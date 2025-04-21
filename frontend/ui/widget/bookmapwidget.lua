@@ -452,7 +452,7 @@ function BookMapRow:init()
                 focus_inner_border = true,
                 Widget:new{
                     dimen = Geom:new{
-                        w = w, -- + 2*self.focus_nav_border,
+                        w = w,
                         h = math.floor(1.2 * self.span_height) - 2*self.focus_nav_border,
                     }
                 }
@@ -1972,7 +1972,6 @@ function BookMapWidget:updateFocus()
             -- The user has scrolled one page or one row, and the focused widget moved out
             -- of the updated view: forget that focused widget and change it to a widget
             -- in the middle of the new view.
-            logger.warn("  scrolled out of view, finding a new focus widget")
             for y, focus_row in ipairs(self.layout) do
                 if #focus_row > 0 then
                     local dimen = focus_row[1].dimen
@@ -1985,8 +1984,6 @@ function BookMapWidget:updateFocus()
             self.cur_focused_widget = self:getFocusItem()
             -- This will trigger a repaint and cause us to be called again (at which point we should do nothing).
             self:refocusWidget(FocusManager.RENDER_IN_NEXT_TICK, FocusManager.FORCED_FOCUS)
-        else
-            logger.warn("  in view, no scrolling")
         end
     else
         -- The focused widget was changed by the user (with keys), it may have moved out of view.
@@ -1995,7 +1992,6 @@ function BookMapWidget:updateFocus()
         -- below baseline): we need to move this BookMapRow fully into view.
         local row, row_idx, row_y, row_h = self:getVGroupRowAtY(focused_widget_dimen.y - self.title_bar_h) -- luacheck: no unused
         if row then
-            logger.warn("  scrolling into view")
             row_y = row_y - self.cropping_widget._scroll_offset_y
             if row_y < 0 then
                 self.cropping_widget:_scrollBy(0, row_y)
@@ -2005,8 +2001,6 @@ function BookMapWidget:updateFocus()
             elseif row_y + row_h > self.crop_height then
                 self.cropping_widget:_scrollBy(0, row_y + row_h - self.crop_height)
                 self:refocusWidget(FocusManager.RENDER_IN_NEXT_TICK, FocusManager.FORCED_FOCUS)
-            else
-                logger.warn("  in view, no scrolling")
             end
         end
     end

@@ -391,7 +391,6 @@ function PageBrowserWidget:updateLayout()
                 focusable = true,
                 focus_border_size = focus_nav_border,
                 focus_inner_border = true,
-                -- background = Blitbuffer.COLOR_WHITE,
                 Widget:new{
                     dimen = self.grid_item_dimen:copy()
                 }
@@ -1138,8 +1137,8 @@ end
 
 function PageBrowserWidget:showGestures()
     local text
-        if Device:isTouchDevice() then
-            text = _([[
+    if Device:isTouchDevice() then
+        text = _([[
 Swipe along the top or left screen edge to change the number of columns or rows of thumbnails.
 
 Swipe vertically to move one row, horizontally to move one screen.
@@ -1153,33 +1152,27 @@ Tap on a thumbnail to read that page.
 Long-press on ≡ to decrease or reset the number of chapter levels shown in the bottom ribbon.
 
 Any multiswipe will close the page browser.]])
-        elseif Device:hasKeyboard() then
-            text = _([[
-The settings (in this menu) can be used to change the number of rows and columns, whether to display page numbers, and to display different chapter-levels in the bottom ribbon.
-
-Press Shift+Up to move up by one row, or either previous-page-turn-button to move one screen.
-
-Press Shift+Down to move down by one row, or either next-page-turn-button to move one screen.
-
-Press Shift+Press on a thumbnail, to open more options.
-
-Press Shift+Back closes all instances of Page Browser and Book Map.
-
-Select a thumbnail to read that page.]])
-        elseif Device:hasScreenKB() then
-            text = _([[
-The settings (in this menu) can be used to change the number of rows and columns, whether to display page numbers, and to display different chapter-levels in the bottom ribbon.
-
-Press ScreenKB+Up to move up by one row, or either previous-page-turn-button to move one screen.
-
-Press ScreenKB+Down to move down by one row, or either next-page-turn-button to move one screen.
-
-Press ScreenKB+Press on a thumbnail, to open more options.
-
-Press ScreenKB+Back closes all instances of Page Browser and Book Map.
-
-Select a thumbnail to read that page.]])
-        end
+    elseif Device:hasKeyboard() then
+        local lines = {
+            _("The settings (in this menu) can be used to change the number of rows and columns, whether to display page numbers, and to display different chapter-levels in the bottom ribbon."),
+            _("Press Shift+Up to move up by one row, or either previous-page-turn-button to move one screen."),
+            _("Press Shift+Down to move down by one row, or either next-page-turn-button to move one screen."),
+            _("Press Shift+Press on a thumbnail, to open more options."),
+            _("Press Shift+Back closes all instances of Page Browser and Book Map."),
+            _("Select a thumbnail to read that page.")
+        }
+        text = table.concat(lines, "\n\n")
+    elseif Device:hasScreenKB() then
+        local lines = {
+            _("The settings (in this menu) can be used to change the number of rows and columns, whether to display page numbers, and to display different chapter-levels in the bottom ribbon."),
+            _("Press ScreenKB+Up to move up by one row, or either previous-page-turn-button to move one screen."),
+            _("Press ScreenKB+Down to move down by one row, or either next-page-turn-button to move one screen."),
+            _("Press ScreenKB+Press on a thumbnail, to open more options."),
+            _("Press ScreenKB+Back closes all instances of Page Browser and Book Map."),
+            _("Select a thumbnail to read that page.")
+        }
+        text = table.concat(lines, "\n\n")
+    end
     UIManager:show(InfoMessage:new{text = text})
 end
 
@@ -1406,6 +1399,7 @@ function PageBrowserWidget:onScrollRowDown()
     return true
 end
 
+-- Override FocusManager internal methods, so we can scroll the view instead of wrap around
 function PageBrowserWidget:_wrapAroundY(dy)
     if dy > 0 then
         self:onScrollRowDown()
