@@ -172,4 +172,27 @@ function socketutil.redact_request(request)
     return safe_request
 end
 
+function socketutil.wrapProgressReporterAroundSink(sink, progressReporter)
+    if progressReporter == nil then
+        return sink
+    end
+
+    assert(progressReporter.expected_size_bytes, "progressReporter.expected_size_bytes is nil")
+    assert(progressReporter.reportProgressCallback, "progressReporter.reportProgressCallback is nil")
+
+    local downloaded_bytes = 0
+    local progress_reporter_sink = function(chunk, err)
+        if chunk == nil then
+            progressReporter.reportProgressCallback(1)
+        else
+            -- accumulate the downloaded bytes so we don't need to check the actual file every time
+            downloaded_bytes = downloaded_bytes + chunk:len()
+            progressReporter.reportProgressCallback(downloaded_bytes / progressReporter.expected_size_bytes)
+        end
+        return sink(chunk, err)
+    end
+
+    return progress_reporter_sink
+end
+
 return socketutil
