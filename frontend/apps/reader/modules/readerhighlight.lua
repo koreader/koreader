@@ -851,6 +851,7 @@ Except when in two columns mode, where this is limited to showing only the previ
                 local highlight_non_touch_interval = G_reader_settings:readSetting("highlight_non_touch_interval") or 1
                 return T(N_("Interval for crosshairs speed increase: 1 second", "Interval for crosshairs speed increase: %1 seconds", highlight_non_touch_interval), highlight_non_touch_interval)
             end,
+            separator = true, -- needed as this is not the last item, readerlink adds another one
             enabled_func = function()
                 return not self.view.highlight.disabled and G_reader_settings:nilOrTrue("highlight_non_touch_spedup")
             end,
@@ -876,8 +877,28 @@ Except when in two columns mode, where this is limited to showing only the previ
 
         -- long_press settings are under the taps_and_gestures menu, which is not available for non-touch devices
         -- Clone long_press settings, and change its label, making it much more meaningful for non-touch device users.
-        menu_items.selection_text = menu_items.long_press
-        menu_items.selection_text.text = _("Text selection tools")
+        menu_items.selection_text = {
+            text = _("Text selection tools"),
+            sub_item_table = {
+                menu_items.long_press.sub_item_table[1], -- Dictionary on single word selection
+                {
+                    text_func = function()
+                        local multi_word = G_reader_settings:readSetting("default_highlight_action")
+                        for __, v in ipairs(long_press_action) do
+                            if v[2] == multi_word then
+                                return T(_("Multi-word selection: %1"), v[1]:lower())
+                            end
+                        end
+                    end,
+                    sub_item_table = { table.unpack(menu_items.long_press.sub_item_table, 2, #long_press_action + 1) }
+                }
+            }
+        }
+        local post_long_press_action_index = #menu_items.selection_text.sub_item_table + #long_press_action -- index after long_press_action
+        -- Copy remaining items (anything after long_press_action) directly to selection_text's sub_item_table
+        for i = post_long_press_action_index, #menu_items.long_press.sub_item_table do
+            table.insert(menu_items.selection_text.sub_item_table, menu_items.long_press.sub_item_table[i])
+        end
         menu_items.long_press = nil
     end
 
