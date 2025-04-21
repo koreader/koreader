@@ -29,6 +29,16 @@ end
 local ReaderPaging = InputContainer:extend{
     pan_rate = 30,  -- default 30 ops, will be adjusted in readerui
     current_page = 0,
+
+    -- CBZ show 2 pages at once
+    -- FIXME(ogkevin): make this configurable so that it can be set to true
+    -- for now, its always false and needs to be set to true during development
+    dual_page_mode = false,
+    dual_page_first_page_is_cover = true,
+    -- In dual page mode, this holds the base pair that we are at.
+    -- This is needed to do relative page changes.
+    current_pair_base = 0,
+
     number_of_pages = 0,
     visible_area = nil,
     page_area = nil,
@@ -533,6 +543,23 @@ function ReaderPaging:onZoomModeUpdate(new_mode)
 end
 
 function ReaderPaging:onPageUpdate(new_page_no, orig_mode)
+    -- FIXME(ogkevin): this logic doesn't work when first page is not the cocer
+    -- FIXME(ogkevin): There is something funky happening when you rotate from enabled, to disabld and back to enabled
+    -- So dual page on, from landscape to portrait to landscape is borked, unitl a page movement happens
+    if self.dual_page_first_page_is_cover and  new_page_no == 1 then
+        self.current_pair_base = 1
+    else
+        self.current_pair_base = new_page_no % 2 == 0 and new_page_no or (new_page_no - 1)
+    end
+
+    logger.dbg(
+        "ReaderPaging:onPageUpdatef: curr_page",
+        self.current_page,
+        "curr_pair_base",
+        self.current_pair_base,
+        "new_page", new_page_no
+    )
+
     self.current_page = new_page_no
     if self.view.page_scroll and orig_mode ~= "scrolling" then
         self.ui:handleEvent(Event:new("InitScrollPageStates", orig_mode))
@@ -928,6 +955,54 @@ function ReaderPaging:onScrollPageRel(page_diff)
     self:_gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
     UIManager:setDirty(self.view.dialog, "partial")
     return true
+end
+
+-- Given the current base and the relative page movements,
+-- return the right base for dual page navigation.
+--
+-- If self.dual_page_first_page_is_cover is enabled, then we start counting pairs
+-- from page 2 onwards.
+-- So if we are at page 1, the next pairs are:
+-- - 2,3
+-- - 4,5
+-- etc
+--
+-- If it's disabled, then it becomes:
+-- - 1,2
+-- - 3,4
+-- etc
+-- 
+-- So if we are at base 1, and make a relative move +1, return 2
+-- which will make readerview render page 2,3
+--
+function ReaderPaging:getPairBaseByRelativeMovement(diff)
+    logger.dbg("ReaderPaging:getPairBaseByRelativeMovement:", diff)
+    local total_pages = self.number_of_pages
+    local current_base = self.current_pair_base
+
+    if self.dual_page_first_page_is_cover and current_base == 1 then
+        -- Handle cover page navigation
+        if diff <= 0 then
+            return 1 -- Stay on cover
+        else
+            -- Jump to first spread (2) + subsequent spreads
+            return math.min(2 + (diff - 1) * 2, total_pages % 2 == 0 and total_pages or total_pages - 1)
+        end
+    end
+
+    -- Calculate new base for spreads
+    local new_base = current_base + (diff * 2)
+
+    -- Clamp to valid range
+    local max_base = total_pages % 2 == 0 and total_pages or total_pages - 1
+    new_base = math.max(1, math.min(new_base, max_base))
+
+    -- Handle backward navigation to cover
+    if new_base < 2 then
+        return total_pages >= 1 and 1 or new_base
+    end
+
+    return new_base
 end
 
 function ReaderPaging:onGotoPageRel(diff)
