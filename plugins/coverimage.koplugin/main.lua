@@ -10,7 +10,7 @@ if not (Device.isAndroid() or Device.isEmulator() or Device.isRemarkable() or De
     return { disabled = true }
 end
 
-local A, android = pcall(require, "android") -- luacheck: ignore
+local A, android = pcall(require, "android")  -- luacheck: ignore
 local Blitbuffer = require("ffi/blitbuffer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
