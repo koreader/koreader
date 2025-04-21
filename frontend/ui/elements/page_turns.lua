@@ -157,7 +157,7 @@ local PageTurns = {
                 return G_reader_settings:isTrue("invert_ui_layout_mirroring")
             end,
             callback = function()
-                UIManager:broadcastEvent(Event:new("ToggleUILayourMiroring"))
+                UIManager:broadcastEvent(Event:new("ToggleUILayoutMiroring"))
             end,
             help_text = _([[
 When enabled the UI direction for the Table of Contents, Book Map, and Page Browser dialogs will mirror the default UI direction.

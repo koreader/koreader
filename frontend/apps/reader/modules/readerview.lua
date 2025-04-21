@@ -1005,7 +1005,7 @@ function ReaderView:shouldInvertBiDiLayoutMirroring()
     return G_reader_settings:isTrue("invert_ui_layout_mirroring")
 end
 
-function ReaderView:onToggleUILayourMiroring()
+function ReaderView:onToggleUILayoutMiroring()
     G_reader_settings:flipNilOrFalse("invert_ui_layout_mirroring")
 end
 
