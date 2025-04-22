@@ -1049,8 +1049,8 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
         {
             title = _("In-page footnote extension"),
             {
-                id = "following-footnote-inpage_any",
-                conflicts_with = function(id) return util.stringStartsWith(id, "following-footnote-inpage_") end,
+                id = "extend-footnote-inpage_following-inpage-footnote_any",
+                conflicts_with = function(id) return util.stringStartsWith(id, "extend-footnote-inpage_following-inpage-footnote_") end,
                 title = _("Extend footnote content until next entry"),
                 description = _([[
 Extend in-page footnotes shown at the bottom of pages to include text up to the next footnote.
@@ -1064,8 +1064,8 @@ This might be needed when books don't correctly mark all text that belongs to th
                 ]],
             },
             {
-                id = "following-footnote-inpage_until_heading",
-                conflicts_with = function(id) return util.stringStartsWith(id, "following-footnote-inpage_") end,
+                id = "extend-footnote-inpage_following-inpage-footnote_until_heading",
+                conflicts_with = function(id) return util.stringStartsWith(id, "extend-footnote-inpage_following-inpage-footnote_") end,
                 title = _("Extend footnote content until next header"),
                 description = _([[
 Extend in-page footnotes shown at the bottom of pages to include text up to the next footnote or heading.
