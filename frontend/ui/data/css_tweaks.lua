@@ -949,11 +949,6 @@ This only works with footnotes that have specific attributes set by the publishe
     -cr-only-if: inpage-footnote;
         font-size: 0.8rem !important;
 }
-*, autoBoxing {
-    -cr-hint: late;
-    -cr-only-if: extended-inpage-footnote;
-        font-size: 0.8rem !important;
-}
             ]],
             separator = true,
         },
@@ -989,11 +984,6 @@ ol.references > li {
 *, autoBoxing {
     -cr-hint: late;
     -cr-only-if: inpage-footnote;
-        font-size: 0.8rem !important;
-}
-*, autoBoxing {
-    -cr-hint: late;
-    -cr-only-if: extended-inpage-footnote;
         font-size: 0.8rem !important;
 }
 /* hide backlinks */
@@ -1048,11 +1038,6 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
 *, autoBoxing {
     -cr-hint: late;
     -cr-only-if: inpage-footnote;
-        font-size: 0.8rem !important;
-}
-*, autoBoxing {
-    -cr-hint: late;
-    -cr-only-if: extended-inpage-footnote;
         font-size: 0.8rem !important;
 }
             ]],
