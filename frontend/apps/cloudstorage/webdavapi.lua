@@ -186,13 +186,13 @@ end
 
 function WebDavApi:uploadFile(file_url, user, pass, local_path, etag)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local code, _, status = socket.skip(1, http.request {
+    local code, _, status = socket.skip(1, http.request{
         url      = file_url,
         method   = "PUT",
         source   = ltn12.source.file(io.open(local_path, "r")),
         user     = user,
         password = pass,
-        headers  = {
+        headers = {
             ["Content-Length"] = lfs.attributes(local_path, "size"),
             ["If-Match"] = etag,
         }
@@ -206,7 +206,7 @@ end
 
 function WebDavApi:createFolder(folder_url, user, pass, folder_name)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local code, _, status = socket.skip(1, http.request {
+    local code, _, status = socket.skip(1, http.request{
         url      = folder_url,
         method   = "MKCOL",
         user     = user,
@@ -218,5 +218,6 @@ function WebDavApi:createFolder(folder_url, user, pass, folder_name)
     end
     return code
 end
+
 
 return WebDavApi
