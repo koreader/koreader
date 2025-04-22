@@ -182,7 +182,9 @@ Makes a json request against a remote endpoint
 function BaseExporter:makeJsonRequest(endpoint, method, body, headers)
     local sink = {}
     local extra_headers = headers or {}
-    local body_json, err = rapidjson.encode(body)
+    local body_json, response, err
+
+    body_json, err = rapidjson.encode(body)
     if not body_json then
         return nil, string.format(msg_failed,
             "cannot encode body" .. err)
@@ -219,7 +221,7 @@ function BaseExporter:makeJsonRequest(endpoint, method, body, headers)
             "no response from server")
     end
 
-    local response, err = rapidjson.decode(sink[1])
+    response, err = rapidjson.decode(sink[1])
     if not response then
         return nil, string.format(msg_failed,
             "unable to decode server response" .. err)
