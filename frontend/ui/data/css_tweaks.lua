@@ -939,29 +939,6 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
             ]],
             separator = true,
         },
-        {
-            id = "smaller_footnote-inpage",
-            title = _("Smaller in-page footnotes"),
-            description = _([[
-Decrease size of in-page footnotes.]]),
-            css = [[
-body[name="notes"] > section {
-    -cr-only-if: fb2-document;
-        font-size: 0.75rem;
-}
-body[name="comments"] > section {
-    -cr-only-if: fb2-document;
-        font-size: 0.85rem;
-}
-*, autoBoxing {
-    -cr-hint: late;
-    -cr-only-if: -fb2-document inpage-footnote;
-        font-size: 0.8rem !important;
-}
-}
-            ]],
-            separator = true,
-        },
         -- Next tweaks, with the help of crengine, will apply only to elements that were
         -- matched by previous tweaks that have set them the "footnote-inpage" cr-hint,
         -- and their children (their content).
@@ -976,13 +953,35 @@ body[name="comments"] > section {
         (function()
             local sub_table = {
                 title = _("In-page footnote font size"),
+                {
+                    id = "smaller_footnote-inpage",
+                    title = _("Smaller footnotes (80%)"),
+                    description = _([[
+Decrease size of in-page footnotes.]]),
+                    css = [[
+body[name="notes"] > section {
+    -cr-only-if: fb2-document;
+        font-size: 0.75rem;
+}
+body[name="comments"] > section {
+    -cr-only-if: fb2-document;
+        font-size: 0.85rem;
+}
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: -fb2-document inpage-footnote;
+        font-size: 0.8rem !important;
+}
+                    ]],
+                    separator = true,
+                },
             }
             for __, rem in ipairs( { 1.0, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65 } ) do
                 local pct = rem * 100
                 table.insert(sub_table, {
                     id = T("inpage_footnote_font-size_%1", pct),
                     conflicts_with = function(id) return util.stringStartsWith(id, "inpage_footnote_font-size_") end,
-                    title = T(_("Footnote font size: %1 %"), pct),
+                    title = T(_("Force footnote font size: %1 %"), pct),
                     css = T([[
 *, autoBoxing {
     -cr-hint: late;
