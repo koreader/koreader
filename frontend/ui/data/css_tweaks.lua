@@ -944,6 +944,7 @@ This only works with footnotes that have specific attributes set by the publishe
         -cr-hint: footnote-inpage;
         margin: 0 !important;
 }
+/* Also applies to extended footnotes */
 *, autoBoxing {
     -cr-hint: late;
     -cr-only-if: inpage-footnote;
@@ -981,6 +982,7 @@ ol.references > li {
     list-style-position: -cr-outside;
     margin: 0 !important;
 }
+/* Also applies to extended footnotes */
 *, autoBoxing {
     -cr-hint: late;
     -cr-only-if: inpage-footnote;
@@ -1035,6 +1037,7 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
     -cr-hint: footnote-inpage;
     margin: 0 !important;
 }
+/* Also applies to extended footnotes */
 *, autoBoxing {
     -cr-hint: late;
     -cr-only-if: inpage-footnote;
