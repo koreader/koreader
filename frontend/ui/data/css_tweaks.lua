@@ -1055,8 +1055,12 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
                 description = _([[
 Extend in-page footnotes shown at the bottom of pages to include text up to the next footnote.
 This might be needed when books don't correctly mark all text that belongs to the footnote.]]),
+-- :where() and priority are needed to ensure lower specificity than
+-- any other tweaks that check -cr-only-if: (inside-)inpage-footnote
+                priority = -1,
                 css = [[
-*, autoBoxing {
+:where(*, autoBoxing) {
+    -cr-hint: late;
     -cr-only-if: following-inpage-footnote -inpage-footnote;
         -cr-hint: extend-footnote-inpage;
         margin: 0 !important;
@@ -1071,8 +1075,12 @@ This might be needed when books don't correctly mark all text that belongs to th
 Extend in-page footnotes shown at the bottom of pages to include text up to the next footnote or heading.
 This might be needed when books don't correctly mark all text that belongs to the footnote.
 This tweak can be duplicated as a user style tweak when a book contains other elements between footnotes that should not be shown in-page.]]),
+-- :where() and priority are needed to ensure lower specificity than
+-- any other tweaks that check -cr-only-if: (inside-)inpage-footnote
+                priority = -1,
                 css = [[
-*:not(h1, h2, h3, h4, h5, h6), autoBoxing {
+:where(*:not(h1, h2, h3, h4, h5, h6), autoBoxing) {
+    -cr-hint: late;
     -cr-only-if: following-inpage-footnote -inpage-footnote;
         -cr-hint: extend-footnote-inpage;
         margin: 0 !important;
