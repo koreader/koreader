@@ -11,6 +11,7 @@ local TitleBar        = require("ui/widget/titlebar")
 local logger          = require("logger")
 local TextWidget      = require("ui/widget/textwidget")
 local Font            = require("ui/font")
+local time = require("ui/time")
 
 --[[--
 A progress bar dialog widget that shows a progress bar for luasocket sinks
@@ -72,7 +73,6 @@ function ProgressbarDialog:init()
 
     -- refresh time in seconds
     -- defauilt: 3 seconds
-    -- @note: lowest rate is 1 second due to lua's os.time() precision limit of seconds
     self.refresh_time_seconds = self.refresh_time_seconds and self.refresh_time_seconds or 3
     -- used with refresh_mode "fixed_percentage"
     -- default: every 20%
@@ -90,7 +90,7 @@ function ProgressbarDialog:init()
     -- used for internal state
     self.last_percent = 0
     self.last_step = 0
-    self.last_redraw_time = 0
+    self.last_redraw_time_ms = 0
 
     -- create the dialog
     local progress_bar_width = Screen:scaleBySize(360)
@@ -172,9 +172,11 @@ function ProgressbarDialog:redrawProgressbarIfNeeded()
 
     if self.refresh_mode == "time" then
         -- check if enough time has passed
-        local current_time = os.time()
-        if os.difftime(current_time, self.last_redraw_time) >= self.refresh_time_seconds then
-            self.last_redraw_time = current_time
+        local current_time_ms = time.now()
+        local time_delta_ms = current_time_ms - self.last_redraw_time_ms
+        local refresh_time_ms = self.refresh_time_seconds * 1000 * 1000
+        if time_delta_ms >= refresh_time_ms then
+            self.last_redraw_time_ms = current_time_ms
             self:redrawProgressbar()
         end
     elseif self.refresh_mode == "fixed_percentage" then
