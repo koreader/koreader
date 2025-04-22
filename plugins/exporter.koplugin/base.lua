@@ -206,11 +206,10 @@ function BaseExporter:makeJsonRequest(endpoint, method, body, headers)
         request.headers[k] = v
     end
 
-    local code, headers, status = socket.skip(1, http.request(request))
+    local code, __, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
 
     if code ~= 200 then
-        logger.info(code, headers, status, request_headers)
         return nil, string.format(msg_failed,
             status or code or "network unreachable")
     end
