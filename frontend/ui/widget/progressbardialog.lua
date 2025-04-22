@@ -14,21 +14,25 @@ local Font            = require("ui/font")
 local time = require("ui/time")
 
 --[[--
-A progress bar dialog widget that shows a progress bar for luasocket sinks
+A dialog that shows a progress bar with a title and subtitle
 
 @usage
 local progressbar_dialog = ProgressbarDialog:new {
-    title = _("Downloading file."),
-    subtitle = "Please wait.",
+    title = nil, -- e.g. _("Downloading file."),
+    subtitle = nil, -- e.g. "Please wait.",
 
     -- determines how the progress bar is updated
-    -- @note: set self.refresh_*  values accordingly
-    refresh_mode = "steps" | "fixed_percentage" | "time",
+    refresh_mode = "time", -- other options: "steps" | "fixed_percentage" | "time",
+
+    -- set self.refresh_* values according to the refresh_mode
+    refresh_time_seconds = 3,
+    refresh_fixed_percentage_change = 0.2,
+    refresh_steps_stepcount = 5,
 
     -- reportProgress() should be called with the current
     -- progress (value between 0-max_progress) to update the progress bar
-    -- optional: if progress_max` is not set, the progress bar will not be shown
-    progress_max = 1200
+    -- optional: if `progress_max` is not set, the progress bar will not be shown
+    progress_max = nil -- e.g. 150
 }
 
 -----------------------general use case-----------------------------------------
@@ -50,7 +54,7 @@ something:startDownload(sink)
 @param progress_max number the maximum progress (e.g. size of the file in bytes for file downloads)
 @param refresh_mode string how the updating of the progress should be handle (to limit redraws to significant changes)
     - "time" means update every x second
-    - "fixed_percentage" means only update when the percentage changes by a certain amount every 10% step
+    - "fixed_percentage" means only update when the percentage changes by a certain amount e.g. every 10% step
     - "steps" means update in steps e.g. 5 total steps and show step markers inside progress bar
 @param refresh_time_seconds number refresh time in seconds -  used with refresh_mode "time"
 @param refresh_fixed_percentage_change number - used with refresh_mode "fixed_percentage"
@@ -72,14 +76,11 @@ function ProgressbarDialog:init()
     self.refresh_mode = self.refresh_mode and self.refresh_mode or "time"
 
     -- refresh time in seconds
-    -- defauilt: 3 seconds
     self.refresh_time_seconds = self.refresh_time_seconds and self.refresh_time_seconds or 3
     -- used with refresh_mode "fixed_percentage"
-    -- default: every 20%
     self.refresh_fixed_percentage_change = self.refresh_fixed_percentage_change and
         self.refresh_fixed_percentage_change or 0.2
     -- used with refresh_mode "steps"
-    -- default: 5 steps in total
     self.refresh_steps_stepcount = self.refresh_steps_stepcount and self.refresh_steps_stepcount or 5
 
     self.ticks = {}
@@ -152,7 +153,7 @@ function ProgressbarDialog:setTitle(title)
     UIManager:setDirty(self.title_bar, function() return "fast", self.title_bar.dimen end)
 end
 
---- the subtitle below  the title to show more information,
+--- the subtitle below the title to show more information,
 --- e.g. "Please wait" or the current file name
 function ProgressbarDialog:setSubtitle(subtitle)
     self.titlle_bar.subtitle = subtitle
@@ -205,7 +206,8 @@ function ProgressbarDialog:redrawProgressbar()
     UIManager:forceRePaint()
 end
 
---- notify for a progress update i.e. when a new chunk on a file download has been received
+--- notify about a progress update i.e. when a new chunk on a file download has been received
+-- @param progress number the current progress (e.g. size of the file in bytes for file downloads)
 function ProgressbarDialog:reportProgress(progress)
     if not self.progress_bar_visible then
         return
@@ -219,12 +221,12 @@ function ProgressbarDialog:reportProgress(progress)
 end
 
 --- Returns the progressCallback or nil if the progress bar is not visible
--- can be used with socketutil.wrapSinkWithProgressCallback
+-- meant to be used with socketutil.wrapSinkWithProgressCallback
 --[[
 usage:
 ------------------------------------------------------------
 local handle = ltn12.sink.file(io.open(local_path, "w"))
-socketutil.wrapSinkWithProgressCallback(handle, progress_dialg:getProgressCallback())
+handle = socketutil.wrapSinkWithProgressCallback(handle, progress_dialog:getProgressCallback())
 ...start download with handle as sink...
 ------------------------------------------------------------
 ]]
