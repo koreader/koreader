@@ -6,11 +6,11 @@ If your current issue hasn't been already reported, make sure you are running th
 
 # How to report
 
-1. please use english (you can use a translator if you wish)
-2. please use a short, descriptive title.
-3. fill device and version
-4. add a short description of the issue and the steps required to reproduce it.
-5. attach the `crash.log` from your device.
+1. Kindly write in English. We understand that not all our users are native English speakers, but we're unable to manage multiple languages effectively. Feel free to use a translator if needed.
+2. Use a short, descriptive title – avoid using all capital letters.
+3. Fill in all the required fields e.g. device, FW, etc.
+4. Add a comprehensive description of the issue and the steps required to reproduce it.
+5. Attach the `crash.log` file from your device.
 
 ## Getting a `crash.log`
 
