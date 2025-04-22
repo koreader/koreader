@@ -1054,7 +1054,7 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
                 title = _("Extend footnote content until next entry"),
                 description = _([[
 Extend in-page footnotes shown at the bottom of pages to include text up to the next footnote.
-This is needed when books don't correctly mark all text that belongs to the footnote.]]),
+This might be needed when books don't correctly mark all text that belongs to the footnote.]]),
                 css = [[
 *, autoBoxing {
     -cr-only-if: following-inpage-footnote -inpage-footnote;
@@ -1069,7 +1069,7 @@ This is needed when books don't correctly mark all text that belongs to the foot
                 title = _("Extend footnote content until next header"),
                 description = _([[
 Extend in-page footnotes shown at the bottom of pages to include text up to the next footnote or heading.
-This is needed when books don't correctly mark all text that belongs to the footnote.
+This might be needed when books don't correctly mark all text that belongs to the footnote.
 This tweak can be duplicated as a user style tweak when a book contains other elements between footnotes that should not be shown in-page.]]),
                 css = [[
 *:not(h1, h2, h3, h4, h5, h6), autoBoxing {
