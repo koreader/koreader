@@ -25,5 +25,5 @@ Android logs are kept in memory. Please go to [Menu] → Help → Bug Report to 
 
 ## Verbose logs
 
-If the bug you're reporting is NOT a crash we'll need you to reproduce the issue with *verbose* debug logging enabled.
+If the bug you are reporting is NOT a crash we'll need you to reproduce the issue with *verbose* debug logging enabled.
 To do so, go to `Top menu → Hamburger menu → Help → Report a bug` and tap `Enable verbose logging`. Restart as requested, then repeat the steps for your issue.
