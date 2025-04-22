@@ -1049,7 +1049,7 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
         {
             title = _("In-page footnote extension"),
             {
-                id = "following-footnote-inpage_all",
+                id = "following-footnote-inpage_any",
                 conflicts_with = function(id) return util.stringStartsWith(id, "following-footnote-inpage_") end,
                 title = _("Extend footnote content until next entry"),
                 description = _([[
