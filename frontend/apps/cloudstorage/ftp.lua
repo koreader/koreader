@@ -20,7 +20,7 @@ function Ftp:run(address, user, pass, path)
     return FtpApi:listFolder(url, path)
 end
 
-function Ftp:downloadFile(item, address, user, pass, path, callback_close, progressReporter)
+function Ftp:downloadFile(item, address, user, pass, path, callback_close, progress_callback)
     local url = FtpApi:generateUrl(address, util.urlEncode(user), util.urlEncode(pass)) .. item.url
     logger.dbg("downloadFile url", url)
     path = util.fixUtf8(path, "_")
@@ -33,7 +33,7 @@ function Ftp:downloadFile(item, address, user, pass, path, callback_close, progr
     end
 
     local handle = ltn12.sink.file(file)
-    handle = socketutil.wrapProgressReporterAroundSink(handle, progressReporter)
+    handle = socketutil.wrapSinkWithProgressCallback(handle, progress_callback)
 
     local response = FtpApi:ftpGet(url, "retr", handle )
     if response ~= nil then

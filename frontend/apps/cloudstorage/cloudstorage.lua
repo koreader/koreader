@@ -20,15 +20,7 @@ local _ = require("gettext")
 local N_ = _.ngettext
 local T = require("ffi/util").template
 local util = require("util")
-local Device = require("device")
-local Screen          = Device.screen
-local VerticalGroup   = require("ui/widget/verticalgroup")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Size            = require("ui/size")
-local FrameContainer  = require("ui/widget/container/framecontainer")
-local Blitbuffer      = require("ffi/blitbuffer")
-local ProgressWidget = require("ui/widget/progresswidget")
-local TitleBar        = require("ui/widget/titlebar")
+local ProgressbarDialog = require("ui/widget/progressbardialog")
 
 local CloudStorage = Menu:extend{
     no_title = false,
@@ -222,90 +214,29 @@ end
 
 function CloudStorage:downloadFile(item)
     local function startDownloadFile(unit_item, address, username, password, path_dir, callback_close)
-        local filesize_available = unit_item.filesize ~= nil and unit_item.filesize > 0
-
-        -- TODO: convert into into custom progress window widget
-        local progress_bar_width = Screen:scaleBySize(360)
-        local progress_bar_height = Screen:scaleBySize(18)
-        local frame_width = Screen:scaleBySize(400)
-
-        local progress_bar = ProgressWidget:new {
-            width = progress_bar_width,
-            height = progress_bar_height,
-            padding = Size.padding.large,
-            margin = Size.margin.tiny,
-            percentage = 0,
-        }
-
-        local title_bar = TitleBar:new {
-            title = _("Downloading file"),
+        local progressbar_dialog = ProgressbarDialog:new {
+            title = _("Downloading..."),
             subtitle = unit_item.text,
-            align = "left",
-            width = frame_width,
-            with_bottom_line = false,
-            bottom_v_padding = Screen:scaleBySize(15),
-            padding = Size.padding.tiny,
-        };
-
-        local frame = WidgetContainer:new {
-            align = "center",
-            dimen = Screen:getSize(),
-            FrameContainer:new {
-                radius = Size.radius.window,
-                bordersize = Size.border.window,
-                padding = Size.padding.large,
-                background = Blitbuffer.COLOR_WHITE,
-                VerticalGroup:new {
-                    title_bar,
-                    filesize_available and progress_bar or nil
-                }
-            }
+            progress_max = unit_item.filesize,
+            refresh_mode = "time",
+            refresh_time_seconds = 3,
         }
-
-        -- only update the UI every 10%
-        local last_percent = 0
-        local percent_steps = 0.2
-
-        local reportProgress = function(percent)
-            -- logger.dbg("CloudStorage:downloadFile - progress report:", percent)
-
-            -- set percentage
-            progress_bar:setPercentage(percent)
-
-            -- only update if we have a significant change or are finished downloading
-            if (percent == 1) or (percent >= last_percent + percent_steps) then
-                last_percent = percent
-
-                --UI is not updating during file download so force an update
-                UIManager:setDirty(frame, function() return "fast", progress_bar.dimen end)
-                UIManager:forceRePaint()
-            end
-        end
 
         UIManager:scheduleIn(1, function()
+            local progress_callback = progressbar_dialog:getProgressCallback()
             -- rename progressReporter to a more fitting name
-            local progressReporter = nil
-            if filesize_available then
-                progressReporter = {
-                    reportProgressCallback = reportProgress,
-                    expected_size_bytes = unit_item.filesize,
-                }
-            end
-
             if self.type == "dropbox" then
-                DropBox:downloadFile(unit_item, password, path_dir, callback_close, progressReporter)
+                DropBox:downloadFile( unit_item, password, path_dir, callback_close, progress_callback)
             elseif self.type == "ftp" then
                 Ftp:downloadFile(unit_item, address, username, password, path_dir, callback_close, nil)
             elseif self.type == "webdav" then
-                WebDav:downloadFile(unit_item, address, username, password, path_dir, callback_close, progressReporter)
+                WebDav:downloadFile( unit_item, address, username, password, path_dir, callback_close, progress_callback)
             end
 
-            -- full flash to make sure the whole window gets closed
-            UIManager:close(frame, "flashui", Screen:getSize())
+            progressbar_dialog:close()
         end)
 
-        -- open menu
-        UIManager:show(frame)
+        progressbar_dialog:show()
     end
 
     local function createTitle(filename_orig, filesize, filename, path) -- title for ButtonDialog

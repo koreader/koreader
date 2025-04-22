@@ -162,12 +162,12 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
     return webdav_list
 end
 
-function WebDavApi:downloadFile(file_url, user, pass, local_path, progressReporter)
+function WebDavApi:downloadFile(file_url, user, pass, local_path, progress_callback)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     logger.dbg("WebDavApi: downloading file: ", file_url)
 
     local handle = ltn12.sink.file(io.open(local_path, "w"))
-    handle = socketutil.wrapProgressReporterAroundSink(handle, progressReporter)
+    handle = socketutil.wrapSinkWithProgressCallback(handle, progress_callback)
 
     local code, headers, status = socket.skip(1, http.request {
         url      = file_url,

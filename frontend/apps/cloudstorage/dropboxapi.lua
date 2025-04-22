@@ -106,7 +106,7 @@ function DropBoxApi:fetchListFolders(path, token)
     logger.warn("DropBoxApi: error:", result_response)
 end
 
-function DropBoxApi:downloadFile(path, token, local_path, progressReporter)
+function DropBoxApi:downloadFile(path, token, local_path, progress_callback)
     local data1 = "{\"path\": \"" .. path .. "\"}"
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
 

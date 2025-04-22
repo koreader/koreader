@@ -1,0 +1,251 @@
+local UIManager       = require("ui/uimanager")
+local Device          = require("device")
+local Screen          = Device.screen
+local VerticalGroup   = require("ui/widget/verticalgroup")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local Size            = require("ui/size")
+local FrameContainer  = require("ui/widget/container/framecontainer")
+local Blitbuffer      = require("ffi/blitbuffer")
+local ProgressWidget  = require("ui/widget/progresswidget")
+local TitleBar        = require("ui/widget/titlebar")
+local logger          = require("logger")
+local TextWidget      = require("ui/widget/textwidget")
+local Font            = require("ui/font")
+
+--[[--
+A progress bar dialog widget that shows a progress bar for luasocket sinks
+
+@usage
+local progressbar_dialog = ProgressbarDialog:new {
+    title = _("Downloading file."),
+    subtitle = "Please wait.",
+
+    -- determines how the progress bar is updated
+    -- @note: set self.refresh_*  values accordingly
+    refresh_mode = "steps" | "fixed_percentage" | "time",
+
+    -- reportProgress() should be called with the current
+    -- progress (value between 0-max_progress) to update the progress bar
+    -- optional: if progress_max` is not set, the progress bar will not be shown
+    progress_max = 1200
+}
+
+-----------------------general use case-----------------------------------------
+-- call reportProgress with the current progress (value between 0-max_progress)
+progressbar_dialog:reportProgress( <progress value> )
+----------------------------------------------------------------------------------
+
+------------------use case with luasocket sink----------------------------------
+local progress_callback = progressbar_dialog:getProgressCallback()
+local sink = ltn12.sink.file(io.open(local_path, "w"))
+sink = socketutil.wrapSinkWithProgressCallback(sink, progress_callback)
+-- start pushing data to the sink, this is usually some function that accepts a luasocket sink
+something:startDownload(sink)
+----------------------------------------------------------------------------------
+
+
+@param title string the title of the dialog
+@param subtitle string the subtitle of the dialog
+@param progress_max number the maximum progress (e.g. size of the file in bytes for file downloads)
+@param refresh_mode string how the updating of the progress should be handle (to limit redraws to significant changes)
+    - "time" means update every x second
+    - "fixed_percentage" means only update when the percentage changes by a certain amount every 10% step
+    - "steps" means update in steps e.g. 5 total steps and show step markers inside progress bar
+@param refresh_time_seconds number refresh time in seconds -  used with refresh_mode "time"
+@param refresh_fixed_percentage_change number - used with refresh_mode "fixed_percentage"
+@param refresh_steps_stepcount number how many steps to show - used with refresh_mode "steps"
+--]]
+local ProgressbarDialog = WidgetContainer:extend {}
+
+function ProgressbarDialog:init()
+    self.align = "center"
+    self.dimen = Screen:getSize()
+
+    self.title = self.title ~= nil and self.title or nil
+    self.subtitle = self.subtitle ~= nil and self.subtitle or nil
+    self.progress_max = self.progress_max ~= nil and self.progress_max or nil
+
+    local progress_max_available = self.progress_max ~= nil and self.progress_max > 0
+    self.progress_bar_visible = progress_max_available
+
+    self.refresh_mode = self.refresh_mode and self.refresh_mode or "time"
+
+    -- refresh time in seconds
+    -- defauilt: 3 seconds
+    -- @note: lowest rate is 1 second due to lua's os.time() precision limit of seconds
+    self.refresh_time_seconds = self.refresh_time_seconds and self.refresh_time_seconds or 3
+    -- used with refresh_mode "fixed_percentage"
+    -- default: every 20%
+    self.refresh_fixed_percentage_change = self.refresh_fixed_percentage_change and
+        self.refresh_fixed_percentage_change or 0.2
+    -- used with refresh_mode "steps"
+    -- default: 5 steps in total
+    self.refresh_steps_stepcount = self.refresh_steps_stepcount and self.refresh_steps_stepcount or 5
+
+    self.ticks = {}
+    for i = 1, self.refresh_steps_stepcount do
+        self.ticks[i] = i
+    end
+
+    -- used for internal state
+    self.last_percent = 0
+    self.last_step = 0
+    self.last_redraw_time = 0
+
+    -- create the dialog
+    local progress_bar_width = Screen:scaleBySize(360)
+    local progress_bar_height = Screen:scaleBySize(18)
+    local frame_width = Screen:scaleBySize(400)
+
+
+    self.title_text = TextWidget:new {
+        text = self.title,
+        face = Font:getFace("cfont", 18),
+        bold = true,
+    }
+    self.subtitle_text = TextWidget:new {
+        text = self.subtitle,
+        face = Font:getFace("cfont", 16),
+        truncate_with_ellipsis = true,
+        truncate_left = false,
+        max_width = progress_bar_width,
+    }
+
+    self.title_bar = TitleBar:new {
+        title = self.title,
+        subtitle = self.subtitle,
+        align = "left",
+        width = frame_width,
+        with_bottom_line = false,
+        bottom_v_padding = Screen:scaleBySize(15),
+        padding = Size.padding.tiny,
+    };
+
+    self.progress_bar = ProgressWidget:new {
+        width = progress_bar_width,
+        height = progress_bar_height,
+        padding = Size.padding.large,
+        margin = Size.margin.tiny,
+        percentage = 0,
+        ticks = self.refresh_mode == "steps" and self.ticks or nil,
+        last = self.refresh_mode == "steps" and self.refresh_steps_stepcount or nil,
+        tick_width = Screen:scaleBySize(2),
+    }
+
+    self[1] = FrameContainer:new {
+        radius = Size.radius.window,
+        bordersize = Size.border.window,
+        padding = Size.padding.large,
+        background = Blitbuffer.COLOR_WHITE,
+        VerticalGroup:new {
+            self.title_text,
+            self.subtitle_text,
+            -- self.title_bar,
+            self.progress_bar_visible and self.progress_bar or nil
+        }
+    }
+end
+
+--- the title at the top of the dialog, e.g. to show "Downloading File" or similar
+function ProgressbarDialog:setTitle(title)
+    self.title_bar.title = title
+    UIManager:setDirty(self.title_bar, function() return "fast", self.title_bar.dimen end)
+end
+
+--- the subtitle below  the title to show more information,
+--- e.g. "Please wait" or the current file name
+function ProgressbarDialog:setSubtitle(subtitle)
+    self.titlle_bar.subtitle = subtitle
+    UIManager:setDirty(self.title_bar, function() return "fast", self.title_bar.dimen end)
+end
+
+--- updates the UI to show the current percentage of the progress bar when needed see `ProgressbarDialog.refresh_mode`
+function ProgressbarDialog:redrawProgressbarIfNeeded()
+    -- grab the current percentage from the progress bar
+    local current_percentage = self.progress_bar.percentage
+
+    -- if we are at 100% always redraw
+    if current_percentage >= 1 then
+        self:redrawProgressbar()
+        return
+    end
+
+    if self.refresh_mode == "time" then
+        -- check if enough time has passed
+        local current_time = os.time()
+        if os.difftime(current_time, self.last_redraw_time) >= self.refresh_time_seconds then
+            self.last_redraw_time = current_time
+            self:redrawProgressbar()
+        end
+    elseif self.refresh_mode == "fixed_percentage" then
+        -- only update if we have a significant change
+        if current_percentage >= self.last_percent + self.refresh_fixed_percentage_change then
+            self.last_percent = current_percentage
+            self:redrawProgressbar()
+        end
+    elseif self.refresh_mode == "steps" then
+        local current_step = math.floor(current_percentage * self.refresh_steps_stepcount)
+
+        -- only update if we reached a new step
+        if self.last_step ~= current_step then
+            self.last_step = current_step
+            self:redrawProgressbar()
+        end
+    else
+        logger.err(
+            "ProgressbarDialog:redrawProgressbarIfNeeded - function called but self.refresh_mode not properly set")
+    end
+end
+
+function ProgressbarDialog:redrawProgressbar()
+    --UI is not updating during file download so force an update
+    UIManager:setDirty(self, function() return "fast", self.progress_bar.dimen end)
+    UIManager:forceRePaint()
+end
+
+--- notify for a progress update i.e. when a new chunk on a file download has been received
+function ProgressbarDialog:reportProgress(progress)
+    if not self.progress_bar_visible then
+        return
+    end
+
+    -- set percentage of progress bar internally, this does not yet update
+    self.progress_bar:setPercentage(progress / self.progress_max)
+
+    -- actually draw the progress bar update
+    self:redrawProgressbarIfNeeded()
+end
+
+--- Returns the progressCallback or nil if the progress bar is not visible
+-- can be used with socketutil.wrapSinkWithProgressCallback
+--[[
+usage:
+------------------------------------------------------------
+local handle = ltn12.sink.file(io.open(local_path, "w"))
+socketutil.wrapSinkWithProgressCallback(handle, progress_dialg:getProgressCallback())
+...start download with handle as sink...
+------------------------------------------------------------
+]]
+function ProgressbarDialog:getProgressCallback()
+    if self.progress_bar_visible then
+        local progressCallback = function(progress)
+            self:reportProgress(progress)
+        end
+        return progressCallback
+    end
+
+    return nil
+end
+
+--- opens dialog
+function ProgressbarDialog:show()
+    UIManager:show(self)
+end
+
+---- closes dialog
+function ProgressbarDialog:close()
+    -- full flash to make sure the whole window gets closed
+    UIManager:close(self, "flashui", Screen:getSize())
+end
+
+return ProgressbarDialog

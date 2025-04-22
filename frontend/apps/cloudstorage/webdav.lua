@@ -17,13 +17,13 @@ function WebDav:run(address, user, pass, path, folder_mode)
     return WebDavApi:listFolder(address, user, pass, path, folder_mode)
 end
 
-function WebDav:downloadFile(item, address, username, password, local_path, callback_close, progressReporter)
+function WebDav:downloadFile(item, address, username, password, local_path, callback_close, progress_callback)
     local code_response = WebDavApi:downloadFile(
         WebDavApi:getJoinedPath(address, item.url),
         username,
         password,
         local_path,
-        progressReporter
+        progress_callback
     )
 
     if code_response == 200 then
