@@ -902,7 +902,7 @@ if last_migration_date < 20250417 then
             global_tweaks["footnote-inpage_classic_classnames"] = true
         end
         if global_tweaks["footnote-inpage_epub_smaller"] or global_tweaks["footnote-inpage_wikipedia_smaller"] or global_tweaks["footnote-inpage_classic_classnames_smaller"] then
-            global_tweaks["smaller_footnote-inpage"] = true
+            global_tweaks["inpage_footnote_font-size_smaller"] = true
         end
         global_tweaks["footnote-inpage_epub_smaller"] = nil
         global_tweaks["footnote-inpage_wikipedia_smaller"] = nil

@@ -26,7 +26,7 @@ local DEFAULT_GLOBAL_STYLE_TWEAKS = {}
 -- Display in-page per-specs footnotes for EPUB and FB2:
 DEFAULT_GLOBAL_STYLE_TWEAKS["footnote-inpage_epub"] = true
 DEFAULT_GLOBAL_STYLE_TWEAKS["footnote-inpage_fb2"] = true
-DEFAULT_GLOBAL_STYLE_TWEAKS["smaller_footnote-inpage"] = true
+DEFAULT_GLOBAL_STYLE_TWEAKS["inpage_footnote_font-size_smaller"] = true
 
 local CssTweaks = {
     DEFAULT_GLOBAL_STYLE_TWEAKS = DEFAULT_GLOBAL_STYLE_TWEAKS,
@@ -954,7 +954,8 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
             local sub_table = {
                 title = _("In-page footnote font size"),
                 {
-                    id = "smaller_footnote-inpage",
+                    id = "inpage_footnote_font-size_smaller",
+                    conflicts_with = function(id) return util.stringStartsWith(id, "inpage_footnote_font-size_") end,
                     title = _("Smaller footnotes (80%)"),
                     description = _([[
 Decrease size of in-page footnotes.]]),
