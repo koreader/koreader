@@ -45,6 +45,57 @@ function SettingsMigration:migrateSettings(config)
         config:saveSetting("copt_word_spacing", { 100, space_condensing })
     end
 
+    if config:has("style_tweaks") then
+        local tweaks = config:readSetting("style_tweaks")
+
+        if tweaks then
+            --            base hint
+            --
+            --          | n | t | f |
+            --       ---+---+---+---+
+            -- small  n | n | t | f |
+            -- hint   t | t | t | t |
+            --        f | f | t | f |
+            --
+            -- If either hint is true, enable the base hint to keep that type of footnote.
+            -- Otherwise if one was false and the other nil or also false, we had a default
+            -- that was disabled for the current book and want to keep it false.
+
+            if tweaks["footnote-inpage_epub"] or tweaks["footnote-inpage_epub_smaller"] then
+                tweaks["footnote-inpage_epub"] = true
+            elseif tweaks["footnote-inpage_epub"] == false or tweaks["footnote-inpage_epub_smaller"] == false then
+                tweaks["footnote-inpage_epub"] = false
+            end
+            if tweaks["footnote-inpage_wikipedia"] or tweaks["footnote-inpage_wikipedia_smaller"] then
+                tweaks["footnote-inpage_wikipedia"] = true
+            elseif tweaks["footnote-inpage_wikipedia"] == false or tweaks["footnote-inpage_wikipedia_smaller"] == false then
+                tweaks["footnote-inpage_wikipedia"] = false
+            end
+            if tweaks["footnote-inpage_classic_classnames"] or tweaks["footnote-inpage_classic_classnames_smaller"] then
+                tweaks["footnote-inpage_classic_classnames"] = true
+            elseif tweaks["footnote-inpage_classic_classnames"] == false or tweaks["footnote-inpage_classic_classnames_smaller"] == false then
+                tweaks["footnote-inpage_classic_classnames"] = false
+            end
+
+            local forced_size = false
+            for __, pct in ipairs( { 100, 90, 85, 80, 75, 70, 65 } ) do
+                if tweaks["inpage_footnote_font-size_" .. pct] then
+                    forced_size = true
+                end
+            end
+            if not forced_size
+                and (tweaks["footnote-inpage_epub_smaller"]
+                    or tweaks["footnote-inpage_wikipedia_smaller"]
+                    or tweaks["footnote-inpage_classic_classnames_smaller"]
+            ) then
+                tweaks["inpage_footnote_font-size_smaller"] = true
+            end
+
+            tweaks["footnote-inpage_epub_smaller"] = nil
+            tweaks["footnote-inpage_wikipedia_smaller"] = nil
+            tweaks["footnote-inpage_classic_classnames_smaller"] = nil
+        end
+    end
 end
 
 return SettingsMigration

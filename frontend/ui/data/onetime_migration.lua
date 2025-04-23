@@ -34,15 +34,6 @@ local function drop_fontcache()
     end
 end
 
--- Global settings, https://github.com/koreader/koreader/pull/4945 & https://github.com/koreader/koreader/pull/5655
--- Limit the check to the most recent update. ReaderUI calls this one unconditionally to update docsettings, too.
-if last_migration_date < 20191129 then
-    logger.info("Performing one-time migration for 20191129")
-
-    local SettingsMigration = require("ui/data/settings_migration")
-    SettingsMigration:migrateSettings(G_reader_settings)
-end
-
 -- ReaderTypography, https://github.com/koreader/koreader/pull/6072
 if last_migration_date < 20200421 then
     logger.info("Performing one-time migration for 20200421")
@@ -886,29 +877,17 @@ if last_migration_date < 20250405 then
     G_reader_settings:delSetting("show_finished")
 end
 
+-- Global settings, https://github.com/koreader/koreader/pull/4945 & https://github.com/koreader/koreader/pull/5655
+-- Limit the check to the most recent update. ReaderUI calls this one unconditionally to update docsettings, too.
 -- 20250417, Refactor default footnote style tweaks
 -- https://github.com/koreader/koreader/pull/13613
 if last_migration_date < 20250417 then
-    local global_tweaks = G_reader_settings:readSetting("style_tweaks")
+    logger.info("Performing one-time migration for 20250417")
 
-    if global_tweaks then
-        if global_tweaks["footnote-inpage_epub_smaller"] then
-            global_tweaks["footnote-inpage_epub"] = true
-        end
-        if global_tweaks["footnote-inpage_wikipedia_smaller"] then
-            global_tweaks["footnote-inpage_wikipedia"] = true
-        end
-        if global_tweaks["footnote-inpage_classic_classnames_smaller"] then
-            global_tweaks["footnote-inpage_classic_classnames"] = true
-        end
-        if global_tweaks["footnote-inpage_epub_smaller"] or global_tweaks["footnote-inpage_wikipedia_smaller"] or global_tweaks["footnote-inpage_classic_classnames_smaller"] then
-            global_tweaks["inpage_footnote_font-size_smaller"] = true
-        end
-        global_tweaks["footnote-inpage_epub_smaller"] = nil
-        global_tweaks["footnote-inpage_wikipedia_smaller"] = nil
-        global_tweaks["footnote-inpage_classic_classnames_smaller"] = nil
-    end
+    local SettingsMigration = require("ui/data/settings_migration")
+    SettingsMigration:migrateSettings(G_reader_settings)
 end
+
 
 -- We're done, store the current migration date
 G_reader_settings:saveSetting("last_migration_date", CURRENT_MIGRATION_DATE)
