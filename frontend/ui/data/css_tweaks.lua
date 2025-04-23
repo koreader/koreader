@@ -877,6 +877,7 @@ body[name="comments"] > title {
         {
             id = "footnote-inpage_epub",
             conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_") end,
+            global_conflicts_with = false,
             title = _("In-page EPUB footnotes"),
             description = _([[
 Show EPUB footnote text at the bottom of pages that contain links to them.
@@ -901,6 +902,7 @@ This only works with footnotes that have specific attributes set by the publishe
         {
             id = "footnote-inpage_wikipedia",
             conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_") end,
+            global_conflicts_with = false,
             title = _("In-page Wikipedia footnotes"),
             description = _([[Show footnotes at the bottom of pages in Wikipedia EPUBs.]]),
             css = [[
@@ -920,6 +922,7 @@ ol.references > li > .mw-cite-backlink { display: none; }
         {
             id = "footnote-inpage_classic_classnames",
             conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_") end,
+            global_conflicts_with = false,
             title = _("In-page classic classname footnotes"),
             description = _([[
 Show footnotes with classic classnames at the bottom of pages.
