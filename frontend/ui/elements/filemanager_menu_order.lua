@@ -56,6 +56,7 @@ local order = {
         "autostandby",
         "autosuspend",
         "autoshutdown",
+        "pageturn_power",
         "ignore_sleepcover",
         "ignore_open_sleepcover",
         "cover_events",
