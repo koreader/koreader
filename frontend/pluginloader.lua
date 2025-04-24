@@ -55,22 +55,47 @@ local function getMenuTable(plugin)
     return t
 end
 
-local function sandboxPluginEventHandlers(plugin)
-    for key, value in pairs(plugin) do
-        if key:sub(1, 2) == "on" and type(value) == "function" then
-            plugin[key] = function(self, ...)
-                local ok, re = pcall(value, self, ...)
-                if ok then
-                    return re
-                else
-                    logger.err("failed to call event handler", key, re)
-                    return false
-                end
-            end
-        end
+-- Event handlers defined by plugins are wrapped in a HandlerSandbox
+-- The purpose of the sandbox is to get meaningful stack-traces out of errors happening in plugins.
+local HandlerSandbox = { mt = {} }
+
+function HandlerSandbox.new(context, fname, f, module)
+    local t = {
+        context = context,
+        fname = fname,
+        f = f,
+    }
+    return setmetatable(t, HandlerSandbox.mt)
+end
+
+function HandlerSandbox:call(module,...)
+    -- NOTE the signature is (self, module, ...)
+    -- self refers to the HandlerSandbox instance but module refers to the
+    -- self parameter of the handlers
+    local traceback = function (err)
+         -- do not print 2 topmost entries in traceback. The first is this local function
+         -- and the second is the call method of HandlerSandbox.
+         logger.err("An error occurred while executing a handler:\n" ..err .. "\n" .. debug.traceback(self.context.name .. ":" .. self.fname, 2))
+    end
+    local ok, re = xpcall(self.f, traceback, module, ...)
+    -- NOTE backward compatibility with previous implementation
+    -- of handler wrapping that returned false on error
+    if ok then
+        return re
+    else
+        return false
     end
 end
 
+HandlerSandbox.mt.__call = HandlerSandbox.call
+
+local function sandboxPluginEventHandlers(plugin)
+    for key, value in pairs(plugin) do
+        if key:sub(1, 2) == "on" and type(value) == "function" then
+            plugin[key] = HandlerSandbox.new(plugin, key, value)
+        end
+    end
+end
 
 local PluginLoader = {
     show_info = true,
