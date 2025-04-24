@@ -985,7 +985,7 @@ body[name="comments"] > section {
                 table.insert(sub_table, {
                     id = T("inpage_footnote_font-size_%1", pct),
                     conflicts_with = function(id) return util.stringStartsWith(id, "inpage_footnote_font-size_") end,
-                    title = T(_("Force footnote font size: %1 %"), pct),
+                    title = T(_("Footnote font size: %1 %"), pct),
                     css = T([[
 *, autoBoxing {
     -cr-hint: late;
