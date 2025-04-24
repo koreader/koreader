@@ -238,17 +238,18 @@ if Device:isKobo() then
         end
     }
 
-    common_settings.pageturn_power = {
-        text = _("Wakeup if page button pressed"),
-        checked_func = function()
-            return G_reader_settings:isTrue("pageturn_power")
-        end,
-        callback = function()
-            G_reader_settings:flipNilOrFalse("pageturn_power")
-            UIManager:askForRestart()
-        end
-    }
-
+    if Device:hasKeys() then
+        common_settings.pageturn_power = {
+            text = _("Wakeup if page button pressed"),
+            checked_func = function()
+                return G_reader_settings:isTrue("pageturn_power")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("pageturn_power")
+                UIManager:askForRestart()
+            end
+        }
+    end
 end
 
 if Device:isKindle() and PowerD:hasHallSensor() then

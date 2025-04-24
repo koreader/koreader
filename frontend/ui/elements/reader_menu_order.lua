@@ -104,7 +104,7 @@ local order = {
         "autostandby",
         "autosuspend",
         "autoshutdown",
-        "pageturn_power",
+        "pageturn_power", -- if Device:hasKeys() and Device:isKobo()
         "ignore_sleepcover",
         "ignore_open_sleepcover",
         "cover_events",
