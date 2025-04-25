@@ -19,6 +19,7 @@ local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
+local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
@@ -342,8 +343,48 @@ end
 -- page bookmarks, dogear
 
 function ReaderBookmark:onToggleBookmark()
-    self:toggleBookmark()
-    self.view.dogear:onSetDogearVisibility(not self.view.dogear_visible)
+    self:toggleBookmarkForCurrentPage()
+    return true
+end
+
+function ReaderBookmark:toggleBookmarkForPage(pageno)
+    logger.dbg("ReaderBookmark:toggleBookmark: pageno ", pageno)
+
+    if self.ui.rolling then
+        pageno = self.ui.document:getPageXPointer(pageno)
+    else
+        pageno = pageno
+    end
+
+    local item
+
+    local index = self:getDogearBookmarkIndex(pageno)
+    -- annotation removal
+    if index then
+        item = table.remove(self.ui.annotation.annotations, index)
+        index = -index
+        -- create new annotation
+    else
+        local text
+        local chapter = self.ui.toc:getTocTitleByPage(pageno)
+        if chapter == "" then
+            chapter = nil
+        else
+            -- @translators In which chapter title (%1) a note is found.
+            text = T(_("in %1"), chapter)
+        end
+        item = {
+            page = pageno,
+            text = text,
+            chapter = chapter,
+        }
+        index = self.ui.annotation:addItem(item)
+    end
+
+    self.ui:handleEvent(Event:new("AnnotationsModified", { item, index_modified = index }))
+    self:toggleDogearVisibility(pageno, self.ui.paging:isDualPageEnabled())
+
+    -- self.view.dogear:onSetDogearVisibility(not self.view.dogear_visible)
     -- Refresh the dogear first, because it might inherit ReaderUI refresh hints.
     UIManager:setDirty(self.view.dialog, function()
         return "ui",
@@ -352,41 +393,18 @@ function ReaderBookmark:onToggleBookmark()
     -- And ask for a footer refresh, in case we have bookmark_count enabled.
     -- Assuming the footer is visible, it'll request a refresh regardless, but the EPDC should optimize it out if no content actually changed.
     self.view.footer:maybeUpdateFooter()
-    return true
 end
 
-function ReaderBookmark:toggleBookmark(pageno)
-    local pn_or_xp, item
-    if pageno then
-        if self.ui.rolling then
-            pn_or_xp = self.ui.document:getPageXPointer(pageno)
-        else
-            pn_or_xp = pageno
-        end
+function ReaderBookmark:toggleBookmarkForCurrentPage()
+    if self.ui.paging and self.ui.paging:isDualPageEnabled() then
+        self.ui.paging:requestPageFromUserInDualPageModeAndExec(
+            function(pageno)
+                self:toggleBookmarkForPage(pageno)
+            end
+        )
     else
-        pn_or_xp = self:getCurrentPageNumber()
+        self:toggleBookmarkForPage(self:getCurrentPageNumber())
     end
-    local index = self:getDogearBookmarkIndex(pn_or_xp)
-    if index then
-        item = table.remove(self.ui.annotation.annotations, index)
-        index = -index
-    else
-        local text
-        local chapter = self.ui.toc:getTocTitleByPage(pn_or_xp)
-        if chapter == "" then
-            chapter = nil
-        else
-            -- @translators In which chapter title (%1) a note is found.
-            text = T(_("in %1"), chapter)
-        end
-        item = {
-            page = pn_or_xp,
-            text = text,
-            chapter = chapter,
-        }
-        index = self.ui.annotation:addItem(item)
-    end
-    self.ui:handleEvent(Event:new("AnnotationsModified", { item, index_modified = index }))
 end
 
 function ReaderBookmark:setDogearVisibility(pn_or_xp)
@@ -396,7 +414,11 @@ end
 
 function ReaderBookmark:isPageBookmarked(pn_or_xp)
     local page = pn_or_xp or self:getCurrentPageNumber()
-    return self:getDogearBookmarkIndex(page) and true or false
+    local bookmarked = self:getDogearBookmarkIndex(page) and true or false
+
+    logger.dbg("ReaderBookmark:isPageBookmarked for page:", page, bookmarked)
+
+    return bookmarked
 end
 
 function ReaderBookmark:isBookmarkInPageOrder(a, b)
@@ -466,9 +488,43 @@ end
 
 -- navigation
 
+-- toggle dogear visibitliy for the given page
+-- If dual page mode is enabled, ask ReaderPaging for the page pair and toggle it on both.
+-- Toggling on both means if one of them is bookmarked, ReaderView.dogear_visible will be set to true
+--
+-- We need to pass dualPageMode from onSetPageMode to prevent race condition
+-- where ReaderPaging.isDualPageEnabled() might still return false
+function ReaderBookmark:toggleDogearVisibility(pageno, dualPageMode)
+    logger.dbg("ReaderBookmark:toggleDogearVisibility ", pageno, dualPageMode)
+    if self.ui.paging then
+        if dualPageMode and self.ui.paging:supportsDualPage() then
+            local visibility = false
+
+            for _, page in ipairs(self.ui.paging:getDualPagePairFromBasePage(pageno)) do
+                logger.dbg("ReaderBookmark:toggleDogearVisibility for dual page", page)
+                if self:isPageBookmarked(page) then visibility = true end
+            end
+
+            self.view.dogear:onSetDogearVisibility(visibility)
+            return
+        end
+
+        self:setDogearVisibility(pageno)
+
+        return
+    end
+
+    self:setDogearVisibility(self.ui.document:getXPointer())
+end
 function ReaderBookmark:onPageUpdate(pageno)
-    local pn_or_xp = self.ui.paging and pageno or self.ui.document:getXPointer()
-    self:setDogearVisibility(pn_or_xp)
+    self:toggleDogearVisibility(pageno, self.ui.paging:isDualPageEnabled())
+end
+
+function ReaderBookmark:onSetPageMode(mode)
+    logger.dbg("ReaderBookmark:onSetPageMode", mode)
+    if self.ui.paging then
+        self:toggleDogearVisibility(self.ui.paging.current_page, mode == 2)
+    end
 end
 
 function ReaderBookmark:onPosUpdate(pos)
@@ -571,11 +627,14 @@ end
 
 -- bookmarks misc info, helpers
 
+-- TODO(ogkevin): dual page awareness "might" be needed here
+-- method is used for relative movements, e.g. first,last bookmark from page X
 function ReaderBookmark:getCurrentPageNumber()
     return self.ui.paging and self.view.state.page or self.ui.document:getXPointer()
 end
 
 function ReaderBookmark:getBookmarkPageNumber(bookmark)
+    logger.dbg("ReaderBookmark:getBookmarkPageNumber ", bookmark)
     return self.ui.paging and bookmark.page or self.ui.document:getPageFromXPointer(bookmark.page)
 end
 
