@@ -44,6 +44,7 @@ local ReaderView = OverlapGroup:extend{
     -- PDF/DjVu continuous paging
     page_scroll = nil,
     page_bgcolor = Blitbuffer.gray(G_defaults:readSetting("DBACKGROUND_COLOR") * (1/15)),
+    page_states = nil, -- table
     -- properties of the gap drawn between each page in scroll mode:
     page_gap = nil, -- table
     -- DjVu page rendering mode (used in djvu.c:drawPage())
@@ -435,6 +436,7 @@ function ReaderView:draw2Pages(bb, x, y)
 
         local area = Geom:new({ h = max_height, w = total_width })
 
+        logger.dbg("readerview.draw2pages: drawing page", pages[i])
         self.document:drawPage(bb, x_offset, y_offset, area, pages[i], zoom, self.state.rotation, self.state.gamma)
 
         x_offset = x_offset + size.w
@@ -1077,7 +1079,8 @@ function ReaderView:shouldInvertBiDiLayoutMirroring()
 end
 
 
--- if dual page is enabled for cbz, then readerpagging will set the correct base page.
+-- If dual page is enabled for paging, then readerpagging will give us the corret
+-- page pairs in ReaderView:draw2Pages by setting self.page_states.
 function ReaderView:onPageUpdate(new_page_no)
     logger.dbg("readerview: on page update", new_page_no)
 
