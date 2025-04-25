@@ -1191,9 +1191,18 @@ function ReaderPaging:onGotoPageRel(diff)
                 end
                 new_page = test_page
             end
+        elseif self:isDualPageEnabled() then
+            new_page = self:getPairBaseByRelativeMovement(diff)
+
+            logger.dbg("readerpaging: relative page pair move to", new_page)
+
+            if self.current_pair_base == new_page and diff > 0 then
+                new_page = self.number_of_pages + 1     -- to trigger EndOfBook below
+            end
         else
             new_page = self.current_page + diff
         end
+
         if new_page > self.number_of_pages then
             self.ui:handleEvent(Event:new("EndOfBook"))
             goto_end(y)
