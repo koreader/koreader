@@ -44,7 +44,6 @@ local ReaderView = OverlapGroup:extend{
     -- PDF/DjVu continuous paging
     page_scroll = nil,
     page_bgcolor = Blitbuffer.gray(G_defaults:readSetting("DBACKGROUND_COLOR") * (1/15)),
-    page_states = nil, -- table
     -- properties of the gap drawn between each page in scroll mode:
     page_gap = nil, -- table
     -- DjVu page rendering mode (used in djvu.c:drawPage())
@@ -194,7 +193,7 @@ function ReaderView:paintTo(bb, x, y)
     if self.ui.paging then
         if self.page_scroll then
             self:drawScrollPages(bb, x, y)
-        elseif self.ui.paging.dual_page_mode then
+        elseif self.ui.paging:isDualPageEnabled() then
             self:draw2Pages(bb, x, y)
         else
             self:drawSinglePage(bb, x, y)
@@ -375,9 +374,10 @@ function ReaderView:drawPageSurround(bb, x, y)
     end
 end
 
--- TODO(ogkevin): this one works, clean this up
 -- This method draws 2 pages next to each other.
 -- Usefull for PDF or CBZ etc
+--
+-- It does this by scaling based on H
 function ReaderView:draw2Pages(bb, x, y)
     -- FIXME("ogkevin"): can we use self.visible_area in some way?
     local visible_area = Geom:new({
@@ -421,16 +421,21 @@ function ReaderView:draw2Pages(bb, x, y)
     -- Calculate positioning
     local x_offset = (visible_area.w - total_width) / 2
 
-    -- Render pages
-    -- FIXME(ogkevin): assuming that all documents are RTL
-    for i = #pages, 1, -1 do
+    local start_i, end_i, step
+    if self.ui.paging.dual_page_mode_rtl then
+        start_i, end_i, step = #pages, 1, -1
+    else
+        start_i, end_i, step = 1, #pages, 1
+    end
+
+    for i = start_i, end_i, step do
         local size = sizes[i]
         local zoom = size.zoom
-        local y_pos = (Screen:getHeight() - size.h) / 2
+        local y_offset = (visible_area.h - size.h) / 2
 
         local area = Geom:new({ h = max_height, w = total_width })
 
-        self.document:drawPage(bb, x_offset, y_pos, area, pages[i], zoom, self.state.rotation, self.state.gamma)
+        self.document:drawPage(bb, x_offset, y_offset, area, pages[i], zoom, self.state.rotation, self.state.gamma)
 
         x_offset = x_offset + size.w
     end
@@ -1058,6 +1063,7 @@ function ReaderView:onReadSettings(config)
     else
         self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
     end
+
     self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or G_defaults:readSetting("DSHOWOVERLAP")
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
     self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height")
@@ -1069,6 +1075,7 @@ function ReaderView:shouldInvertBiDiLayoutMirroring()
     -- A few widgets may temporarily invert UI layout mirroring when both these settings are true
     return self.inverse_reading_order and G_reader_settings:isTrue("invert_ui_layout_mirroring")
 end
+
 
 -- if dual page is enabled for cbz, then readerpagging will set the correct base page.
 function ReaderView:onPageUpdate(new_page_no)
