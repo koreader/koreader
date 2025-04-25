@@ -246,7 +246,6 @@ if Device:isKobo() then
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("pageturn_power")
-                UIManager:askForRestart()
             end
         }
     end
