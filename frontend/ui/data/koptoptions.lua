@@ -347,6 +347,27 @@ left to right or reverse, top to bottom or reverse.]]),
 - 'continuous' mode allows you to scroll the pages like you would in a web browser.]]),
             },
             {
+                name = "page_mode",
+                name_text = _("Page Mode"),
+                toggle = {_("single"), _("dual")},
+                values = {1, 2},
+                default_value = 0,
+                event = "SetPageMode",
+                args = {1, 2},
+                enabled_func = function (configurable)
+                    -- FIXME(ogkevin): how does one limit based on the open document here?
+                    -- This option should only exist if ReaderPaging says so.
+                    -- TODO(ogkevin): Should this trigger a rotation if its not in landscape?
+                    return optionsutil.enableIfEquals(configurable, "page_scroll", 0)
+                end,
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[- 'single' mode shows only one page of the document at a time.
+- 'dual' mode shows two pages at a time
+
+This option only works when the device is in landscape mode!
+]]),
+            },
+            {
                 name = "page_gap_height",
                 name_text = _("Page Gap"),
                 buttonprogress = true,
