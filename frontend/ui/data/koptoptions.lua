@@ -347,6 +347,32 @@ left to right or reverse, top to bottom or reverse.]]),
 - 'continuous' mode allows you to scroll the pages like you would in a web browser.]]),
             },
             {
+                name = "page_mode",
+                name_text = _("Page Mode"),
+                toggle = { _("single"), _("dual") },
+                values = { 1, 2 },
+                default_value = 0,
+                event = "SetPageMode",
+                args = { 1, 2 },
+                enabled_func = function(configurable, document)
+                    -- TODO(ogkevin): Should this trigger a rotation if its not in landscape?
+                    -- FIXME(ogkevin): When screen flips back to portrait, these settings are stuck.
+                    -- need do to dome cleaning on screen mode change
+
+                    local ext = util.getFileNameSuffix(document.file)
+
+                    return optionsutil.enableIfEquals(configurable, "page_scroll", 0) and
+                        ext == "cbz" and
+                        Screen:getScreenMode() == "landscape"
+                end,
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[- 'single' mode shows only one page of the document at a time.
+- 'dual' mode shows two pages at a time
+
+This option only works when the device is in landscape mode!
+]]),
+            },
+            {
                 name = "page_gap_height",
                 name_text = _("Page Gap"),
                 buttonprogress = true,
