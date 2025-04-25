@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
@@ -39,6 +40,7 @@ local ReaderPaging = InputContainer:extend{
 
     -- In dual page mode, this holds the base pair that we are at.
     -- This is needed to do relative page changes.
+    -- It should also be the same value as current_page
     current_pair_base = 0,
 
     number_of_pages = 0,
@@ -613,6 +615,40 @@ function ReaderPaging:onZoomModeUpdate(new_mode)
     self.zoom_mode = new_mode
 end
 
+-- @param page number
+-- 
+-- @return number
+function ReaderPaging:getDualPageBaseFromPage(page)
+    logger.dbg("ReaderPaging.getDualPageBaseFromPage: calulating base for page", page)
+
+    if self.dual_page_mode_first_page_is_cover and page == 1 then
+        return 1
+    end
+
+    if self.dual_page_mode_first_page_is_cover then
+        return (page % 2 == 0) and page or (page - 1)
+    end
+
+    return (page % 2 == 1) and page or (page - 1)
+end
+
+-- Returns the page pair for dual page mode for the given base
+function ReaderPaging:getDualPagePairFromBasePage(page)
+    local pair_base = self:getDualPageBaseFromPage(page)
+    logger.dbg("ReaderPaging.getDualPagePairFromBasePage: got base for pair", pair_base)
+
+    if self.dual_page_mode_first_page_is_cover and pair_base == 1 then return { 1 } end
+
+    -- Create the pair array
+    local pair = { pair_base }
+    if pair_base + 1 <= self.number_of_pages then
+        table.insert(pair, pair_base + 1)
+    end
+
+    return pair
+end
+
+-- @return bool
 function ReaderPaging:isDualPageEnabled()
     local enabled =
         self.dual_page_mode and self:supportsDualPage()
@@ -640,22 +676,101 @@ function ReaderPaging:supportsDualPage()
     )
 end
 
+-- This function can be use to create a pop up and ask to user
+-- which page number of the 2 pages shown in dual page mode should be used
+-- for an action.
+-- The selected page number will then be passed as the only argument to callbackfn
+--
+-- If we're not in DualPageMode, the function is called with the current page.
+--
+-- E.g. when a bookmark is toggled by pressing the right top corner
+function ReaderPaging:requestPageFromUserInDualPageModeAndExec(callbackfn)
+    if not self:isDualPageEnabled() then
+        callbackfn(self.current_page)
+
+        return
+    end
+
+    -- We are on the last page and it's alone
+    if self.current_pair_base == self.number_of_pages then
+        callbackfn(self.current_page)
+
+        return
+    end
+
+    -- We are on the first page and its shown on its own
+    if self.dual_page_mode_first_page_is_cover and self.current_pair_base == 1 then
+        callbackfn(self.current_page)
+
+        return
+    end
+
+    local page_pair = self:getDualPagePairFromBasePage(self.current_pair_base)
+    logger.dbg("ReaderPaging:requestPageFromUserInDualPageModeAndExec() page pair", page_pair)
+
+    local button_dialog
+    local buttons = {
+        {
+            {
+                text = _("Left / First Rendered"),
+                callback = function()
+                    UIManager:close(button_dialog)
+
+                    local page
+                    if not self.dual_page_mode_rtl then
+                        page = page_pair[1]
+                    else
+                        page = page_pair[2]
+                    end
+
+                    logger.dbg("ReaderPaging:requestPageFromUserInDualPageModeAndExec() for left page", page)
+
+                    callbackfn(page)
+                end
+            },
+            {
+                text = _("Right / Second Rendered"),
+                callback = function()
+                    UIManager:close(button_dialog)
+
+                    local page
+                    if not self.dual_page_mode_rtl then
+                        page = page_pair[2]
+                    else
+                        page = page_pair[1]
+                    end
+
+                    logger.dbg("ReaderPaging:requestPageFromUserInDualPageModeAndExec() for right page", page)
+
+                    callbackfn(page)
+                end
+            },
+        },
+    }
+    button_dialog = ButtonDialog:new {
+        name = "ReaderPaging:requestPageFromUserInDualPageModeOrCurrent",
+        title = "To which page do you want to associate the annotation?",
+        title_align = "center",
+        buttons = buttons,
+    }
+
+    UIManager:show(button_dialog, "full")
+end
+
+-- @param mode number 1 = single, 2 = dual
 function ReaderPaging:onSetPageMode(mode)
     logger.dbg("readerpaging: onSetPageMode", mode)
     self.dual_page_mode = false
 
-    if mode == 2 and self:supportsDualPage() then self.dual_page_mode = true end
+    if mode == 2 and self:supportsDualPage() then
+        self.dual_page_mode = true
+    end
 end
 
 function ReaderPaging:onPageUpdate(new_page_no, orig_mode)
-    -- FIXME(ogkevin): this logic doesn't work when first page is not the cocer
     -- FIXME(ogkevin): There is something funky happening when you rotate from enabled, to disabld and back to enabled
     -- So dual page on, from landscape to portrait to landscape is borked, unitl a page movement happens
-    if self.dual_page_mode_first_page_is_cover and  new_page_no == 1 then
-        self.current_pair_base = 1
-    else
-        self.current_pair_base = new_page_no % 2 == 0 and new_page_no or (new_page_no - 1)
-    end
+    self.current_pair_base = self:getDualPageBaseFromPage(new_page_no)
 
     logger.dbg(
         "ReaderPaging:onPageUpdatef: curr_page",
@@ -1281,6 +1396,7 @@ function ReaderPaging:onGotoPageRel(diff)
 end
 
 function ReaderPaging:onRedrawCurrentPage()
+    logger.dbg("ReaderPaging:onRedrawCurrentPage")
     self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
     return true
 end
