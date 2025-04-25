@@ -63,6 +63,7 @@ local ReaderView = OverlapGroup:extend{
     -- has footer
     footer_visible = nil,
     -- has dogear
+    -- This is set by ReaderBookmark
     dogear_visible = false,
     -- in flipping state
     flipping_visible = false,
@@ -251,6 +252,7 @@ function ReaderView:paintTo(bb, x, y)
     end
     -- paint dogear
     if self.dogear_visible then
+        logger.dbg("ReaderView: painting dogear")
         self.dogear:paintTo(bb, x, y)
     end
     -- paint footer
