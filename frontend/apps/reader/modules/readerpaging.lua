@@ -31,10 +31,12 @@ local ReaderPaging = InputContainer:extend{
     current_page = 0,
 
     -- CBZ show 2 pages at once
-    -- FIXME(ogkevin): make this configurable so that it can be set to true
-    -- for now, its always false and needs to be set to true during development
+    -- Generally speaking this variable should not be consulted direclty,
+    -- use ReaderPaging:isDualPageEnabled() instead!
     dual_page_mode = false,
-    dual_page_first_page_is_cover = true,
+    dual_page_mode_first_page_is_cover = true,
+    dual_page_mode_rtl = false,
+
     -- In dual page mode, this holds the base pair that we are at.
     -- This is needed to do relative page changes.
     current_pair_base = 0,
@@ -56,7 +58,70 @@ function ReaderPaging:init()
 
     -- delegate gesture listener to readerui, NOP our own
     self.ges_events = nil
+
+    self.ui:registerPostInitCallback(function()
+        self.ui.menu:registerToMainMenu(self)
+    end)
 end
+
+function ReaderPaging:addToMainMenu(menu_items)
+  if self.ui.paging then
+    menu_items.dual_page_options = {
+      text = _("Dual Page Mode"),
+      sub_item_table = self:genDualPagingMenu(),
+      enabled_func = function()
+        return self:isDualPageEnabled()
+      end,
+      help_text = _(
+        [[Settings for when you're in dual page mode.
+This is enabled when the device is in landscape mode!
+]]
+      ),
+    }
+  end
+end
+
+function ReaderPaging:genDualPagingMenu()
+  return {
+    {
+      text = _("First page is cover"),
+      checked_func = function()
+        return self.dual_page_mode_first_page_is_cover
+      end,
+      callback = function()
+        self.dual_page_mode_first_page_is_cover = not self.dual_page_mode_first_page_is_cover
+      end,
+        enabled_func = function()
+            return self:isDualPageEnabled()
+        end,
+      hold_callback = function()
+      end,
+      separator = true,
+      help_text = _(
+        [[When using Dual Page Mode, and the first page of the document should be shown on its owm, toggle this on.]]
+      ),
+    },
+    {
+      text = _("Right To Left (RTL)"),
+      checked_func = function()
+        return self.dual_page_mode_rtl
+      end,
+      callback = function()
+        self.dual_page_mode_rtl = not self.dual_page_mode_rtl
+      end,
+        enabled_func = function()
+            return self:isDualPageEnabled()
+        end,
+      hold_callback = function()
+      end,
+      separator = true,
+      help_text = _(
+        [[When using Dual Page Mode, and the second page needs to be rendered on the left and the first page on the right (RTL), enable this option.]]
+      ),
+    },
+  }
+end
+
 
 function ReaderPaging:onGesture() end
 
@@ -157,6 +222,9 @@ function ReaderPaging:onReadSettings(config)
     self:_gotoPage(config:readSetting("last_page") or 1)
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
+    self.dual_page_mode = config:isTrue("dual_page_mode")
+    self.dual_page_mode_first_page_is_cover = config:isTrue("dual_page_mode_first_page_is_cover")
+    self.dual_page_mode_rtl = config:isTrue("dual_page_mode_rtl")
 end
 
 function ReaderPaging:onSaveSettings()
@@ -166,6 +234,9 @@ function ReaderPaging:onSaveSettings()
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     self.ui.doc_settings:saveSetting("flipping_zoom_mode", self.flipping_zoom_mode)
     self.ui.doc_settings:saveSetting("flipping_scroll_mode", self.flipping_scroll_mode)
+    self.ui.doc_settings:saveSetting("dual_page_mode", self.dual_page_mode)
+    self.ui.doc_settings:saveSetting("dual_page_mode_first_page_is_cover", self.dual_page_mode_first_page_is_cover)
+    self.ui.doc_settings:saveSetting("dual_page_mode_rtl", self.dual_page_mode_rtl)
 end
 
 function ReaderPaging:getLastProgress()
@@ -542,11 +613,45 @@ function ReaderPaging:onZoomModeUpdate(new_mode)
     self.zoom_mode = new_mode
 end
 
+function ReaderPaging:isDualPageEnabled()
+    local enabled =
+        self.dual_page_mode and self:supportsDualPage()
+    logger.dbg("ReaderPaging:isDualPageEnabled()", enabled)
+
+    return enabled
+end
+
+-- This returns boolean indicating if we are in a position to turn on dual page mode or not
+--
+-- @return boolean
+function ReaderPaging:canDualPageMode()
+    return self:supportsDualPage() and not self.view.page_scroll
+     end
+
+-- If we are in a state to support dual page mode, e.g. device orientation and document ristrictions
+-- 
+-- @returns boolean
+function ReaderPaging:supportsDualPage()
+    local ext = util.getFileNameSuffix(self.ui.document.file)
+
+    return Screen:getScreenMode() == "landscape" and (ext == "cbz"
+    -- FIXME(ogkevin): enable once pdf is ok
+    -- or ext == "pdf"
+    )
+end
+
+function ReaderPaging:onSetPageMode(mode)
+    logger.dbg("readerpaging: onSetPageMode", mode)
+    self.dual_page_mode = false
+
+    if mode == 2 and self:supportsDualPage() then self.dual_page_mode = true end
+end
+
 function ReaderPaging:onPageUpdate(new_page_no, orig_mode)
     -- FIXME(ogkevin): this logic doesn't work when first page is not the cocer
     -- FIXME(ogkevin): There is something funky happening when you rotate from enabled, to disabld and back to enabled
     -- So dual page on, from landscape to portrait to landscape is borked, unitl a page movement happens
-    if self.dual_page_first_page_is_cover and  new_page_no == 1 then
+    if self.dual_page_mode_first_page_is_cover and  new_page_no == 1 then
         self.current_pair_base = 1
     else
         self.current_pair_base = new_page_no % 2 == 0 and new_page_no or (new_page_no - 1)
@@ -960,7 +1065,7 @@ end
 -- Given the current base and the relative page movements,
 -- return the right base for dual page navigation.
 --
--- If self.dual_page_first_page_is_cover is enabled, then we start counting pairs
+-- If self.dual_page_mode_first_page_is_cover is enabled, then we start counting pairs
 -- from page 2 onwards.
 -- So if we are at page 1, the next pairs are:
 -- - 2,3
@@ -980,7 +1085,7 @@ function ReaderPaging:getPairBaseByRelativeMovement(diff)
     local total_pages = self.number_of_pages
     local current_base = self.current_pair_base
 
-    if self.dual_page_first_page_is_cover and current_base == 1 then
+    if self.dual_page_mode_first_page_is_cover and current_base == 1 then
         -- Handle cover page navigation
         if diff <= 0 then
             return 1 -- Stay on cover
