@@ -347,7 +347,10 @@ function ReaderMenu:saveDocumentSettingsAsDefault()
     if self.ui.rolling then
         G_reader_settings:saveSetting("cre_font", self.ui.font.font_face)
         G_reader_settings:saveSetting("copt_css", self.ui.document.default_css)
-        G_reader_settings:saveSetting("style_tweaks", self.ui.styletweak.global_tweaks)
+        local style_tweaks = G_reader_settings:readSetting("style_tweaks")
+        for tweak_id, is_enabled in pairs(self.ui.styletweak.doc_tweaks) do
+            style_tweaks[tweak_id] = is_enabled or nil
+        end
         prefix = "copt_"
     else
         prefix = "kopt_"
