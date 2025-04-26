@@ -382,66 +382,45 @@ end
 --
 -- It does this by scaling based on H
 function ReaderView:draw2Pages(bb, x, y)
-    -- FIXME("ogkevin"): can we use self.visible_area in some way?
-    local visible_area = Geom:new({
-        w = Screen:getWidth(),
-        h = Screen:getHeight(),
-    })
+    local visible_area = self.visible_area
 
-    local sizes = {}
-    local max_height = visible_area.h
     local total_width = 0
 
-    local pages = self.ui.paging:getDualPagePairFromBasePage(self.state.page)
-
-    logger.dbg("readerview.draw2pages: got page pairs for base", self.state.page, pages)
-
-    for i, page in ipairs(pages) do
-        local dimen = self.document:getPageDimensions(page, 1, 0)
-        logger.dbg("readerview.draw2pages: old page dimen", i, dimen.w, dimen.h)
-
-        local zoom = 1
-        local scaled_w = dimen.w
-        local scaled_h = dimen.h
-
-        if dimen.h ~= max_height then
-            zoom = max_height / dimen.h
-            scaled_w = dimen.w * zoom
-            scaled_h = max_height
-        end
-
-        logger.dbg("readerview.draw2pages: new page dimen", i, scaled_w, scaled_h)
-
-        sizes[i] = {
-            w = scaled_w,
-            h = scaled_h,
-            zoom = zoom,
-        }
-
-        total_width = total_width + scaled_w
+    logger.dbg("ReaderView:draw2images: visible area", visible_area.h, visible_area.w, visible_area.x, visible_area.y)
+    if #self.page_states < 1 then
+        self.ui.paging:updatePagePairStatesForBase(self.state.page)
     end
 
-    -- Calculate positioning
-    local x_offset = (visible_area.w - total_width) / 2
+    local states = self.page_states
+
+    logger.dbg("ReaderView:draw2images: page pairs for state", self.state.page, states)
+
+    for _, state in ipairs(states) do
+        total_width = total_width + state.dimen.w
+    end
+
+    local x_offset = x
+    if self.dimen.w > total_width then
+        x_offset = x_offset + (self.dimen.w - total_width) / 2
+    end
+    local y_offset = y
 
     local start_i, end_i, step
     if self.ui.paging.dual_page_mode_rtl then
-        start_i, end_i, step = #pages, 1, -1
+        start_i, end_i, step = #states, 1, -1
     else
-        start_i, end_i, step = 1, #pages, 1
+        start_i, end_i, step = 1, #states, 1
     end
 
     for i = start_i, end_i, step do
-        local size = sizes[i]
-        local zoom = size.zoom
-        local y_offset = (visible_area.h - size.h) / 2
+        local page = states[i].page
+        local zoom = states[i].zoom
+        local area = visible_area:copy()
 
-        local area = Geom:new({ h = max_height, w = total_width })
+        logger.dbg("readerview.draw2pages: drawing page", page, zoom)
+        self.document:drawPage(bb, x_offset, y_offset, area, page, zoom, self.state.rotation, self.state.gamma)
 
-        logger.dbg("readerview.draw2pages: drawing page", pages[i])
-        self.document:drawPage(bb, x_offset, y_offset, area, pages[i], zoom, self.state.rotation, self.state.gamma)
-
-        x_offset = x_offset + size.w
+        x_offset = x_offset + states[i].dimen.w
     end
 
     UIManager:nextTick(self.emitHintPageEvent)
@@ -873,6 +852,8 @@ function ReaderView:recalculate()
         self.dim_area:clear()
         self.ui:handleEvent(
             Event:new("ViewRecalculate", self.visible_area, self.page_area))
+    elseif self.ui.paging and self.ui.paging:isDualPageEnabled()then
+        self.visible_area:setSizeTo(self.dimen)
     else
         self.visible_area:setSizeTo(self.dimen)
     end
