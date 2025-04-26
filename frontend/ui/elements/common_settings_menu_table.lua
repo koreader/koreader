@@ -238,7 +238,7 @@ if Device:isKobo() then
         end
     }
 
-    if Device:hasKeys() then
+    if Device:hasKeys() and Device:isMTK then
         common_settings.pageturn_power = {
             text = _("Wake up on page turn key presses"),
             checked_func = function()
