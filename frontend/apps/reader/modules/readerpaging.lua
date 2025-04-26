@@ -615,6 +615,50 @@ function ReaderPaging:onZoomModeUpdate(new_mode)
     self.zoom_mode = new_mode
 end
 
+-- Returns native page dimensions with dual page mode in mind
+--
+-- If dual mode is enalbed, it returns the total area of pages
+-- next to each other with the shortest one scaled to the largest.
+-- So, if page 1 is 1x1, and page 2 is 5x5 where WxH
+-- the deminesion returens would be 10x5 --> (1 * 5) + 5 x 5 --> scaled to H with zoom factor of 5
+--
+-- @param page number the page number
+--
+-- @return Geom
+-- TODO(ogkevin): this is unused, migth need deletion
+function ReaderPaging:getNativePageDimensions(page)
+    logger.dbg("ReaderPaging:getNativePageDimensions", page)
+
+    if not self:isDualPageEnabled() then
+        return self.ui.document:getNativePageDimensions(page)
+    end
+
+    local totalDimen = Geom:new({ w = 0, h = 0 })
+    local page_pair = self:getDualPagePairFromBasePage(page)
+    local page1 = self.ui.document.getNativePageDimensions(page_pair[1])
+    local page2 = self.ui.document.getNativePageDimensions(page_pair[2])
+
+    local max_h = math.max(page1.h, page2.h)
+
+    if page1.h ~= max_h then
+        local zoom = max_h / page1.h
+        totalDimen.w = page2.w + (page1.w * zoom)
+    elseif page2.h ~= max_h then
+        local zoom = max_h / page2.h
+        totalDimen.w = page1.w + (page2.w * zoom)
+    end
+
+    -- local total_w
+
+    -- for _, p in ipairs(page_pair) do
+    --     local pageDimen = self.ui.document:getNativePageDimensions(p)
+    --     max_h = math.max(totalDimen.h, pageDimen.h)
+    --     -- totalDimen.w = totalDimen.w + pageDimen.w
+    -- end
+
+    return totalDimen
+end
+
 -- @param page number
 -- 
 -- @return number
@@ -762,7 +806,11 @@ function ReaderPaging:onSetPageMode(mode)
     logger.dbg("readerpaging: onSetPageMode", mode)
     self.dual_page_mode = false
 
-    if mode == 2 and self:supportsDualPage() then
+    if mode == 2 and not self.dual_page_mode and self:canDualPageMode() then
+        if self.settings.first_time_dual_page_mode then
+            self:firstTimeDualPageMode()
+        end
+
         self.dual_page_mode = true
     end
 end
@@ -1401,6 +1449,54 @@ function ReaderPaging:onRedrawCurrentPage()
     return true
 end
 
+-- TODO(ogkevin): I think we can drop the param and just use self.curr_pair_base
+function ReaderPaging:updatePagePairStatesForBase(pageno)
+    logger.dbg("ReaderPaging:updatePagePairStatesForBase: setting dual page pairs")
+
+    self.view.page_states = {}
+    local pair = self:getDualPagePairFromBasePage(pageno)
+    local zooms = self:calculateZoomFactorForPagePair(pair)
+
+    for i, page in ipairs(pair) do
+        local dimen = self.ui.document:getNativePageDimensions(page)
+        -- zooms should be as long as pairs
+        ---@diagnostic disable-next-line: need-check-nil
+        local zoom = zooms[i]
+        local scaled_w = dimen.w * zoom
+        local scaled_h = dimen.h * zoom
+
+        self.view.page_states[i] = {
+            page = page,
+            zoom = zoom,
+            rotation = self.view.state.rotation,
+            gamma = self.view.state.gamma,
+            dimen = Geom:new({w = scaled_w, h = scaled_h}),
+        }
+        logger.dbg("ReaderPaging:_gotoPage: set view page states to: ", self.view.page_states)
+    end
+end
+
+-- For the given page pair, calcuate their zooming factor
+-- ATM, we only support filling the height for dual page mode.
+function ReaderPaging:calculateZoomFactorForPagePair(pair)
+    local visible_area = self.visible_area
+    local max_height = visible_area.h
+    local zooms = {}
+
+    for i, page in ipairs(pair) do
+        local dimen = self.ui.document:getNativePageDimensions(page)
+        local zoom = 1
+
+        if dimen.h ~= max_height then
+            zoom = max_height / dimen.h
+        end
+
+        zooms[i] = zoom
+    end
+
+    return zooms
+end
+
 -- wrapper for bounds checking
 function ReaderPaging:_gotoPage(number, orig_mode)
     if number == self.current_page or not number then
@@ -1409,13 +1505,21 @@ function ReaderPaging:_gotoPage(number, orig_mode)
         self.view.footer:onUpdateFooter(self.view.footer_visible)
         return true
     end
+
     if number > self.number_of_pages then
-        logger.warn("page number too high: "..number.."!")
+        logger.warn("page number too high: " .. number .. "!")
         number = self.number_of_pages
     elseif number < 1 then
-        logger.warn("page number too low: "..number.."!")
+        logger.warn("page number too low: " .. number .. "!")
         number = 1
     end
+
+    if not self.view.page_scroll and self:supportsDualPage() then
+        self:updatePagePairStatesForBase(number)
+    end
+
+    logger.dbg("ReaderPaging:_gotoPage: send page update event:", number)
+
     -- this is an event to allow other controllers to be aware of this change
     self.ui:handleEvent(Event:new("PageUpdate", number, orig_mode))
     return true
