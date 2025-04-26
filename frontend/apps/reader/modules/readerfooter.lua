@@ -1380,47 +1380,45 @@ function ReaderFooter:addToMainMenu(menu_items)
 
     -- configure footer_items
     table.insert(sub_items, {
-        separator = true,
         text = _("Configure items"),
+        separator = true,
         sub_item_table = {
             {
                 text = _("Arrange items in status bar"),
                 separator = true,
                 keep_menu_open = true,
                 enabled_func = function()
-                    -- count enabled items
                     local enabled_count = 0
                     for _, m in ipairs(self.mode_index) do
                         if self.settings[m] then
-                            enabled_count = enabled_count + 1
-                            if enabled_count > 1 then
-                                break
+                            if enabled_count == 1 then
+                                return true
                             end
+                            enabled_count = enabled_count + 1
                         end
                     end
-                    return enabled_count > 1
+                    return false
                 end,
                 callback = function()
                     local item_table = {}
-                    for i=1, #self.mode_index do
-                        table.insert(item_table, {text = self:textOptionTitles(self.mode_index[i]), label = self.mode_index[i]})
+                    for i, item in ipairs(self.mode_index) do
+                        item_table[i] = { text = self:textOptionTitles(item), label = item, dim = not self.settings[item] }
                     end
                     local SortWidget = require("ui/widget/sortwidget")
-                    local sort_item
-                    sort_item = SortWidget:new{
+                    UIManager:show(SortWidget:new{
                         title = _("Arrange items"),
+                        height = Screen:getHeight() - self:getHeight() - Size.padding.large,
                         item_table = item_table,
                         callback = function()
-                            for i=1, #sort_item.item_table do
-                                self.mode_index[i] = sort_item.item_table[i].label
+                            for i, item in ipairs(item_table) do
+                                self.mode_index[i] = item.label
                             end
                             self.settings.order = self.mode_index
                             self:updateFooterTextGenerator()
-                            self:onUpdateFooter()
+                            self:onUpdateFooter(true)
                             UIManager:setDirty(nil, "ui")
-                        end
-                    }
-                    UIManager:show(sort_item)
+                        end,
+                    })
                 end,
             },
             getMinibarOption("all_at_once", self.updateFooterTextGenerator),
