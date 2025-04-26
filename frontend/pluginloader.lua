@@ -1,3 +1,13 @@
+--[[--
+Allows extending KOReader through plugins.
+
+Running with debug turned on will log stacktraces.
+Plugins are controlled by the following settings.
+
+- plugins_disabled
+- extra_plugin_paths
+]]
+local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -64,6 +74,7 @@ function HandlerSandbox.new(context, fname, f, module)
         context = context,
         fname = fname,
         f = f,
+        log_stacktrace = dbg:is_on,
     }
     return setmetatable(t, HandlerSandbox.mt)
 end
@@ -72,12 +83,17 @@ function HandlerSandbox:call(module,...)
     -- NOTE the signature is (self, module, ...)
     -- self refers to the HandlerSandbox instance but module refers to the
     -- self parameter of the handlers
-    local traceback = function (err)
-         -- do not print 2 topmost entries in traceback. The first is this local function
-         -- and the second is the call method of HandlerSandbox.
-         logger.err("An error occurred while executing a handler:\n" ..err .. "\n" .. debug.traceback(self.context.name .. ":" .. self.fname, 2))
+    local ok, re
+    if self.log_stacktrace then
+        local traceback = function (err)
+             -- do not print 2 topmost entries in traceback. The first is this local function
+             -- and the second is the `call` method of HandlerSandbox.
+             logger.err("An error occurred while executing a handler:\n" ..err .. "\n" .. debug.traceback(self.context.name .. ":" .. self.fname, 2))
+        end
+        ok, re = xpcall(self.f, traceback, module, ...)
+    else
+        ok, re = pcall(self.f, module, ...)
     end
-    local ok, re = xpcall(self.f, traceback, module, ...)
     -- NOTE backward compatibility with previous implementation
     -- of handler wrapping that returned false on error
     if ok then
