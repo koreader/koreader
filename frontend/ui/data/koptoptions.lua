@@ -200,15 +200,37 @@ Will rotate up to specified value.]]),
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
                 end,
-                toggle = {_("full"), _("width"), _("height")},
+                toggle = { _("full"), _("width"), _("height") },
                 alternate = false,
-                values = {2, 1, 0},
+                values = { 2, 1, 0 },
                 default_value = 1,
                 show_func = function(configurable)
-                    return configurable.zoom_mode_genus > 2
+                    return configurable.zoom_mode_genus > 2 and
+                        configurable.page_mode ~= 2
                 end,
                 event = "DefineZoom",
-                args = {"full", "width", "height"},
+                args = { "full", "width", "height" },
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set how the page should be resized to fit the screen.]]),
+            },
+            -- For Dual Page
+            {
+                name = "zoom_mode_type",
+                name_text = _("Fit"),
+                enabled_func = function(configurable)
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
+                toggle = { _("full"), _("height") },
+                alternate = false,
+                values = { 1,0 },
+                default_value = 1,
+                show_func = function(configurable)
+                    return optionsutil.enableIfEquals(configurable, "page_scroll", 0) and
+                     configurable.zoom_mode_genus == 4 and
+                     configurable.page_mode == 2
+                end,
+                event = "DefineZoom",
+                args = { "full", "height" },
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set how the page should be resized to fit the screen.]]),
             },
@@ -285,12 +307,38 @@ Will rotate up to specified value.]]),
                     "zoom.row",
                     "zoom.manual",
                 },
+                show_func = function(configurable)
+                    return configurable.page_mode ~= 2
+                end,
                 alternate = false,
-                values = {4, 3, 2, 1, 0},
-                labels = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
+                values = { 4, 3, 2, 1, 0 },
+                labels = { _("page"), _("content"), _("columns"), _("rows"), _("manual") },
                 default_value = 4,
                 event = "DefineZoom",
-                args = {"page", "content", "columns", "rows", "manual"},
+                args = { "page", "content", "columns", "rows", "manual" },
+                name_text_hold_callback = optionsutil.showValues,
+            },
+            -- For dual Page Mode
+            {
+                name = "zoom_mode_genus",
+                name_text = _("Zoom to"),
+                enabled_func = function(configurable)
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
+                -- toggle = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
+                item_icons = {
+                    "zoom.page",
+                },
+                show_func = function(configurable)
+                    return optionsutil.enableIfEquals(configurable, "page_scroll", 0) and
+                        configurable.page_mode == 2
+                end,
+                alternate = false,
+                values = { 4, },
+                labels = { _("page"), },
+                default_value = 4,
+                event = "DefineZoom",
+                args = { "page", "manual" },
                 name_text_hold_callback = optionsutil.showValues,
             },
             {

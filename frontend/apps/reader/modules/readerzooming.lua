@@ -310,6 +310,7 @@ function ReaderZooming:onToggleFreeZoom(arg, ges)
     end
 end
 
+-- This event is send on screen size change, therefore self.dimen is the size of the screen
 function ReaderZooming:onSetDimensions(dimensions)
     -- we were resized
     self.dimen = dimensions
@@ -341,6 +342,14 @@ function ReaderZooming:onZoom(direction)
     return true
 end
 
+-- Have a good look at frontend/ui/data/koptoptions.lua
+-- to see in which scenarios the event will fire.
+--
+-- Basically, when self.view.paging is happening and self.view.paging:isDualPageEnabled() is true,
+-- the zoom modes are limited.
+--
+-- Since lua is not staticaly typed, there can be chances of funky behavior if some other
+-- part of the code makes assumptions.
 function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     local config = self.ui.document.configurable
     local zoom_direction_setting = self.zoom_direction_settings[config.zoom_direction]
@@ -519,10 +528,21 @@ function ReaderZooming:onExitFlippingMode(zoom_mode)
     self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode))
 end
 
+-- @param pageno number
+--
+-- @return array of zoom factors with the same order of the pair array
+function ReaderZooming:getZoomForPagePair(pageno)
+    local dimen = self.ui.paging:getNativePageDimensions(pageno)
+
+    return self:getZoomForPageDimen(dimen)
+end
+
 function ReaderZooming:getZoom(pageno)
+    logger.dbg("ReaderZooming:getZoom ", pageno)
+
     -- check if we're in bbox mode and work on bbox if that's the case
-    local zoom
     local page_size = self.ui.document:getNativePageDimensions(pageno)
+
     if not (self.zoom_mode and self.zoom_mode:match("^page") or self.ui.document.configurable.trim_page == 3) then
         local ubbox_dimen = self.ui.document:getUsedBBoxDimensions(pageno, 1)
         -- if bbox is larger than the native page dimension render the full page
@@ -537,21 +557,42 @@ function ReaderZooming:getZoom(pageno)
         -- otherwise, operate on full page
         self.view:onBBoxUpdate(nil)
     end
-    -- calculate zoom value:
-    local zoom_w = self.dimen.w
-    local zoom_h = self.dimen.h
+
+    return self:getZoomForPageDimen(page_size)
+     end
+-- If we are paging with dual page mode enabled, return 2 zooms with the same order
+-- as the page pairs are returned.
+
+-- If not, just return the zoom of the given page
+--
+-- @return number
+function ReaderZooming:getZoomForPageDimen(page_size)
+    local max_h = self.dimen.h
+    local max_w = self.dimen.w
+    local zoom_w = 1
+    local zoom_h = 1
+
+    logger.dbg("ReaderZooming:getZoomForPageDimen ", page_size, max_h, max_w)
+
     if self.ui.view.footer_visible and not self.ui.view.footer.settings.reclaim_height then
-        zoom_h = zoom_h - self.ui.view.footer:getHeight()
+        max_h = max_h - self.ui.view.footer:getHeight()
     end
-    if self.rotation % 180 == 0 then
+
+    logger.dbg("zooming rotation ", self.rotation, self.rotation % 180 == true)
+
+    if self.rotation == 180 or self.rotation == 0 then
         -- No rotation or rotated by 180 degrees
-        zoom_w = zoom_w / page_size.w
-        zoom_h = zoom_h / page_size.h
+        zoom_w = max_w / page_size.w
+        zoom_h = max_h / page_size.h
     else
         -- rotated by 90 or 270 degrees
-        zoom_w = zoom_w / page_size.h
-        zoom_h = zoom_h / page_size.w
+        zoom_w = max_w / page_size.h
+        zoom_h = max_h / page_size.w
     end
+
+    -- The zooming factor
+    local zoom
+
     if self.zoom_mode == "content" or self.zoom_mode == "page" then
         if zoom_w < zoom_h then
             zoom = zoom_w
@@ -566,10 +607,14 @@ function ReaderZooming:getZoom(pageno)
         zoom = self.zoom
     else
         local zoom_factor = self.ui.doc_settings:readSetting("kopt_zoom_factor")
-                         or G_reader_settings:readSetting("kopt_zoom_factor")
-                         or self.kopt_zoom_factor
+            or G_reader_settings:readSetting("kopt_zoom_factor")
+            or self.kopt_zoom_factor
         zoom = zoom_w * zoom_factor
     end
+
+    zoom = zoom_h
+logger.dbg("ReaderZooming:getZoom: zoom ", zoom, max_h/page_size.h)
+
     if zoom and zoom > 10 and not DocCache:willAccept(zoom * (self.dimen.w * self.dimen.h + 512)) then
         logger.dbg("zoom too large, adjusting")
         while not DocCache:willAccept(zoom * (self.dimen.w * self.dimen.h + 512)) do
@@ -584,7 +629,7 @@ function ReaderZooming:getZoom(pageno)
             else
                 zoom = zoom - 0.005
             end
-            logger.dbg("new zoom: "..zoom)
+            logger.dbg("new zoom: " .. zoom)
 
             if zoom < 0 then return 0 end
         end
@@ -610,11 +655,22 @@ function ReaderZooming:getRegionalZoomCenter(pageno, pos)
     return zoom/(1 + 3*margin/zoom/page_size.w)
 end
 
+function ReaderZooming:onReaderReady()
+    self:setZoom()
+end
+
 function ReaderZooming:setZoom()
     if not self.dimen then
         self.dimen = self.ui.dimen
     end
+
+    if self.view.paging and self.view.paging:isDualPageEnabled() then
+    self.zoom = self:getZoomForPagePair(self.current_page)
+        else
+
     self.zoom = self:getZoom(self.current_page)
+        end
+        logger.dbg("ReaderZooming: setting zoom ", self.zoom)
     self.ui:handleEvent(Event:new("ZoomUpdate", self.zoom))
 end
 
