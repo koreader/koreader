@@ -410,6 +410,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
 
     local hash, hash_excerpt, tile
     if is_prescaled then
+        logger.dbg("Document:renderPage: accepting pre scaled dimensions")
         hash = self:getPagePartHash(pageno, zoom, rotation, gamma, rect)
 
         tile = DocCache:check(hash, TileCacheItem)
