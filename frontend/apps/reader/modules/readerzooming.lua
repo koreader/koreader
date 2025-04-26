@@ -218,6 +218,14 @@ end
 function ReaderZooming:onReadSettings(config)
     -- If we have a composite zoom_mode stored, use that
     local zoom_mode = config:readSetting("zoom_mode")
+    local dual_page_mode = config:isTrue("dual_page_mode")
+
+    if dual_page_mode then
+        self:setZoomMode("pageheight")
+
+        return
+    end
+
     if zoom_mode then
         -- Validate it first
         zoom_mode = self.zoom_mode_label[zoom_mode] and zoom_mode or self.DEFAULT_ZOOM_MODE
@@ -310,6 +318,7 @@ function ReaderZooming:onToggleFreeZoom(arg, ges)
     end
 end
 
+-- This event is send on screen size change, therefore self.dimen is the size of the screen
 function ReaderZooming:onSetDimensions(dimensions)
     -- we were resized
     self.dimen = dimensions
@@ -341,6 +350,14 @@ function ReaderZooming:onZoom(direction)
     return true
 end
 
+-- Have a good look at frontend/ui/data/koptoptions.lua
+-- to see in which scenarios the event will fire.
+--
+-- Basically, when self.view.paging is happening and self.view.paging:isDualPageEnabled() is true,
+-- the zoom modes are limited.
+--
+-- Since lua is not staticaly typed, there can be chances of funky behavior if some other
+-- part of the code makes assumptions.
 function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     local config = self.ui.document.configurable
     local zoom_direction_setting = self.zoom_direction_settings[config.zoom_direction]
@@ -433,6 +450,17 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
                 ("%.2f"):format(config.zoom_factor)),
             dismiss_callback = when_applied_callback,
         })
+    end
+end
+
+-- @param mode number 1 = single, 2 = dual
+function ReaderZooming:onSetPageMode(mode)
+    logger.dbg("ReaderZooming: onSetPageMode", mode)
+
+    if mode == 2 then
+        self:onSetZoomMode("pageheight")
+    else
+        self:onSetZoomMode(self.zoom_mode)
     end
 end
 
