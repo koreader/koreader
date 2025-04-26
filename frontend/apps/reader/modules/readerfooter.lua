@@ -511,6 +511,8 @@ function ReaderFooter:init()
     self.mode_index = {}
     self.mode_nb = 0
 
+    self.NUM_PRESETS = 5
+
     local handled_modes = {}
     if self.settings.order then
         -- Start filling self.mode_index from what's been ordered by the user and saved
@@ -1670,7 +1672,6 @@ With this feature enabled, the current page is factored in, resulting in the cou
             separator = true,
         })
     end
-    self.NUM_PRESETS = 5
     table.insert(sub_items, {
         text = _("Status bar presets"),
         separator = true,
@@ -1946,6 +1947,7 @@ function ReaderFooter:genPresetSlotMenuItems(slot_num)
                     end,
                     choice2_text = _("Update"),
                     choice2_callback = function()
+                        self.settings.presets[slot_num] = {}
                         self:saveToPresetSlot(slot_num)
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
