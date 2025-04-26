@@ -9,8 +9,10 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local InputDialog = require("ui/widget/inputdialog")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ProgressWidget = require("ui/widget/progresswidget")
 local RightContainer = require("ui/widget/container/rightcontainer")
@@ -481,6 +483,7 @@ ReaderFooter.default_settings = {
     progress_pct_format = "0",
     pages_left_includes_current_page = false,
     initial_marker = false,
+    presets = {},
 }
 
 function ReaderFooter:init()
@@ -1159,7 +1162,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                             return not self.settings.progress_style_thin
                         end,
                         callback = function()
-                            self.settings.progress_style_thin = nil
+                            self.settings.progress_style_thin = false
                             local bar_height = self.settings.progress_style_thick_height
                             self.progress_bar:updateStyle(true, bar_height)
                             self:setTocMarkers()
@@ -1667,6 +1670,45 @@ With this feature enabled, the current page is factored in, resulting in the cou
             separator = true,
         })
     end
+    self.NUM_PRESETS = 5
+    table.insert(sub_items, {
+        text = _("Status bar presets"),
+        separator = true,
+        sub_item_table = {
+            {
+                text = _("Save current settings to preset"),
+                help_text = _("Saves current status bar configuration including progress bar, items, etc. It does not include Alt status bar settings."),
+                sub_item_table_func = function()
+                    local items = {}
+                    for i=1,self.NUM_PRESETS do
+                        table.insert(items, self:genPresetSlotMenuItems(i))
+                    end
+                    return items
+                end,
+            },
+            {
+                text = _("Load settings from preset"),
+                help_text = _("Load previously saved status bar configurations from preset slots."),
+                enabled_func = function()
+                    local slots = self.settings.presets
+                    if not slots then return false end
+                    for i=1,self.NUM_PRESETS do
+                        if next(slots[i] or {}) ~= nil then
+                            return true
+                        end
+                    end
+                    return false
+                end,
+                sub_item_table_func = function()
+                    local items = {}
+                    for i=1,self.NUM_PRESETS do
+                        table.insert(items, self:genLoadPresetSlotMenuItems(i))
+                    end
+                    return items
+                end,
+            },
+        },
+    })
     table.insert(sub_items, {
         text = _("Show status bar separator"),
         checked_func = function()
@@ -1878,6 +1920,136 @@ function ReaderFooter:genAlignmentMenuItems(value)
             self:refreshFooter(true)
         end,
     }
+end
+
+function ReaderFooter:genPresetSlotMenuItems(slot_num)
+    return {
+        text_func = function()
+            if self.settings.presets and self.settings.presets[slot_num] then
+                if next(self.settings.presets[slot_num]) then
+                    local label = self.settings.presets[slot_num].custom_label or _("long-press to add label")
+                    return T(_("Preset slot %1 (%2)"), slot_num, label)
+                end
+            end
+            return T(_("Preset slot %1 (Empty)"), slot_num)
+        end,
+        keep_menu_open = true,
+        callback = function(touchmenu_instance)
+            if self.settings.presets and self.settings.presets[slot_num] and next(self.settings.presets[slot_num]) then
+                UIManager:show(MultiConfirmBox:new{
+                    text = T(_("Preset already stored in slot %1. What would you like to do?"), slot_num),
+                    choice1_text = _("Delete"),
+                    choice1_callback = function()
+                        self.settings.presets[slot_num] = {}
+                        G_reader_settings:saveSetting("footer", self.settings)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                    choice2_text = _("Update"),
+                    choice2_callback = function()
+                        self:saveToPresetSlot(slot_num)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                    cancel_text = _("Cancel"),
+                })
+            else
+                self:saveToPresetSlot(slot_num)
+                if touchmenu_instance then touchmenu_instance:updateItems() end
+            end
+        end,
+        hold_callback = function(touchmenu_instance)
+            if not next(self.settings.presets[slot_num]) then return end
+            local input_dialog
+            input_dialog = InputDialog:new{
+                title = T(_("Set label for preset slot %1"), slot_num),
+                input = self.settings.presets and self.settings.presets[slot_num] and
+                    self.settings.presets[slot_num].custom_label or "",
+                buttons = {
+                    {
+                        {
+                            text = _("Cancel"),
+                            id = "close",
+                            callback = function()
+                                UIManager:close(input_dialog)
+                            end,
+                        },
+                        {
+                            text = _("Set"),
+                            is_enter_default = true,
+                            callback = function()
+                                local label = input_dialog:getInputText()
+                                if self.settings.presets and self.settings.presets[slot_num] then
+                                    self.settings.presets[slot_num].custom_label = label ~= "" and label or nil
+                                    G_reader_settings:saveSetting("footer", self.settings)
+                                end
+                                if touchmenu_instance then touchmenu_instance:updateItems() end
+                                UIManager:close(input_dialog)
+                            end,
+                        },
+                    },
+                },
+            }
+            UIManager:show(input_dialog)
+            input_dialog:onShowKeyboard()
+            return true
+        end,
+    }
+end
+
+function ReaderFooter:genLoadPresetSlotMenuItems(slot_num)
+    return {
+        text_func = function()
+            local text = T(_("Preset slot %1"), slot_num)
+            if self.settings.presets and self.settings.presets[slot_num] and self.settings.presets[slot_num].custom_label then
+                text = T(_("Preset slot %1 (%2)"), slot_num, self.settings.presets[slot_num].custom_label)
+            end
+            return text
+        end,
+        keep_menu_open = true,
+        enabled_func = function()
+            return self.settings.presets
+                and self.settings.presets[slot_num]
+                and next(self.settings.presets[slot_num]) ~= nil
+        end,
+        callback = function()
+            self:loadFromPresetSlot(slot_num)
+        end,
+    }
+end
+
+function ReaderFooter:saveToPresetSlot(slot)
+    -- If presets table doesn't exist yet, initialize it.
+    if not self.settings.presets then
+        self.settings.presets = {}
+        for i=1,self.NUM_PRESETS do
+            self.settings.presets[i] = {}
+        end
+    end
+    -- Create a copy of current settings, excluding presets themselves.
+    local current_settings = {}
+    for k, v in pairs(self.settings) do
+        if k ~= "presets" and k ~= "custom_label" then
+            current_settings[k] = v
+        end
+    end
+    self.settings.presets[slot] = current_settings
+    G_reader_settings:saveSetting("footer", self.settings)
+end
+
+function ReaderFooter:loadFromPresetSlot(slot)
+    local preset = self.settings.presets[slot]
+    if preset and next(preset) then -- only load if preset exists and is not empty
+        -- Keep preset storage while loading other settings.
+        local saved_presets = self.settings.presets
+        self.settings = {}
+        for k, v in pairs(preset) do
+            self.settings[k] = v
+        end
+        self.settings.presets = saved_presets
+        -- Apply loaded settings.
+        self:updateFooterTextGenerator()
+        self:refreshFooter(true, true)
+        G_reader_settings:saveSetting("footer", self.settings)
+    end
 end
 
 function ReaderFooter:addAdditionalFooterContent(content_func)
