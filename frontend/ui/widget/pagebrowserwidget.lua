@@ -1750,9 +1750,7 @@ function PageBrowserWidget:onThumbnailHold(page, ges)
             align = "left",
             callback = function()
                 UIManager:close(button_dialog)
-                self.ui.handmade:addOrEditPageTocItem(page, function()
-                    self:updateEditableStuff(true)
-                end)
+                self.ui.handmade:addOrEditPageTocItem(page, function() self:updateEditableStuff(true) end)
             end,
             hold_callback = function() -- no dialog: adds empty TOC item if none existing
                 UIManager:close(button_dialog)
