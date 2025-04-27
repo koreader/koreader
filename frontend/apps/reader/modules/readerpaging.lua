@@ -659,6 +659,9 @@ function ReaderPaging:getNativePageDimensions(page)
     return totalDimen
 end
 
+-- Given the page number, calculate what the correct base page would be for
+-- dual page mode.
+-- 
 -- @param page number
 -- 
 -- @return number
