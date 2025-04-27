@@ -518,7 +518,7 @@ end
 -- a hint for the cache engine to paint a full page to the cache
 --- @todo this should trigger a background operation
 function Document:hintPage(pageno, zoom, rotation, gamma)
-    logger.dbg("hinting page", pageno)
+    logger.dbg("Document:hintPage: hinting page", pageno)
     self:renderPage(pageno, nil, zoom, rotation, gamma, true)
 end
 
