@@ -1332,7 +1332,7 @@ function BookMapWidget:onShowBookMapMenu()
         {{
             text = _("Page browser on tap"),
             checked_func = function()
-                if self.overview_mode then 
+                if self.overview_mode then
                     return G_reader_settings:nilOrTrue("book_map_overview_tap_to_page_browser")
                 else
                     return G_reader_settings:nilOrTrue("book_map_tap_to_page_browser")
