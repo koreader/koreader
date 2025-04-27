@@ -240,7 +240,7 @@ if Device:isKobo() then
 
     if Device:hasKeys() and Device:isMTK() then
         common_settings.pageturn_power = {
-            text = _("Wake up on Page-turn button presses"),
+            text = _("Wake up on page-turn button presses"),
             checked_func = function()
                 return G_reader_settings:isTrue("pageturn_power")
             end,
