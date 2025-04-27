@@ -1,4 +1,5 @@
 local EventListener = require("ui/widget/eventlistener")
+local logger = require("logger")
 
 local DHINTCOUNT = G_defaults:readSetting("DHINTCOUNT")
 
@@ -12,7 +13,34 @@ end
 
 function ReaderHinting:onHintPage()
     if not self.view.hinting then return true end
-    for i=1, DHINTCOUNT do
+
+    logger.dbg("ReaderHinting:onHintPage: hinting", DHINTCOUNT, "pages")
+
+    local dualPageMode = self.view.ui.paging and self.view.ui.paging:isDualPageEnabled()
+
+    if dualPageMode then
+        logger.dbg("ReaderHinting:onHintPage: hinting the next page pair due to dual mode")
+    end
+
+    for i = 1, DHINTCOUNT do
+        if dualPageMode then
+            -- local pair = self.view.ui.paging:getDualPageBaseFromPage(self.view.state.page)
+            local base= self.view.ui.paging:getPairBaseByRelativeMovement(i)
+            local pair = self.view.ui.paging:getDualPagePairFromBasePage(base)
+            local zooms = self.view.ui.paging:calculateZoomFactorForPagePair(pair)
+
+            for j, page in ipairs(pair) do
+                self.document:hintPage(
+                    page,
+                    zooms[j],
+                    self.view.state.rotation,
+                    self.view.state.gamma
+                )
+            end
+
+            goto continue
+        end
+
         if self.view.state.page + i <= self.document.info.number_of_pages then
             self.document:hintPage(
                 self.view.state.page + i,
@@ -20,7 +48,10 @@ function ReaderHinting:onHintPage()
                 self.view.state.rotation,
                 self.view.state.gamma)
         end
+
+        ::continue::
     end
+
     return true
 end
 
