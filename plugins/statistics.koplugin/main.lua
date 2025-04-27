@@ -91,6 +91,12 @@ ReaderStatistics.default_settings = {
     calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
     calendar_show_histogram = true,
     calendar_browse_future_months = false,
+
+    -- Check the help message in the menu registration below for more info
+    -- These should be XOR, if both happen to be true(manually editing the settings file),
+    -- divide takes prio and we'll disable duplication
+    dual_page_mode_divide_duration_by_two = false,
+    dual_page_mode_duplicate_duration = false,
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
@@ -1329,6 +1335,59 @@ Time is in hours and minutes.]]),
                         end,
                         enabled_func = function() return self.settings.is_enabled end,
                         keep_menu_open = true,
+                        separator = true,
+                    },
+                    {
+                        -- TODO(ogkevin): properly hook this up to settings and make sure that toggling is XOR
+                        text = _("Dual Page Mode"),
+                        show_func = function()
+                            return self.ui.paging and self.ui.paging:supportsDualPage()
+                        end,
+                        sub_item_table = {
+                            {
+                                text = _("Divide page time in two"),
+                                checked_func = function()
+                                    return self.settings.dual_page_mode_divide_duration_by_two and
+                                        not self.settings.dual_page_mode_duplicate_duration
+                                end,
+                                callback = function()
+                                    self.settings.dual_page_mode_divide_duration_by_two = not self.settings
+                                    .dual_page_mode_divide_duration_by_two
+                                    self.settings.dual_page_mode_duplicate_duration = false
+                                end,
+                                help_text = _(
+                                    [[When reading in Dual Page Mode, by default, the total time spend on the  pages will only count for the lowest page number(the base page).
+If you enable this setting, then the total time spend looking at both pages will be divided by two and stored for each page.
+
+Enabled:
+If you're reading page 2 and 3 for 10m, then we will store that you've spend 5m reading page 2 and 5m reading page 3.
+Disabled:
+If you're reading page 2 and 3 for 10m, then we will store that you've spend 10m reading page 2, and never read page 3.
+]]),
+                            },
+                            {
+                                text = _("Store same time for both pages"),
+                                checked_func = function()
+                                    return self.settings.dual_page_mode_duplicate_duration and
+                                        not self.settings.dual_page_mode_divide_duration_by_two
+                                end,
+                                callback = function()
+                                    self.settings.dual_page_mode_divide_duration_by_two = false
+                                    self.settings.dual_page_mode_duplicate_duration = not self.settings
+                                    .dual_page_mode_duplicate_duration
+                                end,
+                                help_text = _(
+                                    [[When reading in Dual Page Mode, by default, the total time spend on the  pages will only count for the lowest page number(the base page).
+If you enalbe this setting, then the total time spend looking at both pages will be stored for both pages.
+
+Enabled:
+If you're reading page 2 and 3 for 10m, then we will store that you've spend 10m reading page 2 and 10m reading page 3.
+Disabled:
+If you're reading page 2 and 3 for 10m, then we will store that you've spend 10m reading page 2, and never read page 3.
+]]),
+                            }
+                        },
+                        callback = function() end,
                     },
                 },
             },
@@ -2666,10 +2725,47 @@ function ReaderStatistics:onPosUpdate(pos, pageno)
     end
 end
 
+function ReaderStatistics:onDualPageModeEnabled(enabled, base)
+    if not enabled then
+        return
+    end
+
+    logger.dbg("ReaderStatistics:onDualPageModeEnabled: setting page state for page pair", base)
+
+    local pair = self.ui.paging:getDualPagePairFromBasePage(base)
+    if #pair == 1 and pair[#pair] == self.curr_page then
+        return
+    end
+
+    local ts = os.time()
+
+    if self.page_stat and self.page_stat[base] then
+        local page_data = self.page_stat[base]
+        local latest = page_data[#page_data]
+        local original_ts = latest and latest[1]
+        if not original_ts then
+            ts = original_ts
+        end
+    end
+
+    for _, page in ipairs(pair) do
+        logger.dbg("ReaderStatistics:onDualPageModeEnabled setting page_data for", page, "to", ts)
+        local page_data = self.page_stat[page]
+
+        if page_data then
+            table.insert(page_data, { ts, 0 })
+        else
+            self.page_stat[page] = { { ts, 0 } }
+        end
+    end
+end
+
 function ReaderStatistics:onPageUpdate(pageno)
     if not self:isEnabledAndNotFrozen() then
         return
     end
+
+    logger.dbg("ReaderStatistics:onPageUpdate", pageno)
 
     if self._reading_paused_ts then
         -- Reading paused: don't update stats, but remember the current
@@ -2684,52 +2780,43 @@ function ReaderStatistics:onPageUpdate(pageno)
     end
 
     local closing = false
-    if pageno == false then -- from onCloseDocument()
+    if pageno == false then     -- from onCloseDocument()
         closing = true
         pageno = self.curr_page -- avoid issues in following code
     end
 
     self.pageturn_count = self.pageturn_count + 1
     local now_ts = os.time()
+    local pages = { pageno }
 
-    -- Get the previous page's last timestamp (if there is one)
-    local page_data = self.page_stat[self.curr_page]
-    -- This is a list of tuples, in insertion order, we want the last one
-    local data_tuple = page_data and page_data[#page_data]
-    -- Tuple layout is { timestamp, duration }
-    local then_ts = data_tuple and data_tuple[1]
-    -- If we don't have a previous timestamp to compare to, abort early
-    if not then_ts then
-        logger.dbg("ReaderStatistics: No timestamp for previous page", self.curr_page)
-        self.page_stat[pageno] = { { now_ts, 0 } }
-        self.curr_page = pageno
-        return
+    if self.ui.paging and
+        self.ui.paging:isDualPageEnabled() and
+        (self.settings.dual_page_mode_divide_duration_by_two or self.settings.dual_page_mode_duplicate_duration) then
+        self.pageturn_count = self.pageturn_count + 1
+
+        local pair = self.ui.paging:getDualPagePairFromBasePage(self.curr_page)
+        pages = self.ui.paging:getDualPagePairFromBasePage(pageno)
+
+        for _, page in ipairs(pair) do
+            self:updateDurtationForSinglePageTurn(now_ts, page, self.settings.dual_page_mode_divide_duration_by_two)
+        end
+    else
+        self:updateDurtationForSinglePageTurn(now_ts, self.curr_page, false)
     end
 
-    -- By now, we're sure that we actually have a tuple (and the rest of the code ensures they're sane, i.e., zero-initialized)
-    local curr_duration = data_tuple[2]
-    -- NOTE: If all goes well, given the earlier curr_page != pageno check, curr_duration should always be 0 here.
-    -- Compute the difference between now and the previous page's last timestamp
-    local diff_time = now_ts - then_ts
-    if diff_time >= self.settings.min_sec and diff_time <= self.settings.max_sec then
-        self.mem_read_time = self.mem_read_time + diff_time
-        -- If it's the first time we're computing a duration for this page, count it as read
-        if #page_data == 1 and curr_duration == 0 then
-            self.mem_read_pages = self.mem_read_pages + 1
-        end
-        -- Update the tuple with the computed duration
-        data_tuple[2] = curr_duration + diff_time
-    elseif diff_time > self.settings.max_sec then
-        self.mem_read_time = self.mem_read_time + self.settings.max_sec
-        if #page_data == 1 and curr_duration == 0 then
-            self.mem_read_pages = self.mem_read_pages + 1
-        end
-        -- Update the tuple with the computed duration
-        data_tuple[2] = curr_duration + self.settings.max_sec
-    end
+    self.curr_page = pageno
 
     if closing then
         return -- current page data updated, nothing more needed
+    end
+
+    for _, page in ipairs(pages) do
+        local new_page_data = self.page_stat[page]
+        if new_page_data then
+            table.insert(new_page_data, { now_ts, 0 })
+        else
+            self.page_stat[page] = { { now_ts, 0 } }
+        end
     end
 
     -- We want a flush to db every 50 page turns
@@ -2750,16 +2837,50 @@ function ReaderStatistics:onPageUpdate(pageno)
     if self.book_read_pages > 0 or self.mem_read_pages > 0 then
         self.avg_time = (self.book_read_time + self.mem_read_time) / (self.book_read_pages + self.mem_read_pages)
     end
+end
 
-    -- We're done, update the current page tracker
-    self.curr_page = pageno
-    -- And, in the new page's list, append a new tuple with the current timestamp and a placeholder duration
-    -- (duration will be computed on next pageturn)
-    local new_page_data = self.page_stat[pageno]
-    if new_page_data then
-        table.insert(new_page_data, { now_ts, 0 })
-    else
-        self.page_stat[pageno] = { { now_ts, 0 } }
+-- @param pageno number should be the page we just turned away from
+function ReaderStatistics:updateDurtationForSinglePageTurn(now_ts, pageno, divide_diff_by_two)
+    logger.dbg("ReaderStatistics:updateDurtationForSinglePageTurn:", now_ts, pageno,  divide_diff_by_two)
+
+    -- Get the previous page's last timestamp (if there is one)
+    local page_data = self.page_stat[pageno]
+    -- This is a list of tuples, in insertion order, we want the last one
+    local data_tuple = page_data and page_data[#page_data]
+    -- Tuple layout is { timestamp, duration }
+    local then_ts = data_tuple and data_tuple[1]
+    -- If we don't have a previous timestamp to compare to, abort early
+    if not then_ts then
+        logger.dbg("ReaderStatistics: No timestamp for previous page", pageno)
+
+        return
+    end
+
+    -- By now, we're sure that we actually have a tuple (and the rest of the code ensures they're sane, i.e., zero-initialized)
+    local curr_duration = data_tuple[2]
+    -- NOTE: If all goes well, given the earlier curr_page != pageno check, curr_duration should always be 0 here.
+    -- Compute the difference between now and the previous page's last timestamp
+    local diff_time = now_ts - then_ts
+
+    if divide_diff_by_two then
+        diff_time = diff_time / 2
+    end
+
+    if diff_time >= self.settings.min_sec and diff_time <= self.settings.max_sec then
+        self.mem_read_time = self.mem_read_time + diff_time
+        -- If it's the first time we're computing a duration for this page, count it as read
+        if #page_data == 1 and curr_duration == 0 then
+            self.mem_read_pages = self.mem_read_pages + 1
+        end
+        -- Update the tuple with the computed duration
+        data_tuple[2] = curr_duration + diff_time
+    elseif diff_time > self.settings.max_sec then
+        self.mem_read_time = self.mem_read_time + self.settings.max_sec
+        if #page_data == 1 and curr_duration == 0 then
+            self.mem_read_pages = self.mem_read_pages + 1
+        end
+        -- Update the tuple with the computed duration
+        data_tuple[2] = curr_duration + self.settings.max_sec
     end
 end
 
