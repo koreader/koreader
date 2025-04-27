@@ -221,12 +221,18 @@ end
 
 function ReaderPaging:onReadSettings(config)
     self.page_positions = config:readSetting("page_positions") or {}
-    self:_gotoPage(config:readSetting("last_page") or 1)
-    self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
-    self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
     self.dual_page_mode = config:isTrue("dual_page_mode")
     self.dual_page_mode_first_page_is_cover = config:isTrue("dual_page_mode_first_page_is_cover")
     self.dual_page_mode_rtl = config:isTrue("dual_page_mode_rtl")
+    local page = config:readSetting("last_page") or 1
+    self:_gotoPage(page)
+    self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
+    self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
+
+    if self.dual_page_mode then
+        logger.dbg("ReaderPaging:onReadSettings: sending dual mode enabled event", true, page)
+        self.ui:handleEvent(Event:new("DualPageModeEnabled", true, self:getDualPageBaseFromPage(page)))
+    end
 end
 
 function ReaderPaging:onSaveSettings()
@@ -815,6 +821,7 @@ function ReaderPaging:onSetPageMode(mode)
         end
 
         self.dual_page_mode = true
+        self.ui:handleEvent(Event:new("DualPageModeEnabled", true))
     end
 end
 
