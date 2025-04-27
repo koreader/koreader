@@ -404,6 +404,11 @@ function ReaderHandMade:updateHighlightDialog()
                     this:onClose()
                     self:addOrEditPageTocItem(nil, nil, selected_text)
                 end,
+                hold_callback = function() -- no dialog: directly creates new TOC item with selection (if none existing)
+                    local selected_text = this.selected_text
+                    this:onClose()
+                    self:addOrEditPageTocItem(nil, nil, selected_text, true)
+               end,
             }
         end)
     else
@@ -454,7 +459,7 @@ function ReaderHandMade:hasPageTocItem(pageno, xpointer)
     return is_match
 end
 
-function ReaderHandMade:addOrEditPageTocItem(pageno, when_updated_callback, selected_text)
+function ReaderHandMade:addOrEditPageTocItem(pageno, when_updated_callback, selected_text, no_dialog)
     local xpointer, title
     if selected_text then
         -- If we get selected_text, it's from the highlight dialog after text selection
@@ -490,6 +495,7 @@ function ReaderHandMade:addOrEditPageTocItem(pageno, when_updated_callback, sele
         input = item.title,
         input_hint = _("TOC chapter title"),
         description = T(_([[On page %1.]]), pageno),
+        cursor_at_end = false,
         buttons = {
             {
                 {
@@ -532,12 +538,28 @@ function ReaderHandMade:addOrEditPageTocItem(pageno, when_updated_callback, sele
                         text = _("Use selected text"),
                         callback = function()
                             -- Just replace the text without saving, to allow editing/fixing it
-                            dialog:setInputText(selected_text.text, nil, false)
+                            dialog:setInputText(selected_text.text, nil, true)
                         end,
                     } or nil,
             } or nil,
         },
     }
+    if no_dialog then
+        if item_found then return true end  -- no changes if existing TOC entry
+        if selected_text then -- via highlight dialog
+            item.title = selected_text.text
+            table.insert(self.toc, idx, item)
+            self.ui:handleEvent(Event:new("UpdateToc"))
+        else -- via Page browser
+            item.title = ""
+            table.insert(self.toc, idx, item)
+            self.ui:handleEvent(Event:new("UpdateToc"))
+            if when_updated_callback then
+                when_updated_callback()
+            end
+        end
+        return true
+    end
     UIManager:show(dialog)
     dialog:onShowKeyboard()
     return true
