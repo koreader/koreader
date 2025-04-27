@@ -4,7 +4,10 @@
 
 return {
 -- number of pages for hinting
--- default to pre-rendering 1 page
+-- default to pre-rendering 1 page (pair)
+--
+-- When using Dual Page Mode, this controls the amount of next page
+-- pairs that will be pre-rednered.
 DHINTCOUNT = 1,
 
 -- DjVu page rendering mode (used in djvu.c:drawPage())
