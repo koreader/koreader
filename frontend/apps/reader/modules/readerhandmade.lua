@@ -489,6 +489,22 @@ function ReaderHandMade:addOrEditPageTocItem(pageno, when_updated_callback, sele
             depth = 1, -- we only support 1-level chapters to keep the UX simple
         }
     end
+    if no_dialog then
+        if item_found then return true end  -- no changes if existing TOC entry
+        if selected_text then -- via highlight dialog
+            item.title = selected_text.text
+            table.insert(self.toc, idx, item)
+            self.ui:handleEvent(Event:new("UpdateToc"))
+        else -- via Page browser
+            item.title = ""
+            table.insert(self.toc, idx, item)
+            self.ui:handleEvent(Event:new("UpdateToc"))
+            if when_updated_callback then
+                when_updated_callback()
+            end
+        end
+        return true
+    end
     local dialog
     dialog = InputDialog:new{
         title = item_found and _("Edit custom TOC chapter") or _("Create new custom ToC chapter"),
@@ -544,22 +560,6 @@ function ReaderHandMade:addOrEditPageTocItem(pageno, when_updated_callback, sele
             } or nil,
         },
     }
-    if no_dialog then
-        if item_found then return true end  -- no changes if existing TOC entry
-        if selected_text then -- via highlight dialog
-            item.title = selected_text.text
-            table.insert(self.toc, idx, item)
-            self.ui:handleEvent(Event:new("UpdateToc"))
-        else -- via Page browser
-            item.title = ""
-            table.insert(self.toc, idx, item)
-            self.ui:handleEvent(Event:new("UpdateToc"))
-            if when_updated_callback then
-                when_updated_callback()
-            end
-        end
-        return true
-    end
     UIManager:show(dialog)
     dialog:onShowKeyboard()
     return true
