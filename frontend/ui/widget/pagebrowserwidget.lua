@@ -1010,6 +1010,11 @@ function PageBrowserWidget:onShowMenu()
                         self:updateLayout()
                     end
                 end,
+                hold_callback = function()
+                    if self:updateNbCols(-2, true) then
+                        self:updateLayout()
+                    end
+                end,
                 width = plus_minus_width,
             },
             {
@@ -1017,6 +1022,11 @@ function PageBrowserWidget:onShowMenu()
                 enabled_func = function() return self.nb_cols < self.max_nb_cols end,
                 callback = function()
                     if self:updateNbCols(1, true) then
+                        self:updateLayout()
+                    end
+                end,
+                hold_callback = function()
+                    if self:updateNbCols(2, true) then
                         self:updateLayout()
                     end
                 end,
@@ -1037,6 +1047,11 @@ function PageBrowserWidget:onShowMenu()
                         self:updateLayout()
                     end
                 end,
+                hold_callback = function()
+                    if self:updateNbRows(-2, true) then
+                        self:updateLayout()
+                    end
+                end,
                 width = plus_minus_width,
             },
             {
@@ -1044,6 +1059,11 @@ function PageBrowserWidget:onShowMenu()
                 enabled_func = function() return self.nb_rows < self.max_nb_rows end,
                 callback = function()
                     if self:updateNbRows(1, true) then
+                        self:updateLayout()
+                    end
+                end,
+                hold_callback = function()
+                    if self:updateNbRows(2, true) then
                         self:updateLayout()
                     end
                 end,
