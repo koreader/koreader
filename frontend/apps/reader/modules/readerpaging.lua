@@ -85,6 +85,7 @@ end
 
 function ReaderPaging:genDualPagingMenu()
   return {
+      -- TODO(ogkevin): auto dual page mode on rotation?
     {
       text = _("First page is cover"),
       checked_func = function()
@@ -228,6 +229,13 @@ function ReaderPaging:onReadSettings(config)
     self:_gotoPage(page)
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
+
+    if not self:supportsDualPage() and self.dual_page_mode then
+        self.dual_page_mode = false
+        self.ui:handleEvent(Event:new("SetPageMode", 1))
+        local configurable = self.ui.document.configurable
+        configurable.page_mode = 1
+    end
 
     if self.dual_page_mode then
         logger.dbg("ReaderPaging:onReadSettings: sending dual mode enabled event", true, page)
@@ -810,6 +818,19 @@ function ReaderPaging:requestPageFromUserInDualPageModeAndExec(callbackfn)
     UIManager:show(button_dialog, "full")
 end
 
+function ReaderPaging:onSetRotationMode(rotation)
+    logger.dbg("ReaderPaging:onSetRotationMode:", rotation)
+
+    if Screen:getScreenMode() ~= "landscape" then
+        self:onSetPageMode(1)
+
+        local configurable = self.ui.document.configurable
+        configurable.page_mode = 1
+
+        self.dual_page_mode = false
+    end
+end
+
 -- @param mode number 1 = single, 2 = dual
 function ReaderPaging:onSetPageMode(mode)
     logger.dbg("readerpaging: onSetPageMode", mode)
@@ -826,8 +847,6 @@ function ReaderPaging:onSetPageMode(mode)
 end
 
 function ReaderPaging:onPageUpdate(new_page_no, orig_mode)
-    -- FIXME(ogkevin): There is something funky happening when you rotate from enabled, to disabld and back to enabled
-    -- So dual page on, from landscape to portrait to landscape is borked, unitl a page movement happens
     self.current_pair_base = self:getDualPageBaseFromPage(new_page_no)
 
     logger.dbg(
