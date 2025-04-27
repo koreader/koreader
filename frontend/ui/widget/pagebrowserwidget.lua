@@ -1734,6 +1734,10 @@ function PageBrowserWidget:onThumbnailHold(page, ges)
                     self:updateEditableStuff(true)
                 end)
             end,
+            hold_callback = function() -- no dialog: adds empty TOC item if none existing
+                UIManager:close(button_dialog)
+                self.ui.handmade:addOrEditPageTocItem(page, function() self:updateEditableStuff(true) end, nil, true)
+            end,
         }})
     end
     if handmade_hidden_flows_edit_enabled then
