@@ -1338,7 +1338,6 @@ Time is in hours and minutes.]]),
                         separator = true,
                     },
                     {
-                        -- TODO(ogkevin): properly hook this up to settings and make sure that toggling is XOR
                         text = _("Dual Page Mode"),
                         show_func = function()
                             return self.ui.paging and self.ui.paging:supportsDualPage()
