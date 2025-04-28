@@ -1973,8 +1973,7 @@ end
 
 function ReaderFooter:saveToNamedPreset(preset_name)
     local footer_presets = G_reader_settings:readSetting("footer_presets", {})
-    local current_settings = {}
-    current_settings = util.tableDeepCopy(self.settings)
+    local current_settings = util.tableDeepCopy(self.settings)
     footer_presets[preset_name] = current_settings
     G_reader_settings:saveSetting("footer_presets", footer_presets)
 end
