@@ -341,6 +341,8 @@ function ReaderPaging:getPagePosition(page)
 end
 
 function ReaderPaging:onTogglePageFlipping()
+    logger.dbg("ReaderPaging:onTogglePageFlipping")
+
     if self.bookmark_flipping_mode then
         -- do nothing if we're in bookmark flipping mode
         return
@@ -362,6 +364,8 @@ function ReaderPaging:onTogglePageFlipping()
 end
 
 function ReaderPaging:onToggleBookmarkFlipping()
+    logger.dbg("ReaderPaging:onToggleBookmarkFlipping")
+
     self.bookmark_flipping_mode = not self.bookmark_flipping_mode
 
     if self.bookmark_flipping_mode then
@@ -406,22 +410,26 @@ end
 
 function ReaderPaging:updateFlippingPage(page)
     self.flipping_page = page
+
+    if self:isDualPageEnabled() then
+        self.flipping_page = self:getDualPageBaseFromPage(page)
+    end
 end
 
-function ReaderPaging:pageFlipping(flipping_page, flipping_ges)
+function ReaderPaging:pageFlipping(flipping_ges)
     local whole = self.number_of_pages
     local steps = #self.flip_steps
     local stp_proportion = flipping_ges.distance / Screen:getWidth()
     local abs_proportion = flipping_ges.distance / Screen:getHeight()
     local direction = BD.flipDirectionIfMirroredUILayout(flipping_ges.direction)
     if direction == "east" then
-        self:_gotoPage(flipping_page - self.flip_steps[math.ceil(steps*stp_proportion)])
+        self:onGotoPageRel(-self.flip_steps[math.ceil(steps*stp_proportion)])
     elseif direction == "west" then
-        self:_gotoPage(flipping_page + self.flip_steps[math.ceil(steps*stp_proportion)])
+        self:onGotoPageRel(self.flip_steps[math.ceil(steps*stp_proportion)])
     elseif direction == "south" then
-        self:_gotoPage(flipping_page - math.floor(whole*abs_proportion))
+        self:onGotoPageRel(-math.floor(whole*abs_proportion))
     elseif direction == "north" then
-        self:_gotoPage(flipping_page + math.floor(whole*abs_proportion))
+        self:onGotoPageRel(math.floor(whole*abs_proportion))
     end
     UIManager:setDirty(self.view.dialog, "partial")
 end
@@ -536,8 +544,9 @@ function ReaderPaging:onPan(_, ges)
     if self.bookmark_flipping_mode then
         return true
     elseif self.page_flipping_mode then
-        if self.view.zoom_mode == "page" then
-            self:pageFlipping(self.flipping_page, ges)
+        if self.view.zoom_mode == "page" or self:isDualPageEnabled() then
+            logger.dbg("ReaderPaging:onPan", self.flipping_page, ges)
+            self:pageFlipping(ges)
         else
             self.view:PanningStart(-ges.relative.x, -ges.relative.y)
         end
@@ -629,7 +638,8 @@ end
 
 function ReaderPaging:onPanRelease(_, ges)
     if self.page_flipping_mode then
-        if self.view.zoom_mode == "page" then
+        if self.view.zoom_mode == "page" or self:isDualPageEnabled() then
+            logger.dbg("ReaderPaging:onPanRelease", self.current_page, ges)
             self:updateFlippingPage(self.current_page)
         else
             self.view:PanningStop()
@@ -1515,10 +1525,16 @@ function ReaderPaging:onGotoPageRel(diff)
     end
     local function goto_next_page()
         local new_page
+        local curr_page = self.current_page
+
+        if self.page_flipping_mode then
+            curr_page = self.flipping_page
+        end
+
         if self.ui.document:hasHiddenFlows() then
             local forward = diff > 0
             local pdiff = forward and math.ceil(diff) or math.ceil(-diff)
-            new_page = self.current_page
+            new_page = curr_page
             for i=1, pdiff do
                 local test_page = forward and self.ui.document:getNextPage(new_page)
                                            or self.ui.document:getPrevPage(new_page)
@@ -1541,7 +1557,7 @@ function ReaderPaging:onGotoPageRel(diff)
                 new_page = self.number_of_pages + 1     -- to trigger EndOfBook below
             end
         else
-            new_page = self.current_page + diff
+            new_page = curr_page + diff
         end
 
         if new_page > self.number_of_pages then

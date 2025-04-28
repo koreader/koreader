@@ -543,6 +543,17 @@ end
 function ReaderBookmark:gotoBookmark(pn_or_xp, marker_xp)
     if pn_or_xp then
         local event = self.ui.paging and "GotoPage" or "GotoXPointer"
+
+        if self.ui.paging and self.ui.paging:isDualPageEnabled() then
+            local base = self.ui.paging:getDualPageBaseFromPage(pn_or_xp)
+
+            logger.dbg("ReaderBookmark:gotoBookmark: dual page mode, bookmark pageno", pn_or_xp, "so goto base page", base)
+
+            self.ui:handleEvent(Event:new(event, base, marker_xp))
+
+            return
+        end
+
         self.ui:handleEvent(Event:new(event, pn_or_xp, marker_xp))
     end
 end
@@ -643,7 +654,16 @@ end
 
 function ReaderBookmark:getBookmarkPageNumber(bookmark)
     logger.dbg("ReaderBookmark:getBookmarkPageNumber ", bookmark)
-    return self.ui.paging and bookmark.page or self.ui.document:getPageFromXPointer(bookmark.page)
+
+    if not self.ui.paging then
+        return self.ui.document:getPageFromXPointer(bookmark.page)
+    end
+
+    if self.ui.paging:isDualPageEnabled() then
+        return self.ui.paging:getDualPageBaseFromPage(bookmark.page)
+    end
+
+    return bookmark.page
 end
 
 function ReaderBookmark.getBookmarkType(bookmark)
