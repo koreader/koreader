@@ -1,11 +1,13 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
+local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
+local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
 local logger = require("logger")
@@ -58,7 +60,10 @@ ReaderPaging.default_settings = {
     -- If its the first time that the user is using dual page mode,
     -- notify them that zooming is not a thing in this mode.
     -- On why zooming is disabled, see ReaderZooming:onDualPageModeEnabled
-    first_time_dual_page_mode = true
+    first_time_dual_page_mode = true,
+    -- When the device is in ladscape mode and the document is supported,
+    -- auto enable dual page mode.
+    auto_enable_dual_page_mode = false
 }
 
 function ReaderPaging:init()
@@ -73,7 +78,21 @@ function ReaderPaging:init()
 
     self.ui:registerPostInitCallback(function()
         self.ui.menu:registerToMainMenu(self)
+        self:onDispatcherRegisterActions()
     end)
+end
+
+function ReaderPaging:onDispatcherRegisterActions()
+    Dispatcher:registerAction(
+        "paging_toggle_dual_page_mode",
+        {
+            category = "none",
+            event = "ToggleDualPageMode",
+            title = _("Toggle dual page mode"),
+            section = "paging",
+            paging = true
+        }
+    )
 end
 
 function ReaderPaging:addToMainMenu(menu_items)
@@ -95,7 +114,6 @@ end
 
 function ReaderPaging:genDualPagingMenu()
   return {
-      -- TODO(ogkevin): auto dual page mode on rotation?
     {
       text = _("First page is cover"),
       checked_func = function()
@@ -109,7 +127,6 @@ function ReaderPaging:genDualPagingMenu()
         end,
       hold_callback = function()
       end,
-      separator = true,
       help_text = _(
         [[When using Dual Page Mode, and the first page of the document should be shown on its owm, toggle this on.]]
       ),
@@ -130,6 +147,24 @@ function ReaderPaging:genDualPagingMenu()
       separator = true,
       help_text = _(
         [[When using Dual Page Mode, and the second page needs to be rendered on the left and the first page on the right (RTL), enable this option.]]
+      ),
+    },
+    {
+      text = _("Auto Enable"),
+      checked_func = function()
+        return self.settings.auto_enable_dual_page_mode
+      end,
+      callback = function()
+        self.settings.auto_enable_dual_page_mode = not self.settings.auto_enable_dual_page_mode
+      end,
+        enabled_func = function()
+            return self:isDualPageEnabled()
+        end,
+      hold_callback = function()
+      end,
+      separator = true,
+      help_text = _(
+        [[When this settings is enabled, when you rotate your device to landscape mode, Dual Page Mode will be enabled automatically.]]
       ),
     },
   }
@@ -828,17 +863,49 @@ function ReaderPaging:requestPageFromUserInDualPageModeAndExec(callbackfn)
     UIManager:show(button_dialog, "full")
 end
 
-function ReaderPaging:onSetRotationMode(rotation)
-    logger.dbg("ReaderPaging:onSetRotationMode:", rotation)
+function ReaderPaging:autoEnableDualPageModeIfLandscape()
+    local should_enable = Screen:getScreenMode() == "landscape" and
+        not self.dual_page_mode and
+        self.settings.auto_enable_dual_page_mode
 
-    if Screen:getScreenMode() ~= "landscape" then
+    logger.dbg("ReaderPaging:autoEnableDualPageModeIfLandscape", should_enable)
+
+    -- Auto enable Dual Page Mode if we rotate to landscape
+    if should_enable then
+        self:onSetPageMode(2)
+
+        local configurable = self.ui.document.configurable
+        configurable.page_mode = 2
+
+        Notification:notify(_("Dual Mode Page automatically enabled."), Notification.SOURCE_OTHER)
+        self:onRedrawCurrentPage()
+    end
+end
+
+function ReaderPaging:disableDualPageModeIfNotLandscape()
+    -- Disable Dual Page Mode if we're no longer in ladscape
+    if Screen:getScreenMode() ~= "landscape" and self.dual_page_mode then
         self:onSetPageMode(1)
 
         local configurable = self.ui.document.configurable
         configurable.page_mode = 1
 
-        self.dual_page_mode = false
+        Notification:notify(_("Dual Mode Page automatically disabled."), Notification.SOURCE_OTHER)
+        self:onRedrawCurrentPage()
     end
+end
+
+-- When the screen is rezised, we shall check if we ended up in landscape
+function ReaderPaging:onSetDimensions(_)
+    self:autoEnableDualPageModeIfLandscape()
+    self:disableDualPageModeIfNotLandscape()
+end
+
+function ReaderPaging:onSetRotationMode(rotation)
+    logger.dbg("ReaderPaging:onSetRotationMode:", rotation)
+
+    self:autoEnableDualPageModeIfLandscape()
+    self:disableDualPageModeIfNotLandscape()
 end
 
 function ReaderPaging:firstTimeDualPageMode()
@@ -860,9 +927,55 @@ As a tip: you can register a shortcut to toggle dual page mode!
     self.settings.first_time_dual_page_mode = false
 end
 
+-- This should be the only subscriber for this event.
+-- Everyone else needs to sub to DualPageModeEnabled!
+-- This event is sent by dispatcher, and since ReaderPaging owns page mode,
+-- it's in charge to determine if the Toggle is valid or not.
+--
+-- If it is valid, the matching event will be sent:
+-- - DualPageModeEnabled(true|flase, base_page)
+function ReaderPaging:onToggleDualPageMode()
+    logger.dbg("ReaderPaging:onToggleDualPageMode")
+
+    if not self:canDualPageMode() then
+        -- TODO(okgevin): make the "satus" of canDualPageMode visible in the help text so that we can point the user to
+        Notification:notify(_("Dual Mode Page is not supported"))
+
+        return
+    end
+
+    if self.dual_page_mode then
+        Notification:notify(_("Dual Mode Page disabled"))
+        self:onSetPageMode(1)
+        self:onRedrawCurrentPage()
+
+        return
+    end
+
+    Notification:notify(_("Dual Mode Page enabled"))
+    self:onSetPageMode(2)
+    self:onRedrawCurrentPage()
+end
+
+--When page scroll is enalbed, we need to disable Dual Page mode
+--@param page_scroll bool if page_scroll is on or not
+function ReaderPaging:onSetScrollMode(page_scroll)
+    if not self:supportsDualPage() then
+        return
+    end
+
+    if page_scroll then
+        self:onSetPageMode(1)
+
+        return
+    end
+
+    self:autoEnableDualPageModeIfLandscape()
+end
+
 -- @param mode number 1 = single, 2 = dual
 function ReaderPaging:onSetPageMode(mode)
-    logger.dbg("readerpaging: onSetPageMode", mode,"dual paging currently enabled", self.dual_page_mode )
+    logger.dbg("ReaderPaging:onSetPageMode", mode,"dual paging currently enabled", self.dual_page_mode )
 
     local configurable = self.ui.document.configurable
     configurable.page_mode = mode
@@ -1510,7 +1623,20 @@ end
 
 function ReaderPaging:onRedrawCurrentPage()
     logger.dbg("ReaderPaging:onRedrawCurrentPage")
-    self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
+
+    local page = self.current_page
+
+    -- If we are not on a base of a pair, and we redraw, there can be
+    -- some funny rendering. I'm not sure why that is, but ensuring
+    -- that we goto base ensures that this doesn't happen.
+    -- Most likey something with caching, it's always caching.
+    -- As in, the page number didn't change but all of a sudden we're rendering
+    -- something different?
+    if self:isDualPageEnabled() then
+        page = self:getDualPageBaseFromPage(self.current_page)
+    end
+
+    self.ui:handleEvent(Event:new("PageUpdate", page))
     return true
 end
 
