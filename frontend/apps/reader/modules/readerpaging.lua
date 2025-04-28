@@ -231,10 +231,10 @@ function ReaderPaging:onReadSettings(config)
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
 
     if not self:supportsDualPage() and self.dual_page_mode then
-        self.dual_page_mode = false
+        logger.dbg("ReaderPaging:onReadSettings disabling dual page mode")
         self.ui:handleEvent(Event:new("SetPageMode", 1))
-        local configurable = self.ui.document.configurable
-        configurable.page_mode = 1
+        -- UIManager:broadcastEvent(Event:new("SetPageMode", 1))
+        self:onSetPageMode(1)
     end
 
     if self.dual_page_mode then
@@ -833,8 +833,15 @@ end
 
 -- @param mode number 1 = single, 2 = dual
 function ReaderPaging:onSetPageMode(mode)
-    logger.dbg("readerpaging: onSetPageMode", mode)
-    self.dual_page_mode = false
+    logger.dbg("readerpaging: onSetPageMode", mode,"dual paging currently enabled", self.dual_page_mode )
+
+    local configurable = self.ui.document.configurable
+    configurable.page_mode = mode
+
+    if mode ~= 2 and self.dual_page_mode then
+        self.ui:handleEvent(Event:new("DualPageModeEnabled", false))
+        self.dual_page_mode = false
+    end
 
     if mode == 2 and not self.dual_page_mode and self:canDualPageMode() then
         if self.settings.first_time_dual_page_mode then
@@ -842,7 +849,7 @@ function ReaderPaging:onSetPageMode(mode)
         end
 
         self.dual_page_mode = true
-        self.ui:handleEvent(Event:new("DualPageModeEnabled", true))
+        self.ui:handleEvent(Event:new("DualPageModeEnabled", true, self.current_pair_base))
     end
 end
 
