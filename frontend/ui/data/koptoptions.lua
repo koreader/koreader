@@ -368,6 +368,8 @@ left to right or reverse, top to bottom or reverse.]]),
                 help_text = _([[- 'single' mode shows only one page of the document at a time.
 - 'dual' mode shows two pages at a time
 
+Zooming is disabled in this mode, for more info, consult the wiki.
+
 This option only works when the device is in landscape mode!
 ]]),
             },

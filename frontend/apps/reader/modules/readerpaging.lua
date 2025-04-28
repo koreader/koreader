@@ -3,13 +3,14 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
 local logger = require("logger")
-local util = require("util")
 local time = require("ui/time")
+local util = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
@@ -53,6 +54,13 @@ local ReaderPaging = InputContainer:extend{
     flip_steps = {0, 1, 2, 5, 10, 20, 50, 100},
 }
 
+ReaderPaging.default_settings = {
+    -- If its the first time that the user is using dual page mode,
+    -- notify them that zooming is not a thing in this mode.
+    -- On why zooming is disabled, see ReaderZooming:onDualPageModeEnabled
+    first_time_dual_page_mode = true
+}
+
 function ReaderPaging:init()
     self:registerKeyEvents()
     self.pan_interval = time.s(1 / self.pan_rate)
@@ -60,6 +68,8 @@ function ReaderPaging:init()
 
     -- delegate gesture listener to readerui, NOP our own
     self.ges_events = nil
+
+    self.settings = G_reader_settings:readSetting("paging", self.default_settings)
 
     self.ui:registerPostInitCallback(function()
         self.ui.menu:registerToMainMenu(self)
@@ -829,6 +839,25 @@ function ReaderPaging:onSetRotationMode(rotation)
 
         self.dual_page_mode = false
     end
+end
+
+function ReaderPaging:firstTimeDualPageMode()
+    logger.dbg("ReaderPaging:firstTimeDualPageMode")
+
+    -- TODO(ogkevin): Wiki entry for dual page mode!
+    UIManager:show(InfoMessage:new {
+        text = _([[Welcome to Dual Page Mode!
+
+One important thing you should know about this mode.
+All the zooming functions are disabled!
+So if you need to do any zooming, you must go back to single page mode.
+If you're interested in why zooming is disabled, consult the wiki.
+
+As a tip: you can register a shortcut to toggle dual page mode!
+]]),
+    })
+
+    self.settings.first_time_dual_page_mode = false
 end
 
 -- @param mode number 1 = single, 2 = dual
