@@ -890,7 +890,7 @@ end
 -- We're done, store the current migration date
 G_reader_settings:saveSetting("last_migration_date", CURRENT_MIGRATION_DATE)
 
--- Statistics, https://github.com/koreader/koreader/pull/13675
+-- Statistics https://github.com/koreader/koreader/pull/13675
 -- Added new settings, so the default values must be saved
 -- TODO(ogkevin): update this date once we get closer to merrge
 if last_migration_date < 20250406 then
