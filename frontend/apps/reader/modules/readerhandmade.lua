@@ -511,7 +511,7 @@ function ReaderHandMade:addOrEditPageTocItem(pageno, when_updated_callback, sele
         input = item.title,
         input_hint = _("TOC chapter title"),
         description = T(_([[On page %1.]]), pageno),
-        cursor_at_end = false,
+        cursor_at_end = item_found and true or false, -- cursor at start for new entries for easy manual addition of chapter number
         buttons = {
             {
                 {
