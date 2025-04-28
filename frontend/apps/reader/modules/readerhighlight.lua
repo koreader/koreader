@@ -6,6 +6,7 @@ local Device = require("device")
 local DoubleSpinWidget = require("ui/widget/doublespinwidget")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
+local GestureDetector = require("device/gesturedetector")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Notification = require("ui/widget/notification")
@@ -748,7 +749,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
         table.insert(menu_items.long_press.sub_item_table, {
             text_func = function()
                 return T(_("Highlight very-long-press interval: %1 s"),
-                    G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3))
+                    G_reader_settings:readSetting("highlight_long_hold_threshold_s") or GestureDetector.LONG_HOLD_INTERVAL_S)
             end,
             keep_menu_open = true,
             callback = function(touchmenu_instance)
@@ -756,18 +757,20 @@ If you wish your highlights to be saved in the document, just move it to a writa
                     title_text = _("Highlight very-long-press interval"),
                     info_text = _("If a long-press is not released in this interval, it is considered a very-long-press. On document text, single word selection will not be triggered."),
                     width = math.floor(self.screen_w * 0.75),
-                    value = G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3),
-                    value_min = 2.5,
+                    value = G_reader_settings:readSetting("highlight_long_hold_threshold_s") or GestureDetector.LONG_HOLD_INTERVAL_S,
+                    value_min = (G_reader_settings:readSetting("ges_hold_interval_ms")
+                        or GestureDetector.HOLD_INTERVAL_MS) / 1000 + 0.1,
                     value_max = 20,
                     value_step = 0.1,
                     value_hold_step = 0.5,
                     unit = C_("Time", "s"),
                     precision = "%0.1f",
                     ok_text = _("Set interval"),
-                    default_value = 3,
+                    default_value = GestureDetector.LONG_HOLD_INTERVAL_S,
                     callback = function(spin)
-                        G_reader_settings:saveSetting("highlight_long_hold_threshold_s", spin.value)
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                        local value = spin.value ~= GestureDetector.LONG_HOLD_INTERVAL_S and spin.value or nil
+                        G_reader_settings:saveSetting("highlight_long_hold_threshold_s", value)
+                        touchmenu_instance:updateItems()
                     end,
                 }
                 UIManager:show(items)
@@ -1595,8 +1598,8 @@ function ReaderHighlight:_resetHoldTimer(clear)
             end
         end
         if handle_long_hold then
-            -- (Default delay is 3 seconds as in the menu items)
-            UIManager:scheduleIn(G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3), self.long_hold_reached_action)
+            UIManager:scheduleIn(G_reader_settings:readSetting("highlight_long_hold_threshold_s")
+                or GestureDetector.LONG_HOLD_INTERVAL_S, self.long_hold_reached_action)
         end
     end
     -- Unset flag and icon
