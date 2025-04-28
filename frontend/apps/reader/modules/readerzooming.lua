@@ -539,7 +539,6 @@ function ReaderZooming:onReZoom(font_size)
     return true
 end
 
--- TODO(ogkevin): how does this effect dual page mode?
 function ReaderZooming:onEnterFlippingMode(zoom_mode)
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -584,7 +583,6 @@ function ReaderZooming:onEnterFlippingMode(zoom_mode)
     end
 end
 
--- TODO(ogkevin): same here, dual page mode?
 function ReaderZooming:onExitFlippingMode(zoom_mode)
     if Device:isTouchDevice() then
         self.ges_events = {}
