@@ -1981,7 +1981,12 @@ function ReaderFooter:loadFromNamedPreset(preset_name)
     local footer_presets = G_reader_settings:readSetting("footer_presets")
     local preset = footer_presets[preset_name]
     if preset and next(preset) then -- only load if preset exists and is not empty
-        self.settings = util.tableDeepCopy(preset)
+        -- Filter out additional settings before copying to self.settings
+        local filtered_preset = util.tableDeepCopy(preset)
+        filtered_preset.reader_footer_mode = nil
+        filtered_preset.reader_footer_custom_text = nil
+        filtered_preset.reader_footer_custom_text_repetitions = nil
+        self.settings = filtered_preset
         -- Also load additional footer-related settings that were saved
         if preset.reader_footer_mode then
             G_reader_settings:saveSetting("reader_footer_mode", preset.reader_footer_mode)
