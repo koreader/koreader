@@ -477,6 +477,7 @@ local dispatcher_menu_order = {
     "toggle_page_flipping",
     "toggle_bookmark_flipping",
     "toggle_reflow",
+    "paging_toggle_dual_page_mode",
     "zoom",
     "zoom_factor_change",
     ----
