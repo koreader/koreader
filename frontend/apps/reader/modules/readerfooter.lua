@@ -1164,7 +1164,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                             return not self.settings.progress_style_thin
                         end,
                         callback = function()
-                            self.settings.progress_style_thin = false
+                            self.settings.progress_style_thin = nil
                             local bar_height = self.settings.progress_style_thick_height
                             self.progress_bar:updateStyle(true, bar_height)
                             self:setTocMarkers()
@@ -1916,10 +1916,8 @@ function ReaderFooter:getNamedPresetMenuItems()
                     choice1_text = _("Delete"),
                     choice1_callback = function()
                         self:deleteNamedPreset(preset_name)
-                        if touchmenu_instance then
-                            touchmenu_instance.item_table = self:getNamedPresetMenuItems()
-                            touchmenu_instance:updateItems()
-                        end
+                        touchmenu_instance.item_table = self:getNamedPresetMenuItems()
+                        touchmenu_instance:updateItems()
                     end,
                     choice2_text = _("Update"),
                     choice2_callback = function()
@@ -1940,7 +1938,6 @@ function ReaderFooter:createPresetFromCurrentSettings(touchmenu_instance)
     local input_dialog
     input_dialog = InputDialog:new{
         title = _("Enter preset name"),
-        input = "",
         buttons = {
             {
                 {
@@ -1958,10 +1955,8 @@ function ReaderFooter:createPresetFromCurrentSettings(touchmenu_instance)
                         if preset_name == "" or preset_name:match("^%s*$") then return end
                         self:saveToNamedPreset(preset_name)
                         UIManager:close(input_dialog)
-                        if touchmenu_instance then
-                            touchmenu_instance.item_table = self:getNamedPresetMenuItems()
-                            touchmenu_instance:updateItems()
-                        end
+                        touchmenu_instance.item_table = self:getNamedPresetMenuItems()
+                        touchmenu_instance:updateItems()
                     end,
                 },
             },
@@ -1972,17 +1967,15 @@ function ReaderFooter:createPresetFromCurrentSettings(touchmenu_instance)
 end
 
 function ReaderFooter:saveToNamedPreset(preset_name)
-    local footer_presets = G_reader_settings:readSetting("footer_presets", {})
-    local current_settings = util.tableDeepCopy(self.settings)
-    footer_presets[preset_name] = current_settings
+    local footer_presets = G_reader_settings:readSetting("footer_presets")
+    footer_presets[preset_name] = util.tableDeepCopy(self.settings)
     G_reader_settings:saveSetting("footer_presets", footer_presets)
 end
 
 function ReaderFooter:loadFromNamedPreset(preset_name)
-    local footer_presets = G_reader_settings:readSetting("footer_presets", {})
+    local footer_presets = G_reader_settings:readSetting("footer_presets")
     local preset = footer_presets[preset_name]
     if preset and next(preset) then -- only load if preset exists and is not empty
-        self.settings = {} -- erase current settings to avoid unexpected merges
         self.settings = util.tableDeepCopy(preset)
          -- Apply loaded settings
         self:updateFooterTextGenerator()
@@ -1992,14 +1985,13 @@ function ReaderFooter:loadFromNamedPreset(preset_name)
 end
 
 function ReaderFooter:deleteNamedPreset(preset_name)
-    local footer_presets = G_reader_settings:readSetting("footer_presets", {})
+    local footer_presets = G_reader_settings:readSetting("footer_presets")
     footer_presets[preset_name] = nil
-    G_reader_settings:saveSetting("footer_presets", footer_presets)
 end
 
--- function ReaderFooter:onFooterPresetLoad(preset_name)
---     self:loadFromNamedPreset(preset_name)
--- end
+function ReaderFooter:onFooterPresetLoad(preset_name)
+    self:loadFromNamedPreset(preset_name)
+end
 
 function ReaderFooter:addAdditionalFooterContent(content_func)
     table.insert(self.additional_footer_content, content_func)
