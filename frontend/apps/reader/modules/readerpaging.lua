@@ -1030,10 +1030,22 @@ function ReaderPaging:onPageUpdate(new_page_no, orig_mode)
     end
 end
 
+-- We need to remember areas to handle page turn event.
+-- 
+-- If recalculate results in a new visible_area, we need to
+-- recalculate the page states if we're in dual page mode.
+-- 
+-- @param visible_area Geom
+-- @param page_area Geom
 function ReaderPaging:onViewRecalculate(visible_area, page_area)
-    -- we need to remember areas to handle page turn event
+    local va_changed = self.visible_area and not self.visible_area:equalSize(visible_area) or true
+
     self.visible_area = visible_area:copy()
     self.page_area = page_area
+
+    if va_changed and self:isDualPageEnabled() then
+        self:updatePagePairStatesForBase(self.current_pair_base)
+    end
 end
 
 function ReaderPaging:onGotoPercent(percent)
