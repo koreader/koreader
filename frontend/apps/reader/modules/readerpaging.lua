@@ -749,8 +749,11 @@ function ReaderPaging:getDualPageBaseFromPage(page)
 end
 
 -- Returns the page pair for dual page mode for the given base
-function ReaderPaging:getDualPagePairFromBasePage(page)
+-- @param ordered boolean if the caller needs the page number in displaying order from LTR
+function ReaderPaging:getDualPagePairFromBasePage(page, ordered)
     local pair_base = self:getDualPageBaseFromPage(page)
+    ordered = ordered and ordered or false
+
     logger.dbg("ReaderPaging.getDualPagePairFromBasePage: got base for pair", pair_base)
 
     if self.dual_page_mode_first_page_is_cover and pair_base == 1 then return { 1 } end
@@ -759,6 +762,16 @@ function ReaderPaging:getDualPagePairFromBasePage(page)
     local pair = { pair_base }
     if pair_base + 1 <= self.number_of_pages then
         table.insert(pair, pair_base + 1)
+    end
+
+    if not ordered then
+        return pair
+    end
+
+    -- Fancy reversing
+    local n = #pair
+    for i = 1, math.floor(n / 2) do
+        pair[i], pair[n - i + 1] = pair[n - i + 1], pair[i]
     end
 
     return pair
