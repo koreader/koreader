@@ -1,3 +1,19 @@
+--[[--
+Allows extending KOReader through plugins.
+
+Plugins will be sourced from DEFAULT_PLUGIN_PATH. If set, extra_plugin_paths
+is also used. Directories are considered plugins if the name matches
+".+%.koplugin".
+
+Running with debug turned on will log stacktraces for event handlers.
+Plugins are controlled by the following settings.
+
+- plugins_disabled
+- extra_plugin_paths
+
+@module PluginLoader
+]]
+local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -140,43 +156,106 @@ function PluginLoader:_discover()
     return discovered
 end
 
+local LoaderSandbox = { mt = {} }
+
+function LoaderSandbox.new()
+    local t = {
+        env = getfenv(1),
+        log_stacktrace = dbg.is_on,
+    }
+    return setmetatable(t, LoaderSandbox)
+end
+
+function LoaderSandbox:load_path(plugin, path)
+    -- use loadfile as it gives us errors while compiling the plugin script
+    local chunk, err = loadfile(path)
+    if not chunk then
+        logger.err("An error occurred while loading a plugin:\n"..err)
+        return chunk, err
+    end
+    local plugin_env = {}
+    plugin_env = setmetatable(plugin_env, { __index = self.env })
+
+    local function plugin_require (modulename)
+        -- Dynamically inject the plugin path in the package table.
+        -- Then we restore it after require is done.
+        --
+        -- This is necessary because require is a C function and setfenv
+        -- does not support C functions.
+        local env_path = self.env.package.path
+        local env_cpath = self.env.package.cpath
+        self.env.package.path  = string.format("%s/?.lua;%s", plugin.path, self.env.package.path)
+        self.env.package.cpath = string.format("%s/lib/?.so;%s", plugin.path, self.env.package.cpath)
+        local ok, re = pcall(self.env.require, modulename)
+        self.env.package.path  = env_path
+        self.env.package.cpath = env_cpath
+        if ok then
+            return re
+        else
+            error(re, 2)
+        end
+    end
+
+    -- NOTE override require in plugin environment. This enables
+    -- using require both as load time and runtime
+    plugin_env.require = plugin_require
+
+    chunk = setfenv(chunk, plugin_env)
+
+    -- execute the chunk and get back a module for the plugin
+    local ok, re
+    if self.log_stacktrace then
+        local traceback = function(plugin_err)
+             -- do not print 2 topmost entries in traceback. The first is this local function
+             -- and the second is the `load_path` method of LoaderSandbox.
+             logger.err("An error occurred while executing a plugin:\n"..plugin_err.."\n"..debug.traceback(plugin.name..":"..path, 2))
+        end
+        ok, re = xpcall(chunk, traceback)
+    else
+        ok, re = pcall(chunk)
+        if not ok then
+            logger.err("An error occurred while executing a plugin:\n"..re)
+        end
+    end
+    return ok, re
+end
+
 function PluginLoader:_load(t)
     -- keep reference to old value so they can be restored later
-    local package_path = package.path
-    local package_cpath = package.cpath
 
-    local mainfile, metafile, plugin_root, disabled
+    local loader = LoaderSandbox.new()
+
     for _, v in ipairs(t) do
-        mainfile = v.main
-        metafile = v.meta
-        plugin_root = v.path
-        disabled = v.disabled
-        package.path = string.format("%s/?.lua;%s", plugin_root, package_path)
-        package.cpath = string.format("%s/lib/?.so;%s", plugin_root, package_cpath)
-        local ok, plugin_module = pcall(dofile, mainfile)
-        if not ok or not plugin_module then
-            logger.warn("Error when loading", mainfile, plugin_module)
-        elseif type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
-            plugin_module.path = plugin_root
-            plugin_module.name = plugin_module.name or plugin_root:match("/(.-)%.koplugin")
-            if disabled then
+        local ok, plugin_module = LoaderSandbox.load_path(loader, v, v.main)
+        -- error happened and the loader logged it, bail
+        if not ok then goto continue end
+        -- plugin's main.lua does has returned no value
+        if not plugin_module then
+            logger.warn("Plugin "..v.name..": "..v.main.." did not return a non-nil value.")
+            goto continue
+        end
+
+        -- no error and plugin's main.lua returned a non-nil value
+        if type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
+            plugin_module.path = v.path
+            plugin_module.name = v.name or v.path:match("/(.-)%.koplugin")
+
+            if v.disabled then
                 table.insert(self.disabled_plugins, plugin_module)
             else
-                local ok_meta, plugin_metamodule = pcall(dofile, metafile)
-                if ok_meta and plugin_metamodule then
-                    for k, module in pairs(plugin_metamodule) do
+                local plugin_meta_ok, plugin_meta_module = LoaderSandbox.load_path(loader, v, v.meta)
+                if plugin_meta_ok and plugin_meta_module then
+                    for k, module in pairs(plugin_meta_module) do
                         plugin_module[k] = module
                     end
                 end
                 sandboxPluginEventHandlers(plugin_module)
                 table.insert(self.enabled_plugins, plugin_module)
-                logger.dbg("Plugin loaded", plugin_module.name)
+                logger.dbg("Plugin loaded", v.name)
             end
         end
+        ::continue::
     end
-    package.path = package_path
-    package.cpath = package_cpath
-
 end
 
 
