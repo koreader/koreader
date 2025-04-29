@@ -1953,6 +1953,15 @@ function ReaderFooter:createPresetFromCurrentSettings(touchmenu_instance)
                     callback = function()
                         local preset_name = input_dialog:getInputText()
                         if preset_name == "" or preset_name:match("^%s*$") then return end
+                        -- Check if preset name already exists
+                        local footer_presets = G_reader_settings:readSetting("footer_presets", {})
+                        if footer_presets[preset_name] then
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("A preset named '%1' already exists. Please choose a different name."), preset_name),
+                                timeout = 2,
+                            })
+                            return
+                        end
                         self:saveToNamedPreset(preset_name)
                         UIManager:close(input_dialog)
                         touchmenu_instance.item_table = self:getNamedPresetMenuItems()
