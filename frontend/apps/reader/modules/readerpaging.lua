@@ -868,7 +868,16 @@ function ReaderPaging:autoEnableDualPageModeIfLandscape()
         not self.dual_page_mode and
         self.settings.auto_enable_dual_page_mode
 
-    logger.dbg("ReaderPaging:autoEnableDualPageModeIfLandscape", should_enable)
+    logger.dbg("ReaderPaging:autoEnableDualPageModeIfLandscape", should_enable, self.view.page_scroll)
+
+    if should_enable and self.view.page_scroll then
+        UIManager:show(InfoMessage:new {
+            text = _([[Dual Page mode not automatically enabled due to Continues View Mode]]),
+            timeout = 4,
+        })
+
+        return
+    end
 
     -- Auto enable Dual Page Mode if we rotate to landscape
     if should_enable then
@@ -954,6 +963,23 @@ function ReaderPaging:onToggleDualPageMode()
     Notification:notify(_("Dual Mode Page enabled"))
     self:onSetPageMode(2)
     self:onRedrawCurrentPage()
+end
+
+
+--When page scroll is enalbed, we need to disable Dual Page mode
+--@param page_scroll bool if page_scroll is on or not
+function ReaderPaging:onSetScrollMode(page_scroll)
+    if not self:supportsDualPage() then
+        return
+    end
+
+    if page_scroll then
+        self:onSetPageMode(1)
+
+        return
+    end
+
+    self:autoEnableDualPageModeIfLandscape()
 end
 
 -- This event, and direct method calls, should be protected via enalbed_func and show_func
@@ -1621,6 +1647,8 @@ function ReaderPaging:onRedrawCurrentPage()
     -- something different?
     if self:isDualPageEnabled() then
         page = self:getDualPageBaseFromPage(self.current_page)
+        -- Make sure page states are up to date
+        self:updatePagePairStatesForBase(page)
     end
 
     self.ui:handleEvent(Event:new("PageUpdate", page))
