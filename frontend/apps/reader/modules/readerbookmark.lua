@@ -17,6 +17,7 @@ local Size = require("ui/size")
 local SpinWidget = require("ui/widget/spinwidget")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
+local ReaderDogear = require("apps/reader/modules/readerdogear")
 local Utf8Proc = require("ffi/utf8proc")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local logger = require("logger")
@@ -410,9 +411,11 @@ function ReaderBookmark:toggleBookmarkForCurrentPage()
                 self:toggleBookmarkForPage(pageno)
             end
         )
-    else
-        self:toggleBookmarkForPage(self:getCurrentPageNumber())
+
+        return
     end
+
+    self:toggleBookmarkForPage(self:getCurrentPageNumber())
 end
 
 function ReaderBookmark:setDogearVisibility(pn_or_xp)
@@ -430,8 +433,8 @@ function ReaderBookmark:isPageBookmarked(pn_or_xp)
 end
 
 function ReaderBookmark:isBookmarkInPageOrder(a, b)
-    local a_page = self:getBookmarkPageNumber(a)
-    local b_page = self:getBookmarkPageNumber(b)
+    local a_page = self:getBookmarkPageNumber(a, true)
+    local b_page = self:getBookmarkPageNumber(b, true)
     if a_page == b_page then -- have page bookmarks before highlights
         return not a.drawer
     end
@@ -504,26 +507,43 @@ end
 -- where ReaderPaging.isDualPageEnabled() might still return false
 function ReaderBookmark:toggleDogearVisibility(pageno, dualPageMode)
     logger.dbg("ReaderBookmark:toggleDogearVisibility ", pageno, dualPageMode)
-    if self.ui.paging then
-        if dualPageMode and self.ui.paging:supportsDualPage() then
-            local visibility = false
 
-            for _, page in ipairs(self.ui.paging:getDualPagePairFromBasePage(pageno)) do
-                logger.dbg("ReaderBookmark:toggleDogearVisibility for dual page", page)
-                if self:isPageBookmarked(page) then visibility = true end
-            end
+    if not self.ui.paging then
+        self:setDogearVisibility(self.ui.document:getXPointer())
 
-            self.view.dogear:onSetDogearVisibility(visibility)
-            return
-        end
+        return
+    end
 
+    if not dualPageMode then
         self:setDogearVisibility(pageno)
 
         return
     end
 
-    self:setDogearVisibility(self.ui.document:getXPointer())
+    local pairs = self.ui.paging:getDualPagePairFromBasePage(pageno, true)
+    local sides
+    local visibility = false
+
+    if self:isPageBookmarked(pairs[1]) then
+        logger.dbg("ReaderBookmark:toggleDogearVisibility left page is bookmarked")
+        visibility = true
+        sides = ReaderDogear.SIDE_LEFT
+    end
+
+    if #pairs == 2 and self:isPageBookmarked(pairs[2]) then
+        logger.dbg("ReaderBookmark:toggleDogearVisibility right page is bookmarked")
+        visibility = true
+        if sides and sides == 1 then
+            sides = ReaderDogear.SIDE_BOTH
+        else
+            sides = ReaderDogear.SIDE_RIGHT
+        end
+    end
+
+    logger.dbg("ReaderBookmark:toggleDogearVisibility visible", visibility, "on sides", sides)
+    self.view.dogear:onSetDogearVisibility(visibility, sides)
 end
+
 function ReaderBookmark:onPageUpdate(pageno)
     local dual_page_mode = self.ui.paging and self.ui.paging:isDualPageEnabled()
 
@@ -660,14 +680,16 @@ function ReaderBookmark:getCurrentPageNumber()
     return self.ui.paging and self.view.state.page or self.ui.document:getXPointer()
 end
 
-function ReaderBookmark:getBookmarkPageNumber(bookmark)
-    logger.dbg("ReaderBookmark:getBookmarkPageNumber ", bookmark)
+-- @param ignore_dual_page_mode boolean should be set to true if the caller is interested
+--                                      in using the return value for page navigation!
+function ReaderBookmark:getBookmarkPageNumber(bookmark, ignore_dual_page_mode)
+    logger.dbg("ReaderBookmark:getBookmarkPageNumber ", bookmark.page)
 
     if not self.ui.paging then
         return self.ui.document:getPageFromXPointer(bookmark.page)
     end
 
-    if self.ui.paging:isDualPageEnabled() then
+    if not ignore_dual_page_mode and self.ui.paging:isDualPageEnabled() then
         return self.ui.paging:getDualPageBaseFromPage(bookmark.page)
     end
 
