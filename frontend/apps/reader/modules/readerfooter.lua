@@ -1915,7 +1915,8 @@ function ReaderFooter:getNamedPresetMenuItems()
                     text = T(_("What would you like to do with preset '%1'?"), preset_name),
                     choice1_text = _("Delete"),
                     choice1_callback = function()
-                        self:deleteNamedPreset(preset_name)
+                        local footer_presets = G_reader_settings:readSetting("footer_presets")
+                        footer_presets[preset_name] = nil
                         touchmenu_instance.item_table = self:getNamedPresetMenuItems()
                         touchmenu_instance:updateItems()
                     end,
@@ -2001,11 +2002,6 @@ function ReaderFooter:loadFromNamedPreset(preset_name)
         self:updateFooterTextGenerator()
         self:refreshFooter(true, true)
     end
-end
-
-function ReaderFooter:deleteNamedPreset(preset_name)
-    local footer_presets = G_reader_settings:readSetting("footer_presets")
-    footer_presets[preset_name] = nil
 end
 
 function ReaderFooter:onFooterPresetLoad(preset_name)
