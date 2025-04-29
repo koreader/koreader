@@ -590,17 +590,20 @@ function ReaderPaging:getBookLocation()
     if ctx then
         -- We need a copy, as we're getting references to
         -- objects ReaderPaging/ReaderView may still modify
-        local current_location = {}
-        for i=1, #ctx do
-            current_location[i] = util.tableDeepCopy(ctx[i])
-        end
+        local current_location = util.tableDeepCopy(ctx)
         return current_location
     end
 end
 
 function ReaderPaging:onRestoreBookLocation(saved_location)
+    if not saved_location or not saved_location[1] then
+        return
+    end
+    -- We need a copy, as we will assign this to ReaderView.state
+    -- which when modified would change our instance on ReaderLink.location_stack
+    local ctx = util.tableDeepCopy(saved_location)
     if self.view.page_scroll then
-        if self.view:restoreViewContext(saved_location) then
+        if self.view:restoreViewContext(ctx) then
             self:_gotoPage(saved_location[1].page, "scrolling")
         else
             -- If context is unusable (not from scroll mode), trigger
@@ -615,7 +618,7 @@ function ReaderPaging:onRestoreBookLocation(saved_location)
         -- PageUpdate event - so we need to do it for a correct redrawing
         local send_PageUpdate = saved_location[1].page == self.current_page
         self:_gotoPage(saved_location[1].page)
-        if not self.view:restoreViewContext(saved_location) then
+        if not self.view:restoreViewContext(ctx) then
             -- If context is unusable (not from page mode), also
             -- send PageUpdate event to go to its page and redraw it
             send_PageUpdate = true

@@ -89,6 +89,7 @@ function SortItemWidget:init()
                         text = self.item.text,
                         max_width = text_max_width,
                         face = self.item.face or self.face,
+                        fgcolor = self.item.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
                     },
                     self.show_parent.underscore_checked_item and item_checked and LineWidget:new{
                         dimen = Geom:new{ w = text_max_width, h = Size.line.thick },
@@ -288,6 +289,7 @@ function SortWidget:init()
     local vertical_footer = VerticalGroup:new{
         bottom_line,
         self.page_info,
+        self.dimen.h < Screen:getHeight() and bottom_line or nil,
     }
     local footer = BottomContainer:new{
         dimen = self.dimen:copy(),

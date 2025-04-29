@@ -1,0 +1,103 @@
+name: Bug report
+description: Create a bug report to help us improve the application
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+
+  - type: dropdown
+    id: device-type
+    attributes:
+      label: Device
+      description: What type of device are you experiencing the problem on?
+      options:
+        - Kindle
+        - Kobo
+        - Cervantes
+        - Pocketbook
+        - ReMarkable
+        - Android
+        - Linux (AppImage)
+        - Linux (Deb / generic)
+        - Linux (Flatpak)
+        - MacOS (Intel)
+        - MacOS (Apple Silicon, M1, M2, …)
+        - Other (please specify in additional information)
+    validations:
+      required: true
+
+  - type: input
+    id: koreader-version
+    attributes:
+      label: KOReader version
+      description: What version of KOReader are you running?
+      placeholder: e.g., 2025.04
+    validations:
+      required: true
+
+  - type: input
+    id: device-model
+    attributes:
+      label: Model and firmware version
+      description: Please specify your device model and firmware version if applicable
+      placeholder: e.g., Kindle Paperwhite 4 (5.16.3), Kobo Clara HD (4.38.23171)
+    validations:
+      required: false
+
+  - type: textarea
+    id: issue-description
+    attributes:
+      label: Issue description
+      description: Please describe the issue in detail
+      placeholder: What happened? What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce this issue?
+      value: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: crash-log
+    attributes:
+      label: Log
+      description: |
+        Logs are written to `crash.log`. It can normally be found in the KOReader directory:
+        * Cervantes: `/mnt/private/koreader`
+        * Kindle: `koreader/`
+        * Kobo: `.adds/koreader/`
+        * Pocketbook: `applications/koreader/`
+        * Android: Go to [Menu] → Help → Bug Report to save logs to a file
+        * AppImage: Run `koreader-20xx.AppImage 2>&1 | tee crash.log` from the terminal
+        * Deb / Linux: Run `koreader-20xx 2>&1 | tee crash.log` from the terminal
+        * Flatpak: Run `flatpak run rocks.koreader.KOReader 2>&1 | tee crash.log` from the terminal
+      placeholder: Paste the log here or drag and drop the file (zipped if necessary)
+      render: shell
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        **Note:** For non-crash issues, please enable verbose logging:
+        Go to Top menu → Hamburger menu → Help → Report a bug and tap 'Enable verbose logging'.
+        Restart as requested, then repeat the steps for your issue.
+
+  - type: textarea
+    id: additional-information
+    attributes:
+      label: Additional information
+      description: Any additional information, configuration, or data that might be necessary to reproduce the issue
+      placeholder: Add any other context about the problem here
+    validations:
+      required: false

@@ -316,6 +316,153 @@ local function isSwipeToJumpToLatestBookmarkEnabled()
     return G_reader_settings:isTrue("swipe_to_jump_to_latest_bookmark")
 end
 
+function ReaderLink:getFootnoteSettingsMenuTable()
+    local menu_items = {
+        {
+            text = _("Show footnotes in popup"),
+            enabled_func = function()
+                return isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled()
+            end,
+            checked_func = isFootnoteLinkInPopupEnabled,
+            callback = function()
+                G_reader_settings:saveSetting("footnote_link_in_popup",
+                    not isFootnoteLinkInPopupEnabled())
+            end,
+            help_text = _([[
+Show internal link target content in a footnote popup when it looks like it might be a footnote, instead of following the link.
+
+Note that depending on the book quality, footnote detection may not always work correctly.
+The footnote content may be empty, truncated, or include other footnotes.
+
+From the footnote popup, you can jump to the footnote location in the book by swiping to the left.]]),
+        },
+    }
+
+    local function subItemTable()
+        local temp_menu_items = {
+            {
+                text = _("Show more links as footnotes"),
+                enabled_func = function()
+                    return isFootnoteLinkInPopupEnabled() and
+                        (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
+                end,
+                checked_func = isPreferFootnoteEnabled,
+                callback = function()
+                    G_reader_settings:saveSetting("link_prefer_footnote",
+                        not isPreferFootnoteEnabled())
+                end,
+                help_text = _([[Loosen footnote detection rules to show more links as footnotes.]]),
+                separator = Device:isTouchDevice() and true or false,
+            },
+            {
+                text = _("Use book font in popups"),
+                enabled_func = function()
+                    return isFootnoteLinkInPopupEnabled() and
+                        (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
+                end,
+                checked_func = function()
+                    return G_reader_settings:isTrue("footnote_popup_use_book_font")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("footnote_popup_use_book_font")
+                end,
+                help_text = _([[Display the footnote popup text with the configured document font (the book text may still render with a different font if the book uses embedded fonts).]]),
+            },
+            {
+                text = _("Footnote popup font size"),
+                enabled_func = function()
+                    return isFootnoteLinkInPopupEnabled() and
+                        (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
+                end,
+                keep_menu_open = true,
+                callback = function()
+                    local spin_widget
+                    local get_font_size_widget
+                    get_font_size_widget = function(show_absolute_font_size_widget)
+                        local SpinWidget = require("ui/widget/spinwidget")
+                        if show_absolute_font_size_widget then
+                            spin_widget = SpinWidget:new{
+                                width = math.floor(Screen:getWidth() * 0.75),
+                                value = G_reader_settings:readSetting("footnote_popup_absolute_font_size")
+                                                or Screen:scaleBySize(self.document.configurable.font_size),
+                                value_min = 12,
+                                value_max = 255,
+                                precision = "%d",
+                                ok_text = _("Set font size"),
+                                title_text =  _("Set footnote popup font size"),
+                                info_text = _([[
+The footnote popup font can adjust to the font size you've set for the document, but you can specify here a fixed absolute font size to be used instead.]]),
+                                callback = function(spin)
+                                    G_reader_settings:delSetting("footnote_popup_relative_font_size")
+                                    G_reader_settings:saveSetting("footnote_popup_absolute_font_size", spin.value)
+                                end,
+                                extra_text = _("Set a relative font size instead"),
+                                extra_callback = function()
+                                    UIManager:close(spin_widget)
+                                    spin_widget = get_font_size_widget(false)
+                                    UIManager:show(spin_widget)
+                                end,
+                            }
+                        else
+                            spin_widget = SpinWidget:new{
+                                width = math.floor(Screen:getWidth() * 0.75),
+                                value = G_reader_settings:readSetting("footnote_popup_relative_font_size") or -2,
+                                value_min = -10,
+                                value_max = 5,
+                                precision = "%+d",
+                                ok_text = _("Set font size"),
+                                title_text =  _("Set footnote popup font size"),
+                                info_text = _([[
+The footnote popup font adjusts to the font size you've set for the document.
+You can specify here how much smaller or larger it should be relative to the document font size.
+A negative value will make it smaller, while a positive one will make it larger.
+The recommended value is -2.]]),
+                                callback = function(spin)
+                                    G_reader_settings:delSetting("footnote_popup_absolute_font_size")
+                                    G_reader_settings:saveSetting("footnote_popup_relative_font_size", spin.value)
+                                end,
+                                extra_text = _("Set an absolute font size instead"),
+                                extra_callback = function()
+                                    UIManager:close(spin_widget)
+                                    spin_widget = get_font_size_widget(true)
+                                    UIManager:show(spin_widget)
+                                end,
+                            }
+                        end
+                        return spin_widget
+                    end
+                    local show_absolute_font_size_widget = G_reader_settings:has("footnote_popup_absolute_font_size")
+                    spin_widget = get_font_size_widget(show_absolute_font_size_widget)
+                    UIManager:show(spin_widget)
+                end,
+                help_text = _([[
+The footnote popup font adjusts to the font size you've set for the document.
+This allows you to specify how much smaller or larger it should be relative to the document font size.]]),
+            },
+        }
+        return temp_menu_items
+    end
+
+    if not Device:isTouchDevice() then
+        -- on NT devices, add all settings directly to the parent menu_items, to avoid unnecessary sub_menus
+        local items = subItemTable()
+        for _, item in ipairs(items) do
+            table.insert(menu_items, item)
+        end
+    else
+        table.insert(menu_items, {
+            text = _("Footnote popup settings"),
+            enabled_func = function()
+                return isFootnoteLinkInPopupEnabled() and
+                    (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
+            end,
+            separator = true,
+            sub_item_table = subItemTable(),
+        })
+    end
+    return menu_items
+end
+
 function ReaderLink:addToMainMenu(menu_items)
     -- insert table to main reader menu
     menu_items.go_to_previous_location = {
@@ -349,7 +496,15 @@ function ReaderLink:addToMainMenu(menu_items)
         end,
     }
     if not Device:isTouchDevice() then
-        -- Menu items below aren't needed.
+        if self.ui.rolling then
+            -- Add footnote settings to the selection_text menu (readerhighlight)
+            local footnote_items = self:getFootnoteSettingsMenuTable()
+            menu_items.typesetfootnotes = {
+                text = _("Footnotes and links"),
+                sorting_hint = "selection_text",
+                sub_item_table = footnote_items,
+            }
+        end
         return
     end
     menu_items.follow_links = {
@@ -439,121 +594,12 @@ If any of the other Swipe to follow link options is enabled, this will work only
             end,
             help_text = _([[Extends the tap area around internal links. Useful with a small font where tapping on small footnote links may be tedious.]]),
         })
-        table.insert(menu_items.follow_links.sub_item_table, 4, {
-            text = _("Show footnotes in popup"),
-            enabled_func = function()
-                return isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled()
-            end,
-            checked_func = isFootnoteLinkInPopupEnabled,
-            callback = function()
-                G_reader_settings:saveSetting("footnote_link_in_popup",
-                    not isFootnoteLinkInPopupEnabled())
-            end,
-            help_text = _([[
-Show internal link target content in a footnote popup when it looks like it might be a footnote, instead of following the link.
 
-Note that depending on the book quality, footnote detection may not always work correctly.
-The footnote content may be empty, truncated, or include other footnotes.
-
-From the footnote popup, you can jump to the footnote location in the book by swiping to the left.]]),
-        })
-        local footnote_popup_settings_items = {}
-        table.insert(menu_items.follow_links.sub_item_table, 5, {
-            text = _("Footnote popup settings"),
-            enabled_func = function()
-                return isFootnoteLinkInPopupEnabled() and
-                    (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
-            end,
-            sub_item_table = footnote_popup_settings_items,
-            separator = true,
-        })
-        table.insert(footnote_popup_settings_items, {
-            text = _("Show more links as footnotes"),
-            checked_func = isPreferFootnoteEnabled,
-            callback = function()
-                G_reader_settings:saveSetting("link_prefer_footnote",
-                    not isPreferFootnoteEnabled())
-            end,
-            help_text = _([[Loosen footnote detection rules to show more links as footnotes.]]),
-            separator = true,
-        })
-        table.insert(footnote_popup_settings_items, {
-            text = _("Use book font as popup font"),
-            checked_func = function()
-                return G_reader_settings:isTrue("footnote_popup_use_book_font")
-            end,
-            callback = function()
-                G_reader_settings:flipNilOrFalse("footnote_popup_use_book_font")
-            end,
-            help_text = _([[Display the footnote popup text with the font set as the document font (the book text may still render with a different font if the book uses embedded fonts).]]),
-        })
-        table.insert(footnote_popup_settings_items, {
-            text = _("Set footnote popup font size"),
-            keep_menu_open = true,
-            callback = function()
-                local spin_widget
-                local get_font_size_widget
-                get_font_size_widget = function(show_absolute_font_size_widget)
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    if show_absolute_font_size_widget then
-                        spin_widget = SpinWidget:new{
-                            width = math.floor(Screen:getWidth() * 0.75),
-                            value = G_reader_settings:readSetting("footnote_popup_absolute_font_size")
-                                            or Screen:scaleBySize(self.document.configurable.font_size),
-                            value_min = 12,
-                            value_max = 255,
-                            precision = "%d",
-                            ok_text = _("Set font size"),
-                            title_text =  _("Set footnote popup font size"),
-                            info_text = _([[
-The footnote popup font can adjust to the font size you've set for the document, but you can specify here a fixed absolute font size to be used instead.]]),
-                            callback = function(spin)
-                                G_reader_settings:delSetting("footnote_popup_relative_font_size")
-                                G_reader_settings:saveSetting("footnote_popup_absolute_font_size", spin.value)
-                            end,
-                            extra_text = _("Set a relative font size instead"),
-                            extra_callback = function()
-                                UIManager:close(spin_widget)
-                                spin_widget = get_font_size_widget(false)
-                                UIManager:show(spin_widget)
-                            end,
-                        }
-                    else
-                        spin_widget = SpinWidget:new{
-                            width = math.floor(Screen:getWidth() * 0.75),
-                            value = G_reader_settings:readSetting("footnote_popup_relative_font_size") or -2,
-                            value_min = -10,
-                            value_max = 5,
-                            precision = "%+d",
-                            ok_text = _("Set font size"),
-                            title_text =  _("Set footnote popup font size"),
-                            info_text = _([[
-The footnote popup font adjusts to the font size you've set for the document.
-You can specify here how much smaller or larger it should be relative to the document font size.
-A negative value will make it smaller, while a positive one will make it larger.
-The recommended value is -2.]]),
-                            callback = function(spin)
-                                G_reader_settings:delSetting("footnote_popup_absolute_font_size")
-                                G_reader_settings:saveSetting("footnote_popup_relative_font_size", spin.value)
-                            end,
-                            extra_text = _("Set an absolute font size instead"),
-                            extra_callback = function()
-                                UIManager:close(spin_widget)
-                                spin_widget = get_font_size_widget(true)
-                                UIManager:show(spin_widget)
-                            end,
-                        }
-                    end
-                    return spin_widget
-                end
-                local show_absolute_font_size_widget = G_reader_settings:has("footnote_popup_absolute_font_size")
-                spin_widget = get_font_size_widget(show_absolute_font_size_widget)
-                UIManager:show(spin_widget)
-            end,
-            help_text = _([[
-The footnote popup font adjusts to the font size you've set for the document.
-This allows you to specify how much smaller or larger it should be relative to the document font size.]]),
-        })
+        -- Insert footnote settings as 4th and 5th items in the submenu
+        local footnote_items = self:getFootnoteSettingsMenuTable()
+        for i = 1, #footnote_items do
+            table.insert(menu_items.follow_links.sub_item_table, i+3, footnote_items[i])
+        end
     end
 end
 

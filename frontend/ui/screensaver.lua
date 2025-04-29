@@ -1,8 +1,8 @@
 local Blitbuffer = require("ffi/blitbuffer")
+local BookList = require("ui/widget/booklist")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Device = require("device")
-local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local Font = require("ui/font")
@@ -137,7 +137,7 @@ function Screensaver:_calcAverageTimeForPages(pages)
     return sec
 end
 
-function Screensaver:expandSpecial(message, fallback)
+function Screensaver:expandSpecial(message)
     -- Expand special character sequences in given message.
     -- %T document title
     -- %A document authors
@@ -150,12 +150,8 @@ function Screensaver:expandSpecial(message, fallback)
     -- %b battery level
     -- %B battery symbol
 
-    if G_reader_settings:hasNot("lastfile") then
-        return fallback
-    end
-
-    local ret = message
     local lastfile = G_reader_settings:readSetting("lastfile")
+    if lastfile == nil then return end
 
     local totalpages = 0
     local percent = 0
@@ -194,9 +190,9 @@ function Screensaver:expandSpecial(message, fallback)
             percent = Math.round(Math.clamp(((currentpage * 100) / totalpages), 1, 99))
         end
         props = ui.doc_props
-    elseif DocSettings:hasSidecarFile(lastfile) then
+    elseif BookList.hasBookBeenOpened(lastfile) then
         -- If there's no ReaderUI instance, but the file has sidecar data, use that
-        local doc_settings = DocSettings:open(lastfile)
+        local doc_settings = BookList.getDocSettings(lastfile)
         totalpages = doc_settings:readSetting("doc_pages") or totalpages
         percent = doc_settings:readSetting("percent_finished") or percent
         currentpage = Math.round(percent * totalpages)
@@ -245,9 +241,7 @@ function Screensaver:expandSpecial(message, fallback)
         ["%b"] = batt_lvl,
         ["%B"] = batt_symbol,
     }
-    ret = ret:gsub("(%%%a)", replace)
-
-    return ret
+    return message:gsub("(%%%a)", replace)
 end
 
 local function addOverlayMessage(widget, widget_height, text)
@@ -339,9 +333,8 @@ function Screensaver:isExcluded()
         end
 
         local lastfile = G_reader_settings:readSetting("lastfile")
-        if DocSettings:hasSidecarFile(lastfile) then
-            local doc_settings = DocSettings:open(lastfile)
-            return doc_settings:isTrue("exclude_screensaver")
+        if BookList.hasBookBeenOpened(lastfile) then
+            return BookList.getDocSettings(lastfile):isTrue("exclude_screensaver")
         else
             -- No DocSetting, not excluded
             return false
@@ -353,22 +346,22 @@ function Screensaver:setMessage()
     local InputDialog = require("ui/widget/inputdialog")
     local screensaver_message = G_reader_settings:readSetting("screensaver_message")
                              or self.default_screensaver_message
+    local info_text = _([[
+%T title
+%A author(s)
+%S series
+%c current page number
+%t total page number
+%p percentage read
+%h time left in chapter
+%H time left in document
+%b battery level
+%B battery symbol]])
     local input_dialog
     input_dialog = InputDialog:new{
         title = _("Sleep screen message"),
-        description = _([[
-Enter a custom message to be displayed on the sleep screen. The following escape sequences are available:
-  %T title
-  %A author(s)
-  %S series
-  %c current page number
-  %t total page number
-  %p percentage read
-  %h time left in chapter
-  %H time left in document
-  %b battery level
-  %B battery symbol]]),
         input = screensaver_message,
+        allow_newline = true,
         buttons = {
             {
                 {
@@ -379,8 +372,16 @@ Enter a custom message to be displayed on the sleep screen. The following escape
                     end,
                 },
                 {
+                    text = _("Info"),
+                    callback = function()
+                        UIManager:show(InfoMessage:new{
+                            text = info_text,
+                            monospace_font = true,
+                        })
+                    end,
+                },
+                {
                     text = _("Set message"),
-                    is_enter_default = true,
                     callback = function()
                         G_reader_settings:saveSetting("screensaver_message", input_dialog:getInputText())
                         UIManager:close(input_dialog)
@@ -474,12 +475,12 @@ function Screensaver:setup(event, event_message)
     end
     if self.screensaver_type == "cover" then
         local excluded
-        if lastfile and DocSettings:hasSidecarFile(lastfile) then
+        if lastfile and BookList.hasBookBeenOpened(lastfile) then
             local doc_settings
             if ui and ui.doc_settings then
                 doc_settings = ui.doc_settings
             else
-                doc_settings = DocSettings:open(lastfile)
+                doc_settings = BookList.getDocSettings(lastfile)
             end
             excluded = doc_settings:isTrue("exclude_screensaver")
 
@@ -673,7 +674,7 @@ function Screensaver:show()
 
         -- NOTE: Only attempt to expand if there are special characters in the message.
         if screensaver_message:find("%%") then
-            screensaver_message = self:expandSpecial(screensaver_message, self.event_message or self.default_screensaver_message)
+            screensaver_message = self:expandSpecial(screensaver_message) or self.event_message or self.default_screensaver_message
         end
 
         local message_pos

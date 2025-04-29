@@ -432,7 +432,10 @@ function FocusManager:getFocusItem()
     if not self.layout then
         return nil
     end
-    return self.layout[self.selected.y][self.selected.x]
+    if self.layout[self.selected.y] then
+        return self.layout[self.selected.y][self.selected.x]
+    end
+    return nil
 end
 
 function FocusManager:_sendGestureEventToFocusedWidget(gesture)
@@ -542,5 +545,19 @@ function FocusManager:onKeyPress(key)
     return InputContainer.onKeyPress(self, key)
 end
 FocusManager.onKeyRepeat = FocusManager.onKeyPress
+
+function FocusManager:getFocusableWidgetXY(widget)
+    if not self.layout then
+        return
+    end
+    for y, row in ipairs(self.layout) do
+        for x, w in ipairs(row) do
+            if w == widget then
+                return x, y
+            end
+        end
+    end
+end
+
 
 return FocusManager
