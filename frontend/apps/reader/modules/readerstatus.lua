@@ -175,7 +175,8 @@ function ReaderStatus:onOpenNextOrPreviousFileInFolder(prev)
     local collate = G_reader_settings:readSetting("collate")
     if collate == "access" or collate == "date" then return true end
     local FileChooser = require("ui/widget/filechooser")
-    local file = FileChooser:getNextOrPreviousFileInFolder(self.document.file, prev)
+    local fc = FileChooser:new{ ui = self.ui }
+    local file = fc:getNextOrPreviousFileInFolder(self.document.file, prev)
     if file then
         -- Delay until the next tick, as this will destroy the Document instance,
         -- but we may not be the final Event caught by said Document...

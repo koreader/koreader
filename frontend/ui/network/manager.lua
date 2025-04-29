@@ -900,6 +900,14 @@ function NetworkMgr:getProxyMenuTable()
             title = _("Enter proxy address"),
             hint = proxy(),
             callback = function(input)
+                local url = require("socket.url")
+                local parsed = url.parse(input)
+                if not parsed or not parsed.scheme or not parsed.host or not parsed.port then
+                    UIManager:show(InfoMessage:new{
+                        text = _("Invalid proxy address"),
+                    })
+                    return false
+                end
                 self:setHTTPProxy(input)
             end,
         },

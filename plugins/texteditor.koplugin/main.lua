@@ -580,6 +580,7 @@ function TextEditor:editFile(file_path, readonly, caller_callback)
             end
             if self.caller_callback then
                 self.caller_callback(file_path)
+                self.caller_callback = nil
             end
             self:execWhenDoneFunc()
         end,
