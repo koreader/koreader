@@ -1907,6 +1907,20 @@ function ReaderFooter:getNamedPresetMenuItems()
         table.insert(items, {
             text = preset_name,
             keep_menu_open = true,
+            checked_func = function()
+                local preset = footer_presets[preset_name]
+                -- Return false if any setting doesn't match
+                if G_reader_settings:readSetting("reader_footer_mode") ~= preset.reader_footer_mode or
+                   G_reader_settings:readSetting("reader_footer_custom_text") ~= preset.reader_footer_custom_text or
+                   G_reader_settings:readSetting("reader_footer_custom_text_repetitions") ~= preset.reader_footer_custom_text_repetitions then
+                    return false
+                end
+                -- this only checks if values in self.settings match 'preset', but not vice versa. 'preset' has additional keys not present in self.settings
+                for k, v in pairs(self.settings) do
+                    if preset[k] ~= v then return false end
+                end
+                return true
+            end,
             callback = function()
                 self:loadFromNamedPreset(preset_name)
             end,
@@ -1996,6 +2010,7 @@ function ReaderFooter:loadFromNamedPreset(preset_name)
         filtered_preset.reader_footer_custom_text = nil
         filtered_preset.reader_footer_custom_text_repetitions = nil
         self.settings = filtered_preset
+        G_reader_settings:saveSetting("footer", self.settings)
         -- Also load additional footer-related settings that were saved
         if preset.reader_footer_mode then
             G_reader_settings:saveSetting("reader_footer_mode", preset.reader_footer_mode)
@@ -2012,7 +2027,6 @@ function ReaderFooter:loadFromNamedPreset(preset_name)
         -- Apply loaded settings
         self:updateFooterTextGenerator()
         self:refreshFooter(true, true)
-        G_reader_settings:saveSetting("footer", self.settings)
     end
 end
 
