@@ -416,22 +416,38 @@ footerTextGeneratorMap = {
     end,
     dynamic_filler = function(footer)
         local max_width = footer[1]:getSize().w - 2 * footer.horizontal_margin
+        -- when the filler is between other items, it replaces the separator
+        local text, is_filler_inside = footer:genAllFooterText(footerTextGeneratorMap.dynamic_filler)
         local tmp = TextWidget:new{
-            text = footer:genAllFooterText(footerTextGeneratorMap.dynamic_filler),
+            text = text,
             face = footer.footer_text_face,
             bold = footer.settings.text_font_bold,
         }
         local text_width = tmp:getSize().w
         tmp:free()
-        if max_width < text_width then return end
-        tmp = TextWidget:new{
-            text = " ",
-            face = footer.footer_text_face,
-            bold = footer.settings.text_font_bold,
-        }
-        local space_width = tmp:getSize().w
-        tmp:free()
-        return (" "):rep(math.floor((max_width - text_width) / space_width)), true
+        if footer.separator_width == nil then
+            tmp = TextWidget:new{
+                text = footer:genSeparator(),
+                face = footer.footer_text_face,
+                bold = footer.settings.text_font_bold,
+            }
+            footer.separator_width = tmp:getSize().w
+            tmp:free()
+        end
+        local separator_width = is_filler_inside and footer.separator_width or 0
+        if footer.whitespace_width == nil then
+            tmp = TextWidget:new{
+                text = " ",
+                face = footer.footer_text_face,
+                bold = footer.settings.text_font_bold,
+            }
+            footer.whitespace_width = tmp:getSize().w
+            tmp:free()
+        end
+        local filler_nb = math.floor((max_width - text_width + separator_width) / footer.whitespace_width)
+        if filler_nb > 0 then
+            return (" "):rep(filler_nb), true
+        end
     end,
 }
 
@@ -1523,6 +1539,8 @@ With this feature enabled, the current page is factored in, resulting in the cou
                                         bold = self.settings.text_font_bold,
                                     }
                                     self.text_container[1] = self.footer_text
+                                    self.separator_width = nil
+                                    self.whitespace_width = nil
                                     self:refreshFooter(true, true)
                                     if touchmenu_instance then touchmenu_instance:updateItems() end
                                 end,
@@ -1545,6 +1563,8 @@ With this feature enabled, the current page is factored in, resulting in the cou
                                 bold = self.settings.text_font_bold,
                             }
                             self.text_container[1] = self.footer_text
+                            self.separator_width = nil
+                            self.whitespace_width = nil
                             self:refreshFooter(true, true)
                         end,
                     },
@@ -1846,6 +1866,7 @@ function ReaderFooter:genItemSeparatorMenuItems(value)
         end,
         callback = function()
             self.settings.items_separator = value
+            self.separator_width = nil
             self:refreshFooter(true)
         end,
     }
@@ -1950,12 +1971,18 @@ function ReaderFooter:genAllFooterText(gen_to_skip)
     -- We need to BD.wrap() all items and separators, so we're
     -- sure they are laid out in our order (reversed in RTL),
     -- without ordering by the RTL Bidi algorithm.
-    local prev_had_merge
+    local count = 0 -- total number of visible items
+    local skipped_idx, prev_had_merge
     for _, gen in ipairs(self.footerTextGenerators) do
-        if gen == gen_to_skip then goto continue end
+        if gen == gen_to_skip then
+            count = count + 1
+            skipped_idx = count
+            goto continue
+        end
         -- Skip empty generators, so they don't generate bogus separators
         local text, merge = gen(self)
         if text and text ~= "" then
+            count = count + 1
             if self.settings.item_prefix == "compact_items" then
                 -- remove whitespace from footer items if symbol_type is compact_items
                 -- use a hair-space to avoid issues with RTL display
@@ -1976,7 +2003,7 @@ function ReaderFooter:genAllFooterText(gen_to_skip)
         end
         ::continue::
     end
-    return table.concat(info, BD.wrap(self:genSeparator()))
+    return table.concat(info, BD.wrap(self:genSeparator())), skipped_idx ~= 1 and skipped_idx ~= count
 end
 
 function ReaderFooter:setTocMarkers(reset)
