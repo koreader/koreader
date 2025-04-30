@@ -385,25 +385,29 @@ function ReaderView:draw2Pages(bb, x, y)
     local visible_area = self.visible_area
 
     local total_width = 0
+    local max_height = 0
 
-    logger.dbg("ReaderView:draw2images: visible area", visible_area.h, visible_area.w, visible_area.x, visible_area.y)
     if #self.page_states < 1 then
         self.ui.paging:updatePagePairStatesForBase(self.state.page)
     end
 
     local states = self.page_states
 
-    logger.dbg("ReaderView:draw2images: page pairs for state", self.state.page, states)
-
     for _, state in ipairs(states) do
         total_width = total_width + state.dimen.w
+        -- both pages are sacled to same h
+        max_height = state.dimen.h
     end
 
     local x_offset = x
     if self.dimen.w > total_width then
         x_offset = x_offset + (self.dimen.w - total_width) / 2
     end
+
     local y_offset = y
+    if self.dimen.h > max_height then
+        y_offset = y_offset + (self.dimen.h - max_height) / 2
+    end
 
     local start_i, end_i, step
     -- //TODO(ogkevin): add a method that returns the order instead of accessing this field
@@ -418,7 +422,6 @@ function ReaderView:draw2Pages(bb, x, y)
         local zoom = states[i].zoom
         local area = visible_area:copy()
 
-        logger.dbg("readerview.draw2pages: drawing page", page, zoom)
         self.document:drawPage(bb, x_offset, y_offset, area, page, zoom, self.state.rotation, self.state.gamma)
 
         x_offset = x_offset + states[i].dimen.w

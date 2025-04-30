@@ -492,8 +492,8 @@ function ReaderZooming:onDualPageModeEnabled(enabled, _)
 
     if enabled then
         logger.dbg("ReaderZooming:onDualPageModeEnabled: disabling zooming")
-        self:onSetZoomMode("pageheight")
-        self:_updateConfigurable("pageheight")
+        self:onSetZoomMode("page")
+        self:_updateConfigurable("page")
         self.disabled = true
 
         return

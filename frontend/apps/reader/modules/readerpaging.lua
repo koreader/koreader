@@ -1780,8 +1780,11 @@ end
 function ReaderPaging:calculateZoomFactorForPagePair(pair)
     local visible_area = self.visible_area
     local max_height = visible_area.h
+    local max_width = self.ui.view.dimen.w
     local zooms = {}
 
+    local total_width = 0
+    local height_zooms = {}
     for i, page in ipairs(pair) do
         local dimen = self.ui.document:getNativePageDimensions(page)
         local zoom = 1
@@ -1790,7 +1793,20 @@ function ReaderPaging:calculateZoomFactorForPagePair(pair)
             zoom = max_height / dimen.h
         end
 
-        zooms[i] = zoom
+        height_zooms[i] = zoom
+        total_width = total_width + dimen.w * zoom
+    end
+    -- If the total width exceeds the visible width, scale down both pages
+    if total_width > max_width then
+        -- Find the scaling factor to fit both pages
+        local scale_factor = max_width / total_width
+        for i, zoom in ipairs(height_zooms) do
+            zooms[i] = zoom * scale_factor
+        end
+    else
+        for i, zoom in ipairs(height_zooms) do
+            zooms[i] = zoom
+        end
     end
 
     return zooms
