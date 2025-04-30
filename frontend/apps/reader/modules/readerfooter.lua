@@ -1909,15 +1909,15 @@ function ReaderFooter:getNamedPresetMenuItems()
             keep_menu_open = true,
             checked_func = function()
                 local preset = footer_presets[preset_name]
-                -- Return false if any setting doesn't match
+                -- Check if the current settings match the preset, we start with the loose ones (easiest to check).
                 if G_reader_settings:readSetting("reader_footer_mode") ~= preset.reader_footer_mode or
                    G_reader_settings:readSetting("reader_footer_custom_text") ~= preset.reader_footer_custom_text or
                    G_reader_settings:readSetting("reader_footer_custom_text_repetitions") ~= preset.reader_footer_custom_text_repetitions then
                     return false
                 end
-                -- this only checks if values in self.settings match 'preset', but not vice versa. 'preset' has additional keys not present in self.settings
+                -- This only checks if values in self.settings match 'preset', but not vice versa. That should be enough.
                 for k, v in pairs(self.settings) do
-                    if preset[k] ~= v then return false end
+                    if preset.footer[k] ~= v then return false end
                 end
                 return true
             end,
@@ -1936,6 +1936,7 @@ function ReaderFooter:getNamedPresetMenuItems()
                     choice2_text = _("Update"),
                     choice2_callback = function()
                         self:saveToNamedPreset(preset_name)
+                        touchmenu_instance:updateItems()
                         UIManager:show(InfoMessage:new{
                             text = T(_("Preset '%1' was updated with current settings"), preset_name),
                             timeout = 2,
@@ -1991,43 +1992,27 @@ end
 
 function ReaderFooter:saveToNamedPreset(preset_name)
     local footer_presets = G_reader_settings:readSetting("footer_presets")
-    -- Save the main footer settings
-    footer_presets[preset_name] = util.tableDeepCopy(self.settings)
-    -- Save additional footer-related settings
-    footer_presets[preset_name].reader_footer_mode = G_reader_settings:readSetting("reader_footer_mode")
-    footer_presets[preset_name].reader_footer_custom_text = G_reader_settings:readSetting("reader_footer_custom_text")
-    footer_presets[preset_name].reader_footer_custom_text_repetitions = G_reader_settings:readSetting("reader_footer_custom_text_repetitions")
-    G_reader_settings:saveSetting("footer_presets", footer_presets)
+    -- Save all footer settings to the preset
+    footer_presets[preset_name] = {
+        footer = util.tableDeepCopy(self.settings),
+        reader_footer_mode = G_reader_settings:readSetting("reader_footer_mode"),
+        reader_footer_custom_text = G_reader_settings:readSetting("reader_footer_custom_text"),
+        reader_footer_custom_text_repetitions = G_reader_settings:readSetting("reader_footer_custom_text_repetitions"),
+    }
 end
 
 function ReaderFooter:loadFromNamedPreset(preset_name)
-    local footer_presets = G_reader_settings:readSetting("footer_presets")
-    local preset = footer_presets[preset_name]
-    if preset and next(preset) then -- only load if preset exists and is not empty
-        -- Filter out additional settings before copying to self.settings
-        local filtered_preset = util.tableDeepCopy(preset)
-        filtered_preset.reader_footer_mode = nil
-        filtered_preset.reader_footer_custom_text = nil
-        filtered_preset.reader_footer_custom_text_repetitions = nil
-        self.settings = filtered_preset
-        G_reader_settings:saveSetting("footer", self.settings)
-        -- Also load additional footer-related settings that were saved
-        if preset.reader_footer_mode then
-            G_reader_settings:saveSetting("reader_footer_mode", preset.reader_footer_mode)
-            self.mode = preset.reader_footer_mode
-        end
-        if preset.reader_footer_custom_text then
-            G_reader_settings:saveSetting("reader_footer_custom_text", preset.reader_footer_custom_text)
-            self.custom_text = preset.reader_footer_custom_text
-        end
-        if preset.reader_footer_custom_text_repetitions then
-            G_reader_settings:saveSetting("reader_footer_custom_text_repetitions", preset.reader_footer_custom_text_repetitions)
-            self.custom_text_repetitions = preset.reader_footer_custom_text_repetitions
-        end
-        -- Apply loaded settings
-        self:updateFooterTextGenerator()
-        self:refreshFooter(true, true)
-    end
+    local preset = G_reader_settings:readSetting("footer_presets")[preset_name]
+    G_reader_settings:saveSetting("footer", util.tableDeepCopy(preset.footer))
+    G_reader_settings:saveSetting("reader_footer_mode", preset.reader_footer_mode)
+    G_reader_settings:saveSetting("reader_footer_custom_text", preset.reader_footer_custom_text)
+    G_reader_settings:saveSetting("reader_footer_custom_text_repetitions", preset.reader_footer_custom_text_repetitions)
+    self.settings = G_reader_settings:readSetting("footer")
+    self.mode = preset.reader_footer_mode
+    self.custom_text = preset.reader_footer_custom_text
+    self.custom_text_repetitions = tonumber(preset.reader_footer_custom_text_repetitions)
+    self:updateFooterTextGenerator()
+    self:refreshFooter(true, true)
 end
 
 function ReaderFooter:onFooterPresetLoad(preset_name)
