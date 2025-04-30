@@ -406,7 +406,8 @@ function ReaderView:draw2Pages(bb, x, y)
     local y_offset = y
 
     local start_i, end_i, step
-    if self.ui.paging.dual_page_mode_rtl then
+    -- //TODO(ogkevin): add a method that returns the order instead of accessing this field
+    if self.ui.paging.document_settings.dual_page_mode_rtl then
         start_i, end_i, step = #states, 1, -1
     else
         start_i, end_i, step = 1, #states, 1
