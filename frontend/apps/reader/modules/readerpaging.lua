@@ -1022,6 +1022,7 @@ function ReaderPaging:onSetPageMode(mode)
         end
 
         self.dual_page_mode = true
+        self:updatePagePairStatesForBase(self.current_pair_base)
         self.ui:handleEvent(Event:new("DualPageModeEnabled", true, self.current_pair_base))
     end
 end
