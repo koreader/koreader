@@ -357,10 +357,11 @@ function ReaderBookmark:onToggleBookmark()
     return true
 end
 
+-- @param pageno number|string when pageno is a string, it means we've already calculated the x pointer
 function ReaderBookmark:toggleBookmarkForPage(pageno)
     logger.dbg("ReaderBookmark:toggleBookmark: pageno ", pageno)
 
-    if self.ui.rolling then
+    if self.ui.rolling and type(pageno) ~= "string" then
         pageno = self.ui.document:getPageXPointer(pageno)
     else
         pageno = pageno
@@ -392,7 +393,7 @@ function ReaderBookmark:toggleBookmarkForPage(pageno)
     end
 
     self.ui:handleEvent(Event:new("AnnotationsModified", { item, index_modified = index }))
-    self:toggleDogearVisibility(pageno, self.ui.paging:isDualPageEnabled())
+    self:toggleDogearVisibility(pageno, self.ui.paging and self.ui.paging:isDualPageEnabled() or false)
 
     -- Refresh the dogear first, because it might inherit ReaderUI refresh hints.
     UIManager:setDirty(self.view.dialog, function()
