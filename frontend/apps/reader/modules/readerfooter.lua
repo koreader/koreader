@@ -435,18 +435,19 @@ footerTextGeneratorMap = {
             tmp:free()
         end
         local separator_width = is_filler_inside and footer.separator_width or 0
-        if footer.whitespace_width == nil then
+        local filler_space = "\u{200A}" -- HAIR SPACE
+        if footer.filler_space_width == nil then
             tmp = TextWidget:new{
-                text = " ",
+                text = filler_space,
                 face = footer.footer_text_face,
                 bold = footer.settings.text_font_bold,
             }
-            footer.whitespace_width = tmp:getSize().w
+            footer.filler_space_width = tmp:getSize().w
             tmp:free()
         end
-        local filler_nb = math.floor((max_width - text_width + separator_width) / footer.whitespace_width)
+        local filler_nb = math.floor((max_width - text_width + separator_width) / footer.filler_space_width)
         if filler_nb > 0 then
-            return (" "):rep(filler_nb), true
+            return filler_space:rep(filler_nb), true
         end
     end,
 }
@@ -1540,7 +1541,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                                     }
                                     self.text_container[1] = self.footer_text
                                     self.separator_width = nil
-                                    self.whitespace_width = nil
+                                    self.filler_space_width = nil
                                     self:refreshFooter(true, true)
                                     if touchmenu_instance then touchmenu_instance:updateItems() end
                                 end,
@@ -1564,7 +1565,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                             }
                             self.text_container[1] = self.footer_text
                             self.separator_width = nil
-                            self.whitespace_width = nil
+                            self.filler_space_width = nil
                             self:refreshFooter(true, true)
                         end,
                     },
