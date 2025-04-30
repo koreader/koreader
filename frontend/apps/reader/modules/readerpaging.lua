@@ -858,10 +858,7 @@ function ReaderPaging:supportsDualPage()
 
     logger.dbg("ReaderPaging:supportsDualPage", ext, screen_mode)
 
-    return screen_mode == "landscape" and (ext == "cbz"
-    -- FIXME(ogkevin): enable once pdf is ok
-    -- or ext == "pdf"
-    )
+    return screen_mode == "landscape"
 end
 
 -- This function can be use to create a pop up and ask to user
