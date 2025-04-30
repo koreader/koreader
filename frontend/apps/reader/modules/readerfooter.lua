@@ -49,6 +49,7 @@ local MODE = {
     custom_text = 17,
     book_author = 18,
     page_turning_inverted = 19, -- includes both page-turn-button and swipe-and-tap inversion
+    dynamic_filler = 20,
 }
 
 local symbol_prefix = {
@@ -133,7 +134,8 @@ if BD.mirroredUILayout() then
 end
 
 -- functions that generates footer text for each mode
-local footerTextGeneratorMap = {
+local footerTextGeneratorMap
+footerTextGeneratorMap = {
     empty = function() return "" end,
     frontlight = function(footer)
         local symbol_type = footer.settings.item_prefix
@@ -411,6 +413,24 @@ local footerTextGeneratorMap = {
         -- in other words, don't add a separator then.
         local merge = footer.custom_text:gsub(" ", ""):len() == 0
         return footer.custom_text:rep(footer.custom_text_repetitions), merge
+    end,
+    dynamic_filler = function(footer)
+        local max_width = footer[1]:getSize().w - 2 * footer.horizontal_margin
+        local tmp = TextWidget:new{
+            text = footer:genAllFooterText(footerTextGeneratorMap.dynamic_filler),
+            face = footer.footer_text_face,
+            bold = footer.settings.text_font_bold,
+        }
+        local text_width = tmp:getSize().w
+        tmp:free()
+        tmp = TextWidget:new{
+            text = " ",
+            face = footer.footer_text_face,
+            bold = footer.settings.text_font_bold,
+        }
+        local space_width = tmp:getSize().w
+        tmp:free()
+        return (" "):rep(math.floor((max_width - text_width) / space_width)), true
     end,
 }
 
@@ -980,6 +1000,7 @@ function ReaderFooter:textOptionTitles(option)
         custom_text = T(_("Custom text (long-press to edit): \'%1\'%2"), self.custom_text,
             self.custom_text_repetitions > 1 and
             string.format(" × %d", self.custom_text_repetitions) or ""),
+        dynamic_filler = _("Dynamic filler"),
     }
     return option_titles[option]
 end
@@ -1372,6 +1393,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(footer_items, getMinibarOption("book_title"))
     table.insert(footer_items, getMinibarOption("book_chapter"))
     table.insert(footer_items, getMinibarOption("custom_text"))
+    table.insert(footer_items, getMinibarOption("dynamic_filler"))
 
     -- configure footer_items
     table.insert(sub_items, {
@@ -1922,13 +1944,14 @@ function ReaderFooter:genSeparator()
         or (self.settings.item_prefix == "compact_items" and " " or "  ")
 end
 
-function ReaderFooter:genAllFooterText()
+function ReaderFooter:genAllFooterText(gen_to_skip)
     local info = {}
     -- We need to BD.wrap() all items and separators, so we're
     -- sure they are laid out in our order (reversed in RTL),
     -- without ordering by the RTL Bidi algorithm.
     local prev_had_merge
     for _, gen in ipairs(self.footerTextGenerators) do
+        if gen == gen_to_skip then goto continue end
         -- Skip empty generators, so they don't generate bogus separators
         local text, merge = gen(self)
         if text and text ~= "" then
@@ -1950,6 +1973,7 @@ function ReaderFooter:genAllFooterText()
                 table.insert(info, BD.wrap(text))
             end
         end
+        ::continue::
     end
     return table.concat(info, BD.wrap(self:genSeparator()))
 end
