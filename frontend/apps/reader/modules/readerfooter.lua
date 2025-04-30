@@ -423,6 +423,7 @@ footerTextGeneratorMap = {
         }
         local text_width = tmp:getSize().w
         tmp:free()
+        if max_width < text_width then return end
         tmp = TextWidget:new{
             text = " ",
             face = footer.footer_text_face,
