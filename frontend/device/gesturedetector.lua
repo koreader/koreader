@@ -61,6 +61,7 @@ local TAP_INTERVAL_MS = 0
 local DOUBLE_TAP_INTERVAL_MS = 300
 local TWO_FINGER_TAP_DURATION_MS = 300
 local HOLD_INTERVAL_MS = 500
+local LONG_HOLD_INTERVAL_S = 3 -- seconds
 local SWIPE_INTERVAL_MS = 900
 
 -- This is used as a singleton by Input (itself used as a singleton).
@@ -72,6 +73,7 @@ local GestureDetector = {
     DOUBLE_TAP_INTERVAL_MS = DOUBLE_TAP_INTERVAL_MS,
     TWO_FINGER_TAP_DURATION_MS = TWO_FINGER_TAP_DURATION_MS,
     HOLD_INTERVAL_MS = HOLD_INTERVAL_MS,
+    LONG_HOLD_INTERVAL_S = LONG_HOLD_INTERVAL_S,
     SWIPE_INTERVAL_MS = SWIPE_INTERVAL_MS,
     -- pinch/spread direction table
     DIRECTION_TABLE = { -- const

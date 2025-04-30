@@ -648,11 +648,12 @@ The duration value is in milliseconds and can range from 100 (0.1 seconds) to 20
                         info_text = _([[
 If a touch is not released in this interval, it is considered a long-press. On document text, single word selection will then be triggered.
 
-The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).]]),
+The interval value is in milliseconds and can range from 100 (0.1 seconds) to the very-long-press interval.]]),
                         width = math.floor(Screen:getWidth() * 0.75),
                         value = time.to_ms(GestureDetector.ges_hold_interval),
                         value_min = 100,
-                        value_max = 2000,
+                        value_max = 1000 * (G_reader_settings:readSetting("highlight_long_hold_threshold_s")
+                                         or GestureDetector.LONG_HOLD_INTERVAL_S) - 100,
                         value_step = 100,
                         value_hold_step = 500,
                         unit = C_("Time", "ms"),
