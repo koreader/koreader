@@ -96,6 +96,8 @@ function ReaderPaging:init()
     end)
 end
 
+-- TODO(ogkevin): a nice way to not have to duplicate in koptoptions
+-- args and toggle
 function ReaderPaging:onDispatcherRegisterActions()
     Dispatcher:registerAction(
         "paging_toggle_dual_page_mode",
@@ -103,8 +105,48 @@ function ReaderPaging:onDispatcherRegisterActions()
             category = "none",
             event = "ToggleDualPageMode",
             title = _("Toggle dual page mode"),
+            paging = true,
             section = "paging",
-            paging = true
+        }
+    )
+
+    Dispatcher:registerAction(
+        "paging_set_page_mode",
+        {
+            category = "string",
+            event = "SetPageMode",
+            title = _("Set page mode"),
+            args = { 1, 2 },
+            toggle = { _("single"), _("dual") },
+            paging = true,
+            section = "paging",
+        }
+    )
+
+    Dispatcher:registerAction(
+        "paging_set_dual_page_mode_first_page_is_cover",
+        {
+            category = "string",
+            event = "SetDualPageModeFirstPageIsCover",
+            title = _("Set dual page mode first page is cover"),
+            section = "paging",
+            paging = true,
+            args = { true, false},
+            toggle = { _("true"), _("false") },
+        }
+    )
+
+    Dispatcher:registerAction(
+        "paging_set_dual_page_mode_rtl",
+        {
+            category = "string",
+            event = "SetDualPageModeRTL",
+            title = _("Set dual page mode RTL"),
+            section = "paging",
+            paging = true,
+            args = { true, false},
+            toggle = { _("true"), _("false") },
+            separator = true,
         }
     )
 end
@@ -1009,6 +1051,14 @@ end
     end
 
     self:autoEnableDualPageModeIfLandscape()
+end
+
+function ReaderPaging:onSetDualPageModeFirstPageIsCover(bool)
+    self.document_settings.dual_page_mode_first_page_is_cover = bool
+end
+
+function ReaderPaging:onSetDualPageModeRTL(bool)
+    self.document_settings.dual_page_mode_rtl = bool
 end
 
 -- @param mode number 1 = single, 2 = dual
