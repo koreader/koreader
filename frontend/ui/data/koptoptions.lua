@@ -358,10 +358,7 @@ left to right or reverse, top to bottom or reverse.]]),
                 event = "SetPageMode",
                 args = { 1, 2 },
                 enabled_func = function(configurable, document)
-                    local ext = util.getFileNameSuffix(document.file)
-
                     return optionsutil.enableIfEquals(configurable, "page_scroll", 0) and
-                        ext == "cbz" and
                         Screen:getScreenMode() == "landscape"
                 end,
                 name_text_hold_callback = optionsutil.showValues,
