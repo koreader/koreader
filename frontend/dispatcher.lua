@@ -217,7 +217,7 @@ local settingsList = {
     -- Fixed layout documents
     toggle_page_flipping = {category="none", event="TogglePageFlipping", title=_("Toggle page flipping"), paging=true},
     toggle_bookmark_flipping = {category="none", event="ToggleBookmarkFlipping", title=_("Toggle bookmark flipping"), paging=true},
-    toggle_reflow = {category="none", event="ToggleReflow", title=_("Toggle reflow"), paging=true},
+    toggle_reflow = {category="none", event="ToggleReflow", title=_("Toggle reflow"), paging=true, separator = true},
     zoom = {category="string", event="SetZoomMode", title=_("Zoom mode"), args_func=ReaderZooming.getZoomModeActions, paging=true},
     zoom_factor_change = {category="none", event="ZoomFactorChange", title=_("Change zoom factor"), paging=true, separator=true},
     ----
@@ -480,7 +480,12 @@ local dispatcher_menu_order = {
     "toggle_page_flipping",
     "toggle_bookmark_flipping",
     "toggle_reflow",
+    ---
     "paging_toggle_dual_page_mode",
+    "paging_set_page_mode",
+    "paging_set_dual_page_mode_first_page_is_cover",
+    "paging_set_dual_page_mode_rtl",
+    ---
     "zoom",
     "zoom_factor_change",
     ----
