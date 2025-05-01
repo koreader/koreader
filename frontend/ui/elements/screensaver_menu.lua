@@ -160,7 +160,7 @@ return {
                     },
                     {
                         text = _("Choose random image folder"),
-                        enabled_func = allowRandomImageFolder(),
+                        enabled_func = allowRandomImageFolder,
                         keep_menu_open = true,
                         callback = function()
                             Screensaver:chooseFolder()
@@ -170,7 +170,7 @@ return {
                     {
                         text = _("Cycle through images in order"),
                         help_text = _("When enabled, all images (up to 128) will be displayed at least once on the sleep screen in sequence before repeating the cycle."),
-                        enabled_func = allowRandomImageFolder(),
+                        enabled_func = allowRandomImageFolder,
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_cycle_images_alphabetically")
                         end,
