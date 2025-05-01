@@ -846,6 +846,10 @@ body[name="notes"] section {
         -cr-hint: footnote-inpage;
         margin: 0 !important;
 }
+body[name="notes"] > section {
+    -cr-only-if: fb2-document;
+        font-size: 0.75rem;
+}
 body[name="notes"] > title {
     -cr-only-if: fb2-document;
         margin-bottom: 0;
@@ -864,6 +868,10 @@ body[name="comments"] section {
         -cr-hint: footnote-inpage;
         margin: 0 !important;
 }
+body[name="comments"] > section {
+    -cr-only-if: fb2-document;
+        font-size: 0.85rem;
+}
 body[name="comments"] > title {
     -cr-only-if: fb2-document;
         margin-bottom: 0;
@@ -871,6 +879,20 @@ body[name="comments"] > title {
 }
                 ]],
                 separator = true,
+            },
+            {
+                id = "fb2_footnotes_regular_font_size",
+                title = _("Keep regular font size"),
+                description = _([[
+FB2 footnotes and endnotes get a smaller font size when displayed in-page. This allows them to be shown with the normal font size.]]),
+                css = [[
+body[name="notes"] > section,
+body[name="comments"] > section
+{
+    -cr-only-if: fb2-document;
+        font-size: 1rem !important;
+}
+                ]],
             },
             separator = true,
         },
@@ -963,14 +985,6 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
                     description = _([[
 Decrease size of in-page footnotes.]]),
                     css = [[
-body[name="notes"] > section {
-    -cr-only-if: fb2-document;
-        font-size: 0.75rem;
-}
-body[name="comments"] > section {
-    -cr-only-if: fb2-document;
-        font-size: 0.85rem;
-}
 *, autoBoxing {
     -cr-hint: late;
     -cr-only-if: -fb2-document inpage-footnote;
