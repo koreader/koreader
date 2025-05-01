@@ -100,11 +100,6 @@ function ButtonDialog:init()
                 table.insert(back_group, "Menu")
                 self.key_events.Close = { { back_group } }
             end
-            if Device:hasKeyboard() or Device:hasScreenKB() then
-                local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
-                self.key_events.MovePositionUp    = { { modifier, "Up" },    event = "MovePosition", args = true }
-                self.key_events.MovePositionDown  = { { modifier, "Down" },  event = "MovePosition", args = false }
-            end
         end
         if Device:isTouchDevice() then
             self.ges_events.TapClose = {
@@ -281,27 +276,6 @@ function ButtonDialog:onShow()
     UIManager:setDirty(self, function()
         return "ui", self.movable.dimen
     end)
-end
-
-function ButtonDialog:onMovePosition(is_moving_up)
-    local screen_h = Screen:getHeight()
-    local dialog_h = self.movable.dimen.h
-    local padding = Size.padding.small
-    local new_y
-    if is_moving_up then
-        new_y = padding
-    else
-        new_y = screen_h - dialog_h - padding
-    end
-    -- Calculate the offset required to position the dialog at new_y
-    local offset = Geom:new{
-        x = self.movable._moved_offset_x, -- keep current x offset
-        y = new_y - self.movable._orig_y,  -- set new y offset
-    }
-    self.movable:setMovedOffset(offset)
-    -- Force a complete screen redraw to ensure the old dialog is cleared
-    UIManager:setDirty("all", "ui")
-    return true
 end
 
 function ButtonDialog:onCloseWidget()
