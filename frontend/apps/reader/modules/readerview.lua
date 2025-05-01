@@ -184,7 +184,7 @@ function ReaderView:resetLayout()
 end
 
 function ReaderView:paintTo(bb, x, y)
-    dbg:v("readerview painting", self.visible_area, "to", x, y)
+    logger.dbg("ReaderView:paintTo", self.visible_area, "to", x, y)
     if self.page_scroll then
         self:drawPageBackground(bb, x, y)
     else
@@ -196,6 +196,7 @@ function ReaderView:paintTo(bb, x, y)
         if self.page_scroll then
             self:drawScrollPages(bb, x, y)
         elseif self.ui.paging:isDualPageEnabled() then
+            self:drawPageBackground(bb, x, y)
             self:draw2Pages(bb, x, y)
         else
             self:drawSinglePage(bb, x, y)
@@ -387,10 +388,6 @@ function ReaderView:draw2Pages(bb, x, y)
     local total_width = 0
     local max_height = 0
 
-    if #self.page_states < 1 then
-        self.ui.paging:updatePagePairStatesForBase(self.state.page)
-    end
-
     local states = self.page_states
 
     for _, state in ipairs(states) do
@@ -400,13 +397,13 @@ function ReaderView:draw2Pages(bb, x, y)
     end
 
     local x_offset = x
-    if self.dimen.w > total_width then
-        x_offset = x_offset + (self.dimen.w - total_width) / 2
+    if visible_area.w > total_width then
+        x_offset = x_offset + (visible_area.w - total_width) / 2
     end
 
     local y_offset = y
-    if self.dimen.h > max_height then
-        y_offset = y_offset + (self.dimen.h - max_height) / 2
+    if visible_area.h > max_height then
+        y_offset = y_offset + (visible_area.h - max_height) / 2
     end
 
     local start_i, end_i, step
@@ -808,12 +805,27 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
     end
 end
 
+-- TODO(ogkevin): If this becomes dual page aware, panning in dual page mode is unlocked.
+-- However, there is a chicken and egg problem. To calculate page area, zoom
+-- is required. To calculate dual page, visible are is required.
+-- For now, cheat and return the visible_area as atm it's the same as page_area
+--
+-- This could potentially also solve/simplify the zooming issues, as page area would be bigger
+-- then visible area, and so we get panning.
+-- The other issue that needs solving is calculating the correct zoom factor.
+-- Mostlikey, refactoring ReaderPaging:calculateZoomFactorForPagePair should then be moved
+-- to ReaderZooming, and ReaderZooming.disabled potentially removed all together.
 function ReaderView:getPageArea(page, zoom, rotation)
     if self.use_bbox then
         return self.document:getUsedBBoxDimensions(page, zoom, rotation)
-    else
-        return self.document:getPageDimensions(page, zoom, rotation)
+
     end
+
+    if self.ui.paging and self.ui.paging:isDualPageEnabled() then
+        return self.visible_area
+    end
+
+    return self.document:getPageDimensions(page, zoom, rotation)
 end
 
 --[[
@@ -829,41 +841,54 @@ function ReaderView:recalculate()
         self.page_area = self:getPageArea(
             self.state.page,
             self.state.zoom,
-            self.state.rotation)
-        -- reset our size
-        self.visible_area:setSizeTo(self.dimen)
-        if self.footer_visible and not self.footer.settings.reclaim_height then
-            self.visible_area.h = self.visible_area.h - self.footer:getHeight()
-        end
-        if self.document.configurable.writing_direction == 0 then
-            -- starts from left of page_area
-            self.visible_area.x = self.page_area.x
+            self.state.rotation
+        )
+
+        if self.ui.paging:isDualPageEnabled() then
+            self.visible_area = self.visible_area:setSizeTo(Screen:getSize())
+
+            if self.footer_visible and not self.footer.settings.reclaim_height then
+                self.visible_area.h = self.visible_area.h - self.footer:getHeight()
+            end
+
+            logger.dbg("ReaderView:recalculate dual paging enabled, setting visible area to", self.dimen,
+                Screen:getSize())
         else
-            -- start from right of page_area
-            self.visible_area.x = self.page_area.x + self.page_area.w - self.visible_area.w
+            -- reset our size
+            self.visible_area:setSizeTo(self.dimen)
+            if self.footer_visible and not self.footer.settings.reclaim_height then
+                self.visible_area.h = self.visible_area.h - self.footer:getHeight()
+            end
+            if self.document.configurable.writing_direction == 0 then
+                -- starts from left of page_area
+                self.visible_area.x = self.page_area.x
+            else
+                -- start from right of page_area
+                self.visible_area.x = self.page_area.x + self.page_area.w - self.visible_area.w
+            end
+            -- Check if we are in zoom_bottom_to_top
+            if self.document.configurable.zoom_direction and self.document.configurable.zoom_direction >= 2 and self.document.configurable.zoom_direction <= 5 then
+                -- starts from bottom of page_area
+                self.visible_area.y = self.page_area.y + self.page_area.h - self.visible_area.h
+            else
+                -- starts from top of page_area
+                self.visible_area.y = self.page_area.y
+            end
+            if not self.page_scroll then
+                -- and recalculate it according to page size
+                self.visible_area:offsetWithin(self.page_area, 0, 0)
+            end
+            -- clear dim area
+            self.dim_area:clear()
         end
-        -- Check if we are in zoom_bottom_to_top
-        if self.document.configurable.zoom_direction and self.document.configurable.zoom_direction >= 2 and self.document.configurable.zoom_direction <= 5 then
-            -- starts from bottom of page_area
-            self.visible_area.y = self.page_area.y + self.page_area.h - self.visible_area.h
-        else
-            -- starts from top of page_area
-            self.visible_area.y = self.page_area.y
-        end
-        if not self.page_scroll then
-            -- and recalculate it according to page size
-            self.visible_area:offsetWithin(self.page_area, 0, 0)
-        end
-        -- clear dim area
-        self.dim_area:clear()
+
         self.ui:handleEvent(
             Event:new("ViewRecalculate", self.visible_area, self.page_area))
-    elseif self.ui.paging and self.ui.paging:isDualPageEnabled()then
-        self.visible_area:setSizeTo(self.dimen)
     else
         self.visible_area:setSizeTo(self.dimen)
     end
-    self.state.offset = Geom:new{x = 0, y = 0}
+
+    self.state.offset = Geom:new { x = 0, y = 0 }
     if self.dimen.h > self.visible_area.h then
         if self.footer_visible and not self.footer.settings.reclaim_height then
             self.state.offset.y = (self.dimen.h - (self.visible_area.h + self.footer:getHeight())) / 2
@@ -876,6 +901,7 @@ function ReaderView:recalculate()
     end
 
     self:setupNoteMarkPosition()
+    logger.dbg("ReaderView:recalculate visible area", self.visible_area, self.dimen)
 
     -- Flag a repaint so self:paintTo will be called
     -- NOTE: This is also unfortunately called during panning, essentially making sure we'll never be using "fast" for pans ;).

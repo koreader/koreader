@@ -789,6 +789,10 @@ end
 function ReaderPaging:getDualPageBaseFromPage(page)
     logger.dbg("ReaderPaging.getDualPageBaseFromPage: calulating base for page", page)
 
+    if not page or page == 0 then
+        page = 1
+    end
+
     if self.document_settings.dual_page_mode_first_page_is_cover and page == 1 then
         return 1
     end
@@ -850,7 +854,10 @@ function ReaderPaging:canDualPageMode()
 -- @returns boolean
 function ReaderPaging:supportsDualPage()
     local ext = util.getFileNameSuffix(self.ui.document.file)
-    local screen_mode = Screen:getScreenMode()
+    -- FIXME(ogkevin): it seems we can't rely on getScreenMode to get the correct orientation
+    -- e.g. on boot, it says portrait, even though the layout is landscape.
+    -- local screen_mode = Screen:getScreenMode()
+    local screen_mode = "landscape"
 
     logger.dbg("ReaderPaging:supportsDualPage", ext, screen_mode)
 
@@ -1622,6 +1629,7 @@ function ReaderPaging:onGotoPageRel(diff)
         end
 
         if self.ui.document:hasHiddenFlows() then
+            logger.dbg("ReaderPaging:onGotoPageRel: document has hidden flows")
             local forward = diff > 0
             local pdiff = forward and math.ceil(diff) or math.ceil(-diff)
             new_page = curr_page
@@ -1677,6 +1685,7 @@ function ReaderPaging:onGotoPageRel(diff)
 
     -- Handle cases when the view area gets out of page boundaries
     if not self.page_area:contains(new_va) then
+        logger.dbg("ReaderPaging:onGotoPageRel self.page contains new_va")
         if not at_end(x) then
             goto_end(x)
         else
@@ -1692,6 +1701,7 @@ function ReaderPaging:onGotoPageRel(diff)
     end
 
     if self.current_page == prev_page then
+        logger.dbg("ReaderPaging:onGotoPageRel page number didn't update")
         -- Page number haven't changed when panning inside a page,
         -- but time may: keep the footer updated
         self.view.footer:onUpdateFooter(self.view.footer_visible)
@@ -1778,9 +1788,18 @@ end
 -- For the given page pair, calcuate their zooming factor
 -- ATM, we only support filling the height for dual page mode.
 function ReaderPaging:calculateZoomFactorForPagePair(pair)
+    -- FIXME(ogkevin): for some reason, right after boot, self.visible_area is nil.
+    -- most likely ReaderView didn't calc it yet, which makes me wonder, would it be
+    -- better to just always ask for the area from view instead of the event?
+    logger.dbg("ReaderPaging:calculateZoomFactorForPagePair", self.visible_area, self.ui.view.visible_area, self.ui.view.dimen)
+
+    if not self.visible_area then
+        self.visible_area = self.ui.view.visible_area
+    end
+
     local visible_area = self.visible_area
     local max_height = visible_area.h
-    local max_width = self.ui.view.dimen.w
+    local max_width = visible_area.w
     local zooms = {}
 
     local total_width = 0
