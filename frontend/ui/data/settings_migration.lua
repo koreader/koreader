@@ -47,19 +47,24 @@ function SettingsMigration:migrateSettings(config)
 
     if config:has("style_tweaks") then
         local tweaks = config:readSetting("style_tweaks")
-
         if tweaks then
-            --            base hint
+            -- try to preserve user intent when flattening the previous combination of
+            -- ["footnote-inpage_x", "footnote-inpage_x_smaller"] into ["footnote-inpage_x"]
             --
-            --          | n | t | f |
-            --       ---+---+---+---+
-            -- small  n | n | t | f |
-            -- hint   t | t | t | t |
-            --        f | f | t | f |
+            --               |       x_smaller       |
+            --               | nil   | true  | false |
+            --    -----------+-------+-------+-------+
+            --         nil   | nil   | true  | false |
+            --     x   true  | true  | true  | true  |
+            --         false | false | true  | false |
+            --    -----------+-----------------------+
             --
-            -- If either hint is true, enable the base hint to keep that type of footnote.
-            -- Otherwise if one was false and the other nil or also false, we had a default
+            -- If either tweak is true, enable the base tweak to keep that type of footnote.
+            -- (Preserving small vs normal size is handled below)
+            -- If one was false and the other nil or also false, we had a default
             -- that was disabled for the current book and want to keep it false.
+            -- If both are nil they were both disabled (global settings) or both using their
+            -- respective default values (book settings) and we keep it as nil
 
             if tweaks["footnote-inpage_epub"] or tweaks["footnote-inpage_epub_smaller"] then
                 tweaks["footnote-inpage_epub"] = true
