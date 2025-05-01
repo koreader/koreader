@@ -69,8 +69,8 @@ function MovableContainer:init()
     if Device:hasKeys() and self.is_movable_with_keys then
         if Device:hasKeyboard() or Device:hasScreenKB() then
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
-            self.key_events.MovePositionUp    = { { modifier, "Up" },    event = "MovePosition", args = true }
-            self.key_events.MovePositionDown  = { { modifier, "Down" },  event = "MovePosition", args = false }
+            self.key_events.MovePositionTop     = { { modifier, "Up" },    event = "MovePosition", args = true }
+            self.key_events.MovePositionBottom  = { { modifier, "Down" },  event = "MovePosition", args = false }
         end
     end
     if Device:isTouchDevice() and not self.unmovable then
@@ -429,15 +429,15 @@ function MovableContainer:resetEventState()
     self._moving = false
 end
 
-function MovableContainer:onMovePosition(is_moving_up)
+function MovableContainer:onMovePosition(is_moving_to_top)
     if not self.is_movable_with_keys then return false end
     local screen_h = Screen:getHeight()
     local dialog_h = self.dimen.h
     local padding = Size.padding.small
     local new_y
-    if is_moving_up then
+    if is_moving_to_top then
         new_y = padding
-    else -- Move down
+    else -- move down
         new_y = screen_h - dialog_h - padding
     end
     -- Calculate the offset required to position the container at new_y
