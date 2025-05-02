@@ -705,6 +705,13 @@ function Input:handleKeyBoardEv(ev)
             return
         end
     end
+    -- On (some?) Kindles, cyttsp will report BTN_TOOL_DOUBLETAP on a *different* slot...
+    if ev.code == C.BTN_TOOL_DOUBLETAP and ev.value == 1 and self.cur_slot ~= self.main_finger_slot then
+        -- Fudge it back to the main slot to avoid confusing the hell out of GestureDetector
+        self:setupSlotData(self.main_finger_slot)
+
+        return
+    end
 
     local keycode = self.event_map[ev.code]
     if not keycode then
