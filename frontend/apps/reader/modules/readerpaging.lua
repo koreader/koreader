@@ -1777,6 +1777,7 @@ function ReaderPaging:updatePagePairStatesForBase(pageno)
             rotation = self.view.state.rotation,
             gamma = self.view.state.gamma,
             dimen = Geom:new({w = scaled_w, h = scaled_h}),
+            native_dimen = dimen
         }
         logger.dbg("ReaderPaging:_gotoPage: set view page states to: ", self.view.page_states)
     end
