@@ -87,7 +87,7 @@ function ReaderView:init()
         zoom = 1.0,
         rotation = 0,
         gamma = 1.0,
-        offset = nil,
+        offset = Geom:new(),
         bbox = nil,
     }
     self.highlight = {
@@ -303,9 +303,12 @@ end
 Given coordinates on the screen return position in original page
 ]]--
 function ReaderView:screenToPageTransform(pos)
+    logger.dbg("ReaderView:screenToPageTransform pos x,y", pos.x, pos.y, "with area", self.visible_area.x, self.visible_area.y)
     if self.ui.paging then
         if self.page_scroll then
             return self:getScrollPagePosition(pos)
+        elseif self.ui.paging:isDualPageEnabled() then
+            return self:getDualPagePosition(pos)
         else
             return self:getSinglePagePosition(pos)
         end
@@ -319,9 +322,12 @@ end
 Given rectangle in original page return rectangle on the screen
 ]]--
 function ReaderView:pageToScreenTransform(page, rect)
+    logger.dbg("ReaderView:pageToScreenTransform",page, rect)
     if self.ui.paging then
         if self.page_scroll then
             return self:getScrollPageRect(page, rect)
+        elseif self.ui.paging:isDualPageEnabled() then
+            return self:getDualPageRect(page, rect)
         else
             return self:getSinglePageRect(rect)
         end
@@ -406,6 +412,10 @@ function ReaderView:draw2Pages(bb, x, y)
         y_offset = y_offset + (visible_area.h - max_height) / 2
     end
 
+    -- Update offset for ReaderView:*Transform
+    self.state.offset.y = y_offset
+    self.state.offset.x = x_offset
+
     local start_i, end_i, step
     -- //TODO(ogkevin): add a method that returns the order instead of accessing this field
     if self.ui.paging.document_settings.dual_page_mode_rtl then
@@ -452,7 +462,7 @@ end
 function ReaderView:getCurrentPageList()
     local pages = {}
     if self.ui.paging then
-        if self.page_scroll then
+        if self.page_scroll or self.ui.paging:isDualPageEnabled() then
             for _, state in ipairs(self.page_states) do
                 table.insert(pages, state.page)
             end
@@ -516,6 +526,43 @@ function ReaderView:drawSinglePage(bb, x, y)
     UIManager:nextTick(self.emitHintPageEvent)
 end
 
+-- @param pos Geom the screen coordinates
+function ReaderView:getDualPagePosition(pos)
+    logger.dbg("ReaderView:getDualPagePosition", pos)
+    local x_s, y_s = pos.x - self.state.offset.x, pos.y - self.state.offset.y
+    local states = self.page_states
+    local zoom = 1
+    local page = 1
+
+    local start_i, end_i, step
+    -- //TODO(ogkevin): add a method that returns the order instead of accessing this field
+    if self.ui.paging.document_settings.dual_page_mode_rtl then
+        start_i, end_i, step = #states, 1, -1
+    else
+        start_i, end_i, step = 1, #states, 1
+    end
+
+    for i = start_i, end_i, step do
+        local state = states[i]
+        if x_s > state.dimen.w then
+            x_s = x_s - state.dimen.w
+        else
+            zoom = state.zoom
+            page = state.page
+
+            break
+        end
+    end
+
+    return {
+        x = x_s / zoom,
+        y = y_s / zoom,
+        zoom = zoom,
+        page = page,
+        rotation = self.state.rotation,
+    }
+end
+
 function ReaderView:getSinglePagePosition(pos)
     local x_s, y_s = pos.x, pos.y
     return {
@@ -525,6 +572,41 @@ function ReaderView:getSinglePagePosition(pos)
         zoom = self.state.zoom,
         rotation = self.state.rotation,
     }
+end
+
+
+-- @param page number
+-- @param rect_p Geom the coordinates on the page
+function ReaderView:getDualPageRect(page, rect_p)
+    local rect_s = Geom:new({x = self.state.offset.x, y = self.state.offset.y})
+    local states = self.page_states
+
+    local start_i, end_i, step
+    -- //TODO(ogkevin): add a method that returns the order instead of accessing this field
+    if self.ui.paging.document_settings.dual_page_mode_rtl then
+        start_i, end_i, step = #states, 1, -1
+    else
+        start_i, end_i, step = 1, #states, 1
+    end
+
+    for i = start_i, end_i, step do
+        local state = states[i]
+        local trans_p = rect_p:copy()
+        trans_p:transformByScale(state.zoom, state.zoom)
+
+        if state.page == page then
+            rect_s.x = rect_s.x + trans_p.x
+            rect_s.y = rect_s.y + trans_p.y
+            rect_s.w = trans_p.w
+            rect_s.h = trans_p.h
+
+            break
+        end
+
+        rect_s.x = rect_s.x + state.dimen.w
+    end
+
+    return rect_s
 end
 
 function ReaderView:getSinglePageRect(rect_p)
