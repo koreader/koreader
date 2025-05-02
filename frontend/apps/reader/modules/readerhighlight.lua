@@ -1151,7 +1151,11 @@ function ReaderHighlight:updateHighlightRolling(highlight, side, direction, move
 end
 
 function ReaderHighlight:updateHighlightPaging(highlight, side, direction)
-    local page = self.ui.paging.current_page
+    logger.dbg("ReaderHighlight:updateHighlightPaging", highlight)
+    -- FIXME(ogkevin): I believe this assumption is breaking dual page mode edit
+    -- local page = self.ui.paging.current_page
+    -- TODO(ogkevin): this needs confirmation, makes sense however, if the page is already present in highlight
+    local page = highlight.page
     local pboxes
     if highlight.ext then -- multipage highlight, don't move invisible boundaries
         if (page ~= highlight.pos0.page and page ~= highlight.pos1.page ) or -- middle pages
@@ -1652,6 +1656,7 @@ function ReaderHighlight:onPanelZoom(arg, ges)
 end
 
 function ReaderHighlight:onHold(arg, ges)
+    logger.dbg("ReaderHighlight:onHold")
     if self.ui.paging and self.panel_zoom_enabled then
         local res = self:onPanelZoom(arg, ges)
         if res or not self.panel_zoom_fallback_to_text_selection then
@@ -1661,7 +1666,7 @@ function ReaderHighlight:onHold(arg, ges)
 
     self:clear() -- clear previous highlight (delayed clear may not have done it yet)
     self.hold_pos = self.view:screenToPageTransform(ges.pos)
-    logger.dbg("hold position in page", self.hold_pos)
+    logger.dbg("ReaderHighlight:onHold: hold position in page", self.hold_pos)
     if not self.hold_pos then
         logger.dbg("not inside page area")
         return false
