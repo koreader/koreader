@@ -9,8 +9,11 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ProgressWidget = require("ui/widget/progresswidget")
 local RightContainer = require("ui/widget/container/rightcontainer")
@@ -22,7 +25,9 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local datetime = require("datetime")
+local ffiUtil = require("ffi/util")
 local logger = require("logger")
+local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local C_ = _.pgettext
@@ -1710,6 +1715,13 @@ With this feature enabled, the current page is factored in, resulting in the cou
         })
     end
     table.insert(sub_items, {
+        text = _("Status bar presets"),
+        separator = true,
+        sub_item_table_func = function()
+            return self:getNamedPresetMenuItems()
+        end,
+    })
+    table.insert(sub_items, {
         text = _("Show status bar separator"),
         checked_func = function()
             return self.settings.bottom_horizontal_separator == true
@@ -1921,6 +1933,122 @@ function ReaderFooter:genAlignmentMenuItems(value)
             self:refreshFooter(true)
         end,
     }
+end
+
+function ReaderFooter:getNamedPresetMenuItems()
+    local footer_presets = G_reader_settings:readSetting("footer_presets", {})
+    local items = {
+        {
+            text = _("Create new preset from current settings"),
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                self:createPresetFromCurrentSettings(touchmenu_instance)
+            end,
+            separator = true,
+        },
+    }
+    -- Add menu items for each preset
+    for preset_name in ffiUtil.orderedPairs(footer_presets) do
+        table.insert(items, {
+            text = preset_name,
+            keep_menu_open = true,
+            callback = function()
+                self:loadFromNamedPreset(preset_name)
+            end,
+            hold_callback = function(touchmenu_instance)
+                UIManager:show(MultiConfirmBox:new{
+                    text = T(_("What would you like to do with preset '%1'?"), preset_name),
+                    choice1_text = _("Delete"),
+                    choice1_callback = function()
+                        footer_presets[preset_name] = nil
+                        touchmenu_instance.item_table = self:getNamedPresetMenuItems()
+                        touchmenu_instance:updateItems()
+                    end,
+                    choice2_text = _("Update"),
+                    choice2_callback = function()
+                        self:saveToNamedPreset(preset_name)
+                        touchmenu_instance:updateItems()
+                        UIManager:show(InfoMessage:new{
+                            text = T(_("Preset '%1' was updated with current settings"), preset_name),
+                            timeout = 2,
+                        })
+                    end,
+                })
+            end,
+        })
+    end
+    return items
+end
+
+function ReaderFooter:createPresetFromCurrentSettings(touchmenu_instance)
+    local input_dialog
+    input_dialog = InputDialog:new{
+        title = _("Enter preset name"),
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    is_enter_default = true,
+                    callback = function()
+                        local preset_name = input_dialog:getInputText()
+                        if preset_name == "" or preset_name:match("^%s*$") then return end
+                        -- Check if preset name already exists
+                        local footer_presets = G_reader_settings:readSetting("footer_presets")
+                        if footer_presets[preset_name] then
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("A preset named '%1' already exists. Please choose a different name."), preset_name),
+                                timeout = 2,
+                            })
+                            return
+                        end
+                        self:saveToNamedPreset(preset_name)
+                        UIManager:close(input_dialog)
+                        touchmenu_instance.item_table = self:getNamedPresetMenuItems()
+                        touchmenu_instance:updateItems()
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
+end
+
+function ReaderFooter:saveToNamedPreset(preset_name)
+    local footer_presets = G_reader_settings:readSetting("footer_presets")
+    -- Save all footer settings to the preset
+    footer_presets[preset_name] = {
+        footer = util.tableDeepCopy(self.settings),
+        reader_footer_mode = G_reader_settings:readSetting("reader_footer_mode"),
+        reader_footer_custom_text = G_reader_settings:readSetting("reader_footer_custom_text"),
+        reader_footer_custom_text_repetitions = G_reader_settings:readSetting("reader_footer_custom_text_repetitions"),
+    }
+end
+
+function ReaderFooter:loadFromNamedPreset(preset_name)
+    local footer_presets = G_reader_settings:readSetting("footer_presets")
+    local preset = footer_presets[preset_name]
+    G_reader_settings:saveSetting("footer", util.tableDeepCopy(preset.footer))
+    G_reader_settings:saveSetting("reader_footer_mode", preset.reader_footer_mode)
+    G_reader_settings:saveSetting("reader_footer_custom_text", preset.reader_footer_custom_text)
+    G_reader_settings:saveSetting("reader_footer_custom_text_repetitions", preset.reader_footer_custom_text_repetitions)
+    self.settings = G_reader_settings:readSetting("footer")
+    self.mode = preset.reader_footer_mode
+    self.custom_text = preset.reader_footer_custom_text
+    self.custom_text_repetitions = tonumber(preset.reader_footer_custom_text_repetitions)
+    self:updateFooterTextGenerator()
+    self:refreshFooter(true, true)
+end
+
+function ReaderFooter:onFooterPresetLoad(preset_name)
+    -- tbc
 end
 
 function ReaderFooter:addAdditionalFooterContent(content_func)
