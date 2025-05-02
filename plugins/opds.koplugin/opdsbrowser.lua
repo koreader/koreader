@@ -581,6 +581,9 @@ function OPDSBrowser:showDownloads(item)
     if item.author then
         filename = item.author .. " - " .. filename
     end
+    -- Ensure the default download filename is consistent across different platforms. In particular
+    -- this is needed for Process Sync to work correctly if it is configured to rely on file names.
+    filename = filename:gsub('[\\,%/,:,%*,%?,%",%<,%>,%|]','_')local filename_orig = filename
     local filename_orig = filename
     if self.root_catalog_raw_names then
         filename = nil
