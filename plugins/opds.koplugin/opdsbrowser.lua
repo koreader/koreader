@@ -583,7 +583,7 @@ function OPDSBrowser:showDownloads(item)
     end
     -- Ensure the default download filename is consistent across different platforms. In particular
     -- this is needed for Progress Sync to work correctly if it is configured to rely on file names.
-    filename = filename:gsub('[\\,%/,:,%*,%?,%",%<,%>,%|]','_')
+    filename = util.replaceAllInvalidChars(filename)
     local filename_orig = filename
     if self.root_catalog_raw_names then
         filename = nil

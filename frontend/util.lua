@@ -953,7 +953,7 @@ end
 -- <code>/</code> poses a problem.
 ---- @string str filename
 ---- @treturn string sanitized filename
-local function replaceAllInvalidChars(str)
+function util.replaceAllInvalidChars(str)
     if str then
         return str:gsub('[\\,%/,:,%*,%?,%",%<,%>,%|]','_')
     end
@@ -981,7 +981,7 @@ If an optional path is provided, @{util.getFilesystemType}() will be used to det
 ---- @treturn string safe filename
 function util.getSafeFilename(str, path, limit, limit_ext)
     local filename, suffix = util.splitFileNameSuffix(str)
-    local replaceFunc = replaceAllInvalidChars
+    local replaceFunc = util.replaceAllInvalidChars
     local safe_filename
     -- VFAT supports a maximum of 255 UCS-2 characters, although it's probably treated as UTF-16 by Windows
     -- default to a slightly lower limit just in case
