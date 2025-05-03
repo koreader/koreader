@@ -420,7 +420,16 @@ footerTextGeneratorMap = {
         return footer.custom_text:rep(footer.custom_text_repetitions), merge
     end,
     dynamic_filler = function(footer)
-        local max_width = footer[1]:getSize().w - 2 * footer.horizontal_margin
+        local margin = footer.horizontal_margin
+        if not footer.settings.disable_progress_bar then
+            if footer.settings.progress_bar_position == "alongside" then
+                return
+            end
+            if footer.settings.align == "center" then
+                margin = Screen:scaleBySize(footer.settings.progress_margin_width)
+            end
+        end
+        local max_width = math.floor(footer._saved_screen_width - 2 * margin)
         -- when the filler is between other items, it replaces the separator
         local text, is_filler_inside = footer:genAllFooterText(footerTextGeneratorMap.dynamic_filler)
         local tmp = TextWidget:new{
@@ -1947,7 +1956,6 @@ function ReaderFooter:getNamedPresetMenuItems()
             separator = true,
         },
     }
-    -- Add menu items for each preset
     for preset_name in ffiUtil.orderedPairs(footer_presets) do
         table.insert(items, {
             text = preset_name,
@@ -1967,7 +1975,6 @@ function ReaderFooter:getNamedPresetMenuItems()
                     choice2_text = _("Update"),
                     choice2_callback = function()
                         self:saveToNamedPreset(preset_name)
-                        touchmenu_instance:updateItems()
                         UIManager:show(InfoMessage:new{
                             text = T(_("Preset '%1' was updated with current settings"), preset_name),
                             timeout = 2,
@@ -1999,7 +2006,6 @@ function ReaderFooter:createPresetFromCurrentSettings(touchmenu_instance)
                     callback = function()
                         local preset_name = input_dialog:getInputText()
                         if preset_name == "" or preset_name:match("^%s*$") then return end
-                        -- Check if preset name already exists
                         local footer_presets = G_reader_settings:readSetting("footer_presets")
                         if footer_presets[preset_name] then
                             UIManager:show(InfoMessage:new{
@@ -2023,7 +2029,6 @@ end
 
 function ReaderFooter:saveToNamedPreset(preset_name)
     local footer_presets = G_reader_settings:readSetting("footer_presets")
-    -- Save all footer settings to the preset
     footer_presets[preset_name] = {
         footer = util.tableDeepCopy(self.settings),
         reader_footer_mode = G_reader_settings:readSetting("reader_footer_mode"),
@@ -2047,8 +2052,26 @@ function ReaderFooter:loadFromNamedPreset(preset_name)
     self:refreshFooter(true, true)
 end
 
-function ReaderFooter:onFooterPresetLoad(preset_name)
-    -- tbc
+function ReaderFooter:onLoadFooterPreset(preset_name)
+    local footer_presets = G_reader_settings:readSetting("footer_presets")
+    if footer_presets and footer_presets[preset_name] then
+        self:loadFromNamedPreset(preset_name)
+    end
+    return true
+end
+
+function ReaderFooter.getPresets() -- for Dispatcher
+    local footer_presets = G_reader_settings:readSetting("footer_presets")
+    local actions = {}
+    if footer_presets and next(footer_presets) then
+        for preset_name in pairs(footer_presets) do
+            table.insert(actions, preset_name)
+        end
+        if #actions > 1 then
+            table.sort(actions)
+        end
+    end
+    return actions, actions
 end
 
 function ReaderFooter:addAdditionalFooterContent(content_func)
