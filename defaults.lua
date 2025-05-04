@@ -7,7 +7,7 @@ return {
 -- default to pre-rendering 1 page (pair)
 --
 -- When using Dual Page Mode, this controls the amount of next page
--- pairs that will be pre-rednered.
+-- pairs that will be pre-rendered.
 DHINTCOUNT = 1,
 
 -- DjVu page rendering mode (used in djvu.c:drawPage())

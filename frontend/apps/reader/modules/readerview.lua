@@ -385,7 +385,7 @@ function ReaderView:drawPageSurround(bb, x, y)
 end
 
 -- This method draws 2 pages next to each other.
--- Usefull for PDF or CBZ etc
+-- Useful for PDF or CBZ etc
 --
 -- It does this by scaling based on H
 function ReaderView:draw2Pages(bb, x, y)
@@ -1175,8 +1175,7 @@ function ReaderView:shouldInvertBiDiLayoutMirroring()
     return self.inverse_reading_order and G_reader_settings:isTrue("invert_ui_layout_mirroring")
 end
 
-
--- If dual page is enabled for paging, then readerpagging will give us the corret
+-- If dual page is enabled for paging, then readerpagging will give us the correct
 -- page pairs in ReaderView:draw2Pages by setting self.page_states.
 function ReaderView:onPageUpdate(new_page_no)
     logger.dbg("readerview: on page update", new_page_no)

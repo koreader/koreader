@@ -1377,7 +1377,7 @@ If you're reading page 2 and 3 for 10m, then we will store that you've spend 10m
                                 end,
                                 help_text = _(
                                     [[When reading in Dual Page Mode, by default, the total time spend on the  pages will only count for the lowest page number(the base page).
-If you enalbe this setting, then the total time spend looking at both pages will be stored for both pages.
+If you enable this setting, then the total time spend looking at both pages will be stored for both pages.
 
 Enabled:
 If you're reading page 2 and 3 for 10m, then we will store that you've spend 10m reading page 2 and 10m reading page 3.
@@ -2797,10 +2797,10 @@ function ReaderStatistics:onPageUpdate(pageno)
         pages = self.ui.paging:getDualPagePairFromBasePage(pageno)
 
         for _, page in ipairs(pair) do
-            self:updateDurtationForSinglePageTurn(now_ts, page, self.settings.dual_page_mode_divide_duration_by_two)
+            self:updateDurationForSinglePageTurn(now_ts, page, self.settings.dual_page_mode_divide_duration_by_two)
         end
     else
-        self:updateDurtationForSinglePageTurn(now_ts, self.curr_page, false)
+        self:updateDurationForSinglePageTurn(now_ts, self.curr_page, false)
     end
 
     self.curr_page = pageno
@@ -2839,7 +2839,7 @@ function ReaderStatistics:onPageUpdate(pageno)
 end
 
 -- @param pageno number should be the page we just turned away from
-function ReaderStatistics:updateDurtationForSinglePageTurn(now_ts, pageno, divide_diff_by_two)
+function ReaderStatistics:updateDurationForSinglePageTurn(now_ts, pageno, divide_diff_by_two)
     logger.dbg("ReaderStatistics:updateDurtationForSinglePageTurn:", now_ts, pageno,  divide_diff_by_two)
 
     -- Get the previous page's last timestamp (if there is one)

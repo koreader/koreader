@@ -16,15 +16,14 @@ function ReaderHinting:onHintPage()
 
     logger.dbg("ReaderHinting:onHintPage: hinting", DHINTCOUNT, "pages")
 
-    local dualPageMode = self.view.ui.paging and self.view.ui.paging:isDualPageEnabled()
+    local dual_page_mode = self.view.ui.paging and self.view.ui.paging:isDualPageEnabled()
 
-    if dualPageMode then
+    if dual_page_mode then
         logger.dbg("ReaderHinting:onHintPage: hinting the next page pair due to dual mode")
     end
 
     for i = 1, DHINTCOUNT do
-        if dualPageMode then
-            -- local pair = self.view.ui.paging:getDualPageBaseFromPage(self.view.state.page)
+        if dual_page_mode then
             local base= self.view.ui.paging:getPairBaseByRelativeMovement(i)
             local pair = self.view.ui.paging:getDualPagePairFromBasePage(base)
             local zooms = self.view.ui.paging:calculateZoomFactorForPagePair(pair)
@@ -37,19 +36,14 @@ function ReaderHinting:onHintPage()
                     self.view.state.gamma
                 )
             end
-
-            goto continue
-        end
-
-        if self.view.state.page + i <= self.document.info.number_of_pages then
+        elseif self.view.state.page + i <= self.document.info.number_of_pages then
             self.document:hintPage(
                 self.view.state.page + i,
                 self.zoom:getZoom(self.view.state.page + i),
                 self.view.state.rotation,
-                self.view.state.gamma)
+                self.view.state.gamma
+            )
         end
-
-        ::continue::
     end
 
     return true

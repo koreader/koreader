@@ -17,7 +17,7 @@ local ReaderZooming = InputContainer:extend{
     zoom = 1.0,
     -- This flag is used to disable/ignore all zooming events and not update
     -- any zoom or zoom mode etc.
-    -- The caller is, however, responsible for setting the rigth settings before disabling.
+    -- The caller is, however, responsible for setting the right settings before disabling.
     disabled = false,
     available_zoom_modes = { -- const
         "page",
@@ -212,13 +212,13 @@ function ReaderZooming:_updateConfigurable(zoom_mode)
 
     local zoom_mode_genus, zoom_mode_type = self:mode_to_combo(zoom_mode)
 
-    -- FIXME(ogkevin): when zoom_mode is "free", zoom_mode_genus is nil
-    -- This is because in the mode_to_combo maping, free doesn't exsit.
+    -- @fixme: when zoom_mode is "free", zoom_mode_genus is nil
+    -- This is because in the mode_to_combo mapping, free doesn't exist.
     -- Manual does, but is free and manual the same thing?
     logger.dbg("ReaderZooming:_updateConfigurable", zoom_mode, zoom_mode_genus, zoom_mode_type)
 
     -- Configurable keys aren't prefixed, unlike the actual settings...
-    -- TODO(ogkevin): hack for nil zoom_mode_genus, needs confirmation if accaptable
+    -- @fixme: hack for nil zoom_mode_genus, needs confirmation if accaptable
     configurable.zoom_mode_genus = zoom_mode_genus and zoom_mode_genus or 0
     configurable.zoom_mode_type = zoom_mode_type
 
@@ -228,7 +228,6 @@ end
 function ReaderZooming:onReadSettings(config)
     -- If we have a composite zoom_mode stored, use that
     local zoom_mode = config:readSetting("zoom_mode")
-
     if zoom_mode then
         -- Validate it first
         zoom_mode = self.zoom_mode_label[zoom_mode] and zoom_mode or self.DEFAULT_ZOOM_MODE
@@ -471,7 +470,7 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
 end
 
 -- In dual page mode, zooming is a tricky concept.
--- Since we're rendering 2 pages next to each other who might not even have the same dimensions,
+-- Since we're rendering 2 pages next to each other which might not even have the same dimensions,
 -- we can't use 1 zooming factor to apply a zoom to both pages.
 -- Instead, we need individual factors per page.
 
@@ -480,13 +479,13 @@ end
 
 -- Zooming in and out, happens per page and not for the canvas/visable area.
 -- So when the user zooms in, the page is enlarged using a zooming factor, instead of the viewing area being enlarged.
--- On other words, if zooming in worked by taking a tmp screenshot and enlarge that, then this would be fine.
--- But since we're actually re-rendering the page and apply a zoom factor, we run in the same issue discribed above.
+-- In other words, if zooming in worked by taking a tmp screenshot and enlarging that, then this would be fine.
+-- But since we're actually re-rendering the page and apply a zoom factor, we run in the same issue described above.
 -- We can't apply 1 zoom factor to both pages in dual page mode, and calculating zoom on anything other then height
 -- will result in misalignment.
 --
 -- @param enabled bool
--- @param _ number The base page on which dual page mode has been enalbed, we don't care about that for zooming.
+-- @param _ number The base page on which dual page mode has been enabled, we don't care about that for zooming.
 function ReaderZooming:onDualPageModeEnabled(enabled, _)
     logger.dbg("ReaderZooming:onDualPageModeEnabled:", enabled)
 
