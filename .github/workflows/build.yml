@@ -73,7 +73,6 @@ jobs:
             make
             nasm
             ninja
-            p7zip
             pkg-config
             sdl2
             util-linux
