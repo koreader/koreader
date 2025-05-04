@@ -199,8 +199,7 @@ Will rotate up to specified value.]]),
                 name = "zoom_mode_type",
                 name_text = _("Fit"),
                 enabled_func = function(configurable)
-                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0) and
-                        configurable.page_mode ~= 2
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0) and configurable.page_mode ~= 2
                 end,
                 toggle = { _("full"), _("width"), _("height") },
                 alternate = false,
@@ -277,8 +276,7 @@ Will rotate up to specified value.]]),
                 name = "zoom_mode_genus",
                 name_text = _("Zoom to"),
                 enabled_func = function(configurable)
-                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
-                        and configurable.page_mode ~= 2
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0) and configurable.page_mode ~= 2
                 end,
                 -- toggle = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
                 item_icons = {
@@ -367,7 +365,7 @@ left to right or reverse, top to bottom or reverse.]]),
 
 Zooming is disabled in this mode, for more info, consult the wiki.
 
-This option only works when the device is in landscape mode!
+This option only works when the device is in landscape mode.
 ]]),
             },
             {

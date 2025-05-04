@@ -357,19 +357,19 @@ function ReaderBookmark:onToggleBookmark()
     return true
 end
 
--- @param pageno number|string when pageno is a string, it means we've already calculated the x pointer
-function ReaderBookmark:toggleBookmarkForPage(pageno)
-    logger.dbg("ReaderBookmark:toggleBookmark: pageno ", pageno)
+-- @param pageno_or_xpointer number|string when it is a string, it means we've already calculated the x pointer
+function ReaderBookmark:toggleBookmarkForPage(pageno_or_xpointer)
+    logger.dbg("ReaderBookmark:toggleBookmark: pageno ", pageno_or_xpointer)
 
-    if self.ui.rolling and type(pageno) ~= "string" then
-        pageno = self.ui.document:getPageXPointer(pageno)
+    if self.ui.rolling and type(pageno_or_xpointer) ~= "string" then
+        pageno_or_xpointer = self.ui.document:getPageXPointer(pageno_or_xpointer)
     else
-        pageno = pageno
+        pageno_or_xpointer = pageno_or_xpointer
     end
 
     local item
 
-    local index = self:getDogearBookmarkIndex(pageno)
+    local index = self:getDogearBookmarkIndex(pageno_or_xpointer)
     -- annotation removal
     if index then
         item = table.remove(self.ui.annotation.annotations, index)
@@ -377,7 +377,7 @@ function ReaderBookmark:toggleBookmarkForPage(pageno)
         -- create new annotation
     else
         local text
-        local chapter = self.ui.toc:getTocTitleByPage(pageno)
+        local chapter = self.ui.toc:getTocTitleByPage(pageno_or_xpointer)
         if chapter == "" then
             chapter = nil
         else
@@ -385,7 +385,7 @@ function ReaderBookmark:toggleBookmarkForPage(pageno)
             text = T(_("in %1"), chapter)
         end
         item = {
-            page = pageno,
+            page = pageno_or_xpointer,
             text = text,
             chapter = chapter,
         }
@@ -393,7 +393,7 @@ function ReaderBookmark:toggleBookmarkForPage(pageno)
     end
 
     self.ui:handleEvent(Event:new("AnnotationsModified", { item, index_modified = index }))
-    self:toggleDogearVisibility(pageno, self.ui.paging and self.ui.paging:isDualPageEnabled() or false)
+    self:toggleDogearVisibility(pageno_or_xpointer, self.ui.paging and self.ui.paging:isDualPageEnabled() or false)
 
     -- Refresh the dogear first, because it might inherit ReaderUI refresh hints.
     UIManager:setDirty(self.view.dialog, function()
@@ -500,7 +500,7 @@ end
 
 -- navigation
 
--- toggle dogear visibitliy for the given page
+-- toggle dogear visibility for the given page
 -- If dual page mode is enabled, ask ReaderPaging for the page pair and toggle it on both.
 -- Toggling on both means if one of them is bookmarked, ReaderView.dogear_visible will be set to true
 --
