@@ -158,9 +158,10 @@ function FileManagerCollection:isItemMatch(item)
 end
 
 function FileManagerCollection:getBookListTitle(item_table)
-    local collection_title = self:getCollectionTitle(self.booklist_menu.path)
-    local template = ReadCollection.coll_settings[self.booklist_menu.path].folders and "%1 (%2) \u{F114}" or "%1 (%2)"
-    local title = T(template, collection_title, #item_table)
+    local coll_name = self.booklist_menu.path
+    local marker = self.getCollMarker(coll_name)
+    local template = marker and "%1 (%2) " .. marker or "%1 (%2)"
+    local title = T(template, self:getCollectionTitle(coll_name), #item_table)
     local subtitle = ""
     if self.match_table then
         subtitle = {}
@@ -769,13 +770,8 @@ function FileManagerCollection:addBooksFromFolder(include_subfolders)
         path = G_reader_settings:readSetting("home_dir"),
         select_file = false,
         onConfirm = function(folder)
-            local files_found = {}
-            util.findFiles(folder, function(file, f)
-                if not util.stringStartsWith(f, "._") and DocumentRegistry:hasProvider(file) then
-                    files_found[file] = true
-                end
-            end, include_subfolders)
-            local count = ReadCollection:addItemsMultiple(files_found, { [self.booklist_menu.path] = true })
+            local count = ReadCollection:updateCollectionFromFolder(self.booklist_menu.path,
+                { [folder] = { subfolders = include_subfolders } })
             local text
             if count == 0 then
                 text = _("No books added to collection")
@@ -847,22 +843,19 @@ function FileManagerCollection:updateCollListItemTable(do_init, item_number)
     local item_table
     if do_init then
         item_table = {}
-        for name, coll in pairs(ReadCollection.coll) do
+        for coll_name in pairs(ReadCollection.coll) do
             local mandatory
             if self.selected_collections then
-                mandatory = self.selected_collections[name] and self.checkmark or "  "
+                mandatory = self.selected_collections[coll_name] and self.checkmark or "  "
                 self.coll_list.items_mandatory_font_size = self.coll_list.font_size
             else
-                mandatory = util.tableSize(coll)
-                if ReadCollection.coll_settings[name].folders then
-                    mandatory = "\u{F114} " .. mandatory
-                end
+                mandatory = self.getCollListItemMandatory(coll_name)
             end
             table.insert(item_table, {
-                text      = self:getCollectionTitle(name),
+                text      = self:getCollectionTitle(coll_name),
                 mandatory = mandatory,
-                name      = name,
-                order     = ReadCollection.coll_settings[name].order,
+                name      = coll_name,
+                order     = ReadCollection.coll_settings[coll_name].order,
             })
         end
         if #item_table > 1 then
@@ -891,6 +884,24 @@ function FileManagerCollection:updateCollListItemTable(do_init, item_number)
     self.coll_list:switchItemTable(title, item_table, item_number or -1, itemmatch, subtitle)
 end
 
+function FileManagerCollection.getCollListItemMandatory(coll_name)
+    local marker = FileManagerCollection.getCollMarker(coll_name)
+    local coll_nb = util.tableSize(ReadCollection.coll[coll_name])
+    return marker and marker .. " " .. coll_nb or coll_nb
+end
+
+function FileManagerCollection.getCollMarker(coll_name)
+    local coll_settings = ReadCollection.coll_settings[coll_name]
+    local marker
+    if coll_settings.folders then
+        marker = "\u{F114}"
+    end
+    if util.tableGetValue(coll_settings, "filter", "add", "filetype") then
+        marker = marker and "\u{F114} \u{F0B0}" or "\u{F0B0}"
+    end
+    return marker
+end
+
 function FileManagerCollection:onCollListChoice(item)
     if self._manager.selected_collections then
         if item.mandatory == self._manager.checkmark then
@@ -914,6 +925,13 @@ function FileManagerCollection:onCollListHold(item)
     local button_dialog
     local buttons = {
         {
+            {
+                text = _("Filter new books"),
+                callback = function()
+                    UIManager:close(button_dialog)
+                    self._manager:showCollFilterDialog(item)
+                end
+            },
             {
                 text = _("Connect folders"),
                 callback = function()
@@ -948,6 +966,43 @@ function FileManagerCollection:onCollListHold(item)
     return true
 end
 
+function FileManagerCollection:showCollFilterDialog(item)
+    local coll_name = item.name
+    local coll_settings = ReadCollection.coll_settings[coll_name]
+    local input_dialog
+    input_dialog = InputDialog:new{
+        title =  _("Enter new books file type"),
+        input = util.tableGetValue(coll_settings, "filter", "add", "filetype"),
+        input_hint = "epub, pdf",
+        buttons = {{
+            {
+                text = _("Cancel"),
+                id = "close",
+                callback = function()
+                    UIManager:close(input_dialog)
+                end,
+            },
+            {
+                text = _("Save"),
+                callback = function()
+                    UIManager:close(input_dialog)
+                    local filetype = input_dialog:getInputText()
+                    if filetype == "" then
+                        util.tableRemoveValue(coll_settings, "filter", "add", "filetype")
+                    else
+                        util.tableSetValue(coll_settings, filetype:lower(), "filter", "add", "filetype")
+                    end
+                    self.coll_list.item_table[item.idx].mandatory = self.getCollListItemMandatory(coll_name)
+                    self:updateCollListItemTable()
+                    self.updated_collections[coll_name] = true
+                end,
+            },
+        }},
+    }
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
+end
+
 function FileManagerCollection:showCollFolderList(item)
     local coll_name = item.name
     self.coll_folder_list = Menu:new{
@@ -970,11 +1025,7 @@ function FileManagerCollection:showCollFolderList(item)
         self.coll_folder_list = nil
         if self.updated_collections[coll_name] then
             -- folder has been connected, new books added to collection
-            local mandatory = util.tableSize(ReadCollection.coll[coll_name])
-            if ReadCollection.coll_settings[coll_name].folders then
-                mandatory = "\u{F114} " .. mandatory
-            end
-            self.coll_list.item_table[item.idx].mandatory = mandatory
+            self.coll_list.item_table[item.idx].mandatory = self.getCollListItemMandatory(item.name)
             self:updateCollListItemTable()
         end
     end
