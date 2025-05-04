@@ -36,7 +36,6 @@ function RenderImage:renderImageFile(filename, want_frames, width, height)
     return RenderImage:renderImageData(data, #data, want_frames, width, height)
 end
 
-
 --- Renders image data as a BlitBuffer with the best renderer
 --
 -- @tparam data string or userdata (pointer) with image bytes
@@ -116,7 +115,6 @@ function RenderImage:renderSVGImageDataWithCRengine(data, size, width, height)
     local image = Blitbuffer.new(image_w, image_h, Blitbuffer.TYPE_BBRGB32, image_data)
     return image
 end
-
 
 --- Renders image data as a BlitBuffer with GifLib
 --

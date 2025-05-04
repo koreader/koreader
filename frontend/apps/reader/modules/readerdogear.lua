@@ -3,21 +3,21 @@ local Device = require("device")
 local Geom = require("ui/geometry")
 local IconWidget = require("ui/widget/iconwidget")
 local RightContainer = require("ui/widget/container/rightcontainer")
-local LeftContainer= require("ui/widget/container/leftcontainer")
+local LeftContainer = require("ui/widget/container/leftcontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = Device.screen
 local logger = require("logger")
 
-local ReaderDogear = WidgetContainer:extend{}
-
--- These constants are used to instruct ReaderDogear on which corner to paint the dogear
--- This is mainly used in Dual Page mode
--- Default is right top corner
-ReaderDogear.SIDE_LEFT = 1
-ReaderDogear.SIDE_RIGHT = 2
-ReaderDogear.SIDE_BOTH = 3
+local ReaderDogear = WidgetContainer:extend({
+    -- These constants are used to instruct ReaderDogear on which corner to paint the dogear
+    -- This is mainly used in Dual Page mode
+    -- Default is right top corner
+    SIDE_LEFT = 1,
+    SIDE_RIGHT = 2,
+    SIDE_BOTH = 3,
+})
 
 function ReaderDogear:init()
     -- This image could be scaled for DPI (with scale_for_dpi=true, scale_factor=0.7),
@@ -26,8 +26,8 @@ function ReaderDogear:init()
     -- to not overwrite the book text.
     -- For other documents, there is no easy way to know if valuable content
     -- may be hidden by the icon (kopt's page_margin is quite obscure).
-    self.dogear_min_size = math.ceil(math.min(Screen:getWidth(), Screen:getHeight()) * (1/40))
-    self.dogear_max_size = math.ceil(math.min(Screen:getWidth(), Screen:getHeight()) * (1/32))
+    self.dogear_min_size = math.ceil(math.min(Screen:getWidth(), Screen:getHeight()) * (1 / 40))
+    self.dogear_max_size = math.ceil(math.min(Screen:getWidth(), Screen:getHeight()) * (1 / 32))
     self.dogear_size = nil
 
     self.icon_right = nil
@@ -61,43 +61,43 @@ function ReaderDogear:setupDogear(new_dogear_size)
             self.left_ear:free()
         end
 
-        self.top_pad = VerticalSpan:new { width = self.dogear_y_offset }
+        self.top_pad = VerticalSpan:new({ width = self.dogear_y_offset })
 
-        self.icon_right = IconWidget:new {
+        self.icon_right = IconWidget:new({
             icon = "dogear.alpha",
             rotation_angle = BD.mirroredUILayout() and 90 or 0,
             width = self.dogear_size,
             height = self.dogear_size,
             alpha = true, -- Keep the alpha layer intact
-        }
+        })
 
-        self.vgroup_right = VerticalGroup:new {
+        self.vgroup_right = VerticalGroup:new({
             self.top_pad,
             self.icon_right,
-        }
+        })
 
-        self.right_ear = RightContainer:new {
-            dimen = Geom:new { w = Screen:getWidth(), h = self.dogear_y_offset + self.dogear_size },
-            self.vgroup_right
-        }
+        self.right_ear = RightContainer:new({
+            dimen = Geom:new({ w = Screen:getWidth(), h = self.dogear_y_offset + self.dogear_size }),
+            self.vgroup_right,
+        })
 
-        self.icon_left = IconWidget:new {
+        self.icon_left = IconWidget:new({
             icon = "dogear.alpha",
             rotation_angle = self.icon_right.rotation_angle + 90,
             width = self.dogear_size,
             height = self.dogear_size,
             alpha = true, -- Keep the alpha layer intact
-        }
+        })
 
-        self.vgroup_left = VerticalGroup:new {
+        self.vgroup_left = VerticalGroup:new({
             self.top_pad,
             self.icon_left,
-        }
+        })
 
-        self.left_ear = LeftContainer:new {
-            dimen = Geom:new { w = Screen:getWidth(), h = self.dogear_y_offset + self.dogear_size },
-            self.vgroup_left
-        }
+        self.left_ear = LeftContainer:new({
+            dimen = Geom:new({ w = Screen:getWidth(), h = self.dogear_y_offset + self.dogear_size }),
+            self.vgroup_left,
+        })
     end
 end
 
@@ -120,8 +120,12 @@ function ReaderDogear:onReadSettings(config)
     if self.ui.rolling then
         -- Adjust to CreDocument margins (as done in ReaderTypeset)
         local configurable = self.ui.document.configurable
-        local margins = { configurable.h_page_margins[1], configurable.t_page_margin,
-                          configurable.h_page_margins[2], configurable.b_page_margin }
+        local margins = {
+            configurable.h_page_margins[1],
+            configurable.t_page_margin,
+            configurable.h_page_margins[2],
+            configurable.b_page_margin,
+        }
         self:onSetPageMargins(margins)
     end
 end
