@@ -192,7 +192,7 @@ function FileManagerCollection:onMenuSelect(item)
     if self._manager.selected_files then
         item.dim = not item.dim and true or nil
         self._manager.selected_files[item.file] = item.dim
-        self._manager:updateItemTable(self.item_table)
+        self:updateItems(1, true)
     else
         self.close_callback()
         if self.ui.document then
@@ -312,14 +312,14 @@ end
 
 function FileManagerCollection:toggleSelectMode(rebuild)
     if self.selected_files then
-        local item_table
-        if not rebuild then
-            item_table = self.booklist_menu.item_table
-            for _, item in ipairs(item_table) do
+        if rebuild then
+            self:updateItemTable()
+        else
+            for _, item in ipairs(self.booklist_menu.item_table) do
                 item.dim = nil
             end
+            self.booklist_menu:updateItems(1, true)
         end
-        self:updateItemTable(item_table)
         self.booklist_menu:setTitleBarLeftIcon("appbar.menu")
         self.selected_files = nil
     else
@@ -409,7 +409,7 @@ function FileManagerCollection:showSelectModeDialog()
                     for _, item in ipairs(item_table) do
                         item.dim = nil
                     end
-                    self:updateItemTable(item_table)
+                    self.booklist_menu:updateItems(1, true)
                 end,
             },
             {
@@ -420,7 +420,7 @@ function FileManagerCollection:showSelectModeDialog()
                         item.dim = true
                         self.selected_files[item.file] = true
                     end
-                    self:updateItemTable(item_table)
+                    self.booklist_menu:updateItems(1, true)
                 end,
             },
         },
