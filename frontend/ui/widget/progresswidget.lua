@@ -114,11 +114,13 @@ function ProgressWidget:paintTo(bb, x, y)
         self.dimen = Geom:new{
             x = x, y = y,
             w = my_size.w,
-            h = my_size.h
+            h = my_size.h,
         }
     else
         self.dimen.x = x
         self.dimen.y = y
+        self.dimen.w = my_size.w
+        self.dimen.h = my_size.h
     end
     if self.dimen.w == 0 or self.dimen.h == 0 then return end
 

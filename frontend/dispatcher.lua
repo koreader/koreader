@@ -34,6 +34,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local FileManager = require("apps/filemanager/filemanager")
 local Notification = require("ui/widget/notification")
+local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
 local Screen = Device.screen
@@ -149,7 +150,8 @@ local settingsList = {
     -- Reader
     show_config_menu = {category="none", event="ShowConfigMenu", title=_("Show bottom menu"), reader=true},
     toggle_status_bar = {category="none", event="ToggleFooterMode", title=_("Toggle status bar"), reader=true},
-    toggle_chapter_progress_bar = {category="none", event="ToggleChapterProgressBar", title=_("Toggle chapter progress bar"), reader=true, separator=true},
+    toggle_chapter_progress_bar = {category="none", event="ToggleChapterProgressBar", title=_("Toggle chapter progress bar"), reader=true},
+    load_footer_preset = {category="string", event="LoadFooterPreset", title=_("Load status bar preset"), args_func=ReaderFooter.getPresets, reader=true, separator=true},
     ----
     prev_chapter = {category="none", event="GotoPrevChapter", title=_("Previous chapter"), reader=true},
     next_chapter = {category="none", event="GotoNextChapter", title=_("Next chapter"), reader=true},
@@ -386,6 +388,7 @@ local dispatcher_menu_order = {
     "show_config_menu",
     "toggle_status_bar",
     "toggle_chapter_progress_bar",
+    "load_footer_preset",
     ----
     "prev_chapter",
     "next_chapter",
@@ -906,26 +909,29 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                     separator = settingsList[k].separator,
                 })
             elseif settingsList[k].category == "string" or settingsList[k].category == "configurable" then
-                local sub_item_table = {}
-                if not settingsList[k].args and settingsList[k].args_func then
-                    settingsList[k].args, settingsList[k].toggle = settingsList[k].args_func()
-                end
-                for i=1,#settingsList[k].args do
-                    table.insert(sub_item_table, {
-                        text = tostring(settingsList[k].toggle[i]),
-                        checked_func = function()
-                            if location[settings] ~= nil and location[settings][k] ~= nil then
-                                if type(location[settings][k]) == "table" then
-                                    return location[settings][k][1] == settingsList[k].args[i][1]
-                                else
-                                    return location[settings][k] == settingsList[k].args[i]
+                local function sub_item_table_func()
+                    local item_table = {}
+                    if settingsList[k].args_func then
+                        settingsList[k].args, settingsList[k].toggle = settingsList[k].args_func()
+                    end
+                    for i=1,#settingsList[k].args do
+                        table.insert(item_table, {
+                            text = tostring(settingsList[k].toggle[i]),
+                            checked_func = function()
+                                if location[settings] ~= nil and location[settings][k] ~= nil then
+                                    if type(location[settings][k]) == "table" then
+                                        return location[settings][k][1] == settingsList[k].args[i][1]
+                                    else
+                                        return location[settings][k] == settingsList[k].args[i]
+                                    end
                                 end
-                            end
-                        end,
-                        callback = function()
-                            setValue(k, settingsList[k].args[i])
-                        end,
-                    })
+                            end,
+                            callback = function()
+                                setValue(k, settingsList[k].args[i])
+                            end,
+                        })
+                    end
+                    return item_table
                 end
                 table.insert(menu, {
                     text_func = function()
@@ -934,7 +940,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                     checked_func = function()
                         return location[settings] ~= nil and location[settings][k] ~= nil
                     end,
-                    sub_item_table = sub_item_table,
+                    sub_item_table_func = sub_item_table_func,
                     keep_menu_open = true,
                     hold_callback = function(touchmenu_instance)
                         if location[settings] ~= nil and location[settings][k] ~= nil then
