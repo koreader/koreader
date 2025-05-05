@@ -1373,7 +1373,7 @@ end
 function ReaderHighlight:showHighlightDialog(index)
     local item = self.ui.annotation.annotations[index]
     local change_boundaries_enabled = not item.text_edited
-    local start_prev, start_next, end_prev, end_next = "◁▒▒", "▷▒▒", "▒▒◁", "▒▒▷"
+    local start_prev, start_next, end_prev, end_next = "◁▒▒", "▷☓▒", "▒☓◁", "▒▒▷"
     if BD.mirroredUILayout() then
         -- BiDi will mirror the arrows, and this just works
         start_prev, start_next = start_next, start_prev
