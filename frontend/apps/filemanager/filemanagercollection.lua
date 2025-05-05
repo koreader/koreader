@@ -971,7 +971,7 @@ function FileManagerCollection:showCollFilterDialog(item)
     local coll_settings = ReadCollection.coll_settings[coll_name]
     local input_dialog
     input_dialog = InputDialog:new{
-        title =  _("Enter new books file type"),
+        title =  _("Enter file type for new books"),
         input = util.tableGetValue(coll_settings, "filter", "add", "filetype"),
         input_hint = "epub, pdf",
         buttons = {{
