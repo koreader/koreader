@@ -1546,18 +1546,9 @@ With this feature enabled, the current page is factored in, resulting in the cou
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.text_font_size = spin.value
-                                    self.footer_text_face = Font:getFace(self.text_font_face, self.settings.text_font_size)
-                                    self.footer_text:free()
-                                    self.footer_text = TextWidget:new{
-                                        text = self.footer_text.text,
-                                        face = self.footer_text_face,
-                                        bold = self.settings.text_font_bold,
-                                    }
-                                    self.text_container[1] = self.footer_text
-                                    self.separator_width = nil
-                                    self.filler_space_width = nil
+                                    self:updateFooterFont()
                                     self:refreshFooter(true, true)
-                                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                                    touchmenu_instance:updateItems()
                                 end,
                             }
                             UIManager:show(items_font)
@@ -1571,15 +1562,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
                         end,
                         callback = function()
                             self.settings.text_font_bold = not self.settings.text_font_bold
-                            self.footer_text:free()
-                            self.footer_text = TextWidget:new{
-                                text = self.footer_text.text,
-                                face = self.footer_text_face,
-                                bold = self.settings.text_font_bold,
-                            }
-                            self.text_container[1] = self.footer_text
-                            self.separator_width = nil
-                            self.filler_space_width = nil
+                            self:updateFooterFont()
                             self:refreshFooter(true, true)
                         end,
                     },
@@ -1727,7 +1710,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
         text = _("Status bar presets"),
         separator = true,
         sub_item_table_func = function()
-            return self:getNamedPresetMenuItems()
+            return self:genPresetMenuItemTable()
         end,
     })
     table.insert(sub_items, {
@@ -1866,6 +1849,9 @@ function ReaderFooter:genItemSymbolsMenuItems(value)
         end,
         callback = function()
             self.settings.item_prefix = value
+            if self.settings.items_separator == "none" then
+                self.separator_width = nil
+            end
             self:refreshFooter(true)
         end,
     }
@@ -1944,7 +1930,7 @@ function ReaderFooter:genAlignmentMenuItems(value)
     }
 end
 
-function ReaderFooter:getNamedPresetMenuItems()
+function ReaderFooter:genPresetMenuItemTable()
     local footer_presets = G_reader_settings:readSetting("footer_presets", {})
     local items = {
         {
@@ -1961,7 +1947,7 @@ function ReaderFooter:getNamedPresetMenuItems()
             text = preset_name,
             keep_menu_open = true,
             callback = function()
-                self:loadFromNamedPreset(preset_name)
+                self:loadPreset(footer_presets[preset_name])
             end,
             hold_callback = function(touchmenu_instance)
                 UIManager:show(MultiConfirmBox:new{
@@ -1969,12 +1955,12 @@ function ReaderFooter:getNamedPresetMenuItems()
                     choice1_text = _("Delete"),
                     choice1_callback = function()
                         footer_presets[preset_name] = nil
-                        touchmenu_instance.item_table = self:getNamedPresetMenuItems()
+                        touchmenu_instance.item_table = self:genPresetMenuItemTable()
                         touchmenu_instance:updateItems()
                     end,
                     choice2_text = _("Update"),
                     choice2_callback = function()
-                        self:saveToNamedPreset(preset_name)
+                        footer_presets[preset_name] = self:buildPreset()
                         UIManager:show(InfoMessage:new{
                             text = T(_("Preset '%1' was updated with current settings"), preset_name),
                             timeout = 2,
@@ -2012,12 +1998,12 @@ function ReaderFooter:createPresetFromCurrentSettings(touchmenu_instance)
                                 text = T(_("A preset named '%1' already exists. Please choose a different name."), preset_name),
                                 timeout = 2,
                             })
-                            return
+                        else
+                            footer_presets[preset_name] = self:buildPreset()
+                            UIManager:close(input_dialog)
+                            touchmenu_instance.item_table = self:genPresetMenuItemTable()
+                            touchmenu_instance:updateItems()
                         end
-                        self:saveToNamedPreset(preset_name)
-                        UIManager:close(input_dialog)
-                        touchmenu_instance.item_table = self:getNamedPresetMenuItems()
-                        touchmenu_instance:updateItems()
                     end,
                 },
             },
@@ -2027,35 +2013,41 @@ function ReaderFooter:createPresetFromCurrentSettings(touchmenu_instance)
     input_dialog:onShowKeyboard()
 end
 
-function ReaderFooter:saveToNamedPreset(preset_name)
-    local footer_presets = G_reader_settings:readSetting("footer_presets")
-    footer_presets[preset_name] = {
+function ReaderFooter:buildPreset()
+    return {
         footer = util.tableDeepCopy(self.settings),
-        reader_footer_mode = G_reader_settings:readSetting("reader_footer_mode"),
-        reader_footer_custom_text = G_reader_settings:readSetting("reader_footer_custom_text"),
-        reader_footer_custom_text_repetitions = G_reader_settings:readSetting("reader_footer_custom_text_repetitions"),
+        reader_footer_mode = self.mode,
+        reader_footer_custom_text = self.custom_text,
+        reader_footer_custom_text_repetitions = self.custom_text_repetitions,
     }
 end
 
-function ReaderFooter:loadFromNamedPreset(preset_name)
-    local footer_presets = G_reader_settings:readSetting("footer_presets")
-    local preset = footer_presets[preset_name]
+function ReaderFooter:loadPreset(preset)
+    local old_text_font_size = self.settings.text_font_size
+    local old_text_font_bold = self.settings.text_font_bold
     G_reader_settings:saveSetting("footer", util.tableDeepCopy(preset.footer))
     G_reader_settings:saveSetting("reader_footer_mode", preset.reader_footer_mode)
     G_reader_settings:saveSetting("reader_footer_custom_text", preset.reader_footer_custom_text)
     G_reader_settings:saveSetting("reader_footer_custom_text_repetitions", preset.reader_footer_custom_text_repetitions)
     self.settings = G_reader_settings:readSetting("footer")
-    self.mode = preset.reader_footer_mode
+    self.mode_index = self.settings.order
     self.custom_text = preset.reader_footer_custom_text
     self.custom_text_repetitions = tonumber(preset.reader_footer_custom_text_repetitions)
+    self:applyFooterMode(preset.reader_footer_mode)
     self:updateFooterTextGenerator()
+    if old_text_font_size ~= self.settings.text_font_size or old_text_font_bold ~= self.settings.text_font_bold then
+        self:updateFooterFont()
+    else
+        self.separator_width = nil
+        self.filler_space_width = nil
+    end
     self:refreshFooter(true, true)
 end
 
 function ReaderFooter:onLoadFooterPreset(preset_name)
     local footer_presets = G_reader_settings:readSetting("footer_presets")
     if footer_presets and footer_presets[preset_name] then
-        self:loadFromNamedPreset(preset_name)
+        self:loadPreset(footer_presets[preset_name])
     end
     return true
 end
@@ -2260,6 +2252,19 @@ function ReaderFooter:updateFooterPos(force_repaint, full_repaint)
         self.progress_bar:setPercentage(self.position / self.doc_height)
     end
     self:updateFooterText(force_repaint, full_repaint)
+end
+
+function ReaderFooter:updateFooterFont()
+    self.separator_width = nil
+    self.filler_space_width = nil
+    self.footer_text_face = Font:getFace(self.text_font_face, self.settings.text_font_size)
+    self.footer_text:free()
+    self.footer_text = TextWidget:new{
+        text = self.footer_text.text,
+        face = self.footer_text_face,
+        bold = self.settings.text_font_bold,
+    }
+    self.text_container[1] = self.footer_text
 end
 
 -- updateFooterText will start as a noop. After onReaderReady event is
