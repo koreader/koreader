@@ -468,16 +468,18 @@ function Screensaver:setup(event, event_message)
     local ReaderUI = require("apps/reader/readerui")
     local ui = ReaderUI.instance
     local lastfile = G_reader_settings:readSetting("lastfile")
+    local is_document_cover = false
     if self.screensaver_type == "document_cover" then
         -- Set lastfile to the document of which we want to show the cover.
         lastfile = G_reader_settings:readSetting("screensaver_document_cover")
         self.screensaver_type = "cover"
-        self.is_document_cover = true
+        is_document_cover = true
     end
     if self.screensaver_type == "cover" then
         local excluded
-        if not self.is_document_cover and lastfile then
-            local exclude_finished_book, exclude_on_hold_book
+        if not is_document_cover and lastfile then
+            local exclude_finished_book
+            local exclude_on_hold_book
             local exclude_book_in_fm = not ui and G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
             if BookList.hasBookBeenOpened(lastfile) then
                 local doc_settings
