@@ -2041,6 +2041,7 @@ function ReaderFooter:loadPreset(preset)
         self.separator_width = nil
         self.filler_space_width = nil
     end
+    self:setTocMarkers()
     self:refreshFooter(true, true)
 end
 
