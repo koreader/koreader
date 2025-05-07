@@ -500,11 +500,6 @@ function Screensaver:setup(event, event_message)
                 self.show_message = false
             end
         else
-            if not self.is_document_cover and lastfile then
-                -- book was the last file opened but has now been reset (i.e marked unopened)
-                lastfile = nil
-                self.show_message = false
-            end
             -- No DocSetting, not excluded
             excluded = false
         end
