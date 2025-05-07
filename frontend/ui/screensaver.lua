@@ -472,6 +472,7 @@ function Screensaver:setup(event, event_message)
         -- Set lastfile to the document of which we want to show the cover.
         lastfile = G_reader_settings:readSetting("screensaver_document_cover")
         self.screensaver_type = "cover"
+        self.is_document_cover = true
     end
     if self.screensaver_type == "cover" then
         local excluded
@@ -496,6 +497,11 @@ function Screensaver:setup(event, event_message)
                 self.show_message = false
             end
         else
+            if not self.is_document_cover and lastfile then
+                -- book was the last file opened but has now been reset (i.e marked unopened)
+                lastfile = nil
+                self.show_message = false
+            end
             -- No DocSetting, not excluded
             excluded = false
         end
