@@ -650,7 +650,7 @@ function OPDSBrowser:showDownloads(item)
                     callback = function()
                         UIManager:close(self.download_dialog)
                         local local_path = self:getLocalDownloadPath(filename, filetype, acquisition.href)
-                        self:downloadFile(local_path, acquisition.href, self.file_downloaded_callback)
+                        self:checkDownloadFile(local_path, acquisition.href, self.file_downloaded_callback)
                     end,
                     hold_callback = function()
                         UIManager:close(self.download_dialog)
@@ -783,63 +783,17 @@ function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url)
 end
 
 -- Downloads a book (with "File already exists" dialog)
-function OPDSBrowser:downloadFile(local_path, remote_url, caller_callback)
-    local ask_to_overwrite = caller_callback ~= nil -- single file downloading
-    local code
+function OPDSBrowser:checkDownloadFile(local_path, remote_url, caller_callback)
     local function download()
---        UIManager:scheduleIn(1, function()
-            logger.dbg("Downloading file", local_path, "from", remote_url)
-            local parsed = url.parse(remote_url)
-
-            local headers, status
-            if parsed.scheme == "http" or parsed.scheme == "https" then
-                socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-                code, headers, status = socket.skip(1, http.request {
-                    url      = remote_url,
-                    headers  = {
-                        ["Accept-Encoding"] = "identity",
-                    },
-                    sink     = ltn12.sink.file(io.open(local_path, "w")),
-                    user     = self.root_catalog_username,
-                    password = self.root_catalog_password,
-                })
-                socketutil:reset_timeout()
-            else
-                UIManager:show(InfoMessage:new {
-                    text = T(_("Invalid protocol:\n%1"), parsed.scheme),
-                })
-            end
-
-            if code == 200 then
-                logger.dbg("File downloaded to", local_path)
-                if caller_callback then
-                    caller_callback(local_path)
-                end
-            elseif code == 302 and remote_url:match("^https") and headers.location:match("^http[^s]") then
-                util.removeFile(local_path)
-                UIManager:show(InfoMessage:new{
-                    text = T(_("Insecure HTTPS → HTTP downgrade attempted by redirect from:\n\n'%1'\n\nto\n\n'%2'.\n\nPlease inform the server administrator that many clients disallow this because it could be a downgrade attack."), BD.url(remote_url), BD.url(headers.location)),
-                    icon = "notice-warning",
-                })
-            else
-                util.removeFile(local_path)
-                logger.dbg("OPDSBrowser:downloadFile: Request failed:", status or code)
-                logger.dbg("OPDSBrowser:downloadFile: Response headers:", headers)
-                UIManager:show(InfoMessage:new {
-                    text = T(_("Could not save file to:\n%1\n%2"),
-                        BD.filepath(local_path),
-                        status or code or "network unreachable"),
-                })
-            end
---        end)
-
+        UIManager:scheduleIn(1, function()
+            self:downloadFile(local_path, remote_url, caller_callback)
+        end)
         UIManager:show(InfoMessage:new{
-            text = _("Downloading may take several minutes…"),
+            text = _("Downloading…"),
             timeout = 1,
         })
     end
-
-    if ask_to_overwrite and lfs.attributes(local_path) then
+    if lfs.attributes(local_path) then
         UIManager:show(ConfirmBox:new{
             text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filepath(local_path)),
             ok_text = _("Overwrite"),
@@ -850,7 +804,51 @@ function OPDSBrowser:downloadFile(local_path, remote_url, caller_callback)
     else
         download()
     end
-    return code == 200
+end
+
+function OPDSBrowser:downloadFile(local_path, remote_url, caller_callback)
+    logger.dbg("Downloading file", local_path, "from", remote_url)
+    local code, headers, status
+    local parsed = url.parse(remote_url)
+    if parsed.scheme == "http" or parsed.scheme == "https" then
+        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+        code, headers, status = socket.skip(1, http.request {
+            url      = remote_url,
+            headers  = {
+                ["Accept-Encoding"] = "identity",
+            },
+            sink     = ltn12.sink.file(io.open(local_path, "w")),
+            user     = self.root_catalog_username,
+            password = self.root_catalog_password,
+        })
+        socketutil:reset_timeout()
+    else
+        UIManager:show(InfoMessage:new {
+            text = T(_("Invalid protocol:\n%1"), parsed.scheme),
+        })
+    end
+    if code == 200 then
+        logger.dbg("File downloaded to", local_path)
+        if caller_callback then
+            caller_callback(local_path)
+        end
+        return true
+    elseif code == 302 and remote_url:match("^https") and headers.location:match("^http[^s]") then
+        util.removeFile(local_path)
+        UIManager:show(InfoMessage:new{
+            text = T(_("Insecure HTTPS → HTTP downgrade attempted by redirect from:\n\n'%1'\n\nto\n\n'%2'.\n\nPlease inform the server administrator that many clients disallow this because it could be a downgrade attack."), BD.url(remote_url), BD.url(headers.location)),
+            icon = "notice-warning",
+        })
+    else
+        util.removeFile(local_path)
+        logger.dbg("OPDSBrowser:downloadFile: Request failed:", status or code)
+        logger.dbg("OPDSBrowser:downloadFile: Response headers:", headers)
+        UIManager:show(InfoMessage:new {
+            text = T(_("Could not save file to:\n%1\n%2"),
+                BD.filepath(local_path),
+                status or code or "network unreachable"),
+        })
+    end
 end
 
 -- Menu action on item tap (Download a book / Show subcatalog / Search in catalog)
@@ -1029,7 +1027,7 @@ function OPDSBrowser:showDownloadListItemDialog(item)
                         self._manager.file_downloaded_callback(local_path)
                     end
                     NetworkMgr:runWhenConnected(function()
-                        self._manager:downloadFile(dl_item.file, dl_item.url, file_downloaded_callback)
+                        self._manager:checkDownloadFile(dl_item.file, dl_item.url, file_downloaded_callback)
                     end)
                 end,
             },
