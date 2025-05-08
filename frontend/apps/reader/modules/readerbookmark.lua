@@ -253,6 +253,15 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 end,
             },
             {
+                text = _("Keep existing annotations on importing"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("annotations_export_keep_existing")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("annotations_export_keep_existing")
+                end,
+            },
+            {
                 text_func = function()
                     return T(_("Export / import folder: %1"),
                         G_reader_settings:readSetting("annotations_export_folder") or _("book metadata folder"))
