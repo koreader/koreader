@@ -253,12 +253,12 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Keep existing annotations on importing"),
+                text = _("Keep all annotations on import"),
                 checked_func = function()
-                    return G_reader_settings:isTrue("annotations_export_keep_existing")
+                    return G_reader_settings:isTrue("annotations_export_keep_all_on_import")
                 end,
                 callback = function()
-                    G_reader_settings:flipNilOrFalse("annotations_export_keep_existing")
+                    G_reader_settings:flipNilOrFalse("annotations_export_keep_all_on_import")
                 end,
             },
             {
