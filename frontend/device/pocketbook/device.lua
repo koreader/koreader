@@ -873,7 +873,7 @@ elseif codename == "617" then
 elseif codename == "618" then
     return PocketBook618
 elseif codename == "619" then
-    return PocketBook619    
+    return PocketBook619
 elseif codename == "622" then
     return PocketBook622
 elseif codename == "623" then
