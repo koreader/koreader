@@ -25,6 +25,7 @@ local RenderImage = {}
 -- @int height requested height
 -- @treturn BlitBuffer or list of frames (each a function returning a Blitbuffer)
 function RenderImage:renderImageFile(filename, want_frames, width, height)
+    logger.dbg("renderimage: rendering image", filename)
     local file = io.open(filename, "rb")
     if not file then
         logger.warn("could not open image file:", filename)
@@ -35,7 +36,6 @@ function RenderImage:renderImageFile(filename, want_frames, width, height)
     return RenderImage:renderImageData(data, #data, want_frames, width, height)
 end
 
-
 --- Renders image data as a BlitBuffer with the best renderer
 --
 -- @tparam data string or userdata (pointer) with image bytes
@@ -45,6 +45,7 @@ end
 -- @int height requested height
 -- @treturn BlitBuffer or list of frames (each a function returning a Blitbuffer)
 function RenderImage:renderImageData(data, size, want_frames, width, height)
+    logger.dbg("renderimage: rendering image data")
     if not data or not size or size == 0 then
         return
     end
@@ -86,6 +87,7 @@ end
 -- @int height requested height
 -- @treturn BlitBuffer
 function RenderImage:renderImageDataWithMupdf(data, size, width, height)
+    logger.dbg("renderimage: rendering image data with mupdf")
     if not Mupdf then Mupdf = require("ffi/mupdf") end
     local ok, image = pcall(Mupdf.renderImage, data, size, width, height)
     logger.dbg("Mupdf.renderImage", ok, image)
@@ -113,7 +115,6 @@ function RenderImage:renderSVGImageDataWithCRengine(data, size, width, height)
     local image = Blitbuffer.new(image_w, image_h, Blitbuffer.TYPE_BBRGB32, image_data)
     return image
 end
-
 
 --- Renders image data as a BlitBuffer with GifLib
 --

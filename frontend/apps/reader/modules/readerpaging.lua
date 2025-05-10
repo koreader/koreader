@@ -1,14 +1,18 @@
 local BD = require("ui/bidi")
+local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
+local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
+local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
 local logger = require("logger")
-local util = require("util")
 local time = require("ui/time")
+local util = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
@@ -29,6 +33,12 @@ end
 local ReaderPaging = InputContainer:extend{
     pan_rate = 30,  -- default 30 ops, will be adjusted in readerui
     current_page = 0,
+
+    -- In dual page mode, this holds the base pair that we are at.
+    -- This is needed to do relative page changes.
+    -- It should also be the same value as current_page
+    current_pair_base = 0,
+
     number_of_pages = 0,
     visible_area = nil,
     page_area = nil,
@@ -39,6 +49,29 @@ local ReaderPaging = InputContainer:extend{
     flip_steps = {0, 1, 2, 5, 10, 20, 50, 100},
 }
 
+-- Changes to defaults requires a migration!
+ReaderPaging.default_reader_settings = {
+    -- If its the first time that the user is using dual page mode,
+    -- notify them that zooming is not a thing in this mode.
+    -- On why zooming is disabled, see ReaderZooming:onDualPageModeEnabled
+    first_time_dual_page_mode = true,
+    -- When the device is in ladscape mode and the document is supported,
+    -- auto enable dual page mode.
+    auto_enable_dual_page_mode = false
+}
+
+-- @todo migrate all the settings to this reference
+--
+-- Changes to defaults requires a migration!
+ReaderPaging.default_document_settings = {
+    -- CBZ show 2 pages at once
+    -- Generally speaking this variable should not be consulted directly,
+    -- use ReaderPaging:isDualPageEnabled() instead!
+    dual_page_mode = false,
+    dual_page_mode_first_page_is_cover = false,
+    dual_page_mode_rtl = false,
+}
+
 function ReaderPaging:init()
     self:registerKeyEvents()
     self.pan_interval = time.s(1 / self.pan_rate)
@@ -46,7 +79,153 @@ function ReaderPaging:init()
 
     -- delegate gesture listener to readerui, NOP our own
     self.ges_events = nil
+
+    self.reader_settings = G_reader_settings:readSetting("paging", self.default_reader_settings)
+    -- init in onReadSettings
+    -- This holds a reference to the doc settings, so all the settings that are
+    -- configured here, we don't have to manually save or update them
+    --
+    -- @todo migrate all the settings to this reference
+
+    self.document_settings = self.ui.doc_settings:readSetting("paging", self.default_document_settings)
+    logger.dbg("ReaderPaging:init doc settings", self.document_settings)
+
+    self.ui:registerPostInitCallback(function()
+        self.ui.menu:registerToMainMenu(self)
+        self:onDispatcherRegisterActions()
+    end)
 end
+
+-- TODO(ogkevin): a nice way to not have to duplicate in koptoptions
+-- args and toggle
+function ReaderPaging:onDispatcherRegisterActions()
+    Dispatcher:registerAction(
+        "paging_toggle_dual_page_mode",
+        {
+            category = "none",
+            event = "ToggleDualPageMode",
+            title = _("Toggle dual page mode"),
+            paging = true,
+            section = "paging",
+        }
+    )
+
+    Dispatcher:registerAction(
+        "paging_set_page_mode",
+        {
+            category = "string",
+            event = "SetPageMode",
+            title = _("Set page mode"),
+            args = { 1, 2 },
+            toggle = { _("single"), _("dual") },
+            paging = true,
+            section = "paging",
+        }
+    )
+
+    Dispatcher:registerAction(
+        "paging_set_dual_page_mode_first_page_is_cover",
+        {
+            category = "string",
+            event = "SetDualPageModeFirstPageIsCover",
+            title = _("Set dual page mode first page is cover"),
+            section = "paging",
+            paging = true,
+            args = { true, false},
+            toggle = { _("true"), _("false") },
+        }
+    )
+
+    Dispatcher:registerAction(
+        "paging_set_dual_page_mode_rtl",
+        {
+            category = "string",
+            event = "SetDualPageModeRTL",
+            title = _("Set dual page mode RTL"),
+            section = "paging",
+            paging = true,
+            args = { true, false},
+            toggle = { _("true"), _("false") },
+            separator = true,
+        }
+    )
+end
+
+function ReaderPaging:addToMainMenu(menu_items)
+  if self.ui.paging then
+    menu_items.dual_page_options = {
+      text = _("Dual Page Mode"),
+      sub_item_table = self:genDualPagingMenu(),
+      enabled_func = function()
+        return self:isDualPageEnabled()
+      end,
+      help_text = _(
+        [[Settings for when you're in dual page mode.
+This is enabled when the device is in landscape mode!
+]]
+      ),
+    }
+  end
+end
+
+function ReaderPaging:genDualPagingMenu()
+  return {
+    {
+      text = _("First page is cover"),
+      checked_func = function()
+        return self.document_settings.dual_page_mode_first_page_is_cover
+      end,
+      callback = function()
+        self.document_settings.dual_page_mode_first_page_is_cover = not self.document_settings.dual_page_mode_first_page_is_cover
+      end,
+        enabled_func = function()
+            return self:isDualPageEnabled()
+        end,
+      hold_callback = function()
+      end,
+      help_text = _(
+        [[When using Dual Page Mode, and the first page of the document should be shown on its owm, toggle this on.]]
+      ),
+    },
+    {
+      text = _("Right To Left (RTL)"),
+      checked_func = function()
+        return self.document_settings.dual_page_mode_rtl
+      end,
+      callback = function()
+        self.document_settings.dual_page_mode_rtl = not self.document_settings.dual_page_mode_rtl
+      end,
+        enabled_func = function()
+            return self:isDualPageEnabled()
+        end,
+      hold_callback = function()
+      end,
+      separator = true,
+      help_text = _(
+        [[When using Dual Page Mode, and the second page needs to be rendered on the left and the first page on the right (RTL), enable this option.]]
+      ),
+    },
+    {
+      text = _("Auto Enable"),
+      checked_func = function()
+        return self.reader_settings.auto_enable_dual_page_mode
+      end,
+      callback = function()
+        self.reader_settings.auto_enable_dual_page_mode = not self.reader_settings.auto_enable_dual_page_mode
+      end,
+        enabled_func = function()
+            return self:isDualPageEnabled()
+        end,
+      hold_callback = function()
+      end,
+      separator = true,
+      help_text = _(
+        [[When this settings is enabled, when you rotate your device to landscape mode, Dual Page Mode will be enabled automatically.]]
+      ),
+    },
+  }
+end
+
 
 function ReaderPaging:onGesture() end
 
@@ -143,10 +322,25 @@ function ReaderPaging:setupTouchZones()
 end
 
 function ReaderPaging:onReadSettings(config)
+    self.document_settings = config:readSetting("paging", self.default_document_settings)
+
     self.page_positions = config:readSetting("page_positions") or {}
-    self:_gotoPage(config:readSetting("last_page") or 1)
+    local page = config:readSetting("last_page") or 1
+    self:_gotoPage(page)
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
+
+    if not self:supportsDualPage() and self.document_settings.dual_page_mode then
+        logger.dbg("ReaderPaging:onReadSettings disabling dual page mode")
+        self.ui:handleEvent(Event:new("SetPageMode", 1))
+        -- UIManager:broadcastEvent(Event:new("SetPageMode", 1))
+        self:onSetPageMode(1)
+    end
+
+    if self.document_settings.dual_page_mode then
+        logger.dbg("ReaderPaging:onReadSettings: sending dual mode enabled event", true, page)
+        self.ui:handleEvent(Event:new("DualPageModeEnabled", true, self:getDualPageBaseFromPage(page)))
+    end
 end
 
 function ReaderPaging:onSaveSettings()
@@ -199,6 +393,8 @@ function ReaderPaging:getPagePosition(page)
 end
 
 function ReaderPaging:onTogglePageFlipping()
+    logger.dbg("ReaderPaging:onTogglePageFlipping")
+
     if self.bookmark_flipping_mode then
         -- do nothing if we're in bookmark flipping mode
         return
@@ -220,6 +416,8 @@ function ReaderPaging:onTogglePageFlipping()
 end
 
 function ReaderPaging:onToggleBookmarkFlipping()
+    logger.dbg("ReaderPaging:onToggleBookmarkFlipping")
+
     self.bookmark_flipping_mode = not self.bookmark_flipping_mode
 
     if self.bookmark_flipping_mode then
@@ -264,22 +462,26 @@ end
 
 function ReaderPaging:updateFlippingPage(page)
     self.flipping_page = page
+
+    if self:isDualPageEnabled() then
+        self.flipping_page = self:getDualPageBaseFromPage(page)
+    end
 end
 
-function ReaderPaging:pageFlipping(flipping_page, flipping_ges)
+function ReaderPaging:pageFlipping(flipping_ges)
     local whole = self.number_of_pages
     local steps = #self.flip_steps
     local stp_proportion = flipping_ges.distance / Screen:getWidth()
     local abs_proportion = flipping_ges.distance / Screen:getHeight()
     local direction = BD.flipDirectionIfMirroredUILayout(flipping_ges.direction)
     if direction == "east" then
-        self:_gotoPage(flipping_page - self.flip_steps[math.ceil(steps*stp_proportion)])
+        self:onGotoPageRel(-self.flip_steps[math.ceil(steps*stp_proportion)])
     elseif direction == "west" then
-        self:_gotoPage(flipping_page + self.flip_steps[math.ceil(steps*stp_proportion)])
+        self:onGotoPageRel(self.flip_steps[math.ceil(steps*stp_proportion)])
     elseif direction == "south" then
-        self:_gotoPage(flipping_page - math.floor(whole*abs_proportion))
+        self:onGotoPageRel(-math.floor(whole*abs_proportion))
     elseif direction == "north" then
-        self:_gotoPage(flipping_page + math.floor(whole*abs_proportion))
+        self:onGotoPageRel(math.floor(whole*abs_proportion))
     end
     UIManager:setDirty(self.view.dialog, "partial")
 end
@@ -394,8 +596,9 @@ function ReaderPaging:onPan(_, ges)
     if self.bookmark_flipping_mode then
         return true
     elseif self.page_flipping_mode then
-        if self.view.zoom_mode == "page" then
-            self:pageFlipping(self.flipping_page, ges)
+        if self.view.zoom_mode == "page" or self:isDualPageEnabled() then
+            logger.dbg("ReaderPaging:onPan", self.flipping_page, ges)
+            self:pageFlipping(ges)
         else
             self.view:PanningStart(-ges.relative.x, -ges.relative.y)
         end
@@ -487,7 +690,8 @@ end
 
 function ReaderPaging:onPanRelease(_, ges)
     if self.page_flipping_mode then
-        if self.view.zoom_mode == "page" then
+        if self.view.zoom_mode == "page" or self:isDualPageEnabled() then
+            logger.dbg("ReaderPaging:onPanRelease", self.current_page, ges)
             self:updateFlippingPage(self.current_page)
         else
             self.view:PanningStop()
@@ -532,17 +736,374 @@ function ReaderPaging:onZoomModeUpdate(new_mode)
     self.zoom_mode = new_mode
 end
 
+-- Returns native page dimensions with dual page mode in mind
+--
+-- If dual mode is enabled, it returns the total area of pages
+-- next to each other with the shortest one scaled to the largest.
+-- So, if page 1 is 1x1, and page 2 is 5x5 where WxH
+-- the deminesion returens would be 10x5 --> (1 * 5) + 5 x 5 --> scaled to H with zoom factor of 5
+--
+-- @param page number the page number
+--
+-- @return Geom
+-- TODO(ogkevin): this is unused, might need deletion
+function ReaderPaging:getNativePageDimensions(page)
+    logger.dbg("ReaderPaging:getNativePageDimensions", page)
+
+    if not self:isDualPageEnabled() then
+        return self.ui.document:getNativePageDimensions(page)
+    end
+
+    local total_dimen = Geom:new({ w = 0, h = 0 })
+    local page_pair = self:getDualPagePairFromBasePage(page)
+    local page1 = self.ui.document.getNativePageDimensions(page_pair[1])
+    local page2 = self.ui.document.getNativePageDimensions(page_pair[2])
+
+    local max_h = math.max(page1.h, page2.h)
+
+    if page1.h ~= max_h then
+        local zoom = max_h / page1.h
+        total_dimen.w = page2.w + (page1.w * zoom)
+    elseif page2.h ~= max_h then
+        local zoom = max_h / page2.h
+        total_dimen.w = page1.w + (page2.w * zoom)
+    end
+
+    -- local total_w
+
+    -- for _, p in ipairs(page_pair) do
+    --     local pageDimen = self.ui.document:getNativePageDimensions(p)
+    --     max_h = math.max(totalDimen.h, pageDimen.h)
+    --     -- totalDimen.w = totalDimen.w + pageDimen.w
+    -- end
+
+    return total_dimen
+end
+
+-- Given the page number, calculate what the correct base page would be for
+-- dual page mode.
+--
+-- @param page number
+--
+-- @return number
+function ReaderPaging:getDualPageBaseFromPage(page)
+    logger.dbg("ReaderPaging.getDualPageBaseFromPage: calculating base for page", page)
+
+    if not page or page == 0 then
+        page = 1
+    end
+
+    if self.document_settings.dual_page_mode_first_page_is_cover and page == 1 then
+        return 1
+    end
+
+    if self.document_settings.dual_page_mode_first_page_is_cover then
+        return (page % 2 == 0) and page or (page - 1)
+    end
+
+    return (page % 2 == 1) and page or (page - 1)
+end
+
+-- Returns the page pair for dual page mode for the given base
+-- @param ordered boolean if the caller needs the page number in displaying order from LTR
+function ReaderPaging:getDualPagePairFromBasePage(page, ordered)
+    local pair_base = self:getDualPageBaseFromPage(page)
+    ordered = ordered and ordered or false
+
+    logger.dbg("ReaderPaging.getDualPagePairFromBasePage: got base for pair", pair_base)
+
+    if self.document_settings.dual_page_mode_first_page_is_cover and pair_base == 1 then return { 1 } end
+
+    -- Create the pair array
+    local pair = { pair_base }
+    if pair_base + 1 <= self.number_of_pages then
+        table.insert(pair, pair_base + 1)
+    end
+
+    if not ordered then
+        return pair
+    end
+
+    -- Fancy reversing
+    local n = #pair
+    for i = 1, math.floor(n / 2) do
+        pair[i], pair[n - i + 1] = pair[n - i + 1], pair[i]
+    end
+
+    return pair
+end
+
+-- @return bool
+function ReaderPaging:isDualPageEnabled()
+    local enabled =
+        self.document_settings.dual_page_mode and self:supportsDualPage()
+    logger.dbg("ReaderPaging:isDualPageEnabled()", enabled, "setting", self.document_settings.dual_page_mode)
+
+    return enabled
+end
+
+-- This returns boolean indicating if we are in a position to turn on dual page mode or not
+--
+-- @return boolean
+function ReaderPaging:canDualPageMode()
+    return self:supportsDualPage() and not self.view.page_scroll
+end
+
+-- If we are in a state to support dual page mode, e.g. device orientation and document ristrictions
+--
+-- @returns boolean
+function ReaderPaging:supportsDualPage()
+    local ext = util.getFileNameSuffix(self.ui.document.file)
+    local screen_mode = Screen:getScreenMode()
+
+    logger.dbg("ReaderPaging:supportsDualPage", ext, screen_mode)
+
+    return screen_mode == "landscape"
+end
+
+-- This function can be use to create a pop up and ask to user
+-- which page number of the 2 pages shown in dual page mode should be used
+-- for an action.
+-- The selected page number will then be passed as the only argument to callbackfn
+--
+-- If we're not in DualPageMode, the function is called with the current page.
+--
+-- E.g. when a bookmark is toggled by pressing the right top corner
+function ReaderPaging:requestPageFromUserInDualPageModeAndExec(callback)
+    if not self:isDualPageEnabled() then
+        callback(self.current_page)
+        return
+    end
+    -- We are on the last page and it's alone
+    if self.current_pair_base == self.number_of_pages then
+        callback(self.current_page)
+        return
+    end
+    -- We are on the first page and its shown on its own
+    if self.document_settings.dual_page_mode_first_page_is_cover and self.current_pair_base == 1 then
+        callback(self.current_page)
+        return
+    end
+    local page_pair = self:getDualPagePairFromBasePage(self.current_pair_base)
+    logger.dbg("ReaderPaging:requestPageFromUserInDualPageModeAndExec() page pair", page_pair)
+    local button_dialog
+    local buttons = {
+        {
+            {
+                text = _("Left / First Rendered"),
+                callback = function()
+                    UIManager:close(button_dialog)
+                    local page
+                    if not self.document_settings.dual_page_mode_rtl then
+                        page = page_pair[1]
+                    else
+                        page = page_pair[2]
+                    end
+                    logger.dbg("ReaderPaging:requestPageFromUserInDualPageModeAndExec() for left page", page)
+                    callback(page)
+                end
+            },
+            {
+                text = _("Right / Second Rendered"),
+                callback = function()
+                    UIManager:close(button_dialog)
+                    local page
+                    if not self.document_settings.dual_page_mode_rtl then
+                        page = page_pair[2]
+                    else
+                        page = page_pair[1]
+                    end
+                    logger.dbg("ReaderPaging:requestPageFromUserInDualPageModeAndExec() for right page", page)
+                    callback(page)
+                end
+            },
+        },
+    }
+    button_dialog = ButtonDialog:new {
+        name = "ReaderPaging:requestPageFromUserInDualPageModeOrCurrent",
+        title = "Annotate which page?",
+        title_align = "center",
+        buttons = buttons,
+    }
+
+    UIManager:show(button_dialog, "full")
+end
+
+function ReaderPaging:autoEnableDualPageModeIfLandscape()
+    local should_enable = Screen:getScreenMode() == "landscape" and
+        not self.document_settings.dual_page_mode and
+        self.reader_settings.auto_enable_dual_page_mode
+
+    logger.dbg("ReaderPaging:autoEnableDualPageModeIfLandscape", should_enable, self.view.page_scroll)
+
+    if should_enable and self.view.page_scroll then
+        UIManager:show(InfoMessage:new {
+            text = _([[Dual page mode not automatically enabled due to continues view mode.]]),
+            timeout = 4,
+        })
+
+        return
+    end
+
+    -- Auto enable Dual Page Mode if we rotate to landscape
+    if should_enable then
+        self:onSetPageMode(2)
+
+        Notification:notify(_("Dual mode page automatically enabled."), Notification.SOURCE_OTHER)
+        self:onRedrawCurrentPage()
+    end
+end
+
+function ReaderPaging:disableDualPageModeIfNotLandscape()
+    -- Disable Dual Page Mode if we're no longer in ladscape
+    if Screen:getScreenMode() ~= "landscape" and self.document_settings.dual_page_mode then
+        self:onSetPageMode(1)
+
+        Notification:notify(_("Dual page mode automatically disabled."), Notification.SOURCE_OTHER)
+        self:onRedrawCurrentPage()
+    end
+end
+
+-- When the screen is rezised, we shall check if we ended up in landscape
+function ReaderPaging:onSetDimensions(_)
+    self:autoEnableDualPageModeIfLandscape()
+    self:disableDualPageModeIfNotLandscape()
+end
+
+function ReaderPaging:onSetRotationMode(rotation)
+    logger.dbg("ReaderPaging:onSetRotationMode:", rotation)
+
+    self:autoEnableDualPageModeIfLandscape()
+    self:disableDualPageModeIfNotLandscape()
+end
+
+function ReaderPaging:firstTimeDualPageMode()
+    logger.dbg("ReaderPaging:firstTimeDualPageMode")
+
+    -- TODO(ogkevin): Wiki entry for dual page mode!
+    UIManager:show(InfoMessage:new {
+        text = _([[Welcome to Dual Page Mode!
+
+One important thing you should know about this mode.
+All the zooming functions are disabled!
+So if you need to do any zooming, you must go back to single page mode.
+If you're interested in why zooming is disabled, consult the wiki.
+
+As a tip: you can register a shortcut to toggle dual page mode!
+]]),
+    })
+
+    self.reader_settings.first_time_dual_page_mode = false
+end
+
+-- This should be the only subscriber for this event.
+-- Everyone else needs to sub to DualPageModeEnabled!
+-- This event is sent by dispatcher, and since ReaderPaging owns page mode,
+-- it's in charge to determine if the Toggle is valid or not.
+--
+-- If it is valid, the matching event will be sent:
+-- - DualPageModeEnabled(true|flake, base_page)
+function ReaderPaging:onToggleDualPageMode()
+    logger.dbg("ReaderPaging:onToggleDualPageMode")
+
+    if not self:canDualPageMode() then
+        -- TODO(okgevin): make the "status" of canDualPageMode visible in the help text so that we can point the user to
+        Notification:notify(_("Dual mode page is not supported."))
+
+        return
+    end
+
+    if self.document_settings.dual_page_mode then
+        Notification:notify(_("Dual mode page disabled."))
+        self:onSetPageMode(1)
+        self:onRedrawCurrentPage()
+
+        return
+    end
+
+    Notification:notify(_("Dual mode page enabled."))
+    self:onSetPageMode(2)
+    self:onRedrawCurrentPage()
+end
+
+ --When page scroll is enabled, we need to disable Dual Page mode
+ --@param page_scroll bool if page_scroll is on or not
+ function ReaderPaging:onSetScrollMode(page_scroll)
+     if not self:supportsDualPage() then
+         return
+     end
+    if page_scroll then
+        self:onSetPageMode(1)
+
+        return
+    end
+
+    self:autoEnableDualPageModeIfLandscape()
+end
+
+function ReaderPaging:onSetDualPageModeFirstPageIsCover(bool)
+    self.document_settings.dual_page_mode_first_page_is_cover = bool
+end
+
+function ReaderPaging:onSetDualPageModeRTL(bool)
+    self.document_settings.dual_page_mode_rtl = bool
+end
+
+-- @param mode number 1 = single, 2 = dual
+function ReaderPaging:onSetPageMode(mode)
+    logger.dbg("ReaderPaging:onSetPageMode", mode, "dual paging currently enabled", self.document_settings.dual_page_mode )
+
+    if mode ~= 2 and self.document_settings.dual_page_mode then
+        self.ui:handleEvent(Event:new("DualPageModeEnabled", false))
+        self.document_settings.dual_page_mode = false
+    end
+
+    if mode == 2 and not self.document_settings.dual_page_mode and self:canDualPageMode() then
+        if self.reader_settings.first_time_dual_page_mode then
+            self:firstTimeDualPageMode()
+        end
+
+        self.document_settings.dual_page_mode = true
+        self:updatePagePairStatesForBase(self.current_pair_base)
+        self.ui:handleEvent(Event:new("DualPageModeEnabled", true, self.current_pair_base))
+    end
+
+    self.ui.document.configurable.page_mode = mode
+end
+
 function ReaderPaging:onPageUpdate(new_page_no, orig_mode)
+    self.current_pair_base = self:getDualPageBaseFromPage(new_page_no)
+
+    logger.dbg(
+        "ReaderPaging:onPageUpdatef: curr_page",
+        self.current_page,
+        "curr_pair_base",
+        self.current_pair_base,
+        "new_page", new_page_no
+    )
+
     self.current_page = new_page_no
     if self.view.page_scroll and orig_mode ~= "scrolling" then
         self.ui:handleEvent(Event:new("InitScrollPageStates", orig_mode))
     end
 end
 
+-- We need to remember areas to handle page turn event.
+--
+-- If recalculate results in a new visible_area, we need to
+-- recalculate the page states if we're in dual page mode.
+--
+-- @param visible_area Geom
+-- @param page_area Geom
 function ReaderPaging:onViewRecalculate(visible_area, page_area)
-    -- we need to remember areas to handle page turn event
+    local va_changed = self.visible_area and not self.visible_area:equalSize(visible_area) or true
+
     self.visible_area = visible_area:copy()
     self.page_area = page_area
+
+    if va_changed and self:isDualPageEnabled() then
+        self:updatePagePairStatesForBase(self.current_pair_base)
+    end
 end
 
 function ReaderPaging:onGotoPercent(percent)
@@ -930,6 +1491,54 @@ function ReaderPaging:onScrollPageRel(page_diff)
     return true
 end
 
+-- Given the current base and the relative page movements,
+-- return the right base for dual page navigation.
+--
+-- If self.document_settings.dual_page_mode_first_page_is_cover is enabled, then we start counting pairs
+-- from page 2 onwards.
+-- So if we are at page 1, the next pairs are:
+-- - 2,3
+-- - 4,5
+-- etc
+--
+-- If it's disabled, then it becomes:
+-- - 1,2
+-- - 3,4
+-- etc
+--
+-- So if we are at base 1, and make a relative move +1, return 2
+-- which will make readerview render page 2,3
+--
+function ReaderPaging:getPairBaseByRelativeMovement(diff)
+    logger.dbg("ReaderPaging:getPairBaseByRelativeMovement:", diff)
+    local total_pages = self.number_of_pages
+    local current_base = self.current_pair_base
+
+    if self.document_settings.dual_page_mode_first_page_is_cover and current_base == 1 then
+        -- Handle cover page navigation
+        if diff <= 0 then
+            return 1 -- Stay on cover
+        else
+            -- Jump to first spread (2) + subsequent spreads
+            return math.min(2 + (diff - 1) * 2, total_pages % 2 == 0 and total_pages or total_pages - 1)
+        end
+    end
+
+    -- Calculate new base for spreads
+    local new_base = current_base + (diff * 2)
+
+    -- Clamp to valid range
+    local max_base = total_pages % 2 == 0 and total_pages or total_pages - 1
+    new_base = math.max(1, math.min(new_base, max_base))
+
+    -- Handle backward navigation to cover
+    if new_base < 2 then
+        return total_pages >= 1 and 1 or new_base
+    end
+
+    return new_base
+end
+
 function ReaderPaging:onGotoPageRel(diff)
     logger.dbg("goto relative page:", diff)
     local new_va = self.visible_area:copy()
@@ -994,10 +1603,17 @@ function ReaderPaging:onGotoPageRel(diff)
     end
     local function goto_next_page()
         local new_page
+        local curr_page = self.current_page
+
+        if self.page_flipping_mode then
+            curr_page = self.flipping_page
+        end
+
         if self.ui.document:hasHiddenFlows() then
+            logger.dbg("ReaderPaging:onGotoPageRel: document has hidden flows")
             local forward = diff > 0
             local pdiff = forward and math.ceil(diff) or math.ceil(-diff)
-            new_page = self.current_page
+            new_page = curr_page
             for i=1, pdiff do
                 local test_page = forward and self.ui.document:getNextPage(new_page)
                                            or self.ui.document:getPrevPage(new_page)
@@ -1011,9 +1627,18 @@ function ReaderPaging:onGotoPageRel(diff)
                 end
                 new_page = test_page
             end
+        elseif self:isDualPageEnabled() then
+            new_page = self:getPairBaseByRelativeMovement(diff)
+
+            logger.dbg("readerpaging: relative page pair move to", new_page)
+
+            if self.current_pair_base == new_page and diff > 0 then
+                new_page = self.number_of_pages + 1     -- to trigger EndOfBook below
+            end
         else
-            new_page = self.current_page + diff
+            new_page = curr_page + diff
         end
+
         if new_page > self.number_of_pages then
             self.ui:handleEvent(Event:new("EndOfBook"))
             goto_end(y)
@@ -1041,6 +1666,7 @@ function ReaderPaging:onGotoPageRel(diff)
 
     -- Handle cases when the view area gets out of page boundaries
     if not self.page_area:contains(new_va) then
+        logger.dbg("ReaderPaging:onGotoPageRel self.page contains new_va")
         if not at_end(x) then
             goto_end(x)
         else
@@ -1056,6 +1682,7 @@ function ReaderPaging:onGotoPageRel(diff)
     end
 
     if self.current_page == prev_page then
+        logger.dbg("ReaderPaging:onGotoPageRel page number didn't update")
         -- Page number haven't changed when panning inside a page,
         -- but time may: keep the footer updated
         self.view.footer:onUpdateFooter(self.view.footer_visible)
@@ -1092,8 +1719,97 @@ function ReaderPaging:onGotoPageRel(diff)
 end
 
 function ReaderPaging:onRedrawCurrentPage()
-    self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
+    logger.dbg("ReaderPaging:onRedrawCurrentPage")
+
+    local page = self.current_page
+
+    -- If we are not on a base of a pair, and we redraw, there can be
+    -- some funny rendering. I'm not sure why that is, but ensuring
+    -- that we goto base ensures that this doesn't happen.
+    -- Most likely something with caching, it's always caching.
+    -- As in, the page number didn't change but all of a sudden we're rendering
+    -- something different?
+    if self:isDualPageEnabled() then
+        page = self:getDualPageBaseFromPage(self.current_page)
+        -- Make sure page states are up to date
+        self:updatePagePairStatesForBase(page)
+    end
+
+    self.ui:handleEvent(Event:new("PageUpdate", page))
     return true
+end
+
+-- TODO(ogkevin): I think we can drop the param and just use self.curr_pair_base
+function ReaderPaging:updatePagePairStatesForBase(pageno)
+    logger.dbg("ReaderPaging:updatePagePairStatesForBase: setting dual page pairs")
+
+    self.view.page_states = {}
+    local pair = self:getDualPagePairFromBasePage(pageno)
+    local zooms = self:calculateZoomFactorForPagePair(pair)
+
+    for i, page in ipairs(pair) do
+        local dimen = self.ui.document:getNativePageDimensions(page)
+        -- zooms should be as long as pairs
+        ---@diagnostic disable-next-line: need-check-nil
+        local zoom = zooms[i]
+        local scaled_w = dimen.w * zoom
+        local scaled_h = dimen.h * zoom
+
+        self.view.page_states[i] = {
+            page = page,
+            zoom = zoom,
+            rotation = self.view.state.rotation,
+            gamma = self.view.state.gamma,
+            dimen = Geom:new({w = scaled_w, h = scaled_h}),
+            native_dimen = dimen
+        }
+        logger.dbg("ReaderPaging:_gotoPage: set view page states to: ", self.view.page_states)
+    end
+end
+
+-- For the given page pair, calculate their zooming factor
+-- ATM, we only support filling the height for dual page mode.
+function ReaderPaging:calculateZoomFactorForPagePair(pair)
+    logger.dbg("ReaderPaging:calculateZoomFactorForPagePair", self.visible_area, self.ui.view.visible_area, self.ui.view.dimen)
+
+    -- There is a small chance where this method gets called while
+    -- onViewRecalculate didn't get a chance to update self.visible_area.
+    -- To prevent funny page rendering, update self.visible_area before it's
+    -- used for calulcating the zoom factors.
+    self.visible_area = self.ui.view.visible_area
+
+    local visible_area = self.visible_area
+    local max_height = visible_area.h
+    local max_width = visible_area.w
+    local zooms = {}
+
+    local total_width = 0
+    local height_zooms = {}
+    for i, page in ipairs(pair) do
+        local dimen = self.ui.document:getNativePageDimensions(page)
+        local zoom = 1
+
+        if dimen.h ~= max_height then
+            zoom = max_height / dimen.h
+        end
+
+        height_zooms[i] = zoom
+        total_width = total_width + dimen.w * zoom
+    end
+    -- If the total width exceeds the visible width, scale down both pages
+    if total_width > max_width then
+        -- Find the scaling factor to fit both pages
+        local scale_factor = max_width / total_width
+        for i, zoom in ipairs(height_zooms) do
+            zooms[i] = zoom * scale_factor
+        end
+    else
+        for i, zoom in ipairs(height_zooms) do
+            zooms[i] = zoom
+        end
+    end
+
+    return zooms
 end
 
 -- wrapper for bounds checking
@@ -1105,12 +1821,16 @@ function ReaderPaging:_gotoPage(number, orig_mode)
         return true
     end
     if number > self.number_of_pages then
-        logger.warn("page number too high: "..number.."!")
+        logger.warn("page number too high: " .. number .. "!")
         number = self.number_of_pages
     elseif number < 1 then
-        logger.warn("page number too low: "..number.."!")
+        logger.warn("page number too low: " .. number .. "!")
         number = 1
     end
+    if not self.view.page_scroll and self:supportsDualPage() then
+        self:updatePagePairStatesForBase(number)
+    end
+    logger.dbg("ReaderPaging:_gotoPage: send page update event:", number)
     -- this is an event to allow other controllers to be aware of this change
     self.ui:handleEvent(Event:new("PageUpdate", number, orig_mode))
     return true

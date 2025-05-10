@@ -15,6 +15,10 @@ local T = require("ffi/util").template
 
 local ReaderZooming = InputContainer:extend{
     zoom = 1.0,
+    -- This flag is used to disable/ignore all zooming events and not update
+    -- any zoom or zoom mode etc.
+    -- The caller is, however, responsible for setting the right settings before disabling.
+    disabled = false,
     available_zoom_modes = { -- const
         "page",
         "pagewidth",
@@ -208,8 +212,14 @@ function ReaderZooming:_updateConfigurable(zoom_mode)
 
     local zoom_mode_genus, zoom_mode_type = self:mode_to_combo(zoom_mode)
 
+    -- @fixme: when zoom_mode is "free", zoom_mode_genus is nil
+    -- This is because in the mode_to_combo mapping, free doesn't exist.
+    -- Manual does, but is free and manual the same thing?
+    logger.dbg("ReaderZooming:_updateConfigurable", zoom_mode, zoom_mode_genus, zoom_mode_type)
+
     -- Configurable keys aren't prefixed, unlike the actual settings...
-    configurable.zoom_mode_genus = zoom_mode_genus
+    -- @fixme: hack for nil zoom_mode_genus, needs confirmation if accaptable
+    configurable.zoom_mode_genus = zoom_mode_genus and zoom_mode_genus or 0
     configurable.zoom_mode_type = zoom_mode_type
 
     return zoom_mode_genus, zoom_mode_type
@@ -272,6 +282,10 @@ function ReaderZooming:onSaveSettings()
 end
 
 function ReaderZooming:onSpread(arg, ges)
+    if self.disabled then
+        return
+    end
+
     if ges.direction == "horizontal" then
         self:genSetZoomModeCallBack("contentwidth")()
     elseif ges.direction == "vertical" then
@@ -283,6 +297,10 @@ function ReaderZooming:onSpread(arg, ges)
 end
 
 function ReaderZooming:onPinch(arg, ges)
+    if self.disabled then
+        return
+    end
+
     if ges.direction == "diagonal" then
         self:genSetZoomModeCallBack("page")()
     elseif ges.direction == "horizontal" then
@@ -294,6 +312,10 @@ function ReaderZooming:onPinch(arg, ges)
 end
 
 function ReaderZooming:onToggleFreeZoom(arg, ges)
+    if self.disabled then
+        return
+    end
+
     if self.zoom_mode ~= "free" then
         self.orig_zoom = self.zoom
         local xpos, ypos
@@ -310,6 +332,7 @@ function ReaderZooming:onToggleFreeZoom(arg, ges)
     end
 end
 
+-- This event is send on screen size change, therefore self.dimen is the size of the screen
 function ReaderZooming:onSetDimensions(dimensions)
     -- we were resized
     self.dimen = dimensions
@@ -329,6 +352,12 @@ function ReaderZooming:onRotationUpdate(rotation)
 end
 
 function ReaderZooming:onZoom(direction)
+    logger.dbg("ReaderZooming:onZoom", direction, "enabled", not self.disabled)
+
+    if self.disabled then
+        return
+    end
+
     logger.info("zoom", direction)
     if direction == "in" then
         self.zoom = self.zoom * 1.333333
@@ -342,6 +371,10 @@ function ReaderZooming:onZoom(direction)
 end
 
 function ReaderZooming:onDefineZoom(btn, when_applied_callback)
+    if self.disabled then
+        return
+    end
+
     local config = self.ui.document.configurable
     local zoom_direction_setting = self.zoom_direction_settings[config.zoom_direction]
     local settings = { -- unpack the table, work on a local copy
@@ -436,7 +469,45 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     end
 end
 
+-- In dual page mode, zooming is a tricky concept.
+-- Since we're rendering 2 pages next to each other which might not even have the same dimensions,
+-- we can't use 1 zooming factor to apply a zoom to both pages.
+-- Instead, we need individual factors per page.
+
+-- Next to this, in dual page mode zooming must happen based on pageheight to algin pages,
+-- e.g. in commics/manga, so zooming on anything else will misalign the pages.
+
+-- Zooming in and out, happens per page and not for the canvas/visable area.
+-- So when the user zooms in, the page is enlarged using a zooming factor, instead of the viewing area being enlarged.
+-- In other words, if zooming in worked by taking a tmp screenshot and enlarging that, then this would be fine.
+-- But since we're actually re-rendering the page and apply a zoom factor, we run in the same issue described above.
+-- We can't apply 1 zoom factor to both pages in dual page mode, and calculating zoom on anything other then height
+-- will result in misalignment.
+--
+-- @param enabled bool
+-- @param _ number The base page on which dual page mode has been enabled, we don't care about that for zooming.
+function ReaderZooming:onDualPageModeEnabled(enabled, _)
+    logger.dbg("ReaderZooming:onDualPageModeEnabled:", enabled)
+
+    if enabled then
+        logger.dbg("ReaderZooming:onDualPageModeEnabled: disabling zooming")
+        self:onSetZoomMode("page")
+        self:_updateConfigurable("page")
+        self.disabled = true
+
+        return
+    end
+
+    logger.dbg("ReaderZooming:onDualPageModeEnabled: enabling zooming")
+    self.disabled = false
+    self:onSetZoomMode(self.zoom_mode)
+end
+
 function ReaderZooming:onSetZoomMode(new_mode)
+    if self.disabled then
+        return
+    end
+
     self.view.zoom_mode = new_mode
     if self.zoom_mode ~= new_mode then
         logger.info("setting zoom mode to", new_mode)
@@ -625,6 +696,10 @@ function ReaderZooming:genSetZoomModeCallBack(mode)
 end
 
 function ReaderZooming:setZoomMode(mode, no_warning, is_reflowed)
+    if self.disabled then
+        return
+    end
+
     if not no_warning and self.ui.view.page_scroll then
         local message
         if self.paged_modes[mode] then
@@ -712,10 +787,18 @@ function ReaderZooming:_zoomPanChange(text, setting)
 end
 
 function ReaderZooming:onZoomFactorChange()
+    if self.disabled then
+        return
+    end
+
     self:_zoomFactorChange(_("Set Zoom factor"), false, "%.1f")
 end
 
 function ReaderZooming:onSetZoomPan(settings, no_redraw)
+    if self.disabled then
+        return
+    end
+
     self.ui.doc_settings:saveSetting("kopt_zoom_factor", settings.kopt_zoom_factor)
     self.ui.doc_settings:saveSetting("zoom_mode", settings.zoom_mode)
     for k, v in pairs(settings) do
