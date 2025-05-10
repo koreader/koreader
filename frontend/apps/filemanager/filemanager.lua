@@ -1577,6 +1577,99 @@ function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_ca
     end
 end
 
+-- Settings backup
+
+function FileManager:backUpSettings()
+    local groups = G_reader_settings:readSetting("backup")
+    if groups == nil or next(groups) == nil then return end
+    local DataStorage = require("datastorage")
+    local ZipWriter = require("ffi/zipwriter")
+    local dump = require("dump")
+    UIManager:flushSettings()
+    local backup_name = "settings_backup_" .. os.date("%Y-%m-%d %H-%M-%S")
+    local data_dir = DataStorage:getDataDir()
+    local backup = {}
+    local function back_up_file(settings_file)
+        backup[settings_file] = util.readFromFile(settings_file, "rb")
+    end
+    if groups.g_settings then
+        back_up_file(data_dir .. "/settings.reader.lua")
+        local file = data_dir .. "/defaults.custom.lua"
+        if lfs.attributes(file, "mode") == "file" then
+            back_up_file(file)
+        end
+        if self.coverbrowser then
+            backup.coverbrowser = self.coverbrowser.getConfigSet()
+        end
+    end
+    if groups.history then
+        back_up_file(data_dir .. "/history.lua")
+    end
+    if groups.plugins then
+        util.findFiles(DataStorage:getSettingsDir(), function(path, f)
+            if f:match("%.lua$") and not util.stringStartsWith(f, "._") then
+                back_up_file(path)
+            end
+        end, false)
+    end
+    if groups.styletweaks then
+        util.findFiles(data_dir .. "/styletweaks", function(path, f)
+            if f:match("%.css$") and not util.stringStartsWith(f, "._") then
+                back_up_file(path)
+            end
+        end)
+    end
+    local zip = ZipWriter:new{}
+    zip:open(data_dir .. "/" .. "settings_backup_" .. os.date("%Y-%m-%d %H-%M-%S") .. ".zip")
+    zip:add("backup", "return " .. dump(backup, nil, true) .. "\n")
+    zip:close()
+end
+
+function FileManager:restoreSettings(filepath)
+    local LuaSettings = require("luasettings")
+    local g_settings_to_keep = {
+        device_id = true,
+        last_migration_date = true,
+        lastfile = true,
+        quickstart_shown_version = true,
+    }
+    local backup
+    local std_out = io.popen(T("unzip -qqp \"%1\" backup", filepath))
+    if std_out then
+        backup = std_out:read("*all")
+        std_out:close()
+    end
+    backup = backup and loadstring(backup)()
+    if type(backup) ~= "table" then
+        UIManager:show(InfoMessage:new{ text = _("Backup restoring failed") })
+        return
+    end
+    self:onClose()
+    for file, settings in pairs(backup) do
+        if file == "coverbrowser" then
+            if self.coverbrowser then
+                self.coverbrowser.saveConfigSet(settings)
+            end
+        elseif file == "./settings.reader.lua" then
+            local reader_settings = loadstring(settings)()
+            for k in pairs(g_settings_to_keep) do
+                reader_settings[k] = G_reader_settings:readSetting(k)
+            end
+            local tmp = LuaSettings:open(file)
+            tmp.data = reader_settings
+            tmp:flush()
+        else
+            util.makePath(ffiUtil.dirname(file))
+            util.writeToFile(settings, file, true)
+        end
+    end
+    if Device:canRestart() then
+        UIManager:restartKOReader()
+    else
+        UIManager:quit()
+    end
+end
+
 -- Dispatcher helpers
 
 function FileManager.getDisplayModeActions()
