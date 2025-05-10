@@ -102,6 +102,28 @@ local BOOKINFO_COLS_SET = {
         "cover_bb_data",
     }
 
+local CONFIG_SET = {
+    "filemanager_display_mode",
+    "history_display_mode",
+    "collection_display_mode",
+    "unified_display_mode",
+    "nb_cols_portrait",
+    "nb_rows_portrait",
+    "nb_cols_landscape",
+    "nb_rows_landscape",
+    "files_per_page",
+    "fixed_item_font_size",
+    "show_pages_read_as_progress",
+    "show_pages_left_in_progress",
+    "show_progress_in_mosaic",
+    "hide_file_info",
+    "hide_page_info",
+    "no_hint_description",
+    "history_hint_opened",
+    "collections_hint_opened",
+    "series_mode",
+}   
+
 local bookinfo_values_sql = {} -- for "VALUES (?, ?, ?,...)" insert sql part
 for i=1, #BOOKINFO_COLS_SET do
     table.insert(bookinfo_values_sql, "?")
@@ -319,6 +341,20 @@ function BookInfoManager:toggleSetting(key)
     local value = not self:getSetting(key)
     self:saveSetting(key, value)
     return value
+end
+
+function BookInfoManager:getConfigSet()
+    local config_set = {}
+    for _, v in ipairs(CONFIG_SET) do
+        config_set[v] = self:getSetting(v)
+    end
+    return config_set
+end
+
+function BookInfoManager:saveConfigSet(config_set)
+    for _, v in ipairs(CONFIG_SET) do
+        self:saveSetting(v, config_set[v], nil, true)
+    end
 end
 
 -- Bookinfo management
