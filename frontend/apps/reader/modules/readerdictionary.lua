@@ -1087,7 +1087,7 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
     end
 
     -- Before starting the search, remove any dictionaries that are disabled for *this* book.
-    if self.book_disabled_dicts then
+    if dict_names and self.book_disabled_dicts then
         local filtered_names = {}
         for _, name in ipairs(dict_names) do
             if not self.book_disabled_dicts[name] then
