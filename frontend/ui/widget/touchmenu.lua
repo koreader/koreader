@@ -692,11 +692,13 @@ function TouchMenu:updateItems()
     table.insert(self.item_group, self.bar)
     table.insert(self.layout, self.bar.icon_widgets) -- for the focusmanager
 
+    local idx_offset = (self.page - 1) * self.perpage
     for c = 1, self.perpage do
         -- calculate index in item_table
-        local i = (self.page - 1) * self.perpage + c
+        local i = idx_offset + c
         if i <= #self.item_table then
             local item = self.item_table[i]
+            item.idx = i
             local item_tmp = TouchMenuItem:new{
                 item = item,
                 menu = self,
@@ -978,7 +980,7 @@ function TouchMenu:onMenuHold(item, text_truncated)
             end
             -- Provide callback with us, so it can call our
             -- closemenu() or updateItems() when it sees fit
-            callback(self)
+            callback(self, item)
         end
     elseif item.help_text or type(item.help_text_func) == "function" then
         local help_text = item.help_text
