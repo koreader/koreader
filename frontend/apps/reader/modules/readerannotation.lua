@@ -282,7 +282,7 @@ function ReaderAnnotation:importAnnotations()
     if anno:readSetting("device_id") == G_reader_settings:readSetting("device_id") then return end -- same device
     local new_annotations = anno:readSetting("annotations")
     if (self.ui.paging and true) ~= anno:readSetting("paging") then return end -- incompatible annotations type
-    local new_datetime = anno:readSetting("datetime")
+    local new_datetime = G_reader_settings:isTrue("annotations_export_keep_all_on_import") and "" or anno:readSetting("datetime")
     os.remove(file)
     if #self.annotations == 0 then
         self.annotations = new_annotations
