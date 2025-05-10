@@ -344,9 +344,13 @@ function BookInfoManager:toggleSetting(key)
 end
 
 function BookInfoManager:getConfigSet()
+    self:openDbConnection()
+    local res = self.db_conn:exec("SELECT key, value FROM config;")
     local config_set = {}
-    for _, v in ipairs(CONFIG_SET) do
-        config_set[v] = self:getSetting(v)
+    if res then
+        for i, v in ipairs(res[1]) do
+            config_set[v] = tonumber(res[2][i]) or res[2][i]
+        end
     end
     return config_set
 end
