@@ -122,7 +122,7 @@ local CONFIG_SET = {
     "history_hint_opened",
     "collections_hint_opened",
     "series_mode",
-}   
+}
 
 local bookinfo_values_sql = {} -- for "VALUES (?, ?, ?,...)" insert sql part
 for i=1, #BOOKINFO_COLS_SET do
