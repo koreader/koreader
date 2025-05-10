@@ -1586,7 +1586,6 @@ function FileManager:backUpSettings()
     local ZipWriter = require("ffi/zipwriter")
     local dump = require("dump")
     UIManager:flushSettings()
-    local backup_name = "settings_backup_" .. os.date("%Y-%m-%d %H-%M-%S")
     local data_dir = DataStorage:getDataDir()
     local backup = {}
     local function back_up_file(settings_file)
