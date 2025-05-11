@@ -41,6 +41,7 @@ end
 
 function SSH:start()
     if self:isRunning() then
+        logger.dbg("[Network] Not starting SSH server, already running.")
         return
     end
 
