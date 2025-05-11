@@ -1628,6 +1628,7 @@ function FileManager:backUpSettings()
 end
 
 function FileManager:restoreSettings(filepath)
+    local DataStorage = require("datastorage")
     local LuaSettings = require("luasettings")
     local g_settings_to_keep = {
         device_id = true,
@@ -1635,6 +1636,7 @@ function FileManager:restoreSettings(filepath)
         lastfile = true,
         quickstart_shown_version = true,
     }
+    local g_settings_file = DataStorage:getDataDir() .. "/settings.reader.lua"
     local backup
     local std_out = io.popen(T("unzip -qqp \"%1\" backup", filepath))
     if std_out then
@@ -1652,7 +1654,7 @@ function FileManager:restoreSettings(filepath)
             if self.coverbrowser then
                 self.coverbrowser.saveConfigSet(settings)
             end
-        elseif file == "./settings.reader.lua" then
+        elseif file == g_settings_file then
             local reader_settings = loadstring(settings)()
             for k in pairs(g_settings_to_keep) do
                 reader_settings[k] = G_reader_settings:readSetting(k)
