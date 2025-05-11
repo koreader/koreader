@@ -453,6 +453,14 @@ function ReaderDictionary:showPreferredDictsDialog()
     local dialog
     local buttons = {}
     local disabled_buttons = {}  -- store disabled dict buttons separately
+    local update_sdcv = true
+
+    local function saveAndRefresh()
+        self:onSaveSettings()
+        if update_sdcv then self:updateSdcvDictNamesOptions() end
+        UIManager:close(dialog)
+        self:showPreferredDictsDialog()
+    end
 
     local function makeButtonEntry(dict, is_enabled)
         local is_preferred = false
@@ -491,10 +499,7 @@ function ReaderDictionary:showPreferredDictsDialog()
                     else
                         table.insert(self.preferred_dictionaries, dict)
                     end
-                    self:onSaveSettings()
-                    self:updateSdcvDictNamesOptions()
-                    UIManager:close(dialog)
-                    self:showPreferredDictsDialog()
+                    saveAndRefresh()
                 end,
                 hold_callback = function()
                     if not is_enabled then -- re-enable dictionary
@@ -502,9 +507,8 @@ function ReaderDictionary:showPreferredDictsDialog()
                     else -- disable dictionary for this book
                         self.book_disabled_dicts[dict] = true
                     end
-                    self:onSaveSettings()
-                    UIManager:close(dialog)
-                    self:showPreferredDictsDialog()
+                    update_sdcv = false
+                    saveAndRefresh()
                 end,
             }
         }
@@ -523,6 +527,17 @@ function ReaderDictionary:showPreferredDictsDialog()
     for _, btn in ipairs(disabled_buttons) do
         table.insert(buttons, btn)
     end
+
+    table.insert(buttons, {
+        {
+            text = _("Reset"),
+            callback = function()
+                self.book_disabled_dicts = {}
+                self.preferred_dictionaries = {}
+                saveAndRefresh()
+            end,
+        }
+    })
 
     dialog = ButtonDialog:new{
         title = _("Select preferred dictionaries"),
