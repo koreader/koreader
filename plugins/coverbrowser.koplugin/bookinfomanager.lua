@@ -102,28 +102,6 @@ local BOOKINFO_COLS_SET = {
         "cover_bb_data",
     }
 
-local CONFIG_SET = {
-    "filemanager_display_mode",
-    "history_display_mode",
-    "collection_display_mode",
-    "unified_display_mode",
-    "nb_cols_portrait",
-    "nb_rows_portrait",
-    "nb_cols_landscape",
-    "nb_rows_landscape",
-    "files_per_page",
-    "fixed_item_font_size",
-    "show_pages_read_as_progress",
-    "show_pages_left_in_progress",
-    "show_progress_in_mosaic",
-    "hide_file_info",
-    "hide_page_info",
-    "no_hint_description",
-    "history_hint_opened",
-    "collections_hint_opened",
-    "series_mode",
-}
-
 local bookinfo_values_sql = {} -- for "VALUES (?, ?, ?,...)" insert sql part
 for i=1, #BOOKINFO_COLS_SET do
     table.insert(bookinfo_values_sql, "?")
@@ -356,8 +334,19 @@ function BookInfoManager:getConfigSet()
 end
 
 function BookInfoManager:saveConfigSet(config_set)
-    for _, v in ipairs(CONFIG_SET) do
-        self:saveSetting(v, config_set[v], nil, true)
+    self:openDbConnection()
+    local res = self.db_conn:exec("SELECT key FROM config;")
+    local diff = {}
+    if res then
+        for _, v in ipairs(res[1]) do
+            diff[v] = false
+        end
+    end
+    for k, v in pairs(config_set) do
+        diff[k] = v
+    end
+    for k, v in pairs(diff) do
+        self:saveSetting(k, v, nil, true)
     end
 end
 
