@@ -1594,7 +1594,7 @@ function FileManager:backUpSettings()
     if groups.g_settings then
         back_up_file(data_dir .. "/settings.reader.lua")
         local file = data_dir .. "/defaults.custom.lua"
-        if lfs.attributes(file, "mode") == "file" then
+        if isFile(file) then
             back_up_file(file)
         end
         if self.coverbrowser then
@@ -1602,7 +1602,10 @@ function FileManager:backUpSettings()
         end
     end
     if groups.history then
-        back_up_file(data_dir .. "/history.lua")
+        local file = data_dir .. "/history.lua"
+        if isFile(file) then
+            back_up_file(file)
+        end
     end
     if groups.plugins then
         util.findFiles(DataStorage:getSettingsDir(), function(path, f)
