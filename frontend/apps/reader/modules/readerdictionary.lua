@@ -283,7 +283,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
             {
                 keep_menu_open = true,
                 text = _("Set dictionary priority for this book"),
-                help_text = _("This setting enables you to specify dictionary priorities on a per-book basis. Results from higher-priority dictionaries will be displayed first when looking up words. Only dictionaries that are currently active can be selected and prioritized."),
+                help_text = _("This feature enables you to specify dictionary priorities on a per-book basis. Results from higher-priority dictionaries will be displayed first when looking up words. Only dictionaries that are currently active can be selected and prioritized."),
                 enabled_func = function()
                     return not is_docless and #self.enabled_dict_names > 1
                 end,
@@ -454,7 +454,7 @@ function ReaderDictionary:showPreferredDictsDialog()
     local buttons = {}
     local disabled_buttons = {}  -- store disabled dict buttons separately
 
-    local function makeButtonEntry(dict, is_disabled)
+    local function makeButtonEntry(dict, is_enabled)
         local is_preferred = false
         local pref_num = 0
         for i, pref_dict in ipairs(self.preferred_dictionaries) do
@@ -466,11 +466,11 @@ function ReaderDictionary:showPreferredDictsDialog()
         end
 
         local button_text = dict
-        if is_preferred and not is_disabled then
+        if is_preferred and is_enabled then
             -- Add circled number (U+2460...2473) at start
             local symbol = util.unicodeCodepointToUtf8(0x245F + (pref_num < 20 and pref_num or 20))
             button_text = symbol .. " " .. button_text
-        elseif is_disabled then
+        elseif not is_enabled then
             -- Add circled x (U+2297) at start for disabled dictionaries
             button_text = "⊗ " .. button_text
         end
@@ -480,7 +480,7 @@ function ReaderDictionary:showPreferredDictsDialog()
                 align = "left",
                 text = button_text,
                 callback = function()
-                    if is_disabled then return end -- No toggle for disabled dicts
+                    if not is_enabled then return end -- No toggle for disabled dicts
                     if is_preferred then
                         for i, pref_dict in ipairs(self.preferred_dictionaries) do
                             if pref_dict == dict then
@@ -497,7 +497,7 @@ function ReaderDictionary:showPreferredDictsDialog()
                     self:showPreferredDictsDialog()
                 end,
                 hold_callback = function()
-                    if is_disabled then -- re-enable dictionary
+                    if not is_enabled then -- re-enable dictionary
                         self.book_disabled_dicts[dict] = nil
                     else -- disable dictionary for this book
                         self.book_disabled_dicts[dict] = true
@@ -513,9 +513,9 @@ function ReaderDictionary:showPreferredDictsDialog()
     -- Process enabled dictionaries first.
     for _, dict in ipairs(self.enabled_dict_names) do
         if not self.book_disabled_dicts[dict] then
-            table.insert(buttons, makeButtonEntry(dict, false))
+            table.insert(buttons, makeButtonEntry(dict, true))
         else
-            table.insert(disabled_buttons, makeButtonEntry(dict, true))
+            table.insert(disabled_buttons, makeButtonEntry(dict, false))
         end
     end
 
@@ -1360,7 +1360,7 @@ function ReaderDictionary:onReadSettings(config)
         self.disable_fuzzy_search = G_reader_settings:isTrue("disable_fuzzy_search")
     end
     -- Add disabled dictionaries list for this book
-    self.book_disabled_dicts = config:readSetting("book_disabled_dicts") or {}
+    self.book_disabled_dicts = config:readSetting("book_disabled_dicts")
 end
 
 function ReaderDictionary:onSaveSettings()
