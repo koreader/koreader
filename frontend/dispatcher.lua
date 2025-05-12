@@ -34,6 +34,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local FileManager = require("apps/filemanager/filemanager")
 local Notification = require("ui/widget/notification")
+local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
@@ -151,6 +152,7 @@ local settingsList = {
     show_config_menu = {category="none", event="ShowConfigMenu", title=_("Show bottom menu"), reader=true},
     toggle_status_bar = {category="none", event="ToggleFooterMode", title=_("Toggle status bar"), reader=true},
     toggle_chapter_progress_bar = {category="none", event="ToggleChapterProgressBar", title=_("Toggle chapter progress bar"), reader=true},
+    load_dictionary_preset = {category="string", event="LoadDictionaryPreset", title=_("Load dictionary preset"), args_func=ReaderDictionary.getPresets, reader=true},
     load_footer_preset = {category="string", event="LoadFooterPreset", title=_("Load status bar preset"), args_func=ReaderFooter.getPresets, reader=true, separator=true},
     ----
     prev_chapter = {category="none", event="GotoPrevChapter", title=_("Previous chapter"), reader=true},
@@ -388,6 +390,7 @@ local dispatcher_menu_order = {
     "show_config_menu",
     "toggle_status_bar",
     "toggle_chapter_progress_bar",
+    "load_dictionary_preset",
     "load_footer_preset",
     ----
     "prev_chapter",
