@@ -285,10 +285,11 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 text = _("Set dictionary priority for this book"),
                 help_text = _("This feature enables you to specify dictionary priorities on a per-book basis. Results from higher-priority dictionaries will be displayed first when looking up words. Only dictionaries that are currently active can be selected and prioritized."),
                 enabled_func = function()
-                    return not is_docless and #self.enabled_dict_names > 1
+                    -- we allow to use preferred dictionaries even if no dictionaries are enabled globally (see self:updateSdcvDictNamesOptions)
+                    return not is_docless and (#self.enabled_dict_names > 1 or #self.preferred_dictionaries > 0)
                 end,
-                callback = function()
-                    self:showPreferredDictsDialog()
+                callback = function(touchmenu_instance)
+                    self:showPreferredDictsDialog(touchmenu_instance)
                 end,
             },
             {
@@ -449,7 +450,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
     end
 end
 
-function ReaderDictionary:showPreferredDictsDialog()
+function ReaderDictionary:showPreferredDictsDialog(touchmenu_instance)
     local dialog
     local buttons = {}
     local disabled_buttons = {}  -- store disabled dict buttons separately
@@ -459,7 +460,13 @@ function ReaderDictionary:showPreferredDictsDialog()
         self:onSaveSettings()
         if update_sdcv then self:updateSdcvDictNamesOptions() end
         UIManager:close(dialog)
-        self:showPreferredDictsDialog()
+        if #self.enabled_dict_names == 0 then
+            -- This is an edge case where we have a preferred dictionary but no globally enabled ones.
+            -- If we un-prefer said dict, we would end up with an empty dialog, so close up shop and go home.
+            touchmenu_instance:updateItems()
+            return
+        end
+        self:showPreferredDictsDialog(touchmenu_instance)
     end
 
     local function makeButtonEntry(dict, is_enabled)
@@ -503,9 +510,9 @@ function ReaderDictionary:showPreferredDictsDialog()
                 end,
                 hold_callback = function()
                     if not is_enabled then -- re-enable dictionary
-                        self.book_disabled_dicts[dict] = nil
+                        self.disabled_dicts_per_book[dict] = nil
                     else -- disable dictionary for this book
-                        self.book_disabled_dicts[dict] = true
+                        self.disabled_dicts_per_book[dict] = true
                     end
                     update_sdcv = false
                     saveAndRefresh()
@@ -516,7 +523,7 @@ function ReaderDictionary:showPreferredDictsDialog()
 
     -- Process enabled dictionaries first.
     for _, dict in ipairs(self.enabled_dict_names) do
-        if not self.book_disabled_dicts[dict] then
+        if not self.disabled_dicts_per_book[dict] then
             table.insert(buttons, makeButtonEntry(dict, true))
         else
             table.insert(disabled_buttons, makeButtonEntry(dict, false))
@@ -532,7 +539,7 @@ function ReaderDictionary:showPreferredDictsDialog()
         {
             text = _("Reset"),
             callback = function()
-                self.book_disabled_dicts = {}
+                self.disabled_dicts_per_book = {}
                 self.preferred_dictionaries = {}
                 saveAndRefresh()
             end,
@@ -1101,11 +1108,11 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
         return
     end
 
-    -- Before starting the search, remove any dictionaries that are disabled for *this* book.
-    if dict_names and self.book_disabled_dicts then
+    -- Before starting the search, remove any dictionaries that were disabled for *this* book.
+    if dict_names and self.disabled_dicts_per_book then
         local filtered_names = {}
         for _, name in ipairs(dict_names) do
-            if not self.book_disabled_dicts[name] then
+            if not self.disabled_dicts_per_book[name] then
                 table.insert(filtered_names, name)
             end
         end
@@ -1374,14 +1381,14 @@ function ReaderDictionary:onReadSettings(config)
     else
         self.disable_fuzzy_search = G_reader_settings:isTrue("disable_fuzzy_search")
     end
-    -- Add disabled dictionaries list for this book
-    self.book_disabled_dicts = config:readSetting("book_disabled_dicts")
+    -- Add thw disabled-dictionaries list for this book
+    self.disabled_dicts_per_book = config:readSetting("disabled_dicts_per_book") or {}
 end
 
 function ReaderDictionary:onSaveSettings()
     if self.ui.doc_settings then
-        self.ui.doc_settings:saveSetting("preferred_dictionaries", self.preferred_dictionaries)
-        self.ui.doc_settings:saveSetting("book_disabled_dicts", self.book_disabled_dicts)
+        self.ui.doc_settings:saveSetting("preferred_dictionaries", next(self.preferred_dictionaries) and self.preferred_dictionaries or nil)
+        self.ui.doc_settings:saveSetting("disabled_dicts_per_book", next(self.disabled_dicts_per_book) and self.disabled_dicts_per_book or nil)
     end
 end
 
