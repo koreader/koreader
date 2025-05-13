@@ -1,3 +1,63 @@
+--[[
+This module provides a unified interface for managing presets across different KOReader modules.
+It handles creation, loading, updating, and deletion of presets, as well as menu generation.
+
+    Usage example:
+        local Presets = require("ui/presets")
+
+        -- In your module:
+        function MyModule:buildPreset()
+            return {
+                -- Return a table with the settings you want to save
+                setting1 = self.setting1,
+                setting2 = self.setting2,
+            }
+        end
+
+        function MyModule:loadPreset(preset)
+            -- Apply the preset settings to your module
+            self.setting1 = preset.setting1
+            self.setting2 = preset.setting2
+            -- Update UI or other necessary changes
+            self:refresh()
+        end
+
+        -- To create menu items for presets:
+        function MyModule:genPresetMenuItemTable()
+            return Presets:genModulePresetMenuTable(
+                self,
+                "my_module_presets", -- preset key for settings
+                _("Create new preset") -- optional custom text
+            )
+        end
+
+        -- To create a new preset:
+        function MyModule:createPresetFromCurrentSettings(touchmenu_instance)
+            return Presets:createModulePreset(self, touchmenu_instance, "my_module_presets")
+        end
+
+        -- To load a preset by name:
+        function MyModule:onLoadPreset(preset_name)
+            return Presets:onLoadPreset(self, preset_name, "my_module_presets", true)
+        end
+
+        -- To get list of available presets:
+        function MyModule.getPresets()
+            return Presets:getPresets("my_module_presets")
+        end
+
+Required module methods:
+- buildPreset(): returns a table with the settings to save
+- loadPreset(preset): applies the settings from the preset table
+
+The preset system handles:
+- Saving/loading presets to/from G_reader_settings
+- Creating and managing preset menu items
+- User interface for creating/updating/deleting presets
+- Notifications when presets are loaded/updated
+- Adding actions to Dispatcher for loading presets through gestures/hotkeys/profiles
+--]]
+
 local UIManager = require("ui/uimanager")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
@@ -112,6 +172,17 @@ function Presets:genModulePresetMenuTable(module, preset_key, text)
         function(preset) module:loadPreset(preset) end,
         function() return module:genPresetMenuItemTable() end
     )
+end
+
+function Presets:onLoadPreset(module, preset_name, preset_key, show_notification)
+    local presets = G_reader_settings:readSetting(preset_key)
+    if presets and presets[preset_name] then
+        module:loadPreset(presets[preset_name])
+        if show_notification then
+            Notification:notify(T(_("Preset '%1' was loaded"), preset_name))
+        end
+    end
+    return true
 end
 
 function Presets:getPresets(preset_name_key) -- for Dispatcher

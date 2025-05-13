@@ -1967,11 +1967,7 @@ function ReaderFooter:loadPreset(preset)
 end
 
 function ReaderFooter:onLoadFooterPreset(preset_name)
-    local footer_presets = G_reader_settings:readSetting("footer_presets")
-    if footer_presets and footer_presets[preset_name] then
-        self:loadPreset(footer_presets[preset_name])
-    end
-    return true
+    return Presets:onLoadPreset(self, preset_name, "footer_presets")
 end
 
 function ReaderFooter.getPresets() -- for Dispatcher

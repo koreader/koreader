@@ -1396,12 +1396,7 @@ function ReaderDictionary:genPresetMenuItemTable()
 end
 
 function ReaderDictionary:onLoadDictionaryPreset(preset_name)
-    local dict_presets = G_reader_settings:readSetting("dict_presets")
-    if dict_presets and dict_presets[preset_name] then
-        self:loadPreset(dict_presets[preset_name])
-        Notification:notify(T(_("Dictionary preset '%1' was loaded"), preset_name))
-    end
-    return true
+    return Presets:onLoadPreset(self, preset_name, "dict_presets", true)
 end
 
 function ReaderDictionary.getPresets() -- for Dispatcher
