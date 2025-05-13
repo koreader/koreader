@@ -110,12 +110,13 @@ function Presets:createPresetFromCurrentSettings(touchmenu_instance, preset_name
     input_dialog:onShowKeyboard()
 end
 
-function Presets:genPresetMenuItemTable(preset_name_key, text, buildPresetFunc, loadPresetFunc, genPresetMenuItemTableFunc)
+function Presets:genPresetMenuItemTable(preset_name_key, text, buildPresetFunc, loadPresetFunc, genPresetMenuItemTableFunc, enabled_func)
     local presets = G_reader_settings:readSetting(preset_name_key, {})
     local items = {
         {
             text = text or _("Create new preset from current settings"),
             keep_menu_open = true,
+            enabled_func = enabled_func,
             callback = function(touchmenu_instance)
                 self:createPresetFromCurrentSettings(touchmenu_instance, preset_name_key, buildPresetFunc, genPresetMenuItemTableFunc)
             end,
@@ -131,7 +132,7 @@ function Presets:genPresetMenuItemTable(preset_name_key, text, buildPresetFunc, 
                 -- There is no guarantee that it will always be obvious to the user that the preset was loaded
                 -- so we show a notification.
                 UIManager:show(InfoMessage:new{
-                    text = T(_("Preset '%1' loaded succesfully."), preset_name),
+                    text = T(_("Preset '%1' loaded successfully."), preset_name),
                     timeout = 2,
                 })
             end,
@@ -171,13 +172,14 @@ function Presets:createModulePreset(module, touchmenu_instance, preset_key)
     )
 end
 
-function Presets:genModulePresetMenuTable(module, preset_key, text)
+function Presets:genModulePresetMenuTable(module, preset_key, text, enabled_func)
     return self:genPresetMenuItemTable(
         preset_key,
         text,
         function() return module:buildPreset() end,
         function(preset) module:loadPreset(preset) end,
-        function() return module:genPresetMenuItemTable() end
+        function() return module:genPresetMenuItemTable() end,
+        enabled_func
     )
 end
 

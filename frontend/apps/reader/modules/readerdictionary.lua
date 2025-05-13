@@ -1392,7 +1392,8 @@ function ReaderDictionary:createPresetFromCurrentSettings(touchmenu_instance)
 end
 
 function ReaderDictionary:genPresetMenuItemTable()
-    return Presets:genModulePresetMenuTable(self, "dict_presets", _("Create new preset from enabled dictionaries"))
+    return Presets:genModulePresetMenuTable(self, "dict_presets", _("Create new preset from enabled dictionaries"),
+                function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end)
 end
 
 function ReaderDictionary:onLoadDictionaryPreset(preset_name)
