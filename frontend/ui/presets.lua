@@ -194,6 +194,28 @@ function Presets:onLoadPreset(module, preset_name, preset_key, show_notification
     return true
 end
 
+function Presets:cycleThroughPresets(module, preset_key, show_notification)
+    local presets = G_reader_settings:readSetting(preset_key)
+    if not presets or not next(presets) then
+        Notification:notify(_("No presets available"), Notification.SOURCE_ALWAYS_SHOW)
+        return false
+    end
+    -- Get sorted list of preset names
+    local preset_names = self:getPresets(preset_key)
+    -- Get and increment index, wrap around if needed
+    local index = G_reader_settings:readSetting(preset_key .. "_index", 0) + 1
+    if index > #preset_names then
+        index = 1
+    end
+    local next_preset_name = preset_names[index]
+    module:loadPreset(presets[next_preset_name])
+    G_reader_settings:saveSetting(preset_key .. "_index", index)
+    if show_notification then
+        Notification:notify(T(_("Loaded preset: %1"), next_preset_name))
+    end
+    return true
+end
+
 function Presets:getPresets(preset_name_key) -- for Dispatcher
     local presets = G_reader_settings:readSetting(preset_name_key)
     local actions = {}

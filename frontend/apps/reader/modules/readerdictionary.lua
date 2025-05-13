@@ -1396,6 +1396,10 @@ function ReaderDictionary:genPresetMenuItemTable()
                 function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end)
 end
 
+function ReaderDictionary:onCycleDictionaryPresets()
+    return Presets:cycleThroughPresets(self, "dict_presets", true)
+end
+
 function ReaderDictionary:onLoadDictionaryPreset(preset_name)
     return Presets:onLoadPreset(self, preset_name, "dict_presets", true)
 end

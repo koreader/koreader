@@ -153,6 +153,7 @@ local settingsList = {
     toggle_status_bar = {category="none", event="ToggleFooterMode", title=_("Toggle status bar"), reader=true},
     toggle_chapter_progress_bar = {category="none", event="ToggleChapterProgressBar", title=_("Toggle chapter progress bar"), reader=true},
     load_dictionary_preset = {category="string", event="LoadDictionaryPreset", title=_("Load dictionary preset"), args_func=ReaderDictionary.getPresets, reader=true},
+    cycle_dictionary_preset = {category="none", event="CycleDictionaryPresets", title=_("Cycle through dictionary presets"), reader=true,},
     load_footer_preset = {category="string", event="LoadFooterPreset", title=_("Load status bar preset"), args_func=ReaderFooter.getPresets, reader=true, separator=true},
     ----
     prev_chapter = {category="none", event="GotoPrevChapter", title=_("Previous chapter"), reader=true},
@@ -391,6 +392,7 @@ local dispatcher_menu_order = {
     "toggle_status_bar",
     "toggle_chapter_progress_bar",
     "load_dictionary_preset",
+    "cycle_dictionary_preset",
     "load_footer_preset",
     ----
     "prev_chapter",
