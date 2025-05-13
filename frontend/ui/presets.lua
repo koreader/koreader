@@ -128,6 +128,12 @@ function Presets:genPresetMenuItemTable(preset_name_key, text, buildPresetFunc, 
             keep_menu_open = true,
             callback = function()
                 loadPresetFunc(presets[preset_name])
+                -- There is no guarantee that it will always be obvious to the user that the preset was loaded
+                -- so we show a notification.
+                UIManager:show(InfoMessage:new{
+                    text = T(_("Preset '%1' loaded succesfully."), preset_name),
+                    timeout = 2,
+                })
             end,
             hold_callback = function(touchmenu_instance)
                 UIManager:show(MultiConfirmBox:new{
