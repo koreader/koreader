@@ -1,4 +1,3 @@
-local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -710,17 +709,6 @@ function ReaderBookmark:onShowBookmark()
         multilines_show_more_text = multilines_show_more_text,
         line_color = show_separator and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
         title_bar_left_icon = "appbar.menu",
-        on_close_ges = {
-            GestureRange:new{
-                ges = "two_finger_swipe",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
-                },
-                direction = BD.flipDirectionIfMirroredUILayout("east")
-            }
-        },
         show_parent = self.bookmark_menu,
     }
     table.insert(self.bookmark_menu, bm_menu)
