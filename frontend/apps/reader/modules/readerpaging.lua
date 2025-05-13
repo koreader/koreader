@@ -181,8 +181,6 @@ function ReaderPaging:genDualPagingMenu()
         enabled_func = function()
             return self:isDualPageEnabled()
         end,
-      hold_callback = function()
-      end,
       help_text = _(
         [[When using Dual Page Mode, and the first page of the document should be shown on its owm, toggle this on.]]
       ),
@@ -198,8 +196,6 @@ function ReaderPaging:genDualPagingMenu()
         enabled_func = function()
             return self:isDualPageEnabled()
         end,
-      hold_callback = function()
-      end,
       separator = true,
       help_text = _(
         [[When using Dual Page Mode, and the second page needs to be rendered on the left and the first page on the right (RTL), enable this option.]]
@@ -216,8 +212,6 @@ function ReaderPaging:genDualPagingMenu()
         enabled_func = function()
             return self:isDualPageEnabled()
         end,
-      hold_callback = function()
-      end,
       separator = true,
       help_text = _(
         [[When this settings is enabled, when you rotate your device to landscape mode, Dual Page Mode will be enabled automatically.]]
@@ -1016,14 +1010,12 @@ function ReaderPaging:onToggleDualPageMode()
     if self.document_settings.dual_page_mode then
         Notification:notify(_("Dual mode page disabled."))
         self:onSetPageMode(1)
-        self:onRedrawCurrentPage()
 
         return
     end
 
     Notification:notify(_("Dual mode page enabled."))
     self:onSetPageMode(2)
-    self:onRedrawCurrentPage()
 end
 
  --When page scroll is enabled, we need to disable Dual Page mode
@@ -1069,6 +1061,7 @@ function ReaderPaging:onSetPageMode(mode)
     end
 
     self.ui.document.configurable.page_mode = mode
+    self:onRedrawCurrentPage()
 end
 
 function ReaderPaging:onPageUpdate(new_page_no, orig_mode)
