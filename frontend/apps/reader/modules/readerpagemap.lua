@@ -229,17 +229,6 @@ function ReaderPageMap:onShowPageList()
         single_line = true,
         align_baselines = true,
         with_dots = items_with_dots,
-        on_close_ges = {
-            GestureRange:new{
-                ges = "two_finger_swipe",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
-                },
-                direction = BD.flipDirectionIfMirroredUILayout("east")
-            }
-        }
     }
 
     self.pagelist_menu = CenterContainer:new{
