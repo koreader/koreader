@@ -96,7 +96,6 @@ function ReaderPaging:init()
     end)
 end
 
--- TODO(ogkevin): a nice way to not have to duplicate in koptoptions
 -- args and toggle
 function ReaderPaging:onDispatcherRegisterActions()
     Dispatcher:registerAction(
@@ -730,50 +729,6 @@ function ReaderPaging:onZoomModeUpdate(new_mode)
     self.zoom_mode = new_mode
 end
 
--- Returns native page dimensions with dual page mode in mind
---
--- If dual mode is enabled, it returns the total area of pages
--- next to each other with the shortest one scaled to the largest.
--- So, if page 1 is 1x1, and page 2 is 5x5 where WxH
--- the deminesion returens would be 10x5 --> (1 * 5) + 5 x 5 --> scaled to H with zoom factor of 5
---
--- @param page number the page number
---
--- @return Geom
--- TODO(ogkevin): this is unused, might need deletion
-function ReaderPaging:getNativePageDimensions(page)
-    logger.dbg("ReaderPaging:getNativePageDimensions", page)
-
-    if not self:isDualPageEnabled() then
-        return self.ui.document:getNativePageDimensions(page)
-    end
-
-    local total_dimen = Geom:new({ w = 0, h = 0 })
-    local page_pair = self:getDualPagePairFromBasePage(page)
-    local page1 = self.ui.document.getNativePageDimensions(page_pair[1])
-    local page2 = self.ui.document.getNativePageDimensions(page_pair[2])
-
-    local max_h = math.max(page1.h, page2.h)
-
-    if page1.h ~= max_h then
-        local zoom = max_h / page1.h
-        total_dimen.w = page2.w + (page1.w * zoom)
-    elseif page2.h ~= max_h then
-        local zoom = max_h / page2.h
-        total_dimen.w = page1.w + (page2.w * zoom)
-    end
-
-    -- local total_w
-
-    -- for _, p in ipairs(page_pair) do
-    --     local pageDimen = self.ui.document:getNativePageDimensions(p)
-    --     max_h = math.max(totalDimen.h, pageDimen.h)
-    --     -- totalDimen.w = totalDimen.w + pageDimen.w
-    -- end
-
-    return total_dimen
-end
-
 -- Given the page number, calculate what the correct base page would be for
 -- dual page mode.
 --
@@ -974,7 +929,6 @@ end
 function ReaderPaging:firstTimeDualPageMode()
     logger.dbg("ReaderPaging:firstTimeDualPageMode")
 
-    -- TODO(ogkevin): Wiki entry for dual page mode!
     UIManager:show(InfoMessage:new {
         text = _([[Welcome to Dual Page Mode!
 
@@ -1001,7 +955,6 @@ function ReaderPaging:onToggleDualPageMode()
     logger.dbg("ReaderPaging:onToggleDualPageMode")
 
     if not self:canDualPageMode() then
-        -- TODO(okgevin): make the "status" of canDualPageMode visible in the help text so that we can point the user to
         Notification:notify(_("Dual mode page is not supported."))
 
         return
@@ -1732,7 +1685,6 @@ function ReaderPaging:onRedrawCurrentPage()
     return true
 end
 
--- TODO(ogkevin): I think we can drop the param and just use self.curr_pair_base
 function ReaderPaging:updatePagePairStatesForBase(pageno)
     logger.dbg("ReaderPaging:updatePagePairStatesForBase: setting dual page pairs")
 

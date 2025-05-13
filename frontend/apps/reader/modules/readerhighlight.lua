@@ -1144,9 +1144,6 @@ end
 
 function ReaderHighlight:updateHighlightPaging(highlight, side, direction)
     logger.dbg("ReaderHighlight:updateHighlightPaging", highlight)
-    -- FIXME(ogkevin): I believe this assumption is breaking dual page mode edit
-    -- local page = self.ui.paging.current_page
-    -- TODO(ogkevin): this needs confirmation, makes sense however, if the page is already present in highlight
     local page = highlight.page
     local pboxes
     if highlight.ext then -- multipage highlight, don't move invisible boundaries
