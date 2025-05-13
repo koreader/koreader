@@ -62,6 +62,7 @@ local UIManager = require("ui/uimanager")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+local Notification = require("ui/widget/notification")
 local T = require("ffi/util").template
 local ffiUtil = require("ffi/util")
 local _ = require("gettext")
