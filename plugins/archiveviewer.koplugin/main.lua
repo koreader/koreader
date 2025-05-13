@@ -11,6 +11,10 @@ local ffiUtil = require("ffi/util")
 local util = require("util")
 local _ = require("gettext")
 local T = ffiUtil.template
+local ffi = require "ffi"
+local libarchive = ffi.loadlib("archive", "13")
+local logger = require("logger")
+require "ffi/libarchive_h"
 
 local ArchiveViewer = WidgetContainer:extend{
     name = "archiveviewer",
@@ -22,17 +26,37 @@ local ArchiveViewer = WidgetContainer:extend{
     -- subtable key - a name of a subfolder ending with /, or a name of a file (without path)
     -- subtable value - false for subfolders, or file size (string)
     list_table = nil,
-    arc_type = nil,
     arc_ext = {
+        cbr  = true,
         cbz  = true,
         epub = true,
+        rar  = true,
         zip  = true,
     },
 }
 
-local ZIP_LIST            = "unzip -qql \"%1\""
-local ZIP_EXTRACT_CONTENT = "unzip -qqp \"%1\" \"%2\""
-local ZIP_EXTRACT_FILE    = "unzip -qqo \"%1\" \"%2\" -d \"%3\"" -- overwrite
+local function archiveReadIter(filename)
+    logger.dbg('archiveviewer: opening file', filename)
+    local archive = ffi.gc(libarchive.archive_read_new(), libarchive.archive_free)
+    libarchive.archive_read_support_format_all(archive)
+    libarchive.archive_read_support_filter_all(archive)
+    if libarchive.archive_read_open_filename(archive, filename, 10240) ~= libarchive.ARCHIVE_OK then
+        logger.err('archiveviewer: opening file', filename, ffi.string(libarchive.archive_error_string(archive)))
+        return function() end
+    end
+    local entry = ffi.new('struct archive_entry *[1]')
+    return function ()
+        local err = libarchive.archive_read_next_header(archive, entry)
+        if err ~= libarchive.ARCHIVE_OK then
+            if err ~= libarchive.ARCHIVE_EOF then
+                logger.err('archiveviewer: reading next header', ffi.string(libarchive.archive_error_string(archive)))
+            end
+            libarchive.archive_read_close(archive)
+            return nil
+        end
+        return archive, entry[0]
+    end
+end
 
 local function getSuffix(file)
     return util.getFileNameSuffix(file):lower()
@@ -58,19 +82,11 @@ end
 
 function ArchiveViewer:openFile(file)
     local _, filename = util.splitFilePathName(file)
-    local fileext = getSuffix(filename)
-    if fileext == "cbz" or fileext == "epub" or fileext == "zip" then
-        self.arc_type = "zip"
-    end
     self.arc_file = file
 
     self.fm_updated = nil
     self.list_table = {}
-    if self.arc_type == "zip" then
-        self:getZipListTable()
-    else -- add other archivers here
-        return
-    end
+    self:getListTable()
 
     self.menu = Menu:new{
         title = filename,
@@ -97,7 +113,7 @@ function ArchiveViewer:openFile(file)
     UIManager:show(self.menu)
 end
 
-function ArchiveViewer:getZipListTable()
+function ArchiveViewer:getListTable()
     local function parse_path(filepath, filesize)
         if not filepath then return end
         local path, name = util.splitFilePathName(filepath)
@@ -119,14 +135,10 @@ function ArchiveViewer:getZipListTable()
         end
     end
 
-    local std_out = io.popen(T(ZIP_LIST, self.arc_file))
-    if std_out then
-        for line in std_out:lines() do
-            -- entry datetime not used so far
-            local fsize, fname = string.match(line, "%s+(%d+)%s+[-0-9]+%s+[0-9:]+%s+(.+)")
-            parse_path(fname, fsize or 0)
-        end
-        std_out:close()
+    for archive, entry in archiveReadIter(self.arc_file) do
+        local path = ffi.string(libarchive.archive_entry_pathname(entry))
+        local size = libarchive.archive_entry_size(entry)
+        parse_path(path, size)
     end
 end
 
@@ -266,28 +278,39 @@ function ArchiveViewer:viewFile(filepath)
 end
 
 function ArchiveViewer:extractFile(filepath)
-    if self.arc_type == "zip" then
-        local std_out = io.popen(T(ZIP_EXTRACT_FILE, self.arc_file, filepath, util.splitFilePathName(self.arc_file)))
-        if std_out then
-            std_out:close()
+    for archive, entry in archiveReadIter(self.arc_file) do
+        local path = ffi.string(libarchive.archive_entry_pathname(entry))
+        if path == filepath then
+            local directory = util.splitFilePathName(self.arc_file)
+            path = directory .. "/" .. path
+            local dest = libarchive.archive_write_disk_new()
+            libarchive.archive_write_disk_set_options(dest,
+                libarchive.ARCHIVE_EXTRACT_SECURE_NODOTDOT +
+                libarchive.ARCHIVE_EXTRACT_SECURE_SYMLINKS
+            )
+            libarchive.archive_entry_set_pathname(entry, path)
+            if libarchive.archive_read_extract2(archive, entry, dest) ~= libarchive.ARCHIVE_OK then
+                logger.err('archiveviewer: extracting to', path, ffi.string(libarchive.archive_error_string(dest)))
+            end
+            libarchive.archive_write_close(dest)
+            libarchive.archive_free(dest)
+            self.fm_updated = true
         end
-    else
-        return
     end
-    self.fm_updated = true
 end
 
 function ArchiveViewer:extractContent(filepath)
-    local content
-    if self.arc_type == "zip" then
-        local std_out = io.popen(T(ZIP_EXTRACT_CONTENT, self.arc_file, filepath))
-        if std_out then
-            content = std_out:read("*all")
-            std_out:close()
-            return content
+    for archive, entry in archiveReadIter(self.arc_file) do
+        local path = ffi.string(libarchive.archive_entry_pathname(entry))
+        local size = libarchive.archive_entry_size(entry)
+        if path == filepath then
+            local content = ffi.gc(ffi.C.malloc(size), ffi.C.free)
+            if libarchive.archive_read_data(archive, content, size) ~= size then
+                print(ffi.string(libarchive.archive_error_string(self.archive)))
+                return
+            end
+            return ffi.string(content, size)
         end
-    else
-        return
     end
 end
 
