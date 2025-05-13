@@ -13,7 +13,6 @@ local KeyValuePage = require("ui/widget/keyvaluepage")
 local LuaData = require("luadata")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
-local Notification = require("ui/widget/notification")
 local Presets = require("ui/presets")
 local SortWidget = require("ui/widget/sortwidget")
 local Trapper = require("ui/trapper")
@@ -279,14 +278,6 @@ function ReaderDictionary:addToMainMenu(menu_items)
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end)
                 end,
-            },
-            {
-                text = _("Dictionary presets"),
-                help_text = _("This feature enables you to group (e.g., per language) dictionaries as presets. You can then quickly switch between these presets to change the dictionaries used for lookups. \n\n Note: No other settings are stored in the presets, neither are the actual dictionaries, only a reference to the dictionaries."),
-                sub_item_table_func = function()
-                    return self:genPresetMenuItemTable()
-                end,
-                separator = true,
             },
             {
                 text = _("Download dictionaries"),
@@ -1342,20 +1333,19 @@ end
 
 function ReaderDictionary:loadPreset(preset)
     if not preset.enabled_dict_names then return end
-    -- Build a list of currently available dictionary names for validation
+    -- build a list of currently available dictionary names for validation
     local available_dict_names = {}
     for _, ifo in ipairs(available_ifos) do
         available_dict_names[ifo.name] = true
     end
-    -- Enable dictionaries from the preset that are still available, and build the dicts_disabled
-    -- list to make sure only valid ones are used i.e., disable new ones that are not in the preset.
-    local dicts_disabled = {}
-    local valid_enabled_names = {}
-    -- First disable all current dictionaries
+    -- Only enable dictionaries from the preset that are still available, and re-build self.dicts_disabled
+    -- list to make sure only valid ones are used i.e., disable newly added ones that are not in the preset.
+    local dicts_disabled, valid_enabled_names = {}, {}
+    -- first disable all current dictionaries
     for _, ifo in ipairs(available_ifos) do
         dicts_disabled[ifo.file] = true
     end
-    -- Then enable only those from the preset that still exist
+    -- then enable only those from the preset that still exist
     for _, ifo in ipairs(available_ifos) do
         for _, enabled_name in ipairs(preset.enabled_dict_names) do
             if ifo.name == enabled_name then
@@ -1365,27 +1355,37 @@ function ReaderDictionary:loadPreset(preset)
             end
         end
     end
-    -- Update both settings and save
+    -- update both settings and save
     self.dicts_disabled = dicts_disabled
     self.enabled_dict_names = valid_enabled_names
     G_reader_settings:saveSetting("dicts_disabled", self.dicts_disabled)
     self:onSaveSettings()
     self:updateSdcvDictNamesOptions()
     -- Show a message if any dictionaries from the preset are missing.
-    local missing_count = 0
     if #preset.enabled_dict_names > #valid_enabled_names then
+        local missing_dicts = {}
         for _, preset_name in ipairs(preset.enabled_dict_names) do
             if not available_dict_names[preset_name] then
-                missing_count = missing_count + 1
+                table.insert(missing_dicts, preset_name)
             end
         end
-    end
-    if missing_count > 0 then
         UIManager:show(InfoMessage:new{
-            text = T(_("Some dictionaries from this preset have been deleted or are no longer available (%1 missing)." .."\n\n".. "Update the preset or reinstall missing dictionaries to stop seeing this message."), missing_count),
+            text = T(_("Some dictionaries from this preset have been deleted or are no longer available (%1 missing): \n\n• %2"),
+                #missing_dicts,
+                table.concat(missing_dicts, "\n• ")),
         })
     end
 end
+
+-- temporarily here to avoid a conflict with #13768
+            -- {
+            --     text = _("Dictionary presets"),
+            --     help_text = _("This feature enables you to group (e.g., per language) dictionaries as presets. You can then quickly switch between these presets to change the dictionaries used for lookups. \n\n Note: No other settings are stored in the presets, neither are the actual dictionaries, only a reference to the dictionaries."),
+            --     sub_item_table_func = function()
+            --         return self:genPresetMenuItemTable()
+            --     end,
+            --     separator = true,
+            -- },
 
 function ReaderDictionary:createPresetFromCurrentSettings(touchmenu_instance)
     return Presets:createModulePreset(self, touchmenu_instance, "dict_presets")
@@ -1396,12 +1396,7 @@ function ReaderDictionary:genPresetMenuItemTable()
 end
 
 function ReaderDictionary:onLoadDictionaryPreset(preset_name)
-    local dict_presets = G_reader_settings:readSetting("dict_presets")
-    if dict_presets and dict_presets[preset_name] then
-        self:loadPreset(dict_presets[preset_name])
-        Notification:notify(T(_("Dictionary preset '%1' was loaded"), preset_name))
-    end
-    return true
+    return Presets:onLoadPreset(self, preset_name, "dict_presets", true)
 end
 
 function ReaderDictionary.getPresets() -- for Dispatcher
