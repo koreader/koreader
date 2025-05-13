@@ -99,6 +99,19 @@ end
 -- args and toggle
 function ReaderPaging:onDispatcherRegisterActions()
     Dispatcher:registerAction(
+        "paging_set_auto_enable_dual_page_mode",
+        {
+            category = "string",
+            event = "SetAutoEnableDualPageMode",
+            title = _("Set auto enable dual page mode"),
+            section = "paging",
+            paging = true,
+            args = { true, false},
+            toggle = { _("true"), _("false") },
+        }
+    )
+
+    Dispatcher:registerAction(
         "paging_toggle_dual_page_mode",
         {
             category = "none",
@@ -945,7 +958,7 @@ As a tip: you can register a shortcut to toggle dual page mode!
 end
 
 -- This should be the only subscriber for this event.
--- Everyone else needs to sub to DualPageModeEnabled!
+-- Everyone else needs to sub to DualPageModeEnabled.
 -- This event is sent by dispatcher, and since ReaderPaging owns page mode,
 -- it's in charge to determine if the Toggle is valid or not.
 --
@@ -969,6 +982,14 @@ function ReaderPaging:onToggleDualPageMode()
 
     Notification:notify(_("Dual mode page enabled."))
     self:onSetPageMode(2)
+end
+
+-- This should be the only subscriber for this event.
+-- Everyone else needs to sub to DualPageModeEnabled.
+--
+-- @param enabled boolean
+function ReaderPaging:onSetAutoEnableDualPageMode(enabled)
+    self.reader_settings.auto_enable_dual_page_mode = enabled
 end
 
  --When page scroll is enabled, we need to disable Dual Page mode

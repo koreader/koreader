@@ -482,6 +482,7 @@ local dispatcher_menu_order = {
     "toggle_reflow",
     ---
     "paging_toggle_dual_page_mode",
+    "paging_set_auto_enable_dual_page_mode",
     "paging_set_page_mode",
     "paging_set_dual_page_mode_first_page_is_cover",
     "paging_set_dual_page_mode_rtl",
