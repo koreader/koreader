@@ -15,7 +15,7 @@ To get and compile the source you must have:
 - `autoconf`: version greater than 2.64
 - `bash`: version 4.0 or greater
 - `ccache`: optional, but recommended
-- `cmake`: version 3.15 or greater, 3.20 or greater recommended
+- `cmake`: version 3.17.5 or greater
 - `gettext`
 - `gcc/g++` or `clang/clang++`: with C11 & C++17 support
 - `git`
