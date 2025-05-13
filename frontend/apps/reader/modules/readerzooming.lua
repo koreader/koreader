@@ -212,13 +212,13 @@ function ReaderZooming:_updateConfigurable(zoom_mode)
 
     local zoom_mode_genus, zoom_mode_type = self:mode_to_combo(zoom_mode)
 
-    -- @fixme: when zoom_mode is "free", zoom_mode_genus is nil
+    --- @fixme when zoom_mode is "free", zoom_mode_genus is nil
     -- This is because in the mode_to_combo mapping, free doesn't exist.
     -- Manual does, but is free and manual the same thing?
     logger.dbg("ReaderZooming:_updateConfigurable", zoom_mode, zoom_mode_genus, zoom_mode_type)
 
     -- Configurable keys aren't prefixed, unlike the actual settings...
-    -- @fixme: hack for nil zoom_mode_genus, needs confirmation if accaptable
+    --- @fixme hack for nil zoom_mode_genus, needs confirmation if accaptable
     configurable.zoom_mode_genus = zoom_mode_genus and zoom_mode_genus or 0
     configurable.zoom_mode_type = zoom_mode_type
 
