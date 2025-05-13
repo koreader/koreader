@@ -675,7 +675,6 @@ end
 
 -- bookmarks misc info, helpers
 
--- TODO(ogkevin): dual page awareness "might" be needed here
 -- method is used for relative movements, e.g. first,last bookmark from page X
 function ReaderBookmark:getCurrentPageNumber()
     return self.ui.paging and self.view.state.page or self.ui.document:getXPointer()

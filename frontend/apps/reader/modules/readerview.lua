@@ -417,7 +417,6 @@ function ReaderView:draw2Pages(bb, x, y)
     self.state.offset.x = x_offset
 
     local start_i, end_i, step
-    -- //TODO(ogkevin): add a method that returns the order instead of accessing this field
     if self.ui.paging.document_settings.dual_page_mode_rtl then
         start_i, end_i, step = #states, 1, -1
     else
@@ -535,7 +534,6 @@ function ReaderView:getDualPagePosition(pos)
     local page = 1
 
     local start_i, end_i, step
-    -- //TODO(ogkevin): add a method that returns the order instead of accessing this field
     if self.ui.paging.document_settings.dual_page_mode_rtl then
         start_i, end_i, step = #states, 1, -1
     else
@@ -582,7 +580,6 @@ function ReaderView:getDualPageRect(page, rect_p)
     local states = self.page_states
 
     local start_i, end_i, step
-    -- //TODO(ogkevin): add a method that returns the order instead of accessing this field
     if self.ui.paging.document_settings.dual_page_mode_rtl then
         start_i, end_i, step = #states, 1, -1
     else
@@ -887,7 +884,7 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
     end
 end
 
--- TODO(ogkevin): If this becomes dual page aware, panning in dual page mode is unlocked.
+-- If this becomes dual page aware, panning in dual page mode is unlocked.
 -- However, there is a chicken and egg problem. To calculate page area, zoom
 -- is required. To calculate dual page, visible are is required.
 -- For now, cheat and return the visible_area as atm it's the same as page_area

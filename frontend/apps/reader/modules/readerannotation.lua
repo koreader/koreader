@@ -270,7 +270,6 @@ function ReaderAnnotation:onExportAnnotations(on_closing)
         local device_id = G_reader_settings:readSetting("device_id", random.uuid())
         anno:saveSetting("device_id", device_id)
         anno:saveSetting("datetime", os.date("%Y-%m-%d %H:%M:%S"))
-        -- TODO(ogkevin): maybe?
         anno:saveSetting("paging", self.ui.paging and true)
         anno:saveSetting("annotations", self.annotations)
         anno:flush()
@@ -342,7 +341,6 @@ end
 
 -- items handling
 
--- TODO(ogkevin): maybe?
 function ReaderAnnotation:updatePageNumbers(force_update)
     logger.dbg("ReaderAnnotation:updatePageNumbers: ", force_update)
 

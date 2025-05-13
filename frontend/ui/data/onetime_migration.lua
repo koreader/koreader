@@ -12,8 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
--- TODO(ogkevin): update this date once we get closer to merge
-local CURRENT_MIGRATION_DATE = 20250406
+local CURRENT_MIGRATION_DATE = 2025013
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -892,9 +891,8 @@ G_reader_settings:saveSetting("last_migration_date", CURRENT_MIGRATION_DATE)
 
 -- Statistics https://github.com/koreader/koreader/pull/13675
 -- Added new settings, so the default values must be saved
--- TODO(ogkevin): update this date once we get closer to merrge
-if last_migration_date < 20250406 then
-    logger.info("Performing one-time migration for 20250406 ")
+if last_migration_date < 2025013 then
+    logger.info("Performing one-time migration for 2025013 ")
 
     -- c.f., PluginLoader
     local package_path = package.path

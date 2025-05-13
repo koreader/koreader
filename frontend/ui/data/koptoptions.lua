@@ -164,7 +164,6 @@ Will rotate up to specified value.]]),
                 default_pos = 4,
                 default_value = 36,
                 show_func = function(configurable)
-                    -- FIXME(ogkevin): this, for some reason, can be nil after zoom in and out
                     return configurable.zoom_mode_genus and configurable.zoom_mode_genus < 3
                 end,
                 event = "DefineZoom",
