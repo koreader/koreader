@@ -85,7 +85,7 @@ function ReaderPaging:init()
     -- This holds a reference to the doc settings, so all the settings that are
     -- configured here, we don't have to manually save or update them
     --
-    -- @todo migrate all the settings to this reference
+    --- @todo migrate all the settings to this reference
 
     self.document_settings = self.ui.doc_settings:readSetting("paging", self.default_document_settings)
     logger.dbg("ReaderPaging:init doc settings", self.document_settings)
