@@ -836,28 +836,31 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
     -- Open the zip file (with .tmp for now, as crengine may still
     -- have a handle to the final epub_path, and we don't want to
     -- delete a good one if we fail/cancel later)
+    local Archiver = require("ffi/archiver")
+    local epub = Archiver.Writer:new{}
     local epub_path_tmp = epub_path .. ".tmp"
-    local ZipWriter = require("ffi/zipwriter")
-    local epub = ZipWriter:new{}
-    if not epub:open(epub_path_tmp) then
+    if not epub:open(epub_path_tmp, "epub") then
         return false
     end
 
     -- We now create and add all the required epub files
+    local mtime = os.time()
 
     -- ----------------------------------------------------------------
     -- /mimetype : always "application/epub+zip"
-    epub:add("mimetype", "application/epub+zip", true)
+    epub:setZipCompression("store")
+    epub:addFileFromMemory("mimetype", "application/epub+zip", mtime)
+    epub:setZipCompression("deflate")
 
     -- ----------------------------------------------------------------
     -- /META-INF/container.xml : always the same content
-    epub:add("META-INF/container.xml", [[
+    epub:addFileFromMemory("META-INF/container.xml", [[
 <?xml version="1.0"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
   <rootfiles>
     <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
   </rootfiles>
-</container>]])
+</container>]], mtime)
 
     -- ----------------------------------------------------------------
     -- OEBPS/content.opf : metadata + list of other files (paths relative to OEBPS/ directory)
@@ -916,14 +919,14 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
   </spine>
 </package>
 ]])
-    epub:add("OEBPS/content.opf", table.concat(content_opf_parts))
+    epub:addFileFromMemory("OEBPS/content.opf", table.concat(content_opf_parts), mtime)
 
     -- ----------------------------------------------------------------
     -- OEBPS/stylesheet.css
     -- crengine will use its own data/epub.css, we just add/fix a few styles
     -- to look more alike wikipedia web pages (that the user can ignore
     -- with "Embedded Style" off)
-    epub:add("OEBPS/stylesheet.css", [[
+    epub:addFileFromMemory("OEBPS/stylesheet.css", [[
 /* Generic styling picked from our epub.css (see it for comments),
    to give this epub a book look even if used with html5.css */
 body {
@@ -1270,7 +1273,7 @@ abbr.abbr {
     display: none;
 }
 /* hiding .noprint may discard some interesting links */
-]])
+]], mtime)
 
     -- ----------------------------------------------------------------
     -- OEBPS/toc.ncx : table of content
@@ -1351,7 +1354,7 @@ abbr.abbr {
   </navMap>
 </ncx>
 ]])
-    epub:add("OEBPS/toc.ncx", table.concat(toc_ncx_parts))
+    epub:addFileFromMemory("OEBPS/toc.ncx", table.concat(toc_ncx_parts), mtime)
 
     -- ----------------------------------------------------------------
     -- HTML table of content
@@ -1479,7 +1482,7 @@ abbr.abbr {
     if self:isWikipediaLanguageRTL(lang) then
         html_dir = ' dir="rtl"'
     end
-    epub:add("OEBPS/content.html", string.format([[
+    epub:addFileFromMemory("OEBPS/content.html", string.format([[
 <html xmlns="http://www.w3.org/1999/xhtml"%s>
 <head>
   <title>%s</title>
@@ -1493,7 +1496,7 @@ abbr.abbr {
 %s
 </body>
 </html>
-]], html_dir, page_cleaned, page_htmltitle, lang:upper(), saved_on, see_online_version, html))
+]], html_dir, page_cleaned, page_htmltitle, lang:upper(), saved_on, see_online_version, html), mtime)
 
     -- Force a GC to free the memory we used till now (the second call may
     -- help reclaim more memory).
@@ -1535,11 +1538,11 @@ abbr.abbr {
             end
             if success then
                 -- Images do not need to be compressed, so spare some cpu cycles
-                local no_compression = true
-                if img.mimetype == "image/svg+xml" then -- except for SVG images (which are XML text)
-                    no_compression = false
+                if img.mimetype ~= "image/svg+xml" then -- except for SVG images (which are XML text)
+                    epub:setZipCompression("store")
                 end
-                epub:add("OEBPS/"..img.imgpath, content, no_compression)
+                epub:addFileFromMemory("OEBPS/"..img.imgpath, content, mtime)
+                epub:setZipCompression("deflate")
             else
                 go_on = UI:confirm(T(_("Downloading image %1 failed. Continue anyway?"), inum), _("Stop"), _("Continue"))
                 if not go_on then
