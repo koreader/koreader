@@ -1630,7 +1630,6 @@ end
 
 function FileManager:restoreSettings(filepath)
     local DataStorage = require("datastorage")
-    local LuaSettings = require("luasettings")
     local g_settings_to_keep = {
         device_id = true,
         last_migration_date = true,
@@ -1677,9 +1676,9 @@ function FileManager:restoreSettings(filepath)
                 dir = data_dir .. "/styletweaks"
             end
             for file, settings in pairs(group) do
-                local filepath = dir .. "/" .. file -- 'file' may include subfolders
-                util.makePath(ffiUtil.dirname(filepath))
-                util.writeToFile(settings, filepath, true)
+                local file_path = dir .. "/" .. file -- 'file' may include subfolders
+                util.makePath(ffiUtil.dirname(file_path))
+                util.writeToFile(settings, file_path, true)
             end
         end
     end
