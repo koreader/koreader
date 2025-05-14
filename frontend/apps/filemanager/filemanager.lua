@@ -1633,6 +1633,7 @@ function FileManager:restoreSettings(filepath)
     local g_settings_to_keep = {
         device_id = true,
         last_migration_date = true,
+        lastdir = true,
         lastfile = true,
         quickstart_shown_version = true,
     }
