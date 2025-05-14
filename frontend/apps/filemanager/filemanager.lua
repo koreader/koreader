@@ -1588,41 +1588,42 @@ function FileManager:backUpSettings()
     UIManager:flushSettings()
     local data_dir = DataStorage:getDataDir()
     local backup = {}
-    local function back_up_file(settings_file)
-        backup[settings_file] = util.readFromFile(settings_file, "rb")
+    local function back_up_file(group, settings_file, settings_file_path)
+        if settings_file_path == nil then
+            settings_file_path = data_dir .. "/" .. settings_file
+            if not isFile(settings_file_path) then return end
+        end
+        backup[group][settings_file] = util.readFromFile(settings_file_path, "rb")
     end
     if groups.g_settings then
-        back_up_file(data_dir .. "/settings.reader.lua")
-        local file = data_dir .. "/defaults.custom.lua"
-        if isFile(file) then
-            back_up_file(file)
-        end
-        if self.coverbrowser then
-            backup.coverbrowser = self.coverbrowser.getConfigSet()
-        end
+        backup.g_settings = { coverbrowser = self.coverbrowser and self.coverbrowser.getConfigSet() }
+        back_up_file("g_settings", "settings.reader.lua")
+        back_up_file("g_settings", "defaults.custom.lua")
     end
     if groups.history then
-        local file = data_dir .. "/history.lua"
-        if isFile(file) then
-            back_up_file(file)
-        end
+        backup.history = {}
+        back_up_file("history", "history.lua")
     end
     if groups.plugins then
-        util.findFiles(DataStorage:getSettingsDir(), function(path, f)
+        backup.plugins = {}
+        local dir = DataStorage:getSettingsDir()
+        util.findFiles(dir, function(path, f)
             if f:match("%.lua$") and not util.stringStartsWith(f, "._") then
-                back_up_file(path)
+                back_up_file("plugins", f, path)
             end
         end, false)
     end
     if groups.styletweaks then
-        util.findFiles(data_dir .. "/styletweaks", function(path, f)
+        backup.styletweaks = {}
+        local dir = data_dir .. "/styletweaks"
+        util.findFiles(dir, function(path, f)
             if f:match("%.css$") and not util.stringStartsWith(f, "._") then
-                back_up_file(path)
+                back_up_file("styletweaks", path:gsub(dir .. "/", ""), path)
             end
-        end)
+        end) -- include subfolders
     end
     local zip = ZipWriter:new{}
-    zip:open(data_dir .. "/" .. "settings_backup_" .. os.date("%Y-%m-%d %H-%M-%S") .. ".zip")
+    zip:open(data_dir .. "/settings_backup_" .. os.date("%Y-%m-%d %H-%M-%S") .. ".zip")
     zip:add("backup", "return " .. dump(backup, nil, true) .. "\n")
     zip:close()
 end
@@ -1637,7 +1638,6 @@ function FileManager:restoreSettings(filepath)
         lastfile = true,
         quickstart_shown_version = true,
     }
-    local g_settings_file = DataStorage:getDataDir() .. "/settings.reader.lua"
     local backup
     local std_out = io.popen(T("unzip -qqp \"%1\" backup", filepath))
     if std_out then
@@ -1650,22 +1650,37 @@ function FileManager:restoreSettings(filepath)
         return
     end
     self:onClose()
-    for file, settings in pairs(backup) do
-        if file == "coverbrowser" then
-            if self.coverbrowser then
-                self.coverbrowser.saveConfigSet(settings)
+    local data_dir = DataStorage:getDataDir()
+    for group_name, group in pairs(backup) do
+        if group_name == "g_settings" or group_name == "history" then
+            for file, settings in pairs(group) do
+                if file == "coverbrowser" then
+                    if self.coverbrowser then
+                        self.coverbrowser.saveConfigSet(settings)
+                    end
+                elseif file == "settings.reader.lua" then
+                    local reader_settings = loadstring(settings)()
+                    for k in pairs(g_settings_to_keep) do
+                        reader_settings[k] = G_reader_settings:readSetting(k)
+                    end
+                    G_reader_settings.data = reader_settings
+                    G_reader_settings:flush()
+                else
+                    util.writeToFile(settings, data_dir .. "/" .. file, true)
+                end
             end
-        elseif file == g_settings_file then
-            local reader_settings = loadstring(settings)()
-            for k in pairs(g_settings_to_keep) do
-                reader_settings[k] = G_reader_settings:readSetting(k)
-            end
-            local tmp = LuaSettings:open(file)
-            tmp.data = reader_settings
-            tmp:flush()
         else
-            util.makePath(ffiUtil.dirname(file))
-            util.writeToFile(settings, file, true)
+            local dir
+            if group_name == "plugins" then
+                dir = DataStorage:getSettingsDir()
+            elseif group_name == "styletweaks" then
+                dir = data_dir .. "/styletweaks"
+            end
+            for file, settings in pairs(group) do
+                local filepath = dir .. "/" .. file -- 'file' may include subfolders
+                util.makePath(ffiUtil.dirname(filepath))
+                util.writeToFile(settings, filepath, true)
+            end
         end
     end
     if Device:canRestart() then
