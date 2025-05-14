@@ -323,8 +323,8 @@ end
 
 function BookInfoManager:getConfigSet()
     self:openDbConnection()
-    local res = self.db_conn:exec("SELECT key, value FROM config;")
     local config_set = {}
+    local res = self.db_conn:exec("SELECT key, value FROM config;")
     if res then
         for i, v in ipairs(res[1]) do
             config_set[v] = tonumber(res[2][i]) or res[2][i]
@@ -335,8 +335,8 @@ end
 
 function BookInfoManager:saveConfigSet(config_set)
     self:openDbConnection()
-    local res = self.db_conn:exec("SELECT key FROM config;")
     local diff = {}
+    local res = self.db_conn:exec("SELECT key FROM config;")
     if res then
         for _, v in ipairs(res[1]) do
             diff[v] = false
