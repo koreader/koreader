@@ -224,6 +224,52 @@ local settingsList = {
     zoom_factor_change = {category="none", event="ZoomFactorChange", title=_("Change zoom factor"), paging=true, separator=true},
     ----
     panel_zoom_toggle = {category="none", event="TogglePanelZoomSetting", title=_("Toggle panel zoom"), paging=true, separator=true},
+
+    ---- Dual page mode
+    paging_set_auto_enable_dual_page_mode = {
+        category = "string",
+        event = "SetAutoEnableDualPageMode",
+        title = _("Set auto enable dual page mode"),
+        section = "paging",
+        paging = true,
+        args = { true, false},
+        toggle = { _("true"), _("false") },
+    },
+    paging_toggle_dual_page_mode = {
+        category = "none",
+        event = "ToggleDualPageMode",
+        title = _("Toggle dual page mode"),
+        paging = true,
+        section = "paging",
+    },
+    paging_set_page_mode = {
+        category = "string",
+        event = "SetPageMode",
+        title = _("Set page mode"),
+        args = { 1, 2 },
+        toggle = { _("single"), _("dual") },
+        paging = true,
+        section = "paging",
+    },
+    paging_set_dual_page_mode_first_page_is_cover = {
+        category = "string",
+        event = "SetDualPageModeFirstPageIsCover",
+        title = _("Set dual page mode first page is cover"),
+        section = "paging",
+        paging = true,
+        args = { true, false},
+        toggle = { _("true"), _("false") },
+    },
+    paging_set_dual_page_mode_rtl = {
+        category = "string",
+        event = "SetDualPageModeRTL",
+        title = _("Set dual page mode RTL"),
+        section = "paging",
+        paging = true,
+        args = { true, false},
+        toggle = { _("true"), _("false") },
+        separator = true,
+    },
     ----
 
     -- parsed from CreOptions
@@ -825,6 +871,12 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
         end
     end
     for __, k in ipairs(dispatcher_menu_order) do
+
+        if not settingsList[k] then
+            local logger = require("logger")
+            logger.dbg("Dispatcher:_addItem missing action for:", k, "might be missing a call to registerAction or entry in settingsList.")
+        end
+
         if settingsList[k][section] == true and settingsList[k].condition ~= false then
             if settingsList[k].category == "none" or settingsList[k].category == "arg" then
                 table.insert(menu, {

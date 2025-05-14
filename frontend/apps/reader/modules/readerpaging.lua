@@ -1,7 +1,6 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
-local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
@@ -96,72 +95,14 @@ function ReaderPaging:init()
     end)
 end
 
--- args and toggle
-function ReaderPaging:onDispatcherRegisterActions()
-    Dispatcher:registerAction(
-        "paging_set_auto_enable_dual_page_mode",
-        {
-            category = "string",
-            event = "SetAutoEnableDualPageMode",
-            title = _("Set auto enable dual page mode"),
-            section = "paging",
-            paging = true,
-            args = { true, false},
-            toggle = { _("true"), _("false") },
-        }
-    )
-
-    Dispatcher:registerAction(
-        "paging_toggle_dual_page_mode",
-        {
-            category = "none",
-            event = "ToggleDualPageMode",
-            title = _("Toggle dual page mode"),
-            paging = true,
-            section = "paging",
-        }
-    )
-
-    Dispatcher:registerAction(
-        "paging_set_page_mode",
-        {
-            category = "string",
-            event = "SetPageMode",
-            title = _("Set page mode"),
-            args = { 1, 2 },
-            toggle = { _("single"), _("dual") },
-            paging = true,
-            section = "paging",
-        }
-    )
-
-    Dispatcher:registerAction(
-        "paging_set_dual_page_mode_first_page_is_cover",
-        {
-            category = "string",
-            event = "SetDualPageModeFirstPageIsCover",
-            title = _("Set dual page mode first page is cover"),
-            section = "paging",
-            paging = true,
-            args = { true, false},
-            toggle = { _("true"), _("false") },
-        }
-    )
-
-    Dispatcher:registerAction(
-        "paging_set_dual_page_mode_rtl",
-        {
-            category = "string",
-            event = "SetDualPageModeRTL",
-            title = _("Set dual page mode RTL"),
-            section = "paging",
-            paging = true,
-            args = { true, false},
-            toggle = { _("true"), _("false") },
-            separator = true,
-        }
-    )
-end
+-- This cannot be used with ReaderPaging as the actions would only be
+-- registered if a Paging document is opened.
+-- Instead, "hardcode" the actions in ./frontend/dispatcher.lua.
+--
+-- If someone is not reading a Paging document and tries to edit profiles or anything
+-- that triggers the actions menu, a nil panic will happen as the actions that would be
+-- in this function never got registered.
+function ReaderPaging:onDispatcherRegisterActions() end
 
 function ReaderPaging:addToMainMenu(menu_items)
   if self.ui.paging then
