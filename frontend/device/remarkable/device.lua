@@ -268,6 +268,11 @@ function Remarkable:init()
         PluginShare.pause_auto_suspend = true
     end
 
+    if isRmPaperPro then
+        -- enable wakelock
+        os.execute("csl power -w koreader")
+    end
+
     Generic.init(self)
 end
 
@@ -305,8 +310,11 @@ function Remarkable:initNetworkManager(NetworkMgr)
 end
 
 function Remarkable:exit()
-    if isRmPaperPro and os.getenv("KO_DONT_GRAB_INPUT") == "1" then
-        os.execute("~/xovi/start")
+    if isRmPaperPro then
+        os.execute("csl power -u koreader")
+        if os.getenv("KO_DONT_GRAB_INPUT") == "1" then
+            os.execute("~/xovi/start")
+        end
     end
     Generic.exit(self)
 end
