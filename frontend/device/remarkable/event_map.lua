@@ -1,4 +1,5 @@
 return {
+    [20001] = "SleepCover",
     [102] = "Home",
     [105] = "LPgBack",
     [106] = "RPgFwd",
