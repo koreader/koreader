@@ -58,13 +58,13 @@ The preset system handles:
 - Adding actions to Dispatcher for loading presets through gestures/hotkeys/profiles
 --]]
 
-local UIManager = require("ui/uimanager")
-local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
-local T = require("ffi/util").template
+local UIManager = require("ui/uimanager")
 local ffiUtil = require("ffi/util")
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local Presets = {}

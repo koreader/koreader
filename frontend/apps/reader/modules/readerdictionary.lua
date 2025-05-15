@@ -1331,7 +1331,7 @@ function ReaderDictionary:buildPreset()
     }
 end
 
-function ReaderDictionary:loadPreset(preset)
+function ReaderDictionary:loadPreset(preset, skip_notification)
     if not preset.enabled_dict_names then return end
     -- build a list of currently available dictionary names for validation
     local available_dict_names = {}
@@ -1362,7 +1362,7 @@ function ReaderDictionary:loadPreset(preset)
     self:onSaveSettings()
     self:updateSdcvDictNamesOptions()
     -- Show a message if any dictionaries from the preset are missing.
-    if #preset.enabled_dict_names > #valid_enabled_names then
+    if not skip_notification and #preset.enabled_dict_names > #valid_enabled_names then
         local missing_dicts = {}
         for _, preset_name in ipairs(preset.enabled_dict_names) do
             if not available_dict_names[preset_name] then
