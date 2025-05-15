@@ -192,6 +192,7 @@ function Remarkable:init()
     -- If we are launched while Oxide is running, remove Power from the event map
     if oxide_running then
         event_map[116] = nil
+        event_map[143] = nil
     end
 
     self.input = require("device/input"):new{
