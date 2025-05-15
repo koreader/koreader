@@ -5,4 +5,4 @@ return {
     [116] = "Power",
     [143] = "Resume",
 }
--- 116 is issued when the device gets to sleep, 143 when it's waked up.
+-- 116 is issued when the device gets to sleep, 143 when it wakes up.
