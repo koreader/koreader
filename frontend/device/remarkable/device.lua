@@ -304,6 +304,13 @@ function Remarkable:initNetworkManager(NetworkMgr)
     NetworkMgr.isConnected = NetworkMgr.ifHasAnAddress
 end
 
+function Remarkable:exit()
+    if isRmPaperPro and os.getenv("KO_DONT_GRAB_INPUT") == "1" then
+        os.execute("~/xovi/start")
+    end
+    Generic.exit(self)
+end
+
 function Remarkable:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
     local command
@@ -320,10 +327,19 @@ function Remarkable:saveSettings()
 end
 
 function Remarkable:resume()
+    if isRmPaperPro then
+        os.execute("csl wifi -p on")
+    else
+        os.execute("./enable-wifi.sh")
+    end
 end
 
 function Remarkable:suspend()
-    os.execute("./disable-wifi.sh")
+    if isRmPaperPro then
+        os.execute("csl wifi -p off")
+    else
+        os.execute("./disable-wifi.sh")
+    end
     os.execute("systemctl suspend")
 end
 
