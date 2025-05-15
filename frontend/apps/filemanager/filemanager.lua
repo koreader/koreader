@@ -1581,7 +1581,8 @@ end
 
 function FileManager:backUpSettings()
     local groups = G_reader_settings:readSetting("backup")
-    if groups == nil or next(groups) == nil then return end
+    if groups == nil
+        or not (groups.g_settings or groups.history or groups.plugins or groups.styletweaks) then return end
     local DataStorage = require("datastorage")
     local ZipWriter = require("ffi/zipwriter")
     local dump = require("dump")
@@ -1637,6 +1638,16 @@ function FileManager:restoreSettings(filepath)
         lastfile = true,
         quickstart_shown_version = true,
     }
+    local g_settings_paths_to_keep = {
+        download_dir = true,
+        folder_shortcuts = true,
+        home_dir = true,
+        inbox_dir = true,
+        screensaver_dir = true,
+        screensaver_document_cover = true,
+        screensaver_image = true,
+        screenshot_dir = true,
+    }
     local backup
     local std_out = io.popen(T("unzip -qqp \"%1\" backup", filepath))
     if std_out then
@@ -1649,6 +1660,7 @@ function FileManager:restoreSettings(filepath)
         return
     end
     self:onClose()
+    local groups = G_reader_settings:readSetting("backup")
     local data_dir = DataStorage:getDataDir()
     for group_name, group in pairs(backup) do
         if group_name == "g_settings" or group_name == "history" then
@@ -1661,6 +1673,11 @@ function FileManager:restoreSettings(filepath)
                     local reader_settings = loadstring(settings)()
                     for k in pairs(g_settings_to_keep) do
                         reader_settings[k] = G_reader_settings:readSetting(k)
+                    end
+                    if groups.keep_paths then
+                        for k in pairs(g_settings_paths_to_keep) do
+                            reader_settings[k] = G_reader_settings:readSetting(k)
+                        end
                     end
                     G_reader_settings.data = reader_settings
                     G_reader_settings:flush()
