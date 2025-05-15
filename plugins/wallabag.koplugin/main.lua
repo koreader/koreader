@@ -1569,7 +1569,7 @@ function Wallabag:setTimeoutValue(touchmenu_instance, title_text, current_value,
                     end,
                 },
                 {
-                    text = _("Apply"),
+                    text = _("Set timeout"),
                     is_enter_default = true,
                     callback = function()
                         local new_value = tonumber(self.timeout_dialog:getInputText())
