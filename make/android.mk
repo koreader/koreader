@@ -118,9 +118,7 @@ update: all
 	env \
 		ANDROID_ARCH='$(ANDROID_ARCH)' \
 		ANDROID_ABI='$(ANDROID_ABI)' \
-		ANDROID_FULL_ARCH='$(ANDROID_ABI)' \
-		LUAJIT_INC='$(abspath $(STAGING_DIR)/include/luajit-2.1)' \
-		LUAJIT_LIB='$(abspath $(ANDROID_LIBS)/libluajit.so)' \
+		ANDROID_LIBS='$(abspath $(ANDROID_LIBS))' \
 		MAKEFLAGS='$(filter-out --debug=%,$(MAKEFLAGS))' \
 		NDK=$(ANDROID_NDK_ROOT) \
 		SDK=$(ANDROID_SDK_ROOT) \
@@ -129,7 +127,9 @@ update: all
 		--project-cache-dir='$(abspath $(ANDROID_LAUNCHER_BUILD)/gradle)' \
 		-PassetsPath='$(abspath $(ANDROID_ASSETS))' \
 		-PbuildDir='$(abspath $(ANDROID_LAUNCHER_BUILD))' \
+		-PbuildJni='false' \
 		-PlibsPath='$(abspath $(dir $(ANDROID_LIBS)))' \
+		-PsevenZipLib='$(if $(MONOLIBTIC),koreader-monolibtic,7z)' \
 		-PndkCustomPath='$(ANDROID_NDK_ROOT)' \
 		-PprojectName='KOReader' \
 		-PversCode='$(ANDROID_VERSION)' \
