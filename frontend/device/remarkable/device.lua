@@ -294,8 +294,9 @@ function Remarkable:init()
     end
 
     if isRmPaperPro then
-        -- enable wakelock
-        os.execute("csl power -w koreader")
+        -- disable autosuspend of xochitl
+        os.execute("cp -a ~/.config/remarkable/xochitl.conf ~/.config/remarkable/xochitl.conf.bak")
+        os.execute("sed -ri 's/IdleSuspendDelay=[0-9]+/IdleSuspendDelay=0/' ~/.config/remarkable/xochitl.conf")
     end
 
     if self.powerd:hasHallSensor() then
@@ -342,7 +343,7 @@ end
 
 function Remarkable:exit()
     if isRmPaperPro then
-        os.execute("csl power -u koreader")
+        os.execute("mv -f ~/.config/remarkable/xochitl.conf.bak ~/.config/remarkable/xochitl.conf")
         if os.getenv("KO_DONT_GRAB_INPUT") == "1" then
             os.execute("~/xovi/start")
         end
@@ -383,10 +384,16 @@ function Remarkable:suspend()
 end
 
 function Remarkable:powerOff()
+    if isRmPaperPro then
+        os.execute("mv -f ~/.config/remarkable/xochitl.conf.bak ~/.config/remarkable/xochitl.conf")
+    end
     os.execute("systemctl poweroff")
 end
 
 function Remarkable:reboot()
+    if isRmPaperPro then
+        os.execute("mv -f ~/.config/remarkable/xochitl.conf.bak ~/.config/remarkable/xochitl.conf")
+    end
     os.execute("systemctl reboot")
 end
 
