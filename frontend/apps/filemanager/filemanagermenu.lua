@@ -1090,6 +1090,7 @@ function FileManagerMenu:genBackupMenu()
             end,
             sub_item_table = backup_files,
         },
+        gen_menu_item(_("preserve paths in settings"), "keep_paths"),
     }
 end
 
