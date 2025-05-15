@@ -1380,7 +1380,7 @@ function ReaderDictionary:onReadSettings(config)
     else
         self.disable_fuzzy_search = G_reader_settings:isTrue("disable_fuzzy_search")
     end
-    -- Add thw disabled-dictionaries list for this book
+    -- Add the disabled-dictionaries list for this book
     self.disabled_dicts_per_book = config:readSetting("disabled_dicts_per_book") or {}
 end
 
