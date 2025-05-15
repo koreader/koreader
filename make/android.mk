@@ -88,7 +88,7 @@ androiddev: update
 
 update: all
 	# Note: do not remove the module directory so there's no need
-	# for `mk7z.sh` to always recreate `assets.7z` from scratch.
+	# for `mk7z.sh` to always recreate `koreader.7z` from scratch.
 	rm -rf $(ANDROID_LIBS)
 	# Remove old in-tree build artifacts that could conflict.
 	rm -rf $(ANDROID_LAUNCHER_DIR)/assets/{libs,module}
