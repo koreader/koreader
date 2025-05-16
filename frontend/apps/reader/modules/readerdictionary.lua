@@ -261,6 +261,10 @@ function ReaderDictionary:addToMainMenu(menu_items)
         text = _("Dictionary settings"),
         sub_item_table = {
             {
+                text = _("Download dictionaries"),
+                sub_item_table_func = function() return self:_genDownloadDictionariesMenu() end,
+            },
+            {
                 keep_menu_open = true,
                 text_func = function()
                     local nb_available, nb_enabled, nb_disabled = self:getNumberOfDictionaries()
@@ -280,8 +284,12 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Download dictionaries"),
-                sub_item_table_func = function() return self:_genDownloadDictionariesMenu() end,
+                text = _("Dictionary presets"),
+                help_text = _("This feature enables you to group (e.g., per language) dictionaries as presets. You can then quickly switch between these presets to change the dictionaries used for lookups. \n\n Note: No other settings are stored in the presets, neither are the actual dictionaries, only a reference to the dictionaries."),
+                sub_item_table_func = function()
+                    return self:genPresetMenuItemTable()
+                end,
+                separator = true,
             },
             {
                 text_func = function()
@@ -308,7 +316,6 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 hold_callback = function(touchmenu_instance)
                     self:toggleFuzzyDefault(touchmenu_instance)
                 end,
-                separator = true,
             },
             {
                 text = _("Dictionary lookup history"),
@@ -1339,7 +1346,7 @@ function ReaderDictionary:loadPreset(preset, skip_notification)
         available_dict_names[ifo.name] = true
     end
     -- Only enable dictionaries from the preset that are still available, and re-build self.dicts_disabled
-    -- list to make sure only valid ones are used i.e., disable newly added ones that are not in the preset.
+    -- to make sure dicts added after the creation of the preset, are disabled as well.
     local dicts_disabled, valid_enabled_names = {}, {}
     -- first disable all current dictionaries
     for _, ifo in ipairs(available_ifos) do
@@ -1376,16 +1383,6 @@ function ReaderDictionary:loadPreset(preset, skip_notification)
         })
     end
 end
-
--- temporarily here to avoid a conflict with #13768
-            -- {
-            --     text = _("Dictionary presets"),
-            --     help_text = _("This feature enables you to group (e.g., per language) dictionaries as presets. You can then quickly switch between these presets to change the dictionaries used for lookups. \n\n Note: No other settings are stored in the presets, neither are the actual dictionaries, only a reference to the dictionaries."),
-            --     sub_item_table_func = function()
-            --         return self:genPresetMenuItemTable()
-            --     end,
-            --     separator = true,
-            -- },
 
 function ReaderDictionary:createPresetFromCurrentSettings(touchmenu_instance)
     return Presets:createModulePreset(self, touchmenu_instance, "dict_presets")
