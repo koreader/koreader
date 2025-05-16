@@ -180,7 +180,7 @@ function CalibreWireless:initCalibreMQ(host, port)
     end
 end
 
-local function set_inbox_dir(cb)
+function CalibreWireless:setInboxDir(cb)
     local force_chooser_dir
     if Device:isAndroid() then
         force_chooser_dir = Device.home_dir
@@ -196,7 +196,9 @@ local function set_inbox_dir(cb)
             local save_and_cb = function()
                 logger.info("set inbox directory", inbox)
                 G_reader_settings:saveSetting("inbox_dir", inbox)
-                cb(inbox)
+                if cb then
+                    cb(inbox)
+                end
             end
             -- probably not a good idea to mix calibre drivers because
             -- their default settings usually don't match (lpath et al)
@@ -234,7 +236,7 @@ function CalibreWireless:connect()
     -- Setup inbox directory.
     local inbox_dir = G_reader_settings:readSetting("inbox_dir")
     if not inbox_dir then
-        set_inbox_dir(re)
+        self:setInboxDir(re)
         inbox_dir = coroutine.yield()
     end
 
