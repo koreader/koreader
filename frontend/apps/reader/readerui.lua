@@ -4,6 +4,7 @@ ReaderUI is an abstraction for a reader interface.
 It works using data gathered from a document interface.
 ]]--
 
+local Archiver = require("ffi/archiver")
 local BD = require("ui/bidi")
 local BookList = require("ui/widget/booklist")
 local Device = require("device")
@@ -621,28 +622,24 @@ function ReaderUI:extendProvider(file, provider, is_provider_forced)
     -- Also pass to crengine is_fb2 property, based on the archive content (single "zip" extension),
     -- or on the original file double extension ("fb2.zip" etc).
     local _, file_type = filemanagerutil.splitFileNameType(file) -- supports double-extension
-    if file_type == "zip" then
-        -- read the content of zip-file and get extension of the 1st file
-        local std_out = io.popen("unzip -qql \"" .. file .. "\"")
-        if std_out then
-            local size, ext
-            for line in std_out:lines() do
-                size, ext = string.match(line, "%s+(%d+)%s+.+%.([^.]+)")
-                if size and ext then break end
+    if not is_provider_forced and file_type == "zip" then
+        local arc = Archiver.Reader:new()
+        if arc:open(file) then
+            for entry in arc:iterate() do
+                local ext = util.getFileNameSuffix(entry.path)
+                if ext and entry.mode == "file" and entry.size > 0 then
+                    file_type = ext:lower()
+                    break
+                end
             end
-            std_out:close()
-            if ext ~= nil then
-                file_type = ext:lower()
-            end
+            arc:close()
         end
-        if not is_provider_forced then
-            local providers = DocumentRegistry:getProviders("dummy." .. file_type)
-            if providers then
-                for _, p in ipairs(providers) do
-                    if p.provider.provider == "crengine" or p.provider.provider == "mupdf" then -- only these can unzip
-                        provider = p.provider
-                        break
-                    end
+        local providers = DocumentRegistry:getProviders("dummy." .. file_type)
+        if providers then
+            for _, p in ipairs(providers) do
+                if p.provider.provider == "crengine" or p.provider.provider == "mupdf" then -- only these can unzip
+                    provider = p.provider
+                    break
                 end
             end
         end
