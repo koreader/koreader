@@ -198,7 +198,7 @@ function Presets:cycleThroughPresets(module, preset_key, show_notification)
     local presets = G_reader_settings:readSetting(preset_key)
     if not presets or not next(presets) then
         Notification:notify(_("No presets available"), Notification.SOURCE_ALWAYS_SHOW)
-        return false
+        return true -- we *must* return true here to prevent further event propagation, i.e multiple notifications
     end
     -- Get sorted list of preset names
     local preset_names = self:getPresets(preset_key)
