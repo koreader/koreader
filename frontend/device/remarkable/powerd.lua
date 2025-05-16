@@ -74,6 +74,28 @@ function Remarkable_PowerD:isChargingHW()
     return self:read_str_file(self.status_file) == "Charging"
 end
 
+function Remarkable_PowerD:hasHallSensor()
+    return self.hall_file ~= nil
+end
+
+function Remarkable_PowerD:isHallSensorEnabled()
+    local int = self:read_int_file(self.hall_file)
+    return int == 0
+end
+
+function Remarkable_PowerD:onToggleHallSensor(toggle)
+    if toggle == nil then
+        -- Flip it
+        toggle = self:isHallSensorEnabled() and 1 or 0
+    else
+        -- Honor the requested state
+        toggle = toggle and 1 or 0
+    end
+    ffiUtil.writeToSysfs(toggle, self.hall_file)
+
+    G_reader_settings:saveSetting("remarkable_hall_effect_sensor_enabled", toggle == 0 and true or false)
+end
+
 function Remarkable_PowerD:beforeSuspend()
     -- Inhibit user input and emit the Suspend event.
     self.device:_beforeSuspend()
