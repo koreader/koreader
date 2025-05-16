@@ -1588,7 +1588,14 @@ function FileManager:backUpSettings()
     local dump = require("dump")
     UIManager:flushSettings()
     local data_dir = DataStorage:getDataDir()
-    local backup = {}
+    local now = os.date("%Y-%m-%d %H-%M-%S")
+    local backup = {
+        config = {
+            date_time = now,
+            device_id = G_reader_settings:readSetting("device_id"),
+            root_path = DataStorage:getFullDataDir():sub(1,-10), -- remove ending "/koreader"
+        },
+    }
     local function back_up_file(group, settings_file, settings_file_path)
         if settings_file_path == nil then
             settings_file_path = data_dir .. "/" .. settings_file
@@ -1624,7 +1631,7 @@ function FileManager:backUpSettings()
         end) -- include subfolders
     end
     local zip = ZipWriter:new{}
-    zip:open(data_dir .. "/settings_backup_" .. os.date("%Y-%m-%d %H-%M-%S") .. ".zip")
+    zip:open(data_dir .. "/settings_backup_" .. now .. ".zip")
     zip:add("backup", "return " .. dump(backup, nil, true) .. "\n")
     zip:close()
 end
@@ -1633,20 +1640,11 @@ function FileManager:restoreSettings(filepath)
     local DataStorage = require("datastorage")
     local g_settings_to_keep = {
         device_id = true,
+        folder_shortcuts = true,
         last_migration_date = true,
         lastdir = true,
         lastfile = true,
         quickstart_shown_version = true,
-    }
-    local g_settings_paths_to_keep = {
-        download_dir = true,
-        folder_shortcuts = true,
-        home_dir = true,
-        inbox_dir = true,
-        screensaver_dir = true,
-        screensaver_document_cover = true,
-        screensaver_image = true,
-        screenshot_dir = true,
     }
     local backup
     local std_out = io.popen(T("unzip -qqp \"%1\" backup", filepath))
@@ -1662,6 +1660,17 @@ function FileManager:restoreSettings(filepath)
     self:onClose()
     local groups = G_reader_settings:readSetting("backup")
     local data_dir = DataStorage:getDataDir()
+    local root_path = DataStorage:getFullDataDir():sub(1,-10)
+    local function update_path(new_setting, old_setting)
+        if util.stringStartsWith(new_setting, backup.config.root_path) then
+            if groups.keep_paths then
+                new_setting = old_setting
+            else -- replace root path
+                new_setting = new_setting:gsub("^" .. backup.config.root_path, root_path)
+            end
+        end
+        return new_setting
+    end
     for group_name, group in pairs(backup) do
         if group_name == "g_settings" or group_name == "history" then
             for file, settings in pairs(group) do
@@ -1671,12 +1680,16 @@ function FileManager:restoreSettings(filepath)
                     end
                 elseif file == "settings.reader.lua" then
                     local reader_settings = loadstring(settings)()
-                    for k in pairs(g_settings_to_keep) do
-                        reader_settings[k] = G_reader_settings:readSetting(k)
-                    end
-                    if groups.keep_paths then
-                        for k in pairs(g_settings_paths_to_keep) do
-                            reader_settings[k] = G_reader_settings:readSetting(k)
+                    for k, v in pairs(reader_settings) do
+                        local curr_setting = G_reader_settings:readSetting(k)
+                        if g_settings_to_keep[k] then
+                            reader_settings[k] = curr_setting
+                        else
+                            if type(v) == "string" then
+                                reader_settings[k] = update_path(v, curr_setting)
+                            elseif k == "exporter" and type(v.clipping_dir) == "string" then
+                                reader_settings[k].clipping_dir = update_path(v.clipping_dir, curr_setting.clipping_dir)
+                            end
                         end
                     end
                     G_reader_settings.data = reader_settings
@@ -1685,7 +1698,7 @@ function FileManager:restoreSettings(filepath)
                     util.writeToFile(settings, data_dir .. "/" .. file, true)
                 end
             end
-        else
+        elseif group_name == "plugins" or group_name == "styletweaks" then
             local dir
             if group_name == "plugins" then
                 dir = DataStorage:getSettingsDir()
