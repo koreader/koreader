@@ -364,13 +364,13 @@ function Wallabag:addToMainMenu(menu_items)
                         sub_item_table = {
                             {
                                 text_func = function()
-                                    return T(_("File download block timeout: %1 s"), self.file_block_timeout)
+                                    return T(_("Article download block timeout: %1 s"), self.file_block_timeout)
                                 end,
                                 keep_menu_open = true,
                                 callback = function(touchmenu_instance)
                                     self:setTimeoutValue(
                                         touchmenu_instance,
-                                        _("File download block timeout (seconds)"),
+                                        _("Article download block timeout (seconds)"),
                                         self.file_block_timeout,
                                         function(value) self.file_block_timeout = value end
                                     )
@@ -378,13 +378,13 @@ function Wallabag:addToMainMenu(menu_items)
                             },
                             {
                                 text_func = function()
-                                    return T(_("File download total timeout: %1 s"), self.file_total_timeout)
+                                    return T(_("Article download total timeout: %1 s"), self.file_total_timeout)
                                 end,
                                 keep_menu_open = true,
                                 callback = function(touchmenu_instance)
                                     self:setTimeoutValue(
                                         touchmenu_instance,
-                                        _("File download total timeout (seconds)"),
+                                        _("Article download total timeout (seconds)"),
                                         self.file_total_timeout,
                                         function(value) self.file_total_timeout = value end
                                     )
