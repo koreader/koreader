@@ -940,7 +940,6 @@ function Menu:init()
             range = self.dimen,
         }
     }
-    self.ges_events.Close = self.on_close_ges
 
     if Device:hasKeys() then
         -- set up keyboard events
