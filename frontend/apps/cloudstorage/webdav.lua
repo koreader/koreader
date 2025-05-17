@@ -17,8 +17,15 @@ function WebDav:run(address, user, pass, path, folder_mode)
     return WebDavApi:listFolder(address, user, pass, path, folder_mode)
 end
 
-function WebDav:downloadFile(item, address, username, password, local_path, callback_close)
-    local code_response = WebDavApi:downloadFile(WebDavApi:getJoinedPath(address, item.url), username, password, local_path)
+function WebDav:downloadFile(item, address, username, password, local_path, callback_close, progress_callback)
+    local code_response = WebDavApi:downloadFile(
+        WebDavApi:getJoinedPath(address, item.url),
+        username,
+        password,
+        local_path,
+        progress_callback
+    )
+
     if code_response == 200 then
         local __, filename = util.splitFilePathName(local_path)
         if G_reader_settings:isTrue("show_unsupported") and not DocumentRegistry:hasProvider(filename) then

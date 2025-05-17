@@ -20,6 +20,7 @@ local _ = require("gettext")
 local N_ = _.ngettext
 local T = require("ffi/util").template
 local util = require("util")
+local ProgressbarDialog = require("ui/widget/progressbardialog")
 
 local CloudStorage = Menu:extend{
     no_title = false,
@@ -213,19 +214,29 @@ end
 
 function CloudStorage:downloadFile(item)
     local function startDownloadFile(unit_item, address, username, password, path_dir, callback_close)
+        local progressbar_dialog = ProgressbarDialog:new {
+            title = _("Downloading..."),
+            subtitle = unit_item.text,
+            progress_max = unit_item.filesize,
+            refresh_mode = "time",
+            refresh_time_seconds = 3,
+        }
+
         UIManager:scheduleIn(1, function()
+            local progress_callback = progressbar_dialog:getProgressCallback()
+            -- rename progressReporter to a more fitting name
             if self.type == "dropbox" then
-                DropBox:downloadFile(unit_item, password, path_dir, callback_close)
+                DropBox:downloadFile( unit_item, password, path_dir, callback_close, progress_callback)
             elseif self.type == "ftp" then
-                Ftp:downloadFile(unit_item, address, username, password, path_dir, callback_close)
+                Ftp:downloadFile(unit_item, address, username, password, path_dir, callback_close, nil)
             elseif self.type == "webdav" then
-                WebDav:downloadFile(unit_item, address, username, password, path_dir, callback_close)
+                WebDav:downloadFile( unit_item, address, username, password, path_dir, callback_close, progress_callback)
             end
+
+            progressbar_dialog:close()
         end)
-        UIManager:show(InfoMessage:new{
-            text = _("Downloading. This might take a moment."),
-            timeout = 1,
-        })
+
+        progressbar_dialog:show()
     end
 
     local function createTitle(filename_orig, filesize, filename, path) -- title for ButtonDialog
