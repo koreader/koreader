@@ -13,6 +13,7 @@ local KeyValuePage = require("ui/widget/keyvaluepage")
 local LuaData = require("luadata")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
+local Presets = require("ui/presets")
 local SortWidget = require("ui/widget/sortwidget")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
@@ -260,6 +261,10 @@ function ReaderDictionary:addToMainMenu(menu_items)
         text = _("Dictionary settings"),
         sub_item_table = {
             {
+                text = _("Download dictionaries"),
+                sub_item_table_func = function() return self:_genDownloadDictionariesMenu() end,
+            },
+            {
                 keep_menu_open = true,
                 text_func = function()
                     local nb_available, nb_enabled, nb_disabled = self:getNumberOfDictionaries()
@@ -279,8 +284,12 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Download dictionaries"),
-                sub_item_table_func = function() return self:_genDownloadDictionariesMenu() end,
+                text = _("Dictionary presets"),
+                help_text = _("This feature allows you to organize dictionaries into presets (for example, by language). You can quickly switch between these presets to change which dictionaries are used for lookups.\n\nNote: presets only store a reference to the dictionaries, no other settings."),
+                sub_item_table_func = function()
+                    return self:genPresetMenuItemTable()
+                end,
+                separator = true,
             },
             {
                 text_func = function()
@@ -307,35 +316,42 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 hold_callback = function(touchmenu_instance)
                     self:toggleFuzzyDefault(touchmenu_instance)
                 end,
-                separator = true,
             },
             {
-                text = _("Enable dictionary lookup history"),
+                text = _("Dictionary lookup history"),
                 checked_func = function()
                     return not self.disable_lookup_history
                 end,
-                callback = function()
-                    self.disable_lookup_history = not self.disable_lookup_history
-                    G_reader_settings:saveSetting("disable_lookup_history", self.disable_lookup_history)
-                end,
-            },
-            {
-                text = _("Clean dictionary lookup history"),
-                enabled_func = function()
-                    return lookup_history:has("lookup_history")
-                end,
-                keep_menu_open = true,
-                callback = function(touchmenu_instance)
-                    UIManager:show(ConfirmBox:new{
-                        text = _("Clean dictionary lookup history?"),
-                        ok_text = _("Clean"),
-                        ok_callback = function()
-                            -- empty data table to replace current one
-                            lookup_history:reset{}
-                            touchmenu_instance:updateItems()
+                sub_item_table = {
+                    {
+                        text = _("Enable dictionary lookup history"),
+                        checked_func = function()
+                            return not self.disable_lookup_history
                         end,
-                    })
-                end,
+                        callback = function()
+                            self.disable_lookup_history = not self.disable_lookup_history
+                            G_reader_settings:saveSetting("disable_lookup_history", self.disable_lookup_history)
+                        end,
+                    },
+                    {
+                        text = _("Clean dictionary lookup history"),
+                        enabled_func = function()
+                            return lookup_history:has("lookup_history")
+                        end,
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Clean dictionary lookup history?"),
+                                ok_text = _("Clean"),
+                                ok_callback = function()
+                                    -- empty data table to replace current one
+                                    lookup_history:reset{}
+                                    touchmenu_instance:updateItems()
+                                end,
+                            })
+                        end,
+                    },
+                },
                 separator = true,
             },
             { -- setting used by dictquicklookup
@@ -1314,6 +1330,77 @@ The current default (★) is enabled.]])
             touchmenu_instance:updateItems()
         end,
     })
+end
+
+function ReaderDictionary:buildPreset()
+    return { -- Only store the names of enabled dictionaries.
+        enabled_dict_names = util.tableDeepCopy(self.enabled_dict_names),
+    }
+end
+
+function ReaderDictionary:loadPreset(preset, skip_notification)
+    if not preset.enabled_dict_names then return end
+    -- build a list of currently available dictionary names for validation
+    local available_dict_names = {}
+    for _, ifo in ipairs(available_ifos) do
+        available_dict_names[ifo.name] = true
+    end
+    -- Only enable dictionaries from the preset that are still available, and re-build self.dicts_disabled
+    -- to make sure dicts added after the creation of the preset, are disabled as well.
+    local dicts_disabled, valid_enabled_names = {}, {}
+    -- first disable all current dictionaries
+    for _, ifo in ipairs(available_ifos) do
+        dicts_disabled[ifo.file] = true
+    end
+    -- then enable only those from the preset that still exist
+    for _, ifo in ipairs(available_ifos) do
+        for _, enabled_name in ipairs(preset.enabled_dict_names) do
+            if ifo.name == enabled_name then
+                dicts_disabled[ifo.file] = nil -- enable this dictionary
+                table.insert(valid_enabled_names, enabled_name)
+                break
+            end
+        end
+    end
+    -- update both settings and save
+    self.dicts_disabled = dicts_disabled
+    self.enabled_dict_names = valid_enabled_names
+    G_reader_settings:saveSetting("dicts_disabled", self.dicts_disabled)
+    self:onSaveSettings()
+    self:updateSdcvDictNamesOptions()
+    -- Show a message if any dictionaries from the preset are missing.
+    if not skip_notification and #preset.enabled_dict_names > #valid_enabled_names then
+        local missing_dicts = {}
+        for _, preset_name in ipairs(preset.enabled_dict_names) do
+            if not available_dict_names[preset_name] then
+                table.insert(missing_dicts, preset_name)
+            end
+        end
+        UIManager:show(InfoMessage:new{
+            text = _("Some dictionaries from this preset have been deleted or are no longer available:") .. "\n\n• " .. table.concat(missing_dicts, "\n• "),
+        })
+    end
+end
+
+function ReaderDictionary:createPresetFromCurrentSettings(touchmenu_instance)
+    return Presets:createModulePreset(self, touchmenu_instance, "dict_presets")
+end
+
+function ReaderDictionary:genPresetMenuItemTable()
+    return Presets:genModulePresetMenuTable(self, "dict_presets", _("Create new preset from enabled dictionaries"),
+                function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end)
+end
+
+function ReaderDictionary:onCycleDictionaryPresets()
+    return Presets:cycleThroughPresets(self, "dict_presets", true)
+end
+
+function ReaderDictionary:onLoadDictionaryPreset(preset_name)
+    return Presets:onLoadPreset(self, preset_name, "dict_presets", true)
+end
+
+function ReaderDictionary.getPresets() -- for Dispatcher
+    return Presets:getPresets("dict_presets")
 end
 
 return ReaderDictionary
