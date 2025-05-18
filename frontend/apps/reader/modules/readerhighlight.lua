@@ -68,12 +68,11 @@ function ReaderHighlight:init()
     self._highlight_buttons = {
         -- highlight and add_note are for the document itself,
         -- so we put them first.
-        ["01_select"] = function(this)
+        ["01_select"] = function(this, index)
             return {
-                text = _("Select"),
-                enabled = this.hold_pos ~= nil,
+                text = index and _("Extend") or _("Select"),
                 callback = function()
-                    this:startSelection()
+                    this:startSelection(index)
                     this:onClose()
                 end,
             }
@@ -1003,7 +1002,11 @@ function ReaderHighlight:onTapSelectModeIcon()
         cancel_text = _("Close"),
         ok_callback = function()
             self.select_mode = false
-            self:deleteHighlight(self.highlight_idx)
+            if self.ui.annotation.annotations[self.highlight_idx].is_tmp then
+                self:deleteHighlight(self.highlight_idx)
+            else
+                UIManager:setDirty(self.dialog, "ui", self.view.flipping:getRefreshRegion())
+            end
         end,
     })
     return true
@@ -1025,7 +1028,11 @@ function ReaderHighlight:onTap(_, ges)
                     if box.index == self.highlight_idx then
                         -- tap on the first fragment: abort select mode, clear highlight
                         self.select_mode = false
-                        self:deleteHighlight(box.index)
+                        if self.ui.annotation.annotations[box.index].is_tmp then
+                            self:deleteHighlight(box.index)
+                        else
+                            UIManager:setDirty(self.dialog, "ui", self.view.flipping:getRefreshRegion())
+                        end
                         return true
                     end
                 else
@@ -2046,7 +2053,7 @@ function ReaderHighlight:onHoldRelease()
         if self.selected_text then
             self.select_mode = false
             self:extendSelection()
-            if default_highlight_action == "select" then
+            if default_highlight_action == "select" or not self.selected_text.is_tmp then
                 self:saveHighlight(true)
                 self:clear()
             else
@@ -2203,8 +2210,10 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             pos0 = self.selected_text.pos0,
             pos1 = self.selected_text.pos1,
             text = util.cleanupSelectedText(self.selected_text.text),
-            drawer = self.view.highlight.saved_drawer,
-            color = self.view.highlight.saved_color,
+            datetime = self.selected_text.datetime,
+            drawer = self.selected_text.drawer or self.view.highlight.saved_drawer,
+            color = self.selected_text.color or self.view.highlight.saved_color,
+            note = self.selected_text.note,
             chapter = self.ui.toc:getTocTitleByPage(pg_or_xp),
         }
         if self.ui.paging then
@@ -2214,7 +2223,8 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
         end
         local index = self.ui.annotation:addItem(item)
         self.view.footer:maybeUpdateFooter()
-        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = 1, index_modified = index }))
+        self.ui:handleEvent(Event:new("AnnotationsModified",
+            { item, nb_highlights_added = 1, index_modified = index, modify_datetime = not self.selected_text.is_tmp }))
         return index
     end
 end
@@ -2435,8 +2445,14 @@ function ReaderHighlight:showNoteMarkerDialog()
     UIManager:show(dialog)
 end
 
-function ReaderHighlight:startSelection()
-    self.highlight_idx = self:saveHighlight()
+function ReaderHighlight:startSelection(index)
+    if index then -- extend existing highlight
+        UIManager:setDirty(self.dialog, "ui", self.view.flipping:getRefreshRegion())
+    else -- new highlight
+        index = self:saveHighlight()
+        self.ui.annotation.annotations[index].is_tmp = true
+    end
+    self.highlight_idx = index
     self.select_mode = true
 end
 
@@ -2494,6 +2510,11 @@ function ReaderHighlight:extendSelection()
     end
     self:deleteHighlight(self.highlight_idx) -- starting fragment
     self.selected_text = {
+        is_tmp = item1.is_tmp,
+        datetime = item1.datetime,
+        drawer = item1.drawer,
+        color = item1.color,
+        note = item1.note,
         text = new_text,
         pos0 = new_pos0,
         pos1 = new_pos1,
