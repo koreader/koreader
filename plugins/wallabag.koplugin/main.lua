@@ -105,6 +105,11 @@ function Wallabag:init()
     self.offline_queue                 = self.wb_settings.data.wallabag.offline_queue or {}
     self.use_local_archive             = self.wb_settings.data.wallabag.use_local_archive or false
 
+    self.file_block_timeout = self.wb_settings.data.wallabag.file_block_timeout or socketutil.FILE_BLOCK_TIMEOUT
+    self.file_total_timeout = self.wb_settings.data.wallabag.file_total_timeout or socketutil.FILE_TOTAL_TIMEOUT
+    self.large_block_timeout = self.wb_settings.data.wallabag.large_block_timeout or socketutil.LARGE_BLOCK_TIMEOUT
+    self.large_total_timeout = self.wb_settings.data.wallabag.large_total_timeout or socketutil.LARGE_TOTAL_TIMEOUT
+
     -- archive_directory only has a default if directory is set
     self.archive_directory = self.wb_settings.data.wallabag.archive_directory
     if not self.archive_directory or self.archive_directory == "" then
@@ -352,6 +357,67 @@ function Wallabag:addToMainMenu(menu_items)
                                 end,
                             },
                         },
+                    },
+                    {
+                        text = _("Network timeout settings"),
+                        sub_item_table = {
+                            {
+                                text_func = function()
+                                    return T(_("Article download connection timeout: %1 s"), self.file_block_timeout)
+                                end,
+                                keep_menu_open = true,
+                                callback = function(touchmenu_instance)
+                                    self:setTimeoutValue(
+                                        touchmenu_instance,
+                                        _("Article download connection timeout (seconds)"),
+                                        self.file_block_timeout,
+                                        function(value) self.file_block_timeout = value end
+                                    )
+                                end,
+                            },
+                            {
+                                text_func = function()
+                                    return T(_("Article download total timeout: %1 s"), self.file_total_timeout)
+                                end,
+                                keep_menu_open = true,
+                                callback = function(touchmenu_instance)
+                                    self:setTimeoutValue(
+                                        touchmenu_instance,
+                                        _("Article download total timeout (seconds)"),
+                                        self.file_total_timeout,
+                                        function(value) self.file_total_timeout = value end
+                                    )
+                                end,
+                            },
+                            {
+                                text_func = function()
+                                    return T(_("API request connection timeout: %1 s"), self.large_block_timeout)
+                                end,
+                                keep_menu_open = true,
+                                callback = function(touchmenu_instance)
+                                    self:setTimeoutValue(
+                                        touchmenu_instance,
+                                        _("API request connection timeout (seconds)"),
+                                        self.large_block_timeout,
+                                        function(value) self.large_block_timeout = value end
+                                    )
+                                end,
+                            },
+                            {
+                                text_func = function()
+                                    return T(_("API request total timeout: %1 s"), self.large_total_timeout)
+                                end,
+                                keep_menu_open = true,
+                                callback = function(touchmenu_instance)
+                                    self:setTimeoutValue(
+                                        touchmenu_instance,
+                                        _("API request total timeout (seconds)"),
+                                        self.large_total_timeout,
+                                        function(value) self.large_total_timeout = value end
+                                    )
+                                end,
+                            },
+                        }
                     },
                     {
                         text = _("History settings"),
@@ -761,10 +827,10 @@ function Wallabag:callAPI(method, url, headers, body, filepath, quiet)
 
     if filepath ~= nil then
         request.sink = ltn12.sink.file(io.open(filepath, "w"))
-        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+        socketutil:set_timeout(self.file_block_timeout, self.file_total_timeout)
     else
         request.sink = ltn12.sink.table(sink)
-        socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
+        socketutil:set_timeout(self.large_block_timeout, self.large_total_timeout)
     end
 
     if body ~= nil then
@@ -1486,6 +1552,43 @@ function Wallabag:setArchiveDirectory(touchmenu_instance)
     }:chooseDir()
 end
 
+function Wallabag:setTimeoutValue(touchmenu_instance, title_text, current_value, setter_func)
+    self.timeout_dialog = InputDialog:new{
+        title = title_text,
+        input = tostring(current_value),
+        input_type = "number", -- For numeric keyboard
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(self.timeout_dialog)
+                    end,
+                },
+                {
+                    text = _("Set timeout"),
+                    is_enter_default = true,
+                    callback = function()
+                        local new_value = tonumber(self.timeout_dialog:getInputText())
+                        if new_value and new_value > 0 then
+                            setter_func(new_value)
+                            self:saveSettings()
+                            touchmenu_instance:updateItems()
+                            UIManager:close(self.timeout_dialog)
+                        else
+                            UIManager:show(InfoMessage:new{ text = _("Invalid input. Please enter a positive number greater than 0.")})
+                            -- Keep dialog open by not closing it here.
+                        end
+                    end,
+                }
+            }
+        },
+    }
+    UIManager:show(self.timeout_dialog)
+    self.timeout_dialog:onShowKeyboard()
+end
+
 function Wallabag:saveSettings()
     local tempsettings = {
         server_url                    = self.server_url,
@@ -1512,6 +1615,10 @@ function Wallabag:saveSettings()
         offline_queue                  = self.offline_queue,
         use_local_archive             = self.use_local_archive,
         archive_directory             = self.archive_directory,
+        file_block_timeout            = self.file_block_timeout,
+        file_total_timeout            = self.file_total_timeout,
+        large_block_timeout           = self.large_block_timeout,
+        large_total_timeout           = self.large_total_timeout,
     }
 
     self.wb_settings:saveSetting("wallabag", tempsettings)
