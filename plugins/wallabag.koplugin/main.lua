@@ -1552,7 +1552,6 @@ function Wallabag:setArchiveDirectory(touchmenu_instance)
     }:chooseDir()
 end
 
---- A dialog used for setting a generic timeout value.
 function Wallabag:setTimeoutValue(touchmenu_instance, title_text, current_value, setter_func)
     self.timeout_dialog = InputDialog:new{
         title = title_text,
