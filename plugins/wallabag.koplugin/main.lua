@@ -105,7 +105,6 @@ function Wallabag:init()
     self.offline_queue                 = self.wb_settings.data.wallabag.offline_queue or {}
     self.use_local_archive             = self.wb_settings.data.wallabag.use_local_archive or false
 
-    -- Timeout settings
     self.file_block_timeout = self.wb_settings.data.wallabag.file_block_timeout or socketutil.FILE_BLOCK_TIMEOUT
     self.file_total_timeout = self.wb_settings.data.wallabag.file_total_timeout or socketutil.FILE_TOTAL_TIMEOUT
     self.large_block_timeout = self.wb_settings.data.wallabag.large_block_timeout or socketutil.LARGE_BLOCK_TIMEOUT
@@ -1617,7 +1616,6 @@ function Wallabag:saveSettings()
         offline_queue                  = self.offline_queue,
         use_local_archive             = self.use_local_archive,
         archive_directory             = self.archive_directory,
-        -- NEW Timeout settings
         file_block_timeout            = self.file_block_timeout,
         file_total_timeout            = self.file_total_timeout,
         large_block_timeout           = self.large_block_timeout,
