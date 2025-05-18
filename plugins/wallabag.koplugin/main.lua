@@ -364,13 +364,13 @@ function Wallabag:addToMainMenu(menu_items)
                         sub_item_table = {
                             {
                                 text_func = function()
-                                    return T(_("Article download block timeout: %1 s"), self.file_block_timeout)
+                                    return T(_("Article download connection timeout: %1 s"), self.file_block_timeout)
                                 end,
                                 keep_menu_open = true,
                                 callback = function(touchmenu_instance)
                                     self:setTimeoutValue(
                                         touchmenu_instance,
-                                        _("Article download block timeout (seconds)"),
+                                        _("Article download connection timeout (seconds)"),
                                         self.file_block_timeout,
                                         function(value) self.file_block_timeout = value end
                                     )
@@ -392,13 +392,13 @@ function Wallabag:addToMainMenu(menu_items)
                             },
                             {
                                 text_func = function()
-                                    return T(_("API request block timeout: %1 s"), self.large_block_timeout)
+                                    return T(_("API request connection timeout: %1 s"), self.large_block_timeout)
                                 end,
                                 keep_menu_open = true,
                                 callback = function(touchmenu_instance)
                                     self:setTimeoutValue(
                                         touchmenu_instance,
-                                        _("API request block timeout (seconds)"),
+                                        _("API request connection timeout (seconds)"),
                                         self.large_block_timeout,
                                         function(value) self.large_block_timeout = value end
                                     )
