@@ -530,6 +530,24 @@ function HotKeys:onFlushSettings()
     end
 end
 
+function HotKeys:updatePresetReference(action_key_to_modify, old_preset_value, new_preset_value)
+    local changed_anything = false
+    for _, section_name in ipairs({ "hotkeys_fm", "hotkeys_reader" }) do
+        local section_data = self.settings_data.data[section_name]
+        if section_data then
+            for binding, actions in pairs(section_data) do
+                -- Check if the target action key exists and its value is the old preset value
+                if actions[action_key_to_modify] and actions[action_key_to_modify] == old_preset_value then
+                    actions[action_key_to_modify] = new_preset_value -- assigns new value
+                    self.updated = true
+                    changed_anything = true
+                end
+            end
+        end
+    end
+    return changed_anything
+end
+
 function HotKeys:updateProfiles(action_old_name, action_new_name)
     for _, section in ipairs({ "hotkeys_fm", "hotkeys_reader" }) do
         local hotkeys = self.settings_data.data[section]

@@ -1222,6 +1222,25 @@ function Gestures:onFlushSettings()
     end
 end
 
+function Gestures:updatePresetReference(action_key_to_modify, old_preset_value, new_preset_value)
+    local changed_anything = false
+    -- Iterate through both gesture modes/sections, similar to how updateProfiles does
+    for _, section_name in ipairs({ "gesture_fm", "gesture_reader" }) do
+        local section_data = self.settings_data.data[section_name]
+        if section_data then
+            for gesture_name, actions in pairs(section_data) do
+                -- Check if the target action key exists and its value is the old preset value
+                if actions and actions[action_key_to_modify] and actions[action_key_to_modify] == old_preset_value then
+                    actions[action_key_to_modify] = new_preset_value -- assigns new value
+                    self.updated = true
+                    changed_anything = true
+                end
+            end
+        end
+    end
+    return changed_anything
+end
+
 function Gestures:updateProfiles(action_old_name, action_new_name)
     for _, section in ipairs({ "gesture_fm", "gesture_reader" }) do
         local gestures = self.settings_data.data[section]
