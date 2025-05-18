@@ -58,9 +58,9 @@ The preset system handles:
 - Adding actions to Dispatcher for loading presets through gestures/hotkeys/profiles
 --]]
 
+local ConfirmBox = require("ui/widget/confirmbox")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
-local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local ffiUtil = require("ffi/util")
@@ -87,16 +87,8 @@ function Presets:createPresetFromCurrentSettings(touchmenu_instance, preset_name
                     is_enter_default = true,
                     callback = function()
                         local preset_name = input_dialog:getInputText()
-                        if preset_name == "" or preset_name:match("^%s*$") then return end
                         local presets = G_reader_settings:readSetting(preset_name_key, {})
-                        if presets[preset_name] then
-                            UIManager:show(InfoMessage:new{
-                                text = T(_("A preset named '%1' already exists. Please choose a different name."), preset_name),
-                                timeout = 2,
-                            })
-                        else
-                            presets[preset_name] = buildPresetFunc()
-                            G_reader_settings:saveSetting(preset_name_key, presets)
+                        if self:validateAndSavePreset(preset_name, preset_name_key, presets, buildPresetFunc()) then
                             UIManager:close(input_dialog)
                             touchmenu_instance.item_table = genPresetMenuItemTableFunc()
                             touchmenu_instance:updateItems()
@@ -110,7 +102,7 @@ function Presets:createPresetFromCurrentSettings(touchmenu_instance, preset_name
     input_dialog:onShowKeyboard()
 end
 
-function Presets:genPresetMenuItemTable(preset_name_key, text, buildPresetFunc, loadPresetFunc, genPresetMenuItemTableFunc, enabled_func)
+function Presets:genPresetMenuItemTable(preset_name_key, text, buildPresetFunc, loadPresetFunc, genPresetMenuItemTableFunc, enabled_func, module)
     local presets = G_reader_settings:readSetting(preset_name_key, {})
     local items = {
         {
@@ -129,40 +121,181 @@ function Presets:genPresetMenuItemTable(preset_name_key, text, buildPresetFunc, 
             keep_menu_open = true,
             callback = function()
                 loadPresetFunc(presets[preset_name])
-                -- There is no guarantee that it will always be obvious to the user that the preset was loaded
-                -- so we show a notification.
+                -- There's no guarantee that it'll be obvious to the user that the preset was loaded so, we show a notification.
                 UIManager:show(InfoMessage:new{
                     text = T(_("Preset '%1' loaded successfully."), preset_name),
                     timeout = 2,
                 })
             end,
             hold_callback = function(touchmenu_instance)
-                UIManager:show(MultiConfirmBox:new{
+                UIManager:show(ConfirmBox:new{
                     text = T(_("What would you like to do with preset '%1'?"), preset_name),
-                    choice1_text = _("Delete"),
-                    choice1_callback = function()
-                        presets[preset_name] = nil
-                        G_reader_settings:saveSetting(preset_name_key, presets)
-                        touchmenu_instance.item_table = genPresetMenuItemTableFunc()
-                        touchmenu_instance:updateItems()
-                    end,
-                    choice2_text = _("Update"),
-                    choice2_callback = function()
-                        presets[preset_name] = buildPresetFunc()
-                        G_reader_settings:saveSetting(preset_name_key, presets)
-                        UIManager:show(InfoMessage:new{
-                            text = T(_("Preset '%1' was updated with current settings"), preset_name),
-                            timeout = 2,
+                    icon = "notice-question",
+                    ok_text = _("Update"),
+                    ok_callback = function()
+                        UIManager:show(ConfirmBox:new{
+                            text = T(_("Are you sure you want to overwrite preset '%1' with current settings?"), preset_name),
+                            ok_callback = function()
+                                presets[preset_name] = buildPresetFunc()
+                                G_reader_settings:saveSetting(preset_name_key, presets)
+                                UIManager:show(InfoMessage:new{
+                                    text = T(_("Preset '%1' was updated with current settings"), preset_name),
+                                    timeout = 2,
+                                })
+                            end,
                         })
                     end,
+                    other_buttons_first = true,
+                    other_buttons = {
+                        {
+                            {
+                                text = _("Rename"),
+                                callback = function()
+                                    local input_dialog
+                                    input_dialog = InputDialog:new{
+                                        title = _("Enter new preset name"),
+                                        input = preset_name,
+                                        buttons = {
+                                            {
+                                                {
+                                                    text = _("Cancel"),
+                                                    id = "close",
+                                                    callback = function()
+                                                        UIManager:close(input_dialog)
+                                                    end,
+                                                },
+                                                {
+                                                    text = _("Rename"),
+                                                    is_enter_default = true,
+                                                    callback = function()
+                                                        local new_name = input_dialog:getInputText()
+                                                        if self:validateAndSavePreset(new_name, preset_name_key, presets, presets[preset_name]) then
+                                                            presets[preset_name] = nil
+                                                            G_reader_settings:saveSetting(preset_name_key, presets)
+                                                            self:updateGesturesAndHotkeys(module, preset_name, new_name)
+                                                            touchmenu_instance.item_table = genPresetMenuItemTableFunc()
+                                                            touchmenu_instance:updateItems()
+                                                            UIManager:close(input_dialog)
+                                                        end
+                                                    end,
+                                                },
+                                            },
+                                        },
+                                    }
+                                    UIManager:show(input_dialog)
+                                    input_dialog:onShowKeyboard()
+                                end,
+                            },
+                            {
+                                text = _("Delete"),
+                                callback = function()
+                                    UIManager:show(ConfirmBox:new{
+                                        text = T(_("Are you sure you want to delete preset '%1'?"), preset_name),
+                                        ok_text = _("Delete"),
+                                        ok_callback = function()
+                                            presets[preset_name] = nil
+                                            G_reader_settings:saveSetting(preset_name_key, presets)
+                                            self:updateGesturesAndHotkeys(module, preset_name, nil) -- delete from hotkey/gestures
+                                            touchmenu_instance.item_table = genPresetMenuItemTableFunc()
+                                            touchmenu_instance:updateItems()
+                                        end,
+                                    })
+                                end,
+                            },
+                        },
+                    },
                 })
-            end,
+            end, -- hold_callback
         })
-    end
+    end -- for each preset
     return items
 end
 
--- Simplified interface for modules that need to create presets
+function Presets:validateAndSavePreset(preset_name, preset_name_key, presets, preset_data)
+    if preset_name == "" or preset_name:match("^%s*$") then return end
+    if presets[preset_name] then
+        UIManager:show(InfoMessage:new{
+            text = T(_("A preset named '%1' already exists. Please choose a different name."), preset_name),
+            timeout = 2,
+        })
+        return false
+    end
+    presets[preset_name] = preset_data
+    G_reader_settings:saveSetting(preset_name_key, presets)
+    return true
+end
+
+function Presets:updateGesturesAndHotkeys(module, preset_name, new_name)
+    -- We need to make sure we only update the name of the preset the user is currently interacting with,
+    -- since preset names are not unique across modules and we don't use uuids, we need to be careful about
+    -- updating/deleting the correct preset.
+    local function get_target_action_key_for_module() -- e.g., "load_dictionary_preset"
+        local Dispatcher = require("dispatcher") -- we **must** require this here to avoid circular dependencies
+        local module_get_presets_func = module.getPresets
+        if not module_get_presets_func then return end
+
+        -- Helper function to search within a specific settings data source (e.g., hotkeys or gestures)
+        -- for the module's specific preset action key.
+        local function find_key_in_specific_settings(settings_data_source, relevant_section_names)
+            if not settings_data_source or not settings_data_source.data then return end
+            for _, section_name in ipairs(relevant_section_names) do
+                local section_content = settings_data_source.data[section_name]
+                if section_content then
+                    for _, actions in pairs(section_content) do -- Iterate through key bindings/gestures
+                        for action_key, action_value in pairs(actions) do
+                            -- We check action_value against preset_name to find actions using this preset.
+                            -- The crucial part is the args_func comparison to ensure it's THIS module's action.
+                            if action_value == preset_name then
+                                local action_args_func = Dispatcher:getActionArgsFunc(action_key)
+                                if module_get_presets_func and action_args_func == module_get_presets_func then
+                                    return action_key -- Found the key for this module
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            return nil -- Key not found in this settings source
+        end -- find_key_in_specific_settings()
+
+        if module.ui.hotkeys and module.ui.hotkeys.settings_data then
+            local found_key = find_key_in_specific_settings(module.ui.hotkeys.settings_data, {"hotkeys_reader", "hotkeys_fm"})
+            if found_key then return found_key end
+        end
+        if module.ui.gestures and module.ui.gestures.settings_data then
+            local found_key = find_key_in_specific_settings(module.ui.gestures.settings_data, {"gesture_reader", "gesture_fm"})
+            if found_key then return found_key end
+        end
+        return nil -- key not found
+    end -- get_target_action_key_for_module()
+
+    local action_key_for_preset = get_target_action_key_for_module()
+    if not action_key_for_preset then return end
+    -- Delegate updating/deleting the preset to the hotkeys/gesture plugins themselves.
+    if not new_name then -- deletion case
+        if module.ui.hotkeys and not module.ui.hotkeys.disabled and module.ui.hotkeys.deletePresetAction then
+            module.ui.hotkeys:deletePresetAction(action_key_for_preset, preset_name)
+        end
+        if module.ui.gestures and not module.ui.gestures.disabled and module.ui.gestures.deletePresetAction then
+            module.ui.gestures:deletePresetAction(action_key_for_preset, preset_name)
+        end
+    else -- renaming case
+        if module.ui.hotkeys and not module.ui.hotkeys.disabled and module.ui.hotkeys.renamePresetAction then
+            module.ui.hotkeys:renamePresetAction(action_key_for_preset, preset_name, new_name)
+        end
+        if module.ui.gestures and not module.ui.gestures.disabled and module.ui.gestures.renamePresetAction then
+            module.ui.gestures:renamePresetAction(action_key_for_preset, preset_name, new_name)
+        end
+    end
+end -- updateGesturesAndHotkeys()
+
+--[[
+    The following couple of functions are simplified interfaces for modules that need to create presets.
+    They handle the creation of presets and the generation of preset menu items.
+    These functions are intended to be used by modules that need to create presets without
+    having to implement the full preset management logic themselves.
+]]
+
 function Presets:createModulePreset(module, touchmenu_instance, preset_key)
     return self:createPresetFromCurrentSettings(
         touchmenu_instance,
@@ -216,7 +349,7 @@ function Presets:cycleThroughPresets(module, preset_key, show_notification)
     return true
 end
 
-function Presets:getPresets(preset_name_key) -- for Dispatcher
+function Presets:getPresets(preset_name_key)
     local presets = G_reader_settings:readSetting(preset_name_key)
     local actions = {}
     if presets and next(presets) then

@@ -530,6 +530,68 @@ function HotKeys:onFlushSettings()
     end
 end
 
+function HotKeys:renamePresetAction(action_key_to_modify, old_preset_value, new_preset_value)
+    local changed_anything = false
+    for _, section_name in ipairs({ "hotkeys_fm", "hotkeys_reader" }) do
+        local section_data = self.settings_data.data[section_name]
+        if section_data then
+            for binding, actions in pairs(section_data) do
+                -- Check if the target action key exists and its value is the old preset value
+                if actions[action_key_to_modify] and actions[action_key_to_modify] == old_preset_value then
+                    actions[action_key_to_modify] = new_preset_value -- assigns new value
+                    self.updated = true
+                    changed_anything = true
+                end
+            end
+        end
+    end
+    return changed_anything
+end
+
+function HotKeys:deletePresetAction(action_key_to_delete, preset_value_to_delete)
+    local changed_anything = false
+    for _, section_name in ipairs({ "hotkeys_fm", "hotkeys_reader" }) do
+        local section_data = self.settings_data.data[section_name]
+        if section_data then
+            for binding, actions in pairs(section_data) do
+                -- Check if the target action key exists and its value is the preset to delete
+                if actions[action_key_to_delete] and actions[action_key_to_delete] == preset_value_to_delete then
+                    actions[action_key_to_delete] = nil -- Remove the action key itself
+                    -- Clean up from settings.order if it exists
+                    if actions.settings and actions.settings.order then
+                        for i = #actions.settings.order, 1, -1 do -- iterate backwards for safe removal
+                            if actions.settings.order[i] == action_key_to_delete then
+                                table.remove(actions.settings.order, i)
+                            end
+                        end
+                        if #actions.settings.order == 0 then
+                            actions.settings.order = nil -- remove empty order table
+                        end
+                    end
+                    -- if settings table becomes empty
+                    if actions.settings and next(actions.settings) == nil then
+                        actions.settings = nil
+                    end
+                    -- check if the entire 'actions' table for this key binding is now effectively empty
+                    local has_other_actual_actions = false
+                    for key, _ in pairs(actions) do
+                        if key ~= "settings" then -- 'settings' is not an action itself
+                            has_other_actual_actions = true
+                            break
+                        end
+                    end
+                    if not has_other_actual_actions then
+                        section_data[binding] = nil -- remove the entire key binding action table if empty
+                    end
+                    self.updated = true
+                    changed_anything = true
+                end
+            end
+        end
+    end
+    return changed_anything
+end
+
 function HotKeys:updateProfiles(action_old_name, action_new_name)
     for _, section in ipairs({ "hotkeys_fm", "hotkeys_reader" }) do
         local hotkeys = self.settings_data.data[section]
