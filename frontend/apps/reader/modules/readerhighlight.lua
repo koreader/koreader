@@ -71,6 +71,7 @@ function ReaderHighlight:init()
         ["01_select"] = function(this, index)
             return {
                 text = index and _("Extend") or _("Select"),
+                enabled = not (index and this.ui.annotation.annotations[index].text_edited),
                 callback = function()
                     this:startSelection(index)
                     this:onClose()
