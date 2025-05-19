@@ -779,7 +779,7 @@ function ReaderSearch:showAllResultsMenuDialog()
             {
                 text_func = function()
                     local pn = self.ui.rolling and self.ui.document:getPageFromXPointer(self.start_page) or self.start_page
-                    return T(_("Go to search start page: %1"), self.ui.annotation:getPageRef(self.start_page, pn) or pn)
+                    return T(_("Go back to original page: %1"), self.ui.annotation:getPageRef(self.start_page, pn) or pn)
                 end,
                 callback = function()
                     UIManager:close(button_dialog)
