@@ -180,7 +180,7 @@ local settingsList = {
     ----
     fulltext_search = {category="none", event="ShowFulltextSearchInput", title=_("Fulltext search"), reader=true},
     fulltext_search_findall_results = {category="none", event="ShowFindAllResults", title=_("Last fulltext search results"), reader=true},
-    fulltext_search_start_page = {category="none", event="GoToStartPage", title=_("Go to fulltext search start page"), reader=true},
+    fulltext_search_start_page = {category="none", event="GoToStartPage", title=_("Fulltext search: go back to original page"), reader=true},
     toc = {category="none", event="ShowToc", title=_("Table of contents"), reader=true},
     book_map = {category="none", event="ShowBookMap", title=_("Book map"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
     book_map_overview = {category="none", event="ShowBookMap", arg=true, title=_("Book map (overview)"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
