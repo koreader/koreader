@@ -31,7 +31,6 @@ local FileChooser = BookList:extend{
         -- Kobo
         "^%.adobe%-digital%-editions$",
         "^certificates$",
-        "^custom%-dict$",
         "^iink$",
         "^kepub$",
         "^markups$",
