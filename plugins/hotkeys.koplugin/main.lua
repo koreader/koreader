@@ -530,7 +530,7 @@ function HotKeys:onFlushSettings()
     end
 end
 
-function HotKeys:updateProfiles(action_old_name, action_new_name)
+function HotKeys:updateActionName(action_old_name, action_new_name)
     for _, section in ipairs({ "hotkeys_fm", "hotkeys_reader" }) do
         local hotkeys = self.settings_data.data[section]
         for shortcut_name, shortcut in pairs(hotkeys) do
@@ -542,7 +542,7 @@ function HotKeys:updateProfiles(action_old_name, action_new_name)
                                 shortcut.settings.order[i] = action_new_name
                             else
                                 table.remove(shortcut.settings.order, i)
-                                if #shortcut.settings.order == 0 then
+                                if #shortcut.settings.order < 2 then
                                     shortcut.settings.order = nil
                                     if next(shortcut.settings) == nil then
                                         shortcut.settings = nil
@@ -557,6 +557,39 @@ function HotKeys:updateProfiles(action_old_name, action_new_name)
                 if action_new_name then
                     shortcut[action_new_name] = true
                 else
+                    if next(shortcut) == nil then
+                        self.settings_data.data[section][shortcut_name] = nil
+                    end
+                end
+                self.updated = true
+            end
+        end
+    end
+end
+
+function HotKeys:updateActionValue(action_name, old_value, new_value)
+    for _, section in ipairs({ "hotkeys_fm", "hotkeys_reader" }) do
+        local hotkeys = self.settings_data.data[section]
+        for shortcut_name, shortcut in pairs(hotkeys) do
+            if shortcut[action_name] == old_value then
+                if new_value then
+                    shortcut[action_name] = new_value
+                else
+                    if shortcut.settings and shortcut.settings.order then
+                        for i, action in ipairs(shortcut.settings.order) do
+                            if action == action_name then
+                                table.remove(shortcut.settings.order, i)
+                                if #shortcut.settings.order < 2 then
+                                    shortcut.settings.order = nil
+                                    if next(shortcut.settings) == nil then
+                                        shortcut.settings = nil
+                                    end
+                                end
+                                break
+                            end
+                        end
+                    end
+                    shortcut[action_name] = nil
                     if next(shortcut) == nil then
                         self.settings_data.data[section][shortcut_name] = nil
                     end
