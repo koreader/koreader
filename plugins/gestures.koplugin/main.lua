@@ -1264,9 +1264,8 @@ function Gestures:updateActionValue(action_name, old_value, new_value)
         local gestures = self.settings_data.data[section]
         for gesture_name, gesture in pairs(gestures) do
             if gesture[action_name] == old_value then
-                if new_value ~= nil then
-                    gesture[action_name] = new_value
-                else
+                gesture[action_name] = new_value
+                if new_value == nil then
                     if gesture.settings and gesture.settings.order then
                         for i, action in ipairs(gesture.settings.order) do
                             if action == action_name then
@@ -1281,7 +1280,6 @@ function Gestures:updateActionValue(action_name, old_value, new_value)
                             end
                         end
                     end
-                    gesture[action_name] = nil
                     if next(gesture) == nil then
                         self.settings_data.data[section][gesture_name] = nil
                     end
