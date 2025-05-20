@@ -1231,4 +1231,28 @@ function Dispatcher:execute(settings, exec_props)
     end
 end
 
+function Dispatcher.updateActionNameInPlugins(ui, old_name, new_name)
+    if ui.gestures then
+        ui.gestures:updateActionName(old_name, new_name)
+    end
+    if ui.hotkeys then
+        ui.hotkeys:updateActionName(old_name, new_name)
+    end
+    if ui.profiles then
+        ui.profiles:updateActionName(old_name, new_name)
+    end
+end
+
+function Dispatcher.updateActionValueInPlugins(ui, action_name, old_value, new_value)
+    if ui.gestures then
+        ui.gestures:updateActionValue(action_name, old_value, new_value)
+    end
+    if ui.hotkeys then
+        ui.hotkeys:updateActionValue(action_name, old_value, new_value)
+    end
+    if ui.profiles then
+        ui.profiles:updateActionValue(action_name, old_value, new_value)
+    end
+end
+
 return Dispatcher
