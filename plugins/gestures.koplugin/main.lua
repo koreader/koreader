@@ -1222,7 +1222,7 @@ function Gestures:onFlushSettings()
     end
 end
 
-function Gestures:updateProfiles(action_old_name, action_new_name)
+function Gestures:updateActionName(action_old_name, action_new_name)
     for _, section in ipairs({ "gesture_fm", "gesture_reader" }) do
         local gestures = self.settings_data.data[section]
         for gesture_name, gesture in pairs(gestures) do
@@ -1234,7 +1234,7 @@ function Gestures:updateProfiles(action_old_name, action_new_name)
                                 gesture.settings.order[i] = action_new_name
                             else
                                 table.remove(gesture.settings.order, i)
-                                if #gesture.settings.order == 0 then
+                                if #gesture.settings.order < 2 then
                                     gesture.settings.order = nil
                                     if next(gesture.settings) == nil then
                                         gesture.settings = nil
@@ -1249,6 +1249,39 @@ function Gestures:updateProfiles(action_old_name, action_new_name)
                 if action_new_name then
                     gesture[action_new_name] = true
                 else
+                    if next(gesture) == nil then
+                        self.settings_data.data[section][gesture_name] = nil
+                    end
+                end
+                self.updated = true
+            end
+        end
+    end
+end
+
+function Gestures:updateActionValue(action_name, old_value, new_value)
+    for _, section in ipairs({ "gesture_fm", "gesture_reader" }) do
+        local gestures = self.settings_data.data[section]
+        for gesture_name, gesture in pairs(gestures) do
+            if gesture[action_name] == old_value then
+                if new_value then
+                    gesture[action_name] = new_value
+                else
+                    if gesture.settings and gesture.settings.order then
+                        for i, action in ipairs(gesture.settings.order) do
+                            if action == action_name then
+                                table.remove(gesture.settings.order, i)
+                                if #gesture.settings.order < 2 then
+                                    gesture.settings.order = nil
+                                    if next(gesture.settings) == nil then
+                                        gesture.settings = nil
+                                    end
+                                end
+                                break
+                            end
+                        end
+                    end
+                    gesture[action_name] = nil
                     if next(gesture) == nil then
                         self.settings_data.data[section][gesture_name] = nil
                     end
