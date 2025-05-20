@@ -52,6 +52,7 @@ local external = require("device/thirdparty"):new{
         { "Aard2", "Aard2", false, "itkach.aard2", "aard2" },
         { "Alpus", "Alpus", false, "com.ngcomputing.fora.android", "search" },
         { "ColorDict", "ColorDict", false, "com.socialnmobile.colordict", "send" },
+        { "DictTango", "DictTango", false, "cn.jimex.dict", "send" },
         { "Eudic", "Eudic", false, "com.eusoft.eudic", "send" },
         { "EudicPlay", "Eudic (Google Play)", false, "com.qianyan.eudic", "send" },
         { "Fora", "Fora Dict", false, "com.ngc.fora", "search" },
