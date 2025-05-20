@@ -1955,6 +1955,8 @@ function ReaderFooter:genPresetMenuItemTable()
                     choice1_text = _("Delete"),
                     choice1_callback = function()
                         footer_presets[preset_name] = nil
+                        local Dispatcher = require("dispatcher")
+                        Dispatcher.updateActionValueInPlugins(self.ui, "load_footer_preset", preset_name)
                         touchmenu_instance.item_table = self:genPresetMenuItemTable()
                         touchmenu_instance:updateItems()
                     end,
