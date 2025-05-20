@@ -248,7 +248,7 @@ function Profiles:getSubMenuItems()
                 callback = function()
                     if v.settings.registered then
                         dispatcherUnregisterProfile(k)
-                        self:updateProfiles(self.prefix..k)
+                        Dispatcher.updateActionNameInPlugins(self.ui, self.prefix..k)
                         self.data[k].settings.registered = nil
                     else
                         dispatcherRegisterProfile(k)
@@ -279,7 +279,7 @@ function Profiles:getSubMenuItems()
                         if v.settings.registered then
                             dispatcherUnregisterProfile(k)
                             dispatcherRegisterProfile(new_name)
-                            self:updateProfiles(self.prefix..k, self.prefix..new_name)
+                            Dispatcher.updateActionNameInPlugins(self.ui, self.prefix..k, self.prefix..new_name)
                         end
                         self.data[k] = nil
                         self.updated = true
@@ -319,7 +319,7 @@ function Profiles:getSubMenuItems()
                             self:updateAutoExec(k)
                             if v.settings.registered then
                                 dispatcherUnregisterProfile(k)
-                                self:updateProfiles(self.prefix..k)
+                                Dispatcher.updateActionNameInPlugins(self.ui, self.prefix..k)
                             end
                             self.data[k] = nil
                             self.updated = true
@@ -461,7 +461,7 @@ function Profiles:getProfileFromCurrentBookSettings(new_name)
     return profile
 end
 
-function Profiles:updateProfiles(action_old_name, action_new_name)
+function Profiles:updateActionName(action_old_name, action_new_name)
     for _, profile in pairs(self.data) do
         if profile[action_old_name] then
             if profile.settings and profile.settings.order then
@@ -471,7 +471,7 @@ function Profiles:updateProfiles(action_old_name, action_new_name)
                             profile.settings.order[i] = action_new_name
                         else
                             table.remove(profile.settings.order, i)
-                            if #profile.settings.order == 0 then
+                            if #profile.settings.order < 2 then
                                 profile.settings.order = nil
                             end
                         end
@@ -486,10 +486,29 @@ function Profiles:updateProfiles(action_old_name, action_new_name)
             self.updated = true
         end
     end
-    if self.ui.gestures then -- search and update the profile action in assigned gestures
-        self.ui.gestures:updateProfiles(action_old_name, action_new_name)
-    elseif self.ui.hotkeys then -- search and update the profile action in assigned keyboard shortcuts
-        self.ui.hotkeys:updateProfiles(action_old_name, action_new_name)
+end
+
+function Profiles:updateActionValue(action_name, old_value, new_value)
+    for _, profile in pairs(self.data) do
+        if profile[action_name] == old_value then
+            if new_value then
+                profile[action_name] = new_value
+            else
+                if profile.settings and profile.settings.order then
+                    for i, action in ipairs(profile.settings.order) do
+                        if action == action_name then
+                            table.remove(profile.settings.order, i)
+                            if #profile.settings.order < 2 then
+                                profile.settings.order = nil
+                            end
+                            break
+                        end
+                    end
+                end
+                profile[action_name] = nil
+            end
+            self.updated = true
+        end
     end
 end
 
