@@ -572,7 +572,7 @@ function HotKeys:updateActionValue(action_name, old_value, new_value)
         local hotkeys = self.settings_data.data[section]
         for shortcut_name, shortcut in pairs(hotkeys) do
             if shortcut[action_name] == old_value then
-                if new_value then
+                if new_value ~= nil then
                     shortcut[action_name] = new_value
                 else
                     if shortcut.settings and shortcut.settings.order then
