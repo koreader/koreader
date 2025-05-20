@@ -491,7 +491,7 @@ end
 function Profiles:updateActionValue(action_name, old_value, new_value)
     for _, profile in pairs(self.data) do
         if profile[action_name] == old_value then
-            if new_value then
+            if new_value ~= nil then
                 profile[action_name] = new_value
             else
                 if profile.settings and profile.settings.order then
