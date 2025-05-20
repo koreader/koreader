@@ -162,9 +162,7 @@ end
 function BookShortcuts:deleteShortcut(name)
     self.shortcuts.data[name] = nil
     Dispatcher:removeAction(name)
-    if self.ui.profiles then
-        self.ui.profiles:updateProfiles(name)
-    end
+    Dispatcher.updateActionNameInPlugins(self.ui, name)
     self.updated = true
 end
 
