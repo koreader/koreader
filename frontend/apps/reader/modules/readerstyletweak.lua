@@ -566,9 +566,11 @@ You can enable individual tweaks on this book with a tap, or view more details a
                             if self.tweaks_in_dispatcher[item.id] then
                                 self.tweaks_in_dispatcher[item.id] = nil
                                 Dispatcher:removeAction(self.dispatcher_prefix_toggle..item.id)
-                                Dispatcher.updateActionNameInPlugins(self.ui, self.dispatcher_prefix_toggle..item.id)
+                                UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged",
+                                    { old_name = self.dispatcher_prefix_toggle..item.id, new_name = nil }))
                                 Dispatcher:removeAction(self.dispatcher_prefix_set..item.id)
-                                Dispatcher.updateActionNameInPlugins(self.ui, self.dispatcher_prefix_set..item.id)
+                                UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged",
+                                    { old_name = self.dispatcher_prefix_set..item.id, new_name = nil }))
                             else
                                 self.tweaks_in_dispatcher[item.id] = item.title
                                 dispatcherRegisterStyleTweak(item.id, item.title)
