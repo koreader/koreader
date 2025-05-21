@@ -530,16 +530,16 @@ function HotKeys:onFlushSettings()
     end
 end
 
-function HotKeys:updateActionName(action_old_name, action_new_name)
+function HotKeys:onDispatcherActionNameChanged(action)
     for _, section in ipairs({ "hotkeys_fm", "hotkeys_reader" }) do
         local hotkeys = self.settings_data.data[section]
         for shortcut_name, shortcut in pairs(hotkeys) do
-            if shortcut[action_old_name] then
+            if shortcut[action.old_name] ~= nil then
                 if shortcut.settings and shortcut.settings.order then
-                    for i, action in ipairs(shortcut.settings.order) do
-                        if action == action_old_name then
-                            if action_new_name then
-                                shortcut.settings.order[i] = action_new_name
+                    for i, action_in_order in ipairs(shortcut.settings.order) do
+                        if action_in_order == action.old_name then
+                            if action.new_name then
+                                shortcut.settings.order[i] = action.new_name
                             else
                                 table.remove(shortcut.settings.order, i)
                                 if #shortcut.settings.order < 2 then
@@ -553,9 +553,9 @@ function HotKeys:updateActionName(action_old_name, action_new_name)
                         end
                     end
                 end
-                shortcut[action_old_name] = nil
-                if action_new_name then
-                    shortcut[action_new_name] = true
+                shortcut[action.old_name] = nil
+                if action.new_name then
+                    shortcut[action.new_name] = true
                 else
                     if next(shortcut) == nil then
                         self.settings_data.data[section][shortcut_name] = nil
@@ -567,16 +567,16 @@ function HotKeys:updateActionName(action_old_name, action_new_name)
     end
 end
 
-function HotKeys:updateActionValue(action_name, old_value, new_value)
+function HotKeys:onDispatcherActionValueChanged(action)
     for _, section in ipairs({ "hotkeys_fm", "hotkeys_reader" }) do
         local hotkeys = self.settings_data.data[section]
         for shortcut_name, shortcut in pairs(hotkeys) do
-            if shortcut[action_name] == old_value then
-                shortcut[action_name] = new_value
-                if new_value == nil then
+            if shortcut[action.name] == action.old_value then
+                shortcut[action.name] = action.new_value
+                if action.new_value == nil then
                     if shortcut.settings and shortcut.settings.order then
-                        for i, action in ipairs(shortcut.settings.order) do
-                            if action == action_name then
+                        for i, action_in_order in ipairs(shortcut.settings.order) do
+                            if action_in_order == action.name then
                                 table.remove(shortcut.settings.order, i)
                                 if #shortcut.settings.order < 2 then
                                     shortcut.settings.order = nil
