@@ -1952,7 +1952,7 @@ function ReaderFooter:loadPreset(preset)
     G_reader_settings:saveSetting("reader_footer_custom_text", preset.reader_footer_custom_text)
     G_reader_settings:saveSetting("reader_footer_custom_text_repetitions", preset.reader_footer_custom_text_repetitions)
     self.settings = G_reader_settings:readSetting("footer")
-    self.mode_index = self.settings.order
+    self.mode_index = self.settings.order or self.mode_index
     self.custom_text = preset.reader_footer_custom_text
     self.custom_text_repetitions = tonumber(preset.reader_footer_custom_text_repetitions)
     self:applyFooterMode(preset.reader_footer_mode)
@@ -1963,6 +1963,7 @@ function ReaderFooter:loadPreset(preset)
         self.separator_width = nil
         self.filler_space_width = nil
     end
+    self:setTocMarkers()
     self:refreshFooter(true, true)
 end
 

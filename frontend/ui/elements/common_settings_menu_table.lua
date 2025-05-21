@@ -239,9 +239,9 @@ if Device:isKobo() then
     }
 end
 
-if Device:isKindle() and PowerD:hasHallSensor() then
+if PowerD:hasHallSensor() then
     common_settings.cover_events = {
-        text = _("Disable Kindle cover events"),
+        text = _("Disable cover events"),
         help_text = _([[Toggle the Hall effect sensor.
 This is used to detect if the cover is closed, which will automatically sleep and wake the device. If there is no cover present the sensor may cause spurious wakeups when located next to a magnetic source.]]),
         keep_menu_open = true,
