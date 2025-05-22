@@ -224,7 +224,20 @@ if Device:hasGSensor() then
 
     function DeviceListener:onLockGSensor()
         G_reader_settings:flipNilOrFalse("input_lock_gsensor")
-        Device:lockGSensor(G_reader_settings:isTrue("input_lock_gsensor"))
+        self:setLockGsensor(G_reader_settings:isTrue("input_lock_gsensor"))
+        return true
+    end
+
+    -- @param flag bool on/off
+    function DeviceListener:onSetLockGSensor(flag)
+        self:setLockGsensor(flag)
+        return true
+    end
+
+    -- @param flag bool on/off
+    function DeviceListener:setLockGsensor(flag)
+        G_reader_settings:saveSetting("input_lock_gsensor", flag)
+        Device:lockGSensor(flag)
         local new_text
         if G_reader_settings:isTrue("input_lock_gsensor") then
             new_text = _("Orientation locked.")
@@ -232,7 +245,6 @@ if Device:hasGSensor() then
             new_text = _("Orientation unlocked.")
         end
         Notification:notify(new_text)
-        return true
     end
 end
 

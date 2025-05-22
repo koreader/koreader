@@ -91,7 +91,8 @@ local settingsList = {
     toggle_key_repeat = {category="none", event="ToggleKeyRepeat", title=_("Toggle key repeat"), device=true, condition=Device:hasKeys() and Device:canKeyRepeat(), separator=true},
     toggle_gsensor = {category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:hasGSensor()},
     temp_gsensor_on = {category="none", event="TempGSensorOn", title=_("Enable accelerometer for 5 seconds"), device=true, condition=Device:hasGSensor()},
-    lock_gsensor = {category="none", event="LockGSensor", title=_("Lock auto rotation to current orientation"), device=true, condition=Device:hasGSensor()},
+    lock_gsensor = {category="none", event="LockGSensor", title=_("Toggle lock auto rotation to current orientation"), device=true, condition=Device:hasGSensor()},
+    set_lock_gsensor = {category="string", event="SetLockGSensor", title=_("Set lock auto rotation to current orientation"), device=true, condition=Device:hasGSensor(), args = {true, false}, toggle = { _("true"), _("false")}},
     rotation_mode = {category="string", device=true}, -- title=_("Rotation"), parsed from CreOptions
     toggle_rotation = {category="none", event="SwapRotation", title=_("Toggle orientation"), device=true},
     invert_rotation = {category="none", event="InvertRotation", title=_("Invert rotation"), device=true},
@@ -180,6 +181,7 @@ local settingsList = {
     ----
     fulltext_search = {category="none", event="ShowFulltextSearchInput", title=_("Fulltext search"), reader=true},
     fulltext_search_findall_results = {category="none", event="ShowFindAllResults", title=_("Last fulltext search results"), reader=true},
+    fulltext_search_start_page = {category="none", event="GoToStartPage", title=_("Fulltext search: go back to original page"), reader=true},
     toc = {category="none", event="ShowToc", title=_("Table of contents"), reader=true},
     book_map = {category="none", event="ShowBookMap", title=_("Book map"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
     book_map_overview = {category="none", event="ShowBookMap", arg=true, title=_("Book map (overview)"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
@@ -329,6 +331,7 @@ local dispatcher_menu_order = {
     "toggle_gsensor",
     "temp_gsensor_on",
     "lock_gsensor",
+    "set_lock_gsensor",
     "rotation_mode",
     "toggle_rotation",
     "invert_rotation",
@@ -417,6 +420,7 @@ local dispatcher_menu_order = {
     ----
     "fulltext_search",
     "fulltext_search_findall_results",
+    "fulltext_search_start_page",
     "toc",
     "book_map",
     "book_map_overview",

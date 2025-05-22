@@ -358,6 +358,8 @@ end
 
 function PdfDocument:register(registry)
     --- Document types ---
+    registry:addProvider("cbr", "application/vnd.comicbook-rar", self, 100)
+    registry:addProvider("cbr", "application/vnd.rar", self, 100)
     registry:addProvider("cbt", "application/vnd.comicbook+tar", self, 100)
     registry:addProvider("cbz", "application/vnd.comicbook+zip", self, 100)
     registry:addProvider("cbz", "application/x-cbz", self, 100) -- Alternative mimetype for OPDS.

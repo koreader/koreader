@@ -454,11 +454,6 @@ local function dispatcherRegisterStyleTweak(tweak_id, tweak_title)
         {category="none", event="ToggleStyleTweak", arg=tweak_id, title=T(_("Style tweak '%1' toggle"), tweak_title), rolling=true})
 end
 
-local function dispatcherUnregisterStyleTweak(tweak_id)
-    Dispatcher:removeAction(ReaderStyleTweak.dispatcher_prefix_toggle..tweak_id)
-    Dispatcher:removeAction(ReaderStyleTweak.dispatcher_prefix_set..tweak_id)
-end
-
 function ReaderStyleTweak:init()
     self.tweaks_in_dispatcher = G_reader_settings:readSetting("style_tweaks_in_dispatcher") or {}
     self.tweaks_by_id = {}
@@ -570,11 +565,12 @@ You can enable individual tweaks on this book with a tap, or view more details a
                         toggle_tweak_in_dispatcher_callback = function()
                             if self.tweaks_in_dispatcher[item.id] then
                                 self.tweaks_in_dispatcher[item.id] = nil
-                                dispatcherUnregisterStyleTweak(item.id)
-                                if self.ui.profiles then
-                                    self.ui.profiles:updateProfiles(self.dispatcher_prefix_toggle..item.id)
-                                    self.ui.profiles:updateProfiles(self.dispatcher_prefix_set..item.id)
-                                end
+                                Dispatcher:removeAction(self.dispatcher_prefix_toggle..item.id)
+                                UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged",
+                                    { old_name = self.dispatcher_prefix_toggle..item.id, new_name = nil }))
+                                Dispatcher:removeAction(self.dispatcher_prefix_set..item.id)
+                                UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged",
+                                    { old_name = self.dispatcher_prefix_set..item.id, new_name = nil }))
                             else
                                 self.tweaks_in_dispatcher[item.id] = item.title
                                 dispatcherRegisterStyleTweak(item.id, item.title)
