@@ -172,22 +172,22 @@ function socketutil.redact_request(request)
     return safe_request
 end
 
-function socketutil.wrapSinkWithProgressCallback(sink, progressCallback)
-    if progressCallback == nil then
+function socketutil.chainSinkWithProgressCallback(sink, progressCallback)
+    if sink == nil or progressCallback == nil then
         return sink
     end
 
     local downloaded_bytes = 0
-    local progress_reporter_sink = function(chunk, err)
+    local progress_reporter_filter = function(chunk, err)
         if chunk ~= nil then
             -- accumulate the downloaded bytes so we don't need to check the actual file every time
             downloaded_bytes = downloaded_bytes + chunk:len()
+            progressCallback(downloaded_bytes)
         end
-        progressCallback(downloaded_bytes)
-        return sink(chunk, err)
+        return chunk, err
     end
 
-    return progress_reporter_sink
+    return ltn12.sink.chain(progress_reporter_filter, sink)
 end
 
 return socketutil

@@ -33,7 +33,7 @@ function Ftp:downloadFile(item, address, user, pass, path, callback_close, progr
     end
 
     local handle = ltn12.sink.file(file)
-    handle = socketutil.wrapSinkWithProgressCallback(handle, progress_callback)
+    handle = socketutil.chainSinkWithProgressCallback(handle, progress_callback)
 
     local response = FtpApi:ftpGet(url, "retr", handle )
     if response ~= nil then

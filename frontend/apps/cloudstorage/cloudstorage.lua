@@ -215,16 +215,14 @@ end
 function CloudStorage:downloadFile(item)
     local function startDownloadFile(unit_item, address, username, password, path_dir, callback_close)
         local progressbar_dialog = ProgressbarDialog:new {
-            title = _("Downloading..."),
+            title = _("Downloading…"),
             subtitle = unit_item.text,
             progress_max = unit_item.filesize,
-            refresh_mode = "time",
             refresh_time_seconds = 3,
         }
 
         UIManager:scheduleIn(1, function()
             local progress_callback = progressbar_dialog:getProgressCallback()
-            -- rename progressReporter to a more fitting name
             if self.type == "dropbox" then
                 DropBox:downloadFile( unit_item, password, path_dir, callback_close, progress_callback)
             elseif self.type == "ftp" then

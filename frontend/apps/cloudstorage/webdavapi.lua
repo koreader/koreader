@@ -167,7 +167,7 @@ function WebDavApi:downloadFile(file_url, user, pass, local_path, progress_callb
     logger.dbg("WebDavApi: downloading file: ", file_url)
 
     local handle = ltn12.sink.file(io.open(local_path, "w"))
-    handle = socketutil.wrapSinkWithProgressCallback(handle, progress_callback)
+    handle = socketutil.chainSinkWithProgressCallback(handle, progress_callback)
 
     local code, headers, status = socket.skip(1, http.request {
         url      = file_url,
