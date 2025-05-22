@@ -7,10 +7,10 @@ local Size            = require("ui/size")
 local FrameContainer  = require("ui/widget/container/framecontainer")
 local Blitbuffer      = require("ffi/blitbuffer")
 local ProgressWidget  = require("ui/widget/progresswidget")
-local dbg = require("dbg")
+local dbg             = require("dbg")
 local TextWidget      = require("ui/widget/textwidget")
 local Font            = require("ui/font")
-local time = require("ui/time")
+local time            = require("ui/time")
 
 --[[--
 A dialog that shows a progress bar with a title and subtitle
@@ -96,15 +96,15 @@ function ProgressbarDialog:init()
     }
 
     -- only add relevant widgets
-    local vertical_group = VerticalGroup:new{ }
+    local vertical_group = VerticalGroup:new {}
     if self.title then
-        vertical_group[#vertical_group+1] = self.title_text
+        vertical_group[#vertical_group + 1] = self.title_text
     end
     if self.subtitle then
-        vertical_group[#vertical_group+1] = self.subtitle_text
+        vertical_group[#vertical_group + 1] = self.subtitle_text
     end
     if self.progress_bar_visible then
-        vertical_group[#vertical_group+1] = self.progress_bar
+        vertical_group[#vertical_group + 1] = self.progress_bar
     end
 
     self.frame_container = FrameContainer:new {
@@ -117,14 +117,17 @@ function ProgressbarDialog:init()
 
     self[1] = self.frame_container
 end
+
 dbg:guard(ProgressbarDialog, "init",
-nil,
+    nil,
     function(self)
         assert(self.progress_max == nil or
             (type(self.progress_max) == "number" and self.progress_max > 0),
-            "Wrong self.progress_max type (expected nil or number greater than 0), value was: " .. tostring(self.progress_max))
+            "Wrong self.progress_max type (expected nil or number greater than 0), value was: " ..
+            tostring(self.progress_max))
         assert(type(self.refresh_time_seconds) == "number" and self.refresh_time_seconds > 0,
-            "Wrong self.refresh_time_seconds type (expected number greater than 0), value was: " .. tostring(self.refresh_time_seconds))
+            "Wrong self.refresh_time_seconds type (expected number greater than 0), value was: " ..
+            tostring(self.refresh_time_seconds))
         assert(self.title == nil or type(self.title) == "string",
             "Wrong title type (expected nil or string), value was of type: " .. type(self.title))
         assert(self.subtitle == nil or type(self.subtitle) == "string",

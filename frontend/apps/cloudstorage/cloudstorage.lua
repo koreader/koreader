@@ -224,11 +224,11 @@ function CloudStorage:downloadFile(item)
         UIManager:scheduleIn(1, function()
             local progress_callback = progressbar_dialog:getProgressCallback()
             if self.type == "dropbox" then
-                DropBox:downloadFile( unit_item, password, path_dir, callback_close, progress_callback)
+                DropBox:downloadFile(unit_item, password, path_dir, callback_close, progress_callback)
             elseif self.type == "ftp" then
                 Ftp:downloadFile(unit_item, address, username, password, path_dir, callback_close, nil)
             elseif self.type == "webdav" then
-                WebDav:downloadFile( unit_item, address, username, password, path_dir, callback_close, progress_callback)
+                WebDav:downloadFile(unit_item, address, username, password, path_dir, callback_close, progress_callback)
             end
 
             progressbar_dialog:close()
