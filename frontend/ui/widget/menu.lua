@@ -987,6 +987,7 @@ function Menu:updatePageInfo(select_number)
     if #self.item_table > 0 then
         local is_focused = self.itemnumber and self.itemnumber > 0
         if is_focused or Device:hasDPad() then
+            self.prev_itemnumber = self.itemnumber -- for CoverBrowser
             self.itemnumber = nil -- focus only once
             select_number = select_number or 1 -- default to select the first item
             local x, y
@@ -1388,7 +1389,7 @@ function Menu:onLastPage()
 end
 
 function Menu:onGotoPage(page)
-    self.prev_focused_path = nil
+    self.prev_itemnumber = nil
     self.page = page
     self:updateItems(1, true)
     return true
