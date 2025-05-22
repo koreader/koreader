@@ -19,8 +19,8 @@ A dialog that shows a progress bar with a title and subtitle
 local progressbar_dialog = ProgressbarDialog:new {
     title = nil,
     subtitle = nil,
-    refresh_time_seconds = 3,
     progress_max = nil
+    refresh_time_seconds = 3,
 }
 
 -- attach progress callback and call show()
@@ -30,7 +30,7 @@ progressbar_dialog:show()
 progressbar_dialog:close()
 
 -----------------------general use case-----------------------------------------
--- manually call reportProgress with the current progress (value between 0-max_progress)
+-- manually call reportProgress with the current progress (value between 0-progress_max)
 progressbar_dialog:reportProgress( <progress value> )
 ----------------------------------------------------------------------------------
 
@@ -47,9 +47,9 @@ Note: provide at least one of title, subtitle or progress_max
 @param subtitle string the subtitle of the dialog
 @param progress_max number the maximum progress (e.g. size of the file in bytes for file downloads)
                     reportProgress() should be called with the current
-                    progress (value between 0-max_progress) to update the progress bar
+                    progress (value between 0-progress_max) to update the progress bar
                     optional: if `progress_max` is nil, the progress bar will be hidden
-@param refresh_time_seconds number refresh time in seconds -  used with refresh_mode "time"
+@param refresh_time_seconds number refresh time in seconds
 --]]
 local ProgressbarDialog = WidgetContainer:extend {}
 
@@ -170,7 +170,7 @@ function ProgressbarDialog:reportProgress(progress)
         return
     end
 
-    -- set percentage of progress bar internally, this does not yet update
+    -- set percentage of progress bar internally, this does not yet update the screen element
     self.progress_bar:setPercentage(progress / self.progress_max)
 
     -- actually draw the progress bar update
