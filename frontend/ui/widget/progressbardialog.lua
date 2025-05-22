@@ -35,9 +35,10 @@ progressbar_dialog:reportProgress( <progress value> )
 ----------------------------------------------------------------------------------
 
 ------------------use case with luasocket sink----------------------------------
-local progress_callback = progressbar_dialog:getProgressCallback()
 local sink = ltn12.sink.file(io.open(local_path, "w"))
-sink = socketutil.chainSinkWithProgressCallback(sink, progress_callback)
+sink = socketutil.chainSinkWithProgressCallback(sink, function(progress)
+    progressbar_dialog:reportProgress(progress)
+end)
 -- start pushing data to the sink, this is usually some function that accepts a luasocket sink
 something:startDownload(sink)
 ----------------------------------------------------------------------------------
@@ -175,27 +176,6 @@ function ProgressbarDialog:reportProgress(progress)
 
     -- actually draw the progress bar update
     self:redrawProgressbarIfNeeded()
-end
-
---- Returns the progressCallback or nil if the progress bar is not visible
--- meant to be used with socketutil.chainSinkWithProgressCallback
---[[
-usage:
-------------------------------------------------------------
-local handle = ltn12.sink.file(io.open(local_path, "w"))
-local sink = socketutil.chainSinkWithProgressCallback(handle, progress_dialog:getProgressCallback())
-...start download with sink...
-------------------------------------------------------------
-]]
-function ProgressbarDialog:getProgressCallback()
-    if self.progress_bar_visible then
-        local progressCallback = function(progress)
-            self:reportProgress(progress)
-        end
-        return progressCallback
-    end
-
-    return nil
 end
 
 --- opens dialog
