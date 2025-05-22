@@ -1955,6 +1955,8 @@ function ReaderFooter:genPresetMenuItemTable()
                     choice1_text = _("Delete"),
                     choice1_callback = function()
                         footer_presets[preset_name] = nil
+                        UIManager:broadcastEvent(Event:new("DispatcherActionValueChanged",
+                            { name = "load_footer_preset", old_value = preset_name, new_value = nil }))
                         touchmenu_instance.item_table = self:genPresetMenuItemTable()
                         touchmenu_instance:updateItems()
                     end,
