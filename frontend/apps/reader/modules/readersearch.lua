@@ -215,6 +215,7 @@ function ReaderSearch:searchCallback(reverse, text)
     if search_text == nil or search_text == "" then return end
     self.ui.doc_settings:saveSetting("fulltext_search_last_search_text", search_text)
     self.last_search_text = search_text
+    self.start_page = self.ui.paging and self.view.state.page or self.ui.document:getXPointer()
 
     local regex_error
     if text then -- from highlight dialog
@@ -774,12 +775,35 @@ function ReaderSearch:showAllResultsMenuDialog()
                 end,
             },
         },
+        {
+            {
+                text_func = function()
+                    local pn = self.ui.rolling and self.ui.document:getPageFromXPointer(self.start_page) or self.start_page
+                    return T(_("Go back to original page: %1"), self.ui.annotation:getPageRef(self.start_page, pn) or pn)
+                end,
+                callback = function()
+                    UIManager:close(button_dialog)
+                    self.result_menu.close_callback()
+                    self:onGoToStartPage()
+                end,
+            },
+        },
     }
     button_dialog = ButtonDialog:new{
         title_align = "center",
         buttons = buttons,
     }
     UIManager:show(button_dialog)
+end
+
+function ReaderSearch:onGoToStartPage()
+    if self.start_page then
+        if self.ui.rolling then
+            self.ui.rolling:onGotoXPointer(self.start_page)
+        else
+            self.ui.paging:onGotoPage(self.start_page)
+        end
+    end
 end
 
 return ReaderSearch
