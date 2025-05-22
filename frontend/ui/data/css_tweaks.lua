@@ -981,9 +981,9 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
                 {
                     id = "inpage_footnote_font-size_smaller",
                     conflicts_with = function(id) return util.stringStartsWith(id, "inpage_footnote_font-size_") end,
-                    title = _("Smaller footnotes (80%)"),
+                    title = _("Smaller footnotes (80%, legacy)"),
                     description = _([[
-Decrease size of in-page footnotes. This may have limited/no effect, e.g. if it's overwritten by publisher styles.]]),
+Decrease size of in-page footnotes. This may have limited/no apparent effect, e.g. if it's overwritten by publisher styles. The "footnote font size" style tweaks are recommended instead.]]),
                     css = [[
 *, autoBoxing {
     -cr-hint: late;
