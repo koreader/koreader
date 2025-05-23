@@ -81,25 +81,46 @@ local function getFeedLink(possible_link)
 end
 
 -- Look for author names that look like
--- <author><name> Author Name </name></author>
--- and return a byline with the name,
--- or names separated by commas.
+-- <dc:creator>First Author, Second Author</dc:creator>
+-- or
+-- <author><name>First Author</name></author>
+-- <author><name>Second Author</name></author>...
+-- and return a byline or empty string
 local function getByline(feed)
-    if feed.author then
-        if feed.author.name then -- single author
-            return "By " .. feed.author.name
-        end
+    if type(feed["dc:creator"]) == "string" then
+        return "By " .. feed["dc:creator"]
+    end
+    if type(feed["dc:creator"]) == "table" then
         local i = 0
         local authors = {}
-        for _ in pairs(feed.author) do -- multiple authors
+        for _ in pairs(feed["dc:creator"]) do
             i = i + 1
-            if feed.author[i] == nil then
+            if feed["dc:creator"][i] == nil then
                 break
             end
-            authors[i] = feed.author[i].name
+            authors[i] = feed["dc:creator"][i]
         end
         if #authors > 0 then
             return "By " .. table.concat(authors, ", ")
+        end
+    end
+    if feed.author then
+        if type(feed.author.name) == "string" then -- single author
+            return "By " .. feed.author.name
+        end
+        if type(feed.author) == "table" then
+            local i = 0
+            local authors = {}
+            for _ in pairs(feed.author) do -- multiple authors
+                i = i + 1
+                if feed.author[i] == nil then
+                    break
+                end
+                authors[i] = feed.author[i].name
+            end
+            if #authors > 0 then
+                return "By " .. table.concat(authors, ", ")
+            end
         end
     end
     return ""
