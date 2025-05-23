@@ -88,7 +88,7 @@ end
 -- and return a byline or empty string
 local function getByline(feed)
     if type(feed["dc:creator"]) == "string" then
-        return "By " .. feed["dc:creator"]
+        return feed["dc:creator"]
     end
     if type(feed["dc:creator"]) == "table" then
         local i = 0
@@ -101,12 +101,12 @@ local function getByline(feed)
             authors[i] = feed["dc:creator"][i]
         end
         if #authors > 0 then
-            return "By " .. table.concat(authors, ", ")
+            return table.concat(authors, ", ")
         end
     end
     if feed.author then
         if type(feed.author.name) == "string" then -- single author
-            return "By " .. feed.author.name
+            return feed.author.name
         end
         if type(feed.author) == "table" then
             local i = 0
@@ -119,7 +119,7 @@ local function getByline(feed)
                 authors[i] = feed.author[i].name
             end
             if #authors > 0 then
-                return "By " .. table.concat(authors, ", ")
+                return table.concat(authors, ", ")
             end
         end
     end
@@ -755,6 +755,7 @@ function NewsDownloader:createFromDescription(feed, title, content, feed_output_
 </head>
 <body>
 <header><h1>%s</h1><p><address>%s</address></p></header>
+<br>
 <article>%s</article>
 <br>
 <footer><small>%s</small></footer>
