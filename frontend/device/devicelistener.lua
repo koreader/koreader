@@ -5,6 +5,7 @@ local Notification = require("ui/widget/notification")
 local Screen = Device.screen
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
+local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -342,8 +343,7 @@ function DeviceListener:onSwapPageTurnButtons(side)
     if side == "left" then
         -- Revert any prior global inversions first, as we could end up with an all greyed out menu.
         if G_reader_settings:isTrue("input_invert_page_turn_keys") then
-            G_reader_settings:makeFalse("input_invert_page_turn_keys")
-            Device:invertButtons()
+            self:setPageTurnButtonDirection(true)
         end
         G_reader_settings:flipNilOrFalse("input_invert_left_page_turn_keys")
         Device:invertButtonsLeft()
@@ -355,8 +355,7 @@ function DeviceListener:onSwapPageTurnButtons(side)
     elseif side == "right" then
         -- Revert any prior global inversions first, as we could end up with an all greyed out menu.
         if G_reader_settings:isTrue("input_invert_page_turn_keys") then
-            G_reader_settings:makeFalse("input_invert_page_turn_keys")
-            Device:invertButtons()
+            self:setPageTurnButtonDirection(true)
         end
         G_reader_settings:flipNilOrFalse("input_invert_right_page_turn_keys")
         Device:invertButtonsRight()
@@ -370,8 +369,7 @@ function DeviceListener:onSwapPageTurnButtons(side)
         if G_reader_settings:isTrue("input_invert_left_page_turn_keys") and G_reader_settings:isTrue("input_invert_right_page_turn_keys") then
             G_reader_settings:makeFalse("input_invert_left_page_turn_keys")
             G_reader_settings:makeFalse("input_invert_right_page_turn_keys")
-            G_reader_settings:makeFalse("input_invert_page_turn_keys")
-            Device:invertButtons()
+            self:setPageTurnButtonDirection(true)
             new_text = _("Page-turn buttons no longer inverted.")
             Notification:notify(new_text)
             return true
@@ -392,6 +390,35 @@ function DeviceListener:onSwapPageTurnButtons(side)
     end
     Notification:notify(new_text)
     return true
+end
+
+-- @param invert bool if the page turn buttons should be set to inverted or not
+function DeviceListener:setPageTurnButtonDirection(invert)
+    local setting = G_reader_settings:readSetting("input_invert_page_turn_keys")
+    if invert == setting then
+        return
+    end
+    G_reader_settings:saveSetting("input_invert_page_turn_keys", invert)
+    Device:invertButtons()
+end
+
+-- @param invert bool if the page turn buttons should be set to inverted or not
+function DeviceListener:onSetPageTurnButtonDirection(invert)
+    local setting = G_reader_settings:readSetting("input_invert_page_turn_keys")
+    logger.dbg("DeviceListener:onSetPageTurnButtonDirection", invert, setting)
+    if invert == setting then
+        logger.dbg("DeviceListener:onSetPageTurnButtonDirection", "not toggling page turn buttons")
+        return
+    end
+    logger.dbg("DeviceListener:onSetPageTurnButtonDirection", "toggling page turn buttons")
+    self:setPageTurnButtonDirection(invert)
+    local text
+    if invert then
+        text = _("Page-turn buttons inverted.")
+    else
+        text = _("Page-turn buttons no longer inverted.")
+    end
+    Notification:notify(text)
 end
 
 function DeviceListener:onToggleKeyRepeat(toggle)
