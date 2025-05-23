@@ -337,7 +337,7 @@ function CalibreWireless:connect()
 
     -- Heartbeat monitoring…
     while ok and not self.disconnected_by_server do
-        ok = resume_in(15)
+        ok = resume_in(5 * 60)
     end
 
     local msg
