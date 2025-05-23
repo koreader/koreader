@@ -59,6 +59,7 @@ The preset system handles:
 --]]
 
 local ConfirmBox = require("ui/widget/confirmbox")
+local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Notification = require("ui/widget/notification")
@@ -102,7 +103,7 @@ function Presets:createPresetFromCurrentSettings(touchmenu_instance, preset_name
     input_dialog:onShowKeyboard()
 end
 
-function Presets:genPresetMenuItemTable(preset_name_key, text, buildPresetFunc, loadPresetFunc, genPresetMenuItemTableFunc, enabled_func, module)
+function Presets:genPresetMenuItemTable(module, preset_name_key, text, enabled_func, buildPresetFunc, loadPresetFunc, genPresetMenuItemTableFunc)
     local presets = G_reader_settings:readSetting(preset_name_key, {})
     local items = {
         {
@@ -170,9 +171,18 @@ function Presets:genPresetMenuItemTable(preset_name_key, text, buildPresetFunc, 
                                                     callback = function()
                                                         local new_name = input_dialog:getInputText()
                                                         if self:validateAndSavePreset(new_name, preset_name_key, presets, presets[preset_name]) then
+                                                            local old_preset_data = presets[preset_name]
+                                                            presets[new_name] = old_preset_data
                                                             presets[preset_name] = nil
                                                             G_reader_settings:saveSetting(preset_name_key, presets)
-                                                            self:updateGesturesAndHotkeys(module, preset_name, new_name)
+                                                            local action_key = self:_getTargetActionKeyForModule(module, preset_name)
+                                                            if action_key then
+                                                                UIManager:broadcastEvent(Event:new("DispatcherActionValueChanged", {
+                                                                    name = action_key,
+                                                                    old_value = preset_name,
+                                                                    new_value = new_name
+                                                                }))
+                                                            end
                                                             touchmenu_instance.item_table = genPresetMenuItemTableFunc()
                                                             touchmenu_instance:updateItems()
                                                             UIManager:close(input_dialog)
@@ -195,7 +205,14 @@ function Presets:genPresetMenuItemTable(preset_name_key, text, buildPresetFunc, 
                                         ok_callback = function()
                                             presets[preset_name] = nil
                                             G_reader_settings:saveSetting(preset_name_key, presets)
-                                            self:updateGesturesAndHotkeys(module, preset_name, nil) -- delete from hotkey/gestures
+                                            local action_key = self:_getTargetActionKeyForModule(module, preset_name)
+                                            if action_key then
+                                                UIManager:broadcastEvent(Event:new("DispatcherActionValueChanged", {
+                                                    name = action_key,
+                                                    old_value = preset_name,
+                                                    new_value = nil
+                                                }))
+                                            end
                                             touchmenu_instance.item_table = genPresetMenuItemTableFunc()
                                             touchmenu_instance:updateItems()
                                         end,
@@ -225,69 +242,48 @@ function Presets:validateAndSavePreset(preset_name, preset_name_key, presets, pr
     return true
 end
 
-function Presets:updateGesturesAndHotkeys(module, preset_name, new_name)
+function Presets:_getTargetActionKeyForModule(module, preset_name)
     -- We need to make sure we only update the name of the preset the user is currently interacting with,
     -- since preset names are not unique across modules and we don't use uuids, we need to be careful about
     -- updating/deleting the correct preset.
-    local function get_target_action_key_for_module() -- e.g., "load_dictionary_preset"
-        local Dispatcher = require("dispatcher") -- we **must** require this here to avoid circular dependencies
-        local module_get_presets_func = module.getPresets
-        if not module_get_presets_func then return end
+    local Dispatcher = require("dispatcher") -- we **must** require this here to avoid circular dependencies
+    local module_get_presets_func = module.getPresets
+    if not module_get_presets_func then return end
 
-        -- Helper function to search within a specific settings data source (e.g., hotkeys or gestures)
-        -- for the module's specific preset action key.
-        local function find_key_in_specific_settings(settings_data_source, relevant_section_names)
-            if not settings_data_source or not settings_data_source.data then return end
-            for _, section_name in ipairs(relevant_section_names) do
-                local section_content = settings_data_source.data[section_name]
-                if section_content then
-                    for _, actions in pairs(section_content) do -- Iterate through key bindings/gestures
-                        for action_key, action_value in pairs(actions) do
-                            -- We check action_value against preset_name to find actions using this preset.
-                            -- The crucial part is the args_func comparison to ensure it's THIS module's action.
-                            if action_value == preset_name then
-                                local action_args_func = Dispatcher:getActionArgsFunc(action_key)
-                                if module_get_presets_func and action_args_func == module_get_presets_func then
-                                    return action_key -- Found the key for this module
-                                end
+    -- Helper function to search within a specific settings data source (e.g., hotkeys or gestures)
+    -- for the module's specific preset action key.
+    local function find_key_in_specific_settings(settings_data_source, relevant_section_names)
+        if not settings_data_source or not settings_data_source.data then return end
+        for _, section_name in ipairs(relevant_section_names) do
+            local section_content = settings_data_source.data[section_name]
+            if section_content then
+                for _, actions in pairs(section_content) do -- Iterate through key bindings/gestures
+                    for action_key, action_value in pairs(actions) do
+                        -- We check action_value against preset_name to find actions using this preset.
+                        -- The crucial part is the args_func comparison to ensure it's THIS module's action.
+                        if action_value == preset_name then
+                            local action_args_func = Dispatcher:getActionArgsFunc(action_key)
+                            if module_get_presets_func and action_args_func == module_get_presets_func then
+                                return action_key -- Found the key for this module
                             end
                         end
                     end
                 end
             end
-            return nil -- Key not found in this settings source
-        end -- find_key_in_specific_settings()
+        end
+        return nil -- Key not found in this settings source
+    end -- find_key_in_specific_settings()
 
-        if module.ui.hotkeys and module.ui.hotkeys.settings_data then
-            local found_key = find_key_in_specific_settings(module.ui.hotkeys.settings_data, {"hotkeys_reader", "hotkeys_fm"})
-            if found_key then return found_key end
-        end
-        if module.ui.gestures and module.ui.gestures.settings_data then
-            local found_key = find_key_in_specific_settings(module.ui.gestures.settings_data, {"gesture_reader", "gesture_fm"})
-            if found_key then return found_key end
-        end
-        return nil -- key not found
-    end -- get_target_action_key_for_module()
-
-    local action_key_for_preset = get_target_action_key_for_module()
-    if not action_key_for_preset then return end
-    -- Delegate updating/deleting the preset to the hotkeys/gesture plugins themselves.
-    if not new_name then -- deletion case
-        if module.ui.hotkeys and not module.ui.hotkeys.disabled and module.ui.hotkeys.deletePresetAction then
-            module.ui.hotkeys:deletePresetAction(action_key_for_preset, preset_name)
-        end
-        if module.ui.gestures and not module.ui.gestures.disabled and module.ui.gestures.deletePresetAction then
-            module.ui.gestures:deletePresetAction(action_key_for_preset, preset_name)
-        end
-    else -- renaming case
-        if module.ui.hotkeys and not module.ui.hotkeys.disabled and module.ui.hotkeys.renamePresetAction then
-            module.ui.hotkeys:renamePresetAction(action_key_for_preset, preset_name, new_name)
-        end
-        if module.ui.gestures and not module.ui.gestures.disabled and module.ui.gestures.renamePresetAction then
-            module.ui.gestures:renamePresetAction(action_key_for_preset, preset_name, new_name)
-        end
+    if module.ui.hotkeys and module.ui.hotkeys.settings_data then
+        local found_key = find_key_in_specific_settings(module.ui.hotkeys.settings_data, {"hotkeys_reader", "hotkeys_fm"})
+        if found_key then return found_key end
     end
-end -- updateGesturesAndHotkeys()
+    if module.ui.gestures and module.ui.gestures.settings_data then
+        local found_key = find_key_in_specific_settings(module.ui.gestures.settings_data, {"gesture_reader", "gesture_fm"})
+        if found_key then return found_key end
+    end
+    return nil -- key not found
+end -- _getTargetActionKeyForModule()
 
 --[[
     The following couple of functions are simplified interfaces for modules that need to create presets.
@@ -307,12 +303,13 @@ end
 
 function Presets:genModulePresetMenuTable(module, preset_key, text, enabled_func)
     return self:genPresetMenuItemTable(
+        module,
         preset_key,
         text,
+        enabled_func,
         function() return module:buildPreset() end,
         function(preset) module:loadPreset(preset) end,
-        function() return module:genPresetMenuItemTable() end,
-        enabled_func
+        function() return module:genPresetMenuItemTable() end
     )
 end
 

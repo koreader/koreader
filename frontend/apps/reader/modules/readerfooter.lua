@@ -1927,49 +1927,8 @@ function ReaderFooter:genAlignmentMenuItems(value)
     }
 end
 
-function ReaderFooter:genPresetMenuItemTable()
-    local footer_presets = G_reader_settings:readSetting("footer_presets", {})
-    local items = {
-        {
-            text = _("Create new preset from current settings"),
-            keep_menu_open = true,
-            callback = function(touchmenu_instance)
-                self:createPresetFromCurrentSettings(touchmenu_instance)
-            end,
-            separator = true,
-        },
-    }
-    for preset_name in ffiUtil.orderedPairs(footer_presets) do
-        table.insert(items, {
-            text = preset_name,
-            keep_menu_open = true,
-            callback = function()
-                self:loadPreset(footer_presets[preset_name])
-            end,
-            hold_callback = function(touchmenu_instance)
-                UIManager:show(MultiConfirmBox:new{
-                    text = T(_("What would you like to do with preset '%1'?"), preset_name),
-                    choice1_text = _("Delete"),
-                    choice1_callback = function()
-                        footer_presets[preset_name] = nil
-                        UIManager:broadcastEvent(Event:new("DispatcherActionValueChanged",
-                            { name = "load_footer_preset", old_value = preset_name, new_value = nil }))
-                        touchmenu_instance.item_table = self:genPresetMenuItemTable()
-                        touchmenu_instance:updateItems()
-                    end,
-                    choice2_text = _("Update"),
-                    choice2_callback = function()
-                        footer_presets[preset_name] = self:buildPreset()
-                        UIManager:show(InfoMessage:new{
-                            text = T(_("Preset '%1' was updated with current settings"), preset_name),
-                            timeout = 2,
-                        })
-                    end,
-                })
-            end,
-        })
-    end
-    return items
+function ReaderFooter:createPresetFromCurrentSettings(touchmenu_instance)
+    return Presets:createModulePreset(self, touchmenu_instance, "footer_presets")
 end
 
 function ReaderFooter:genPresetMenuItemTable()
