@@ -80,6 +80,31 @@ local function getFeedLink(possible_link)
     end
 end
 
+-- Look for author names that look like
+-- <author><name> Author Name </name></author>
+-- and return a byline with the name,
+-- or names separated by commas.
+local function getByline(feed)
+    if feed.author then
+        if feed.author.name then -- single author
+            return "By " .. feed.author.name
+        end
+        local i = 0
+        local authors = {}
+        for _ in pairs(feed.author) do -- multiple authors
+            i = i + 1
+            if feed.author[i] == nil then
+                break
+            end
+            authors[i] = feed.author[i].name
+        end
+        if #authors > 0 then
+            return "By " .. table.concat(authors, ", ")
+        end
+    end
+    return ""
+end
+
 function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
 end
@@ -680,6 +705,7 @@ function NewsDownloader:createFromDescription(feed, title, content, feed_output_
     else
         logger.dbg("NewsDownloader: News file will be stored to :", news_file_path)
         local article_message = T(_("%1\n%2"), message, title_with_date)
+        local byline = getByline(feed)
         local footer = _("If this is only a summary, the full article can be downloaded by going to the News Downloader settings and changing 'Download full article' to 'true'.")
 
         local base_url = getFeedLink(feed.link)
@@ -707,12 +733,12 @@ function NewsDownloader:createFromDescription(feed, title, content, feed_output_
 <title>%s</title>
 </head>
 <body>
-<header><h1>%s</h1></header>
+<header><h1>%s</h1><p><address>%s</address></p></header>
 <article>%s</article>
 <br>
 <footer><small>%s</small></footer>
 </body>
-</html>]], title, title, content, footer)
+</html>]], title, title, byline, content, footer)
         local link = getFeedLink(feed.link)
         DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message)
     end
