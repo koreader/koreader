@@ -71,9 +71,25 @@ local _ = require("gettext")
 local Presets = {}
 
 function Presets:createPresetFromCurrentSettings(touchmenu_instance, preset_name_key, buildPresetFunc, genPresetMenuItemTableFunc)
+    self:editPresetName({},
+        function(entered_preset_name, dialog_instance) -- this is the on_confirm_callback.
+        -- It uses preset_name_key, buildPresetFunc, and genPresetMenuItemTableFunc from the outer scope.
+        local presets = G_reader_settings:readSetting(preset_name_key, {})
+        if self:validateAndSavePreset(entered_preset_name, preset_name_key, presets, buildPresetFunc()) then
+            UIManager:close(dialog_instance)
+            touchmenu_instance.item_table = genPresetMenuItemTableFunc()
+            touchmenu_instance:updateItems()
+        end
+        -- If validateAndSavePreset returns false, it means validation failed (e.g., duplicate name),
+        -- an InfoMessage was shown by validateAndSavePreset, and the dialog remains open.
+    end)
+end
+
+function Presets:editPresetName(options, on_confirm_callback)
     local input_dialog
     input_dialog = InputDialog:new{
-        title = _("Enter preset name"),
+        title = options.title or _("Enter preset name"),
+        input = options.initial_value or "",
         buttons = {
             {
                 {
@@ -84,16 +100,11 @@ function Presets:createPresetFromCurrentSettings(touchmenu_instance, preset_name
                     end,
                 },
                 {
-                    text = _("Save"),
+                    text = options.confirm_button_text or _("Create"),
                     is_enter_default = true,
                     callback = function()
-                        local preset_name = input_dialog:getInputText()
-                        local presets = G_reader_settings:readSetting(preset_name_key, {})
-                        if self:validateAndSavePreset(preset_name, preset_name_key, presets, buildPresetFunc()) then
-                            UIManager:close(input_dialog)
-                            touchmenu_instance.item_table = genPresetMenuItemTableFunc()
-                            touchmenu_instance:updateItems()
-                        end
+                        local entered_text = input_dialog:getInputText()
+                        on_confirm_callback(entered_text, input_dialog)
                     end,
                 },
             },
@@ -150,53 +161,6 @@ function Presets:genPresetMenuItemTable(module, preset_name_key, text, enabled_f
                     other_buttons = {
                         {
                             {
-                                text = _("Rename"),
-                                callback = function()
-                                    local input_dialog
-                                    input_dialog = InputDialog:new{
-                                        title = _("Enter new preset name"),
-                                        input = preset_name,
-                                        buttons = {
-                                            {
-                                                {
-                                                    text = _("Cancel"),
-                                                    id = "close",
-                                                    callback = function()
-                                                        UIManager:close(input_dialog)
-                                                    end,
-                                                },
-                                                {
-                                                    text = _("Rename"),
-                                                    is_enter_default = true,
-                                                    callback = function()
-                                                        local new_name = input_dialog:getInputText()
-                                                        if self:validateAndSavePreset(new_name, preset_name_key, presets, presets[preset_name]) then
-                                                            local old_preset_data = presets[preset_name]
-                                                            presets[new_name] = old_preset_data
-                                                            presets[preset_name] = nil
-                                                            G_reader_settings:saveSetting(preset_name_key, presets)
-                                                            local action_key = self:_getTargetActionKeyForModule(module, preset_name)
-                                                            if action_key then
-                                                                UIManager:broadcastEvent(Event:new("DispatcherActionValueChanged", {
-                                                                    name = action_key,
-                                                                    old_value = preset_name,
-                                                                    new_value = new_name
-                                                                }))
-                                                            end
-                                                            touchmenu_instance.item_table = genPresetMenuItemTableFunc()
-                                                            touchmenu_instance:updateItems()
-                                                            UIManager:close(input_dialog)
-                                                        end
-                                                    end,
-                                                },
-                                            },
-                                        },
-                                    }
-                                    UIManager:show(input_dialog)
-                                    input_dialog:onShowKeyboard()
-                                end,
-                            },
-                            {
                                 text = _("Delete"),
                                 callback = function()
                                     UIManager:show(ConfirmBox:new{
@@ -210,7 +174,7 @@ function Presets:genPresetMenuItemTable(module, preset_name_key, text, enabled_f
                                                 UIManager:broadcastEvent(Event:new("DispatcherActionValueChanged", {
                                                     name = action_key,
                                                     old_value = preset_name,
-                                                    new_value = nil
+                                                    new_value = nil -- delete the action
                                                 }))
                                             end
                                             touchmenu_instance.item_table = genPresetMenuItemTableFunc()
@@ -219,11 +183,41 @@ function Presets:genPresetMenuItemTable(module, preset_name_key, text, enabled_f
                                     })
                                 end,
                             },
+                            {
+                                text = _("Rename"),
+                                callback = function()
+                                    self:editPresetName({
+                                        title = _("Enter new preset name"),
+                                        initial_value = preset_name,
+                                        confirm_button_text = _("Rename"),
+                                    }, function(new_name, dialog_instance)
+                                        if new_name == preset_name then
+                                            UIManager:close(dialog_instance) -- no change?, just close then
+                                            return
+                                        end
+                                        if self:validateAndSavePreset(new_name, preset_name_key, presets, presets[preset_name]) then
+                                            presets[preset_name] = nil
+                                            G_reader_settings:saveSetting(preset_name_key, presets)
+                                            local action_key = self:_getTargetActionKeyForModule(module, preset_name)
+                                            if action_key then
+                                                UIManager:broadcastEvent(Event:new("DispatcherActionValueChanged", {
+                                                    name = action_key,
+                                                    old_value = preset_name,
+                                                    new_value = new_name
+                                                }))
+                                            end
+                                            touchmenu_instance.item_table = genPresetMenuItemTableFunc()
+                                            touchmenu_instance:updateItems()
+                                            UIManager:close(dialog_instance)
+                                        end
+                                    end) -- editPresetName
+                                end, -- rename callback
+                            },
                         },
-                    },
-                })
+                    }, -- end of other_buttons
+                }) -- end of ConfirmBox
             end, -- hold_callback
-        })
+        }) -- end of table.insert
     end -- for each preset
     return items
 end
