@@ -70,48 +70,41 @@ function ProgressbarDialog:init()
     local progress_bar_width = Screen:scaleBySize(360)
     local progress_bar_height = Screen:scaleBySize(18)
 
-    self.title_text = TextWidget:new {
-        text = self.title or "",
-        face = Font:getFace("cfont", 18),
-        bold = true,
-        max_width = progress_bar_width,
-    }
-
-    self.subtitle_text = TextWidget:new {
-        text = self.subtitle or "",
-        face = Font:getFace("cfont", 16),
-        max_width = progress_bar_width,
-    }
-
-    self.progress_bar = ProgressWidget:new {
-        width = progress_bar_width,
-        height = progress_bar_height,
-        padding = Size.padding.large,
-        margin = Size.margin.tiny,
-        percentage = 0,
-    }
-
     -- only add relevant widgets
     local vertical_group = VerticalGroup:new {}
     if self.title then
-        vertical_group[#vertical_group + 1] = self.title_text
+        vertical_group[#vertical_group + 1] = TextWidget:new {
+            text = self.title or "",
+            face = Font:getFace("cfont", 18),
+            bold = true,
+            max_width = progress_bar_width,
+        }
     end
     if self.subtitle then
-        vertical_group[#vertical_group + 1] = self.subtitle_text
+        vertical_group[#vertical_group + 1] = TextWidget:new {
+            text = self.subtitle or "",
+            face = Font:getFace("cfont", 16),
+            max_width = progress_bar_width,
+        }
     end
     if self.progress_bar_visible then
+        self.progress_bar = ProgressWidget:new {
+            width = progress_bar_width,
+            height = progress_bar_height,
+            padding = Size.padding.large,
+            margin = Size.margin.tiny,
+            percentage = 0,
+        }
         vertical_group[#vertical_group + 1] = self.progress_bar
     end
 
-    self.frame_container = FrameContainer:new {
+    self[1] = FrameContainer:new {
         radius = Size.radius.window,
         bordersize = Size.border.window,
         padding = Size.padding.large,
         background = Blitbuffer.COLOR_WHITE,
         vertical_group
     }
-
-    self[1] = self.frame_container
 end
 
 dbg:guard(ProgressbarDialog, "init",
