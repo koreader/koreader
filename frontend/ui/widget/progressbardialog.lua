@@ -58,11 +58,6 @@ function ProgressbarDialog:init()
     self.align = "center"
     self.dimen = Screen:getSize()
 
-    -- set default values if not provided
-    self.title = self.title ~= nil and self.title or nil
-    self.subtitle = self.subtitle ~= nil and self.subtitle or nil
-    self.progress_max = self.progress_max ~= nil and self.progress_max or nil
-
     self.progress_bar_visible = self.progress_max ~= nil and self.progress_max > 0
 
     -- refresh time in seconds
