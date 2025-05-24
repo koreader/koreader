@@ -429,15 +429,15 @@ function MovableContainer:resetEventState()
     self._moving = false
 end
 
-function MovableContainer:onMovePosition(is_moving_to_top)
+function MovableContainer:onMovePosition(move_to_top)
     if not self.is_movable_with_keys then return false end
     local screen_h = Screen:getHeight()
     local dialog_h = self.dimen.h
     local padding = Size.padding.small
     local new_y
-    if is_moving_to_top then
+    if move_to_top then
         new_y = padding
-    else -- move down
+    else -- move to the bottom
         new_y = screen_h - dialog_h - padding
     end
     -- Calculate the offset required to position the container at new_y
