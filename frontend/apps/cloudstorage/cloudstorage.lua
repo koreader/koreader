@@ -218,7 +218,6 @@ function CloudStorage:downloadFile(item)
             title = _("Downloading…"),
             subtitle = unit_item.text,
             progress_max = unit_item.filesize,
-            refresh_time_seconds = 3,
         }
 
         UIManager:scheduleIn(1, function()

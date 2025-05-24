@@ -52,16 +52,15 @@ Note: provide at least one of title, subtitle or progress_max
                     optional: if `progress_max` is nil, the progress bar will be hidden
 @param refresh_time_seconds number refresh time in seconds
 --]]
-local ProgressbarDialog = WidgetContainer:extend {}
+local ProgressbarDialog = WidgetContainer:extend {
+    refresh_time_seconds = 3,
+}
 
 function ProgressbarDialog:init()
     self.align = "center"
     self.dimen = Screen:getSize()
 
     self.progress_bar_visible = self.progress_max ~= nil and self.progress_max > 0
-
-    -- refresh time in seconds
-    self.refresh_time_seconds = self.refresh_time_seconds and self.refresh_time_seconds or 3
 
     -- used for internal state
     self.last_redraw_time_ms = 0
