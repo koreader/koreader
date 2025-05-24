@@ -1,16 +1,16 @@
-local UIManager       = require("ui/uimanager")
-local Device          = require("device")
-local Screen          = Device.screen
-local VerticalGroup   = require("ui/widget/verticalgroup")
+local Blitbuffer = require("ffi/blitbuffer")
+local Device = require("device")
+local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local ProgressWidget = require("ui/widget/progresswidget")
+local Size = require("ui/size")
+local TextWidget = require("ui/widget/textwidget")
+local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Size            = require("ui/size")
-local FrameContainer  = require("ui/widget/container/framecontainer")
-local Blitbuffer      = require("ffi/blitbuffer")
-local ProgressWidget  = require("ui/widget/progresswidget")
-local dbg             = require("dbg")
-local TextWidget      = require("ui/widget/textwidget")
-local Font            = require("ui/font")
-local time            = require("ui/time")
+local dbg = require("dbg")
+local time = require("ui/time")
+local Screen = Device.screen
 
 --[[--
 A dialog that shows a progress bar with a title and subtitle

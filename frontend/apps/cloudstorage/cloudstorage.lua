@@ -12,6 +12,7 @@ local LuaSettings = require("luasettings")
 local Menu = require("ui/widget/menu")
 local NetworkMgr = require("ui/network/manager")
 local PathChooser = require("ui/widget/pathchooser")
+local ProgressbarDialog = require("ui/widget/progressbardialog")
 local UIManager = require("ui/uimanager")
 local WebDav = require("apps/cloudstorage/webdav")
 local lfs = require("libs/libkoreader-lfs")
@@ -20,7 +21,6 @@ local _ = require("gettext")
 local N_ = _.ngettext
 local T = require("ffi/util").template
 local util = require("util")
-local ProgressbarDialog = require("ui/widget/progressbardialog")
 
 local CloudStorage = Menu:extend{
     no_title = false,
