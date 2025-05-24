@@ -20,6 +20,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local logger = require("logger")
@@ -39,6 +40,8 @@ local MovableContainer = InputContainer:extend{
     -- This can be passed if a MovableContainer should be present (as a no-op),
     -- so we don't need to change the widget layout.
     unmovable = nil,
+    -- Whether this container should be movable with keyboard/dpad
+    is_movable_with_keys = true,
 
     -- Initial position can be set related to an existing widget
     -- 'anchor' should be a Geom object (a widget's 'dimen', or a point), and
@@ -63,6 +66,13 @@ local MovableContainer = InputContainer:extend{
 }
 
 function MovableContainer:init()
+    if Device:hasKeys() and self.is_movable_with_keys then
+        if Device:hasKeyboard() or Device:hasScreenKB() then
+            local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            self.key_events.MovePositionTop     = { { modifier, "Up" },    event = "MovePosition", args = true }
+            self.key_events.MovePositionBottom  = { { modifier, "Down" },  event = "MovePosition", args = false }
+        end
+    end
     if Device:isTouchDevice() and not self.unmovable then
         local range = Geom:new{
             x = 0, y = 0,
@@ -417,6 +427,28 @@ function MovableContainer:resetEventState()
     -- Can be called explicitly to prevent bad widget interactions.
     self._touch_pre_pan_was_inside = false
     self._moving = false
+end
+
+function MovableContainer:onMovePosition(move_to_top)
+    if not self.is_movable_with_keys then return false end
+    local screen_h = Screen:getHeight()
+    local dialog_h = self.dimen.h
+    local padding = Size.padding.small
+    local new_y
+    if move_to_top then
+        new_y = padding
+    else -- move to the bottom
+        new_y = screen_h - dialog_h - padding
+    end
+    -- Calculate the offset required to position the container at new_y
+    local offset = Geom:new{
+        x = self._moved_offset_x, -- keep current x offset
+        y = new_y - self._orig_y,  -- set new y offset
+    }
+    self:setMovedOffset(offset)
+    -- Force a complete screen redraw to ensure the old position is cleared
+    UIManager:setDirty("all", "ui")
+    return true
 end
 
 return MovableContainer
