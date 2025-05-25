@@ -67,7 +67,12 @@ local DictQuickLookup = InputContainer:extend{
     window_list = {},
     -- Static class member, used by ReaderWiktionary to communicate state from a closed widget to the next opened one.
     rotated_update_wiki_languages_on_close = nil,
+
+    _is_temporary_fullscreen_mode = false,
 }
+
+-- Static variable to hold request data for temporary fullscreen
+DictQuickLookup.temp_fullscreen_request = nil
 
 function DictQuickLookup.getWikiSaveEpubDefaultDir()
     local dir = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
@@ -193,6 +198,12 @@ function DictQuickLookup:init()
                     end
                 end
             },
+            ToggleTemporaryFullScreen = {
+                GestureRange:new{
+                    ges = "spread",
+                    range = range,
+                },
+            },
             -- These will be forwarded to MovableContainer after some checks
             ForwardingTouch = { GestureRange:new{ ges = "touch", range = range, }, },
             ForwardingPan = { GestureRange:new{ ges = "pan", range = range, }, },
@@ -202,8 +213,13 @@ function DictQuickLookup:init()
 
     -- We no longer support setting a default dict with Tap on title.
     -- self:changeToDefaultDict()
-    -- Now, dictionaries can be ordered (although not yet per-book), so trust the order set
-    self:changeDictionary(1, true) -- don't call update
+    if DictQuickLookup.temp_fullscreen_request and DictQuickLookup.temp_fullscreen_request.dict_index then
+        self:changeDictionary(DictQuickLookup.temp_fullscreen_request.dict_index, true)
+        DictQuickLookup.temp_fullscreen_request = nil
+        self._is_temporary_fullscreen_mode = true
+    else
+        self:changeDictionary(1, true) -- don't call update
+    end
 
     -- And here comes the initial widget layout...
     if self.is_wiki then
@@ -769,6 +785,7 @@ function DictQuickLookup:registerKeyEvents()
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
             self.key_events.ChangeToPrevDict = { { modifier, Input.group.PgBack } }
             self.key_events.ChangeToNextDict = { { modifier, Input.group.PgFwd } }
+            self.key_events.ToggleTemporaryFullScreen = { { modifier, "Home" } }
             self.key_events.StartOrUpTextSelectorIndicator   = { { modifier, "Up" },   event = "StartOrMoveTextSelectorIndicator", args = { 0, -1, true } }
             self.key_events.StartOrDownTextSelectorIndicator = { { modifier, "Down" }, event = "StartOrMoveTextSelectorIndicator", args = { 0,  1, true } }
             self.key_events.FastLeftTextSelectorIndicator  = { { modifier, "Left" },  event = "MoveTextSelectorIndicator", args = { -1, 0, true } }
@@ -981,6 +998,40 @@ function DictQuickLookup:update()
     UIManager:setDirty(self, function()
         return "partial", self.dict_frame.dimen
     end)
+end
+
+function DictQuickLookup:onToggleTemporaryFullScreen()
+    self:toggleTemporaryFullScreen()
+    return true
+end
+
+function DictQuickLookup:toggleTemporaryFullScreen()
+    if self._is_temporary_fullscreen_mode then return false end
+    if self.is_wiki_fullpage or G_reader_settings:isTrue("dict_largewindow") then return false end
+
+    -- Remove ourselves from window_list before creating new instance
+    for i = #DictQuickLookup.window_list, 1, -1 do
+        if DictQuickLookup.window_list[i] == self then
+            table.remove(DictQuickLookup.window_list, i)
+            break
+        end
+    end
+
+    -- Prepare to open a new temporary large instance
+    DictQuickLookup.temp_fullscreen_request = {
+        dict_index = self.dict_index,
+    }
+    -- Set the global setting to true for the *new* instance that will be created
+    G_reader_settings:makeTrue("dict_largewindow")
+
+    local ui_ref = self.ui or UIManager
+    -- re-trigger the lookup
+    if self.is_wiki then
+        ui_ref:handleEvent(Event:new("LookupWikipedia", self.word, self.is_sane_word, self.word_boxes, false, self.lang, function() self:onClose(true) end))
+    else
+        ui_ref:handleEvent(Event:new("LookupWord", self.word, true, self.word_boxes, self.highlight, nil, function() self:onClose(true) end))
+    end
+    return true
 end
 
 function DictQuickLookup:getInitialVisibleArea()
@@ -1226,6 +1277,11 @@ function DictQuickLookup:onClose(no_clear)
     self.menu_opened = {}
 
     UIManager:close(self)
+
+    -- Reset largewindow setting only if this was a temporary fullscreen instance
+    if self._is_temporary_fullscreen_mode then
+        G_reader_settings:makeFalse("dict_largewindow")
+    end
 
     if self.update_wiki_languages_on_close then
         -- except if we got no result for current language
