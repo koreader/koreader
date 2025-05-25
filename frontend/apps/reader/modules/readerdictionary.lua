@@ -874,31 +874,72 @@ function ReaderDictionary:dismissLookupInfo()
 end
 
 function ReaderDictionary:onShowDictionaryLookup()
+    local buttons = {}
+    local presets = G_reader_settings:readSetting("dict_presets")
+    if presets and next(presets) then
+        table.insert(buttons, {
+            {
+                text = _("One-time search with preset"),
+                callback = function()
+                    local text = self.dictionary_lookup_dialog:getInputText()
+                    if text == "" or text:match("^%s*$") then return end
+                    local current_state = self:buildPreset()
+                    local preset_names = Presets:getPresets("dict_presets")
+                    local buttons_preset = {}
+                    local dialog_preset
+                    for _, preset_name in ipairs(preset_names) do
+                        table.insert(buttons_preset, {
+                            {
+                                align = "left",
+                                text = preset_name,
+                                callback = function()
+                                    self:loadPreset(presets[preset_name], true)
+                                    UIManager:close(dialog_preset)
+                                    UIManager:close(self.dictionary_lookup_dialog)
+                                    self:onLookupWord(text, true, nil, nil, nil,
+                                        function()
+                                            self:loadPreset(current_state, true)
+                                        end
+                                    )
+                                end,
+                            }
+                        })
+                    end
+                    dialog_preset = ButtonDialog:new{
+                        buttons = buttons_preset,
+                        shrink_unneeded_width = true,
+                    }
+                    UIManager:show(dialog_preset)
+                end,
+            }
+        })
+    end
+
+    table.insert(buttons, {
+        {
+            text = _("Cancel"),
+            id = "close",
+            callback = function()
+                UIManager:close(self.dictionary_lookup_dialog)
+            end,
+        },
+        {
+            text = _("Search dictionary"),
+            is_enter_default = true,
+            callback = function()
+                if self.dictionary_lookup_dialog:getInputText() == "" then return end
+                UIManager:close(self.dictionary_lookup_dialog)
+                -- Trust that input text does not need any cleaning (allows querying for "-suffix")
+                self:onLookupWord(self.dictionary_lookup_dialog:getInputText(), true)
+            end,
+        },
+    })
+
     self.dictionary_lookup_dialog = InputDialog:new{
         title = _("Enter a word or phrase to look up"),
         input = "",
         input_type = "text",
-        buttons = {
-            {
-                {
-                    text = _("Cancel"),
-                    id = "close",
-                    callback = function()
-                        UIManager:close(self.dictionary_lookup_dialog)
-                    end,
-                },
-                {
-                    text = _("Search dictionary"),
-                    is_enter_default = true,
-                    callback = function()
-                        if self.dictionary_lookup_dialog:getInputText() == "" then return end
-                        UIManager:close(self.dictionary_lookup_dialog)
-                        -- Trust that input text does not need any cleaning (allows querying for "-suffix")
-                        self:onLookupWord(self.dictionary_lookup_dialog:getInputText(), true)
-                    end,
-                },
-            }
-        },
+        buttons = buttons,
     }
     UIManager:show(self.dictionary_lookup_dialog)
     self.dictionary_lookup_dialog:onShowKeyboard()

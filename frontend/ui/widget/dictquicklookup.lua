@@ -1418,10 +1418,12 @@ function DictQuickLookup:onLookupInputWord(hint)
                                     self.ui.dictionary:loadPreset(presets[preset_name], true)
                                     UIManager:close(button_dialog)
                                     UIManager:close(self.input_dialog)
-                                    self.ui:handleEvent(Event:new("LookupWord", text, true))
-                                    UIManager:scheduleIn(0.5, function()
-                                        self.ui.dictionary:loadPreset(current_dict_state)
-                                    end)
+                                    self.ui:handleEvent(Event:new("LookupWord", text, true, nil, nil, nil,
+                                        function()
+                                            -- Restore original preset _after_ lookup is complete
+                                            self.ui.dictionary:loadPreset(current_dict_state)
+                                        end
+                                    ))
                                 end
                             }
                         })
