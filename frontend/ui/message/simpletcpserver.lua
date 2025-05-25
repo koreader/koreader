@@ -46,7 +46,29 @@ function SimpleTCPServer:waitEvent()
             end
             if data == "" then -- proper empty line after request headers
                 table.insert(lines, data) -- keep it in content
-                data = table.concat(lines, "\r\n")
+                -- Extract headers to parse Content-Length
+                local headers = {}
+                for _, line in ipairs(lines) do
+                    local key, value = line:match("^(.-):%s*(.*)")
+                    if key and value then
+                        headers[key:lower()] = value
+                    end
+                end
+                -- If Content-Length is present, read the body
+                local content_length = tonumber(headers["content-length"])
+                local body = ""
+                if content_length and content_length > 0 then
+                    client:settimeout(0.5, "t")
+                    local body_data, err = client:receive(content_length)
+                    if body_data then
+                        body = body_data
+                    else
+                        logger.err("SimpleTCPServer: Failed to read body:", err)
+                        client:close()
+                    end
+                end
+                -- Combine headers and body into one string
+                data = table.concat(lines, "\r\n") .. "\r\n" .. body
                 logger.dbg("SimpleTCPServer: Received data: ", data)
                 -- Give us more time to process the request and send the response
                 client:settimeout(0.5, "t")
