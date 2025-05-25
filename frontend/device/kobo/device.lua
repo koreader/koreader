@@ -1783,7 +1783,7 @@ elseif codename == "condor" then
     return KoboCondor
 elseif codename == "monza" or codename == "monzaTolino" then
     return KoboMonza
-elseif codename == "spaBW" or codename == "spaTolinoBW" then
+elseif codename == "spaBW" or codename == "spaTolinoBW" or codename == "spaBWTPV" then
     return KoboSpaBW
 elseif codename == "spaColour" or codename == "spaTolinoColour" then
     return KoboSpaColour

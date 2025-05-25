@@ -34,6 +34,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local FileManager = require("apps/filemanager/filemanager")
 local Notification = require("ui/widget/notification")
+local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
 local Screen = Device.screen
@@ -85,12 +86,14 @@ local settingsList = {
     ----
     swap_left_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg="left", title=_("Invert left-side page-turn buttons"), device=true, condition= Device:hasDPad() and Device:useDPadAsActionKeys()},
     swap_right_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg="right", title=_("Invert right-side page-turn buttons"), device=true, condition= Device:hasDPad() and Device:useDPadAsActionKeys()},
-    swap_page_turn_buttons = {category="none", event="SwapPageTurnButtons", title=_("Invert page-turn buttons"), device=true, condition=Device:hasKeys(), separator=true},
+    swap_page_turn_buttons = {category="none", event="SwapPageTurnButtons", title=_("Invert page-turn buttons"), device=true, condition=Device:hasKeys()},
+    set_page_turn_buttons = {category="string", event="SetPageTurnButtonDirection", title=_("Set page-turn button inversion"), device=true, condition=Device:hasKeys(), args = {true, false}, toggle = { _("on"), _("off")}, separator=true},
     ----
     toggle_key_repeat = {category="none", event="ToggleKeyRepeat", title=_("Toggle key repeat"), device=true, condition=Device:hasKeys() and Device:canKeyRepeat(), separator=true},
     toggle_gsensor = {category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:hasGSensor()},
     temp_gsensor_on = {category="none", event="TempGSensorOn", title=_("Enable accelerometer for 5 seconds"), device=true, condition=Device:hasGSensor()},
-    lock_gsensor = {category="none", event="LockGSensor", title=_("Lock auto rotation to current orientation"), device=true, condition=Device:hasGSensor()},
+    lock_gsensor = {category="none", event="LockGSensor", title=_("Toggle lock auto rotation to current orientation"), device=true, condition=Device:hasGSensor()},
+    set_lock_gsensor = {category="string", event="SetLockGSensor", title=_("Set lock auto rotation to current orientation"), device=true, condition=Device:hasGSensor(), args = {true, false}, toggle = { _("true"), _("false")}},
     rotation_mode = {category="string", device=true}, -- title=_("Rotation"), parsed from CreOptions
     toggle_rotation = {category="none", event="SwapRotation", title=_("Toggle orientation"), device=true},
     invert_rotation = {category="none", event="InvertRotation", title=_("Invert rotation"), device=true},
@@ -149,7 +152,8 @@ local settingsList = {
     -- Reader
     show_config_menu = {category="none", event="ShowConfigMenu", title=_("Show bottom menu"), reader=true},
     toggle_status_bar = {category="none", event="ToggleFooterMode", title=_("Toggle status bar"), reader=true},
-    toggle_chapter_progress_bar = {category="none", event="ToggleChapterProgressBar", title=_("Toggle chapter progress bar"), reader=true, separator=true},
+    toggle_chapter_progress_bar = {category="none", event="ToggleChapterProgressBar", title=_("Toggle chapter progress bar"), reader=true},
+    load_footer_preset = {category="string", event="LoadFooterPreset", title=_("Load status bar preset"), args_func=ReaderFooter.getPresets, reader=true, separator=true},
     ----
     prev_chapter = {category="none", event="GotoPrevChapter", title=_("Previous chapter"), reader=true},
     next_chapter = {category="none", event="GotoNextChapter", title=_("Next chapter"), reader=true},
@@ -178,10 +182,11 @@ local settingsList = {
     ----
     fulltext_search = {category="none", event="ShowFulltextSearchInput", title=_("Fulltext search"), reader=true},
     fulltext_search_findall_results = {category="none", event="ShowFindAllResults", title=_("Last fulltext search results"), reader=true},
+    fulltext_search_start_page = {category="none", event="GoToStartPage", title=_("Fulltext search: go back to original page"), reader=true},
     toc = {category="none", event="ShowToc", title=_("Table of contents"), reader=true},
     book_map = {category="none", event="ShowBookMap", title=_("Book map"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
     book_map_overview = {category="none", event="ShowBookMap", arg=true, title=_("Book map (overview)"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
-    page_browser = {category="none", event="ShowPageBrowser", title=_("Page browser"), reader=true, condition=Device:isTouchDevice()},
+    page_browser = {category="none", event="ShowPageBrowser", title=_("Page browser"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
     bookmarks = {category="none", event="ShowBookmark", title=_("Bookmarks"), reader=true},
     bookmark_search = {category="none", event="SearchBookmark", title=_("Bookmark search"), reader=true},
     toggle_bookmark = {category="none", event="ToggleBookmark", title=_("Toggle bookmark"), reader=true, separator=true},
@@ -319,14 +324,16 @@ local dispatcher_menu_order = {
     "touch_input_off",
     "toggle_touch_input",
     ----
-    "swap_page_turn_buttons",
     "swap_left_page_turn_buttons",
     "swap_right_page_turn_buttons",
+    "swap_page_turn_buttons",
+    "set_page_turn_buttons",
     ----
     "toggle_key_repeat",
     "toggle_gsensor",
     "temp_gsensor_on",
     "lock_gsensor",
+    "set_lock_gsensor",
     "rotation_mode",
     "toggle_rotation",
     "invert_rotation",
@@ -386,6 +393,7 @@ local dispatcher_menu_order = {
     "show_config_menu",
     "toggle_status_bar",
     "toggle_chapter_progress_bar",
+    "load_footer_preset",
     ----
     "prev_chapter",
     "next_chapter",
@@ -414,6 +422,7 @@ local dispatcher_menu_order = {
     ----
     "fulltext_search",
     "fulltext_search_findall_results",
+    "fulltext_search_start_page",
     "toc",
     "book_map",
     "book_map_overview",
@@ -906,26 +915,29 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                     separator = settingsList[k].separator,
                 })
             elseif settingsList[k].category == "string" or settingsList[k].category == "configurable" then
-                local sub_item_table = {}
-                if not settingsList[k].args and settingsList[k].args_func then
-                    settingsList[k].args, settingsList[k].toggle = settingsList[k].args_func()
-                end
-                for i=1,#settingsList[k].args do
-                    table.insert(sub_item_table, {
-                        text = tostring(settingsList[k].toggle[i]),
-                        checked_func = function()
-                            if location[settings] ~= nil and location[settings][k] ~= nil then
-                                if type(location[settings][k]) == "table" then
-                                    return location[settings][k][1] == settingsList[k].args[i][1]
-                                else
-                                    return location[settings][k] == settingsList[k].args[i]
+                local function sub_item_table_func()
+                    local item_table = {}
+                    if settingsList[k].args_func then
+                        settingsList[k].args, settingsList[k].toggle = settingsList[k].args_func()
+                    end
+                    for i=1,#settingsList[k].args do
+                        table.insert(item_table, {
+                            text = tostring(settingsList[k].toggle[i]),
+                            checked_func = function()
+                                if location[settings] ~= nil and location[settings][k] ~= nil then
+                                    if type(location[settings][k]) == "table" then
+                                        return location[settings][k][1] == settingsList[k].args[i][1]
+                                    else
+                                        return location[settings][k] == settingsList[k].args[i]
+                                    end
                                 end
-                            end
-                        end,
-                        callback = function()
-                            setValue(k, settingsList[k].args[i])
-                        end,
-                    })
+                            end,
+                            callback = function()
+                                setValue(k, settingsList[k].args[i])
+                            end,
+                        })
+                    end
+                    return item_table
                 end
                 table.insert(menu, {
                     text_func = function()
@@ -934,7 +946,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                     checked_func = function()
                         return location[settings] ~= nil and location[settings][k] ~= nil
                     end,
-                    sub_item_table = sub_item_table,
+                    sub_item_table_func = sub_item_table_func,
                     keep_menu_open = true,
                     hold_callback = function(touchmenu_instance)
                         if location[settings] ~= nil and location[settings][k] ~= nil then

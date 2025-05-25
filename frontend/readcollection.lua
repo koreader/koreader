@@ -102,7 +102,7 @@ end
 
 function ReadCollection:isFileInCollection(file, collection_name)
     file = ffiUtil.realpath(file) or file
-    return self.coll[collection_name][file] and true or false
+    return self.coll[collection_name] and self.coll[collection_name][file] and true or false
 end
 
 function ReadCollection:isFileInCollections(file, ignore_show_mark_setting)
@@ -285,18 +285,33 @@ function ReadCollection:updateItemsByPath(path, new_path) -- FM: rename folder, 
     end
 end
 
-function ReadCollection:updateCollectionFromFolder(collection_name)
+function ReadCollection:updateCollectionFromFolder(collection_name, folders)
+    folders = folders or self.coll_settings[collection_name].folders
     local count = 0
-    if self.coll_settings[collection_name].folders then
+    if folders then
         local coll = self.coll[collection_name]
-        local function add_item_callback(file, filename, attr)
+        local filetypes = util.tableGetValue(self.coll_settings[collection_name], "filter", "add", "filetype")
+        local function add_item_callback(file, f, attr)
             file = ffiUtil.realpath(file)
-            if coll[file] == nil and DocumentRegistry:hasProvider(file) then
-                self:addItem(file, collection_name, attr)
-                count = count + 1
+            local does_match = coll[file] == nil and not util.stringStartsWith(f, "._") and DocumentRegistry:hasProvider(file)
+            if does_match then
+                if filetypes then
+                    does_match = false
+                    local _, fileext = require("apps/filemanager/filemanagerutil").splitFileNameType(file)
+                    for filetype in util.gsplit(filetypes, ",") do
+                        if util.trim(filetype) == fileext then
+                            does_match = true
+                            break
+                        end
+                    end
+                end
+                if does_match then
+                    self:addItem(file, collection_name, attr)
+                    count = count + 1
+                end
             end
         end
-        for folder, folder_settings in pairs(self.coll_settings[collection_name].folders) do
+        for folder, folder_settings in pairs(folders) do
             util.findFiles(folder, add_item_callback, folder_settings.subfolders)
         end
     end

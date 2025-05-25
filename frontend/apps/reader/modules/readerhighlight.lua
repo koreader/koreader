@@ -6,6 +6,7 @@ local Device = require("device")
 local DoubleSpinWidget = require("ui/widget/doublespinwidget")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
+local GestureDetector = require("device/gesturedetector")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Notification = require("ui/widget/notification")
@@ -67,12 +68,12 @@ function ReaderHighlight:init()
     self._highlight_buttons = {
         -- highlight and add_note are for the document itself,
         -- so we put them first.
-        ["01_select"] = function(this)
+        ["01_select"] = function(this, index)
             return {
-                text = _("Select"),
-                enabled = this.hold_pos ~= nil,
+                text = index and _("Extend") or _("Select"),
+                enabled = not (index and this.ui.annotation.annotations[index].text_edited),
                 callback = function()
-                    this:startSelection()
+                    this:startSelection(index)
                     this:onClose()
                 end,
             }
@@ -748,7 +749,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
         table.insert(menu_items.long_press.sub_item_table, {
             text_func = function()
                 return T(_("Highlight very-long-press interval: %1 s"),
-                    G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3))
+                    G_reader_settings:readSetting("highlight_long_hold_threshold_s") or GestureDetector.LONG_HOLD_INTERVAL_S)
             end,
             keep_menu_open = true,
             callback = function(touchmenu_instance)
@@ -756,18 +757,20 @@ If you wish your highlights to be saved in the document, just move it to a writa
                     title_text = _("Highlight very-long-press interval"),
                     info_text = _("If a long-press is not released in this interval, it is considered a very-long-press. On document text, single word selection will not be triggered."),
                     width = math.floor(self.screen_w * 0.75),
-                    value = G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3),
-                    value_min = 2.5,
+                    value = G_reader_settings:readSetting("highlight_long_hold_threshold_s") or GestureDetector.LONG_HOLD_INTERVAL_S,
+                    value_min = (G_reader_settings:readSetting("ges_hold_interval_ms")
+                        or GestureDetector.HOLD_INTERVAL_MS) / 1000 + 0.1,
                     value_max = 20,
                     value_step = 0.1,
                     value_hold_step = 0.5,
                     unit = C_("Time", "s"),
                     precision = "%0.1f",
                     ok_text = _("Set interval"),
-                    default_value = 3,
+                    default_value = GestureDetector.LONG_HOLD_INTERVAL_S,
                     callback = function(spin)
-                        G_reader_settings:saveSetting("highlight_long_hold_threshold_s", spin.value)
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                        local value = spin.value ~= GestureDetector.LONG_HOLD_INTERVAL_S and spin.value or nil
+                        G_reader_settings:saveSetting("highlight_long_hold_threshold_s", value)
+                        touchmenu_instance:updateItems()
                     end,
                 }
                 UIManager:show(items)
@@ -851,6 +854,7 @@ Except when in two columns mode, where this is limited to showing only the previ
                 local highlight_non_touch_interval = G_reader_settings:readSetting("highlight_non_touch_interval") or 1
                 return T(N_("Interval for crosshairs speed increase: 1 second", "Interval for crosshairs speed increase: %1 seconds", highlight_non_touch_interval), highlight_non_touch_interval)
             end,
+            separator = true, -- needed as this is not the last item, readerlink adds another one
             enabled_func = function()
                 return not self.view.highlight.disabled and G_reader_settings:nilOrTrue("highlight_non_touch_spedup")
             end,
@@ -876,8 +880,28 @@ Except when in two columns mode, where this is limited to showing only the previ
 
         -- long_press settings are under the taps_and_gestures menu, which is not available for non-touch devices
         -- Clone long_press settings, and change its label, making it much more meaningful for non-touch device users.
-        menu_items.selection_text = menu_items.long_press
-        menu_items.selection_text.text = _("Text selection tools")
+        menu_items.selection_text = {
+            text = _("Text selection tools"),
+            sub_item_table = {
+                menu_items.long_press.sub_item_table[1], -- Dictionary on single word selection
+                {
+                    text_func = function()
+                        local multi_word = G_reader_settings:readSetting("default_highlight_action")
+                        for __, v in ipairs(long_press_action) do
+                            if v[2] == multi_word then
+                                return T(_("Multi-word selection: %1"), v[1]:lower())
+                            end
+                        end
+                    end,
+                    sub_item_table = { table.unpack(menu_items.long_press.sub_item_table, 2, #long_press_action + 1) }
+                }
+            }
+        }
+        local post_long_press_action_index = #menu_items.selection_text.sub_item_table + #long_press_action -- index after long_press_action
+        -- Copy remaining items (anything after long_press_action) directly to selection_text's sub_item_table
+        for i = post_long_press_action_index, #menu_items.long_press.sub_item_table do
+            table.insert(menu_items.selection_text.sub_item_table, menu_items.long_press.sub_item_table[i])
+        end
         menu_items.long_press = nil
     end
 
@@ -979,7 +1003,11 @@ function ReaderHighlight:onTapSelectModeIcon()
         cancel_text = _("Close"),
         ok_callback = function()
             self.select_mode = false
-            self:deleteHighlight(self.highlight_idx)
+            if self.ui.annotation.annotations[self.highlight_idx].is_tmp then
+                self:deleteHighlight(self.highlight_idx)
+            else
+                UIManager:setDirty(self.dialog, "ui", self.view.flipping:getRefreshRegion())
+            end
         end,
     })
     return true
@@ -1001,7 +1029,11 @@ function ReaderHighlight:onTap(_, ges)
                     if box.index == self.highlight_idx then
                         -- tap on the first fragment: abort select mode, clear highlight
                         self.select_mode = false
-                        self:deleteHighlight(box.index)
+                        if self.ui.annotation.annotations[box.index].is_tmp then
+                            self:deleteHighlight(box.index)
+                        else
+                            UIManager:setDirty(self.dialog, "ui", self.view.flipping:getRefreshRegion())
+                        end
                         return true
                     end
                 else
@@ -1349,7 +1381,7 @@ end
 function ReaderHighlight:showHighlightDialog(index)
     local item = self.ui.annotation.annotations[index]
     local change_boundaries_enabled = not item.text_edited
-    local start_prev, start_next, end_prev, end_next = "◁▒▒", "▷▒▒", "▒▒◁", "▒▒▷"
+    local start_prev, start_next, end_prev, end_next = "◁▒▒", "▷☓▒", "▒☓◁", "▒▒▷"
     if BD.mirroredUILayout() then
         -- BiDi will mirror the arrows, and this just works
         start_prev, start_next = start_next, start_prev
@@ -1574,8 +1606,8 @@ function ReaderHighlight:_resetHoldTimer(clear)
             end
         end
         if handle_long_hold then
-            -- (Default delay is 3 seconds as in the menu items)
-            UIManager:scheduleIn(G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3), self.long_hold_reached_action)
+            UIManager:scheduleIn(G_reader_settings:readSetting("highlight_long_hold_threshold_s")
+                or GestureDetector.LONG_HOLD_INTERVAL_S, self.long_hold_reached_action)
         end
     end
     -- Unset flag and icon
@@ -2022,7 +2054,7 @@ function ReaderHighlight:onHoldRelease()
         if self.selected_text then
             self.select_mode = false
             self:extendSelection()
-            if default_highlight_action == "select" then
+            if default_highlight_action == "select" or not self.selected_text.is_tmp then
                 self:saveHighlight(true)
                 self:clear()
             else
@@ -2179,8 +2211,10 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             pos0 = self.selected_text.pos0,
             pos1 = self.selected_text.pos1,
             text = util.cleanupSelectedText(self.selected_text.text),
-            drawer = self.view.highlight.saved_drawer,
-            color = self.view.highlight.saved_color,
+            datetime = self.selected_text.datetime,
+            drawer = self.selected_text.drawer or self.view.highlight.saved_drawer,
+            color = self.selected_text.color or self.view.highlight.saved_color,
+            note = self.selected_text.note,
             chapter = self.ui.toc:getTocTitleByPage(pg_or_xp),
         }
         if self.ui.paging then
@@ -2190,7 +2224,8 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
         end
         local index = self.ui.annotation:addItem(item)
         self.view.footer:maybeUpdateFooter()
-        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = 1, index_modified = index }))
+        self.ui:handleEvent(Event:new("AnnotationsModified",
+            { item, nb_highlights_added = 1, index_modified = index, modify_datetime = not self.selected_text.is_tmp }))
         return index
     end
 end
@@ -2411,8 +2446,14 @@ function ReaderHighlight:showNoteMarkerDialog()
     UIManager:show(dialog)
 end
 
-function ReaderHighlight:startSelection()
-    self.highlight_idx = self:saveHighlight()
+function ReaderHighlight:startSelection(index)
+    if index then -- extend existing highlight
+        UIManager:setDirty(self.dialog, "ui", self.view.flipping:getRefreshRegion())
+    else -- new highlight
+        index = self:saveHighlight()
+        self.ui.annotation.annotations[index].is_tmp = true
+    end
+    self.highlight_idx = index
     self.select_mode = true
 end
 
@@ -2470,6 +2511,11 @@ function ReaderHighlight:extendSelection()
     end
     self:deleteHighlight(self.highlight_idx) -- starting fragment
     self.selected_text = {
+        is_tmp = item1.is_tmp,
+        datetime = item1.datetime,
+        drawer = item1.drawer,
+        color = item1.color,
+        note = item1.note,
         text = new_text,
         pos0 = new_pos0,
         pos1 = new_pos1,

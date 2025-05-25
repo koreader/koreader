@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -216,6 +217,7 @@ function ReaderDictionary:updateSdcvDictNamesOptions()
 end
 
 function ReaderDictionary:addToMainMenu(menu_items)
+    local is_docless = self.ui == nil or self.ui.document == nil
     menu_items.search_settings = { -- submenu with Dict, Wiki, Translation settings
         text = _("Settings"),
     }
@@ -381,6 +383,20 @@ function ReaderDictionary:addToMainMenu(menu_items)
             }
         }
     }
+    if not is_docless then
+        table.insert(menu_items.dictionary_settings.sub_item_table, 3, {
+            keep_menu_open = true,
+            text = _("Set dictionary priority for this book"),
+            help_text = _("This feature enables you to specify dictionary priorities on a per-book basis. Results from higher-priority dictionaries will be displayed first when looking up words. Only dictionaries that are currently active can be selected and prioritized."),
+            enabled_func = function()
+                -- we allow to use preferred dictionaries even if no dictionaries are enabled globally (see self:updateSdcvDictNamesOptions)
+                return #self.enabled_dict_names > 1 or #self.preferred_dictionaries > 0
+            end,
+            callback = function(touchmenu_instance)
+                self:showPreferredDictsDialog(touchmenu_instance)
+            end,
+        })
+    end
     if Device:canExternalDictLookup() then
         local function genExternalDictItems()
             local items_table = {}
@@ -431,6 +447,111 @@ function ReaderDictionary:addToMainMenu(menu_items)
             separator = true,
         })
     end
+end
+
+function ReaderDictionary:showPreferredDictsDialog(touchmenu_instance)
+    local dialog
+    local buttons = {}
+    local disabled_buttons = {}  -- store disabled dict buttons separately
+    local update_sdcv = true
+
+    local function saveAndRefresh()
+        self:onSaveSettings()
+        if update_sdcv then self:updateSdcvDictNamesOptions() end
+        UIManager:close(dialog)
+        if #self.enabled_dict_names == 0 then
+            -- This is an edge case where we have a preferred dictionary but no globally enabled ones.
+            -- If we un-prefer said dict, we would end up with an empty dialog, so close up shop and go home.
+            touchmenu_instance:updateItems()
+            return
+        end
+        self:showPreferredDictsDialog(touchmenu_instance)
+    end
+
+    local function makeButtonEntry(dict, is_enabled)
+        local is_preferred = false
+        local pref_num = 0
+        for i, pref_dict in ipairs(self.preferred_dictionaries) do
+            if pref_dict == dict then
+                is_preferred = true
+                pref_num = i
+                break
+            end
+        end
+
+        local button_text = dict
+        if is_preferred and is_enabled then
+            -- Add circled number (U+2460...2473) at start
+            local symbol = util.unicodeCodepointToUtf8(0x245F + (pref_num < 20 and pref_num or 20))
+            button_text = symbol .. " " .. button_text
+        elseif not is_enabled then
+            -- Add circled x (U+2297) at start for disabled dictionaries
+            button_text = "⊗ " .. button_text
+        end
+
+        return {
+            {
+                align = "left",
+                text = button_text,
+                callback = function()
+                    if not is_enabled then return end -- No toggle for disabled dicts
+                    if is_preferred then
+                        for i, pref_dict in ipairs(self.preferred_dictionaries) do
+                            if pref_dict == dict then
+                                table.remove(self.preferred_dictionaries, i)
+                                break
+                            end
+                        end
+                    else
+                        table.insert(self.preferred_dictionaries, dict)
+                    end
+                    saveAndRefresh()
+                end,
+                hold_callback = function()
+                    if not is_enabled then -- re-enable dictionary
+                        self.doc_disabled_dicts[dict] = nil
+                    else -- disable dictionary for this book
+                        self.doc_disabled_dicts[dict] = true
+                    end
+                    update_sdcv = false
+                    saveAndRefresh()
+                end,
+            }
+        }
+    end
+
+    -- Process enabled dictionaries first.
+    for _, dict in ipairs(self.enabled_dict_names) do
+        if not self.doc_disabled_dicts[dict] then
+            table.insert(buttons, makeButtonEntry(dict, true))
+        else
+            table.insert(disabled_buttons, makeButtonEntry(dict, false))
+        end
+    end
+
+    -- Append disabled dictionaries at the bottom of the list.
+    for _, btn in ipairs(disabled_buttons) do
+        table.insert(buttons, btn)
+    end
+
+    table.insert(buttons, {
+        {
+            text = _("Reset"),
+            callback = function()
+                self.doc_disabled_dicts = {}
+                self.preferred_dictionaries = {}
+                saveAndRefresh()
+            end,
+        }
+    })
+
+    dialog = ButtonDialog:new{
+        title = _("Select preferred dictionaries"),
+        title_align = "center",
+        shrink_unneeded_width = true,
+        buttons = buttons,
+    }
+    UIManager:show(dialog)
 end
 
 function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link, dict_close_callback)
@@ -986,6 +1107,17 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
         return
     end
 
+    -- Before starting the search, remove any dictionaries that were disabled for *this* book.
+    if dict_names and self.doc_disabled_dicts then
+        local filtered_names = {}
+        for _, name in ipairs(dict_names) do
+            if not self.doc_disabled_dicts[name] then
+                table.insert(filtered_names, name)
+            end
+        end
+        dict_names = filtered_names
+    end
+
     -- If the user disabled all the dictionaries, go away.
     if dict_names and #dict_names == 0 then
         -- Dummy result
@@ -1248,11 +1380,14 @@ function ReaderDictionary:onReadSettings(config)
     else
         self.disable_fuzzy_search = G_reader_settings:isTrue("disable_fuzzy_search")
     end
+    -- Disabled dictionary list for this book
+    self.doc_disabled_dicts = config:readSetting("disabled_dicts") or {}
 end
 
 function ReaderDictionary:onSaveSettings()
     if self.ui.doc_settings then
-        self.ui.doc_settings:saveSetting("preferred_dictionaries", self.preferred_dictionaries)
+        self.ui.doc_settings:saveSetting("preferred_dictionaries", next(self.preferred_dictionaries) and self.preferred_dictionaries or nil)
+        self.ui.doc_settings:saveSetting("disabled_dicts", next(self.doc_disabled_dicts) and self.doc_disabled_dicts or nil)
     end
 end
 

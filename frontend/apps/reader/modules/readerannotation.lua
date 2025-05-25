@@ -282,7 +282,7 @@ function ReaderAnnotation:importAnnotations()
     if anno:readSetting("device_id") == G_reader_settings:readSetting("device_id") then return end -- same device
     local new_annotations = anno:readSetting("annotations")
     if (self.ui.paging and true) ~= anno:readSetting("paging") then return end -- incompatible annotations type
-    local new_datetime = anno:readSetting("datetime")
+    local new_datetime = G_reader_settings:isTrue("annotations_export_keep_all_on_import") and "" or anno:readSetting("datetime")
     os.remove(file)
     if #self.annotations == 0 then
         self.annotations = new_annotations
@@ -503,7 +503,7 @@ function ReaderAnnotation:getInsertionIndex(item)
 end
 
 function ReaderAnnotation:addItem(item)
-    item.datetime = os.date("%Y-%m-%d %H:%M:%S")
+    item.datetime = item.datetime or os.date("%Y-%m-%d %H:%M:%S")
     item.pageno = self.ui.rolling and self.document:getPageFromXPointer(item.page) or item.page
     item.pageref = self:getPageRef(item.page, item.pageno)
     local index = self:getInsertionIndex(item)
@@ -512,7 +512,7 @@ function ReaderAnnotation:addItem(item)
 end
 
 function ReaderAnnotation:onAnnotationsModified(items)
-    if items.index_modified == nil then -- not needed when annotation added or removed
+    if items.index_modified == nil or items.modify_datetime then -- not needed when annotation added or removed
         items[1].datetime_updated = os.date("%Y-%m-%d %H:%M:%S")
     end
 end

@@ -454,11 +454,6 @@ local function dispatcherRegisterStyleTweak(tweak_id, tweak_title)
         {category="none", event="ToggleStyleTweak", arg=tweak_id, title=T(_("Style tweak '%1' toggle"), tweak_title), rolling=true})
 end
 
-local function dispatcherUnregisterStyleTweak(tweak_id)
-    Dispatcher:removeAction(ReaderStyleTweak.dispatcher_prefix_toggle..tweak_id)
-    Dispatcher:removeAction(ReaderStyleTweak.dispatcher_prefix_set..tweak_id)
-end
-
 function ReaderStyleTweak:init()
     self.tweaks_in_dispatcher = G_reader_settings:readSetting("style_tweaks_in_dispatcher") or {}
     self.tweaks_by_id = {}
@@ -570,11 +565,12 @@ You can enable individual tweaks on this book with a tap, or view more details a
                         toggle_tweak_in_dispatcher_callback = function()
                             if self.tweaks_in_dispatcher[item.id] then
                                 self.tweaks_in_dispatcher[item.id] = nil
-                                dispatcherUnregisterStyleTweak(item.id)
-                                if self.ui.profiles then
-                                    self.ui.profiles:updateProfiles(self.dispatcher_prefix_toggle..item.id)
-                                    self.ui.profiles:updateProfiles(self.dispatcher_prefix_set..item.id)
-                                end
+                                Dispatcher:removeAction(self.dispatcher_prefix_toggle..item.id)
+                                UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged",
+                                    { old_name = self.dispatcher_prefix_toggle..item.id, new_name = nil }))
+                                Dispatcher:removeAction(self.dispatcher_prefix_set..item.id)
+                                UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged",
+                                    { old_name = self.dispatcher_prefix_set..item.id, new_name = nil }))
                             else
                                 self.tweaks_in_dispatcher[item.id] = item.title
                                 dispatcherRegisterStyleTweak(item.id, item.title)
@@ -883,6 +879,7 @@ You can then paste it here with long-press in the text box.]]), true},
 
     { _("Private CSS properties"), {
         { "-cr-hint: footnote-inpage;", _("When set on a block element containing the target id of a href, this block element will be shown as an in-page footnote.")},
+        { "-cr-hint: extend-footnote-inpage;", _("When set on a block element following a block element marked `footnote-inpage`, this block will be shown as part of the same in-page footnote as the previous element. Can be chained across multiple elements following an in-page footnote.")},
         { "-cr-hint: non-linear;", _("Can be set on some specific DocFragments (e.g. DocFragment[id$=_16]) to ignore them in the linear pages flow.")},
         { "-cr-hint: non-linear-combining;", _("Can be set on contiguous footnote blocks to ignore them in the linear pages flow.")},
         { "-cr-hint: toc-level1;", _("When set on an element, its text can be used to build the alternative table of contents. toc-level2 to toc-level6 can be used for nested chapters.")},
