@@ -735,6 +735,7 @@ function DictQuickLookup:init()
             -- a few things before forwarding them
             "touch", "pan", "pan_release",
         },
+        is_movable_with_keys = false,
         self.dict_frame,
     }
 
