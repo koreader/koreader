@@ -1021,12 +1021,12 @@ function DictQuickLookup:setTemporaryFullScreenMode()
     -- This setting will be reverted upon closing the new instance. Note that any would be child windows will also open in fullscreen mode.
     G_reader_settings:makeTrue("dict_largewindow")
 
-    local ui_ref = self.ui or UIManager
+    local ui = self.ui or UIManager
     -- Re-trigger the lookup, and close this instance _after_ the new one is created.
     if self.is_wiki then
-        ui_ref:handleEvent(Event:new("LookupWikipedia", self.word, self.is_sane_word, self.word_boxes, false, self.lang, function() self:onClose(true) end))
+        ui:handleEvent(Event:new("LookupWikipedia", self.word, self.is_sane_word, self.word_boxes, false, self.lang, function() self:onClose(true) end))
     else
-        ui_ref:handleEvent(Event:new("LookupWord", self.word, true, self.word_boxes, self.highlight, nil, function() self:onClose(true) end))
+        ui:handleEvent(Event:new("LookupWord", self.word, true, self.word_boxes, self.highlight, nil, function() self:onClose(true) end))
     end
     return true
 end
