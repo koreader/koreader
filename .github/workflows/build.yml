@@ -67,14 +67,12 @@ jobs:
             automake
             bash
             binutils
-            cmake
             coreutils
             findutils
             libtool
             make
             nasm
             ninja
-            p7zip
             pkg-config
             sdl2
             util-linux

@@ -2,6 +2,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
+local Event = require("ui/event")
 local LuaSettings = require("luasettings")
 local PathChooser = require("ui/widget/pathchooser")
 local ReadHistory = require("readhistory")
@@ -162,9 +163,7 @@ end
 function BookShortcuts:deleteShortcut(name)
     self.shortcuts.data[name] = nil
     Dispatcher:removeAction(name)
-    if self.ui.profiles then
-        self.ui.profiles:updateProfiles(name)
-    end
+    UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged", { old_name = name, new_name = nil }))
     self.updated = true
 end
 

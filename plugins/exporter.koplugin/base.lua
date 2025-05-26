@@ -17,6 +17,8 @@ local socketutil = require("socketutil")
 local util = require("util")
 local _ = require("gettext")
 
+local msg_failed = "json request failed: %s"
+
 local BaseExporter = {
     clipping_dir = DataStorage:getFullDataDir() .. "/clipboard"
 }
@@ -180,9 +182,12 @@ Makes a json request against a remote endpoint
 function BaseExporter:makeJsonRequest(endpoint, method, body, headers)
     local sink = {}
     local extra_headers = headers or {}
-    local body_json = rapidjson.encode(body)
+    local body_json, response, err
+
+    body_json, err = rapidjson.encode(body)
     if not body_json then
-        return nil, "Invalid JSON string"
+        return nil, string.format(msg_failed,
+            "cannot encode body" .. err)
     end
     local source = ltn12.source.string(body_json)
     socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
@@ -203,20 +208,23 @@ function BaseExporter:makeJsonRequest(endpoint, method, body, headers)
         request.headers[k] = v
     end
 
-    local code = socket.skip(1, http.request(request))
+    local code, __, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
 
     if code ~= 200 then
-        return nil, "Server HTTP response code is not OK"
+        return nil, string.format(msg_failed,
+            status or code or "network unreachable")
     end
 
     if not sink[1] then
-        return nil, "No response from server"
+        return nil, string.format(msg_failed,
+            "no response from server")
     end
 
-    local response, err = rapidjson.decode(sink[1])
+    response, err = rapidjson.decode(sink[1])
     if not response then
-        return nil, "Unable to decode JSON: " .. err
+        return nil, string.format(msg_failed,
+            "unable to decode server response" .. err)
     end
 
     return response

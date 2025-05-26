@@ -1,3 +1,4 @@
+local Archiver = require("ffi/archiver")
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local DocumentRegistry = require("document/documentregistry")
@@ -15,28 +16,22 @@ local T = ffiUtil.template
 local ArchiveViewer = WidgetContainer:extend{
     name = "archiveviewer",
     fullname = _("Archive viewer"),
-    arc_file = nil, -- archive
+    arc = nil, -- archive
     -- list_table is a flat table containing archive files and folders
     -- key - a full path of the folder ("/" for root), for all folders and subfolders of any level
     -- value - a subtable of subfolders and files in the folder
     -- subtable key - a name of a subfolder ending with /, or a name of a file (without path)
     -- subtable value - false for subfolders, or file size (string)
     list_table = nil,
-    arc_type = nil,
-    arc_ext = {
-        cbz  = true,
-        epub = true,
-        zip  = true,
-    },
 }
 
-local ZIP_LIST            = "unzip -qql \"%1\""
-local ZIP_EXTRACT_CONTENT = "unzip -qqp \"%1\" \"%2\""
-local ZIP_EXTRACT_FILE    = "unzip -qqo \"%1\" \"%2\" -d \"%3\"" -- overwrite
-
-local function getSuffix(file)
-    return util.getFileNameSuffix(file):lower()
-end
+local SUPPORTED_EXTENSIONS = {
+    cbr  = true,
+    cbz  = true,
+    epub = true,
+    rar  = true,
+    zip  = true,
+}
 
 function ArchiveViewer:init()
     self:registerDocumentRegistryAuxProvider()
@@ -53,23 +48,18 @@ function ArchiveViewer:registerDocumentRegistryAuxProvider()
 end
 
 function ArchiveViewer:isFileTypeSupported(file)
-    return self.arc_ext[getSuffix(file)] and true or false
+    return SUPPORTED_EXTENSIONS[util.getFileNameSuffix(file):lower()] ~= nil
 end
 
 function ArchiveViewer:openFile(file)
     local _, filename = util.splitFilePathName(file)
-    local fileext = getSuffix(filename)
-    if fileext == "cbz" or fileext == "epub" or fileext == "zip" then
-        self.arc_type = "zip"
-    end
-    self.arc_file = file
 
+    self.arc = Archiver.Reader:new()
     self.fm_updated = nil
     self.list_table = {}
-    if self.arc_type == "zip" then
-        self:getZipListTable()
-    else -- add other archivers here
-        return
+
+    if self.arc:open(file) then
+        self:getListTable()
     end
 
     self.menu = Menu:new{
@@ -97,7 +87,7 @@ function ArchiveViewer:openFile(file)
     UIManager:show(self.menu)
 end
 
-function ArchiveViewer:getZipListTable()
+function ArchiveViewer:getListTable()
     local function parse_path(filepath, filesize)
         if not filepath then return end
         local path, name = util.splitFilePathName(filepath)
@@ -119,14 +109,10 @@ function ArchiveViewer:getZipListTable()
         end
     end
 
-    local std_out = io.popen(T(ZIP_LIST, self.arc_file))
-    if std_out then
-        for line in std_out:lines() do
-            -- entry datetime not used so far
-            local fsize, fname = string.match(line, "%s+(%d+)%s+[-0-9]+%s+[0-9:]+%s+(.+)")
-            parse_path(fname, fsize or 0)
+    for entry in self.arc:iterate() do
+        if entry.mode == "file" then
+            parse_path(entry.path, entry.size)
         end
-        std_out:close()
     end
 end
 
@@ -266,29 +252,12 @@ function ArchiveViewer:viewFile(filepath)
 end
 
 function ArchiveViewer:extractFile(filepath)
-    if self.arc_type == "zip" then
-        local std_out = io.popen(T(ZIP_EXTRACT_FILE, self.arc_file, filepath, util.splitFilePathName(self.arc_file)))
-        if std_out then
-            std_out:close()
-        end
-    else
-        return
-    end
-    self.fm_updated = true
+    local directory = util.splitFilePathName(self.arc.filepath)
+    self.fm_updated = self.arc:extractToPath(filepath, directory .. filepath)
 end
 
 function ArchiveViewer:extractContent(filepath)
-    local content
-    if self.arc_type == "zip" then
-        local std_out = io.popen(T(ZIP_EXTRACT_CONTENT, self.arc_file, filepath))
-        if std_out then
-            content = std_out:read("*all")
-            std_out:close()
-            return content
-        end
-    else
-        return
-    end
+    return self.arc:extractToMemory(filepath)
 end
 
 return ArchiveViewer

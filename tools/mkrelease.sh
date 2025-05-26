@@ -19,7 +19,7 @@ OPTIONS:
 declare -r AWK_HELPERS='
 function print_entry(path, size, crc) {
     sub("/$", "", path)
-    if (crc)
+    if (crc != "")
         print path, size, crc
     else
         print path"/"

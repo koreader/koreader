@@ -37,43 +37,27 @@ function Calibre:onCalibreBrowseBy(field)
 end
 
 function Calibre:onNetworkDisconnected()
-    self:closeWirelessConnection()
+    CalibreWireless:disconnect()
 end
 
 function Calibre:onSuspend()
-    self:closeWirelessConnection()
+    CalibreWireless:disconnect()
 end
 
 function Calibre:onClose()
-    self:closeWirelessConnection()
+    CalibreWireless:disconnect()
+end
+
+function Calibre:onCloseWidget()
+    CalibreWireless:disconnect()
 end
 
 function Calibre:onStartWirelessConnection()
-    UIManager:nextTick(function()
-        UIManager:show(InfoMessage:new{
-            text = _("Connecting to calibre"),
-            timeout = 2,
-        })
-    end)
-    UIManager:tickAfterNext(function()
-        self:startWirelessConnection()
-    end)
+   CalibreWireless:connect()
 end
 
 function Calibre:onCloseWirelessConnection()
-    self:closeWirelessConnection()
-end
-
-function Calibre:startWirelessConnection()
-    if not CalibreWireless.calibre_socket then
-        CalibreWireless:connect()
-    end
-end
-
-function Calibre:closeWirelessConnection()
-    if CalibreWireless.calibre_socket then
-        CalibreWireless:disconnect()
-    end
+    CalibreWireless:disconnect()
 end
 
 function Calibre:onDispatcherRegisterActions()

@@ -943,6 +943,11 @@ This only works with footnotes that have specific attributes set by the publishe
     -cr-only-if: -fb2-document;
         -cr-hint: footnote-inpage;
         margin: 0 !important;
+}
+/* Also applies to extended footnotes */
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: inpage-footnote;
         font-size: 0.8rem !important;
 }
             ]],
@@ -976,7 +981,12 @@ ol.references > li {
     -cr-hint: footnote-inpage;
     list-style-position: -cr-outside;
     margin: 0 !important;
-    font-size: 0.8rem !important;
+}
+/* Also applies to extended footnotes */
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: inpage-footnote;
+        font-size: 0.8rem !important;
 }
 /* hide backlinks */
 ol.references > li > .noprint { display: none; }
@@ -1026,10 +1036,57 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
 {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
-    font-size: 0.8rem !important;
+}
+/* Also applies to extended footnotes */
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: inpage-footnote;
+        font-size: 0.8rem !important;
 }
             ]],
             separator = true,
+        },
+        {
+            title = _("In-page footnote extension"),
+            {
+                id = "extend-footnote-inpage_any",
+                conflicts_with = function(id) return util.stringStartsWith(id, "extend-footnote-inpage_") end,
+                title = _("Extend footnote content until next entry"),
+                description = _([[
+Extend in-page footnotes shown at the bottom of pages to include text up to the next footnote.
+This might be needed when books don't correctly mark all text that belongs to the footnote.]]),
+-- :where() and priority are needed to ensure lower specificity than
+-- any other tweaks that check -cr-only-if: (inside-)inpage-footnote
+                priority = -1,
+                css = [[
+:where(*, autoBoxing) {
+    -cr-hint: late;
+    -cr-only-if: following-inpage-footnote -inpage-footnote;
+        -cr-hint: extend-footnote-inpage;
+        margin: 0 !important;
+}
+                ]],
+            },
+            {
+                id = "extend-footnote-inpage_until_heading",
+                conflicts_with = function(id) return util.stringStartsWith(id, "extend-footnote-inpage_") end,
+                title = _("Extend footnote content until next header"),
+                description = _([[
+Extend in-page footnotes shown at the bottom of pages to include text up to the next footnote or heading.
+This might be needed when books don't correctly mark all text that belongs to the footnote.
+This tweak can be duplicated as a user style tweak when a book contains other elements between footnotes that should not be shown in-page.]]),
+-- :where() and priority are needed to ensure lower specificity than
+-- any other tweaks that check -cr-only-if: (inside-)inpage-footnote
+                priority = -1,
+                css = [[
+:where(*:not(h1, h2, h3, h4, h5, h6), autoBoxing) {
+    -cr-hint: late;
+    -cr-only-if: following-inpage-footnote -inpage-footnote;
+        -cr-hint: extend-footnote-inpage;
+        margin: 0 !important;
+}
+                ]],
+            },
         },
         -- Next tweaks, with the help of crengine, will apply only to elements that were
         -- matched by previous tweaks that have set them the "footnote-inpage" cr-hint,

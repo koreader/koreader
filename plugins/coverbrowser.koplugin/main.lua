@@ -610,7 +610,7 @@ function CoverBrowser:refreshFileManagerInstance()
     local fc = self.ui.file_chooser
     if fc then
         fc:_recalculateDimen()
-        fc:changeToPath(fc.path, fc.prev_focused_path)
+        fc:switchItemTable(nil, nil, fc.prev_itemnumber, { dummy = "" }) -- dummy itemmatch to draw focus
     end
 end
 

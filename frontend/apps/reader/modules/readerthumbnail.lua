@@ -83,6 +83,7 @@ function ReaderThumbnail:addToMainMenu(menu_items)
         -- Show the alternative overview mode (which is just a restricted
         -- variation of the main book map) with long-press (let's avoid
         -- adding another item in the crowded first menu).
+        hold_keep_menu_open = false,
         hold_callback = function()
             self:onShowBookMap(true)
         end,

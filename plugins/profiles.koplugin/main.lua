@@ -3,6 +3,7 @@ local DataStorage = require("datastorage")
 local DateTimeWidget = require("ui/widget/datetimewidget")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
+local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
@@ -248,7 +249,8 @@ function Profiles:getSubMenuItems()
                 callback = function()
                     if v.settings.registered then
                         dispatcherUnregisterProfile(k)
-                        self:updateProfiles(self.prefix..k)
+                        UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged",
+                            { old_name = self.prefix..k, new_name = nil }))
                         self.data[k].settings.registered = nil
                     else
                         dispatcherRegisterProfile(k)
@@ -279,7 +281,8 @@ function Profiles:getSubMenuItems()
                         if v.settings.registered then
                             dispatcherUnregisterProfile(k)
                             dispatcherRegisterProfile(new_name)
-                            self:updateProfiles(self.prefix..k, self.prefix..new_name)
+                            UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged",
+                                { old_name = self.prefix..k, new_name = self.prefix..new_name }))
                         end
                         self.data[k] = nil
                         self.updated = true
@@ -319,7 +322,8 @@ function Profiles:getSubMenuItems()
                             self:updateAutoExec(k)
                             if v.settings.registered then
                                 dispatcherUnregisterProfile(k)
-                                self:updateProfiles(self.prefix..k)
+                                UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged",
+                                    { old_name = self.prefix..k, new_name = nil }))
                             end
                             self.data[k] = nil
                             self.updated = true
@@ -461,17 +465,17 @@ function Profiles:getProfileFromCurrentBookSettings(new_name)
     return profile
 end
 
-function Profiles:updateProfiles(action_old_name, action_new_name)
+function Profiles:onDispatcherActionNameChanged(action)
     for _, profile in pairs(self.data) do
-        if profile[action_old_name] then
+        if profile[action.old_name] ~= nil then
             if profile.settings and profile.settings.order then
-                for i, action in ipairs(profile.settings.order) do
-                    if action == action_old_name then
-                        if action_new_name then
-                            profile.settings.order[i] = action_new_name
+                for i, action_in_order in ipairs(profile.settings.order) do
+                    if action_in_order == action.old_name then
+                        if action.new_name then
+                            profile.settings.order[i] = action.new_name
                         else
                             table.remove(profile.settings.order, i)
-                            if #profile.settings.order == 0 then
+                            if #profile.settings.order < 2 then
                                 profile.settings.order = nil
                             end
                         end
@@ -479,17 +483,34 @@ function Profiles:updateProfiles(action_old_name, action_new_name)
                     end
                 end
             end
-            profile[action_old_name] = nil
-            if action_new_name then
-                profile[action_new_name] = true
+            profile[action.old_name] = nil
+            if action.new_name then
+                profile[action.new_name] = true
             end
             self.updated = true
         end
     end
-    if self.ui.gestures then -- search and update the profile action in assigned gestures
-        self.ui.gestures:updateProfiles(action_old_name, action_new_name)
-    elseif self.ui.hotkeys then -- search and update the profile action in assigned keyboard shortcuts
-        self.ui.hotkeys:updateProfiles(action_old_name, action_new_name)
+end
+
+function Profiles:onDispatcherActionValueChanged(action)
+    for _, profile in pairs(self.data) do
+        if profile[action.name] == action.old_value then
+            profile[action.name] = action.new_value
+            if action.new_value == nil then
+                if profile.settings and profile.settings.order then
+                    for i, action_in_order in ipairs(profile.settings.order) do
+                        if action_in_order == action.name then
+                            table.remove(profile.settings.order, i)
+                            if #profile.settings.order < 2 then
+                                profile.settings.order = nil
+                            end
+                            break
+                        end
+                    end
+                end
+            end
+            self.updated = true
+        end
     end
 end
 

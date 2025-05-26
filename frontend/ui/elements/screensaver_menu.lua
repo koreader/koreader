@@ -13,6 +13,15 @@ local function isReaderProgressEnabled()
     return Screensaver.getReaderProgress ~= nil and hasLastFile()
 end
 
+local function allowRandomImageFolder()
+    local may_ignore_book_cover = G_reader_settings:isTrue("screensaver_exclude_on_hold_books")
+        or G_reader_settings:isTrue("screensaver_exclude_finished_books")
+        or G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
+        or Screensaver:isExcluded()
+    return G_reader_settings:readSetting("screensaver_type") == "random_image"
+            or (G_reader_settings:readSetting("screensaver_type") == "cover" and may_ignore_book_cover)
+end
+
 local function genMenuItem(text, setting, value, enabled_func, separator)
     return {
         text = text,
@@ -136,8 +145,7 @@ return {
             {
                 text = _("Custom images"),
                 enabled_func = function()
-                    return G_reader_settings:readSetting("screensaver_type") == "random_image"
-                           or G_reader_settings:readSetting("screensaver_type") == "document_cover"
+                    return allowRandomImageFolder() or G_reader_settings:readSetting("screensaver_type") == "document_cover"
                 end,
                 sub_item_table = {
                     {
@@ -152,9 +160,7 @@ return {
                     },
                     {
                         text = _("Choose random image folder"),
-                        enabled_func = function()
-                            return G_reader_settings:readSetting("screensaver_type") == "random_image"
-                        end,
+                        enabled_func = allowRandomImageFolder,
                         keep_menu_open = true,
                         callback = function()
                             Screensaver:chooseFolder()
@@ -164,9 +170,7 @@ return {
                     {
                         text = _("Cycle through images in order"),
                         help_text = _("When enabled, all images (up to 128) will be displayed at least once on the sleep screen in sequence before repeating the cycle."),
-                        enabled_func = function()
-                            return G_reader_settings:readSetting("screensaver_type") == "random_image"
-                        end,
+                        enabled_func = allowRandomImageFolder,
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_cycle_images_alphabetically")
                         end,

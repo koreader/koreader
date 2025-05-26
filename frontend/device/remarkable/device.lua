@@ -58,6 +58,7 @@ local Remarkable = Generic:extend{
     -- Despite the SoC supporting it, it's finicky in practice (#6772)
     canHWInvert = no,
     home_dir = "/home/root",
+    input_hall = nil,
 }
 
 local Remarkable1 = Remarkable:extend{
@@ -122,6 +123,7 @@ local RemarkablePaperPro = Remarkable:extend{
     input_wacom = "/dev/input/event2",
     input_ts = "/dev/input/event3",
     input_buttons = "/dev/input/event0",
+    input_hall = "/dev/input/event1",
     battery_path = "/sys/class/power_supply/max1726x_battery/capacity",
     status_path = "/sys/class/power_supply/max1726x_battery/status",
     canSuspend = no, -- Suspend and Standby should be handled by xochitl with KO_DONT_GRAB_INPUT=1 set, otherwise bad things will happen
@@ -186,17 +188,28 @@ function Remarkable:init()
         device = self,
         capacity_file = self.battery_path,
         status_file = self.status_path,
+        hall_file = isRmPaperPro and "/sys/class/input/input1/inhibited" or nil,
     }
 
     local event_map = dofile("frontend/device/remarkable/event_map.lua")
     -- If we are launched while Oxide is running, remove Power from the event map
     if oxide_running then
         event_map[116] = nil
+        event_map[143] = nil
     end
 
     self.input = require("device/input"):new{
         device = self,
         event_map = dofile("frontend/device/remarkable/event_map.lua"),
+        event_map_adapter = {
+            SleepCover = function(ev)
+                if ev.value == 1 then
+                    return "Suspend"
+                else
+                    return "Resume"
+                end
+            end,
+        },
         wacom_protocol = true,
     }
 
@@ -224,6 +237,19 @@ function Remarkable:init()
     self.input:open(self.input_wacom) -- Wacom (it's not Wacom on Paper Pro but it should work)
     self.input:open(self.input_ts) -- Touchscreen
     self.input:open(self.input_buttons) -- Buttons
+
+    if self.input_hall ~= nil then
+        self.input:open(self.input_hall) -- Hall sensor
+        local hallSensorMangling = function(this, ev)
+            if ev.type == C.EV_SW then
+                if ev.code == 0 then
+                    ev.type = C.EV_KEY
+                    ev.code = 20001
+                end
+            end
+        end
+        self.input:registerEventAdjustHook(hallSensorMangling)
+    end
 
     local scalex = screen_width / self.mt_width
     local scaley = screen_height / self.mt_height
@@ -267,6 +293,18 @@ function Remarkable:init()
         PluginShare.pause_auto_suspend = true
     end
 
+    if isRmPaperPro then
+        -- disable autosuspend of xochitl
+        os.execute("cp -a ~/.config/remarkable/xochitl.conf ~/.config/remarkable/xochitl.conf.bak")
+        os.execute("sed -ri 's/IdleSuspendDelay=[0-9]+/IdleSuspendDelay=0/' ~/.config/remarkable/xochitl.conf")
+    end
+
+    if self.powerd:hasHallSensor() then
+        if G_reader_settings:has("remarkable_hall_effect_sensor_enabled") then
+            self.powerd:onToggleHallSensor(G_reader_settings:readSetting("remarkable_hall_effect_sensor_enabled"))
+        end
+    end
+
     Generic.init(self)
 end
 
@@ -303,6 +341,16 @@ function Remarkable:initNetworkManager(NetworkMgr)
     NetworkMgr.isConnected = NetworkMgr.ifHasAnAddress
 end
 
+function Remarkable:exit()
+    if isRmPaperPro then
+        os.execute("mv -f ~/.config/remarkable/xochitl.conf.bak ~/.config/remarkable/xochitl.conf")
+        if os.getenv("KO_DONT_GRAB_INPUT") == "1" then
+            os.execute("~/xovi/start")
+        end
+    end
+    Generic.exit(self)
+end
+
 function Remarkable:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
     local command
@@ -319,18 +367,33 @@ function Remarkable:saveSettings()
 end
 
 function Remarkable:resume()
+    if isRmPaperPro then
+        os.execute("csl wifi -p on")
+    else
+        os.execute("./enable-wifi.sh")
+    end
 end
 
 function Remarkable:suspend()
-    os.execute("./disable-wifi.sh")
+    if isRmPaperPro then
+        os.execute("csl wifi -p off")
+    else
+        os.execute("./disable-wifi.sh")
+    end
     os.execute("systemctl suspend")
 end
 
 function Remarkable:powerOff()
+    if isRmPaperPro then
+        os.execute("mv -f ~/.config/remarkable/xochitl.conf.bak ~/.config/remarkable/xochitl.conf")
+    end
     os.execute("systemctl poweroff")
 end
 
 function Remarkable:reboot()
+    if isRmPaperPro then
+        os.execute("mv -f ~/.config/remarkable/xochitl.conf.bak ~/.config/remarkable/xochitl.conf")
+    end
     os.execute("systemctl reboot")
 end
 

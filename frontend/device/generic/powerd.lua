@@ -353,4 +353,8 @@ function BasePowerD:getBatterySymbol(is_charged, is_charging, capacity)
     end
 end
 
+function BasePowerD:hasHallSensor()
+    return false
+end
+
 return BasePowerD

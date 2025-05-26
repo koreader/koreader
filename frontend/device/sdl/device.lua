@@ -70,6 +70,7 @@ local Device = Generic:extend{
     hasKeys = yes,
     hasSymKey = os.getenv("DISABLE_TOUCH") == "1" and yes or no,
     hasDPad = yes,
+    useDPadAsActionKeys = os.getenv("DISABLE_TOUCH") == "1" and yes or no,
     hasWifiToggle = no,
     hasSeamlessWifiToggle = no,
     isTouchDevice = yes,

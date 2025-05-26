@@ -1332,11 +1332,19 @@ function BookMapWidget:onShowBookMapMenu()
         {{
             text = _("Page browser on tap"),
             checked_func = function()
-                return G_reader_settings:nilOrTrue("book_map_tap_to_page_browser")
+                if self.overview_mode then
+                    return G_reader_settings:nilOrTrue("book_map_overview_tap_to_page_browser")
+                else
+                    return G_reader_settings:nilOrTrue("book_map_tap_to_page_browser")
+                end
             end,
             align = "left",
             callback = function()
-                G_reader_settings:flipNilOrTrue("book_map_tap_to_page_browser")
+                if self.overview_mode then
+                    return G_reader_settings:flipNilOrTrue("book_map_overview_tap_to_page_browser")
+                else
+                    return G_reader_settings:flipNilOrTrue("book_map_tap_to_page_browser")
+                end
             end,
         }},
         {{
@@ -1412,6 +1420,11 @@ function BookMapWidget:onShowBookMapMenu()
                         self:update()
                     end
                 end,
+                hold_callback = function()
+                    if self:updatePagesPerRow(50, true) then
+                        self:update()
+                    end
+                end,
                 width = plus_minus_width,
             },
             {
@@ -1419,6 +1432,11 @@ function BookMapWidget:onShowBookMapMenu()
                 enabled_func = function() return self.pages_per_row > self.min_pages_per_row end,
                 callback = function()
                     if self:updatePagesPerRow(-10, true) then
+                        self:update()
+                    end
+                end,
+                hold_callback = function()
+                    if self:updatePagesPerRow(-50, true) then
                         self:update()
                     end
                 end,
@@ -1905,7 +1923,7 @@ function BookMapWidget:onTap(arg, ges)
         page = row:getPageAtX(x, true)
     end
     if page then
-        if not G_reader_settings:nilOrTrue("book_map_tap_to_page_browser") then
+        if (self.overview_mode and G_reader_settings:isFalse("book_map_overview_tap_to_page_browser")) or (not self.overview_mode and G_reader_settings:isFalse("book_map_tap_to_page_browser")) then
             self:onClose(true)
             self.ui.link:addCurrentLocationToStack()
             self.ui:handleEvent(Event:new("GotoPage", page))

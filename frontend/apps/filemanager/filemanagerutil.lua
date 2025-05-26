@@ -379,7 +379,7 @@ function filemanagerutil.showChooseDialog(title_header, caller_callback, current
                     UIManager:close(dialog)
                     if path then
                         if is_file then
-                            path = path:match("(.*/)")
+                            path = ffiUtil.dirname(path)
                         end
                         if lfs.attributes(path, "mode") ~= "directory" then
                             path = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
