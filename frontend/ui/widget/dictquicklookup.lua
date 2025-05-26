@@ -198,7 +198,7 @@ function DictQuickLookup:init()
                     end
                 end
             },
-            ToggleTemporaryFullScreen = {
+            SetTemporaryFullScreenMode = {
                 GestureRange:new{
                     ges = "spread",
                     range = range,
@@ -785,7 +785,7 @@ function DictQuickLookup:registerKeyEvents()
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
             self.key_events.ChangeToPrevDict = { { modifier, Input.group.PgBack } }
             self.key_events.ChangeToNextDict = { { modifier, Input.group.PgFwd } }
-            self.key_events.ToggleTemporaryFullScreen = { { modifier, "Home" } }
+            self.key_events.SetTemporaryFullScreenMode = { { modifier, "Home" } }
             self.key_events.StartOrUpTextSelectorIndicator   = { { modifier, "Up" },   event = "StartOrMoveTextSelectorIndicator", args = { 0, -1, true } }
             self.key_events.StartOrDownTextSelectorIndicator = { { modifier, "Down" }, event = "StartOrMoveTextSelectorIndicator", args = { 0,  1, true } }
             self.key_events.FastLeftTextSelectorIndicator  = { { modifier, "Left" },  event = "MoveTextSelectorIndicator", args = { -1, 0, true } }
@@ -1000,32 +1000,29 @@ function DictQuickLookup:update()
     end)
 end
 
-function DictQuickLookup:onToggleTemporaryFullScreen()
-    self:toggleTemporaryFullScreen()
+function DictQuickLookup:onSetTemporaryFullScreenMode()
+    self:setTemporaryFullScreenMode()
     return true
 end
 
-function DictQuickLookup:toggleTemporaryFullScreen()
+function DictQuickLookup:setTemporaryFullScreenMode()
     if self._is_temporary_fullscreen_mode then return false end
     if self.is_wiki_fullpage or G_reader_settings:isTrue("dict_largewindow") then return false end
 
-    -- Remove ourselves from window_list before creating new instance
+    -- Remove ourselves from window_list before creating the new instance, onHoldClose won't like it if we still exist.
     for i = #DictQuickLookup.window_list, 1, -1 do
         if DictQuickLookup.window_list[i] == self then
             table.remove(DictQuickLookup.window_list, i)
             break
         end
     end
-
-    -- Prepare to open a new temporary large instance
-    DictQuickLookup.temp_fullscreen_request = {
-        dict_index = self.dict_index,
-    }
-    -- Set the global setting to true for the *new* instance that will be created
+    -- We want to remember the current dict_index (e.g. 5/7), so that it can be restored later.
+    DictQuickLookup.temp_fullscreen_request = { dict_index = self.dict_index, }
+    -- This setting will be reverted upon closing the new instance. Note that any would be child windows will also open in fullscreen mode.
     G_reader_settings:makeTrue("dict_largewindow")
 
     local ui_ref = self.ui or UIManager
-    -- re-trigger the lookup
+    -- Re-trigger the lookup, and close this instance _after_ the new one is created.
     if self.is_wiki then
         ui_ref:handleEvent(Event:new("LookupWikipedia", self.word, self.is_sane_word, self.word_boxes, false, self.lang, function() self:onClose(true) end))
     else
@@ -1278,7 +1275,6 @@ function DictQuickLookup:onClose(no_clear)
 
     UIManager:close(self)
 
-    -- Reset largewindow setting only if this was a temporary fullscreen instance
     if self._is_temporary_fullscreen_mode then
         G_reader_settings:makeFalse("dict_largewindow")
     end
