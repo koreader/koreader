@@ -189,7 +189,8 @@ function FileManagerBackup:chooseBackupFile()
                 return
             end
             local check_buttons = {}
-            local confirmbox = ConfirmBox:new{
+            local confirmbox
+            confirmbox = ConfirmBox:new{
                 text = T(_("Backup date: %1\nSource device: %2"), backup.config.date_time,
                     device_id == backup.config.device_id and _("this device") or backup.config.model),
                 ok_text = _("Restore"),
@@ -283,16 +284,16 @@ function FileManagerBackup:restoreSettings(backup, check_buttons)
     end
     if check_buttons.plugins.checked then
         local dir = DataStorage:getSettingsDir() .. "/"
-        for file, settings in pairs(backup.plugins) do
-            util.writeToFile(settings, dir .. file, true)
+        for file, content in pairs(backup.plugins) do
+            util.writeToFile(content, dir .. file, true)
         end
     end
     if check_buttons.styletweaks.checked then
         local dir = data_dir .. "/styletweaks/"
-        for file, settings in pairs(backup.styletweaks) do
+        for file, content in pairs(backup.styletweaks) do
             local file_path = dir .. file -- 'file' may include subfolders
             util.makePath(ffiUtil.dirname(file_path))
-            util.writeToFile(settings, file_path, true)
+            util.writeToFile(content, file_path, true)
         end
     end
     if Device:canRestart() then
