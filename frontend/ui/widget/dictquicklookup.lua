@@ -211,7 +211,7 @@ function DictQuickLookup:init()
         }
     end
 
-    self.temp_fullscreen = DictQuickLookup.temp_fullscreen_request and DictQuickLookup.temp_fullscreen_request.full_screen == true
+    self.temp_large_window = DictQuickLookup.temp_fullscreen_request and DictQuickLookup.temp_fullscreen_request.full_screen == true
 
     -- We no longer support setting a default dict with Tap on title.
     -- self:changeToDefaultDict()
@@ -232,7 +232,7 @@ function DictQuickLookup:init()
 
     -- Bigger window if fullpage Wikipedia article being shown,
     -- or when large windows for dict requested
-    local is_large_window = self.is_wiki_fullpage or G_reader_settings:isTrue("dict_largewindow") or self.temp_fullscreen
+    local is_large_window = self.is_wiki_fullpage or G_reader_settings:isTrue("dict_largewindow") or self.temp_large_window
     if is_large_window then
         self.width = Screen:getWidth() - 2*Size.margin.default
     else
@@ -1008,7 +1008,7 @@ function DictQuickLookup:onSetTemporaryFullScreenMode()
 end
 
 function DictQuickLookup:setTemporaryFullScreenMode()
-    if self.temp_fullscreen then return false end
+    if self.temp_large_window then return false end
     if self.is_wiki_fullpage or G_reader_settings:isTrue("dict_largewindow") then return false end
 
     -- Remove ourselves from window_list before creating the new instance, onHoldClose won't like it if we still exist.
