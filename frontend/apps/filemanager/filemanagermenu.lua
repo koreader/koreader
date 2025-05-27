@@ -2,10 +2,8 @@ local BD = require("ui/bidi")
 local BookList = require("ui/widget/booklist")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
-local DataStorage = require("datastorage")
 local Device = require("device")
 local DoubleSpinWidget = require("ui/widget/doublespinwidget")
-local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local PluginLoader = require("pluginloader")
@@ -135,6 +133,7 @@ end
 function FileManagerMenu:onOpenLastDoc()
     local last_file = G_reader_settings:readSetting("lastfile")
     if not last_file or lfs.attributes(last_file, "mode") ~= "file" then
+        local InfoMessage = require("ui/widget/infomessage")
         UIManager:show(InfoMessage:new{
             text = _("Cannot open last document"),
         })
@@ -446,7 +445,10 @@ To:
             },
             {
                 text = _("Settings backup"),
-                sub_item_table_func = function() return self:genBackupMenu() end,
+                sub_item_table_func = function()
+                    local FileManagerBackup = require("apps/filemanager/filemanagerbackup")
+                    return FileManagerBackup:genBackupMenu(self.ui)
+                end,
             },
         },
     }
@@ -535,6 +537,7 @@ To:
                     UIManager:show(ConfirmBox:new{
                         text = _("Clear the cache folder?"),
                         ok_callback = function()
+                            local DataStorage = require("datastorage")
                             local cachedir = DataStorage:getDataDir() .. "/cache"
                             if lfs.attributes(cachedir, "mode") == "directory" then
                                 ffiUtil.purgeDir(cachedir)
@@ -1004,93 +1007,6 @@ function FileManagerMenu:getStartWithMenuTable()
             end
         end,
         sub_item_table = sub_item_table,
-    }
-end
-
-function FileManagerMenu:genBackupMenu()
-    local function gen_menu_item(item_text, item_key, separator)
-        return {
-            text = item_text,
-            checked_func = function()
-                local groups = G_reader_settings:readSetting("backup")
-                return groups[item_key]
-            end,
-            callback = function()
-                local groups = G_reader_settings:readSetting("backup")
-                groups[item_key] = not groups[item_key] or nil
-            end,
-            separator = separator,
-        }
-    end
-
-    local backup_files = {}
-    util.findFiles(DataStorage:getDataDir(), function(path, f)
-        if util.stringStartsWith(f, "settings_backup_") then
-            table.insert(backup_files, path)
-        end
-    end, false)
-    if #backup_files > 0 then
-        if #backup_files > 1 then
-            table.sort(backup_files, function(a, b) return a > b end) -- recent first
-        end
-        for i, file in ipairs(backup_files) do
-            local backup_name = file:match(".*settings_backup_(.*).zip")
-            backup_files[i] = {
-                text = backup_name,
-                keep_menu_open = true,
-                callback = function()
-                    UIManager:show(ConfirmBox:new{
-                        text = T(_("Restore settings from backup\n%1?\nKOReader will restart."), backup_name),
-                        ok_text = _("Restore"),
-                        ok_callback = function()
-                            self.ui:restoreSettings(file)
-                        end,
-                    })
-                end,
-                hold_callback = function(touchmenu_instance, item)
-                    UIManager:show(ConfirmBox:new{
-                        text = T(_("Delete settings backup\n%1?"), backup_name),
-                        ok_text = _("Delete"),
-                        ok_callback = function()
-                            os.remove(file)
-                            table.remove(backup_files, item.idx)
-                            if #backup_files == 0 then
-                                touchmenu_instance:backToUpperMenu()
-                            else
-                                touchmenu_instance:updateItems()
-                            end
-                        end,
-                    })
-                end,
-            }
-        end
-    end
-
-    return {
-        {
-            text = _("Back up"),
-            enabled_func = function()
-                local groups = G_reader_settings:readSetting("backup", {})
-                return next(groups) ~= nil
-            end,
-            callback = function()
-                UIManager:show(InfoMessage:new{ text = _("The settings backed up") })
-                self.ui:backUpSettings()
-            end,
-        },
-        gen_menu_item(_("program settings"), "g_settings"),
-        gen_menu_item(_("history"), "history"),
-        gen_menu_item(_("plugins settings"), "plugins"),
-        gen_menu_item(_("user style tweaks"), "styletweaks", true),
-        -- separator
-        {
-            text = _("Restore"),
-            enabled_func = function()
-                return #backup_files > 0
-            end,
-            sub_item_table = backup_files,
-        },
-        gen_menu_item(_("preserve paths in settings"), "keep_paths"),
     }
 end
 
