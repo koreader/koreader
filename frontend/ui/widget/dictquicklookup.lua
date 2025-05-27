@@ -211,11 +211,13 @@ function DictQuickLookup:init()
         }
     end
 
+    self.temp_fullscreen = DictQuickLookup.temp_fullscreen_request and DictQuickLookup.temp_fullscreen_request.full_screen == true
+
     -- We no longer support setting a default dict with Tap on title.
     -- self:changeToDefaultDict()
     if DictQuickLookup.temp_fullscreen_request and DictQuickLookup.temp_fullscreen_request.dict_index then
         self:changeDictionary(DictQuickLookup.temp_fullscreen_request.dict_index, true)
-        DictQuickLookup.temp_fullscreen_request = nil
+        DictQuickLookup.temp_fullscreen_request.dict_index = nil
         self._is_temporary_fullscreen_mode = true
     else
         self:changeDictionary(1, true) -- don't call update
@@ -230,7 +232,7 @@ function DictQuickLookup:init()
 
     -- Bigger window if fullpage Wikipedia article being shown,
     -- or when large windows for dict requested
-    local is_large_window = self.is_wiki_fullpage or G_reader_settings:isTrue("dict_largewindow")
+    local is_large_window = self.is_wiki_fullpage or G_reader_settings:isTrue("dict_largewindow") or self.temp_fullscreen
     if is_large_window then
         self.width = Screen:getWidth() - 2*Size.margin.default
     else
@@ -1006,7 +1008,7 @@ function DictQuickLookup:onSetTemporaryFullScreenMode()
 end
 
 function DictQuickLookup:setTemporaryFullScreenMode()
-    if self._is_temporary_fullscreen_mode then return false end
+    if self.temp_fullscreen then return false end
     if self.is_wiki_fullpage or G_reader_settings:isTrue("dict_largewindow") then return false end
 
     -- Remove ourselves from window_list before creating the new instance, onHoldClose won't like it if we still exist.
@@ -1017,16 +1019,15 @@ function DictQuickLookup:setTemporaryFullScreenMode()
         end
     end
     -- We want to remember the current dict_index (e.g. 5/7), so that it can be restored later.
-    DictQuickLookup.temp_fullscreen_request = { dict_index = self.dict_index, }
-    -- This setting will be reverted upon closing the new instance. Note that any would be child windows will also open in fullscreen mode.
-    G_reader_settings:makeTrue("dict_largewindow")
-
-    local ui = self.ui or UIManager
+    DictQuickLookup.temp_fullscreen_request = {
+        dict_index = self.dict_index,
+        full_screen = true, -- note: any would-be child window will also open in fullscreen mode.
+    }
     -- Re-trigger the lookup, and close this instance _after_ the new one is created.
     if self.is_wiki then
-        ui:handleEvent(Event:new("LookupWikipedia", self.word, self.is_sane_word, self.word_boxes, false, self.lang, function() self:onClose(true) end))
+        self.ui:handleEvent(Event:new("LookupWikipedia", self.word, self.is_sane_word, self.word_boxes, false, self.lang, function() self:onClose(true) end))
     else
-        ui:handleEvent(Event:new("LookupWord", self.word, true, self.word_boxes, self.highlight, nil, function() self:onClose(true) end))
+        self.ui:handleEvent(Event:new("LookupWord", self.word, true, self.word_boxes, self.highlight, nil, function() self:onClose(true) end))
     end
     return true
 end
@@ -1276,7 +1277,7 @@ function DictQuickLookup:onClose(no_clear)
     UIManager:close(self)
 
     if self._is_temporary_fullscreen_mode then
-        G_reader_settings:makeFalse("dict_largewindow")
+        DictQuickLookup.temp_fullscreen_request = nil
     end
 
     if self.update_wiki_languages_on_close then
