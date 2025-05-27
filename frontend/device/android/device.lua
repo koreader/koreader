@@ -544,10 +544,6 @@ function Device:_showLightDialog()
     end
 end
 
-function Device:untar(archive, extract_to)
-    return android.untar(archive, extract_to)
-end
-
 function Device:download(link, name, ok_text)
     local ConfirmBox = require("ui/widget/confirmbox")
     local InfoMessage = require("ui/widget/infomessage")

@@ -879,6 +879,7 @@ You can then paste it here with long-press in the text box.]]), true},
 
     { _("Private CSS properties"), {
         { "-cr-hint: footnote-inpage;", _("When set on a block element containing the target id of a href, this block element will be shown as an in-page footnote.")},
+        { "-cr-hint: extend-footnote-inpage;", _("When set on a block element following a block element marked `footnote-inpage`, this block will be shown as part of the same in-page footnote as the previous element. Can be chained across multiple elements following an in-page footnote.")},
         { "-cr-hint: non-linear;", _("Can be set on some specific DocFragments (e.g. DocFragment[id$=_16]) to ignore them in the linear pages flow.")},
         { "-cr-hint: non-linear-combining;", _("Can be set on contiguous footnote blocks to ignore them in the linear pages flow.")},
         { "-cr-hint: toc-level1;", _("When set on an element, its text can be used to build the alternative table of contents. toc-level2 to toc-level6 can be used for nested chapters.")},

@@ -10,7 +10,6 @@ local datetime = require("datetime")
 local dbg = require("dbg")
 local time = require("ui/time")
 local _ = require("gettext")
-local T = require("ffi/util").template
 
 local State = {}
 
@@ -205,7 +204,7 @@ function BatteryStat:showStatistics()
     self:accumulate()
     local kv_pairs = self:dump()
     kv_pairs[#kv_pairs].separator = true
-    table.insert(kv_pairs, {_("Tap to reset the data."), "",
+    table.insert(kv_pairs, {_("Tap to reset the data"), "",
                             callback = function()
                                 UIManager:setDirty(self.kv_page, "fast")
                                 UIManager:scheduleIn(0.1, function()
@@ -213,7 +212,7 @@ function BatteryStat:showStatistics()
                                 end)
                             end})
     self.kv_page = KeyValuePage:new{
-        title = T(_("Battery statistics (now %1%)"), self.awake_state.percentage),
+        title = _("Battery statistics") .. " (" .. self.awake_state.percentage .. "%)",
         kv_pairs = kv_pairs,
         single_page = true,
     }
