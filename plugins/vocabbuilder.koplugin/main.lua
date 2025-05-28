@@ -599,7 +599,12 @@ function WordInfoDialog:init()
     local copy_button = Button:new{
         text = "", -- copy in nerdfont,
         callback = function()
-            Device.input.setClipboardText(self.title)
+            local removable_head = _("Vocabulary exists:") .. " "
+            local title = self.title
+            if self.update_callback and title:sub(1, #removable_head) == removable_head then
+                title = title:sub(#removable_head + 1)
+            end
+            Device.input.setClipboardText(title)
             UIManager:show(Notification:new{
                 text = _("Word copied to clipboard."),
             })
@@ -626,9 +631,7 @@ function WordInfoDialog:init()
         show_parent = self
     }
 
-    if not self.update_callback then
-        table.insert(self.layout, {copy_button})
-    end
+    table.insert(self.layout, {copy_button})
     table.insert(self.layout, {self.book_title_button})
     self:mergeLayoutInVertical(focus_button)
 
