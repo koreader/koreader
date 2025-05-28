@@ -622,10 +622,10 @@ function Profiles:genAutoExecPathChangedMenuItem(text, event, profile_name, sepa
             }
             local sub_item_table = {}
             for i, mode in ipairs(conditions) do
-                local condition = conditions[i][2]
+                local condition = mode[2]
                 sub_item_table[i] = {
                     text_func = function()
-                        local txt = conditions[i][1]
+                        local txt = mode[1]
                         local value = util.tableGetValue(self.autoexec, event, profile_name, condition)
                         return value and txt .. ": " .. value or txt
                     end,
