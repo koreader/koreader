@@ -503,6 +503,7 @@ end
 Individual word info dialogue widget
 --]]--
 local WordInfoDialog = FocusManager:extend{
+    word = nil,
     title = nil,
     highlighted_word = nil,
     book_title = nil,
@@ -599,12 +600,7 @@ function WordInfoDialog:init()
     local copy_button = Button:new{
         text = "", -- copy in nerdfont,
         callback = function()
-            local removable_head = _("Vocabulary exists:") .. " "
-            local title = self.title
-            if self.update_callback and title:sub(1, #removable_head) == removable_head then
-                title = title:sub(#removable_head + 1)
-            end
-            Device.input.setClipboardText(title)
+            Device.input.setClipboardText(self.word)
             UIManager:show(Notification:new{
                 text = _("Word copied to clipboard."),
             })
@@ -2118,6 +2114,7 @@ function VocabBuilder:onWordLookedUp(word, title, is_manual)
         local time_str = T(_("Review scheduled at %1"), os.date("%Y-%m-%d %H:%M", item.due_time))
         local dialog = WordInfoDialog:new{
             title = _("Vocabulary exists:") .. " " .. word,
+            word = word,
             highlighted_word = item.highlight or word,
             book_title = item.book_title,
             dates = date_str .. " | " .. time_str,
