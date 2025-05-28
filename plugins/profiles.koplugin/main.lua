@@ -622,18 +622,18 @@ function Profiles:genAutoExecPathChangedMenuItem(text, event, profile_name, sepa
             }
             local sub_item_table = {}
             for i, mode in ipairs(conditions) do
+                local condition = conditions[i][2]
                 sub_item_table[i] = {
                     text_func = function()
                         local txt = conditions[i][1]
-                        local value = util.tableGetValue(self.autoexec, event, profile_name, conditions[i][2])
+                        local value = util.tableGetValue(self.autoexec, event, profile_name, condition)
                         return value and txt .. ": " .. value or txt
                     end,
                     no_refresh_on_check = true,
                     checked_func = function()
-                        return util.tableGetValue(self.autoexec, event, profile_name, conditions[i][2])
+                        return util.tableGetValue(self.autoexec, event, profile_name, condition)
                     end,
                     callback = function(touchmenu_instance)
-                        local condition = conditions[i][2]
                         local dialog
                         local buttons = {{
                             {
@@ -1002,7 +1002,7 @@ function Profiles:onPathChanged(path) -- global
                 do_execute = path ~= trigger
             end
             if do_execute then
-                break -- execute profile only once
+                break
             end
         end
         if do_execute then
