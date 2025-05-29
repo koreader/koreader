@@ -279,7 +279,8 @@ else
 fi
 sevenzip_compress_cmd+=("${options[@]}" a "${output}" "-i@${filelist}")
 tar_compress_cmd=(
-    "${TAR}" --create --no-recursion --owner=0 --group=0
+    "${TAR}" --create --no-recursion
+    --numeric-owner --owner=0 --group=0
     --verbatim-files-from --files-from="${filelist}"
 )
 case "${format}" in
