@@ -655,7 +655,7 @@ function WordInfoDialog:init()
                                     alignment = self.title_align or "left",
                                 },
                                 HorizontalSpan:new{ width=Size.padding.default },
-                                not self.update_callback and copy_button or nil,
+                                copy_button,
                             },
                             self.book_title_button,
                             VerticalSpan:new{width= Size.padding.default},
