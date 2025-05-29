@@ -130,6 +130,7 @@ release_excludes = $(strip $(UPDATE_PATH_EXCLUDES:%='-x!$1%') $(UPDATE_GLOBAL_EX
 define mkupdate
 cd $(INSTALL_DIR) &&
 '$(abspath tools/mkrelease.sh)'
+--epoch="$$(git log -1 --format='%cs' "$$(git describe --tags | cut -d- -f1)")"
 $(if $(PARALLEL_JOBS),--jobs $(PARALLEL_JOBS))
 --manifest=$(or $2,koreader)/ota/package.index
 $(foreach a,$1,'$(if $(filter --%,$a),$a,$(abspath $a))') $(or $2,koreader)
