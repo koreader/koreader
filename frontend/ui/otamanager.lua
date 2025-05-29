@@ -307,8 +307,9 @@ function OTAManager:_buildLocalPackage()
     local tar_cmd = {
         './tar',
         '--create', '--file='..self.installed_package,
+        '--mtime', tostring(Version:getBuildDate()),
         '--numeric-owner', '--owner=0', '--group=0',
-        '--no-recursion', '-C', '..',
+        '--ignore-failed-read', '--no-recursion', '-C', '..',
         '--verbatim-files-from', '--files-from', self.package_indexfile,
     }
 
