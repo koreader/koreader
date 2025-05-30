@@ -171,7 +171,7 @@ function ButtonDialog:init()
             bordersize = 0,
             title_group,
         }
-        title_group_height = self.title_group:getSize().h
+        title_group_height = self.title_group:getSize().h + Size.line.medium
     else
         self.title_group = VerticalSpan:new{}
         title_group_height = 0
