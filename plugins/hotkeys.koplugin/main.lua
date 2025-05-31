@@ -421,8 +421,10 @@ function HotKeys:overrideConflictingKeyEvents()
         self.ui.bookmark.key_events = {} -- reset it.
         logger.dbg("Hotkey ReaderBookmark:registerKeyEvents() overridden.")
 
-        self.ui.font.key_events = {} -- reset it.
-        logger.dbg("Hotkey ReaderFont:registerKeyEvents() overridden.")
+        if self.ui.font then -- readerfont is not available for pdf/djvu files.
+            self.ui.font.key_events = {} -- reset it.
+            logger.dbg("Hotkey ReaderFont:registerKeyEvents() overridden.")
+        end
 
         if Device:hasScreenKB() or Device:hasSymKey() then
             local readerconfig = self.ui.config
