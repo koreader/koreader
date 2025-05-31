@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--  Remote Note Input  -->
+    <title>%1</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --accent-color: #13998B;
+            --border-color: #e0e0e0;
+            --input-bg: #f5f5f5;
+            --switch-bg: #cccccc;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1a1a1a;
+                --text-color: #e0e0e0;
+                --border-color: #404040;
+                --input-bg: #2a2a2a;
+                --switch-bg: #555555;
+            }
+
+            .instructions {
+                color: #999;
+                background-color: rgba(19, 153, 139, 0.1);
+            }
+        }
+
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 0 15px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            color: var(--accent-color);
+            margin: 2rem 0;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .note-input {
+            width: 100%;
+            height: 500px;
+            padding: 15px;
+            margin-bottom: 25px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-color);
+            resize: vertical;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        .note-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(19, 153, 139, 0.1);
+        }
+
+        .settings {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: var(--input-bg);
+            border-radius: 6px;
+            gap: 10px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--switch-bg);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        input:checked+.slider {
+            background-color: var(--accent-color);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(22px);
+        }
+
+        .submit-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .submit-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--accent-color);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            max-width: 80%;
+            text-align: center;
+        }
+
+        .toast.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .instructions {
+            font-size: 0.85em;
+            color: #666;
+            margin: 20px 0 10px;
+            padding: 12px;
+            line-height: 1.5;
+            border-left: 3px solid var(--accent-color);
+            background-color: rgba(19, 153, 139, 0.05);
+            border-radius: 4px;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+
+            .note-input {
+                height: 400px;
+                font-size: 15px;
+            }
+
+            .settings {
+                padding: 12px;
+            }
+
+            .toast {
+                width: 90%;
+                bottom: 10px;
+            }
+
+            .instructions {
+                font-size: 0.8em;
+                margin: 15px 0;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Highlight Note</h1>
+        <!--  Write down your thoughts about this highlight... -->
+        <textarea class="note-input" placeholder="%2"></textarea>
+        <div class="settings">
+            <span>Clear after sending</span>
+            <label class="switch">
+                <input type="checkbox" id="clearToggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+        <!--  Send to KOReader -->
+        <button class="submit-btn" onclick="handleSubmit()">%3</button>
+        <div class="instructions">%4</div>
+        <div class="toast"></div>
+    </div>
+
+    <script>
+        function showToast(message, isSuccess) {
+            const toast = document.querySelector('.toast');
+            toast.textContent = message;
+            toast.style.backgroundColor = isSuccess ? '#13998B' : '#ff4444';
+            toast.classList.add('active');
+
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3000);
+        }
+
+        function handleSubmit() {
+            const noteInput = document.querySelector('.note-input');
+            const clearToggle = document.getElementById('clearToggle');
+
+            if (!noteInput.value.trim()) {
+                // Please enter some text
+                showToast('%5', false);
+                return;
+            }
+
+            const btn = document.querySelector('.submit-btn');
+            btn.disabled = true;
+            // Sending...
+            btn.textContent = '%6';
+
+            fetch('/send-note', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/text' },
+                body: noteInput.value
+            })
+                .then(response => {
+                    // Network error
+                    if (!response.ok) throw new Error("%7");
+
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(data);
+                    if (data.code === 0) {
+                        // Sent successfully
+                        showToast(data.message || '%8', true);
+                        if (clearToggle.checked) noteInput.value = '';
+                    } else {
+                        // Failed to send
+                        showToast(data.message || '%9', false);
+                    }
+                })
+                .catch(error => {
+                    // Failed to send
+                    showToast('%10', false);
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    // Send to KOReader
+                    btn.textContent = '%11';
+                });
+        }
+    </script>
+</body>
+</html>
