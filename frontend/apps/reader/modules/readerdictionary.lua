@@ -999,6 +999,10 @@ end
 
 function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     local words = {word}
+    -- If a word starts with a capital letter, add lowercase version to words array.
+    if not fuzzy_search and word:match("^%u") then
+        table.insert(words, word:lower())
+    end
 
     if self.ui.languagesupport and self.ui.languagesupport:hasActiveLanguagePlugins() then
         -- Get any other candidates from any language-specific plugins we have.
