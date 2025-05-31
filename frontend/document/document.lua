@@ -410,6 +410,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
 
     local hash, hash_excerpt, tile
     if is_prescaled then
+        logger.dbg("Document:renderPage: accepting pre scaled dimensions")
         hash = self:getPagePartHash(pageno, zoom, rotation, gamma, rect)
 
         tile = DocCache:check(hash, TileCacheItem)
@@ -517,7 +518,7 @@ end
 -- a hint for the cache engine to paint a full page to the cache
 --- @todo this should trigger a background operation
 function Document:hintPage(pageno, zoom, rotation, gamma)
-    logger.dbg("hinting page", pageno)
+    logger.dbg("Document:hintPage: hinting page", pageno)
     self:renderPage(pageno, nil, zoom, rotation, gamma, true)
 end
 

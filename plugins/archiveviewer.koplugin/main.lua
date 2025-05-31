@@ -9,6 +9,7 @@ local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
+local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local T = ffiUtil.template
@@ -227,6 +228,7 @@ function ArchiveViewer:viewFile(filepath)
         setmetatable(image_table, {__index = function (_, key)
                 local content = self:extractContent(images_list[key])
                 if content then
+                    logger.dbg("plugin.archiveviewer:: rendering image", filepath)
                     return RenderImage:renderImageData(content, #content)
                 end
             end
