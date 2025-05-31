@@ -4,8 +4,6 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
-local Geom = require("ui/geometry")
-local GestureRange = require("ui/gesturerange")
 local Menu = require("ui/widget/menu")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local OverlapGroup = require("ui/widget/overlapgroup")
@@ -229,17 +227,6 @@ function ReaderPageMap:onShowPageList()
         single_line = true,
         align_baselines = true,
         with_dots = items_with_dots,
-        on_close_ges = {
-            GestureRange:new{
-                ges = "two_finger_swipe",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
-                },
-                direction = BD.flipDirectionIfMirroredUILayout("east")
-            }
-        }
     }
 
     self.pagelist_menu = CenterContainer:new{
