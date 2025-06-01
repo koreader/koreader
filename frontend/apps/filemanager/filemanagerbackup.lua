@@ -1,14 +1,10 @@
 local Archiver = require("ffi/archiver")
-local Blitbuffer = require("ffi/blitbuffer")
+local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
-local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
-local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
-local LineWidget = require("ui/widget/linewidget")
 local PathChooser = require("ui/widget/pathchooser")
-local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local dump = require("dump")
 local ffiUtil = require("ffi/util")
@@ -188,49 +184,57 @@ function FileManagerBackup:chooseBackupFile()
                 UIManager:show(InfoMessage:new{ text = _("Invalid backup file") })
                 return
             end
+
+            local button_dialog
             local check_buttons = {}
-            local confirmbox
-            confirmbox = ConfirmBox:new{
-                text = T(_("Backup date: %1\nSource device: %2"), backup.config.date_time,
-                    device_id == backup.config.device_id and _("this device") or backup.config.model),
-                ok_text = _("Restore"),
-                keep_dialog_open = true,
-                ok_callback = function()
-                    for _, section in ipairs(sections) do
-                        if check_buttons[section].checked then
-                            UIManager:close(confirmbox)
-                            self:restoreSettings(backup, check_buttons)
-                            break
-                        end
-                    end
-                end,
+            local buttons = {
+                {
+                    {
+                        text = _("Cancel"),
+                        callback = function()
+                            UIManager:close(button_dialog)
+                        end,
+                    },
+                    {
+                        text = _("Restore"),
+                        callback = function()
+                            for _, section in ipairs(sections) do
+                                if check_buttons[section].checked then
+                                    UIManager:close(button_dialog)
+                                    return self:restoreSettings(backup, check_buttons)
+                                end
+                            end
+                        end,
+                    },
+                },
             }
-            for _, section in ipairs(sections) do
+            button_dialog = ButtonDialog:new{
+                title = T(_("Backup date: %1\nSource device: %2"), backup.config.date_time,
+                    device_id == backup.config.device_id and _("this device") or backup.config.model),
+                width_factor = 0.8,
+                buttons = buttons,
+            }
+            for i, section in ipairs(sections) do
                 check_buttons[section] = CheckButton:new{
                     text = section_text[section],
                     enabled = backup[section] and true or false,
                     checked = backup[section] and true or false,
-                    parent = confirmbox,
+                    parent = button_dialog,
                 }
-                confirmbox:addWidget(check_buttons[section])
+                if i == #sections and device_id ~= backup.config.device_id then
+                    check_buttons[section].separator = true
+                end
+                button_dialog:addWidget(check_buttons[section])
             end
             if device_id ~= backup.config.device_id then
-                local line_widget = LineWidget:new{
-                    background = Blitbuffer.COLOR_GRAY,
-                    dimen = Geom:new{
-                        w = confirmbox:getAddedWidgetAvailableWidth(),
-                        h = Size.line.medium,
-                    },
-                }
-                confirmbox:addWidget(line_widget)
                 check_buttons["preserve_paths"] = CheckButton:new{
                     text = _("preserve paths in settings"),
                     checked = true,
-                    parent = confirmbox,
+                    parent = button_dialog,
                 }
-                confirmbox:addWidget(check_buttons["preserve_paths"])
+                button_dialog:addWidget(check_buttons["preserve_paths"])
             end
-            UIManager:show(confirmbox)
+            UIManager:show(button_dialog)
         end,
     })
 end
