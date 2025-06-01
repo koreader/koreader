@@ -68,11 +68,11 @@ local DictQuickLookup = InputContainer:extend{
     -- Static class member, used by ReaderWiktionary to communicate state from a closed widget to the next opened one.
     rotated_update_wiki_languages_on_close = nil,
 
-    _is_temporary_fullscreen_mode = false,
+    _is_temporary_large_window = false,
 }
 
 -- Static variable to hold request data for temporary fullscreen
-DictQuickLookup.temp_fullscreen_request = nil
+DictQuickLookup.temp_large_window_request = nil
 
 function DictQuickLookup.getWikiSaveEpubDefaultDir()
     local dir = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
@@ -198,7 +198,7 @@ function DictQuickLookup:init()
                     end
                 end
             },
-            SetTemporaryFullScreenMode = {
+            SetTemporaryLargeWindowMode = {
                 GestureRange:new{
                     ges = "spread",
                     range = range,
@@ -211,14 +211,14 @@ function DictQuickLookup:init()
         }
     end
 
-    self.temp_large_window = DictQuickLookup.temp_fullscreen_request and DictQuickLookup.temp_fullscreen_request.full_screen == true
+    self.temp_large_window = DictQuickLookup.temp_large_window_request and DictQuickLookup.temp_large_window_request.full_screen == true
 
     -- We no longer support setting a default dict with Tap on title.
     -- self:changeToDefaultDict()
-    if DictQuickLookup.temp_fullscreen_request and DictQuickLookup.temp_fullscreen_request.dict_index then
-        self:changeDictionary(DictQuickLookup.temp_fullscreen_request.dict_index, true)
-        DictQuickLookup.temp_fullscreen_request.dict_index = nil
-        self._is_temporary_fullscreen_mode = true
+    if DictQuickLookup.temp_large_window_request and DictQuickLookup.temp_large_window_request.dict_index then
+        self:changeDictionary(DictQuickLookup.temp_large_window_request.dict_index, true)
+        DictQuickLookup.temp_large_window_request.dict_index = nil
+        self._is_temporary_large_window = true
     else
         self:changeDictionary(1, true) -- don't call update
     end
@@ -787,7 +787,7 @@ function DictQuickLookup:registerKeyEvents()
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
             self.key_events.ChangeToPrevDict = { { modifier, Input.group.PgBack } }
             self.key_events.ChangeToNextDict = { { modifier, Input.group.PgFwd } }
-            self.key_events.SetTemporaryFullScreenMode = { { modifier, "Home" } }
+            self.key_events.SetTemporaryLargeWindowMode = { { modifier, "Home" } }
             self.key_events.StartOrUpTextSelectorIndicator   = { { modifier, "Up" },   event = "StartOrMoveTextSelectorIndicator", args = { 0, -1, true } }
             self.key_events.StartOrDownTextSelectorIndicator = { { modifier, "Down" }, event = "StartOrMoveTextSelectorIndicator", args = { 0,  1, true } }
             self.key_events.FastLeftTextSelectorIndicator  = { { modifier, "Left" },  event = "MoveTextSelectorIndicator", args = { -1, 0, true } }
@@ -1002,12 +1002,12 @@ function DictQuickLookup:update()
     end)
 end
 
-function DictQuickLookup:onSetTemporaryFullScreenMode()
-    self:setTemporaryFullScreenMode()
+function DictQuickLookup:onSetTemporaryLargeWindowMode()
+    self:setTemporaryLargeWindowMode()
     return true
 end
 
-function DictQuickLookup:setTemporaryFullScreenMode()
+function DictQuickLookup:setTemporaryLargeWindowMode()
     if self.temp_large_window then return false end
     if self.is_wiki_fullpage or G_reader_settings:isTrue("dict_largewindow") then return false end
 
@@ -1019,7 +1019,7 @@ function DictQuickLookup:setTemporaryFullScreenMode()
         end
     end
     -- We want to remember the current dict_index (e.g. 5/7), so that it can be restored later.
-    DictQuickLookup.temp_fullscreen_request = {
+    DictQuickLookup.temp_large_window_request = {
         dict_index = self.dict_index,
         full_screen = true, -- note: any would-be child window will also open in fullscreen mode.
     }
@@ -1276,8 +1276,8 @@ function DictQuickLookup:onClose(no_clear)
 
     UIManager:close(self)
 
-    if self._is_temporary_fullscreen_mode then
-        DictQuickLookup.temp_fullscreen_request = nil
+    if self._is_temporary_large_window then
+        DictQuickLookup.temp_large_window_request = nil
     end
 
     if self.update_wiki_languages_on_close then
