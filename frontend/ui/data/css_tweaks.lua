@@ -1025,7 +1025,7 @@ This tweak can be duplicated as a user style tweak when a book contains other el
                     conflicts_with = function(id) return util.stringStartsWith(id, "inpage_footnote_font-size_") end,
                     title = _("Smaller footnotes (80%, legacy)"),
                     description = _([[
-Decrease size of in-page footnotes. This may have limited/no apparent effect, e.g. if it's overwritten by publisher styles. The "footnote font size" style tweaks are recommended instead.]]),
+Decrease size of in-page footnotes. This may have no effect if it's overwritten by publisher styles. The "footnote font size" style tweaks are recommended instead.]]),
                     css = [[
 *, autoBoxing {
     -cr-hint: late;
