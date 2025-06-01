@@ -164,7 +164,7 @@ Will rotate up to specified value.]]),
                 default_pos = 4,
                 default_value = 36,
                 show_func = function(configurable)
-                    return configurable.zoom_mode_genus < 3
+                    return configurable.zoom_mode_genus and configurable.zoom_mode_genus < 3
                 end,
                 event = "DefineZoom",
                 args =   {0, 12, 24, 36, 48, 60, 72, 84},
@@ -185,7 +185,7 @@ Will rotate up to specified value.]]),
                 default_pos = 4,
                 default_value = 36,
                 show_func = function(configurable)
-                    return configurable.zoom_mode_genus < 3
+                    return configurable.zoom_mode_genus and configurable.zoom_mode_genus < 3
                 end,
                 event = "DefineZoom",
                 args =   {0, 12, 24, 36, 48, 60, 72, 84},
@@ -198,17 +198,17 @@ Will rotate up to specified value.]]),
                 name = "zoom_mode_type",
                 name_text = _("Fit"),
                 enabled_func = function(configurable)
-                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0) and configurable.page_mode ~= 2
                 end,
-                toggle = {_("full"), _("width"), _("height")},
+                toggle = { _("full"), _("width"), _("height") },
                 alternate = false,
-                values = {2, 1, 0},
+                values = { 2, 1, 0 },
                 default_value = 1,
                 show_func = function(configurable)
-                    return configurable.zoom_mode_genus > 2
+                    return configurable.zoom_mode_genus and configurable.zoom_mode_genus > 2
                 end,
                 event = "DefineZoom",
-                args = {"full", "width", "height"},
+                args = { "full", "width", "height" },
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set how the page should be resized to fit the screen.]]),
             },
@@ -275,7 +275,7 @@ Will rotate up to specified value.]]),
                 name = "zoom_mode_genus",
                 name_text = _("Zoom to"),
                 enabled_func = function(configurable)
-                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0) and configurable.page_mode ~= 2
                 end,
                 -- toggle = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
                 item_icons = {
@@ -286,11 +286,11 @@ Will rotate up to specified value.]]),
                     "zoom.manual",
                 },
                 alternate = false,
-                values = {4, 3, 2, 1, 0},
-                labels = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
+                values = { 4, 3, 2, 1, 0 },
+                labels = { _("page"), _("content"), _("columns"), _("rows"), _("manual") },
                 default_value = 4,
                 event = "DefineZoom",
-                args = {"page", "content", "columns", "rows", "manual"},
+                args = { "page", "content", "columns", "rows", "manual" },
                 name_text_hold_callback = optionsutil.showValues,
             },
             {
@@ -345,6 +345,27 @@ left to right or reverse, top to bottom or reverse.]]),
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[- 'page' mode shows only one page of the document at a time.
 - 'continuous' mode allows you to scroll the pages like you would in a web browser.]]),
+            },
+            {
+                name = "page_mode",
+                name_text = _("Page Mode"),
+                toggle = { _("single"), _("dual") },
+                values = { 1, 2 },
+                default_value = 0,
+                event = "SetPageMode",
+                args = { 1, 2 },
+                enabled_func = function(configurable, document)
+                    return optionsutil.enableIfEquals(configurable, "page_scroll", 0) and
+                        Screen:getScreenMode() == "landscape"
+                end,
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[- 'single' mode shows only one page of the document at a time.
+- 'dual' mode shows two pages at a time
+
+Zooming is disabled in this mode, for more info, consult the wiki.
+
+This option only works when the device is in landscape mode.
+]]),
             },
             {
                 name = "page_gap_height",

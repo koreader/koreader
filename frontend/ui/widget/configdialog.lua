@@ -350,6 +350,7 @@ function ConfigOption:init()
                 end
             end
             if self.options[c].name then
+                logger.dbg("ConfigOption:init() from option", self.options[c].name)
                 if self.options[c].values then
                     -- check if current value is stored in configurable or calculated in runtime
                     local val = self.options[c].current_func and self.options[c].current_func()

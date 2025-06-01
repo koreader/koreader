@@ -15,6 +15,8 @@ local ReaderAnnotation = WidgetContainer:extend{
 -- build, read, save
 
 function ReaderAnnotation:buildAnnotation(bm, highlights, init)
+    logger.dbg("ReaderAnnotation:buildAnnotation: ", bm, highlights)
+
     -- bm: associated single bookmark ; highlights: tables with all highlights
     if self.ui.rolling then
         local is_invalid
@@ -236,6 +238,7 @@ function ReaderAnnotation:migrateToAnnotations(config)
 end
 
 function ReaderAnnotation:setNeedsUpdateFlag()
+    logger.dbg("ReaderAnnotation:setNeedsUpdateFlag")
     self.needs_update = true
 end
 
@@ -337,6 +340,8 @@ end
 -- items handling
 
 function ReaderAnnotation:updatePageNumbers(force_update)
+    logger.dbg("ReaderAnnotation:updatePageNumbers: ", force_update)
+
     if force_update or self.needs_update then
         for _, item in ipairs(self.annotations) do
             item.pageno = self.ui.rolling and self.document:getPageFromXPointer(item.page) or item.page
@@ -502,6 +507,11 @@ function ReaderAnnotation:getInsertionIndex(item)
     return _middle + direction
 end
 
+-- This function gets called when you add an anntotation, that little dog ear top right
+--
+-- DEBUG ReaderAnnotation:addItem:  {
+--   page = 62
+-- } --[[table: 0x014283f4d0]]
 function ReaderAnnotation:addItem(item)
     item.datetime = item.datetime or os.date("%Y-%m-%d %H:%M:%S")
     item.pageno = self.ui.rolling and self.document:getPageFromXPointer(item.page) or item.page
@@ -512,6 +522,7 @@ function ReaderAnnotation:addItem(item)
 end
 
 function ReaderAnnotation:onAnnotationsModified(items)
+    logger.dbg("ReaderAnnotation:onAnnotationsModified: ", items)
     if items.index_modified == nil or items.modify_datetime then -- not needed when annotation added or removed
         items[1].datetime_updated = os.date("%Y-%m-%d %H:%M:%S")
     end

@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20250405
+local CURRENT_MIGRATION_DATE = 2025013
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -888,3 +888,29 @@ end
 
 -- We're done, store the current migration date
 G_reader_settings:saveSetting("last_migration_date", CURRENT_MIGRATION_DATE)
+
+-- Statistics https://github.com/koreader/koreader/pull/13675
+-- Added new settings, so the default values must be saved
+if last_migration_date < 2025013 then
+    logger.info("Performing one-time migration for 2025013 ")
+
+    -- c.f., PluginLoader
+    local package_path = package.path
+    package.path = string.format("%s/?.lua;%s", "plugins/statistics.koplugin", package_path)
+    local ok, ReaderStatistics = pcall(dofile, "plugins/statistics.koplugin/main.lua")
+    package.path = package_path
+    if not ok or not ReaderStatistics then
+        logger.warn("Error when loading plugins/statistics.koplugin/main.lua:", ReaderStatistics)
+    else
+        local settings = G_reader_settings:readSetting("statistics")
+        if settings then
+            for k, v in pairs(ReaderStatistics.default_settings) do
+                if settings[k] == nil then
+                    settings[k] = v
+                end
+            end
+            G_reader_settings:saveSetting("statistics", settings)
+        end
+    end
+end
+
