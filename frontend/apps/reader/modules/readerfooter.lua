@@ -1949,7 +1949,7 @@ function ReaderFooter:genPresetMenuItemTable()
             callback = function()
                 self:loadPreset(footer_presets[preset_name])
             end,
-            hold_callback = function(touchmenu_instance)
+            hold_callback = function(touchmenu_instance, item)
                 UIManager:show(MultiConfirmBox:new{
                     text = T(_("What would you like to do with preset '%1'?"), preset_name),
                     choice1_text = _("Delete"),
@@ -1957,7 +1957,7 @@ function ReaderFooter:genPresetMenuItemTable()
                         footer_presets[preset_name] = nil
                         UIManager:broadcastEvent(Event:new("DispatcherActionValueChanged",
                             { name = "load_footer_preset", old_value = preset_name, new_value = nil }))
-                        touchmenu_instance.item_table = self:genPresetMenuItemTable()
+                        table.remove(touchmenu_instance.item_table, item.idx)
                         touchmenu_instance:updateItems()
                     end,
                     choice2_text = _("Update"),
