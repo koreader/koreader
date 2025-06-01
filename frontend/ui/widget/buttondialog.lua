@@ -124,40 +124,64 @@ function ButtonDialog:init()
     }
     local buttontable_width = self.buttontable:getSize().w -- may be shrunk
 
-    local title_widget, title_widget_height
-    if self.title then
-        local title_padding, title_margin, title_face
-        if self.use_info_style then
-            title_padding = self.info_padding
-            title_margin  = self.info_margin
-            title_face    = self.info_face
-        else
-            title_padding = self.title_padding
-            title_margin  = self.title_margin
-            title_face    = self.title_face
+    local title_padding, title_margin, title_group_height
+    if self.use_info_style then
+        title_padding = self.info_padding
+        title_margin  = self.info_margin
+    else
+        title_padding = self.title_padding
+        title_margin  = self.title_margin
+    end
+    self.title_group_width = buttontable_width - 2 * (title_padding + title_margin)
+    if self.title or self._added_widgets then
+        local title_group = VerticalGroup:new{}
+        if self.title then
+            title_group[1] = TextBoxWidget:new{
+                text = self.title,
+                width = self.title_group_width,
+                face = self.use_info_style and self.info_face or self.title_face,
+                alignment = self.title_align,
+            }
         end
-        title_widget = FrameContainer:new{
+        if self._added_widgets then
+            if self.title then
+                table.insert(title_group, VerticalSpan:new{ width = Size.padding.default })
+            end
+            self.layout = {}
+            for i, widget in ipairs(self._added_widgets) do
+                table.insert(title_group, widget)
+                if widget.separator then
+                    table.insert(title_group, LineWidget:new{
+                        background = Blitbuffer.COLOR_GRAY,
+                        dimen = Geom:new{
+                            w = self.title_group_width,
+                            h = Size.line.medium,
+                        },
+                    })
+                end
+                if not widget.not_focusable then
+                    self.layout[i] = { widget }
+                end
+            end
+            self:mergeLayoutInVertical(self.buttontable)
+        end
+        self.title_group = FrameContainer:new{
             padding = title_padding,
             margin = title_margin,
             bordersize = 0,
-            TextBoxWidget:new{
-                text = self.title,
-                width = buttontable_width - 2 * (title_padding + title_margin),
-                face = title_face,
-                alignment = self.title_align,
-            },
+            title_group,
         }
-        title_widget_height = title_widget:getSize().h + Size.line.medium
+        title_group_height = self.title_group:getSize().h + Size.line.medium
     else
-        title_widget = VerticalSpan:new{}
-        title_widget_height = 0
+        self.title_group = VerticalSpan:new{}
+        title_group_height = 0
     end
-    self.top_to_content_offset = Size.padding.buttontable + Size.margin.default + title_widget_height
+    self.top_to_content_offset = Size.padding.buttontable + Size.margin.default + title_group_height
 
     -- If the ButtonTable ends up being taller than the screen, wrap it inside a ScrollableContainer.
     -- Ensure some small top and bottom padding, so the scrollbar stand out, and some outer margin
     -- so the this dialog does not take the full height and stand as a popup.
-    local max_height = Screen:getHeight() - 2*Size.padding.buttontable - 2*Size.margin.default - title_widget_height
+    local max_height = Screen:getHeight() - 2*Size.padding.buttontable - 2*Size.margin.default - title_group_height
     local height = self.buttontable:getSize().h
     local scontainer, scrollbar_width
     if height > max_height then
@@ -203,7 +227,7 @@ function ButtonDialog:init()
         }
     end
     local separator
-    if self.title then
+    if self.title or self._added_widgets then
         separator = LineWidget:new{
             background = Blitbuffer.COLOR_GRAY,
             dimen = Geom:new{
@@ -227,7 +251,7 @@ function ButtonDialog:init()
             padding_top = 0,
             padding_bottom = 0,
             VerticalGroup:new{
-                title_widget,
+                self.title_group,
                 separator,
                 scontainer or self.buttontable,
             },
@@ -235,7 +259,7 @@ function ButtonDialog:init()
     }
 
     -- No need to reinvent the wheel, ButtonTable's layout is perfect as-is
-    self.layout = self.buttontable.layout
+    self.layout = self.layout or self.buttontable.layout
     -- But we'll want to control focus in its place, though
     self.buttontable.layout = nil
 
@@ -243,6 +267,30 @@ function ButtonDialog:init()
         dimen = Screen:getSize(),
         self.movable,
     }
+end
+
+function ButtonDialog:reinit()
+    local title_group = self.title_group[1]
+    if title_group then
+        -- preserve added widgets' subwidgets from being free'ed
+        for i = #title_group, 1, -1 do
+            if title_group[i].parent then -- only added widgets have parent
+                table.remove(title_group, i)
+            end
+        end
+    end
+    self:free()
+    self:init()
+end
+
+function ButtonDialog:addWidget(widget)
+    self._added_widgets = self._added_widgets or {}
+    table.insert(self._added_widgets, widget)
+    self:reinit()
+end
+
+function ButtonDialog:getAddedWidgetAvailableWidth()
+    return self.title_group_width
 end
 
 function ButtonDialog:getContentSize()
@@ -267,8 +315,7 @@ end
 
 function ButtonDialog:setTitle(title)
     self.title = title
-    self:free()
-    self:init()
+    self:reinit()
     UIManager:setDirty("all", "ui")
 end
 
