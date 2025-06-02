@@ -211,7 +211,7 @@ function DictQuickLookup:init()
         }
     end
 
-    self.temp_large_window = DictQuickLookup.temp_large_window_request and DictQuickLookup.temp_large_window_request.full_screen == true
+    self.temp_large_window = DictQuickLookup.temp_large_window_request and DictQuickLookup.temp_large_window_request.is_large_window == true
 
     -- We no longer support setting a default dict with Tap on title.
     -- self:changeToDefaultDict()
@@ -1021,7 +1021,7 @@ function DictQuickLookup:setTemporaryLargeWindowMode()
     -- We want to remember the current dict_index (e.g. 5/7), so that it can be restored later.
     DictQuickLookup.temp_large_window_request = {
         dict_index = self.dict_index,
-        full_screen = true, -- note: any would-be child window will also open in fullscreen mode.
+        is_large_window = true, -- note: any would-be child window will also open in fullscreen mode.
     }
     -- Re-trigger the lookup, and close this instance _after_ the new one is created.
     if self.is_wiki then
