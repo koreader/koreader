@@ -815,37 +815,18 @@ function ReaderToc:onShowToc()
     -- update collapsible state
     if #self.toc > 0 and #self.collapsed_toc == 0 then
         local depth = 0
-        if self.search_string then
-            for i = #self.toc, 1, -1 do
-                local v = self.toc[i]
-                if v.depth < depth or self.search_string == "*" or util.stringSearch(v.title, self.search_string) ~= 0 then
-                    if v.depth < depth then
-                        v.state = self.collapse_button:new{}
-                        self.expanded_nodes[i] = true
-                    end
-                    table.insert(self.collapsed_toc, 1, v)
-                    depth = v.depth
-                end
+        for i = #self.toc, 1, -1 do
+            local v = self.toc[i]
+            -- node v has child node(s)
+            if v.depth < depth then
+                v.state = self.expand_button:new{}
             end
-            self.filtered_toc = {}
-            for i, v in ipairs(self.collapsed_toc) do
-                v.index = i
-                self.filtered_toc[i] = v
+            if v.depth < self.collapse_depth then
+                table.insert(self.collapsed_toc, 1, v)
             end
-        else
-            for i = #self.toc, 1, -1 do
-                local v = self.toc[i]
-                -- node v has child node(s)
-                if v.depth < depth then
-                    v.state = self.expand_button:new{}
-                end
-                if v.depth < self.collapse_depth then
-                    table.insert(self.collapsed_toc, 1, v)
-                end
-                depth = v.depth
-            end
-            self.filtered_toc = self.toc
+            depth = v.depth
         end
+        self.filtered_toc = self.toc
     end
     local can_collapse = self:getMaxDepth() > 1
 
@@ -967,43 +948,71 @@ function ReaderToc:onShowToc()
 end
 
 function ReaderToc:showTocDialog()
-    local function set_show_toc(search_string)
-        self.search_string = search_string
-        self.toc_menu_items_built = search_string and true
+    self:searchToc()
+end
+
+function ReaderToc:searchToc()
+    if #self.toc == 0 then return end
+    if self.search_string then -- restore full ToC
+        self.search_string = nil
+        self.toc_menu_items_built = false
         self.expanded_nodes = {}
         self.collapsed_toc = {}
         self.toc_menu.close_callback()
         self:onShowToc()
+        return
     end
-    if self.search_string then
-        set_show_toc()
-    else
-        local input_dialog
-        input_dialog = InputDialog:new{
-            title =  _("Enter text to search for in ToC"),
-            buttons = {{
-                {
-                    text = _("Cancel"),
-                    id = "close",
-                    callback = function()
-                        UIManager:close(input_dialog)
-                    end,
-                },
-                {
-                    text = _("Search"),
-                    callback = function()
-                        local str = input_dialog:getInputText()
-                        if str ~= "" then
-                            UIManager:close(input_dialog)
-                            set_show_toc(str)
+
+    local input_dialog
+    input_dialog = InputDialog:new{
+        title =  _("Enter text to search for"),
+        buttons = {{
+            {
+                text = _("Cancel"),
+                id = "close",
+                callback = function()
+                    UIManager:close(input_dialog)
+                end,
+            },
+            {
+                text = _("Search"),
+                callback = function()
+                    local str = input_dialog:getInputText()
+                    if str == "" then return end
+                    UIManager:close(input_dialog)
+                    local collapsed_toc, expanded_nodes = {}, {}
+                    local depth = 0
+                    for i = #self.toc, 1, -1 do
+                        local v = self.toc[i]
+                        if v.depth < depth or str == "*" or util.stringSearch(v.title, str) ~= 0 then
+                            if v.depth < depth then
+                                v.state = self.collapse_button:new{}
+                                expanded_nodes[i] = true
+                            end
+                            table.insert(collapsed_toc, 1, v)
+                            depth = v.depth
                         end
-                    end,
-                },
-            }},
-        }
-        UIManager:show(input_dialog)
-        input_dialog:onShowKeyboard()
-    end
+                    end
+                    if #collapsed_toc > 0 then
+                        self.search_string = str
+                        self.filtered_toc = {}
+                        for i, v in ipairs(collapsed_toc) do
+                            v.index = i
+                            self.filtered_toc[i] = v
+                        end
+                        self.collapsed_toc = collapsed_toc
+                        self.expanded_nodes = expanded_nodes
+                        self.toc_menu.close_callback()
+                        self:onShowToc()
+                    else
+                        UIManager:show(InfoMessage:new{ text = _("No results in table of contents") })
+                    end
+                end,
+            },
+        }},
+    }
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
 end
 
 -- expand TOC node of index in raw toc table
