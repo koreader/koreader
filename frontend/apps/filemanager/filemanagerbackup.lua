@@ -243,6 +243,8 @@ function FileManagerBackup:restoreSettings(backup, check_buttons)
     local g_settings_to_keep = {
         backup = true,
         device_id = true,
+        dicts_disabled = true,
+        dicts_order = true,
         folder_shortcuts = true,
         last_migration_date = true,
         lastdir = true,
