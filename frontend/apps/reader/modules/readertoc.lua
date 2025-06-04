@@ -839,7 +839,6 @@ function ReaderToc:onShowToc()
         subtitle = self.search_string and T(_("Query: %1"), self.search_string) or "",
         state_w = can_collapse and button_size.w or 0,
         ui = self.ui,
-        covers_fullscreen = true,
         is_borderless = true,
         is_popout = false,
         single_line = true,
