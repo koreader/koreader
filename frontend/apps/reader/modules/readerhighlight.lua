@@ -245,20 +245,18 @@ function ReaderHighlight:registerKeyEvents()
         self.key_events.RightHighlightIndicator = { { "Right" }, event = "MoveHighlightIndicator", args = {1, 0} }
         self.key_events.HighlightPress          = { { "Press" } }
     end
-    if Device:hasKeyboard() then
+    if Device:hasScreenKB() or Device:hasKeyboard() then
+        local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
         -- Used for text selection with dpad/keys
         local QUICK_INDICATOR_MOVE = true
-        self.key_events.QuickUpHighlightIndicator    = { { "Shift", "Up" },    event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICATOR_MOVE} }
-        self.key_events.QuickDownHighlightIndicator  = { { "Shift", "Down" },  event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICATOR_MOVE} }
-        self.key_events.QuickLeftHighlightIndicator  = { { "Shift", "Left" },  event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICATOR_MOVE} }
-        self.key_events.QuickRightHighlightIndicator = { { "Shift", "Right" }, event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICATOR_MOVE} }
-        self.key_events.StartHighlightIndicator      = { { "H" } }
-    elseif Device:hasScreenKB() then
-        local QUICK_INDICATOR_MOVE = true
-        self.key_events.QuickUpHighlightIndicator    = { { "ScreenKB", "Up" },    event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICATOR_MOVE} }
-        self.key_events.QuickDownHighlightIndicator  = { { "ScreenKB", "Down" },  event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICATOR_MOVE} }
-        self.key_events.QuickLeftHighlightIndicator  = { { "ScreenKB", "Left" },  event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICATOR_MOVE} }
-        self.key_events.QuickRightHighlightIndicator = { { "ScreenKB", "Right" }, event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICATOR_MOVE} }
+        self.key_events.QuickUpHighlightIndicator    = { { modifier, "Up" },    event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICATOR_MOVE} }
+        self.key_events.QuickDownHighlightIndicator  = { { modifier, "Down" },  event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICATOR_MOVE} }
+        self.key_events.QuickLeftHighlightIndicator  = { { modifier, "Left" },  event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICATOR_MOVE} }
+        self.key_events.QuickRightHighlightIndicator = { { modifier, "Right" }, event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICATOR_MOVE} }
+        self.key_events.HighlightModifierPress       = { { modifier, "Press" } }
+        if Device:hasKeyboard() then
+            self.key_events.StartHighlightIndicator  = { { "H" } }
+        end
     end
 end
 
@@ -2761,6 +2759,16 @@ function ReaderHighlight:onHighlightPress()
         )
     end
     UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
+    return true
+end
+
+function ReaderHighlight:onHighlightModifierPress()
+    if not self._current_indicator_pos then return false end -- let hotkeys run its course
+    if not self._start_indicator_highlight then return true end -- don't trigger hotkeys during text selection
+    -- Simulate very long-long press by setting the long hold flag. This will trigger the long-press dialog.
+    self.long_hold_reached = true
+    self:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
+    self:onStopHighlightIndicator()
     return true
 end
 
