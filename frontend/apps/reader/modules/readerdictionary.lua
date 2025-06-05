@@ -17,6 +17,7 @@ local NetworkMgr = require("ui/network/manager")
 local SortWidget = require("ui/widget/sortwidget")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
+local Utf8Proc = require("ffi/utf8proc")
 local ffi = require("ffi")
 local C = ffi.C
 local ffiUtil  = require("ffi/util")
@@ -999,6 +1000,13 @@ end
 
 function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     local words = {word}
+    -- If a word starts with a capital letter, add lowercase version to words array.
+    if not fuzzy_search then
+        local lowercased = Utf8Proc.lowercase(word, false)
+        if word ~= lowercased then
+            table.insert(words, lowercased)
+        end
+    end
 
     if self.ui.languagesupport and self.ui.languagesupport:hasActiveLanguagePlugins() then
         -- Get any other candidates from any language-specific plugins we have.
