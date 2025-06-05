@@ -110,6 +110,11 @@ function Calibre:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 sub_item_table = self:getWirelessMenuTable(),
             },
+            {
+                text = _("Metadata settings"),
+                keep_menu_open = true,
+                sub_item_table = self:getMetadataMenuTable(),
+            },
         }
     }
     -- insert the metadata search
@@ -121,6 +126,23 @@ function Calibre:addToMainMenu(menu_items)
             end
         }
     end
+end
+
+-- metadata options
+function Calibre:getMetadataMenuTable()
+    return {
+        {
+            text = _("Enable calibre to doc sidecar path map"),
+            checked_func = function()
+                return G_reader_settings:nilOrTrue("calibre_metadata_keep_sidecar_path_map")
+            end,
+            help_text = _(
+[[If you are using Calibre koreader plugin, this option is required to make it work properly if you're not using the default document sidecar settings.]]),
+            callback = function()
+                return G_reader_settings:flipNilOrTrue("calibre_metadata_keep_sidecar_path_map")
+            end,
+        },
+    }
 end
 
 -- search options available from UI
