@@ -6,8 +6,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local Font = require("ui/font")
-local GestureRange = require("ui/gesturerange")
-local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
@@ -846,17 +844,6 @@ function ReaderToc:onShowToc()
         items_font_size = items_font_size,
         items_padding = can_collapse and math.floor(Size.padding.fullscreen / 2) or nil, -- c.f., note above. Menu's default is twice that.
         line_color = Blitbuffer.COLOR_WHITE,
-        on_close_ges = {
-            GestureRange:new{
-                ges = "two_finger_swipe",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
-                },
-                direction = BD.flipDirectionIfMirroredUILayout("west")
-            }
-        }
     }
 
     local menu_container = CenterContainer:new{
