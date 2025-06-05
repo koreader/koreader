@@ -51,6 +51,7 @@ local Dispatcher = {
 -- See above for description.
 local settingsList = {
     -- General
+    gesture_overview = {category="none", event="ShowGestureOverview", title=_("Gesture overview"), general=true},
     filemanager = {category="none", event="Home", title=_("File browser"), general=true},
     open_previous_document = {category="none", event="OpenLastDoc", title=_("Open previous document"), general=true},
     history = {category="none", event="ShowHist", title=_("History"), general=true},
@@ -291,6 +292,7 @@ local settingsList = {
 -- array for item order in menu
 local dispatcher_menu_order = {
     -- General
+    "gesture_overview",
     "filemanager",
     "open_previous_document",
     "history",
@@ -626,7 +628,7 @@ function Dispatcher:removeAction(name)
     return true
 end
 
-local function iter_func(settings)
+function Dispatcher.iter_func(settings)
     local order = util.tableGetValue(settings, "settings", "order")
     if order and #order > 1 then
         return ipairs(order)
@@ -760,7 +762,7 @@ function Dispatcher.getDisplayList(settings, for_sorting)
     local item_table = {}
     if not settings then return item_table end
     local is_check_mark = for_sorting and settings.settings and settings.settings.show_as_quickmenu
-    for item, v in iter_func(settings) do
+    for item, v in Dispatcher.iter_func(settings) do
         if type(item) == "number" then item = v end
         if settingsList[item] ~= nil and settingsList[item].condition ~= false then
             table.insert(item_table, {
@@ -1193,7 +1195,7 @@ function Dispatcher:execute(settings, exec_props)
         Notification:notify(T(_("Executing profile: %1"), settings.settings.name))
     end
     local gesture = exec_props and exec_props.gesture
-    for k, v in iter_func(settings) do
+    for k, v in Dispatcher.iter_func(settings) do
         if type(k) == "number" then
             k = v
             v = settings[k]
