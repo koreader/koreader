@@ -75,6 +75,9 @@ function ReaderHighlight:init()
                 callback = function()
                     this:startSelection(index)
                     this:onClose()
+                    if not Device:isTouchDevice() then
+                        self:onStartHighlightIndicator()
+                    end
                 end,
             }
         end,
@@ -2676,6 +2679,13 @@ end
 function ReaderHighlight:onHighlightPress()
     if not self._current_indicator_pos then return false end
     if self._start_indicator_highlight then
+        self:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
+        self:onStopHighlightIndicator()
+        return true
+    end
+    -- Check if we're in select mode (extending an existing highlight)
+    if self.select_mode and self.highlight_idx then
+        self:onHold(nil, self:_createHighlightGesture("hold"))
         self:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
         self:onStopHighlightIndicator()
         return true
