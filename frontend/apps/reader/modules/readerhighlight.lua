@@ -2796,6 +2796,16 @@ function ReaderHighlight:onStartHighlightIndicator()
 end
 
 function ReaderHighlight:onStopHighlightIndicator(need_clear_selection)
+    -- If we're in select mode and user presses back, end the selection
+    if self.select_mode and self.highlight_idx then
+        self.select_mode = false
+        if self.ui.annotation.annotations[self.highlight_idx].is_tmp then
+            self:deleteHighlight(self.highlight_idx) -- temporary highlight, delete it
+        else
+            UIManager:setDirty(self.dialog, "ui", self.view.flipping:getRefreshRegion())
+        end
+        self.highlight_idx = nil
+    end
     if self._current_indicator_pos then
         local rect = self._current_indicator_pos
         self._previous_indicator_pos = rect
