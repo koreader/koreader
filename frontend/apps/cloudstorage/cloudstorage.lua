@@ -16,6 +16,8 @@ local UIManager = require("ui/uimanager")
 local WebDav = require("apps/cloudstorage/webdav")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local SyncCommon = require("apps/cloudstorage/synccommon")
+local Trapper = require("ui/trapper")
 local _ = require("gettext")
 local N_ = _.ngettext
 local T = require("ffi/util").template
@@ -146,11 +148,13 @@ end
 
 function CloudStorage:openCloudServer(url)
     local tbl, e
+    logger.dbg("CloudStorage:openCloudServer type=", self.type, " url=", url or "")
     if self.type == "dropbox" then
         if NetworkMgr:willRerunWhenOnline(function() self:openCloudServer(url) end) then
             return
         end
         if self:generateDropBoxAccessToken() then
+            logger.dbg("CloudStorage:openCloudServer calling DropBox:run")
             tbl, e = DropBox:run(url, self.password, self.choose_folder_mode)
         end
     elseif self.type == "ftp" then
@@ -162,6 +166,7 @@ function CloudStorage:openCloudServer(url)
         if NetworkMgr:willRerunWhenConnected(function() self:openCloudServer(url) end) then
             return
         end
+        logger.dbg("CloudStorage:openCloudServer calling WebDav:run")
         tbl, e = WebDav:run(self.address, self.username, self.password, url, self.choose_folder_mode)
     end
     if tbl then
@@ -178,7 +183,7 @@ function CloudStorage:openCloudServer(url)
         end
         return true
     else
-        logger.err("CloudStorage:", e)
+        logger.err("CloudStorage:openCloudServer failed:", e)
         UIManager:show(InfoMessage:new{
             text = _("Cannot fetch list of folder contents\nPlease check your configuration or network connection."),
             timeout = 3,
@@ -403,7 +408,7 @@ function CloudStorage:onMenuHold(item)
                 },
             },
         }
-        if item.type == "dropbox" then
+        if item.type == "dropbox" or item.type == "webdav" then
             table.insert(buttons, {
                 {
                     text = _("Synchronize now"),
@@ -417,7 +422,7 @@ function CloudStorage:onMenuHold(item)
                     text = _("Synchronize settings"),
                     callback = function()
                         UIManager:close(cs_server_dialog)
-                        self:synchronizeSettings(item)
+                        self:synchronizeSettings(item) 
                     end
                 },
             })
@@ -431,38 +436,116 @@ function CloudStorage:onMenuHold(item)
 end
 
 function CloudStorage:synchronizeCloud(item)
-    if NetworkMgr:willRerunWhenOnline(function() self:synchronizeCloud(item) end) then
+    self.type = item.type
+    if self.type == "dropbox" then
+        if NetworkMgr:willRerunWhenOnline(function() self:synchronizeCloud(item) end) then
+            return
+        end
+    elseif self.type == "webdav" then
+        if NetworkMgr:willRerunWhenConnected(function() self:synchronizeCloud(item) end) then
+            return
+        end
+    else
         return
     end
     self.password = item.password
     self.address = item.address
-    local Trapper = require("ui/trapper")
+    self.username = item.username
+    logger.dbg("CloudStorage:synchronizeCloud type=", item.type, " item=", item.text)
+    
     Trapper:wrap(function()
-        Trapper:setPausedText("Download paused.\nDo you want to continue or abort downloading files?")
-        if self:generateDropBoxAccessToken() then
-            local ok, downloaded_files, failed_files = pcall(self.downloadListFiles, self, item)
-            if ok and downloaded_files then
-                if not failed_files then failed_files = 0 end
-                local text
-                if downloaded_files == 0 and failed_files == 0 then
-                    text = _("No files to download from Dropbox.")
-                else
-                    text = T(N_("Successfully downloaded 1 file from Dropbox to local storage.", "Successfully downloaded %1 files from Dropbox to local storage.", downloaded_files), downloaded_files)
-                    if failed_files > 0 then
-                        text = text .. "\n" .. T(N_("Failed to download 1 file.", "Failed to download %1 files.", failed_files), failed_files)
-                    end
-                end
-                UIManager:show(InfoMessage:new{
-                    text = text,
-                    timeout = 3,
-                })
+        Trapper:setPausedText(_("Download paused.\nDo you want to continue or abort downloading files?"))
+        
+        -- Progress callback for UI updates
+        local function on_progress(kind, current, total, rel_path)
+            local progress_text
+            if kind == "scan_remote" then
+                progress_text = _("Scanning remote files...")
+            elseif kind == "scan_local" then
+                progress_text = _("Scanning local files...")
+            elseif kind == "create_dirs" then
+                progress_text = _("Creating directories...")
+            elseif kind == "download" then
+                progress_text = T(_("Downloading %1/%2: %3"), current, total, rel_path or "")
+            elseif kind == "cleanup" then
+                progress_text = _("Cleaning up local files...")
+            elseif kind == "cleanup_dirs" then
+                progress_text = _("Removing empty folders...")
             else
-                Trapper:reset() -- close any last widget not cleaned if error
-                UIManager:show(InfoMessage:new{
-                    text = _("No files to download from Dropbox.\nPlease check your configuration and connection."),
-                    timeout = 3,
-                })
+                progress_text = _("Synchronizing...")
             end
+            
+            Trapper:info(progress_text)
+        end
+        
+        local ok, results_or_err
+        if item.type == "dropbox" then
+            if self:generateDropBoxAccessToken() then
+                if DropBox.synchronize then
+                    logger.dbg("CloudStorage:synchronizeCloud calling DropBox.synchronize")
+                    ok, results_or_err = pcall(DropBox.synchronize, DropBox, item, self.password, on_progress)
+                else
+                    ok, results_or_err = pcall(self.downloadListFiles, self, item)
+                end
+            end
+        elseif item.type == "webdav" then
+            if WebDav.synchronize then
+                logger.dbg("CloudStorage:synchronizeCloud calling WebDav.synchronize")
+                ok, results_or_err = pcall(WebDav.synchronize, WebDav, item, self.username, self.password, on_progress)
+            else
+                ok, results_or_err = pcall(self.downloadListFiles, self, item)
+            end
+        else
+            ok, results_or_err = pcall(self.downloadListFiles, self, item)
+        end
+        
+        if ok and results_or_err then
+            local text
+            if type(results_or_err) == "table" then
+                -- New sync API result format
+                local service_name = server_types[item.type] or _("Cloud service")
+                text = T(N_("Successfully downloaded 1 file from %2.", "Successfully downloaded %1 files from %2.", results_or_err.downloaded), results_or_err.downloaded, service_name)
+                
+                if results_or_err.deleted_files and results_or_err.deleted_files > 0 then
+                    text = text .. " " .. T(N_("Deleted 1 local file.", "Deleted %1 local files.", results_or_err.deleted_files), results_or_err.deleted_files)
+                end
+                if results_or_err.deleted_folders and results_or_err.deleted_folders > 0 then
+                    text = text .. " " .. T(N_("Deleted 1 empty folder.", "Deleted %1 empty folders.", results_or_err.deleted_folders), results_or_err.deleted_folders)
+                end
+                if results_or_err.failed and results_or_err.failed > 0 then
+                    text = text .. "\n" .. T(N_("Failed to download 1 file.", "Failed to download %1 files.", results_or_err.failed), results_or_err.failed)
+                end
+                if results_or_err.skipped and results_or_err.skipped > 0 then
+                    text = text .. " " .. T(N_("Skipped 1 unchanged file.", "Skipped %1 unchanged files.", results_or_err.skipped), results_or_err.skipped)
+                end
+            else
+                -- Legacy return format (just number)
+                local downloaded_files = results_or_err
+                if type(downloaded_files) == "boolean" then
+                    downloaded_files = downloaded_files and 1 or 0
+                end
+                downloaded_files = downloaded_files or 0
+                
+                if downloaded_files == 0 then
+                    text = _("No files to download.")
+                else
+                    local service_name = server_types[item.type] or _("Cloud service")
+                    text = T(N_("Successfully downloaded 1 file from %2.", "Successfully downloaded %1 files from %2.", downloaded_files), downloaded_files, service_name)
+                end
+            end
+            
+            logger.dbg("CloudStorage:synchronizeCloud success:", text)
+            UIManager:show(InfoMessage:new{
+                text = text,
+                timeout = 3,
+            })
+        else
+            logger.err("CloudStorage:synchronizeCloud failed:", results_or_err)
+            Trapper:reset()
+            UIManager:show(InfoMessage:new{
+                text = _("Synchronization failed.\nPlease check your configuration and connection."),
+                timeout = 3,
+            })
         end
     end)
 end
@@ -470,24 +553,29 @@ end
 function CloudStorage:downloadListFiles(item)
     local local_files = {}
     local path = item.sync_dest_folder
-    local UI = require("ui/trapper")
-    UI:info(_("Retrieving files…"))
-
     local ok, iter, dir_obj = pcall(lfs.dir, path)
     if ok then
         for f in iter, dir_obj do
             local filename = path .."/" .. f
             local attributes = lfs.attributes(filename)
-            if attributes.mode == "file" then
+            if attributes and attributes.mode == "file" then
                 local_files[f] = attributes.size
             end
         end
     end
-    local remote_files = DropBox:showFiles(item.sync_source_folder, self.password)
-    if #remote_files == 0 then
-        UI:clear()
-        return false
+    
+    local remote_files
+    if self.type == "dropbox" then
+        remote_files = DropBox:showFiles(item.sync_source_folder, self.password)
+    elseif self.type == "webdav" then
+        remote_files = WebDav:showFiles(self.address, self.username, self.password, item.url)
     end
+    
+    if not remote_files or #remote_files == 0 then
+        UI:clear()
+        return false, 0  -- Return both boolean and numeric value
+    end
+    
     local files_to_download = 0
     for i, file in ipairs(remote_files) do
         if not local_files[file.text] or local_files[file.text] ~= file.size then
@@ -498,7 +586,7 @@ function CloudStorage:downloadListFiles(item)
 
     if files_to_download == 0 then
         UI:clear()
-        return 0
+        return false, 0  -- Return both boolean and numeric value
     end
 
     local response, go_on
@@ -508,13 +596,16 @@ function CloudStorage:downloadListFiles(item)
     for _, file in ipairs(remote_files) do
         if file.download then
             proccessed_files = proccessed_files + 1
-            print(file.url)
             local text = string.format("Downloading file (%d/%d):\n%s", proccessed_files, files_to_download, file.text)
             go_on = UI:info(text)
             if not go_on then
                 break
             end
-            response = DropBox:downloadFileNoUI(file.url, self.password, item.sync_dest_folder .. "/" .. file.text)
+            if self.type == "dropbox" then
+                response = DropBox:downloadFileNoUI(file.url, self.password, item.sync_dest_folder .. "/" .. file.text)
+            elseif self.type == "webdav" then
+                response = WebDav:downloadFileNoUI(self.address, self.username, self.password, file.url, item.sync_dest_folder .. "/" .. file.text)
+            end
             if response then
                 success_files = success_files + 1
             else
@@ -523,20 +614,22 @@ function CloudStorage:downloadListFiles(item)
         end
     end
     UI:clear()
-    return success_files, unsuccess_files
+    return success_files, unsuccess_files  -- Return both values
 end
 
 function CloudStorage:synchronizeSettings(item)
     local syn_dialog
-    local dropbox_sync_folder = item.sync_source_folder or "not set"
-    local local_sync_folder = item.sync_dest_folder or "not set"
+    local remote_sync_folder = item.sync_source_folder or _("not set")
+    local local_sync_folder = item.sync_dest_folder or _("not set")
+    local service_name = server_types[item.type] or _("Cloud service")
+
     syn_dialog = ButtonDialog:new {
-        title = T(_("Dropbox folder:\n%1\nLocal folder:\n%2"), BD.dirpath(dropbox_sync_folder), BD.dirpath(local_sync_folder)),
+        title = T(_("%1 folder:\n%2\nLocal folder:\n%3"), service_name, BD.dirpath(remote_sync_folder), BD.dirpath(local_sync_folder)),
         title_align = "center",
         buttons = {
             {
                 {
-                    text = _("Choose Dropbox folder"),
+                    text = T(_("Choose %1 folder"), service_name),
                     callback = function()
                         UIManager:close(syn_dialog)
                         require("ui/downloadmgr"):new{

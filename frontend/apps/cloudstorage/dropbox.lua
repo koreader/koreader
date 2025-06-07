@@ -9,6 +9,8 @@ local ReaderUI = require("apps/reader/readerui")
 local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
+local logger = require("logger")
+local SyncCommon = require("apps/cloudstorage/synccommon")
 
 local DropBox = {}
 
@@ -22,6 +24,125 @@ end
 
 function DropBox:showFiles(url, password)
     return DropBoxApi:showFiles(url, password)
+end
+
+-- Get remote files recursively for synchronization
+function DropBox:getRemoteFilesRecursive(base_path, password, current_rel_path, on_progress)
+    local files = {}
+    local current_path = base_path
+    if current_rel_path and current_rel_path ~= "" then
+        current_path = base_path .. "/" .. current_rel_path
+    end
+    local file_list = DropBoxApi:showFiles(current_path, password, true)
+    if not file_list then
+        logger.err("DropBox:getRemoteFilesRecursive: Failed to list folder", current_path)
+        return files
+    end
+    for _, item in ipairs(file_list) do
+        local rel_path = current_rel_path and current_rel_path ~= "" and (current_rel_path .. "/" .. item.text) or item.text
+        if item.type == "file" then
+            files[rel_path] = {
+                url = item.url,
+                size = item.size,
+                text = item.text,
+                type = "file"
+            }
+        elseif item.type == "folder" then
+            local sub_files = self:getRemoteFilesRecursive(base_path, password, rel_path, on_progress)
+            for k, v in pairs(sub_files) do
+                files[k] = v
+            end
+        end
+    end
+    return files
+end
+
+-- Main synchronization function for Dropbox
+function DropBox:synchronize(item, password, on_progress)
+    logger.dbg("DropBox:synchronize called for item=", item.text, " local_path=", item.sync_dest_folder, " remote_path=", item.sync_source_folder)
+    local local_path = item.sync_dest_folder
+    local remote_path = item.sync_source_folder
+    local results = SyncCommon.init_results()
+    
+    if not local_path or not remote_path then
+        SyncCommon.add_error(results, _("Missing sync source or destination folder"))
+        return results
+    end
+    
+    -- Show progress for getting file lists
+    SyncCommon.call_progress_callback(on_progress, "scan_remote", 0, 1, "")
+    local remote_files = self:getRemoteFilesRecursive(remote_path, password, "", on_progress)
+    
+    SyncCommon.call_progress_callback(on_progress, "scan_local", 0, 1, "")
+    local local_files = SyncCommon.get_local_files_recursive(local_path, "")
+    
+    -- Create necessary local directories
+    SyncCommon.call_progress_callback(on_progress, "create_dirs", 0, 1, "")
+    local dir_errors = SyncCommon.create_local_directories(local_path, remote_files)
+    for _, err in ipairs(dir_errors) do
+        SyncCommon.add_error(results, err)
+    end
+    
+    -- Count total files to download for progress
+    local total_to_download = 0
+    for rel_path, remote_file in pairs(remote_files) do
+        if remote_file.type == "file" then
+            local local_file = local_files[rel_path]
+            local should_download = not local_file or (remote_file.size and local_file.size ~= remote_file.size)
+            if should_download then
+                total_to_download = total_to_download + 1
+            end
+        end
+    end
+    
+    -- Download new/changed files with progress
+    local current_download = 0
+    for rel_path, remote_file in pairs(remote_files) do
+        if remote_file.type == "file" then
+            local local_file = local_files[rel_path]
+            local should_download = not local_file or (remote_file.size and local_file.size ~= remote_file.size)
+            if should_download then
+                current_download = current_download + 1
+                SyncCommon.call_progress_callback(on_progress, "download", current_download, total_to_download, remote_file.text)
+                local local_file_path = local_path .. "/" .. rel_path
+                logger.dbg("DropBox:synchronize downloading ", rel_path, " to ", local_file_path)
+                local success = self:downloadFileNoUI(remote_file.url, password, local_file_path)
+                if success then
+                    results.downloaded = results.downloaded + 1
+                else
+                    results.failed = results.failed + 1
+                    SyncCommon.add_error(results, _("Failed to download file: ") .. remote_file.text)
+                end
+            else
+                results.skipped = results.skipped + 1
+            end
+        end
+    end
+    
+    -- Delete local files that don't exist remotely
+    SyncCommon.call_progress_callback(on_progress, "cleanup", 0, 1, "")
+    for rel_path, local_file in pairs(local_files) do
+        if not remote_files[rel_path] then
+            logger.dbg("DropBox:synchronize deleting local file ", local_file.path)
+            local success, err = SyncCommon.delete_local_file(local_file.path)
+            if success then
+                results.deleted_files = results.deleted_files + 1
+            else
+                SyncCommon.add_error(results, _("Failed to delete file: ") .. rel_path .. " (" .. (err or "unknown error") .. ")")
+            end
+        end
+    end
+    
+    -- Clean up empty folders
+    SyncCommon.call_progress_callback(on_progress, "cleanup_dirs", 0, 1, "")
+    local deleted_folders, folder_errors = SyncCommon.delete_empty_folders(local_path)
+    results.deleted_folders = deleted_folders
+    for _, err in ipairs(folder_errors) do
+        SyncCommon.add_error(results, err)
+    end
+    
+    logger.dbg("DropBox:synchronize results:", results)
+    return results
 end
 
 function DropBox:downloadFile(item, password, path, callback_close)

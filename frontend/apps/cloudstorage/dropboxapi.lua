@@ -9,6 +9,7 @@ local socket = require("socket")
 local socketutil = require("socketutil")
 local util = require("util")
 local _ = require("gettext")
+local SyncCommon = require("apps/cloudstorage/synccommon")
 
 local DropBoxApi = {
 }
@@ -107,6 +108,7 @@ function DropBoxApi:fetchListFolders(path, token)
 end
 
 function DropBoxApi:downloadFile(path, token, local_path)
+    logger.dbg("DropBoxApi:downloadFile path=", path, " local_path=", local_path)
     local data1 = "{\"path\": \"" .. path .. "\"}"
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     local code, headers, status = socket.skip(1, http.request{
@@ -120,7 +122,7 @@ function DropBoxApi:downloadFile(path, token, local_path)
     })
     socketutil:reset_timeout()
     if code ~= 200 then
-        logger.warn("DropBoxApi: cannot download file:", status or code)
+        logger.err("DropBoxApi: cannot download file:", status or code)
     end
     return code, (headers or {}).etag
 end
@@ -226,7 +228,7 @@ function DropBoxApi:listFolder(path, token, folder_mode)
     return dropbox_list
 end
 
-function DropBoxApi:showFiles(path, token)
+function DropBoxApi:showFiles(path, token, include_folders)
     local dropbox_files = {}
     local tag, text
     local ls_dropbox = self:fetchListFolders(path, token)
@@ -239,7 +241,48 @@ function DropBoxApi:showFiles(path, token)
                 text = text,
                 url = files.path_display,
                 size = files.size,
+                type = "file",
             })
+        elseif include_folders and tag == "folder" then
+            table.insert(dropbox_files, {
+                text = text,
+                url = files.path_display,
+                type = "folder",
+            })
+        end
+    end
+    return dropbox_files
+end
+
+function DropBoxApi:listFolderRecursive(path, token)
+    local dropbox_files = {}
+    local ls_dropbox = self:fetchListFolders(path, token)
+
+    if ls_dropbox == nil or ls_dropbox.entries == nil then
+        logger.warn("DropBoxApi:showFilesAndFoldersV2: Failed to list or no entries for path:", path)
+        return {} -- Return empty table on error or no entries
+    end
+
+    for _, file_entry in ipairs(ls_dropbox.entries) do
+        local text = file_entry.name
+        local tag = file_entry[".tag"]
+
+        if tag == "folder" then
+            table.insert(dropbox_files, {
+                text = text,
+                type = "folder",
+                url = file_entry.path_display, -- Full Dropbox path for the folder
+            })
+        elseif tag == "file" then
+            -- Check if the document type is supported or if showing unsupported files is enabled
+            if DocumentRegistry:hasProvider(text) or G_reader_settings:isTrue("show_unsupported") then
+                table.insert(dropbox_files, {
+                    text = text,
+                    type = "file",
+                    url = file_entry.path_display, -- Full Dropbox path for the file
+                    size = file_entry.size,
+                })
+            end
         end
     end
     return dropbox_files

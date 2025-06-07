@@ -6,8 +6,8 @@ local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ReaderUI = require("apps/reader/readerui")
 local UIManager = require("ui/uimanager")
-local ltn12 = require("ltn12")
 local logger = require("logger")
+local SyncCommon = require("apps/cloudstorage/synccommon")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -59,6 +59,95 @@ function Ftp:downloadFile(item, address, user, pass, path, callback_close)
             timeout = 3,
         })
     end
+end
+
+function Ftp:synchronize(item, user, pass, on_progress)
+    logger.dbg("Ftp:synchronize called for item=", item.text, " local_path=", item.sync_dest_folder, " remote_path=", item.sync_source_folder)
+    local local_path = item.sync_dest_folder
+    local remote_path = item.sync_source_folder
+    local results = SyncCommon.init_results()
+
+    if not local_path or not remote_path then
+        SyncCommon.add_error(results, _("Missing sync source or destination folder"))
+        return results
+    end
+
+    -- Show progress for getting file lists
+    SyncCommon.call_progress_callback(on_progress, "scan_remote", 0, 1, "")
+    local remote_files = FtpApi:listFolder(remote_path, user, pass)
+
+    SyncCommon.call_progress_callback(on_progress, "scan_local", 0, 1, "")
+    local local_files = SyncCommon.get_local_files_recursive(local_path, "")
+
+    -- Create necessary local directories
+    SyncCommon.call_progress_callback(on_progress, "create_dirs", 0, 1, "")
+    local dir_errors = SyncCommon.create_local_directories(local_path, remote_files)
+    for _, err in ipairs(dir_errors) do
+        SyncCommon.add_error(results, err)
+    end
+
+    -- Count total files to download for progress
+    local total_to_download = 0
+    for rel_path, remote_file in pairs(remote_files) do
+        if remote_file.type == "file" then
+            local local_file = local_files[rel_path]
+            local should_download = not local_file or (remote_file.size and local_file.size ~= remote_file.size)
+            if should_download then
+                total_to_download = total_to_download + 1
+            end
+        end
+    end
+
+    -- Download new/changed files with progress
+    local current_download = 0
+    for rel_path, remote_file in pairs(remote_files) do
+        if remote_file.type == "file" then
+            local local_file = local_files[rel_path]
+            local should_download = not local_file or (remote_file.size and local_file.size ~= remote_file.size)
+
+            if should_download then
+                current_download = current_download + 1
+                SyncCommon.call_progress_callback(on_progress, "download", current_download, total_to_download, remote_file.text)
+                local local_file_path = local_path .. "/" .. rel_path
+                logger.dbg("Ftp:synchronize downloading ", rel_path, " to ", local_file_path)
+                local success = FtpApi:ftpGet(remote_file.url, "retr", ltn12.sink.file(io.open(local_file_path, "w")))
+
+                if success then
+                    results.downloaded = results.downloaded + 1
+                else
+                    results.failed = results.failed + 1
+                    SyncCommon.add_error(results, _("Failed to download file: ") .. remote_file.text)
+                end
+            else
+                results.skipped = results.skipped + 1
+            end
+        end
+    end
+
+    -- Delete local files that don't exist remotely
+    SyncCommon.call_progress_callback(on_progress, "cleanup", 0, 1, "")
+    for rel_path, local_file in pairs(local_files) do
+        if not remote_files[rel_path] then
+            logger.dbg("Ftp:synchronize deleting local file ", local_file.path)
+            local success, err = SyncCommon.delete_local_file(local_file.path)
+            if success then
+                results.deleted_files = results.deleted_files + 1
+            else
+                SyncCommon.add_error(results, _("Failed to delete file: ") .. rel_path .. " (" .. (err or "unknown error") .. ")")
+            end
+        end
+    end
+
+    -- Clean up empty folders
+    SyncCommon.call_progress_callback(on_progress, "cleanup_dirs", 0, 1, "")
+    local deleted_folders, folder_errors = SyncCommon.delete_empty_folders(local_path)
+    results.deleted_folders = deleted_folders
+    for _, err in ipairs(folder_errors) do
+        SyncCommon.add_error(results, err)
+    end
+
+    logger.dbg("Ftp:synchronize results:", results)
+    return results
 end
 
 function Ftp:config(item, callback)

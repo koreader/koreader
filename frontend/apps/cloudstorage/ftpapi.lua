@@ -4,9 +4,9 @@ local ftp = require("socket.ftp")
 local ltn12 = require("ltn12")
 local util = require("util")
 local url = require("socket.url")
+local logger = require("logger")
 
-local FtpApi = {
-}
+local FtpApi = {}
 
 function FtpApi:generateUrl(address, user, pass)
     local colon_sign = ""
@@ -29,6 +29,9 @@ function FtpApi:ftpGet(u, command, sink)
     p.sink = sink
     p.type = "i"  -- binary
     local r, e = ftp.get(p)
+    if not r then
+        logger.err("FtpApi:ftpGet failed:", e)
+    end
     return r, e
 end
 
@@ -42,7 +45,8 @@ function FtpApi:listFolder(address_path, folder_path)
     local sink = ltn12.sink.table(tbl)
     local ls_ftp, e = self:ftpGet(address_path, "nlst", sink)
     if ls_ftp == nil then
-        return false, e
+        logger.err("FtpApi:listFolder failed:", e)
+        return {}
     end
     if folder_path == "/" then
         folder_path = ""
@@ -58,8 +62,7 @@ function FtpApi:listFolder(address_path, folder_path)
                     url = string.format("%s/%s",folder_path, file_name),
                     type = type,
                 })
-            --show only file with supported formats
-            elseif extension  and (DocumentRegistry:hasProvider(item)
+            elseif extension and (DocumentRegistry:hasProvider(item)
                 or G_reader_settings:isTrue("show_unsupported")) then
                 type = "file"
                 table.insert(ftp_file, {
@@ -70,7 +73,6 @@ function FtpApi:listFolder(address_path, folder_path)
             end
         end
     end
-    --sort
     table.sort(ftp_list, function(v1,v2)
         return ffiUtil.strcoll(v1.text, v2.text)
     end)
@@ -94,7 +96,11 @@ function FtpApi:delete(file_path)
     p.argument = string.gsub(p.path, "^/", "")
     p.command = "dele"
     p.check = 250
-    return ftp.command(p)
+    local success, err = ftp.command(p)
+    if not success then
+        logger.err("FtpApi:delete failed:", err)
+    end
+    return success, err
 end
 
 return FtpApi
