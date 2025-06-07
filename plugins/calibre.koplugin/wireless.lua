@@ -713,9 +713,7 @@ function CalibreWireless:sendBookMetadata(arg)
     local idx = arg.index + 1
     logger.dbg(string.format("SEND_BOOK_METADATA %d/%d", idx, arg.count), arg)
 
-    if not CalibreMetadata:updateBookIfExists(arg.data) then
-        logger.dbg("Metadata cannot be updated, lpath changed?", arg.data.lpath)
-    end
+    CalibreMetadata:updateBookIfExists(arg.data)
 
     if idx == arg.count then
         CalibreMetadata:saveBookList()
