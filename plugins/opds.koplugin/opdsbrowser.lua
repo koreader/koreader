@@ -650,15 +650,17 @@ function OPDSBrowser:showDownloads(item)
                     callback = function()
                         UIManager:close(self.download_dialog)
                         local local_path = self:getLocalDownloadPath(filename, filetype, acquisition.href)
-                        self:checkDownloadFile(local_path, acquisition.href, self.file_downloaded_callback)
+                        self:checkDownloadFile(local_path, acquisition.href, self.root_catalog_username, self.root_catalog_password, self.file_downloaded_callback)
                     end,
                     hold_callback = function()
                         UIManager:close(self.download_dialog)
                         table.insert(self.downloads, {
-                            file    = self:getLocalDownloadPath(filename, filetype, acquisition.href),
-                            url     = acquisition.href,
-                            info    = type(item.content) == "string" and util.htmlToPlainTextIfHtml(item.content) or "",
-                            catalog = self.root_catalog_title,
+                            file     = self:getLocalDownloadPath(filename, filetype, acquisition.href),
+                            url      = acquisition.href,
+                            info     = type(item.content) == "string" and util.htmlToPlainTextIfHtml(item.content) or "",
+                            catalog  = self.root_catalog_title,
+                            username = self.root_catalog_username,
+                            password = self.root_catalog_password,
                         })
                         self._manager.updated = true
                         Notification:notify(_("Book added to download list"))
@@ -783,10 +785,10 @@ function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url)
 end
 
 -- Downloads a book (with "File already exists" dialog)
-function OPDSBrowser:checkDownloadFile(local_path, remote_url, caller_callback)
+function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, password, caller_callback)
     local function download()
         UIManager:scheduleIn(1, function()
-            self:downloadFile(local_path, remote_url, caller_callback)
+            self:downloadFile(local_path, remote_url, username, password, caller_callback)
         end)
         UIManager:show(InfoMessage:new{
             text = _("Downloading…"),
@@ -806,7 +808,7 @@ function OPDSBrowser:checkDownloadFile(local_path, remote_url, caller_callback)
     end
 end
 
-function OPDSBrowser:downloadFile(local_path, remote_url, caller_callback)
+function OPDSBrowser:downloadFile(local_path, remote_url, username, password, caller_callback)
     logger.dbg("Downloading file", local_path, "from", remote_url)
     local code, headers, status
     local parsed = url.parse(remote_url)
@@ -818,8 +820,8 @@ function OPDSBrowser:downloadFile(local_path, remote_url, caller_callback)
                 ["Accept-Encoding"] = "identity",
             },
             sink     = ltn12.sink.file(io.open(local_path, "w")),
-            user     = self.root_catalog_username,
-            password = self.root_catalog_password,
+            user     = username,
+            password = password,
         })
         socketutil:reset_timeout()
     else
@@ -1027,7 +1029,7 @@ function OPDSBrowser:showDownloadListItemDialog(item)
                         self._manager.file_downloaded_callback(local_path)
                     end
                     NetworkMgr:runWhenConnected(function()
-                        self._manager:checkDownloadFile(dl_item.file, dl_item.url, file_downloaded_callback)
+                        self._manager:checkDownloadFile(dl_item.file, dl_item.url, dl_item.username, dl_item.password, file_downloaded_callback)
                     end)
                 end,
             },
@@ -1101,7 +1103,7 @@ function OPDSBrowser:downloadDownloadList()
     local completed, downloaded = Trapper:dismissableRunInSubprocess(function()
         local dl = {}
         for _, item in ipairs(self.downloads) do
-            if self:downloadFile(item.file, item.url) then
+            if self:downloadFile(item.file, item.url, item.username, item.password) then
                 dl[item.file] = true
             end
         end

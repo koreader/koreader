@@ -128,7 +128,6 @@ END
 pushd "${APP_PATH}/Contents/koreader"
 
 # Prepare bundle for distribution.
-lipo /usr/bin/tar -extract_family "${APP_ARCH}" -output tar
 mv COPYING README.md ../Resources/
 mv koreader ../MacOS/koreader
 

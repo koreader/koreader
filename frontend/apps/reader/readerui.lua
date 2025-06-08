@@ -4,6 +4,7 @@ ReaderUI is an abstraction for a reader interface.
 It works using data gathered from a document interface.
 ]]--
 
+local Archiver = require("ffi/archiver")
 local BD = require("ui/bidi")
 local BookList = require("ui/widget/booklist")
 local Device = require("device")
@@ -622,18 +623,16 @@ function ReaderUI:extendProvider(file, provider, is_provider_forced)
     -- or on the original file double extension ("fb2.zip" etc).
     local _, file_type = filemanagerutil.splitFileNameType(file) -- supports double-extension
     if file_type == "zip" then
-        -- read the content of zip-file and get extension of the 1st file
-        local std_out = io.popen("unzip -qql \"" .. file .. "\"")
-        if std_out then
-            local size, ext
-            for line in std_out:lines() do
-                size, ext = string.match(line, "%s+(%d+)%s+.+%.([^.]+)")
-                if size and ext then break end
+        local arc = Archiver.Reader:new()
+        if arc:open(file) then
+            for entry in arc:iterate() do
+                local ext = util.getFileNameSuffix(entry.path)
+                if ext and entry.mode == "file" and entry.size > 0 then
+                    file_type = ext:lower()
+                    break
+                end
             end
-            std_out:close()
-            if ext ~= nil then
-                file_type = ext:lower()
-            end
+            arc:close()
         end
         if not is_provider_forced then
             local providers = DocumentRegistry:getProviders("dummy." .. file_type)

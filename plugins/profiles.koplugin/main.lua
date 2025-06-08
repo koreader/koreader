@@ -617,21 +617,23 @@ function Profiles:genAutoExecPathChangedMenuItem(text, event, profile_name, sepa
             local conditions = {
                 { _("if folder path contains"), "has" },
                 { _("if folder path does not contain"), "has_not" },
+                { _("if folder path is equal"), "is_equal" },
+                { _("if folder path is not equal"), "is_not_equal" },
             }
             local sub_item_table = {}
             for i, mode in ipairs(conditions) do
+                local condition = mode[2]
                 sub_item_table[i] = {
                     text_func = function()
-                        local txt = conditions[i][1]
-                        local value = util.tableGetValue(self.autoexec, event, profile_name, conditions[i][2])
+                        local txt = mode[1]
+                        local value = util.tableGetValue(self.autoexec, event, profile_name, condition)
                         return value and txt .. ": " .. value or txt
                     end,
                     no_refresh_on_check = true,
                     checked_func = function()
-                        return util.tableGetValue(self.autoexec, event, profile_name, conditions[i][2])
+                        return util.tableGetValue(self.autoexec, event, profile_name, condition)
                     end,
                     callback = function(touchmenu_instance)
-                        local condition = conditions[i][2]
                         local dialog
                         local buttons = {{
                             {
@@ -671,6 +673,10 @@ function Profiles:genAutoExecPathChangedMenuItem(text, event, profile_name, sepa
                         }
                         UIManager:show(dialog)
                         dialog:onShowKeyboard()
+                    end,
+                    hold_callback = function(touchmenu_instance)
+                        util.tableRemoveValue(self.autoexec, event, profile_name, condition)
+                        touchmenu_instance:updateItems()
                     end,
                 }
             end
@@ -985,11 +991,19 @@ function Profiles:onPathChanged(path) -- global
     end
     for profile_name, conditions in pairs(self.autoexec[event]) do
         local do_execute
-        if conditions.has then
-            do_execute = is_match(path, conditions.has)
-        end
-        if do_execute == nil and conditions.has_not then
-            do_execute = not is_match(path, conditions.has_not)
+        for condition, trigger in pairs(conditions) do
+            if condition == "has" then
+                do_execute = is_match(path, trigger)
+            elseif condition == "has_not" then
+                do_execute = not is_match(path, trigger)
+            elseif condition == "is_equal" then
+                do_execute = path == trigger
+            elseif condition == "is_not_equal" then
+                do_execute = path ~= trigger
+            end
+            if do_execute then
+                break
+            end
         end
         if do_execute then
             self:executeAutoExec(profile_name)

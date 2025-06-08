@@ -442,29 +442,32 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     -- Open the zip file (with .tmp for now, as crengine may still
     -- have a handle to the final epub_path, and we don't want to
     -- delete a good one if we fail/cancel later)
+    local Archiver = require("ffi/archiver")
+    local epub = Archiver.Writer:new{}
     local epub_path_tmp = epub_path .. ".tmp"
-    local ZipWriter = require("ffi/zipwriter")
-    local epub = ZipWriter:new{}
-    if not epub:open(epub_path_tmp) then
+    if not epub:open(epub_path_tmp, "epub") then
         logger.dbg("Failed to open epub_path_tmp")
         return false
     end
 
     -- We now create and add all the required epub files
+    local mtime = os.time()
 
     -- ----------------------------------------------------------------
     -- /mimetype : always "application/epub+zip"
-    epub:add("mimetype", "application/epub+zip", true)
+    epub:setZipCompression("store")
+    epub:addFileFromMemory("mimetype", "application/epub+zip", mtime)
+    epub:setZipCompression("deflate")
 
     -- ----------------------------------------------------------------
     -- /META-INF/container.xml : always the same content
-    epub:add("META-INF/container.xml", [[
+    epub:addFileFromMemory("META-INF/container.xml", [[
 <?xml version="1.0"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
   <rootfiles>
     <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
   </rootfiles>
-</container>]])
+</container>]], mtime)
     logger.dbg("Added META-INF/container.xml")
 
     -- ----------------------------------------------------------------
@@ -517,7 +520,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
   </spine>
 </package>
 ]])
-    epub:add("OEBPS/content.opf", table.concat(content_opf_parts))
+    epub:addFileFromMemory("OEBPS/content.opf", table.concat(content_opf_parts), mtime)
     logger.dbg("Added OEBPS/content.opf")
 
     -- ----------------------------------------------------------------
@@ -525,9 +528,9 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     --- @todo We told it we'd include a stylesheet.css, so it's probably best
     -- that we do. In theory, we could try to fetch any *.css files linked in
     -- the main html.
-    epub:add("OEBPS/stylesheet.css", [[
+    epub:addFileFromMemory("OEBPS/stylesheet.css", [[
 /* Empty */
-]])
+]], mtime)
     logger.dbg("Added OEBPS/stylesheet.css")
 
     -- ----------------------------------------------------------------
@@ -567,12 +570,12 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
   </navMap>
 </ncx>
 ]])
-    epub:add("OEBPS/toc.ncx", table.concat(toc_ncx_parts))
+    epub:addFileFromMemory("OEBPS/toc.ncx", table.concat(toc_ncx_parts), mtime)
     logger.dbg("Added OEBPS/toc.ncx")
 
     -- ----------------------------------------------------------------
     -- OEBPS/content.html
-    epub:add("OEBPS/content.html", html)
+    epub:addFileFromMemory("OEBPS/content.html", html, mtime)
     logger.dbg("Added OEBPS/content.html")
 
     -- Force a GC to free the memory we used till now (the second call may
@@ -619,7 +622,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 if img.mimetype == "image/svg+xml" then -- except for SVG images (which are XML text)
                     no_compression = false
                 end
-                epub:add("OEBPS/"..img.imgpath, content, no_compression)
+                epub:addFileFromMemory("OEBPS/"..img.imgpath, content, no_compression, mtime)
             else
                 go_on = UI:confirm(T(_("Downloading image %1 failed. Continue anyway?"), inum), _("Stop"), _("Continue"))
                 if not go_on then

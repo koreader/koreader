@@ -88,7 +88,7 @@ androiddev: update
 
 update: all
 	# Note: do not remove the module directory so there's no need
-	# for `mk7z.sh` to always recreate `assets.7z` from scratch.
+	# for `mk7z.sh` to always recreate `koreader.7z` from scratch.
 	rm -rf $(ANDROID_LIBS)
 	# Remove old in-tree build artifacts that could conflict.
 	rm -rf $(ANDROID_LAUNCHER_DIR)/assets/{libs,module}
@@ -113,24 +113,13 @@ update: all
 	  --options='$(ANDROID_ASSETS_COMPRESSION)' \
 	  $(abspath $(ANDROID_ASSETS)/module/koreader.7z) \
 	  . '-x!libs' '-x!sdcv' $(release_excludes)
-	# Note: we filter out the `--debug=…` make flag so the old
-	# crummy version provided by the NDK does not blow a gasket.
-	env \
-		ANDROID_ARCH='$(ANDROID_ARCH)' \
-		ANDROID_ABI='$(ANDROID_ABI)' \
-		ANDROID_FULL_ARCH='$(ANDROID_ABI)' \
-		LUAJIT_INC='$(abspath $(STAGING_DIR)/include/luajit-2.1)' \
-		LUAJIT_LIB='$(abspath $(ANDROID_LIBS)/libluajit.so)' \
-		MAKEFLAGS='$(filter-out --debug=%,$(MAKEFLAGS))' \
-		NDK=$(ANDROID_NDK_ROOT) \
-		SDK=$(ANDROID_SDK_ROOT) \
-		$(ANDROID_LAUNCHER_DIR)/gradlew \
+	$(ANDROID_LAUNCHER_DIR)/gradlew \
 		--project-dir='$(abspath $(ANDROID_LAUNCHER_DIR))' \
 		--project-cache-dir='$(abspath $(ANDROID_LAUNCHER_BUILD)/gradle)' \
 		-PassetsPath='$(abspath $(ANDROID_ASSETS))' \
 		-PbuildDir='$(abspath $(ANDROID_LAUNCHER_BUILD))' \
 		-PlibsPath='$(abspath $(dir $(ANDROID_LIBS)))' \
-		-PndkCustomPath='$(ANDROID_NDK_ROOT)' \
+		-PsevenZipLib='$(if $(MONOLIBTIC),koreader-monolibtic,7z)' \
 		-PprojectName='KOReader' \
 		-PversCode='$(ANDROID_VERSION)' \
 		-PversName='$(ANDROID_NAME)' \

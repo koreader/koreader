@@ -244,7 +244,7 @@ function Device:init()
     }
 
     -- disable translation for specific models, where media keys follow gravity, see https://github.com/koreader/koreader/issues/12423
-    if android.prop.model == "moaanmix7" or android.prop.model == "xiaomi_reader" or android.prop.model == "gocolor7" then
+    if android.prop.model == "go7" or android.prop.model == "gocolor7" or android.prop.model == "moaanmix7" or android.prop.model == "xiaomi_reader" then
         self.input:disableRotationMap()
     end
 
@@ -542,10 +542,6 @@ function Device:_showLightDialog()
             self.powerd:setWarmth(self.powerd.fl_warmth)
         end
     end
-end
-
-function Device:untar(archive, extract_to)
-    return android.untar(archive, extract_to)
 end
 
 function Device:download(link, name, ok_text)

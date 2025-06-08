@@ -43,7 +43,7 @@ local FEED_TYPE_ATOM = "atom"
 -- If a title looks like <title>blabla</title> it'll just be feed.title.
 -- If a title looks like <title attr="alb">blabla</title> then we get a table
 -- where [1] is the title string and the attributes are also available.
-local function getFeedTitle(possible_title)
+function NewsDownloader.getFeedTitle(possible_title)
     if type(possible_title) == "string" then
         return util.htmlEntitiesToUtf8(possible_title)
     elseif possible_title[1] and type(possible_title[1]) == "string" then
@@ -69,7 +69,7 @@ end
 -- Some feeds that can be used for unit test.
 -- http://fransdejonge.com/feed/ for multiple links.
 -- https://github.com/koreader/koreader/commits/master.atom for single link with attributes.
-local function getFeedLink(possible_link)
+function NewsDownloader.getFeedLink(possible_link)
     local E = {}
     if type(possible_link) == "string" then
         return possible_link
@@ -78,6 +78,52 @@ local function getFeedLink(possible_link)
     elseif ((possible_link[1] or E)._attr or E).href then
         return possible_link[1]._attr.href
     end
+end
+
+-- Look for author names that look like
+-- <dc:creator>First Author, Second Author</dc:creator>
+-- or
+-- <author><name>First Author</name></author>
+-- <author><name>Second Author</name></author>...
+-- and return a byline or empty string
+local function getByline(feed)
+    if type(feed["dc:creator"]) == "string" then
+        return feed["dc:creator"]
+    end
+    if type(feed["dc:creator"]) == "table" then
+        local i = 0
+        local authors = {}
+        for _ in pairs(feed["dc:creator"]) do
+            i = i + 1
+            if feed["dc:creator"][i] == nil then
+                break
+            end
+            authors[i] = feed["dc:creator"][i]
+        end
+        if #authors > 0 then
+            return table.concat(authors, ", ")
+        end
+    end
+    if feed.author then
+        if type(feed.author.name) == "string" then -- single author
+            return feed.author.name
+        end
+        if type(feed.author) == "table" then
+            local i = 0
+            local authors = {}
+            for _ in pairs(feed.author) do -- multiple authors
+                i = i + 1
+                if feed.author[i] == nil then
+                    break
+                end
+                authors[i] = feed.author[i].name
+            end
+            if #authors > 0 then
+                return table.concat(authors, ", ")
+            end
+        end
+    end
+    return ""
 end
 
 function NewsDownloader:init()
@@ -559,12 +605,20 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, limit, download_f
         total_items = (limit == 0)
             and #feeds.rss.channel.item
             or limit
+        if feed_item[1] == nil and feed_item.title then
+            -- Normalize data for single-item feeds.
+            feed_item = {feed_item}
+        end
     else
-        feed_title = getFeedTitle(feeds.feed.title)
+        feed_title = self.getFeedTitle(feeds.feed.title)
         feed_item = feeds.feed.entry
         total_items = (limit == 0)
             and #feeds.feed.entry
             or limit
+        if feed_item[1] == nil and feed_item.title then
+            -- Normalize data for single-item feeds.
+            feed_item = {feed_item}
+        end
     end
     -- Get the path to the output directory.
     local feed_output_dir = ("%s%s/"):format(
@@ -640,7 +694,7 @@ local function parseDate(dateTime)
 end
 
 local function getTitleWithDate(feed)
-    local title = util.getSafeFilename(getFeedTitle(feed.title))
+    local title = util.getSafeFilename(NewsDownloader.getFeedTitle(feed.title))
     if feed.updated then
         title = parseDate(feed.updated) .. title
     elseif feed.pubDate then
@@ -663,7 +717,7 @@ function NewsDownloader:downloadFeed(feed, cookies, feed_output_dir, include_ima
     else
         logger.dbg("NewsDownloader: News file will be stored to :", news_file_path)
         local article_message = T(_("%1\n%2"), message, title_with_date)
-        local link = getFeedLink(feed.link)
+        local link = self.getFeedLink(feed.link)
         local html = DownloadBackend:loadPage(link, cookies)
         DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message, enable_filter, filter_element)
     end
@@ -680,9 +734,10 @@ function NewsDownloader:createFromDescription(feed, title, content, feed_output_
     else
         logger.dbg("NewsDownloader: News file will be stored to :", news_file_path)
         local article_message = T(_("%1\n%2"), message, title_with_date)
+        local byline = getByline(feed)
         local footer = _("If this is only a summary, the full article can be downloaded by going to the News Downloader settings and changing 'Download full article' to 'true'.")
 
-        local base_url = getFeedLink(feed.link)
+        local base_url = self.getFeedLink(feed.link)
         if base_url then
             if not base_url:match("/$") then
                 base_url = base_url .. "/"
@@ -707,13 +762,14 @@ function NewsDownloader:createFromDescription(feed, title, content, feed_output_
 <title>%s</title>
 </head>
 <body>
-<header><h1>%s</h1></header>
+<header><h1>%s</h1><p><address>%s</address></p></header>
+<br>
 <article>%s</article>
 <br>
 <footer><small>%s</small></footer>
 </body>
-</html>]], title, title, content, footer)
-        local link = getFeedLink(feed.link)
+</html>]], title, title, byline, content, footer)
+        local link = self.getFeedLink(feed.link)
         DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message)
     end
 end
@@ -801,7 +857,7 @@ function NewsDownloader:viewFeedList()
                 -- Prepare the view with all the callbacks for editing the attributes
                 local feed_item_vc = FeedView:getItem(
                     #feed_config + 1,
-                    getEmptyFeed(),
+                    self.getEmptyFeed(),
                     function(id, edit_key, value)
                         self:editFeedAttribute(id, edit_key, value)
                     end
@@ -965,7 +1021,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
     if id > #feed_config then
         table.insert(
             feed_config,
-            getEmptyFeed()
+            self.getEmptyFeed()
         )
     end
 
