@@ -353,7 +353,7 @@ function OPDSBrowser:genItemTableFromURL(item_url)
     return self:genItemTableFromCatalog(catalog, item_url, true)
 end
 
-function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, sync)
+function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
     local item_table = {}
     if not catalog then
         return item_table
@@ -1151,6 +1151,50 @@ function OPDSBrowser:downloadDownloadList()
     end
 end
 
+function OPDSBrowser:syncDownload(server)
+    local function dump(o)
+        if type(o) == 'table' then
+            local s = '{ '
+            for k,v in pairs(o) do
+                if type(k) ~= 'number' then k = '"'..k..'"' end
+                s = s .. '['..k..'] = ' .. dump(v) .. ','
+            end
+            return s .. '} '
+        else
+            return tostring(o)
+        end
+    end
+
+    local table
+    local newLastDownload = nil
+    table = self:getSyncDownloadList(server)
+--     print(dump(table))
+    for i, entry in ipairs(table) do
+        -- First entry in table is the newest
+        -- If already downloaded, return
+        if i == 1 then
+            if server.lastDownload == entry.acquisitions[1].href then
+                return newLastDownload
+            else
+                newLastDownload = entry.acquisitions[1].href
+            end
+        end
+        for _, link in ipairs(entry.acquisitions) do
+            local filetype = util.getFileNameSuffix(link.href)
+            if not DocumentRegistry:hasProvider("dummy." .. filetype) then
+                filetype = nil
+            end
+            if not filetype and DocumentRegistry:hasProvider(nil, link.type) then
+                filetype = DocumentRegistry:mimeToExt(link.type)
+            end
+            logger.dbg("Filetype for sync download is", filetype)
+            local downloadPath = self:getLocalDownloadPath(entry.title, filetype, link.href, true)
+            OPDSBrowser:checkDownloadFile(downloadPath, link.href, server.username, server.password)
+        end
+    end
+    return newLastDownload
+end
+
 function OPDSBrowser:getSyncDownloadList(server)
     self.root_catalog_password  = server.password
     self.root_catalog_raw_names = server.raw_names
@@ -1159,8 +1203,9 @@ function OPDSBrowser:getSyncDownloadList(server)
     local ok, catalog = pcall(self.parseFeed, self, server.url)
     local item_table = {}
     local feed = catalog.feed or catalog
+
     local function build_href(href)
-        return url.absolute(item_url, href)
+        return url.absolute(server.url, href)
     end
     for __, entry in ipairs(feed.entry or {}) do
         local item = {}

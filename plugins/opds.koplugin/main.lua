@@ -100,7 +100,7 @@ function OPDS:getOPDSDownloadMenu()
         {
             text = _("Perform sync"),
             callback = function()
-                self:checkSyncDownload()
+                self:checkSyncDownload(self.servers)
             end,
         },
         {
@@ -113,32 +113,24 @@ function OPDS:getOPDSDownloadMenu()
 end
 
 
-
 function OPDS:checkSyncDownload()
-    self.servers = self.settings:readSetting("servers")
-    local function dump(o)
-        if type(o) == 'table' then
-            local s = '{ '
-            for k,v in pairs(o) do
-                if type(k) ~= 'number' then k = '"'..k..'"' end
-                s = s .. '['..k..'] = ' .. dump(v) .. ','
-            end
-            return s .. '} '
-        else
-            return tostring(o)
-        end
-    end
-
-    for i, item in ipairs(self.servers) do
+    for _, item in ipairs(self.servers) do
         if item.sync then
-            local table = OPDSBrowser:getSyncDownloadList(item)
-            print(dump(table))
+            local lastDownload = OPDSBrowser:syncDownload(item)
+            if lastDownload then
+                logger.dbg("Updating opds last download for server" .. item.title)
+                self:appendFieldToCatalog(item, "lastDownload", lastDownload)
+            else
+            end
         end
-
     end
 end
 
 
+function OPDS:appendFieldToCatalog(item, newName, newValue)
+    item[newName] = newValue
+    self.updated = true
+end
 
 function OPDS:setSyncDir()
     local force_chooser_dir
