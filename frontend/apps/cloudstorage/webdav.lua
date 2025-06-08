@@ -309,13 +309,6 @@ The start folder is appended to the server path.]])
                     callback = function()
                         local fields = self.settings_dialog:getFields()
                         if fields[1] ~= "" and fields[2] ~= "" then
-                            -- Ensure HTTPS by default for security
-                            if not fields[2]:match("^https?://") then
-                                UIManager:show(InfoMessage:new{
-                                    text = _("Server address must start with http:// or https://\nHTTPS is strongly recommended for security."),
-                                })
-                                return
-                            end
                             -- make sure the URL is a valid path
                             if fields[5] ~= "" then
                                 if not fields[5]:match('^/') then
