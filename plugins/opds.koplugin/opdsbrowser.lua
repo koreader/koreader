@@ -68,13 +68,14 @@ end
 
 local function buildRootEntry(server)
     return {
-        text       = server.title,
-        mandatory  = server.username and "\u{f2c0}",
-        url        = server.url,
-        username   = server.username,
-        password   = server.password,
-        raw_names  = server.raw_names, -- use server raw filenames for download
-        searchable = server.url and server.url:match("%%s") and true or false,
+        text         = server.title,
+        mandatory    = server.username and "\u{f2c0}",
+        url          = server.url,
+        username     = server.username,
+        password     = server.password,
+        raw_names    = server.raw_names, -- use server raw filenames for download
+        searchable   = server.url and server.url:match("%%s") and true or false,
+        sync         = server.sync,
     }
 end
 
@@ -138,6 +139,7 @@ function OPDSBrowser:addEditCatalog(item)
                     callback = function()
                         local new_fields = dialog:getFields()
                         new_fields[5] = check_button_raw_names.checked or nil
+                        new_fields[6] = check_button_sync_catalog.checked or nil
                         self:editCatalogFromInput(new_fields, item)
                         UIManager:close(dialog)
                     end,
@@ -150,7 +152,13 @@ function OPDSBrowser:addEditCatalog(item)
         checked = item and item.raw_names,
         parent = dialog,
     }
+    check_button_sync_catalog = CheckButton:new{
+        text = _("Sync catalog"),
+        checked = item and item.sync,
+        parent = dialog,
+    }
     dialog:addWidget(check_button_raw_names)
+    dialog:addWidget(check_button_sync_catalog)
     UIManager:show(dialog)
     dialog:onShowKeyboard()
 end
@@ -193,11 +201,12 @@ end
 -- Saves catalog properties from input dialog
 function OPDSBrowser:editCatalogFromInput(fields, item, no_refresh)
     local new_server = {
-        title     = fields[1],
-        url       = fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2],
-        username  = fields[3] ~= "" and fields[3] or nil,
-        password  = fields[4] ~= "" and fields[4] or nil,
-        raw_names = fields[5],
+        title        = fields[1],
+        url          = fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2],
+        username     = fields[3] ~= "" and fields[3] or nil,
+        password     = fields[4] ~= "" and fields[4] or nil,
+        raw_names    = fields[5],
+        sync         = fields[6],
     }
     local new_item = buildRootEntry(new_server)
     local new_idx, itemnumber
@@ -341,10 +350,10 @@ function OPDSBrowser:genItemTableFromURL(item_url)
         })
         catalog = nil
     end
-    return self:genItemTableFromCatalog(catalog, item_url)
+    return self:genItemTableFromCatalog(catalog, item_url, true)
 end
 
-function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
+function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, sync)
     local item_table = {}
     if not catalog then
         return item_table
@@ -649,13 +658,13 @@ function OPDSBrowser:showDownloads(item)
                     text = text .. "\u{2B07}", -- append DOWNWARDS BLACK ARROW
                     callback = function()
                         UIManager:close(self.download_dialog)
-                        local local_path = self:getLocalDownloadPath(filename, filetype, acquisition.href)
+                        local local_path = self:getLocalDownloadPath(filename, filetype, acquisition.href, false)
                         self:checkDownloadFile(local_path, acquisition.href, self.root_catalog_username, self.root_catalog_password, self.file_downloaded_callback)
                     end,
                     hold_callback = function()
                         UIManager:close(self.download_dialog)
                         table.insert(self.downloads, {
-                            file     = self:getLocalDownloadPath(filename, filetype, acquisition.href),
+                            file     = self:getLocalDownloadPath(filename, filetype, acquisition.href, false),
                             url      = acquisition.href,
                             info     = type(item.content) == "string" and util.htmlToPlainTextIfHtml(item.content) or "",
                             catalog  = self.root_catalog_title,
@@ -772,12 +781,16 @@ function OPDSBrowser:showDownloads(item)
 end
 
 -- Returns user selected or last opened folder
-function OPDSBrowser.getCurrentDownloadDir()
-    return G_reader_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+function OPDSBrowser.getCurrentDownloadDir(sync)
+    if sync then
+        return G_reader_settings:readSetting("opds_sync_dir") or G_reader_settings:readSetting("lastdir")
+    else
+        return G_reader_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+    end
 end
 
-function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url)
-    local download_dir = OPDSBrowser.getCurrentDownloadDir()
+function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url, sync)
+    local download_dir = OPDSBrowser.getCurrentDownloadDir(sync)
     filename = filename and filename .. "." .. filetype:lower() or self:getServerFileName(remote_url)
     filename = util.getSafeFilename(filename, download_dir)
     filename = (download_dir ~= "/" and download_dir or "") .. '/' .. filename
@@ -809,6 +822,7 @@ function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, passwor
 end
 
 function OPDSBrowser:downloadFile(local_path, remote_url, username, password, caller_callback)
+
     logger.dbg("Downloading file", local_path, "from", remote_url)
     local code, headers, status
     local parsed = url.parse(remote_url)
@@ -1136,5 +1150,128 @@ function OPDSBrowser:downloadDownloadList()
         UIManager:show(InfoMessage:new{ text = T(N_("1 book downloaded", "%1 books downloaded", dl_count), dl_count) })
     end
 end
+
+function OPDSBrowser:getSyncDownloadList(server)
+    self.root_catalog_password  = server.password
+    self.root_catalog_raw_names = server.raw_names
+    self.root_catalog_username  = server.username
+    self.root_catalog_title     = server.title
+    local ok, catalog = pcall(self.parseFeed, self, server.url)
+    local item_table = {}
+    local feed = catalog.feed or catalog
+    local function build_href(href)
+        return url.absolute(item_url, href)
+    end
+    for __, entry in ipairs(feed.entry or {}) do
+        local item = {}
+        item.acquisitions = {}
+        if entry.link then
+            for ___, link in ipairs(entry.link) do
+                local link_href = build_href(link.href)
+                if link.type and link.type:find(self.catalog_type)
+                        and (not link.rel
+                             or link.rel == "subsection"
+                             or link.rel == "http://opds-spec.org/subsection"
+                             or link.rel == "http://opds-spec.org/sort/popular"
+                             or link.rel == "http://opds-spec.org/sort/new") then
+                    item.url = link_href
+                end
+                -- Some catalogs do not use the rel attribute to denote
+                -- a publication. Arxiv uses title. Specifically, it uses
+                -- a title attribute that contains pdf. (title="pdf")
+                if link.rel or link.title then
+                    if link.rel == self.borrow_rel then
+                        table.insert(item.acquisitions, {
+                            type = "borrow",
+                        })
+                    elseif link.rel and link.rel:match(self.acquisition_rel) then
+                        table.insert(item.acquisitions, {
+                            type  = link.type,
+                            href  = link_href,
+                            title = link.title,
+                        })
+                    elseif link.rel == self.stream_rel then
+                        -- https://vaemendis.net/opds-pse/
+                        -- «count» MUST provide the number of pages of the document
+                        -- namespace may be not "pse"
+                        local count, last_read
+                        for k, v in pairs(link) do
+                            if k:sub(-6) == ":count" then
+                                count = tonumber(v)
+                            elseif k:sub(-9) == ":lastRead" then
+                                last_read = tonumber(v)
+                            end
+                        end
+                        if count then
+                            table.insert(item.acquisitions, {
+                                type  = link.type,
+                                href  = link_href,
+                                title = link.title,
+                                count = count,
+                                last_read = last_read and last_read > 0 and last_read or nil
+                            })
+                        end
+                    elseif self.thumbnail_rel[link.rel] then
+                        item.thumbnail = link_href
+                    elseif self.image_rel[link.rel] then
+                        item.image = link_href
+                    elseif link.rel ~= "alternate" and DocumentRegistry:hasProvider(nil, link.type) then
+                        table.insert(item.acquisitions, {
+                            type  = link.type,
+                            href  = link_href,
+                            title = link.title,
+                        })
+                    end
+                    -- This statement grabs the catalog items that are
+                    -- indicated by title="pdf" or whose type is
+                    -- "application/pdf"
+                    if link.title == "pdf" or link.type == "application/pdf"
+                        and link.rel ~= "subsection" then
+                        -- Check for the presence of the pdf suffix and add it
+                        -- if it's missing.
+                        local href = link.href
+                        if util.getFileNameSuffix(href) ~= "pdf" then
+                            href = href .. ".pdf"
+                        end
+                        table.insert(item.acquisitions, {
+                            type = link.title,
+                            href = build_href(href),
+                        })
+                    end
+                end
+            end
+        end
+        local title = _("Unknown")
+        if type(entry.title) == "string" then
+            title = entry.title
+        elseif type(entry.title) == "table" then
+            if type(entry.title.type) == "string" and entry.title.div ~= "" then
+                title = entry.title.div
+            end
+        end
+        item.text = title
+        local author = _("Unknown Author")
+        if type(entry.author) == "table" and entry.author.name then
+            author = entry.author.name
+            if type(author) == "table" then
+                if #author > 0 then
+                    author = table.concat(author, ", ")
+                else
+                    -- we may get an empty table on https://gallica.bnf.fr/opds
+                    author = nil
+                end
+            end
+            if author then
+                item.text = title .. " - " .. author
+            end
+        end
+        item.title = title
+        item.author = author
+        item.content = entry.content or entry.summary
+        table.insert(item_table, item)
+    end
+    return item_table
+end
+
 
 return OPDSBrowser

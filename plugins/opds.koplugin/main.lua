@@ -10,6 +10,9 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
+local logger = require("logger")
+local Device = require("device")
+
 local OPDS = WidgetContainer:extend{
     name = "opds",
     opds_settings_file = DataStorage:getSettingsDir() .. "/opds.lua",
@@ -64,12 +67,91 @@ end
 function OPDS:addToMainMenu(menu_items)
     if not self.ui.document then -- FileManager menu only
         menu_items.opds = {
-            text = _("OPDS catalog"),
-            callback = function()
-                self:onShowOPDSCatalog()
-            end,
+            text = _("OPDS"),
+            sub_item_table = {
+                {
+                    text = _("OPDS catalog"),
+                    keep_menu_open = true,
+                    callback = function()
+                        self:onShowOPDSCatalog()
+                    end,
+                },
+                {
+                    text = _("Automatic OPDS download"),
+                    keep_menu_open = true,
+                    sub_item_table = self:getOPDSDownloadMenu(),
+                },
+            },
         }
     end
+end
+
+function OPDS:getOPDSDownloadMenu()
+    return {
+        {
+            text = _("OPDS sync"),
+            checked_func = function()
+                return G_reader_settings:isTrue("opds_sync")
+            end,
+            callback = function()
+                G_reader_settings:toggle("opds_sync")
+            end,
+        },
+        {
+            text = _("Perform sync"),
+            callback = function()
+                self:checkSyncDownload()
+            end,
+        },
+        {
+            text = _("Set OPDS sync directory"),
+            callback = function()
+                self:setSyncDir()
+            end,
+        },
+    }
+end
+
+
+
+function OPDS:checkSyncDownload()
+    self.servers = self.settings:readSetting("servers")
+    local function dump(o)
+        if type(o) == 'table' then
+            local s = '{ '
+            for k,v in pairs(o) do
+                if type(k) ~= 'number' then k = '"'..k..'"' end
+                s = s .. '['..k..'] = ' .. dump(v) .. ','
+            end
+            return s .. '} '
+        else
+            return tostring(o)
+        end
+    end
+
+    for i, item in ipairs(self.servers) do
+        if item.sync then
+            local table = OPDSBrowser:getSyncDownloadList(item)
+            print(dump(table))
+        end
+
+    end
+end
+
+
+
+function OPDS:setSyncDir()
+    local force_chooser_dir
+    if Device:isAndroid() then
+        force_chooser_dir = Device.home_dir
+    end
+
+    require("ui/downloadmgr"):new{
+        onConfirm = function(inbox)
+            logger.info("set opds sync directory", inbox)
+            G_reader_settings:saveSetting("opds_sync_dir", inbox)
+        end,
+    }:chooseDir(force_chooser_dir)
 end
 
 function OPDS:onShowOPDSCatalog()
