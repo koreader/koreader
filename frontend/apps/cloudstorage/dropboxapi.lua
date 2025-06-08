@@ -9,7 +9,6 @@ local socket = require("socket")
 local socketutil = require("socketutil")
 local util = require("util")
 local _ = require("gettext")
-local SyncCommon = require("apps/cloudstorage/synccommon")
 
 local DropBoxApi = {
 }

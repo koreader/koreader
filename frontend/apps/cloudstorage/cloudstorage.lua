@@ -16,7 +16,6 @@ local UIManager = require("ui/uimanager")
 local WebDav = require("apps/cloudstorage/webdav")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local SyncCommon = require("apps/cloudstorage/synccommon")
 local Trapper = require("ui/trapper")
 local _ = require("gettext")
 local N_ = _.ngettext
@@ -422,7 +421,7 @@ function CloudStorage:onMenuHold(item)
                     text = _("Synchronize settings"),
                     callback = function()
                         UIManager:close(cs_server_dialog)
-                        self:synchronizeSettings(item) 
+                        self:synchronizeSettings(item)
                     end
                 },
             })
@@ -459,10 +458,8 @@ function CloudStorage:synchronizeCloud(item)
     self.address = item.address
     self.username = item.username
     logger.dbg(string.format("CloudStorage:synchronizeCloud type=%s item=%s", item.type or "nil", item.text or "nil"))
-    
     Trapper:wrap(function()
         Trapper:setPausedText(_("Download paused.\nDo you want to continue or abort downloading files?"))
-        
         -- Progress callback for UI updates
         local function on_progress(kind, current, total, rel_path)
             local progress_text
@@ -481,10 +478,8 @@ function CloudStorage:synchronizeCloud(item)
             else
                 progress_text = _("Synchronizing...")
             end
-            
             Trapper:info(progress_text)
         end
-        
         local ok, results_or_err
         if item.type == "dropbox" then
             if self:generateDropBoxAccessToken() then
@@ -505,14 +500,12 @@ function CloudStorage:synchronizeCloud(item)
         else
             ok, results_or_err = pcall(self.downloadListFiles, self, item)
         end
-        
         if ok and results_or_err then
             local text
             if type(results_or_err) == "table" then
                 -- New sync API result format
                 local service_name = server_types[item.type] or _("Cloud service")
                 text = T(N_("Successfully downloaded 1 file from %2.", "Successfully downloaded %1 files from %2.", results_or_err.downloaded), results_or_err.downloaded, service_name)
-                
                 if results_or_err.deleted_files and results_or_err.deleted_files > 0 then
                     text = text .. " " .. T(N_("Deleted 1 local file.", "Deleted %1 local files.", results_or_err.deleted_files), results_or_err.deleted_files)
                 end
@@ -532,7 +525,6 @@ function CloudStorage:synchronizeCloud(item)
                     downloaded_files = downloaded_files and 1 or 0
                 end
                 downloaded_files = downloaded_files or 0
-                
                 if downloaded_files == 0 then
                     text = _("No files to download.")
                 else
@@ -540,7 +532,6 @@ function CloudStorage:synchronizeCloud(item)
                     text = T(N_("Successfully downloaded 1 file from %2.", "Successfully downloaded %1 files from %2.", downloaded_files), downloaded_files, service_name)
                 end
             end
-            
             logger.dbg("CloudStorage:synchronizeCloud success:", text)
             UIManager:show(InfoMessage:new{
                 text = text,
@@ -570,18 +561,16 @@ function CloudStorage:downloadListFiles(item)
             end
         end
     end
-    
+
     local remote_files
     if self.type == "dropbox" then
         remote_files = DropBox:showFiles(item.sync_source_folder, self.password)
     elseif self.type == "webdav" then
         remote_files = WebDav:showFiles(self.address, self.username, self.password, item.url)
     end
-    
     if not remote_files or #remote_files == 0 then
         return false, 0  -- Return both boolean and numeric value
     end
-    
     local files_to_download = 0
     for i, file in ipairs(remote_files) do
         if not local_files[file.text] or local_files[file.text] ~= file.size then

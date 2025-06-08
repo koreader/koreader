@@ -8,7 +8,6 @@ local util = require("util")
 local _ = require("gettext")
 local logger = require("logger")
 local lfs = require("libs/libkoreader-lfs")
-local SyncCommon = require("apps/cloudstorage/synccommon")
 
 local WebDavApi = {
 }
@@ -59,7 +58,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, options)
     -- Handle backward compatibility
     local folder_mode = false
     local sync_mode = false
-    
+
     if type(options) == "boolean" then
         -- Legacy boolean folder_mode parameter
         folder_mode = options
@@ -114,7 +113,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, options)
             local is_current_dir = self.trim_slashes(item_fullpath) == path
             local is_not_collection = item:find("<[^:]*:resourcetype%s*/>") or
                                       item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
-            
+
             -- For sync mode, we need just the item name, not the full path
             local item_path = item_name
             if not sync_mode and path and path ~= "" then
@@ -182,10 +181,10 @@ function WebDavApi:downloadFile(url, user, pass, local_path)
         logger.err("WebDavApi:downloadFile: Insecure connection not allowed. Use HTTPS.")
         return nil
     end
-    
+
     logger.dbg("WebDavApi:downloadFile url=", url, " local_path=", local_path)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local code, headers, status = socket.skip(1, http.request{
+    local code, _, status = socket.skip(1, http.request{
         url = url,
         user = user,
         password = pass,
@@ -204,7 +203,7 @@ function WebDavApi:uploadFile(file_url, user, pass, local_path, etag)
         logger.err("WebDavApi:uploadFile: Insecure connection not allowed. Use HTTPS.")
         return nil
     end
-    
+
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     local code, _, status = socket.skip(1, http.request{
         url      = file_url,

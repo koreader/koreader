@@ -63,26 +63,26 @@ function DropBox:synchronize(item, password, on_progress)
     local local_path = item.sync_dest_folder
     local remote_path = item.sync_source_folder
     local results = SyncCommon.init_results()
-    
+
     if not local_path or not remote_path then
         SyncCommon.add_error(results, _("Missing sync source or destination folder"))
         return results
     end
-    
+
     -- Show progress for getting file lists
     SyncCommon.call_progress_callback(on_progress, "scan_remote", 0, 1, "")
     local remote_files = self:getRemoteFilesRecursive(remote_path, password, "", on_progress)
-    
+
     SyncCommon.call_progress_callback(on_progress, "scan_local", 0, 1, "")
     local local_files = SyncCommon.get_local_files_recursive(local_path, "")
-    
+
     -- Create necessary local directories
     SyncCommon.call_progress_callback(on_progress, "create_dirs", 0, 1, "")
     local dir_errors = SyncCommon.create_local_directories(local_path, remote_files)
     for _, err in ipairs(dir_errors) do
         SyncCommon.add_error(results, err)
     end
-    
+
     -- Count total files to download for progress
     local total_to_download = 0
     for rel_path, remote_file in pairs(remote_files) do
@@ -94,7 +94,7 @@ function DropBox:synchronize(item, password, on_progress)
             end
         end
     end
-    
+
     -- Download new/changed files with progress
     local current_download = 0
     for rel_path, remote_file in pairs(remote_files) do
@@ -118,7 +118,7 @@ function DropBox:synchronize(item, password, on_progress)
             end
         end
     end
-    
+
     -- Delete local files that don't exist remotely
     SyncCommon.call_progress_callback(on_progress, "cleanup", 0, 1, "")
     for rel_path, local_file in pairs(local_files) do
@@ -132,7 +132,7 @@ function DropBox:synchronize(item, password, on_progress)
             end
         end
     end
-    
+
     -- Clean up empty folders
     SyncCommon.call_progress_callback(on_progress, "cleanup_dirs", 0, 1, "")
     local deleted_folders, folder_errors = SyncCommon.delete_empty_folders(local_path)
@@ -140,7 +140,7 @@ function DropBox:synchronize(item, password, on_progress)
     for _, err in ipairs(folder_errors) do
         SyncCommon.add_error(results, err)
     end
-    
+
     logger.dbg("DropBox:synchronize results:", results)
     return results
 end

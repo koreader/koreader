@@ -28,19 +28,19 @@ end
 -- Throttled progress callback helper
 function SyncCommon.call_progress_callback(callback, kind, current, total, rel_path)
     if not callback then return end
-    
+
     local now = os.time()
     local should_emit = false
-    
+
     -- Emit if enough time has passed or enough files processed
-    if now - last_progress_time >= PROGRESS_THROTTLE_TIME or 
+    if now - last_progress_time >= PROGRESS_THROTTLE_TIME or
        current - last_progress_count >= PROGRESS_THROTTLE_COUNT or
        current == 1 or current == total then
         should_emit = true
         last_progress_time = now
         last_progress_count = current
     end
-    
+
     if should_emit then
         callback(kind, current, total, rel_path)
     end
@@ -65,7 +65,7 @@ function SyncCommon.get_local_files_recursive(base_path, current_rel_path)
             local item_path = current_path .. "/" .. item
             local rel_path = current_rel_path and current_rel_path ~= "" and (current_rel_path .. "/" .. item) or item
             local attr = lfs.attributes(item_path)
-            
+
             if attr then
                 if attr.mode == "file" and item ~= ".DS_Store" then
                     files[rel_path] = {
@@ -113,13 +113,13 @@ end
 function SyncCommon.delete_empty_folders(base_path)
     local deleted_count = 0
     local errors = {}
-    
+
     local function delete_empty_recursive(path)
         local ok, iter, dir_obj = pcall(lfs.dir, path)
-        if not ok then 
-            return 
+        if not ok then
+            return
         end
-        
+
         local has_items = false
         for item in iter, dir_obj do
             if item ~= "." and item ~= ".." then
@@ -129,25 +129,25 @@ function SyncCommon.delete_empty_folders(base_path)
                     delete_empty_recursive(item_path)
                     -- Check again if directory is now empty
                     attr = lfs.attributes(item_path)
-                    if attr then 
-                        has_items = true 
+                    if attr then
+                        has_items = true
                     end
                 else
                     has_items = true
                 end
             end
         end
-        
+
         if not has_items and path ~= base_path then
-            local ok, err = lfs.rmdir(path)
-            if ok then
+            local success, err = lfs.rmdir(path)
+            if success then
                 deleted_count = deleted_count + 1
             else
                 table.insert(errors, "Failed to remove empty directory " .. path .. ": " .. (err or "unknown error"))
             end
         end
     end
-    
+
     delete_empty_recursive(base_path)
     return deleted_count, errors
 end

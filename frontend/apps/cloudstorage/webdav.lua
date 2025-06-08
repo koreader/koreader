@@ -99,7 +99,7 @@ end
 -- Get remote files recursively for synchronization
 function WebDav:getRemoteFilesRecursive(base_url, username, password, sync_folder_path, on_progress)
     local files = {}
-    
+
     -- Internal recursive function that builds relative paths correctly
     local function getFilesRecursive(current_url, current_rel_path)
         logger.dbg("WebDav:getRemoteFilesRecursive listing:", current_url, " rel_path:", current_rel_path)
@@ -132,11 +132,11 @@ function WebDav:getRemoteFilesRecursive(base_url, username, password, sync_folde
             end
         end
     end
-    
+
     -- Start recursion from the sync folder
     local start_url = sync_folder_path and sync_folder_path ~= "" and WebDavApi:getJoinedPath(base_url, sync_folder_path) or base_url
     getFilesRecursive(start_url, "")
-    
+
     return files
 end
 
@@ -147,13 +147,13 @@ function WebDav:synchronize(item, username, password, on_progress)
     -- Use the full WebDAV server address
     local remote_base_url = item.address
     local sync_folder = item.sync_source_folder or ""
-    
+
     if not local_path or not remote_base_url then
         local results = SyncCommon.init_results()
         SyncCommon.add_error(results, _("Missing sync source or destination configuration"))
         return results
     end
-    
+
     -- Remove leading slash from sync_folder to avoid double slashes
     if sync_folder:sub(1, 1) == "/" then
         sync_folder = sync_folder:sub(2)
@@ -162,25 +162,25 @@ function WebDav:synchronize(item, username, password, on_progress)
     if sync_folder:sub(-1) == "/" then
         sync_folder = sync_folder:sub(1, -2)
     end
-    
+
     local results = SyncCommon.init_results()
 
     logger.dbg("WebDav:synchronize remote_base_url=", remote_base_url, " sync_folder=", sync_folder, " local_path=", local_path)
-    
+
     -- Show progress for getting file lists
     SyncCommon.call_progress_callback(on_progress, "scan_remote", 0, 1, "")
     local remote_files = self:getRemoteFilesRecursive(remote_base_url, username, password, sync_folder, on_progress)
-    
+
     SyncCommon.call_progress_callback(on_progress, "scan_local", 0, 1, "")
     local local_files = SyncCommon.get_local_files_recursive(local_path, "")
-    
+
     -- Create necessary local directories
     SyncCommon.call_progress_callback(on_progress, "create_dirs", 0, 1, "")
     local dir_errors = SyncCommon.create_local_directories(local_path, remote_files)
     for _, err in ipairs(dir_errors) do
         SyncCommon.add_error(results, err)
     end
-    
+
     -- Count total files to download for progress
     local total_to_download = 0
     for rel_path, remote_file in pairs(remote_files) do
@@ -199,7 +199,7 @@ function WebDav:synchronize(item, username, password, on_progress)
         if remote_file.type == "file" then
             local local_file = local_files[rel_path]
             local should_download = not local_file or (remote_file.size and local_file.size ~= remote_file.size)
-            
+
             if should_download then
                 current_download = current_download + 1
                 SyncCommon.call_progress_callback(on_progress, "download", current_download, total_to_download, remote_file.text)
@@ -208,7 +208,7 @@ function WebDav:synchronize(item, username, password, on_progress)
                 local full_remote_path = sync_folder and sync_folder ~= "" and (sync_folder .. "/" .. remote_file.url) or remote_file.url
                 logger.dbg("WebDav:synchronize downloading ", rel_path, " from ", full_remote_path, " to ", local_file_path)
                 local success = self:downloadFileNoUI(remote_base_url, username, password, full_remote_path, local_file_path)
-                
+
                 if success then
                     results.downloaded = results.downloaded + 1
                 else
