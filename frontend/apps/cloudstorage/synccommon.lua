@@ -154,7 +154,7 @@ end
 
 -- Delete local files and their sidecar directories
 function SyncCommon.delete_local_file(file_path)
-    local ok, err = lfs.remove(file_path)
+    local ok, err = os.remove(file_path)
     if ok then
         local sdr_path = DocSettings:getSidecarDir(file_path)
         local sdr_attr = lfs.attributes(sdr_path)
@@ -183,6 +183,7 @@ end
 -- Add error to results
 function SyncCommon.add_error(results, error_msg)
     table.insert(results.errors, error_msg)
+    return results  -- Make it fluent
 end
 
 return SyncCommon

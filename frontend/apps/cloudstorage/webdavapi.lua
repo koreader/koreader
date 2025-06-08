@@ -199,6 +199,12 @@ function WebDavApi:downloadFile(url, user, pass, local_path)
 end
 
 function WebDavApi:uploadFile(file_url, user, pass, local_path, etag)
+    -- Ensure HTTPS by default for security
+    if not file_url:match("^https://") and not file_url:match("^http://localhost") and not file_url:match("^http://127%.0%.0%.1") then
+        logger.err("WebDavApi:uploadFile: Insecure connection not allowed. Use HTTPS.")
+        return nil
+    end
+    
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     local code, _, status = socket.skip(1, http.request{
         url      = file_url,

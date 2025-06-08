@@ -9,6 +9,7 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local SyncCommon = require("apps/cloudstorage/synccommon")
 local util = require("util")
+local ltn12 = require("ltn12")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -156,7 +157,9 @@ The FTP address must be in the following format:
 ftp://example.domain.com
 An IP address is also supported, for example:
 ftp://10.10.10.1
-Username and password are optional.]])
+Username and password are optional.
+
+⚠️ SECURITY WARNING: FTP transmits passwords in plain text. Use only on trusted networks or consider secure alternatives like SFTP/WebDAV over HTTPS.]])
     local hint_name = _("Your FTP name")
     local text_name = ""
     local hint_address = _("FTP address eg ftp://example.com")

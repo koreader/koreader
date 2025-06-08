@@ -46,7 +46,7 @@ function FtpApi:listFolder(address_path, folder_path)
     local ls_ftp, e = self:ftpGet(address_path, "nlst", sink)
     if ls_ftp == nil then
         logger.err("FtpApi:listFolder failed:", e)
-        return {}
+        return nil, e  -- Return nil and error instead of empty table
     end
     if folder_path == "/" then
         folder_path = ""

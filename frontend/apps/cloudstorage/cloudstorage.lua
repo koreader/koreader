@@ -445,13 +445,20 @@ function CloudStorage:synchronizeCloud(item)
         if NetworkMgr:willRerunWhenConnected(function() self:synchronizeCloud(item) end) then
             return
         end
+    elseif self.type == "ftp" then
+        -- FTP synchronization not supported due to security concerns and complexity
+        UIManager:show(InfoMessage:new{
+            text = _("FTP synchronization is not supported.\nPlease use individual file downloads or consider WebDAV/Dropbox for sync functionality."),
+            timeout = 4,
+        })
+        return
     else
         return
     end
     self.password = item.password
     self.address = item.address
     self.username = item.username
-    logger.dbg("CloudStorage:synchronizeCloud type=", item.type, " item=", item.text)
+    logger.dbg(string.format("CloudStorage:synchronizeCloud type=%s item=%s", item.type or "nil", item.text or "nil"))
     
     Trapper:wrap(function()
         Trapper:setPausedText(_("Download paused.\nDo you want to continue or abort downloading files?"))
@@ -572,7 +579,6 @@ function CloudStorage:downloadListFiles(item)
     end
     
     if not remote_files or #remote_files == 0 then
-        UI:clear()
         return false, 0  -- Return both boolean and numeric value
     end
     
@@ -585,7 +591,6 @@ function CloudStorage:downloadListFiles(item)
     end
 
     if files_to_download == 0 then
-        UI:clear()
         return false, 0  -- Return both boolean and numeric value
     end
 
@@ -597,7 +602,7 @@ function CloudStorage:downloadListFiles(item)
         if file.download then
             proccessed_files = proccessed_files + 1
             local text = string.format("Downloading file (%d/%d):\n%s", proccessed_files, files_to_download, file.text)
-            go_on = UI:info(text)
+            go_on = Trapper:info(text)
             if not go_on then
                 break
             end
@@ -613,7 +618,6 @@ function CloudStorage:downloadListFiles(item)
             end
         end
     end
-    UI:clear()
     return success_files, unsuccess_files  -- Return both values
 end
 

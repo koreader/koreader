@@ -255,37 +255,9 @@ function DropBoxApi:showFiles(path, token, include_folders)
 end
 
 function DropBoxApi:listFolderRecursive(path, token)
-    local dropbox_files = {}
-    local ls_dropbox = self:fetchListFolders(path, token)
-
-    if ls_dropbox == nil or ls_dropbox.entries == nil then
-        logger.warn("DropBoxApi:showFilesAndFoldersV2: Failed to list or no entries for path:", path)
-        return {} -- Return empty table on error or no entries
-    end
-
-    for _, file_entry in ipairs(ls_dropbox.entries) do
-        local text = file_entry.name
-        local tag = file_entry[".tag"]
-
-        if tag == "folder" then
-            table.insert(dropbox_files, {
-                text = text,
-                type = "folder",
-                url = file_entry.path_display, -- Full Dropbox path for the folder
-            })
-        elseif tag == "file" then
-            -- Check if the document type is supported or if showing unsupported files is enabled
-            if DocumentRegistry:hasProvider(text) or G_reader_settings:isTrue("show_unsupported") then
-                table.insert(dropbox_files, {
-                    text = text,
-                    type = "file",
-                    url = file_entry.path_display, -- Full Dropbox path for the file
-                    size = file_entry.size,
-                })
-            end
-        end
-    end
-    return dropbox_files
+    -- Use the existing getRemoteFilesRecursive method from dropbox.lua to avoid duplication
+    local DropBox = require("apps/cloudstorage/dropbox")
+    return DropBox:getRemoteFilesRecursive(path, token, "", nil)
 end
 
 function DropBoxApi:fetchAdditionalFolders(response, token)
