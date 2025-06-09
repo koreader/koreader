@@ -36,19 +36,19 @@ end
 function SyncCommon.get_local_files_recursive(base_path, current_rel_path)
     local files = {}
     local current_path = base_path .. (current_rel_path ~= "" and "/" .. current_rel_path or "")
-    
+
     local ok, iter, dir_obj = pcall(lfs.dir, current_path)
     if not ok then
         logger.warn("SyncCommon: Cannot read directory:", current_path)
         return files
     end
-    
+
     for file in iter, dir_obj do
         if file ~= "." and file ~= ".." then
             local file_path = current_path .. "/" .. file
             local rel_path = current_rel_path ~= "" and (current_rel_path .. "/" .. file) or file
             local attributes = lfs.attributes(file_path)
-            
+
             if attributes then
                 if attributes.mode == "file" then
                     files[rel_path] = {
@@ -65,7 +65,7 @@ function SyncCommon.get_local_files_recursive(base_path, current_rel_path)
             end
         end
     end
-    
+
     return files
 end
 
@@ -73,7 +73,7 @@ end
 function SyncCommon.create_local_directories(base_path, remote_files)
     local errors = {}
     local dirs_to_create = {}
-    
+
     -- Collect all directory paths
     for rel_path, file_info in pairs(remote_files) do
         if file_info.type == "file" then
@@ -83,7 +83,7 @@ function SyncCommon.create_local_directories(base_path, remote_files)
             end
         end
     end
-    
+
     -- Create directories
     for dir_rel_path, _ in pairs(dirs_to_create) do
         local full_dir_path = base_path .. "/" .. dir_rel_path
@@ -92,7 +92,7 @@ function SyncCommon.create_local_directories(base_path, remote_files)
             table.insert(errors, _("Failed to create directory: ") .. dir_rel_path .. " (" .. (err or "unknown error") .. ")")
         end
     end
-    
+
     return errors
 end
 
@@ -102,7 +102,7 @@ function SyncCommon.mkdir_recursive(path)
     if ok or err == "File exists" then
         return true
     end
-    
+
     -- Try to create parent directory first
     local parent = path:match("^(.+)/[^/]+$")
     if parent then
@@ -111,7 +111,7 @@ function SyncCommon.mkdir_recursive(path)
             return lfs.mkdir(path)
         end
     end
-    
+
     return false, err
 end
 

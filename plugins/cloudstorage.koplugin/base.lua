@@ -9,7 +9,6 @@ Each provider should inherit from this class and implement *at least* a `list` f
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
 local logger = require("logger")
-local util = require("util")
 local _ = require("gettext")
 
 local BaseCloudStorage = {

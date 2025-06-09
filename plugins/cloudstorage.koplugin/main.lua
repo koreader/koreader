@@ -9,7 +9,6 @@ local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
-local NetworkMgr = require("ui/network/manager")
 local PathChooser = require("ui/widget/pathchooser")
 local Provider = require("provider")
 local UIManager = require("ui/uimanager")
@@ -60,14 +59,14 @@ end
 function CloudStorageMenu:init()
     self.cs_settings = self:readSettings()
     self.show_parent = self
-    
+
     if self.item then
         self.item_table = self:genItemTable(self.item)
         self.choose_folder_mode = true
     else
         self.item_table = self:genItemTableFromRoot()
     end
-    
+
     self.title_bar_left_icon = "plus"
     self.onLeftButtonTap = function() -- add new cloud storage
         self:selectCloudType()
@@ -83,7 +82,7 @@ function CloudStorageMenu:genItemTableFromRoot()
     local added_servers = self.cs_settings:readSetting("cs_servers") or {}
     local provider_names = self:getProviderNames()
     local providers = self:getProviders()
-    
+
     for _, server in ipairs(added_servers) do
         if providers[server.type] then
             table.insert(item_table, {
@@ -113,7 +112,7 @@ end
 function CloudStorageMenu:genItemTable(item)
     local item_table = {}
     local added_servers = self.cs_settings:readSetting("cs_servers") or {}
-    
+
     for _, server in ipairs(added_servers) do
         if server.name == item.text and server.password == item.password and server.type == item.type then
             table.insert(item_table, {
@@ -139,7 +138,7 @@ end
 function CloudStorageMenu:selectCloudType()
     local buttons = {}
     local provider_names = self:getProviderNames()
-    
+
     -- Build buttons from available providers
     for provider_id, name in FFIUtil.orderedPairs(provider_names) do
         table.insert(buttons, {
@@ -152,7 +151,7 @@ function CloudStorageMenu:selectCloudType()
             },
         })
     end
-    
+
     -- Show error if no providers are available
     if #buttons == 0 then
         UIManager:show(InfoMessage:new{
@@ -161,7 +160,7 @@ function CloudStorageMenu:selectCloudType()
         })
         return false
     end
-    
+
     self.cloud_dialog = ButtonDialog:new{
         title = _("Add new cloud storage"),
         title_align = "center",
@@ -178,11 +177,11 @@ function CloudStorageMenu:openCloudServer(url)
         logger.err("CloudStorage:openCloudServer: No list function for provider", self.type)
         return false
     end
-    
+
     logger.dbg("CloudStorage:openCloudServer type=", self.type, " url=", url or "")
-    
+
     local tbl, e = provider.list(self.address, self.username, self.password, url, self.choose_folder_mode)
-    
+
     if tbl then
         self:switchItemTable(url, tbl)
         if provider.upload or provider.create_folder then
@@ -237,7 +236,7 @@ function CloudStorageMenu:downloadFile(item)
         logger.err("CloudStorage:downloadFile: No download function for provider", self.type)
         return
     end
-    
+
     local function startDownloadFile(unit_item, address, username, password, path_dir, callback_close)
         UIManager:scheduleIn(1, function()
             provider.download(unit_item, address, username, password, path_dir, callback_close)
@@ -354,26 +353,26 @@ function CloudStorageMenu:configCloud(provider_id)
         logger.err("CloudStorage:configCloud: Unknown provider", provider_id)
         return
     end
-    
+
     local function callbackAdd(fields)
         local cs_settings = self:readSettings()
         local cs_servers = cs_settings:readSetting("cs_servers") or {}
-        
+
         local server_config = {
             type = provider_id,
         }
-        
+
         -- Map fields to server config based on provider's config_fields
         for i, field_config in ipairs(provider.config_fields) do
             server_config[field_config.name] = fields[i]
         end
-        
+
         table.insert(cs_servers, server_config)
         cs_settings:saveSetting("cs_servers", cs_servers)
         cs_settings:flush()
         self:init()
     end
-    
+
     -- Use declarative configuration via MultiInputDialog
     local dialog_config = {
         title = provider.config_title or T(_("Add %1 account"), provider.name),
@@ -406,7 +405,7 @@ function CloudStorageMenu:configCloud(provider_id)
             },
         },
     }
-    
+
     -- Build fields from provider configuration
     for _, field_config in ipairs(provider.config_fields) do
         table.insert(dialog_config.fields, {
@@ -416,7 +415,7 @@ function CloudStorageMenu:configCloud(provider_id)
             text_type = field_config.text_type,
         })
     end
-    
+
     self.config_dialog = MultiInputDialog:new(dialog_config)
     UIManager:show(self.config_dialog)
     self.config_dialog:onShowKeyboard()
@@ -433,17 +432,17 @@ function CloudStorageMenu:synchronizeCloud(item)
         })
         return
     end
-    
+
     self.type = item.type
     self.password = item.password
     self.address = item.address
     self.username = item.username
-    
+
     logger.dbg(string.format("CloudStorage:synchronizeCloud type=%s item=%s", item.type or "nil", item.text or "nil"))
-    
+
     Trapper:wrap(function()
         Trapper:setPausedText(_("Download paused.\nDo you want to continue or abort downloading files?"))
-        
+
         local function on_progress(kind, current, total, rel_path)
             local progress_text
             if kind == "scan_remote" then
@@ -463,9 +462,9 @@ function CloudStorageMenu:synchronizeCloud(item)
             end
             Trapper:info(progress_text)
         end
-        
+
         local ok, results_or_err = pcall(provider.sync, item, self.address, self.username, self.password, on_progress)
-        
+
         if ok and results_or_err then
             local text
             if type(results_or_err) == "table" then
@@ -484,7 +483,7 @@ function CloudStorageMenu:synchronizeCloud(item)
                     text = text .. " " .. T(N_("Skipped 1 unchanged file.", "Skipped %1 unchanged files.", results_or_err.skipped), results_or_err.skipped)
                 end
             end
-            
+
             logger.dbg("CloudStorage:synchronizeCloud success:", text)
             UIManager:show(InfoMessage:new{
                 text = text,
@@ -697,7 +696,7 @@ function CloudStorageMenu:showPlusMenu(url)
     local provider = providers[self.type]
     local button_dialog
     local buttons = {}
-    
+
     if provider and provider.upload then
         table.insert(buttons, {
             {
@@ -709,7 +708,7 @@ function CloudStorageMenu:showPlusMenu(url)
             },
         })
     end
-    
+
     if provider and provider.create_folder then
         table.insert(buttons, {
             {
@@ -721,7 +720,7 @@ function CloudStorageMenu:showPlusMenu(url)
             },
         })
     end
-    
+
     table.insert(buttons, {})
     table.insert(buttons, {
         {
@@ -749,7 +748,7 @@ function CloudStorageMenu:uploadFile(url)
         })
         return
     end
-    
+
     local path_chooser
     path_chooser = PathChooser:new{
         select_directory = false,
@@ -791,7 +790,7 @@ function CloudStorageMenu:createFolder(url)
         })
         return
     end
-    
+
     local input_dialog, check_button_enter_folder
     input_dialog = InputDialog:new{
         title = _("New folder"),
@@ -844,11 +843,11 @@ function CloudStorageMenu:editCloudServer(item)
         logger.err("CloudStorage:editCloudServer: Unknown provider", item.type)
         return
     end
-    
+
     local function callbackEdit(fields)
         local cs_settings = self:readSettings()
         local cs_servers = cs_settings:readSetting("cs_servers") or {}
-        
+
         for i, server in ipairs(cs_servers) do
             if server.name == item.text and server.type == item.type then
                 -- Map fields to server config based on provider's config_fields
@@ -859,12 +858,12 @@ function CloudStorageMenu:editCloudServer(item)
                 break
             end
         end
-        
+
         cs_settings:saveSetting("cs_servers", cs_servers)
         cs_settings:flush()
         self:init()
     end
-    
+
     -- Use declarative configuration for editing
     local dialog_config = {
         title = provider.config_title or T(_("Edit %1 account"), provider.name),
@@ -897,7 +896,7 @@ function CloudStorageMenu:editCloudServer(item)
             },
         },
     }
-    
+
     -- Pre-populate fields with existing values
     for _, field_config in ipairs(provider.config_fields) do
         table.insert(dialog_config.fields, {
@@ -907,7 +906,7 @@ function CloudStorageMenu:editCloudServer(item)
             text_type = field_config.text_type,
         })
     end
-    
+
     self.config_dialog = MultiInputDialog:new(dialog_config)
     UIManager:show(self.config_dialog)
     self.config_dialog:onShowKeyboard()

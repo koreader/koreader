@@ -807,7 +807,7 @@ To:
             end,
         })
     end
-    
+
     -- main menu tab
     self.menu_items.open_last_document = {
         text_func = function()

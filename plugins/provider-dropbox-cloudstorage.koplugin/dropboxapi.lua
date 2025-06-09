@@ -26,7 +26,7 @@ function DropBoxApi:getAccessToken(refresh_token, app_key_colon_secret)
     logger.dbg("DropBoxApi:getAccessToken called")
     logger.dbg("DropBoxApi: refresh_token length=", refresh_token and #refresh_token or "nil")
     logger.dbg("DropBoxApi: app_key_colon_secret=", app_key_colon_secret and "***provided***" or "nil")
-    
+
     local sink = {}
     local data = "grant_type=refresh_token&refresh_token=" .. refresh_token
     local request = {
@@ -44,11 +44,11 @@ function DropBoxApi:getAccessToken(refresh_token, app_key_colon_secret)
     local code, _, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
     local result_response = table.concat(sink)
-    
+
     logger.dbg("DropBoxApi: Token exchange response code=", code)
     logger.dbg("DropBoxApi: Token exchange status=", status)
     logger.dbg("DropBoxApi: Token exchange response=", result_response)
-    
+
     if code == 200 and result_response ~= "" then
         local _, result = pcall(JSON.decode, result_response)
         if result and result["access_token"] then
@@ -88,14 +88,14 @@ end
 
 function DropBoxApi:fetchListFolders(path, token)
     logger.dbg("DropBoxApi:fetchListFolders called with path=", path, "token length=", token and #token or "nil")
-    
+
     if path == nil or path == "/" then path = "" end
     local data = "{\"path\": \"" .. path .. "\",\"recursive\": false,\"include_media_info\": false,"..
         "\"include_deleted\": false,\"include_has_explicit_shared_members\": false}"
-    
+
     logger.dbg("DropBoxApi: Request data=", data)
     logger.dbg("DropBoxApi: Bearer token=", token and ("Bearer " .. token:sub(1, 20) .. "...") or "nil")
-    
+
     local sink = {}
     local request = {
         url     = API_LIST_FOLDER,
@@ -108,17 +108,17 @@ function DropBoxApi:fetchListFolders(path, token)
         source  = ltn12.source.string(data),
         sink    = ltn12.sink.table(sink),
     }
-    
+
     logger.dbg("DropBoxApi: Making request to", API_LIST_FOLDER)
     socketutil:set_timeout()
     local code, _, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
     local result_response = table.concat(sink)
-    
+
     logger.dbg("DropBoxApi: List folders response code=", code)
     logger.dbg("DropBoxApi: List folders status=", status)
     logger.dbg("DropBoxApi: List folders response=", result_response)
-    
+
     if code == 200 and result_response ~= "" then
         local ret, result = pcall(JSON.decode, result_response)
         if ret then
@@ -206,7 +206,7 @@ end
 -- We see also extra folder "Long-press to select current directory" at the beginning.
 function DropBoxApi:listFolder(path, token, folder_mode)
     logger.dbg("DropBoxApi:listFolder called with path=", path, " token length=", token and #token or "nil", " folder_mode=", folder_mode)
-    
+
     local dropbox_list = {}
     local dropbox_file = {}
     local tag, text
@@ -257,7 +257,7 @@ function DropBoxApi:listFolder(path, token, folder_mode)
             type = files.type,
         })
     end
-    
+
     logger.dbg("DropBoxApi:listFolder returning", #dropbox_list, "items")
     return dropbox_list
 end

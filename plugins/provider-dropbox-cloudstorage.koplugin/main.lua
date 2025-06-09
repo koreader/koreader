@@ -22,17 +22,17 @@ local DropboxProvider = BaseCloudStorage:new {
 
 function DropboxProvider:list(address, username, password, path, folder_mode)
     logger.dbg("Dropbox:list called with path=", path, " folder_mode=", folder_mode)
-    logger.dbg("Dropbox:list params: address=", address and "***provided***" or "nil", 
-               " username=", username and "***provided***" or "nil", 
+    logger.dbg("Dropbox:list params: address=", address and "***provided***" or "nil",
+               " username=", username and "***provided***" or "nil",
                " password=", password and "***provided***" or "nil")
-    
+
     if NetworkMgr:willRerunWhenOnline(function() return self:list(address, username, password, path, folder_mode) end) then
         return nil
     end
-    
+
     -- Generate access token if needed
     local access_token = password
-    
+
     -- If we have app credentials (address), treat password as refresh token
     if address and address ~= "" then
         logger.dbg("Dropbox:list using refresh token flow")
@@ -45,7 +45,7 @@ function DropboxProvider:list(address, username, password, path, folder_mode)
     else
         logger.dbg("Dropbox:list using direct access token (legacy mode)")
     end
-    
+
     -- Fix: Correct parameter order for listFolder
     logger.dbg("Dropbox:list calling DropBoxApi:listFolder with path=", path, " access_token length=", access_token and #access_token or "nil")
     return DropBoxApi:listFolder(path, access_token, folder_mode)
@@ -55,7 +55,7 @@ function DropboxProvider:download(item, address, username, password, local_path,
     if NetworkMgr:willRerunWhenOnline(function() self:download(item, address, username, password, local_path, callback_close) end) then
         return
     end
-    
+
     -- Generate access token if needed
     local access_token = password
     if not username and address and address ~= "" then
@@ -68,7 +68,7 @@ function DropboxProvider:download(item, address, username, password, local_path,
             return
         end
     end
-    
+
     local code_response = DropBoxApi:downloadFile(item, access_token, local_path)
     if code_response == 200 then
         local __, filename = util.splitFilePathName(local_path)
@@ -107,11 +107,11 @@ end
 
 function DropboxProvider:sync(item, address, username, password, on_progress)
     logger.dbg("Dropbox:synchronize called for item=", item.text, " sync_source_folder=", item.sync_source_folder, " sync_dest_folder=", item.sync_dest_folder)
-    
+
     if NetworkMgr:willRerunWhenOnline(function() self:sync(item, address, username, password, on_progress) end) then
         return
     end
-    
+
     local local_path = item.sync_dest_folder
     local sync_folder = item.sync_source_folder or ""
 
@@ -230,11 +230,11 @@ function DropboxProvider:getRemoteFilesRecursive(access_token, sync_folder_path,
 
         for i, item in ipairs(file_list) do
             logger.dbg("Dropbox:getRemoteFilesRecursive processing item", i, ":", item.text, "type:", item.type)
-            
+
             if item.type == "file" then
                 local rel_path = current_rel_path and current_rel_path ~= "" and (current_rel_path .. "/" .. item.text) or item.text
                 logger.dbg("Dropbox:getRemoteFilesRecursive adding file:", rel_path, "size:", item.mandatory)
-                
+
                 files[rel_path] = {
                     url = item.url,
                     size = item.filesize or item.size, -- Try both fields

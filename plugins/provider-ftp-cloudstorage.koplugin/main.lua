@@ -3,7 +3,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DocumentRegistry = require("document/documentregistry")
 local FtpApi = require("ftpapi")
 local InfoMessage = require("ui/widget/infomessage")
-local NetworkMgr = require("ui/network/manager")
 local Provider = require("provider")
 local ReaderUI = require("apps/reader/readerui")
 local UIManager = require("ui/uimanager")
@@ -89,19 +88,19 @@ end
 function FtpProvider:getRemoteFilesRecursive(address, username, password, base_path, current_path)
     current_path = current_path or ""
     local all_files = {}
-    
+
     local full_path = base_path .. current_path
     logger.dbg("FTP:getRemoteFilesRecursive scanning:", full_path)
-    
+
     local items, err = self:list(address, username, password, full_path)
     if not items then
         logger.err("FTP:getRemoteFilesRecursive failed to list:", full_path, "error:", err)
         return all_files
     end
-    
+
     for _, item in ipairs(items) do
         local rel_path = current_path .. "/" .. item.text:gsub("/$", "")  -- Remove trailing slash from folder names
-        
+
         if item.type == "file" then
             -- Add file to results
             all_files[rel_path] = {
@@ -121,7 +120,7 @@ function FtpProvider:getRemoteFilesRecursive(address, username, password, base_p
             end
         end
     end
-    
+
     return all_files
 end
 
@@ -138,10 +137,10 @@ function FtpProvider:sync(item, address, username, password, on_progress)
 
     -- Show progress for getting file lists
     SyncCommon.call_progress_callback(on_progress, "scan_remote", 0, 1, "")
-    
+
     -- Use recursive scanning to get all files from subdirectories
     local remote_files = self:getRemoteFilesRecursive(address, username, password, remote_path)
-    
+
     if not remote_files or next(remote_files) == nil then
         logger.dbg("FTP:sync no remote files found")
         -- Still continue to allow cleanup of local files
@@ -225,22 +224,22 @@ end
 function FtpProvider:downloadFileNoUI(address, username, password, remote_file, local_path)
     local url = FtpApi:generateUrl(address, util.urlEncode(username), util.urlEncode(password)) .. remote_file.url
     logger.dbg("FTP:downloadFileNoUI downloading from:", url, "to:", local_path)
-    
+
     -- Normalize path for UTF-8 issues
     local normalized_path = util.fixUtf8(local_path, "_")
-    
+
     -- Create file handle for ltn12 sink - don't manually close it as ltn12 handles this
     local file, err = io.open(normalized_path, "wb")  -- Use binary mode for epub files
     if not file then
         logger.err("FTP: Could not open local file for writing:", normalized_path, "error:", err)
         return false
     end
-    
+
     logger.dbg("FTP:downloadFileNoUI file opened successfully, starting download")
     local response = FtpApi:ftpGet(url, "retr", ltn12.sink.file(file))
-    
+
     -- ltn12.sink.file automatically closes the file handle, so we don't need to close it manually
-    
+
     if response ~= nil then
         logger.dbg("FTP:downloadFileNoUI download successful")
         return true

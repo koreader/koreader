@@ -52,7 +52,7 @@ function FtpApi:listFolder(address_path, folder_path, folder_mode)
     if folder_path == "/" then
         folder_path = ""
     end
-    
+
     -- Add folder selection item if in folder_mode
     if folder_mode then
         table.insert(ftp_list, {
@@ -61,7 +61,7 @@ function FtpApi:listFolder(address_path, folder_path, folder_mode)
             type = "folder_long_press",
         })
     end
-    
+
     for item in (table.concat(tbl)..'\n'):gmatch'(.-)\r?\n' do
         if item ~= '' then
             file_name = item:match("([^/]+)$")
