@@ -5,6 +5,7 @@ local ltn12 = require("ltn12")
 local util = require("util")
 local url = require("socket.url")
 local logger = require("logger")
+local _ = require("gettext")
 
 local FtpApi = {}
 
@@ -35,7 +36,7 @@ function FtpApi:ftpGet(u, command, sink)
     return r, e
 end
 
-function FtpApi:listFolder(address_path, folder_path)
+function FtpApi:listFolder(address_path, folder_path, folder_mode)
     local ftp_list = {}
     local ftp_file = {}
     local type
@@ -51,6 +52,16 @@ function FtpApi:listFolder(address_path, folder_path)
     if folder_path == "/" then
         folder_path = ""
     end
+    
+    -- Add folder selection item if in folder_mode
+    if folder_mode then
+        table.insert(ftp_list, {
+            text = _("Long-press to select current folder"),
+            url = folder_path,
+            type = "folder_long_press",
+        })
+    end
+    
     for item in (table.concat(tbl)..'\n'):gmatch'(.-)\r?\n' do
         if item ~= '' then
             file_name = item:match("([^/]+)$")

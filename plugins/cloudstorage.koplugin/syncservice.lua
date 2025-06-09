@@ -72,7 +72,8 @@ function SyncService:generateItemTable()
         text = _("Add service"),
         bold = true,
         callback = function()
-            local cloud_storage = require("apps/cloudstorage/cloudstorage"):new{}
+            local CloudStorage = require("plugins/cloudstorage.koplugin/main")
+            local cloud_storage = CloudStorage:new{}
             local onClose = cloud_storage.onClose
             cloud_storage.onClose = function(this)
                 onClose(this)

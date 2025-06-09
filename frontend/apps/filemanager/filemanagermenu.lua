@@ -807,20 +807,7 @@ To:
             end,
         })
     end
-
-    self.menu_items.cloud_storage = {
-        text = _("Cloud storage"),
-        callback = function()
-            local cloud_storage = require("apps/cloudstorage/cloudstorage"):new{}
-            UIManager:show(cloud_storage)
-            local filemanagerRefresh = function() self.ui:onRefresh() end
-            function cloud_storage:onClose()
-                filemanagerRefresh()
-                UIManager:close(cloud_storage)
-            end
-        end,
-    }
-
+    
     -- main menu tab
     self.menu_items.open_last_document = {
         text_func = function()

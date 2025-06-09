@@ -18,6 +18,7 @@ end
 local Provider = {
     features = {
         ["exporter"] = {},
+        ["cloudstorage"] = {},
     },
 }
 
