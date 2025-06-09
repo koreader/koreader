@@ -22,9 +22,6 @@ local DropboxProvider = BaseCloudStorage:new {
 
 function DropboxProvider:list(address, username, password, path, folder_mode)
     logger.dbg("Dropbox:list called with path=", path, " folder_mode=", folder_mode)
-    logger.dbg("Dropbox:list params: address=", address and "***provided***" or "nil",
-               " username=", username and "***provided***" or "nil",
-               " password=", password and "***provided***" or "nil")
 
     if NetworkMgr:willRerunWhenOnline(function() return self:list(address, username, password, path, folder_mode) end) then
         return nil
@@ -41,13 +38,12 @@ function DropboxProvider:list(address, username, password, path, folder_mode)
             logger.warn("Dropbox:list failed to get access token")
             return nil, _("Failed to get Dropbox access token")
         end
-        logger.dbg("Dropbox:list got access token, length=", #access_token)
+        logger.dbg("Dropbox:list got access token")
     else
         logger.dbg("Dropbox:list using direct access token (legacy mode)")
     end
 
-    -- Fix: Correct parameter order for listFolder
-    logger.dbg("Dropbox:list calling DropBoxApi:listFolder with path=", path, " access_token length=", access_token and #access_token or "nil")
+    logger.dbg("Dropbox:list calling DropBoxApi:listFolder with path=", path)
     return DropBoxApi:listFolder(path, access_token, folder_mode)
 end
 
@@ -155,8 +151,7 @@ function DropboxProvider:sync(item, address, username, password, on_progress)
     for rel_path, remote_file in pairs(remote_files) do
         if remote_file.type == "file" then
             local local_file = local_files[rel_path]
-            local should_download = not local_file or (remote_file.size and local_file.size ~= remote_file.size)
-            if should_download then
+            if SyncCommon.should_download_file(local_file, remote_file) then
                 total_to_download = total_to_download + 1
             end
         end
@@ -167,8 +162,7 @@ function DropboxProvider:sync(item, address, username, password, on_progress)
     for rel_path, remote_file in pairs(remote_files) do
         if remote_file.type == "file" then
             local local_file = local_files[rel_path]
-            local should_download = not local_file or (remote_file.size and local_file.size ~= remote_file.size)
-            if should_download then
+            if SyncCommon.should_download_file(local_file, remote_file) then
                 current_download = current_download + 1
                 SyncCommon.call_progress_callback(on_progress, "download", current_download, total_to_download, remote_file.text)
                 local local_file_path = local_path .. "/" .. rel_path
@@ -206,7 +200,6 @@ end
 
 -- Helper function for downloading files without UI (for sync)
 function DropboxProvider:downloadFileNoUI(access_token, remote_file, local_path)
-    -- Fix: Pass the URL from the remote_file object, not the whole object
     local code_response = DropBoxApi:downloadFile(remote_file.url, access_token, local_path)
     return code_response == 200
 end
@@ -214,55 +207,19 @@ end
 -- Helper function to get remote files recursively
 function DropboxProvider:getRemoteFilesRecursive(access_token, sync_folder_path, on_progress)
     logger.dbg("Dropbox:getRemoteFilesRecursive called with sync_folder_path=", sync_folder_path)
-    local files = {}
-
-    local function getFilesRecursive(current_path, current_rel_path)
-        logger.dbg("Dropbox:getRemoteFilesRecursive listing:", current_path, " rel_path:", current_rel_path)
-
-        -- Fix: Don't pass folder_mode for sync - we want raw file/folder data
-        local file_list = DropBoxApi:listFolder(current_path, access_token, false)
-        if not file_list then
-            logger.err("Dropbox:getRemoteFilesRecursive: Failed to list folder", current_path)
-            return
-        end
-
-        logger.dbg("Dropbox:getRemoteFilesRecursive got", #file_list, "items from listFolder")
-
-        for i, item in ipairs(file_list) do
-            logger.dbg("Dropbox:getRemoteFilesRecursive processing item", i, ":", item.text, "type:", item.type)
-
-            if item.type == "file" then
-                local rel_path = current_rel_path and current_rel_path ~= "" and (current_rel_path .. "/" .. item.text) or item.text
-                logger.dbg("Dropbox:getRemoteFilesRecursive adding file:", rel_path, "size:", item.mandatory)
-
-                files[rel_path] = {
-                    url = item.url,
-                    size = item.filesize or item.size, -- Try both fields
-                    text = item.text,
-                    type = "file"
-                }
-            elseif item.type == "folder" then
-                local folder_name = item.text:gsub("/$", "") -- Remove trailing slash if present
-                local sub_rel_path = current_rel_path and current_rel_path ~= "" and (current_rel_path .. "/" .. folder_name) or folder_name
-                local sub_path = current_path .. "/" .. folder_name
-                logger.dbg("Dropbox:getRemoteFilesRecursive recursing into folder:", folder_name, "sub_path:", sub_path)
-                getFilesRecursive(sub_path, sub_rel_path)
-            else
-                logger.dbg("Dropbox:getRemoteFilesRecursive ignoring item with unknown type:", item.type)
-            end
-        end
+    
+    -- Use the common recursive scanner from SyncCommon
+    local list_function = function(address, username, password, path, folder_mode)
+        return DropBoxApi:listFolder(path, access_token, folder_mode)
     end
-
-    local start_path = sync_folder_path and sync_folder_path ~= "" and sync_folder_path or ""
-    logger.dbg("Dropbox:getRemoteFilesRecursive starting with path:", start_path)
-    getFilesRecursive(start_path, "")
-
-    logger.dbg("Dropbox:getRemoteFilesRecursive found total files:", table.getn and table.getn(files) or "unknown count")
-    for rel_path, file_info in pairs(files) do
-        logger.dbg("Dropbox:getRemoteFilesRecursive final file:", rel_path, "size:", file_info.size, "type:", file_info.type)
-    end
-
-    return files
+    
+    return SyncCommon.get_remote_files_recursive(
+        self,
+        list_function,
+        {nil, nil, nil}, -- base_params not needed for Dropbox
+        sync_folder_path,
+        on_progress
+    )
 end
 
 -- Register the Dropbox provider with the Provider system

@@ -21,14 +21,14 @@ local WebDavProvider = BaseCloudStorage:new {
 
 function WebDavProvider:list(address, username, password, path, folder_mode)
     logger.dbg("WebDAV:list called with address=", address, " path=", path, " folder_mode=", folder_mode)
-    local options = {
-        folder_mode = folder_mode
-    }
+    
+    local options = { folder_mode = folder_mode }
     return WebDavApi:listFolder(address, username, password, path, options)
 end
 
 function WebDavProvider:download(item, address, username, password, local_path, callback_close)
     local code_response = WebDavApi:downloadFile(WebDavApi:getJoinedPath(address, item.url), username, password, local_path)
+    
     if code_response == 200 then
         local __, filename = util.splitFilePathName(local_path)
         if G_reader_settings:isTrue("show_unsupported") and not DocumentRegistry:hasProvider(filename) then
@@ -60,12 +60,13 @@ function WebDavProvider:download(item, address, username, password, local_path, 
 end
 
 function WebDavProvider:info(item)
-    local info_text = T(_"Type: %1\nName: %2\nAddress: %3", "WebDAV", item.text, item.address)
+    local info_text = T(_"Type: %1\nName: %2", "WebDAV", item.text)
     UIManager:show(InfoMessage:new{text = info_text})
 end
 
 function WebDavProvider:sync(item, address, username, password, on_progress)
     logger.dbg("WebDAV:synchronize called for item=", item.text, " sync_source_folder=", item.sync_source_folder, " sync_dest_folder=", item.sync_dest_folder)
+    
     local local_path = item.sync_dest_folder
     local remote_base_url = address
     local sync_folder = item.sync_source_folder or ""
@@ -107,8 +108,7 @@ function WebDavProvider:sync(item, address, username, password, on_progress)
     for rel_path, remote_file in pairs(remote_files) do
         if remote_file.type == "file" then
             local local_file = local_files[rel_path]
-            local should_download = not local_file or (remote_file.size and local_file.size ~= remote_file.size)
-            if should_download then
+            if SyncCommon.should_download_file(local_file, remote_file) then
                 total_to_download = total_to_download + 1
             end
         end
@@ -119,12 +119,12 @@ function WebDavProvider:sync(item, address, username, password, on_progress)
     for rel_path, remote_file in pairs(remote_files) do
         if remote_file.type == "file" then
             local local_file = local_files[rel_path]
-            local should_download = not local_file or (remote_file.size and local_file.size ~= remote_file.size)
-            if should_download then
+            if SyncCommon.should_download_file(local_file, remote_file) then
                 current_download = current_download + 1
                 SyncCommon.call_progress_callback(on_progress, "download", current_download, total_to_download, remote_file.text)
                 local local_file_path = local_path .. "/" .. rel_path
                 logger.dbg("WebDAV:synchronize downloading ", rel_path, " to ", local_file_path)
+                
                 local success = self:downloadFileNoUI(remote_base_url, username, password, remote_file.relative_path, local_file_path)
                 if success then
                     results.downloaded = results.downloaded + 1
@@ -132,6 +132,9 @@ function WebDavProvider:sync(item, address, username, password, on_progress)
                     results.failed = results.failed + 1
                     SyncCommon.add_error(results, _("Failed to download file: ") .. remote_file.text)
                 end
+                
+                -- Yield to keep UI responsive
+                SyncCommon.yield_if_needed(current_download, 5)
             else
                 results.skipped = results.skipped + 1
             end
@@ -165,46 +168,20 @@ end
 
 -- Helper function to get remote files recursively
 function WebDavProvider:getRemoteFilesRecursive(base_url, username, password, sync_folder_path, on_progress)
-    local files = {}
-
-    local function getFilesRecursive(current_url, current_rel_path)
-        logger.dbg("WebDAV:getRemoteFilesRecursive listing:", current_url, " rel_path:", current_rel_path)
-
-        local file_list = WebDavApi:listFolder(current_url, username, password, "", {sync_mode = true})
-        if not file_list then
-            logger.err("WebDAV:getRemoteFilesRecursive: Failed to list folder", current_url)
-            return
-        end
-
-        for _, item in ipairs(file_list) do
-            if item.type == "file" then
-                local rel_path = current_rel_path and current_rel_path ~= "" and (current_rel_path .. "/" .. item.text) or item.text
-                -- Store the full relative path including sync_folder_path for downloading
-                local full_relative_path
-                if sync_folder_path and sync_folder_path ~= "" then
-                    full_relative_path = sync_folder_path .. "/" .. rel_path
-                else
-                    full_relative_path = rel_path
-                end
-                files[rel_path] = {
-                    relative_path = full_relative_path,
-                    size = item.filesize,
-                    text = item.text,
-                    type = "file"
-                }
-            elseif item.type == "folder" then
-                local folder_name = item.text:gsub("/$", "")
-                local sub_rel_path = current_rel_path and current_rel_path ~= "" and (current_rel_path .. "/" .. folder_name) or folder_name
-                local sub_url = WebDavApi:getJoinedPath(current_url, folder_name)
-                getFilesRecursive(sub_url, sub_rel_path)
-            end
-        end
+    logger.dbg("WebDAV:getRemoteFilesRecursive called with sync_folder_path=", sync_folder_path)
+    
+    -- Use the common recursive scanner from SyncCommon
+    local list_function = function(address, user, pass, path, folder_mode)
+        return WebDavApi:listFolder(address, user, pass, path, {sync_mode = true})
     end
-
-    local start_url = sync_folder_path and sync_folder_path ~= "" and WebDavApi:getJoinedPath(base_url, sync_folder_path) or base_url
-    getFilesRecursive(start_url, "")
-
-    return files
+    
+    return SyncCommon.get_remote_files_recursive(
+        self,
+        list_function,
+        {base_url, username, password}, -- base_params for WebDAV
+        sync_folder_path,
+        on_progress
+    )
 end
 
 -- Register the WebDAV provider with the Provider system

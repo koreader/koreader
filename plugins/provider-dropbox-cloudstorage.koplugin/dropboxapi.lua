@@ -24,8 +24,11 @@ local API_UPLOAD_FILE     = "https://content.dropboxapi.com/2/files/upload"
 
 function DropBoxApi:getAccessToken(refresh_token, app_key_colon_secret)
     logger.dbg("DropBoxApi:getAccessToken called")
-    logger.dbg("DropBoxApi: refresh_token length=", refresh_token and #refresh_token or "nil")
-    logger.dbg("DropBoxApi: app_key_colon_secret=", app_key_colon_secret and "***provided***" or "nil")
+    
+    if not refresh_token or not app_key_colon_secret then
+        logger.err("DropBoxApi: Missing refresh token or app credentials")
+        return nil
+    end
 
     local sink = {}
     local data = "grant_type=refresh_token&refresh_token=" .. refresh_token
@@ -47,19 +50,18 @@ function DropBoxApi:getAccessToken(refresh_token, app_key_colon_secret)
 
     logger.dbg("DropBoxApi: Token exchange response code=", code)
     logger.dbg("DropBoxApi: Token exchange status=", status)
-    logger.dbg("DropBoxApi: Token exchange response=", result_response)
 
     if code == 200 and result_response ~= "" then
-        local _, result = pcall(JSON.decode, result_response)
-        if result and result["access_token"] then
-            logger.dbg("DropBoxApi: Successfully got access token, length=", #result["access_token"])
+        local ok, result = pcall(JSON.decode, result_response)
+        if ok and result and result["access_token"] then
+            logger.dbg("DropBoxApi: Successfully got access token")
             return result["access_token"]
         else
             logger.warn("DropBoxApi: Invalid JSON response or missing access_token")
         end
     end
+    
     logger.warn("DropBoxApi: cannot get access token:", status or code)
-    logger.warn("DropBoxApi: error:", result_response)
     return nil
 end
 
@@ -83,18 +85,21 @@ function DropBoxApi:fetchInfo(token, space_usage)
         return result
     end
     logger.warn("DropBoxApi: cannot get account info:", status or code)
-    logger.warn("DropBoxApi: error:", result_response)
 end
 
 function DropBoxApi:fetchListFolders(path, token)
-    logger.dbg("DropBoxApi:fetchListFolders called with path=", path, "token length=", token and #token or "nil")
+    logger.dbg("DropBoxApi:fetchListFolders called with path=", path)
+
+    if not token then
+        logger.err("DropBoxApi: Missing access token for fetchListFolders")
+        return nil
+    end
 
     if path == nil or path == "/" then path = "" end
     local data = "{\"path\": \"" .. path .. "\",\"recursive\": false,\"include_media_info\": false,"..
         "\"include_deleted\": false,\"include_has_explicit_shared_members\": false}"
 
     logger.dbg("DropBoxApi: Request data=", data)
-    logger.dbg("DropBoxApi: Bearer token=", token and ("Bearer " .. token:sub(1, 20) .. "...") or "nil")
 
     local sink = {}
     local request = {
@@ -117,7 +122,6 @@ function DropBoxApi:fetchListFolders(path, token)
 
     logger.dbg("DropBoxApi: List folders response code=", code)
     logger.dbg("DropBoxApi: List folders status=", status)
-    logger.dbg("DropBoxApi: List folders response=", result_response)
 
     if code == 200 and result_response ~= "" then
         local ret, result = pcall(JSON.decode, result_response)
@@ -134,11 +138,16 @@ function DropBoxApi:fetchListFolders(path, token)
         end
     end
     logger.warn("DropBoxApi: cannot get folder content:", status or code)
-    logger.warn("DropBoxApi: error:", result_response)
 end
 
 function DropBoxApi:downloadFile(path, token, local_path)
     logger.dbg("DropBoxApi:downloadFile path=", path, " local_path=", local_path)
+    
+    if not token then
+        logger.err("DropBoxApi: Missing access token for downloadFile")
+        return nil
+    end
+    
     local data1 = "{\"path\": \"" .. path .. "\"}"
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     local code, headers, status = socket.skip(1, http.request{
@@ -158,6 +167,11 @@ function DropBoxApi:downloadFile(path, token, local_path)
 end
 
 function DropBoxApi:uploadFile(path, token, file_path, etag, overwrite)
+    if not token then
+        logger.err("DropBoxApi: Missing access token for uploadFile")
+        return nil
+    end
+    
     local data = "{\"path\": \"" .. path .. "/" .. ffiUtil.basename(file_path) ..
         "\",\"mode\":" .. (overwrite and "\"overwrite\"" or "\"add\"") ..
         ",\"autorename\": " .. (overwrite and "false" or "true") ..
@@ -183,6 +197,11 @@ function DropBoxApi:uploadFile(path, token, file_path, etag, overwrite)
 end
 
 function DropBoxApi:createFolder(path, token, folder_name)
+    if not token then
+        logger.err("DropBoxApi: Missing access token for createFolder")
+        return nil
+    end
+    
     local data = "{\"path\": \"" .. path .. "/" .. folder_name .. "\",\"autorename\": false}"
     socketutil:set_timeout()
     local code, _, status = socket.skip(1, http.request{
@@ -205,7 +224,7 @@ end
 -- folder_mode - set to true when we want to see only folder.
 -- We see also extra folder "Long-press to select current directory" at the beginning.
 function DropBoxApi:listFolder(path, token, folder_mode)
-    logger.dbg("DropBoxApi:listFolder called with path=", path, " token length=", token and #token or "nil", " folder_mode=", folder_mode)
+    logger.dbg("DropBoxApi:listFolder called with path=", path, " folder_mode=", folder_mode)
 
     local dropbox_list = {}
     local dropbox_file = {}
@@ -231,6 +250,8 @@ function DropBoxApi:listFolder(path, token, folder_mode)
                 mandatory = util.getFriendlySize(files.size),
                 url = files.path_display,
                 type = tag,
+                size = files.size,
+                filesize = files.size, -- For compatibility
             })
         end
     end
@@ -255,6 +276,8 @@ function DropBoxApi:listFolder(path, token, folder_mode)
             mandatory = files.mandatory,
             url = files.url,
             type = files.type,
+            size = files.size,
+            filesize = files.filesize,
         })
     end
 
@@ -288,55 +311,49 @@ function DropBoxApi:showFiles(path, token, include_folders)
     return dropbox_files
 end
 
-function DropBoxApi:listFolderRecursive(path, token)
-    -- Use the existing getRemoteFilesRecursive method from dropbox.lua to avoid duplication
-    local DropBox = require("apps/cloudstorage/dropbox")
-    return DropBox:getRemoteFilesRecursive(path, token, "", nil)
-end
-
 function DropBoxApi:fetchAdditionalFolders(response, token)
-  local out = response
-  local cursor = response.cursor
+    local out = response
+    local cursor = response.cursor
 
-  repeat
-    local data = "{\"cursor\": \"" .. cursor .. "\"}"
+    repeat
+        local data = "{\"cursor\": \"" .. cursor .. "\"}"
 
-    local sink = {}
-    socketutil:set_timeout()
-    local request = {
-        url     = API_LIST_ADD_FOLDER,
-        method  = "POST",
-        headers = {
-            ["Authorization"]  = "Bearer ".. token,
-            ["Content-Type"]   = "application/json",
-            ["Content-Length"] = #data,
-        },
-        source  = ltn12.source.string(data),
-        sink    = ltn12.sink.table(sink),
-    }
-    local headers_request = socket.skip(1, http.request(request))
-    socketutil:reset_timeout()
-    if headers_request == nil then
-        return nil
-    end
+        local sink = {}
+        socketutil:set_timeout()
+        local request = {
+            url     = API_LIST_ADD_FOLDER,
+            method  = "POST",
+            headers = {
+                ["Authorization"]  = "Bearer ".. token,
+                ["Content-Type"]   = "application/json",
+                ["Content-Length"] = #data,
+            },
+            source  = ltn12.source.string(data),
+            sink    = ltn12.sink.table(sink),
+        }
+        local headers_request = socket.skip(1, http.request(request))
+        socketutil:reset_timeout()
+        if headers_request == nil then
+            return nil
+        end
 
-    local result_response = table.concat(sink)
-    local ret, result = pcall(JSON.decode, result_response)
+        local result_response = table.concat(sink)
+        local ret, result = pcall(JSON.decode, result_response)
 
-    if not ret then
-      return nil
-    end
+        if not ret then
+          return nil
+        end
 
-    for __, v in ipairs(result.entries) do
-      table.insert(out.entries, v)
-    end
+        for __, v in ipairs(result.entries) do
+          table.insert(out.entries, v)
+        end
 
-    if result.has_more then
-      cursor = result.cursor
-    end
-  until not result.has_more
+        if result.has_more then
+          cursor = result.cursor
+        end
+    until not result.has_more
 
-  return out
+    return out
 end
 
 return DropBoxApi

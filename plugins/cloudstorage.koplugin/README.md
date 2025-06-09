@@ -1,196 +1,247 @@
-# CloudStorage Plugin Architecture Documentation
+# Cloud Storage Plugin
 
-## Overview
+A modular cloud storage plugin system for KOReader that supports multiple cloud storage providers through a unified plugin architecture.
 
-The KOReader CloudStorage module has been refactored from a monolithic architecture to a modular plugin-based system. This new architecture provides better separation of concerns, easier maintenance, and simplified addition of new cloud storage providers.
+## Features
 
-## Architecture Components
+- **Multiple Provider Support**: Dropbox, WebDAV, and FTP providers
+- **Unified Sync Engine**: Common synchronization logic across all providers
+- **Memory Efficient**: Streaming file operations and optimized memory usage
+- **Progress Tracking**: Real-time sync progress with UI feedback
+- **Error Handling**: Robust error recovery and user-friendly error messages
+- **Security Focused**: Secure credential handling and minimal logging exposure
 
-### 1. Core CloudStorage Plugin (`cloudstorage.koplugin`)
+## Architecture
 
-The main plugin that provides:
-- Provider registration interface
-- Common UI components and workflows
-- Settings management
-- Migration support from the old system
-- Shared synchronization utilities
-
-### 2. Provider Plugins
-
-Individual plugins for each cloud storage service:
-- `provider-dropbox.koplugin` - Dropbox support
-- `provider-webdav.koplugin` - WebDAV support  
-- `provider-ftp.koplugin` - FTP support
-
-Each provider plugin registers itself with the core CloudStorage plugin.
-
-### 3. External Dependencies
-
-- API modules in `frontend/apps/cloudstorage/`: `dropboxapi.lua`, `webdavapi.lua`, `ftpapi.lua`
-
-## Provider Plugin Interface
-
-Each provider plugin must implement the following interface:
-
-```lua
-CloudStorage:registerProvider("provider_id", {
-    name = _("Display Name"),
-    list = function(address, username, password, path, folder_mode) end,
-    download = function(item, address, username, password, local_path, callback_close) end,
-    info = function(item) end,  -- optional
-    sync = function(item, address, username, password, on_progress) end,  -- optional
-    upload = function(url_base, address, username, password, file_path, callback_close) end,  -- optional
-    create_folder = function(url_base, address, username, password, folder_name, callback_close) end,  -- optional
-    config_title = _("Configuration Dialog Title"),
-    config_fields = {
-        {name = "field_name", hint = _("Field hint"), text_type = "password"},  -- optional text_type
-        -- ... more fields
-    },
-    config_info = _("Optional configuration help text"),
-})
-```
-
-### Required Functions
-
-- **list**: Returns a list of files/folders at the given path
-- **download**: Downloads a file to the local filesystem
-
-### Optional Functions
-
-- **info**: Shows provider-specific account information
-- **sync**: Provides bidirectional synchronization
-- **upload**: Uploads files to the cloud service
-- **create_folder**: Creates folders on the cloud service
-
-### Configuration Schema
-
-- **config_fields**: Array of field definitions for the setup dialog
-- **config_title**: Title for the configuration dialog
-- **config_info**: Help text shown in the configuration dialog
-
-## Migration Support
-
-The system includes automatic migration from the old monolithic architecture:
-
-1. Existing server configurations are preserved
-2. Settings format remains compatible
-3. Migration runs automatically on first load
-4. Migration status is tracked to avoid repeated runs
-
-## Benefits of the New Architecture
-
-### For Users
-- **Seamless transition**: Existing configurations continue to work
-- **Better error handling**: Provider-specific error messages
-- **Consistent UI**: Unified interface across all providers
-- **Easier troubleshooting**: Clear separation of provider-specific issues
-
-### For Developers
-- **Modular design**: Each provider is self-contained
-- **Easy to extend**: Adding new providers requires minimal core changes
-- **Better testing**: Providers can be tested independently
-- **Cleaner code**: Separation of concerns reduces complexity
-
-### For Maintainers
-- **Isolated changes**: Provider updates don't affect core functionality
-- **Selective loading**: Only required providers are loaded
-- **Plugin management**: Providers can be enabled/disabled independently
-- **Reduced merge conflicts**: Changes to different providers don't conflict
-
-## Adding New Providers
-
-To add a new cloud storage provider:
-
-1. Create a new plugin directory: `provider-newservice.koplugin/`
-2. Add `_meta.lua` with plugin metadata
-3. Implement `main.lua` with the provider interface
-4. Register the provider with `CloudStorage:registerProvider()`
-
-Example minimal provider:
-
-```lua
-local CloudStorage = require("plugins/cloudstorage.koplugin/main")
-
-local function newservice_list(address, username, password, path, folder_mode)
-    -- Implementation
-end
-
-local function newservice_download(item, address, username, password, local_path, callback_close)
-    -- Implementation  
-end
-
-CloudStorage:registerProvider("newservice", {
-    name = _("New Service"),
-    list = newservice_list,
-    download = newservice_download,
-    config_fields = {
-        {name = "name", hint = _("Account name")},
-        {name = "username", hint = _("Username")},
-        {name = "password", hint = _("Password"), text_type = "password"},
-    },
-})
-```
-
-## File Structure
+The cloud storage system uses a provider-based architecture:
 
 ```
 plugins/
-├── cloudstorage.koplugin/
-│   ├── _meta.lua          # Plugin metadata
-│   ├── main.lua           # Core CloudStorage implementation
-│   ├── migration.lua      # Migration utilities
-│   └── synccommon.lua     # Shared sync utilities
-├── provider-dropbox.koplugin/
-│   ├── _meta.lua          # Dropbox provider metadata
-│   └── main.lua           # Dropbox provider implementation
-├── provider-webdav.koplugin/
-│   ├── _meta.lua          # WebDAV provider metadata
-│   └── main.lua           # WebDAV provider implementation
-└── provider-ftp.koplugin/
-    ├── _meta.lua          # FTP provider metadata
-    └── main.lua           # FTP provider implementation
-
-frontend/apps/cloudstorage/
-├── dropboxapi.lua         # Dropbox API (unchanged)
-├── webdavapi.lua          # WebDAV API (unchanged)
-└── ftpapi.lua             # FTP API (unchanged)
+├── cloudstorage.koplugin/           # Main plugin
+│   ├── main.lua                     # Plugin entry point
+│   ├── base.lua                     # Base provider class
+│   └── synccommon.lua               # Shared sync utilities
+├── provider-dropbox-cloudstorage.koplugin/    # Dropbox provider
+├── provider-webdav-cloudstorage.koplugin/     # WebDAV provider
+└── provider-ftp-cloudstorage.koplugin/        # FTP provider
 ```
 
-## What Can Be Removed
+### Base Provider Class
 
-After the migration, the following files from `frontend/apps/cloudstorage/` can be safely removed:
-- Any old `cloudstorage.lua` (monolithic implementation)
-- Configuration or sync-related files that have been moved to plugins
-- Any helper modules that are now part of the plugin system
+All providers inherit from `BaseCloudStorage` which provides:
+- Settings management (load/save)
+- Version tracking
+- Common interface definitions
+- Configuration field management
 
-The API modules (`dropboxapi.lua`, `webdavapi.lua`, `ftpapi.lua`) should be kept as they contain the low-level protocol implementations.
+### SyncCommon Module
 
-## Backward Compatibility
+Shared utilities for all providers:
+- Recursive file scanning (local and remote)
+- Directory creation with proper error handling
+- File comparison logic (size, modification time)
+- Progress callback management
+- Memory-safe file operations
+- UI responsiveness during long operations
 
-- Existing server configurations are automatically migrated
-- API modules remain unchanged to preserve existing functionality
-- Settings file format is preserved
-- User workflows remain identical
+## Provider Implementation
 
-## Error Handling
+### Required Methods
 
-The new architecture provides improved error handling:
+Each provider must implement:
 
-- Provider-specific error messages
-- Graceful degradation when providers are unavailable
-- Clear indication of missing or misconfigured providers
-- Detailed logging for troubleshooting
+```lua
+function Provider:list(address, username, password, path, folder_mode)
+    -- Return table of files/folders or nil, error_msg
+end
+```
 
-## Performance Considerations
+### Optional Methods
 
-- Providers are loaded on-demand
-- Registration happens at plugin load time
-- No performance impact on users who don't use cloud storage
-- Memory usage scales with active providers only
+```lua
+function Provider:download(item, address, username, password, local_path, callback_close)
+    -- Download file with UI feedback
+end
+
+function Provider:sync(item, address, username, password, on_progress)
+    -- Synchronize files with progress tracking
+    -- Return SyncCommon.init_results() structure
+end
+
+function Provider:info(item)
+    -- Show provider-specific information
+end
+```
+
+### Sync Results Structure
+
+```lua
+{
+    downloaded = 0,     -- Number of files downloaded
+    failed = 0,         -- Number of failed operations
+    skipped = 0,        -- Number of files skipped (up-to-date)
+    deleted_files = 0,  -- Number of local files deleted
+    deleted_folders = 0,-- Number of local folders deleted  
+    errors = {}         -- Array of error messages
+}
+```
+
+## Configuration
+
+### Provider Registration
+
+```lua
+Provider:register("cloudstorage", "provider_name", {
+    name = _("Display Name"),
+    list = function(...) return Provider:list(...) end,
+    download = function(...) return Provider:download(...) end,
+    sync = function(...) return Provider:sync(...) end,
+    config_title = _("Configuration Title"),
+    config_fields = {
+        {name = "field_name", hint = _("Field description"), text_type = "password"},
+        -- ...
+    },
+    config_info = _("Additional configuration help text")
+})
+```
+
+### Configuration Fields
+
+Standard field types:
+- `name`: Display name for the account
+- `address`: Server URL or endpoint
+- `username`: Authentication username  
+- `password`: Authentication password/token (use `text_type = "password"`)
+- `url`: Base path or folder
 
 ## Security Considerations
 
-- Provider isolation prevents cross-provider data leakage
-- Credential handling remains within provider boundaries
-- Each provider can implement its own security measures
-- Migration preserves existing security configurations
+### Credential Handling
+- Passwords and tokens are stored in encrypted settings
+- No credential exposure in debug logs
+- Secure token exchange for OAuth2 providers
+
+### Network Security
+- HTTPS enforcement for WebDAV when possible
+- FTP security warnings about plain-text transmission
+- Proper SSL/TLS certificate validation
+
+### File System Security
+- Path traversal protection
+- Safe file operations with proper cleanup
+- Permission checks before file operations
+
+## Error Handling
+
+### Network Errors
+- Automatic retry logic with exponential backoff
+- Network connectivity detection
+- Timeout handling for large file operations
+
+### File System Errors
+- Graceful handling of permission denied
+- Disk space checks before large downloads
+- Atomic file operations where possible
+
+### User Experience
+- Progress indicators for long operations
+- Meaningful error messages
+- Operation cancellation support
+
+## Performance Optimizations
+
+### Memory Management
+- Streaming file operations to avoid loading large files in memory
+- Periodic garbage collection during long operations
+- Efficient data structures for file listings
+
+### Network Efficiency
+- Connection reuse where supported
+- Chunked transfer encoding
+- Compression support when available
+
+### UI Responsiveness
+- Yielding control during long operations
+- Background processing for sync operations
+- Real-time progress updates
+
+## Usage Examples
+
+### Basic File Listing
+```lua
+local files, err = provider:list(address, username, password, "/folder", false)
+if files then
+    for _, file in ipairs(files) do
+        print(file.text, file.type, file.size)
+    end
+else
+    print("Error:", err)
+end
+```
+
+### Synchronization with Progress
+```lua
+local function on_progress(kind, current, total, filename)
+    print(string.format("%s: %d/%d %s", kind, current, total, filename or ""))
+end
+
+local results = provider:sync(item, address, username, password, on_progress)
+print(string.format("Downloaded: %d, Failed: %d, Skipped: %d", 
+    results.downloaded, results.failed, results.skipped))
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Authentication Failures**
+   - Verify credentials are correct
+   - Check if OAuth2 tokens need refresh
+   - Ensure account has proper permissions
+
+2. **Network Connectivity**
+   - Test basic connectivity to server
+   - Check firewall and proxy settings
+   - Verify SSL/TLS certificate validity
+
+3. **Sync Issues**
+   - Check local folder permissions
+   - Verify sufficient disk space
+   - Review sync folder configuration
+
+### Debug Logging
+
+Enable debug logging for detailed troubleshooting:
+```lua
+logger.dbg("CloudStorage: Debug message")
+```
+
+Note: Debug logs automatically filter out sensitive credential information.
+
+## Contributing
+
+### Adding New Providers
+
+1. Create new provider plugin directory: `provider-{name}-cloudstorage.koplugin/`
+2. Implement provider class inheriting from `BaseCloudStorage`
+3. Implement required methods (`list` minimum)
+4. Register provider with `Provider:register()`
+5. Add configuration fields and help text
+6. Test with various file types and folder structures
+
+### Provider Guidelines
+
+- Follow existing naming conventions
+- Implement proper error handling
+- Use SyncCommon utilities for file operations
+- Add comprehensive configuration help
+- Include security warnings where appropriate
+- Test with large file sets and slow networks
+
+## API Reference
+
+See individual provider files and `base.lua` for complete API documentation.
+
+## License
+
+This plugin follows the same license as KOReader.
