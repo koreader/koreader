@@ -152,9 +152,6 @@ function SyncCommon.get_remote_files_recursive(provider, list_function, base_par
         table.insert(params, current_path)
         table.insert(params, false) -- folder_mode = false for sync
 
-        logger.dbg("SyncCommon: About to call list_function with params:", params)
-        logger.dbg("SyncCommon: Params count:", #params, " current_path:", current_path)
-        
         local file_list, err = list_function(unpack(params))
         if not file_list then
             logger.err("SyncCommon: Failed to list folder", current_path, "error:", err or "unknown")
