@@ -70,7 +70,7 @@ function FtpApi:listFolder(address_path, folder_path, folder_mode)
                 type = "folder"
                 table.insert(ftp_list, {
                     text = file_name .. "/",
-                    url = string.format("%s/%s",folder_path, file_name),
+                    url = string.format("%s/%s", folder_path, file_name), -- Full absolute path for consistency
                     type = type,
                 })
             elseif extension and (DocumentRegistry:hasProvider(item)
@@ -78,7 +78,7 @@ function FtpApi:listFolder(address_path, folder_path, folder_mode)
                 type = "file"
                 table.insert(ftp_file, {
                     text = file_name,
-                    url = string.format("%s/%s",folder_path, file_name),
+                    url = string.format("%s/%s", folder_path, file_name), -- Full absolute path for consistency
                     type = type,
                 })
             end

@@ -239,7 +239,7 @@ function DropBoxApi:listFolder(path, token, folder_mode)
             if folder_mode then tag = "folder_long_press" end
             table.insert(dropbox_list, {
                 text = text,
-                url = files.path_display,
+                url = files.path_display, -- Full absolute path for consistency
                 type = tag,
             })
         --show only file with supported formats
@@ -248,7 +248,7 @@ function DropBoxApi:listFolder(path, token, folder_mode)
             table.insert(dropbox_file, {
                 text = text,
                 mandatory = util.getFriendlySize(files.size),
-                url = files.path_display,
+                url = files.path_display, -- Full absolute path for consistency
                 type = tag,
                 size = files.size,
                 filesize = files.size, -- For compatibility

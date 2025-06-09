@@ -114,10 +114,13 @@ function WebDavApi:listFolder(address, user, pass, folder_path, options)
             local is_not_collection = item:find("<[^:]*:resourcetype%s*/>") or
                                       item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
 
-            -- For sync mode, we need just the item name, not the full path
+            -- For sync mode, we need the full absolute path for consistency
             local item_path = item_name
             if not sync_mode and path and path ~= "" then
                 item_path = path .. "/" .. item_name
+            elseif sync_mode then
+                -- For sync mode, always provide full absolute path
+                item_path = (path and path ~= "") and (path .. "/" .. item_name) or item_name
             end
 
             -- only available for files, not directories/collections

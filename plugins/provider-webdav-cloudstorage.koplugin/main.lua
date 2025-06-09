@@ -125,7 +125,8 @@ function WebDavProvider:sync(item, address, username, password, on_progress)
                 local local_file_path = local_path .. "/" .. rel_path
                 logger.dbg("WebDAV:synchronize downloading ", rel_path, " to ", local_file_path)
 
-                local success = self:downloadFileNoUI(remote_base_url, username, password, remote_file.relative_path, local_file_path)
+                local remote_file_path = sync_folder and sync_folder ~= "" and (sync_folder .. "/" .. rel_path) or rel_path
+                local success = self:downloadFileNoUI(remote_base_url, username, password, remote_file_path, local_file_path)
                 if success then
                     results.downloaded = results.downloaded + 1
                 else

@@ -210,13 +210,16 @@ function DropboxProvider:getRemoteFilesRecursive(access_token, sync_folder_path,
 
     -- Use the common recursive scanner from SyncCommon
     local list_function = function(address, username, password, path, folder_mode)
+        -- For Dropbox, address/username/password are not used in sync mode
+        -- The 4th parameter (path) is what we need
+        logger.dbg("Dropbox:list_function called with path=", path, " folder_mode=", folder_mode)
         return DropBoxApi:listFolder(path, access_token, folder_mode)
     end
 
     return SyncCommon.get_remote_files_recursive(
         self,
         list_function,
-        {nil, nil, nil}, -- base_params not needed for Dropbox
+        {"dummy", "dummy", "dummy"}, -- Use dummy values instead of nil to ensure proper parameter passing
         sync_folder_path,
         on_progress
     )
