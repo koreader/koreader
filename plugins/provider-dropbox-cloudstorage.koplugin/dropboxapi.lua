@@ -24,7 +24,7 @@ local API_UPLOAD_FILE     = "https://content.dropboxapi.com/2/files/upload"
 
 function DropBoxApi:getAccessToken(refresh_token, app_key_colon_secret)
     logger.dbg("DropBoxApi:getAccessToken called")
-    
+
     if not refresh_token or not app_key_colon_secret then
         logger.err("DropBoxApi: Missing refresh token or app credentials")
         return nil
@@ -60,7 +60,7 @@ function DropBoxApi:getAccessToken(refresh_token, app_key_colon_secret)
             logger.warn("DropBoxApi: Invalid JSON response or missing access_token")
         end
     end
-    
+
     logger.warn("DropBoxApi: cannot get access token:", status or code)
     return nil
 end
@@ -142,12 +142,12 @@ end
 
 function DropBoxApi:downloadFile(path, token, local_path)
     logger.dbg("DropBoxApi:downloadFile path=", path, " local_path=", local_path)
-    
+
     if not token then
         logger.err("DropBoxApi: Missing access token for downloadFile")
         return nil
     end
-    
+
     local data1 = "{\"path\": \"" .. path .. "\"}"
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     local code, headers, status = socket.skip(1, http.request{
@@ -171,7 +171,7 @@ function DropBoxApi:uploadFile(path, token, file_path, etag, overwrite)
         logger.err("DropBoxApi: Missing access token for uploadFile")
         return nil
     end
-    
+
     local data = "{\"path\": \"" .. path .. "/" .. ffiUtil.basename(file_path) ..
         "\",\"mode\":" .. (overwrite and "\"overwrite\"" or "\"add\"") ..
         ",\"autorename\": " .. (overwrite and "false" or "true") ..
@@ -201,7 +201,7 @@ function DropBoxApi:createFolder(path, token, folder_name)
         logger.err("DropBoxApi: Missing access token for createFolder")
         return nil
     end
-    
+
     local data = "{\"path\": \"" .. path .. "/" .. folder_name .. "\",\"autorename\": false}"
     socketutil:set_timeout()
     local code, _, status = socket.skip(1, http.request{

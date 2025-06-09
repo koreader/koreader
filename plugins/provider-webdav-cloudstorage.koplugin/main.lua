@@ -21,14 +21,14 @@ local WebDavProvider = BaseCloudStorage:new {
 
 function WebDavProvider:list(address, username, password, path, folder_mode)
     logger.dbg("WebDAV:list called with address=", address, " path=", path, " folder_mode=", folder_mode)
-    
+
     local options = { folder_mode = folder_mode }
     return WebDavApi:listFolder(address, username, password, path, options)
 end
 
 function WebDavProvider:download(item, address, username, password, local_path, callback_close)
     local code_response = WebDavApi:downloadFile(WebDavApi:getJoinedPath(address, item.url), username, password, local_path)
-    
+
     if code_response == 200 then
         local __, filename = util.splitFilePathName(local_path)
         if G_reader_settings:isTrue("show_unsupported") and not DocumentRegistry:hasProvider(filename) then
@@ -66,7 +66,7 @@ end
 
 function WebDavProvider:sync(item, address, username, password, on_progress)
     logger.dbg("WebDAV:synchronize called for item=", item.text, " sync_source_folder=", item.sync_source_folder, " sync_dest_folder=", item.sync_dest_folder)
-    
+
     local local_path = item.sync_dest_folder
     local remote_base_url = address
     local sync_folder = item.sync_source_folder or ""
@@ -124,7 +124,7 @@ function WebDavProvider:sync(item, address, username, password, on_progress)
                 SyncCommon.call_progress_callback(on_progress, "download", current_download, total_to_download, remote_file.text)
                 local local_file_path = local_path .. "/" .. rel_path
                 logger.dbg("WebDAV:synchronize downloading ", rel_path, " to ", local_file_path)
-                
+
                 local success = self:downloadFileNoUI(remote_base_url, username, password, remote_file.relative_path, local_file_path)
                 if success then
                     results.downloaded = results.downloaded + 1
@@ -132,7 +132,7 @@ function WebDavProvider:sync(item, address, username, password, on_progress)
                     results.failed = results.failed + 1
                     SyncCommon.add_error(results, _("Failed to download file: ") .. remote_file.text)
                 end
-                
+
                 -- Yield to keep UI responsive
                 SyncCommon.yield_if_needed(current_download, 5)
             else
@@ -169,12 +169,12 @@ end
 -- Helper function to get remote files recursively
 function WebDavProvider:getRemoteFilesRecursive(base_url, username, password, sync_folder_path, on_progress)
     logger.dbg("WebDAV:getRemoteFilesRecursive called with sync_folder_path=", sync_folder_path)
-    
+
     -- Use the common recursive scanner from SyncCommon
     local list_function = function(address, user, pass, path, folder_mode)
         return WebDavApi:listFolder(address, user, pass, path, {sync_mode = true})
     end
-    
+
     return SyncCommon.get_remote_files_recursive(
         self,
         list_function,

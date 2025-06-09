@@ -22,7 +22,7 @@ local FtpProvider = BaseCloudStorage:new {
 
 function FtpProvider:list(address, username, password, path, folder_mode)
     logger.dbg("FTP:list called with address=", address, " path=", path, " folder_mode=", folder_mode)
-    
+
     local url = FtpApi:generateUrl(address, util.urlEncode(username), util.urlEncode(password)) .. path
     return FtpApi:listFolder(url, path, folder_mode)
 end
@@ -39,7 +39,7 @@ function FtpProvider:download(item, address, username, password, path, callback_
         })
         return
     end
-    
+
     local response = FtpApi:ftpGet(url, "retr", ltn12.sink.file(file))
     if response ~= nil then
         local __, filename = util.splitFilePathName(path)
@@ -78,7 +78,7 @@ end
 
 function FtpProvider:sync(item, address, username, password, on_progress)
     logger.dbg("FTP:synchronize called for item=", item.text, " local_path=", item.sync_dest_folder, " remote_path=", item.sync_source_folder)
-    
+
     local local_path = item.sync_dest_folder
     local remote_path = item.sync_source_folder
     local results = SyncCommon.init_results()
@@ -123,10 +123,10 @@ function FtpProvider:sync(item, address, username, password, on_progress)
             if SyncCommon.should_download_file(local_file, remote_file) then
                 current_download = current_download + 1
                 SyncCommon.call_progress_callback(on_progress, "download", current_download, total_to_download, remote_file.text)
-                
+
                 local local_file_path = local_path:sub(-1) == "/" and (local_path .. rel_path) or (local_path .. "/" .. rel_path)
                 logger.dbg("FTP:synchronize downloading ", rel_path, " to ", local_file_path)
-                
+
                 local success = self:downloadFileNoUI(address, username, password, remote_file, local_file_path)
                 if success then
                     results.downloaded = results.downloaded + 1
@@ -134,7 +134,7 @@ function FtpProvider:sync(item, address, username, password, on_progress)
                     results.failed = results.failed + 1
                     SyncCommon.add_error(results, _("Failed to download file: ") .. remote_file.text)
                 end
-                
+
                 -- Yield to keep UI responsive
                 SyncCommon.yield_if_needed(current_download, 5)
             else
@@ -164,13 +164,13 @@ end
 -- Helper function to recursively get all files from FTP directories
 function FtpProvider:getRemoteFilesRecursive(address, username, password, base_path)
     logger.dbg("FTP:getRemoteFilesRecursive called with base_path=", base_path)
-    
+
     -- Use the common recursive scanner from SyncCommon
     local list_function = function(addr, user, pass, path, folder_mode)
         local url = FtpApi:generateUrl(addr, util.urlEncode(user), util.urlEncode(pass)) .. path
         return FtpApi:listFolder(url, path, folder_mode)
     end
-    
+
     return SyncCommon.get_remote_files_recursive(
         self,
         list_function,
@@ -184,7 +184,7 @@ end
 function FtpProvider:downloadFileNoUI(address, username, password, remote_file, local_path)
     local url = FtpApi:generateUrl(address, util.urlEncode(username), util.urlEncode(password)) .. remote_file.url
     local normalized_path = util.fixUtf8(local_path, "_")
-    
+
     return SyncCommon.safe_file_operation(function(file)
         local result = FtpApi:ftpGet(url, "retr", ltn12.sink.file(file))
         return result ~= nil

@@ -134,14 +134,14 @@ end
 function SyncCommon.get_remote_files_recursive(provider, list_function, base_params, sync_folder_path, on_progress)
     local files = {}
     local processed_folders = {} -- Prevent infinite loops
-    
+
     local function getFilesRecursive(current_path, current_rel_path)
         if processed_folders[current_path] then
             logger.warn("SyncCommon: Circular reference detected, skipping:", current_path)
             return
         end
         processed_folders[current_path] = true
-        
+
         logger.dbg("SyncCommon: Scanning remote folder:", current_path, "rel_path:", current_rel_path)
 
         -- Use provider's list function
@@ -151,7 +151,7 @@ function SyncCommon.get_remote_files_recursive(provider, list_function, base_par
         end
         table.insert(params, current_path)
         table.insert(params, false) -- folder_mode = false for sync
-        
+
         local file_list, err = list_function(unpack(params))
         if not file_list then
             logger.err("SyncCommon: Failed to list folder", current_path, "error:", err or "unknown")
@@ -165,7 +165,7 @@ function SyncCommon.get_remote_files_recursive(provider, list_function, base_par
             if i % 20 == 0 and require("ui/uimanager").UIManager then
                 require("ui/uimanager").UIManager:nextTick(function() end)
             end
-            
+
             if item.type == "file" then
                 local rel_path = current_rel_path and current_rel_path ~= "" and (current_rel_path .. "/" .. item.text) or item.text
                 files[rel_path] = {
@@ -196,17 +196,17 @@ function SyncCommon.should_download_file(local_file, remote_file)
     if not local_file then
         return true -- File doesn't exist locally
     end
-    
+
     -- Compare sizes
     if remote_file.size and local_file.size ~= remote_file.size then
         return true
     end
-    
+
     -- Compare modification times if available
     if remote_file.mtime and local_file.mtime and remote_file.mtime > local_file.mtime then
         return true
     end
-    
+
     return false
 end
 
@@ -220,12 +220,12 @@ function SyncCommon.safe_file_operation(operation, file_path, mode)
         end
         return operation(file_handle)
     end)
-    
+
     -- Ensure file is always closed
     if file_handle then
         pcall(file_handle.close, file_handle)
     end
-    
+
     if not ok then
         return false, result
     end
