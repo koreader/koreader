@@ -350,7 +350,7 @@ function OPDSBrowser:genItemTableFromURL(item_url)
         })
         catalog = nil
     end
-    return self:genItemTableFromCatalog(catalog, item_url, true)
+    return self:genItemTableFromCatalog(catalog, item_url)
 end
 
 function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
@@ -822,7 +822,6 @@ function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, passwor
 end
 
 function OPDSBrowser:downloadFile(local_path, remote_url, username, password, caller_callback)
-
     logger.dbg("Downloading file", local_path, "from", remote_url)
     local code, headers, status
     local parsed = url.parse(remote_url)
@@ -1152,19 +1151,6 @@ function OPDSBrowser:downloadDownloadList()
 end
 
 function OPDSBrowser:syncDownload(server)
-    local function dump(o)
-        if type(o) == 'table' then
-            local s = '{ '
-            for k,v in pairs(o) do
-                if type(k) ~= 'number' then k = '"'..k..'"' end
-                s = s .. '['..k..'] = ' .. dump(v) .. ','
-            end
-            return s .. '} '
-        else
-            return tostring(o)
-        end
-    end
-
     local table
     local newLastDownload = nil
     table = self:getSyncDownloadList(server)
@@ -1317,6 +1303,5 @@ function OPDSBrowser:getSyncDownloadList(server)
     end
     return item_table
 end
-
 
 return OPDSBrowser
