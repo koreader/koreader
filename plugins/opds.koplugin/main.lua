@@ -118,7 +118,7 @@ function OPDS:checkSyncDownload()
         if item.sync then
             local lastDownload = OPDSBrowser:syncDownload(item)
             if lastDownload then
-                logger.dbg("Updating opds last download for server" .. item.title)
+                logger.dbg("Updating opds last download for server " .. item.title)
                 self:appendFieldToCatalog(item, "lastDownload", lastDownload)
             else
             end
