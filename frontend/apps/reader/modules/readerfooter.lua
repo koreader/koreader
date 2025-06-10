@@ -460,7 +460,7 @@ footerTextGeneratorMap = {
         end
         local filler_nb = math.floor((max_width - text_width + separator_width) / footer.filler_space_width)
         if filler_nb > 0 then
-            return filler_space:rep(filler_nb), true
+            return " ":rep(filler_nb), true
         end
     end,
 }
