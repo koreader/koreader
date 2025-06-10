@@ -449,10 +449,9 @@ footerTextGeneratorMap = {
             tmp:free()
         end
         local separator_width = is_filler_inside and footer.separator_width or 0
-        local filler_space = "\u{200A}" -- HAIR SPACE
         if footer.filler_space_width == nil then
             tmp = TextWidget:new{
-                text = filler_space,
+                text = " ",
                 face = footer.footer_text_face,
                 bold = footer.settings.text_font_bold,
             }
