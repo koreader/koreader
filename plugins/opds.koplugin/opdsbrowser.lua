@@ -341,7 +341,7 @@ function OPDSBrowser:getSearchTemplate(osd_url)
 end
 
 -- Generates menu items from the fetched list of catalog entries
-function OPDSBrowser:genItemTableFromURL(item_url)
+function OPDSBrowser:genItemTableFromURL(item_url, sync)
     local ok, catalog = pcall(self.parseFeed, self, item_url)
     if not ok then
         logger.info("Cannot get catalog info from", item_url, catalog)
@@ -350,10 +350,10 @@ function OPDSBrowser:genItemTableFromURL(item_url)
         })
         catalog = nil
     end
-    return self:genItemTableFromCatalog(catalog, item_url, true)
+    return self:genItemTableFromCatalog(catalog, item_url, sync)
 end
 
-function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
+function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, sync)
     local item_table = {}
     if not catalog then
         return item_table
@@ -365,41 +365,43 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
         return url.absolute(item_url, href)
     end
 
-    local has_opensearch = false
-    local hrefs = {}
-    if feed.link then
-        for __, link in ipairs(feed.link) do
-            if link.type ~= nil then
-                if link.type:find(self.catalog_type) then
-                    if link.rel and link.href then
-                        hrefs[link.rel] = build_href(link.href)
+    if not sync then
+        local has_opensearch = false
+        local hrefs = {}
+        if feed.link then
+            for __, link in ipairs(feed.link) do
+                if link.type ~= nil then
+                    if link.type:find(self.catalog_type) then
+                        if link.rel and link.href then
+                            hrefs[link.rel] = build_href(link.href)
+                        end
                     end
-                end
-                -- OpenSearch
-                if link.type:find(self.search_type) then
-                    if link.href then
-                        table.insert(item_table, { -- the first item in each subcatalog
-                            text       = "\u{f002} " .. _("Search"), -- append SEARCH icon
-                            url        = build_href(self:getSearchTemplate(build_href(link.href))),
-                            searchable = true,
-                        })
-                        has_opensearch = true
+                    -- OpenSearch
+                    if link.type:find(self.search_type) then
+                        if link.href then
+                            table.insert(item_table, { -- the first item in each subcatalog
+                                text       = "\u{f002} " .. _("Search"), -- append SEARCH icon
+                                url        = build_href(self:getSearchTemplate(build_href(link.href))),
+                                searchable = true,
+                            })
+                            has_opensearch = true
+                        end
                     end
-                end
-                -- Calibre search (also matches the actual template for OpenSearch!)
-                if link.type:find(self.search_template_type) and link.rel and link.rel:find("search") then
-                    if link.href and not has_opensearch then
-                        table.insert(item_table, {
-                            text       = "\u{f002} " .. _("Search"),
-                            url        = build_href(link.href:gsub("{searchTerms}", "%%s")),
-                            searchable = true,
-                        })
+                    -- Calibre search (also matches the actual template for OpenSearch!)
+                    if link.type:find(self.search_template_type) and link.rel and link.rel:find("search") then
+                        if link.href and not has_opensearch then
+                            table.insert(item_table, {
+                                text       = "\u{f002} " .. _("Search"),
+                                url        = build_href(link.href:gsub("{searchTerms}", "%%s")),
+                                searchable = true,
+                            })
+                        end
                     end
                 end
             end
         end
+        item_table.hrefs = hrefs
     end
-    item_table.hrefs = hrefs
 
     for __, entry in ipairs(feed.entry or {}) do
         local item = {}
@@ -822,7 +824,6 @@ function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, passwor
 end
 
 function OPDSBrowser:downloadFile(local_path, remote_url, username, password, caller_callback)
-
     logger.dbg("Downloading file", local_path, "from", remote_url)
     local code, headers, status
     local parsed = url.parse(remote_url)
@@ -1152,6 +1153,8 @@ function OPDSBrowser:downloadDownloadList()
 end
 
 function OPDSBrowser:syncDownload(server)
+    local table
+    local newLastDownload = nil
     local function dump(o)
         if type(o) == 'table' then
             local s = '{ '
@@ -1164,11 +1167,8 @@ function OPDSBrowser:syncDownload(server)
             return tostring(o)
         end
     end
-
-    local table
-    local newLastDownload = nil
     table = self:getSyncDownloadList(server)
---     print(dump(table))
+    print(dump(table))
     for i, entry in ipairs(table) do
         -- First entry in table is the newest
         -- If already downloaded, return
@@ -1189,7 +1189,8 @@ function OPDSBrowser:syncDownload(server)
             end
             logger.dbg("Filetype for sync download is", filetype)
             local downloadPath = self:getLocalDownloadPath(entry.title, filetype, link.href, true)
-            OPDSBrowser:checkDownloadFile(downloadPath, link.href, server.username, server.password)
+            print(downloadPath)
+--             OPDSBrowser:checkDownloadFile(downloadPath, link.href, server.username, server.password)
         end
     end
     return newLastDownload
@@ -1200,123 +1201,7 @@ function OPDSBrowser:getSyncDownloadList(server)
     self.root_catalog_raw_names = server.raw_names
     self.root_catalog_username  = server.username
     self.root_catalog_title     = server.title
-    local ok, catalog = pcall(self.parseFeed, self, server.url)
-    local item_table = {}
-    local feed = catalog.feed or catalog
-
-    local function build_href(href)
-        return url.absolute(server.url, href)
-    end
-    for __, entry in ipairs(feed.entry or {}) do
-        local item = {}
-        item.acquisitions = {}
-        if entry.link then
-            for ___, link in ipairs(entry.link) do
-                local link_href = build_href(link.href)
-                if link.type and link.type:find(self.catalog_type)
-                        and (not link.rel
-                             or link.rel == "subsection"
-                             or link.rel == "http://opds-spec.org/subsection"
-                             or link.rel == "http://opds-spec.org/sort/popular"
-                             or link.rel == "http://opds-spec.org/sort/new") then
-                    item.url = link_href
-                end
-                -- Some catalogs do not use the rel attribute to denote
-                -- a publication. Arxiv uses title. Specifically, it uses
-                -- a title attribute that contains pdf. (title="pdf")
-                if link.rel or link.title then
-                    if link.rel == self.borrow_rel then
-                        table.insert(item.acquisitions, {
-                            type = "borrow",
-                        })
-                    elseif link.rel and link.rel:match(self.acquisition_rel) then
-                        table.insert(item.acquisitions, {
-                            type  = link.type,
-                            href  = link_href,
-                            title = link.title,
-                        })
-                    elseif link.rel == self.stream_rel then
-                        -- https://vaemendis.net/opds-pse/
-                        -- «count» MUST provide the number of pages of the document
-                        -- namespace may be not "pse"
-                        local count, last_read
-                        for k, v in pairs(link) do
-                            if k:sub(-6) == ":count" then
-                                count = tonumber(v)
-                            elseif k:sub(-9) == ":lastRead" then
-                                last_read = tonumber(v)
-                            end
-                        end
-                        if count then
-                            table.insert(item.acquisitions, {
-                                type  = link.type,
-                                href  = link_href,
-                                title = link.title,
-                                count = count,
-                                last_read = last_read and last_read > 0 and last_read or nil
-                            })
-                        end
-                    elseif self.thumbnail_rel[link.rel] then
-                        item.thumbnail = link_href
-                    elseif self.image_rel[link.rel] then
-                        item.image = link_href
-                    elseif link.rel ~= "alternate" and DocumentRegistry:hasProvider(nil, link.type) then
-                        table.insert(item.acquisitions, {
-                            type  = link.type,
-                            href  = link_href,
-                            title = link.title,
-                        })
-                    end
-                    -- This statement grabs the catalog items that are
-                    -- indicated by title="pdf" or whose type is
-                    -- "application/pdf"
-                    if link.title == "pdf" or link.type == "application/pdf"
-                        and link.rel ~= "subsection" then
-                        -- Check for the presence of the pdf suffix and add it
-                        -- if it's missing.
-                        local href = link.href
-                        if util.getFileNameSuffix(href) ~= "pdf" then
-                            href = href .. ".pdf"
-                        end
-                        table.insert(item.acquisitions, {
-                            type = link.title,
-                            href = build_href(href),
-                        })
-                    end
-                end
-            end
-        end
-        local title = _("Unknown")
-        if type(entry.title) == "string" then
-            title = entry.title
-        elseif type(entry.title) == "table" then
-            if type(entry.title.type) == "string" and entry.title.div ~= "" then
-                title = entry.title.div
-            end
-        end
-        item.text = title
-        local author = _("Unknown Author")
-        if type(entry.author) == "table" and entry.author.name then
-            author = entry.author.name
-            if type(author) == "table" then
-                if #author > 0 then
-                    author = table.concat(author, ", ")
-                else
-                    -- we may get an empty table on https://gallica.bnf.fr/opds
-                    author = nil
-                end
-            end
-            if author then
-                item.text = title .. " - " .. author
-            end
-        end
-        item.title = title
-        item.author = author
-        item.content = entry.content or entry.summary
-        table.insert(item_table, item)
-    end
-    return item_table
+    return self:genItemTableFromURL(server.url, true)
 end
-
 
 return OPDSBrowser
