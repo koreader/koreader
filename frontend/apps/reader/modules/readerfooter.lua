@@ -449,9 +449,10 @@ footerTextGeneratorMap = {
             tmp:free()
         end
         local separator_width = is_filler_inside and footer.separator_width or 0
+        local filler_space = " "
         if footer.filler_space_width == nil then
             tmp = TextWidget:new{
-                text = " ",
+                text = filler_space,
                 face = footer.footer_text_face,
                 bold = footer.settings.text_font_bold,
             }
@@ -460,7 +461,7 @@ footerTextGeneratorMap = {
         end
         local filler_nb = math.floor((max_width - text_width + separator_width) / footer.filler_space_width)
         if filler_nb > 0 then
-            return " ":rep(filler_nb), true
+            return filler_space:rep(filler_nb), true
         end
     end,
 }
