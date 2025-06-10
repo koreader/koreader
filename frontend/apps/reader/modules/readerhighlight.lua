@@ -2683,7 +2683,7 @@ function ReaderHighlight:onHighlightPress()
         self:onStopHighlightIndicator()
         return true
     end
-    -- Check if we're in select mode (extending an existing highlight)
+    -- Check if we're in select mode (or extending an existing highlight)
     if self.select_mode and self.highlight_idx then
         self:onHold(nil, self:_createHighlightGesture("hold"))
         self:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
