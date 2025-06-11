@@ -70,14 +70,14 @@ function OPDS:addToMainMenu(menu_items)
             text = _("OPDS"),
             sub_item_table = {
                 {
-                    text = _("OPDS catalog"),
+                    text = _("Catalogs"),
                     keep_menu_open = true,
                     callback = function()
                         self:onShowOPDSCatalog()
                     end,
                 },
                 {
-                    text = _("Automatic OPDS download"),
+                    text = _("Sync"),
                     keep_menu_open = true,
                     sub_item_table = self:getOPDSDownloadMenu(),
                 },
@@ -100,7 +100,19 @@ function OPDS:getOPDSDownloadMenu()
         {
             text = _("Perform sync"),
             callback = function()
-                self:checkSyncDownload(self.servers)
+                self:checkSyncDownload(false)
+            end,
+        },
+        {
+            text = _("Force sync"),
+            callback = function()
+                UIManager:show(ConfirmBox: new{
+                    text = "Are you sure you want to force sync? This may overwrite existing data.",
+                    ok_text = "Force sync",
+                    ok_callback = function()
+                        self:checkSyncDownload(true)
+                    end
+                })
             end,
         },
         {
@@ -112,21 +124,18 @@ function OPDS:getOPDSDownloadMenu()
     }
 end
 
-
-function OPDS:checkSyncDownload()
+function OPDS:checkSyncDownload(force)
     for _, item in ipairs(self.servers) do
         if item.sync then
-            local last_download = OPDSBrowser:syncDownload(item)
+            local last_download = OPDSBrowser:syncDownload(item, force)
             print(last_download)
             if last_download then
                 logger.dbg("Updating opds last download for server " .. item.title)
                 self:appendFieldToCatalog(item, "last_download", last_download)
-            else
             end
         end
     end
 end
-
 
 function OPDS:appendFieldToCatalog(item, new_name, new_value)
     item[new_name] = new_value
