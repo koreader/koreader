@@ -32,10 +32,10 @@ function CloudStorage:loadTargetProviders()
     local target_path = "plugins/cloudstorage.koplugin/target/"
     local providers = {
         "dropbox",
-        "ftp", 
+        "ftp",
         "webdav"
     }
-    
+
     for _, provider_name in ipairs(providers) do
         local provider_file = target_path .. provider_name
         local ok, err = pcall(require, provider_file)
