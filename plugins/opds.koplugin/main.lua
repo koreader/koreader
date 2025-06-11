@@ -116,10 +116,11 @@ end
 function OPDS:checkSyncDownload()
     for _, item in ipairs(self.servers) do
         if item.sync then
-            local lastDownload = OPDSBrowser:syncDownload(item)
-            if lastDownload then
+            local last_download = OPDSBrowser:syncDownload(item)
+            print(last_download)
+            if last_download then
                 logger.dbg("Updating opds last download for server " .. item.title)
---                 self:appendFieldToCatalog(item, "lastDownload", lastDownload)
+                self:appendFieldToCatalog(item, "last_download", last_download)
             else
             end
         end
@@ -127,8 +128,8 @@ function OPDS:checkSyncDownload()
 end
 
 
-function OPDS:appendFieldToCatalog(item, newName, newValue)
-    item[newName] = newValue
+function OPDS:appendFieldToCatalog(item, new_name, new_value)
+    item[new_name] = new_value
     self.updated = true
 end
 

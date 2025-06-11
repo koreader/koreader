@@ -516,7 +516,7 @@ end
 
 -- Requests and shows updated list of catalog entries
 function OPDSBrowser:updateCatalog(item_url, paths_updated)
-    local menu_table = self:genItemTableFromURL(item_url)
+    local menu_table = self:genItemTableFromURL(item_url, false)
     if #menu_table > 0 then
         if not paths_updated then
             table.insert(self.paths, {
@@ -537,7 +537,7 @@ end
 
 -- Requests and adds more catalog entries to fill out the page
 function OPDSBrowser:appendCatalog(item_url)
-    local menu_table = self:genItemTableFromURL(item_url)
+    local menu_table = self:genItemTableFromURL(item_url, false)
     if #menu_table > 0 then
         for _, item in ipairs(menu_table) do
             -- Don't append multiple search entries
@@ -711,7 +711,7 @@ function OPDSBrowser:showDownloads(item)
                         G_reader_settings:saveSetting("download_dir", path)
                         self.download_dialog:setTitle(createTitle(path, filename))
                     end,
-                }:chooseDir(self.getCurrentDownloadDir())
+                }:chooseDir(self.getCurrentDownloadDir(false))
             end,
         },
         {
@@ -740,7 +740,7 @@ function OPDSBrowser:showDownloads(item)
                                         filename = filename_orig
                                     end
                                     UIManager:close(dialog)
-                                    self.download_dialog:setTitle(createTitle(self.getCurrentDownloadDir(), filename))
+                                    self.download_dialog:setTitle(createTitle(self.getCurrentDownloadDir(false), filename))
                                 end,
                             },
                         }
@@ -776,7 +776,7 @@ function OPDSBrowser:showDownloads(item)
     })
 
     self.download_dialog = ButtonDialog:new{
-        title = createTitle(self.getCurrentDownloadDir(), filename),
+        title = createTitle(self.getCurrentDownloadDir(false), filename),
         buttons = buttons,
     }
     UIManager:show(self.download_dialog)
@@ -800,7 +800,7 @@ function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url, sync)
 end
 
 -- Downloads a book (with "File already exists" dialog)
-function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, password, caller_callback)
+function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, password, caller_callback, sync)
     local function download()
         UIManager:scheduleIn(1, function()
             self:downloadFile(local_path, remote_url, username, password, caller_callback)
@@ -811,13 +811,19 @@ function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, passwor
         })
     end
     if lfs.attributes(local_path) then
-        UIManager:show(ConfirmBox:new{
-            text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filepath(local_path)),
-            ok_text = _("Overwrite"),
-            ok_callback = function()
-                download()
-            end,
-        })
+        if not sync then
+            UIManager:show(ConfirmBox:new{
+                text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filepath(local_path)),
+                ok_text = _("Overwrite"),
+                ok_callback = function()
+                    download()
+                end,
+            })
+        else
+            local file_name, file_extension = util.splitFileNameSuffix(local_path)
+            local_path = file_name .. "_1." .. file_extension
+            download()
+        end
     else
         download()
     end
@@ -1044,7 +1050,7 @@ function OPDSBrowser:showDownloadListItemDialog(item)
                         self._manager.file_downloaded_callback(local_path)
                     end
                     NetworkMgr:runWhenConnected(function()
-                        self._manager:checkDownloadFile(dl_item.file, dl_item.url, dl_item.username, dl_item.password, file_downloaded_callback)
+                        self._manager:checkDownloadFile(dl_item.file, dl_item.url, dl_item.username, dl_item.password, file_downloaded_callback, false)
                     end)
                 end,
             },
@@ -1153,8 +1159,8 @@ function OPDSBrowser:downloadDownloadList()
 end
 
 function OPDSBrowser:syncDownload(server)
-    local table
-    local newLastDownload = nil
+    local table = {}
+    local new_last_download = nil
     local function dump(o)
         if type(o) == 'table' then
             local s = '{ '
@@ -1168,18 +1174,16 @@ function OPDSBrowser:syncDownload(server)
         end
     end
     table = self:getSyncDownloadList(server)
-    print(dump(table))
     for i, entry in ipairs(table) do
         -- First entry in table is the newest
         -- If already downloaded, return
-        if i == 1 then
-            if server.lastDownload == entry.acquisitions[1].href then
-                return newLastDownload
-            else
-                newLastDownload = entry.acquisitions[1].href
-            end
-        end
         for _, link in ipairs(entry.acquisitions) do
+            if link.href == server.last_download then
+                return new_last_download
+            end
+            if i == 1 then
+                new_last_download = link.href
+            end
             local filetype = util.getFileNameSuffix(link.href)
             if not DocumentRegistry:hasProvider("dummy." .. filetype) then
                 filetype = nil
@@ -1188,12 +1192,13 @@ function OPDSBrowser:syncDownload(server)
                 filetype = DocumentRegistry:mimeToExt(link.type)
             end
             logger.dbg("Filetype for sync download is", filetype)
-            local downloadPath = self:getLocalDownloadPath(entry.title, filetype, link.href, true)
-            print(downloadPath)
---             OPDSBrowser:checkDownloadFile(downloadPath, link.href, server.username, server.password)
+            local download_path = self:getLocalDownloadPath(entry.title, filetype, link.href, true)
+            NetworkMgr:runWhenConnected(function()
+                OPDSBrowser:checkDownloadFile(download_path, link.href, server.username, server.password, nil, true)
+            end)
         end
     end
-    return newLastDownload
+    return new_last_download
 end
 
 function OPDSBrowser:getSyncDownloadList(server)
