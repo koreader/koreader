@@ -666,8 +666,8 @@ function ReaderFooter:init()
     -- Initialize preset configuration
     self.preset_config = {
         presets = G_reader_settings:readSetting("footer_presets", {}),
-        save = function(self)
-            G_reader_settings:saveSetting("footer_presets", self.presets)
+        save = function(config)
+            G_reader_settings:saveSetting("footer_presets", config.presets)
         end,
     }
 end

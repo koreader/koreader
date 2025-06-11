@@ -171,11 +171,11 @@ function ReaderDictionary:init()
     self.preset_config = {
         presets = G_reader_settings:readSetting("dict_presets", {}),
         cycle_index = G_reader_settings:readSetting("dict_presets_cycle_index", 0),
-        save = function(self)
-            G_reader_settings:saveSetting("dict_presets", self.presets)
+        save = function(config)
+            G_reader_settings:saveSetting("dict_presets", config.presets)
         end,
-        saveCycleIndex = function(self)
-            G_reader_settings:saveSetting("dict_presets_cycle_index", self.cycle_index)
+        saveCycleIndex = function(config)
+            G_reader_settings:saveSetting("dict_presets_cycle_index", config.cycle_index)
         end,
     }
 end
