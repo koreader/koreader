@@ -662,6 +662,14 @@ function ReaderFooter:init()
     self.custom_text = G_reader_settings:readSetting("reader_footer_custom_text", "KOReader")
     self.custom_text_repetitions =
         tonumber(G_reader_settings:readSetting("reader_footer_custom_text_repetitions", "1"))
+
+    -- Initialize preset configuration
+    self.preset_config = {
+        presets = G_reader_settings:readSetting("footer_presets", {}),
+        save = function(self)
+            G_reader_settings:saveSetting("footer_presets", self.presets)
+        end,
+    }
 end
 
 function ReaderFooter:set_custom_text(touchmenu_instance)
@@ -1927,12 +1935,12 @@ function ReaderFooter:genAlignmentMenuItems(value)
     }
 end
 
-function ReaderFooter:createPresetFromCurrentSettings(touchmenu_instance)
-    return Presets:createModulePreset(self, touchmenu_instance, "footer_presets")
+function ReaderFooter:genPresetMenuItemTable()
+    return Presets:genModulePresetMenuTable(self, nil)
 end
 
-function ReaderFooter:genPresetMenuItemTable()
-    return Presets:genModulePresetMenuTable(self, "footer_presets", nil)
+function ReaderFooter:createPresetFromCurrentSettings(touchmenu_instance)
+    return Presets:createModulePreset(self, touchmenu_instance)
 end
 
 function ReaderFooter:buildPreset()
@@ -1968,11 +1976,14 @@ function ReaderFooter:loadPreset(preset)
 end
 
 function ReaderFooter:onLoadFooterPreset(preset_name)
-    return Presets:onLoadPreset(self, preset_name, "footer_presets")
+    return Presets:onLoadPreset(self, preset_name, true)
 end
 
 function ReaderFooter.getPresets() -- for Dispatcher
-    return Presets:getPresets("footer_presets")
+    local footer_config = {
+        presets = G_reader_settings:readSetting("footer_presets", {})
+    }
+    return Presets:getPresets(footer_config)
 end
 
 function ReaderFooter:addAdditionalFooterContent(content_func)

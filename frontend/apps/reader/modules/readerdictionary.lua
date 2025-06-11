@@ -166,6 +166,18 @@ function ReaderDictionary:init()
     if not lookup_history then
         lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", "LookupHistory")
     end
+
+    -- Initialize preset configuration
+    self.preset_config = {
+        presets = G_reader_settings:readSetting("dict_presets", {}),
+        cycle_index = G_reader_settings:readSetting("dict_presets_cycle_index", 0),
+        save = function(self)
+            G_reader_settings:saveSetting("dict_presets", self.presets)
+        end,
+        saveCycleIndex = function(self)
+            G_reader_settings:saveSetting("dict_presets_cycle_index", self.cycle_index)
+        end,
+    }
 end
 
 function ReaderDictionary:registerKeyEvents()
@@ -1567,24 +1579,27 @@ function ReaderDictionary:loadPreset(preset, skip_notification)
 end
 
 function ReaderDictionary:createPresetFromCurrentSettings(touchmenu_instance)
-    return Presets:createModulePreset(self, touchmenu_instance, "dict_presets")
+    return Presets:createModulePreset(self, touchmenu_instance)
 end
 
 function ReaderDictionary:genPresetMenuItemTable()
-    return Presets:genModulePresetMenuTable(self, "dict_presets", _("Create new preset from enabled dictionaries"),
+    return Presets:genModulePresetMenuTable(self, _("Create new preset from enabled dictionaries"),
                 function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end)
 end
 
 function ReaderDictionary:onCycleDictionaryPresets()
-    return Presets:cycleThroughPresets(self, "dict_presets", true)
+    return Presets:cycleThroughPresets(self, true)
 end
 
 function ReaderDictionary:onLoadDictionaryPreset(preset_name)
-    return Presets:onLoadPreset(self, preset_name, "dict_presets", true)
+    return Presets:onLoadPreset(self, preset_name, true)
 end
 
 function ReaderDictionary.getPresets() -- for Dispatcher
-    return Presets:getPresets("dict_presets")
+    local dict_config = {
+        presets = G_reader_settings:readSetting("dict_presets", {})
+    }
+    return Presets:getPresets(dict_config)
 end
 
 return ReaderDictionary

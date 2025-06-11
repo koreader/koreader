@@ -70,12 +70,10 @@ local _ = require("gettext")
 
 local Presets = {}
 
-function Presets:createPresetFromCurrentSettings(touchmenu_instance, preset_name_key, buildPresetFunc, genPresetMenuItemTableFunc)
+function Presets:createPresetFromCurrentSettings(touchmenu_instance, preset_config, buildPresetFunc, genPresetMenuItemTableFunc)
     self:editPresetName({},
-        function(entered_preset_name, dialog_instance) -- this is the on_confirm_callback.
-        -- It uses preset_name_key, buildPresetFunc, and genPresetMenuItemTableFunc from the outer scope.
-        local presets = G_reader_settings:readSetting(preset_name_key, {})
-        if self:validateAndSavePreset(entered_preset_name, preset_name_key, presets, buildPresetFunc()) then
+        function(entered_preset_name, dialog_instance)
+        if self:validateAndSavePreset(entered_preset_name, preset_config, buildPresetFunc()) then
             UIManager:close(dialog_instance)
             touchmenu_instance.item_table = genPresetMenuItemTableFunc()
             touchmenu_instance:updateItems()
@@ -114,15 +112,15 @@ function Presets:editPresetName(options, on_confirm_callback)
     input_dialog:onShowKeyboard()
 end
 
-function Presets:genPresetMenuItemTable(module, preset_name_key, text, enabled_func, buildPresetFunc, loadPresetFunc, genPresetMenuItemTableFunc)
-    local presets = G_reader_settings:readSetting(preset_name_key, {})
+function Presets:genPresetMenuItemTable(module, preset_config, text, enabled_func, buildPresetFunc, loadPresetFunc, genPresetMenuItemTableFunc)
+    local presets = preset_config.presets
     local items = {
         {
             text = text or _("Create new preset from current settings"),
             keep_menu_open = true,
             enabled_func = enabled_func,
             callback = function(touchmenu_instance)
-                self:createPresetFromCurrentSettings(touchmenu_instance, preset_name_key, buildPresetFunc, genPresetMenuItemTableFunc)
+                self:createPresetFromCurrentSettings(touchmenu_instance, preset_config, buildPresetFunc, genPresetMenuItemTableFunc)
             end,
             separator = true,
         },
@@ -149,7 +147,7 @@ function Presets:genPresetMenuItemTable(module, preset_name_key, text, enabled_f
                             text = T(_("Are you sure you want to overwrite preset '%1' with current settings?"), preset_name),
                             ok_callback = function()
                                 presets[preset_name] = buildPresetFunc()
-                                G_reader_settings:saveSetting(preset_name_key, presets)
+                                preset_config:save()
                                 UIManager:show(InfoMessage:new{
                                     text = T(_("Preset '%1' was updated with current settings"), preset_name),
                                     timeout = 2,
@@ -168,7 +166,7 @@ function Presets:genPresetMenuItemTable(module, preset_name_key, text, enabled_f
                                         ok_text = _("Delete"),
                                         ok_callback = function()
                                             presets[preset_name] = nil
-                                            G_reader_settings:saveSetting(preset_name_key, presets)
+                                            preset_config:save()
                                             local action_key = self:_getTargetActionKeyForModule(module, preset_name)
                                             if action_key then
                                                 UIManager:broadcastEvent(Event:new("DispatcherActionValueChanged", {
@@ -195,9 +193,9 @@ function Presets:genPresetMenuItemTable(module, preset_name_key, text, enabled_f
                                             UIManager:close(dialog_instance) -- no change?, just close then
                                             return
                                         end
-                                        if self:validateAndSavePreset(new_name, preset_name_key, presets, presets[preset_name]) then
+                                        if self:validateAndSavePreset(new_name, preset_config, presets[preset_name]) then
                                             presets[preset_name] = nil
-                                            G_reader_settings:saveSetting(preset_name_key, presets)
+                                            preset_config:save()
                                             local action_key = self:_getTargetActionKeyForModule(module, preset_name)
                                             if action_key then
                                                 UIManager:broadcastEvent(Event:new("DispatcherActionValueChanged", {
@@ -222,17 +220,17 @@ function Presets:genPresetMenuItemTable(module, preset_name_key, text, enabled_f
     return items
 end
 
-function Presets:validateAndSavePreset(preset_name, preset_name_key, presets, preset_data)
+function Presets:validateAndSavePreset(preset_name, preset_config, preset_data)
     if preset_name == "" or preset_name:match("^%s*$") then return end
-    if presets[preset_name] then
+    if preset_config.presets[preset_name] then
         UIManager:show(InfoMessage:new{
             text = T(_("A preset named '%1' already exists. Please choose a different name."), preset_name),
             timeout = 2,
         })
         return false
     end
-    presets[preset_name] = preset_data
-    G_reader_settings:saveSetting(preset_name_key, presets)
+    preset_config.presets[preset_name] = preset_data
+    preset_config:save() -- Let the module handle its own saving
     return true
 end
 
@@ -286,19 +284,19 @@ end -- _getTargetActionKeyForModule()
     having to implement the full preset management logic themselves.
 ]]
 
-function Presets:createModulePreset(module, touchmenu_instance, preset_key)
+function Presets:createModulePreset(module, touchmenu_instance)
     return self:createPresetFromCurrentSettings(
         touchmenu_instance,
-        preset_key,
+        module.preset_config,
         function() return module:buildPreset() end,
         function() return module:genPresetMenuItemTable() end
     )
 end
 
-function Presets:genModulePresetMenuTable(module, preset_key, text, enabled_func)
+function Presets:genModulePresetMenuTable(module, text, enabled_func)
     return self:genPresetMenuItemTable(
         module,
-        preset_key,
+        module.preset_config,
         text,
         enabled_func,
         function() return module:buildPreset() end,
@@ -307,8 +305,8 @@ function Presets:genModulePresetMenuTable(module, preset_key, text, enabled_func
     )
 end
 
-function Presets:onLoadPreset(module, preset_name, preset_key, show_notification)
-    local presets = G_reader_settings:readSetting(preset_key)
+function Presets:onLoadPreset(module, preset_name, show_notification)
+    local presets = module.preset_config.presets
     if presets and presets[preset_name] then
         module:loadPreset(presets[preset_name])
         if show_notification then
@@ -318,30 +316,29 @@ function Presets:onLoadPreset(module, preset_name, preset_key, show_notification
     return true
 end
 
-function Presets:cycleThroughPresets(module, preset_key, show_notification)
-    local presets = G_reader_settings:readSetting(preset_key)
-    if not presets or not next(presets) then
+function Presets:cycleThroughPresets(module, show_notification)
+    local preset_names = self:getPresets(module.preset_config)
+    if #preset_names == 0 then
         Notification:notify(_("No presets available"), Notification.SOURCE_ALWAYS_SHOW)
         return true -- we *must* return true here to prevent further event propagation, i.e multiple notifications
     end
-    -- Get sorted list of preset names
-    local preset_names = self:getPresets(preset_key)
     -- Get and increment index, wrap around if needed
-    local index = G_reader_settings:readSetting(preset_key .. "_index", 0) + 1
+    local index = module.preset_config.cycle_index + 1
     if index > #preset_names then
         index = 1
     end
     local next_preset_name = preset_names[index]
-    module:loadPreset(presets[next_preset_name])
-    G_reader_settings:saveSetting(preset_key .. "_index", index)
+    module:loadPreset(module.preset_config.presets[next_preset_name])
+    module.preset_config.cycle_index = index
+    module.preset_config:saveCycleIndex()
     if show_notification then
         Notification:notify(T(_("Loaded preset: %1"), next_preset_name))
     end
     return true
 end
 
-function Presets:getPresets(preset_name_key)
-    local presets = G_reader_settings:readSetting(preset_name_key)
+function Presets:getPresets(preset_config)
+    local presets = preset_config.presets
     local actions = {}
     if presets and next(presets) then
         for preset_name in pairs(presets) do
