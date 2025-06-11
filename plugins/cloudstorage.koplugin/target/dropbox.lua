@@ -1,7 +1,7 @@
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DocumentRegistry = require("document/documentregistry")
-local DropBoxApi = require("dropboxapi")
+local DropBoxApi = require("plugins/cloudstorage.koplugin/target/dropboxapi")
 local InfoMessage = require("ui/widget/infomessage")
 local NetworkMgr = require("ui/network/manager")
 local Provider = require("provider")
@@ -65,7 +65,7 @@ function DropboxProvider:download(item, address, username, password, local_path,
         end
     end
 
-    local code_response = DropBoxApi:downloadFile(item, access_token, local_path)
+    local code_response = DropBoxApi:downloadFile(item.url, access_token, local_path)
     if code_response == 200 then
         local __, filename = util.splitFilePathName(local_path)
         if G_reader_settings:isTrue("show_unsupported") and not DocumentRegistry:hasProvider(filename) then

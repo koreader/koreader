@@ -27,6 +27,29 @@ local CloudStorage = WidgetContainer:extend{
     is_doc_only = false,
 }
 
+-- Load target providers when the plugin is loaded
+function CloudStorage:loadTargetProviders()
+    local target_path = "plugins/cloudstorage.koplugin/target/"
+    local providers = {
+        "dropbox",
+        "ftp", 
+        "webdav"
+    }
+    
+    for _, provider_name in ipairs(providers) do
+        local provider_file = target_path .. provider_name
+        local ok, err = pcall(require, provider_file)
+        if not ok then
+            logger.warn("CloudStorage: Failed to load target provider", provider_name, ":", err)
+        else
+            logger.dbg("CloudStorage: Successfully loaded target provider", provider_name)
+        end
+    end
+end
+
+-- Load target providers when the module is required
+CloudStorage:loadTargetProviders()
+
 -- The actual menu widget for cloud storage browsing
 local CloudStorageMenu = Menu:extend{
     no_title = false,
