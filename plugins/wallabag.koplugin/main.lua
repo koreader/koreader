@@ -771,8 +771,10 @@ function Wallabag:downloadArticle(article)
         -- newsdownloader.koplugin has a date parser but it is available only if the plugin is activated.
         --- @todo find a better solution
         if self.is_dateparser_available then
+            local ROUNDING_TOLERANCE = 1 -- needed to avoid false negatives as epochs down to seconds are not always exact
             local server_date = self.dateparser.parse(article.updated_at)
-            if server_date < attr.modification then
+            logger.dbg("Wallabag:downloadArticle: checking dates. local:", attr.modification, " - server ", server_date, ' (', article.updated_at, ')')
+            if server_date <= attr.modification + ROUNDING_TOLERANCE then
                 skip_article = true
                 logger.dbg("Wallabag:downloadArticle: skipping download because local copy at", local_path, "is newer")
             end
@@ -784,6 +786,24 @@ function Wallabag:downloadArticle(article)
 
     if skip_article == false then
         if self:callAPI("GET", item_url, nil, nil, local_path) then
+            -- Set the file's modification time to match Wallabag's creation date
+            if article.updated_at then
+                -- Convert ISO 8601 date to Unix timestamp
+                -- @todo use dateparser.parse ?
+                local year, month, day, hour, min, sec = article.updated_at:match("(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)")
+                if year and month and day then
+                    local timestamp = os.time({
+                        year = tonumber(year),
+                        month = tonumber(month),
+                        day = tonumber(day),
+                        hour = tonumber(hour) or 0,
+                        min = tonumber(min) or 0,
+                        sec = tonumber(sec) or 0
+                    })
+                    -- Set the file's modification time
+                    lfs.touch(local_path, timestamp, timestamp)
+                end
+            end
             return downloaded -- = 3
         else
             return failed -- = 1
