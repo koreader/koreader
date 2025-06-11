@@ -300,9 +300,9 @@ function ReaderDictionary:addToMainMenu(menu_items)
             },
             {
                 text = _("Dictionary presets"),
-                help_text = _("This feature allows you to organize dictionaries into presets (for example, by language). You can quickly switch between these presets to change which dictionaries are used for lookups.\n\nNote: presets only store a reference to the dictionaries, no other settings."),
-                sub_item_table_func = function()
-                    return self:genPresetMenuItemTable()
+                help_text = _("This feature allows you to organize dictionaries into presets (for example, by language). You can quickly switch between these presets to change which dictionaries are used for lookups.\n\nNote: presets only store dictionaries, no other settings."),
+                sub_item_table_func = function(touchmenu_instance)
+                    return self:genPresetMenuItemTable(touchmenu_instance)
                 end,
                 separator = true,
             },
@@ -1579,12 +1579,20 @@ function ReaderDictionary:loadPreset(preset, skip_notification)
 end
 
 function ReaderDictionary:createPresetFromCurrentSettings(touchmenu_instance)
-    return Presets:createModulePreset(self, touchmenu_instance)
+    return Presets:createModulePreset(self, function()
+        touchmenu_instance.item_table = self:genPresetMenuItemTable()
+        touchmenu_instance:updateItems()
+    end)
 end
 
-function ReaderDictionary:genPresetMenuItemTable()
-    return Presets:genModulePresetMenuTable(self, _("Create new preset from enabled dictionaries"),
-                function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end)
+function ReaderDictionary:genPresetMenuItemTable(touchmenu_instance)
+    return Presets:genModulePresetMenuTable( self, _("Create new preset from enabled dictionaries"),
+        function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end,
+        function()
+            touchmenu_instance.item_table = self:genPresetMenuItemTable(touchmenu_instance)
+            touchmenu_instance:updateItems()
+        end
+    )
 end
 
 function ReaderDictionary:onCycleDictionaryPresets()

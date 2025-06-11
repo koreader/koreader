@@ -1714,8 +1714,8 @@ With this feature enabled, the current page is factored in, resulting in the cou
     table.insert(sub_items, {
         text = _("Status bar presets"),
         separator = true,
-        sub_item_table_func = function()
-            return self:genPresetMenuItemTable()
+        sub_item_table_func = function(touchmenu_instance)
+            return self:genPresetMenuItemTable(touchmenu_instance)
         end,
     })
     table.insert(sub_items, {
@@ -1935,12 +1935,18 @@ function ReaderFooter:genAlignmentMenuItems(value)
     }
 end
 
-function ReaderFooter:genPresetMenuItemTable()
-    return Presets:genModulePresetMenuTable(self, nil)
+function ReaderFooter:genPresetMenuItemTable(touchmenu_instance)
+    return Presets:genModulePresetMenuTable(self, nil, nil, function()
+        touchmenu_instance.item_table = self:genPresetMenuItemTable(touchmenu_instance)
+        touchmenu_instance:updateItems()
+    end)
 end
 
 function ReaderFooter:createPresetFromCurrentSettings(touchmenu_instance)
-    return Presets:createModulePreset(self, touchmenu_instance)
+    return Presets:createModulePreset(self, function()
+        touchmenu_instance.item_table = self:genPresetMenuItemTable()
+        touchmenu_instance:updateItems()
+    end)
 end
 
 function ReaderFooter:buildPreset()

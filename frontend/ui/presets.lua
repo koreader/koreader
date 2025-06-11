@@ -70,13 +70,12 @@ local _ = require("gettext")
 
 local Presets = {}
 
-function Presets:createPresetFromCurrentSettings(touchmenu_instance, preset_config, buildPresetFunc, genPresetMenuItemTableFunc)
+function Presets:createPresetFromCurrentSettings(preset_config, buildPresetFunc, on_updated_callback)
     self:editPresetName({},
         function(entered_preset_name, dialog_instance)
         if self:validateAndSavePreset(entered_preset_name, preset_config, buildPresetFunc()) then
             UIManager:close(dialog_instance)
-            touchmenu_instance.item_table = genPresetMenuItemTableFunc()
-            touchmenu_instance:updateItems()
+            on_updated_callback()
         end
         -- If validateAndSavePreset returns false, it means validation failed (e.g., duplicate name),
         -- an InfoMessage was shown by validateAndSavePreset, and the dialog remains open.
@@ -112,15 +111,15 @@ function Presets:editPresetName(options, on_confirm_callback)
     input_dialog:onShowKeyboard()
 end
 
-function Presets:genPresetMenuItemTable(module, preset_config, text, enabled_func, buildPresetFunc, loadPresetFunc, genPresetMenuItemTableFunc)
+function Presets:genPresetMenuItemTable(module, preset_config, text, enabled_func, buildPresetFunc, loadPresetFunc, on_updated_callback)
     local presets = preset_config.presets
     local items = {
         {
             text = text or _("Create new preset from current settings"),
             keep_menu_open = true,
             enabled_func = enabled_func,
-            callback = function(touchmenu_instance)
-                self:createPresetFromCurrentSettings(touchmenu_instance, preset_config, buildPresetFunc, genPresetMenuItemTableFunc)
+            callback = function()
+                self:createPresetFromCurrentSettings(preset_config, buildPresetFunc, on_updated_callback)
             end,
             separator = true,
         },
@@ -175,8 +174,7 @@ function Presets:genPresetMenuItemTable(module, preset_config, text, enabled_fun
                                                     new_value = nil -- delete the action
                                                 }))
                                             end
-                                            touchmenu_instance.item_table = genPresetMenuItemTableFunc()
-                                            touchmenu_instance:updateItems()
+                                            on_updated_callback()
                                         end,
                                     })
                                 end,
@@ -204,8 +202,7 @@ function Presets:genPresetMenuItemTable(module, preset_config, text, enabled_fun
                                                     new_value = new_name
                                                 }))
                                             end
-                                            touchmenu_instance.item_table = genPresetMenuItemTableFunc()
-                                            touchmenu_instance:updateItems()
+                                            on_updated_callback()
                                             UIManager:close(dialog_instance)
                                         end
                                     end) -- editPresetName
