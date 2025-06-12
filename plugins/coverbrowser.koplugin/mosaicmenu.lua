@@ -74,7 +74,7 @@ function FolderCoverManager:createFolderCoverWidget(image_path, width, height, f
     local inner_height = height - (margin + border) * 2
 
     if inner_width <= 0 or inner_height <= 0 then
-        inner_width, inner_height = 50, 50
+        inner_width, inner_height = Size.item.height_default, Size.item.height_default
     end
 
     -- Create cover image with center cropping
@@ -131,7 +131,7 @@ function FolderCoverManager:createFolderCoverWidget(image_path, width, height, f
                 FrameContainer:new{
                     bordersize = 0,
                     margin = 0,
-                    padding = 2,
+                    padding = Size.padding.tiny,
                     background = Blitbuffer.COLOR_WHITE,
                     radius = Screen:scaleBySize(3),
                     CenterContainer:new{
