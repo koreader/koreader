@@ -171,6 +171,7 @@ function ReaderDictionary:init()
     self.preset_config = {
         presets = G_reader_settings:readSetting("dict_presets", {}),
         cycle_index = G_reader_settings:readSetting("dict_presets_cycle_index", 0),
+        dispatcher_name = "load_dictionary_preset",
         save = function(config)
             G_reader_settings:saveSetting("dict_presets", config.presets)
         end,
@@ -1580,15 +1581,21 @@ function ReaderDictionary:loadPreset(preset, skip_notification)
 end
 
 function ReaderDictionary:createPresetFromCurrentSettings(touchmenu_instance)
-    return Presets:createModulePreset(self, function()
-        touchmenu_instance.item_table = self:genPresetMenuItemTable()
-        touchmenu_instance:updateItems()
-    end)
+    return Presets:createPresetFromCurrentSettings(
+        self.preset_config,
+        function() return self:buildPreset() end,
+        function()
+            touchmenu_instance.item_table = self:genPresetMenuItemTable()
+            touchmenu_instance:updateItems()
+        end
+    )
 end
 
 function ReaderDictionary:genPresetMenuItemTable(touchmenu_instance)
-    return Presets:genModulePresetMenuTable( self, _("Create new preset from enabled dictionaries"),
+    return Presets:genPresetMenuItemTable( self.preset_config, _("Create new preset from enabled dictionaries"),
         function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end,
+        function() return self:buildPreset() end,
+        function(preset) self:loadPreset(preset) end,
         function()
             touchmenu_instance.item_table = self:genPresetMenuItemTable(touchmenu_instance)
             touchmenu_instance:updateItems()
@@ -1597,11 +1604,11 @@ function ReaderDictionary:genPresetMenuItemTable(touchmenu_instance)
 end
 
 function ReaderDictionary:onCycleDictionaryPresets()
-    return Presets:cycleThroughPresets(self, true)
+    return Presets:cycleThroughPresets(self.preset_config, function(preset) self:loadPreset(preset) end, true)
 end
 
 function ReaderDictionary:onLoadDictionaryPreset(preset_name)
-    return Presets:onLoadPreset(self, preset_name, true)
+    return Presets:onLoadPreset(self.preset_config, preset_name, function(preset) self:loadPreset(preset) end, true)
 end
 
 function ReaderDictionary.getPresets() -- for Dispatcher

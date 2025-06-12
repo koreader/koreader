@@ -666,6 +666,7 @@ function ReaderFooter:init()
     -- Initialize preset configuration
     self.preset_config = {
         presets = G_reader_settings:readSetting("footer_presets", {}),
+        dispatcher_name = "load_footer_preset",
         save = function(config)
             G_reader_settings:saveSetting("footer_presets", config.presets)
         end,
@@ -1936,17 +1937,24 @@ function ReaderFooter:genAlignmentMenuItems(value)
 end
 
 function ReaderFooter:genPresetMenuItemTable(touchmenu_instance)
-    return Presets:genModulePresetMenuTable(self, nil, nil, function()
-        touchmenu_instance.item_table = self:genPresetMenuItemTable(touchmenu_instance)
-        touchmenu_instance:updateItems()
-    end)
+    return Presets:genPresetMenuItemTable(self.preset_config, nil, nil,
+        function() return self:buildPreset() end,
+        function(preset) self:loadPreset(preset) end,
+        function()
+            touchmenu_instance.item_table = self:genPresetMenuItemTable(touchmenu_instance)
+            touchmenu_instance:updateItems()
+        end
+    )
 end
 
 function ReaderFooter:createPresetFromCurrentSettings(touchmenu_instance)
-    return Presets:createModulePreset(self, function()
-        touchmenu_instance.item_table = self:genPresetMenuItemTable()
-        touchmenu_instance:updateItems()
-    end)
+    return Presets:createPresetFromCurrentSettings(self.preset_config,
+        function() return self:buildPreset() end,
+        function()
+            touchmenu_instance.item_table = self:genPresetMenuItemTable()
+            touchmenu_instance:updateItems()
+        end
+    )
 end
 
 function ReaderFooter:buildPreset()
@@ -1982,7 +1990,7 @@ function ReaderFooter:loadPreset(preset)
 end
 
 function ReaderFooter:onLoadFooterPreset(preset_name)
-    return Presets:onLoadPreset(self, preset_name, true)
+    return Presets:onLoadPreset(self.preset_config, preset_name, function(preset) self:loadPreset(preset) end, true)
 end
 
 function ReaderFooter.getPresets() -- for Dispatcher
