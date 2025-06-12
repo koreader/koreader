@@ -1,7 +1,7 @@
 APPIMAGE_DIR = $(PLATFORM_DIR)/appimage
 
 APPIMAGETOOL = appimagetool-x86_64.AppImage
-APPIMAGETOOL_URL = https://github.com/AppImage/AppImageKit/releases/download/13/$(APPIMAGETOOL)
+APPIMAGETOOL_URL = https://github.com/AppImage/appimagetool/releases/download/continuous/$(APPIMAGETOOL)
 
 KOREADER_APPIMAGE = koreader-$(DIST)-$(MACHINE)-$(VERSION).AppImage
 

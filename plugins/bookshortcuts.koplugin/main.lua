@@ -137,13 +137,13 @@ function BookShortcuts:getSubMenuItems()
         table.insert(sub_item_table, {
             text = icon .. text,
             callback = function() self:onBookShortcut(k) end,
-            hold_callback = function(touchmenu_instance)
+            hold_callback = function(touchmenu_instance, item)
                 UIManager:show(ConfirmBox:new{
                     text = _("Do you want to delete this shortcut?") .. "\n\n" .. k .. "\n",
                     ok_text = _("Delete"),
                     ok_callback = function()
                         self:deleteShortcut(k)
-                        touchmenu_instance.item_table = self:getSubMenuItems()
+                        table.remove(touchmenu_instance.item_table, item.idx)
                         touchmenu_instance.page = 1
                         touchmenu_instance:updateItems()
                     end,

@@ -10,11 +10,13 @@ local GestureRange = require("ui/gesturerange")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
 local Screen = Device.screen
@@ -675,6 +677,7 @@ function ReaderToc:getChapterPagesDone(pageno)
 end
 
 function ReaderToc:updateCurrentNode()
+    if self.search_string ~= nil and self.search_string ~= "*" then return end
     if #self.collapsed_toc > 0 and self.pageno then
         for i, v in ipairs(self.collapsed_toc) do
             if v.page >= self.pageno then
@@ -695,10 +698,10 @@ end
 function ReaderToc:expandParentNode(index)
     if index then
         local nodes_to_expand = {}
-        local depth = self.toc[index].depth
+        local depth = self.filtered_toc[index].depth
         for i = index - 1, 1, -1 do
-            if depth > self.toc[i].depth then
-                depth = self.toc[i].depth
+            if depth > self.filtered_toc[i].depth then
+                depth = self.filtered_toc[i].depth
                 table.insert(nodes_to_expand, i)
             end
             if depth == 1 then break end
@@ -823,6 +826,7 @@ function ReaderToc:onShowToc()
             end
             depth = v.depth
         end
+        self.filtered_toc = self.toc
     end
     local can_collapse = self:getMaxDepth() > 1
 
@@ -832,13 +836,11 @@ function ReaderToc:onShowToc()
     local button_size = self.expand_button:getSize()
     local toc_menu = Menu:new{
         title = self:getTitle(),
-        item_table = self.collapsed_toc,
+        subtitle = self.search_string and T(_("Query: %1"), self.search_string) or "",
         state_w = can_collapse and button_size.w or 0,
         ui = self.ui,
         is_borderless = true,
         is_popout = false,
-        width = Screen:getWidth(),
-        height = Screen:getHeight(),
         single_line = true,
         align_baselines = true,
         with_dots = items_with_dots,
@@ -846,6 +848,11 @@ function ReaderToc:onShowToc()
         items_font_size = items_font_size,
         items_padding = can_collapse and math.floor(Size.padding.fullscreen / 2) or nil, -- c.f., note above. Menu's default is twice that.
         line_color = Blitbuffer.COLOR_WHITE,
+        title_bar_fm_style = true,
+        title_bar_left_icon = "appbar.menu",
+        onLeftButtonTap = function()
+            self:showTocDialog()
+        end,
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",
@@ -917,15 +924,17 @@ function ReaderToc:onShowToc()
     self.toc_menu = toc_menu
 
     self:updateCurrentNode()
-    -- auto expand the parent node of current page
-    local idx = self:getTocIndexByPage(self.pageno)
-    if idx then
-        self:expandParentNode(idx)
-        -- Also do it for other toc items on current page
-        idx = idx + 1
-        while self.toc[idx] and self.toc[idx].page == self.pageno do
+    if self.search_string == nil then
+        -- auto expand the parent node of current page
+        local idx = self:getTocIndexByPage(self.pageno)
+        if idx then
             self:expandParentNode(idx)
+            -- Also do it for other toc items on current page
             idx = idx + 1
+            while self.toc[idx] and self.toc[idx].page == self.pageno do
+                self:expandParentNode(idx)
+                idx = idx + 1
+            end
         end
     end
 
@@ -937,12 +946,80 @@ function ReaderToc:onShowToc()
     return true
 end
 
+function ReaderToc:showTocDialog()
+    self:searchToc()
+end
+
+function ReaderToc:searchToc()
+    if #self.toc == 0 then return end
+    if self.search_string then -- restore full ToC
+        self.search_string = nil
+        self.toc_menu_items_built = false
+        self.expanded_nodes = {}
+        self.collapsed_toc = {}
+        self.toc_menu.close_callback()
+        self:onShowToc()
+        return
+    end
+
+    local input_dialog
+    input_dialog = InputDialog:new{
+        title =  _("Enter text to search for"),
+        buttons = {{
+            {
+                text = _("Cancel"),
+                id = "close",
+                callback = function()
+                    UIManager:close(input_dialog)
+                end,
+            },
+            {
+                text = _("Search"),
+                callback = function()
+                    local str = input_dialog:getInputText()
+                    if str == "" then return end
+                    UIManager:close(input_dialog)
+                    local collapsed_toc, expanded_nodes = {}, {}
+                    local depth = 0
+                    for i = #self.toc, 1, -1 do
+                        local v = self.toc[i]
+                        if v.depth < depth or str == "*" or util.stringSearch(v.title, str) ~= 0 then
+                            if v.depth < depth then
+                                v.state = self.collapse_button:new{}
+                                expanded_nodes[i] = true
+                            end
+                            table.insert(collapsed_toc, 1, v)
+                            depth = v.depth
+                        end
+                    end
+                    if #collapsed_toc > 0 then
+                        self.search_string = str
+                        self.filtered_toc = {}
+                        for i, v in ipairs(collapsed_toc) do
+                            v.index = i
+                            self.filtered_toc[i] = v
+                        end
+                        self.collapsed_toc = collapsed_toc
+                        self.expanded_nodes = expanded_nodes
+                        self.toc_menu.close_callback()
+                        self:onShowToc()
+                    else
+                        UIManager:show(InfoMessage:new{ text = _("No results in table of contents") })
+                    end
+                end,
+            },
+        }},
+    }
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
+end
+
 -- expand TOC node of index in raw toc table
 function ReaderToc:expandToc(index)
     if self.expanded_nodes[index] == true then return end
 
     self.expanded_nodes[index] = true
-    local cur_node = self.toc[index]
+    local cur_node = self.filtered_toc[index]
     local cur_depth = cur_node.depth
     local collapsed_index = nil
     for i, v in ipairs(self.collapsed_toc) do
@@ -955,8 +1032,8 @@ function ReaderToc:expandToc(index)
     -- either the toc entry of index has no child nodes
     -- or it's parent nodes are not expanded yet
     if not collapsed_index then return end
-    for i = index + 1, #self.toc do
-        local v = self.toc[i]
+    for i = index + 1, #self.filtered_toc do
+        local v = self.filtered_toc[i]
         if v.depth == cur_depth + 1 then
             collapsed_index = collapsed_index + 1
             table.insert(self.collapsed_toc, collapsed_index, v)
@@ -976,7 +1053,7 @@ function ReaderToc:collapseToc(index)
     if self.expanded_nodes[index] == true then
         self.expanded_nodes[index] = nil
     end
-    local cur_node = self.toc[index]
+    local cur_node = self.filtered_toc[index]
     local cur_depth = cur_node.depth
     local i = 1
     local is_child_node = false

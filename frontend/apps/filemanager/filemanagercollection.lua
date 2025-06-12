@@ -743,16 +743,18 @@ function FileManagerCollection:showArrangeBooksDialog()
             text = _("Manual sorting") .. (curr_collate_id == nil and "  ✓" or ""),
             callback = function()
                 UIManager:close(arrange_dialog)
-                UIManager:show(SortWidget:new{
+                local sort_widget
+                sort_widget = SortWidget:new{
                     title = _("Arrange books in collection"),
                     item_table = self.booklist_menu.item_table,
                     callback = function()
-                        ReadCollection:updateCollectionOrder(collection_name, self.booklist_menu.item_table)
+                        ReadCollection:updateCollectionOrder(collection_name, sort_widget.item_table)
                         self.updated_collections[collection_name] = true
                         self:setCollate(false, false)
                         self:updateItemTable()
                     end,
-                })
+                }
+                UIManager:show(sort_widget)
             end,
         }},
     }
@@ -1292,15 +1294,17 @@ function FileManagerCollection:removeCollection(item)
 end
 
 function FileManagerCollection:sortCollections()
-    UIManager:show(SortWidget:new{
+    local sort_widget
+    sort_widget = SortWidget:new{
         title = _("Arrange collections"),
         item_table = self.coll_list.item_table,
         callback = function()
             self.updated_collections = { true } -- all
-            ReadCollection:updateCollectionListOrder(self.coll_list.item_table)
+            ReadCollection:updateCollectionListOrder(sort_widget.item_table)
             self:updateCollListItemTable(true) -- init
         end,
-    })
+    }
+    UIManager:show(sort_widget)
 end
 
 function FileManagerCollection:onShowCollectionsSearchDialog(search_str, coll_name)

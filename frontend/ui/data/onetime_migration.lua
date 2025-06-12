@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20250405
+local CURRENT_MIGRATION_DATE = 20250601
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -32,15 +32,6 @@ local function drop_fontcache()
     if not ok then
        logger.warn("os.remove:", err)
     end
-end
-
--- Global settings, https://github.com/koreader/koreader/pull/4945 & https://github.com/koreader/koreader/pull/5655
--- Limit the check to the most recent update. ReaderUI calls this one unconditionally to update docsettings, too.
-if last_migration_date < 20191129 then
-    logger.info("Performing one-time migration for 20191129")
-
-    local SettingsMigration = require("ui/data/settings_migration")
-    SettingsMigration:migrateSettings(G_reader_settings)
 end
 
 -- ReaderTypography, https://github.com/koreader/koreader/pull/6072
@@ -885,6 +876,18 @@ if last_migration_date < 20250405 then
     end
     G_reader_settings:delSetting("show_finished")
 end
+
+-- Global settings, https://github.com/koreader/koreader/pull/4945 & https://github.com/koreader/koreader/pull/5655
+-- Limit the check to the most recent update. ReaderUI calls this one unconditionally to update docsettings, too.
+-- 20250601, Refactor default footnote style tweaks
+-- https://github.com/koreader/koreader/pull/13613
+if last_migration_date < 20250601 then
+    logger.info("Performing one-time migration for 20250601")
+
+    local SettingsMigration = require("ui/data/settings_migration")
+    SettingsMigration:migrateSettings(G_reader_settings)
+end
+
 
 -- We're done, store the current migration date
 G_reader_settings:saveSetting("last_migration_date", CURRENT_MIGRATION_DATE)

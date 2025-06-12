@@ -60,6 +60,10 @@ function DjvuDocument:getPageTextBoxes(pageno)
     return self._document:getPageText(pageno)
 end
 
+function DjvuDocument:getTextBoxes(pageno)
+    return self.koptinterface:getTextBoxes(self, pageno)
+end
+
 function DjvuDocument:getPanelFromPage(pageno, pos)
     return self.koptinterface:getPanelFromPage(self, pageno, pos)
 end

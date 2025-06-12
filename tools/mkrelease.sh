@@ -100,7 +100,7 @@ case "$1" in
     *.7z | *.zip) format="${1##*.}" ;;
     *.tar.gz | *.targz) format=tar.gz ;;
     *.tar.xz) format=tar.xz ;;
-    *.tar.zstd) format=tar.zstd ;;
+    *.tar.zst) format=tar.zst ;;
     *)
         echo "ERROR: unsupported release format: ${1##*.}" 1>&2
         exit 2
@@ -303,7 +303,7 @@ case "${format}" in
             xz ${jobs:+--threads=${jobs}} "${options[@]}" |
             write_to_file "${output}"
         ;;
-    tar.zstd)
+    tar.zst)
         echo "Creating archive: ${output}"
         "${tar_compress_cmd[@]}" |
             zstd ${jobs:+--threads=${jobs}} "${options[@]}" --stdout |
