@@ -9,8 +9,8 @@
             self.preset_config = {
                 presets = G_reader_settings:readSetting("my_module_presets", {}),                -- or custom storage
                 cycle_index = G_reader_settings:readSetting("my_module_presets_cycle_index", 0), -- optional, only needed if cycling through presets
-                dispatcher_name = "load_my_module_preset", -- must match dispatcher.lua entry
-                save = function(config)
+                dispatcher_name = "load_my_module_preset",                                       -- must match dispatcher.lua entry
+            save = function(config)                                                              -- Save presets to persistent storage
                     G_reader_settings:saveSetting("my_module_presets", config.presets)
                 end,
                 saveCycleIndex = function(config)
@@ -41,8 +41,8 @@
             function MyModule:genPresetMenuItemTable(touchmenu_instance)
                 return Presets:genPresetMenuItemTable(
                     self.preset_config,                              -- preset configuration object
-                    _("Create new preset from current settings"),    -- optional: custom text for create button
-                    function() return self:hasValidSettings() end,   -- optional: function to enable/disable create button
+                    _("Create new preset from current settings"),    -- optional: custom text for UI menu
+                    function() return self:hasValidSettings() end,   -- optional: function to enable/disable creating presets
                     function() return self:buildPreset() end,        -- function to build preset data
                     function(preset) self:loadPreset(preset) end,    -- function to load preset data
                     function()                                       -- callback when presets are updated
@@ -52,7 +52,7 @@
                 )
             end
 
-        -- 4. Create a new preset programmatically:
+        -- 4. Create a new preset from current settings (for UI):
             function MyModule:createPresetFromCurrentSettings(touchmenu_instance)
                 return Presets:createPresetFromCurrentSettings(
                     self.preset_config,

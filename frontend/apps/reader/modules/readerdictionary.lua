@@ -1580,9 +1580,9 @@ end
 
 function ReaderDictionary:createPresetFromCurrentSettings(touchmenu_instance)
     return Presets:createPresetFromCurrentSettings(
-        self.preset_config,
-        function() return self:buildPreset() end,
-        function()
+        self.preset_config,                       -- configuration object
+        function() return self:buildPreset() end, -- buildPresetFunc
+        function()                                -- on_updated_callback
             touchmenu_instance.item_table = self:genPresetMenuItemTable()
             touchmenu_instance:updateItems()
         end
@@ -1591,10 +1591,10 @@ end
 
 function ReaderDictionary:genPresetMenuItemTable(touchmenu_instance)
     return Presets:genPresetMenuItemTable( self.preset_config, _("Create new preset from enabled dictionaries"),
-        function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end,
-        function() return self:buildPreset() end,
-        function(preset) self:loadPreset(preset) end,
-        function()
+        function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end, -- enabled_func
+        function() return self:buildPreset() end,                                       -- buildPresetFunc
+        function(preset) self:loadPreset(preset) end,                                   -- loadPresetFunc
+        function()                                                                      -- on_updated_callback
             touchmenu_instance.item_table = self:genPresetMenuItemTable(touchmenu_instance)
             touchmenu_instance:updateItems()
         end

@@ -1937,10 +1937,11 @@ function ReaderFooter:genAlignmentMenuItems(value)
 end
 
 function ReaderFooter:genPresetMenuItemTable(touchmenu_instance)
-    return Presets:genPresetMenuItemTable(self.preset_config, nil, nil,
-        function() return self:buildPreset() end,
-        function(preset) self:loadPreset(preset) end,
-        function()
+    return Presets:genPresetMenuItemTable(
+        self.preset_config, nil, nil,          -- configuration object, text, enabled_func
+        function() return self:buildPreset() end,     -- buildPresetFunc
+        function(preset) self:loadPreset(preset) end, -- loadPresetFunc
+        function()                                    -- on_updated_callback
             touchmenu_instance.item_table = self:genPresetMenuItemTable(touchmenu_instance)
             touchmenu_instance:updateItems()
         end
@@ -1948,9 +1949,10 @@ function ReaderFooter:genPresetMenuItemTable(touchmenu_instance)
 end
 
 function ReaderFooter:createPresetFromCurrentSettings(touchmenu_instance)
-    return Presets:createPresetFromCurrentSettings(self.preset_config,
-        function() return self:buildPreset() end,
-        function()
+    return Presets:createPresetFromCurrentSettings(
+        self.preset_config,                       -- configuration object
+        function() return self:buildPreset() end, -- buildPresetFunc
+        function()                                -- on_updated_callback
             touchmenu_instance.item_table = self:genPresetMenuItemTable()
             touchmenu_instance:updateItems()
         end
