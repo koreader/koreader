@@ -92,7 +92,7 @@ function CoverBrowser:init()
             BookInfoManager:saveSetting("history_display_mode", "mosaic_image")
             BookInfoManager:saveSetting("collection_display_mode", "mosaic_image")
         end
-        
+
         -- Set up default folder cover settings
         if BookInfoManager:getSetting("folder_cover_disabled") == nil then
             logger.info("CoverBrowser: setting default folder cover settings")
@@ -104,7 +104,7 @@ function CoverBrowser:init()
             BookInfoManager:saveSetting("folder_cover_file_count_position", "bottom")
             BookInfoManager:saveSetting("show_latest_visited_indicator", true)
         end
-        
+
         G_reader_settings:makeTrue("coverbrowser_initial_default_setup_done")
     end
 
@@ -336,7 +336,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                             return T(_("Folder name position: %1"), _(position))
                         end,
                         enabled_func = function()
-                            return not BookInfoManager:getSetting("folder_cover_disabled") and 
+                            return not BookInfoManager:getSetting("folder_cover_disabled") and
                                    BookInfoManager:getSetting("folder_cover_show_folder_name")
                         end,
                         sub_item_table = {
@@ -394,7 +394,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                             return T(_("File count position: %1"), _(position))
                         end,
                         enabled_func = function()
-                            return not BookInfoManager:getSetting("folder_cover_disabled") and 
+                            return not BookInfoManager:getSetting("folder_cover_disabled") and
                                    BookInfoManager:getSetting("folder_cover_show_file_count")
                         end,
                         sub_item_table = {

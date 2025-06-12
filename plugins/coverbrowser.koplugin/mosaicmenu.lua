@@ -40,30 +40,30 @@ function FolderCoverManager:findCover(dir_path)
     if not dir_path or dir_path == "" or dir_path == ".." or dir_path:match("%.%.$") then
         return nil
     end
-    
+
     dir_path = dir_path:gsub("[/\\]+$", "")
-    
+
     -- Try exact matches with lowercase and uppercase extensions
-    for _, candidate in ipairs(self.cover_candidates) do 
+    for _, candidate in ipairs(self.cover_candidates) do
         for _, ext in ipairs(self.cover_extensions) do
             local exact_path = dir_path .. "/" .. candidate .. ext
             local f = io.open(exact_path, "rb")
-            if f then 
+            if f then
                 f:close()
-                return exact_path 
+                return exact_path
             end
-            
+
             local upper_path = dir_path .. "/" .. candidate .. ext:upper()
             if upper_path ~= exact_path then
                 f = io.open(upper_path, "rb")
-                if f then 
+                if f then
                     f:close()
-                    return upper_path 
+                    return upper_path
                 end
             end
-        end 
+        end
     end
-    
+
     return nil
 end
 
@@ -72,7 +72,7 @@ function FolderCoverManager:createFolderCoverWidget(image_path, width, height, f
     local border = Size.border.thick
     local inner_width = width - (margin + border) * 2
     local inner_height = height - (margin + border) * 2
-    
+
     if inner_width <= 0 or inner_height <= 0 then
         inner_width, inner_height = 50, 50
     end
@@ -84,14 +84,14 @@ function FolderCoverManager:createFolderCoverWidget(image_path, width, height, f
         local orig_w = temp_image:getOriginalWidth()
         local orig_h = temp_image:getOriginalHeight()
         temp_image:free()
-        
+
         local scale_to_fill = 0
         if orig_w and orig_h then
             local scale_x = inner_width / orig_w
             local scale_y = inner_height / orig_h
             scale_to_fill = math.max(scale_x, scale_y)
         end
-        
+
         return ImageWidget:new{
             file = image_path,
             width = inner_width,
@@ -101,21 +101,20 @@ function FolderCoverManager:createFolderCoverWidget(image_path, width, height, f
             center_y_ratio = 0.5,
         }
     end)
-    
+
     if not success or not cover_image then
         return nil
     end
 
     local overlays = {}
-    
+
     -- Create text overlays if enabled
-    if BookInfoManager:getSetting("folder_cover_show_folder_name") or 
+    if BookInfoManager:getSetting("folder_cover_show_folder_name") or
        BookInfoManager:getSetting("folder_cover_show_file_count") then
-        
+
         local AlphaContainer = require("ui/widget/container/alphacontainer")
         local TopContainer = require("ui/widget/container/topcontainer")
-        local BottomContainer = require("ui/widget/container/bottomcontainer")
-        
+
         -- Helper function to create text overlay widget
         local function createOverlayWidget(text, font_face, font_size, is_bold)
             local text_widget = TextBoxWidget:new{
@@ -126,7 +125,7 @@ function FolderCoverManager:createFolderCoverWidget(image_path, width, height, f
                 bold = is_bold or false,
                 fgcolor = Blitbuffer.COLOR_BLACK,
             }
-            
+
             return AlphaContainer:new{
                 alpha = 0.8,
                 FrameContainer:new{
@@ -145,10 +144,10 @@ function FolderCoverManager:createFolderCoverWidget(image_path, width, height, f
                 },
             }
         end
-        
+
         -- Create text widgets for folder name and file count
         local folder_name_widget, file_count_widget
-        
+
         if BookInfoManager:getSetting("folder_cover_show_folder_name") and folder_name and folder_name ~= "" then
             local display_name = folder_name
             if display_name:match('/$') then
@@ -157,30 +156,30 @@ function FolderCoverManager:createFolderCoverWidget(image_path, width, height, f
             display_name = BD.directory(display_name)
             folder_name_widget = createOverlayWidget(display_name, "cfont", 18, true)
         end
-        
+
         if BookInfoManager:getSetting("folder_cover_show_file_count") and file_count then
             file_count_widget = createOverlayWidget(tostring(file_count), "infont", 15, false)
         end
-        
+
         -- Get positions and group overlays
         local folder_name_position = BookInfoManager:getSetting("folder_cover_folder_name_position") or "middle"
         local file_count_position = BookInfoManager:getSetting("folder_cover_file_count_position") or "bottom"
-        
+
         local position_groups = { top = {}, middle = {}, bottom = {} }
-        
+
         if folder_name_widget then
             table.insert(position_groups[folder_name_position], folder_name_widget)
         end
         if file_count_widget then
             table.insert(position_groups[file_count_position], file_count_widget)
         end
-        
+
         -- Helper function to create positioned overlay container
         local function createPositionedOverlay(widgets_group, position)
             if #widgets_group == 0 then return nil end
-            
+
             local container_widget = #widgets_group == 1 and widgets_group[1] or VerticalGroup:new(widgets_group)
-            
+
             if position == "top" then
                 return TopContainer:new{
                     dimen = Geom:new{w = inner_width, h = inner_height},
@@ -198,7 +197,7 @@ function FolderCoverManager:createFolderCoverWidget(image_path, width, height, f
                 }
             end
         end
-        
+
         -- Create positioned overlays for each position group
         for position, widgets_group in pairs(position_groups) do
             local positioned_overlay = createPositionedOverlay(widgets_group, position)
@@ -215,7 +214,7 @@ function FolderCoverManager:createFolderCoverWidget(image_path, width, height, f
             cover_image,
         }
     }
-    
+
     for _, overlay in ipairs(overlays) do
         table.insert(content_parts, overlay)
     end
@@ -623,12 +622,12 @@ function MosaicMenuItem:update()
         if not BookInfoManager:getSetting("folder_cover_disabled") then
             folder_cover_path = FolderCoverManager:findCover(self.filepath)
         end
-        
+
         if folder_cover_path and self.do_cover_image then
             -- Create custom folder cover widget
             local folder_name = BookInfoManager:getSetting("folder_cover_show_folder_name") and self.text or nil
             local file_count = BookInfoManager:getSetting("folder_cover_show_file_count") and self.mandatory or nil
-            
+
             widget = FolderCoverManager:createFolderCoverWidget(
                 folder_cover_path,
                 dimen.w,
@@ -636,14 +635,14 @@ function MosaicMenuItem:update()
                 folder_name,
                 file_count
             )
-            
+
             if widget then
                 -- Let menu know it has some item with images
                 self.menu._has_cover_images = true
                 self._has_cover_image = true
             end
         end
-        
+
         if not widget then
             -- Fall back to default directory display
             local margin = Screen:scaleBySize(5) -- make directories less wide
