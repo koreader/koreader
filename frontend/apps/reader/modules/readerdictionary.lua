@@ -276,10 +276,6 @@ function ReaderDictionary:addToMainMenu(menu_items)
         text = _("Dictionary settings"),
         sub_item_table = {
             {
-                text = _("Download dictionaries"),
-                sub_item_table_func = function() return self:_genDownloadDictionariesMenu() end,
-            },
-            {
                 keep_menu_open = true,
                 text_func = function()
                     local nb_available, nb_enabled, nb_disabled = self:getNumberOfDictionaries()
@@ -304,6 +300,10 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 sub_item_table_func = function(touchmenu_instance)
                     return self:genPresetMenuItemTable(touchmenu_instance)
                 end,
+            },
+            {
+                text = _("Download dictionaries"),
+                sub_item_table_func = function() return self:_genDownloadDictionariesMenu() end,
                 separator = true,
             },
             {
@@ -331,6 +331,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 hold_callback = function(touchmenu_instance)
                     self:toggleFuzzyDefault(touchmenu_instance)
                 end,
+                separator = true,
             },
             {
                 text = _("Dictionary lookup history"),
@@ -413,7 +414,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
         }
     }
     if not is_docless then
-        table.insert(menu_items.dictionary_settings.sub_item_table, 3, {
+        table.insert(menu_items.dictionary_settings.sub_item_table, 2, {
             keep_menu_open = true,
             text = _("Set dictionary priority for this book"),
             help_text = _("This feature enables you to specify dictionary priorities on a per-book basis. Results from higher-priority dictionaries will be displayed first when looking up words. Only dictionaries that are currently active can be selected and prioritized."),
