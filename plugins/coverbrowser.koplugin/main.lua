@@ -92,6 +92,19 @@ function CoverBrowser:init()
             BookInfoManager:saveSetting("history_display_mode", "mosaic_image")
             BookInfoManager:saveSetting("collection_display_mode", "mosaic_image")
         end
+        
+        -- Set up default folder cover settings
+        if BookInfoManager:getSetting("folder_cover_disabled") == nil then
+            logger.info("CoverBrowser: setting default folder cover settings")
+            -- folder_cover_disabled = false means folder covers are enabled by default
+            BookInfoManager:saveSetting("folder_cover_disabled", false)
+            BookInfoManager:saveSetting("folder_cover_show_folder_name", true)
+            BookInfoManager:saveSetting("folder_cover_folder_name_position", "middle")
+            BookInfoManager:saveSetting("folder_cover_show_file_count", true)
+            BookInfoManager:saveSetting("folder_cover_file_count_position", "bottom")
+            BookInfoManager:saveSetting("show_latest_visited_indicator", true)
+        end
+        
         G_reader_settings:makeTrue("coverbrowser_initial_default_setup_done")
     end
 
@@ -287,6 +300,150 @@ function CoverBrowser:addToMainMenu(menu_items)
                         end,
                     }
                     UIManager:show(widget)
+                end,
+                separator = true,
+            },
+            -- Add folder cover settings
+            {
+                text = _("Folder covers"),
+                sub_item_table = {
+                    {
+                        text = _("Show folder cover images"),
+                        checked_func = function()
+                            return not BookInfoManager:getSetting("folder_cover_disabled")
+                        end,
+                        callback = function()
+                            BookInfoManager:toggleSetting("folder_cover_disabled")
+                            fc:updateItems(1, true)
+                        end,
+                    },
+                    {
+                        text = _("Show folder names on covers"),
+                        enabled_func = function()
+                            return not BookInfoManager:getSetting("folder_cover_disabled")
+                        end,
+                        checked_func = function()
+                            return BookInfoManager:getSetting("folder_cover_show_folder_name")
+                        end,
+                        callback = function()
+                            BookInfoManager:toggleSetting("folder_cover_show_folder_name")
+                            fc:updateItems(1, true)
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            local position = BookInfoManager:getSetting("folder_cover_folder_name_position") or "middle"
+                            return T(_("Folder name position: %1"), _(position))
+                        end,
+                        enabled_func = function()
+                            return not BookInfoManager:getSetting("folder_cover_disabled") and 
+                                   BookInfoManager:getSetting("folder_cover_show_folder_name")
+                        end,
+                        sub_item_table = {
+                            {
+                                text = _("Top"),
+                                radio = true,
+                                checked_func = function()
+                                    return (BookInfoManager:getSetting("folder_cover_folder_name_position") or "middle") == "top"
+                                end,
+                                callback = function()
+                                    BookInfoManager:saveSetting("folder_cover_folder_name_position", "top")
+                                    fc:updateItems(1, true)
+                                end,
+                            },
+                            {
+                                text = _("Middle"),
+                                radio = true,
+                                checked_func = function()
+                                    return (BookInfoManager:getSetting("folder_cover_folder_name_position") or "middle") == "middle"
+                                end,
+                                callback = function()
+                                    BookInfoManager:saveSetting("folder_cover_folder_name_position", "middle")
+                                    fc:updateItems(1, true)
+                                end,
+                            },
+                            {
+                                text = _("Bottom"),
+                                radio = true,
+                                checked_func = function()
+                                    return (BookInfoManager:getSetting("folder_cover_folder_name_position") or "middle") == "bottom"
+                                end,
+                                callback = function()
+                                    BookInfoManager:saveSetting("folder_cover_folder_name_position", "bottom")
+                                    fc:updateItems(1, true)
+                                end,
+                            },
+                        },
+                    },
+                    {
+                        text = _("Show file count on covers"),
+                        enabled_func = function()
+                            return not BookInfoManager:getSetting("folder_cover_disabled")
+                        end,
+                        checked_func = function()
+                            return BookInfoManager:getSetting("folder_cover_show_file_count")
+                        end,
+                        callback = function()
+                            BookInfoManager:toggleSetting("folder_cover_show_file_count")
+                            fc:updateItems(1, true)
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            local position = BookInfoManager:getSetting("folder_cover_file_count_position") or "bottom"
+                            return T(_("File count position: %1"), _(position))
+                        end,
+                        enabled_func = function()
+                            return not BookInfoManager:getSetting("folder_cover_disabled") and 
+                                   BookInfoManager:getSetting("folder_cover_show_file_count")
+                        end,
+                        sub_item_table = {
+                            {
+                                text = _("Top"),
+                                radio = true,
+                                checked_func = function()
+                                    return (BookInfoManager:getSetting("folder_cover_file_count_position") or "bottom") == "top"
+                                end,
+                                callback = function()
+                                    BookInfoManager:saveSetting("folder_cover_file_count_position", "top")
+                                    fc:updateItems(1, true)
+                                end,
+                            },
+                            {
+                                text = _("Middle"),
+                                radio = true,
+                                checked_func = function()
+                                    return (BookInfoManager:getSetting("folder_cover_file_count_position") or "bottom") == "middle"
+                                end,
+                                callback = function()
+                                    BookInfoManager:saveSetting("folder_cover_file_count_position", "middle")
+                                    fc:updateItems(1, true)
+                                end,
+                            },
+                            {
+                                text = _("Bottom"),
+                                radio = true,
+                                checked_func = function()
+                                    return (BookInfoManager:getSetting("folder_cover_file_count_position") or "bottom") == "bottom"
+                                end,
+                                callback = function()
+                                    BookInfoManager:saveSetting("folder_cover_file_count_position", "bottom")
+                                    fc:updateItems(1, true)
+                                end,
+                            },
+                        },
+                    },
+                },
+                separator = true,
+            },
+            {
+                text = _("Show latest visited indicator"),
+                checked_func = function()
+                    return BookInfoManager:getSetting("show_latest_visited_indicator")
+                end,
+                callback = function()
+                    BookInfoManager:toggleSetting("show_latest_visited_indicator")
+                    fc:updateItems(1, true)
                 end,
                 separator = true,
             },
@@ -594,7 +751,7 @@ function CoverBrowser.addFileDialogButtons(widget_id)
                         UIManager:close(menu.file_dialog)
                         menu:updateItems(1, true)
                     end,
-                },
+                }
             }
         end
     end)

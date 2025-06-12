@@ -22,13 +22,218 @@ local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local logger = require("logger")
-local util = require("util")
+local util = require("gettext")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 local getMenuText = require("ui/widget/menu").getMenuText
 
 local BookInfoManager = require("bookinfomanager")
+
+-- Folder cover detection and widget creation functionality
+local FolderCoverManager = {
+    cover_candidates = {"cover", "folder", ".cover", ".folder"},
+    cover_extensions = {".jpg", ".jpeg", ".png", ".webp", ".gif"},
+}
+
+function FolderCoverManager:findCover(dir_path)
+    if not dir_path or dir_path == "" or dir_path == ".." or dir_path:match("%.%.$") then
+        return nil
+    end
+    
+    dir_path = dir_path:gsub("[/\\]+$", "")
+    
+    -- Try exact matches with lowercase and uppercase extensions
+    for _, candidate in ipairs(self.cover_candidates) do 
+        for _, ext in ipairs(self.cover_extensions) do
+            local exact_path = dir_path .. "/" .. candidate .. ext
+            local f = io.open(exact_path, "rb")
+            if f then 
+                f:close()
+                return exact_path 
+            end
+            
+            local upper_path = dir_path .. "/" .. candidate .. ext:upper()
+            if upper_path ~= exact_path then
+                f = io.open(upper_path, "rb")
+                if f then 
+                    f:close()
+                    return upper_path 
+                end
+            end
+        end 
+    end
+    
+    return nil
+end
+
+function FolderCoverManager:createFolderCoverWidget(image_path, width, height, folder_name, file_count)
+    local margin = Screen:scaleBySize(5)
+    local border = Size.border.thick
+    local inner_width = width - (margin + border) * 2
+    local inner_height = height - (margin + border) * 2
+    
+    if inner_width <= 0 or inner_height <= 0 then
+        inner_width, inner_height = 50, 50
+    end
+
+    -- Create cover image with center cropping
+    local success, cover_image = pcall(function()
+        local temp_image = ImageWidget:new{ file = image_path, scale_factor = 1 }
+        temp_image:_render()
+        local orig_w = temp_image:getOriginalWidth()
+        local orig_h = temp_image:getOriginalHeight()
+        temp_image:free()
+        
+        local scale_to_fill = 0
+        if orig_w and orig_h then
+            local scale_x = inner_width / orig_w
+            local scale_y = inner_height / orig_h
+            scale_to_fill = math.max(scale_x, scale_y)
+        end
+        
+        return ImageWidget:new{
+            file = image_path,
+            width = inner_width,
+            height = inner_height,
+            scale_factor = scale_to_fill,
+            center_x_ratio = 0.5,
+            center_y_ratio = 0.5,
+        }
+    end)
+    
+    if not success or not cover_image then
+        return nil
+    end
+
+    local overlays = {}
+    
+    -- Create text overlays if enabled
+    if BookInfoManager:getSetting("folder_cover_show_folder_name") or 
+       BookInfoManager:getSetting("folder_cover_show_file_count") then
+        
+        local AlphaContainer = require("ui/widget/container/alphacontainer")
+        local TopContainer = require("ui/widget/container/topcontainer")
+        local BottomContainer = require("ui/widget/container/bottomcontainer")
+        
+        -- Helper function to create text overlay widget
+        local function createOverlayWidget(text, font_face, font_size, is_bold)
+            local text_widget = TextBoxWidget:new{
+                text = text,
+                face = Font:getFace(font_face, font_size),
+                width = inner_width,
+                alignment = "center",
+                bold = is_bold or false,
+                fgcolor = Blitbuffer.COLOR_BLACK,
+            }
+            
+            return AlphaContainer:new{
+                alpha = 0.8,
+                FrameContainer:new{
+                    bordersize = 0,
+                    margin = 0,
+                    padding = 2,
+                    background = Blitbuffer.COLOR_WHITE,
+                    radius = Screen:scaleBySize(3),
+                    CenterContainer:new{
+                        dimen = Geom:new{
+                            w = inner_width - Screen:scaleBySize(4),
+                            h = text_widget:getSize().h + (is_bold and 6 or 4),
+                        },
+                        text_widget,
+                    },
+                },
+            }
+        end
+        
+        -- Create text widgets for folder name and file count
+        local folder_name_widget, file_count_widget
+        
+        if BookInfoManager:getSetting("folder_cover_show_folder_name") and folder_name and folder_name ~= "" then
+            local display_name = folder_name
+            if display_name:match('/$') then
+                display_name = display_name:sub(1, -2)
+            end
+            display_name = BD.directory(display_name)
+            folder_name_widget = createOverlayWidget(display_name, "cfont", 18, true)
+        end
+        
+        if BookInfoManager:getSetting("folder_cover_show_file_count") and file_count then
+            file_count_widget = createOverlayWidget(tostring(file_count), "infont", 15, false)
+        end
+        
+        -- Get positions and group overlays
+        local folder_name_position = BookInfoManager:getSetting("folder_cover_folder_name_position") or "middle"
+        local file_count_position = BookInfoManager:getSetting("folder_cover_file_count_position") or "bottom"
+        
+        local position_groups = { top = {}, middle = {}, bottom = {} }
+        
+        if folder_name_widget then
+            table.insert(position_groups[folder_name_position], folder_name_widget)
+        end
+        if file_count_widget then
+            table.insert(position_groups[file_count_position], file_count_widget)
+        end
+        
+        -- Helper function to create positioned overlay container
+        local function createPositionedOverlay(widgets_group, position)
+            if #widgets_group == 0 then return nil end
+            
+            local container_widget = #widgets_group == 1 and widgets_group[1] or VerticalGroup:new(widgets_group)
+            
+            if position == "top" then
+                return TopContainer:new{
+                    dimen = Geom:new{w = inner_width, h = inner_height},
+                    container_widget,
+                }
+            elseif position == "bottom" then
+                return BottomContainer:new{
+                    dimen = Geom:new{w = inner_width, h = inner_height},
+                    container_widget,
+                }
+            else -- middle
+                return CenterContainer:new{
+                    dimen = Geom:new{w = inner_width, h = inner_height},
+                    container_widget,
+                }
+            end
+        end
+        
+        -- Create positioned overlays for each position group
+        for position, widgets_group in pairs(position_groups) do
+            local positioned_overlay = createPositionedOverlay(widgets_group, position)
+            if positioned_overlay then
+                table.insert(overlays, positioned_overlay)
+            end
+        end
+    end
+
+    -- Combine cover image with overlays
+    local content_parts = {
+        CenterContainer:new{
+            dimen = Geom:new{w = inner_width, h = inner_height},
+            cover_image,
+        }
+    }
+    
+    for _, overlay in ipairs(overlays) do
+        table.insert(content_parts, overlay)
+    end
+
+    return FrameContainer:new{
+        width = width,
+        height = height,
+        margin = margin,
+        padding = 0,
+        bordersize = border,
+        background = Blitbuffer.COLOR_WHITE,
+        radius = Screen:scaleBySize(10),
+        OverlapGroup:new{
+            dimen = Geom:new{w = inner_width, h = inner_height},
+            unpack(content_parts)
+        },
+    }
+end
 
 -- Here is the specific UI implementation for "mosaic" display modes
 -- (see covermenu.lua for the generic code)
@@ -413,69 +618,97 @@ function MosaicMenuItem:update()
 
     self.is_directory = not (self.entry.is_file or self.entry.file)
     if self.is_directory then
-        -- Directory : rounded corners
-        local margin = Screen:scaleBySize(5) -- make directories less wide
-        local padding = Screen:scaleBySize(5)
-        border_size = Size.border.thick -- make directories' borders larger
-        local dimen_in = Geom:new{
-            w = dimen.w - (margin + padding + border_size)*2,
-            h = dimen.h - (margin + padding + border_size)*2
-        }
-        local text = self.text
-        if text:match('/$') then -- remove /, more readable
-            text = text:sub(1, -2)
+        -- Check for folder cover image first (only if folder covers are enabled)
+        local folder_cover_path = nil
+        if not BookInfoManager:getSetting("folder_cover_disabled") then
+            folder_cover_path = FolderCoverManager:findCover(self.filepath)
         end
-        text = BD.directory(text)
-        local nbitems = TextBoxWidget:new{
-            text = self.mandatory,
-            face = Font:getFace("infont", 15),
-            width = dimen_in.w,
-            alignment = "center",
-        }
-        -- The directory name will be centered, with nbitems at bottom.
-        -- We could use 2*nbitems:getSize().h to keep that centering,
-        -- but using 3* will avoid getting the directory name stuck
-        -- to nbitems.
-        local available_height = dimen_in.h - 3 * nbitems:getSize().h
-        local dir_font_size = 20
-        local directory
-        while true do
-            if directory then
-                directory:free(true)
+        
+        if folder_cover_path and self.do_cover_image then
+            -- Create custom folder cover widget
+            local folder_name = BookInfoManager:getSetting("folder_cover_show_folder_name") and self.text or nil
+            local file_count = BookInfoManager:getSetting("folder_cover_show_file_count") and self.mandatory or nil
+            
+            widget = FolderCoverManager:createFolderCoverWidget(
+                folder_cover_path,
+                dimen.w,
+                dimen.h,
+                folder_name,
+                file_count
+            )
+            
+            if widget then
+                -- Let menu know it has some item with images
+                self.menu._has_cover_images = true
+                self._has_cover_image = true
             end
-            directory = TextBoxWidget:new{
-                text = text,
-                face = Font:getFace("cfont", dir_font_size),
+        end
+        
+        if not widget then
+            -- Fall back to default directory display
+            local margin = Screen:scaleBySize(5) -- make directories less wide
+            local padding = Screen:scaleBySize(5)
+            border_size = Size.border.thick -- make directories' borders larger
+            local dimen_in = Geom:new{
+                w = dimen.w - (margin + padding + border_size)*2,
+                h = dimen.h - (margin + padding + border_size)*2
+            }
+            local text = self.text
+            if text:match('/$') then -- remove /, more readable
+                text = text:sub(1, -2)
+            end
+            text = BD.directory(text)
+            local nbitems = TextBoxWidget:new{
+                text = self.mandatory,
+                face = Font:getFace("infont", 15),
                 width = dimen_in.w,
                 alignment = "center",
-                bold = true,
             }
-            if directory:getSize().h <= available_height then
-                break
+            -- The directory name will be centered, with nbitems at bottom.
+            -- We could use 2*nbitems:getSize().h to keep that centering,
+            -- but using 3* will avoid getting the directory name stuck
+            -- to nbitems.
+            local available_height = dimen_in.h - 3 * nbitems:getSize().h
+            local dir_font_size = 20
+            local directory
+            while true do
+                if directory then
+                    directory:free(true)
+                end
+                directory = TextBoxWidget:new{
+                    text = text,
+                    face = Font:getFace("cfont", dir_font_size),
+                    width = dimen_in.w,
+                    alignment = "center",
+                    bold = true,
+                }
+                if directory:getSize().h <= available_height then
+                    break
+                end
+                dir_font_size = dir_font_size - 1
+                if dir_font_size < 10 then -- don't go too low
+                    directory:free()
+                    directory.height = available_height
+                    directory.height_adjust = true
+                    directory.height_overflow_show_ellipsis = true
+                    directory:init()
+                    break
+                end
             end
-            dir_font_size = dir_font_size - 1
-            if dir_font_size < 10 then -- don't go too low
-                directory:free()
-                directory.height = available_height
-                directory.height_adjust = true
-                directory.height_overflow_show_ellipsis = true
-                directory:init()
-                break
-            end
+            widget = FrameContainer:new{
+                width = dimen.w,
+                height = dimen.h,
+                margin = margin,
+                padding = padding,
+                bordersize = border_size,
+                radius = Screen:scaleBySize(10),
+                OverlapGroup:new{
+                    dimen = dimen_in,
+                    CenterContainer:new{ dimen = dimen_in, directory},
+                    BottomContainer:new{ dimen = dimen_in, nbitems},
+                },
+            }
         end
-        widget = FrameContainer:new{
-            width = dimen.w,
-            height = dimen.h,
-            margin = margin,
-            padding = padding,
-            bordersize = border_size,
-            radius = Screen:scaleBySize(10),
-            OverlapGroup:new{
-                dimen = dimen_in,
-                CenterContainer:new{ dimen = dimen_in, directory},
-                BottomContainer:new{ dimen = dimen_in, nbitems},
-            },
-        }
     else -- file
         self.file_deleted = self.entry.dim -- entry with deleted file from History or selected file from FM
 
@@ -754,7 +987,12 @@ end
 
 -- As done in MenuItem
 function MosaicMenuItem:onFocus()
-    self._underline_container.color = Blitbuffer.COLOR_BLACK
+    -- Check if latest visited indicator should be shown
+    if BookInfoManager:getSetting("show_latest_visited_indicator") then
+        self._underline_container.color = Blitbuffer.COLOR_BLACK
+    else
+        self._underline_container.color = Blitbuffer.COLOR_WHITE
+    end
     return true
 end
 
