@@ -1452,8 +1452,8 @@ function DictQuickLookup:onLookupInputWord(hint)
             },
         },
     }
-    local presets = G_reader_settings:readSetting("dict_presets")
-    if presets and next(presets) then
+    local preset_names = Presets:getPresets(self.ui.dictionary.preset_config)
+    if preset_names and #preset_names > 0 then
         table.insert(buttons, 1, {
             {
                 text = _("One-time search with preset"),
@@ -1461,7 +1461,6 @@ function DictQuickLookup:onLookupInputWord(hint)
                     local text = self.input_dialog:getInputText()
                     if text == "" or text:match("^%s*$") then return end
                     local current_dict_state = self.ui.dictionary:buildPreset()
-                    local preset_names = Presets:getPresets("dict_presets")
                     local button_dialog, dialog_buttons = nil, {} -- CI won't like it if we call it buttons :( so dialog_buttons
                     for _, preset_name in ipairs(preset_names) do
                         table.insert(dialog_buttons, {
@@ -1469,13 +1468,13 @@ function DictQuickLookup:onLookupInputWord(hint)
                                 align = "left",
                                 text = preset_name,
                                 callback = function()
-                                    self.ui.dictionary:loadPreset(presets[preset_name], true)
+                                    self.ui.dictionary:loadPreset(self.ui.dictionary.preset_config.presets[preset_name], true)
                                     UIManager:close(button_dialog)
                                     UIManager:close(self.input_dialog)
                                     self.ui:handleEvent(Event:new("LookupWord", text, true, nil, nil, nil,
                                         function()
                                             -- Restore original preset _after_ lookup is complete
-                                            self.ui.dictionary:loadPreset(current_dict_state)
+                                            self.ui.dictionary:loadPreset(current_dict_state, true)
                                         end
                                     ))
                                 end

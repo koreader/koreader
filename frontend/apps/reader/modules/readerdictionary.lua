@@ -890,41 +890,39 @@ end
 
 function ReaderDictionary:onShowDictionaryLookup()
     local buttons = {}
-    local presets = G_reader_settings:readSetting("dict_presets")
-    if presets and next(presets) then
+    local preset_names = Presets:getPresets(self.preset_config)
+    if preset_names and #preset_names > 0 then
         table.insert(buttons, {
             {
                 text = _("One-time search with preset"),
                 callback = function()
                     local text = self.dictionary_lookup_dialog:getInputText()
                     if text == "" or text:match("^%s*$") then return end
-                    local current_state = self:buildPreset()
-                    local preset_names = Presets:getPresets("dict_presets")
-                    local buttons_preset = {}
-                    local dialog_preset
+                    local current_dict_state = self:buildPreset()
+                    local button_dialog, dialog_buttons = nil, {} -- CI won't like it if we call it buttons :( so dialog_buttons
                     for _, preset_name in ipairs(preset_names) do
-                        table.insert(buttons_preset, {
+                        table.insert(dialog_buttons, {
                             {
                                 align = "left",
                                 text = preset_name,
                                 callback = function()
-                                    self:loadPreset(presets[preset_name], true)
-                                    UIManager:close(dialog_preset)
+                                    self:loadPreset(self.preset_config.presets[preset_name], true)
+                                    UIManager:close(button_dialog)
                                     UIManager:close(self.dictionary_lookup_dialog)
                                     self:onLookupWord(text, true, nil, nil, nil,
                                         function()
-                                            self:loadPreset(current_state, true)
+                                            self:loadPreset(current_dict_state, true)
                                         end
                                     )
                                 end,
                             }
                         })
                     end
-                    dialog_preset = ButtonDialog:new{
-                        buttons = buttons_preset,
+                    button_dialog = ButtonDialog:new{
+                        buttons = dialog_buttons,
                         shrink_unneeded_width = true,
                     }
-                    UIManager:show(dialog_preset)
+                    UIManager:show(button_dialog)
                 end,
             }
         })
