@@ -170,13 +170,13 @@ function ReaderDictionary:init()
     -- Initialize preset configuration
     self.preset_config = {
         presets = G_reader_settings:readSetting("dict_presets", {}),
-        cycle_index = G_reader_settings:readSetting("dict_presets_cycle_index", 0),
+        cycle_index = G_reader_settings:readSetting("dict_presets_cycle_index"),
         dispatcher_name = "load_dictionary_preset",
-        save = function(config)
-            G_reader_settings:saveSetting("dict_presets", config.presets)
+        save = function(this)
+            G_reader_settings:saveSetting("dict_presets", this.presets)
         end,
-        saveCycleIndex = function(config)
-            G_reader_settings:saveSetting("dict_presets_cycle_index", config.cycle_index)
+        saveCycleIndex = function(this)
+            G_reader_settings:saveSetting("dict_presets_cycle_index", this.cycle_index)
         end,
     }
 end
@@ -1578,19 +1578,8 @@ function ReaderDictionary:loadPreset(preset, skip_notification)
     end
 end
 
-function ReaderDictionary:createPresetFromCurrentSettings(touchmenu_instance)
-    return Presets:createPresetFromCurrentSettings(
-        self.preset_config,                       -- configuration object
-        function() return self:buildPreset() end, -- buildPresetFunc
-        function()                                -- on_updated_callback
-            touchmenu_instance.item_table = self:genPresetMenuItemTable()
-            touchmenu_instance:updateItems()
-        end
-    )
-end
-
 function ReaderDictionary:genPresetMenuItemTable(touchmenu_instance)
-    return Presets:genPresetMenuItemTable( self.preset_config, _("Create new preset from enabled dictionaries"),
+    return Presets.genPresetMenuItemTable( self.preset_config, _("Create new preset from enabled dictionaries"),
         function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end, -- enabled_func
         function() return self:buildPreset() end,                                       -- buildPresetFunc
         function(preset) self:loadPreset(preset) end,                                   -- loadPresetFunc

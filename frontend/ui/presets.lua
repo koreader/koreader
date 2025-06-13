@@ -140,10 +140,10 @@ local _ = require("gettext")
 
 local Presets = {}
 
-function Presets:createPresetFromCurrentSettings(preset_config, buildPresetFunc, on_updated_callback)
-    self:editPresetName({},
+function Presets.createPresetFromCurrentSettings(preset_config, buildPresetFunc, on_updated_callback)
+    Presets.editPresetName({},
         function(entered_preset_name, dialog_instance)
-        if self:validateAndSavePreset(entered_preset_name, preset_config, buildPresetFunc()) then
+        if Presets.validateAndSavePreset(entered_preset_name, preset_config, buildPresetFunc()) then
             UIManager:close(dialog_instance)
             on_updated_callback()
         end
@@ -152,7 +152,7 @@ function Presets:createPresetFromCurrentSettings(preset_config, buildPresetFunc,
     end)
 end
 
-function Presets:editPresetName(options, on_confirm_callback)
+function Presets.editPresetName(options, on_confirm_callback)
     local input_dialog
     input_dialog = InputDialog:new{
         title = options.title or _("Enter preset name"),
@@ -181,7 +181,21 @@ function Presets:editPresetName(options, on_confirm_callback)
     input_dialog:onShowKeyboard()
 end
 
-function Presets:genPresetMenuItemTable(preset_config, text, enabled_func, buildPresetFunc, loadPresetFunc, on_updated_callback)
+function Presets.validateAndSavePreset(preset_name, preset_config, preset_data)
+    if preset_name == "" or preset_name:match("^%s*$") then return end
+    if preset_config.presets[preset_name] then
+        UIManager:show(InfoMessage:new{
+            text = T(_("A preset named '%1' already exists. Please choose a different name."), preset_name),
+            timeout = 2,
+        })
+        return false
+    end
+    preset_config.presets[preset_name] = preset_data
+    preset_config:save() -- Let the module handle its own saving
+    return true
+end
+
+function Presets.genPresetMenuItemTable(preset_config, text, enabled_func, buildPresetFunc, loadPresetFunc, on_updated_callback)
     local presets = preset_config.presets
     local items = {
         {
@@ -189,7 +203,7 @@ function Presets:genPresetMenuItemTable(preset_config, text, enabled_func, build
             keep_menu_open = true,
             enabled_func = enabled_func,
             callback = function()
-                self:createPresetFromCurrentSettings(preset_config, buildPresetFunc, on_updated_callback)
+                Presets.createPresetFromCurrentSettings(preset_config, buildPresetFunc, on_updated_callback)
             end,
             separator = true,
         },
@@ -252,7 +266,7 @@ function Presets:genPresetMenuItemTable(preset_config, text, enabled_func, build
                             {
                                 text = _("Rename"),
                                 callback = function()
-                                    self:editPresetName({
+                                    Presets.editPresetName({
                                         title = _("Enter new preset name"),
                                         initial_value = preset_name,
                                         confirm_button_text = _("Rename"),
@@ -261,7 +275,7 @@ function Presets:genPresetMenuItemTable(preset_config, text, enabled_func, build
                                             UIManager:close(dialog_instance) -- no change?, just close then
                                             return
                                         end
-                                        if self:validateAndSavePreset(new_name, preset_config, presets[preset_name]) then
+                                        if Presets.validateAndSavePreset(new_name, preset_config, presets[preset_name]) then
                                             presets[preset_name] = nil
                                             preset_config:save()
                                             local action_key = preset_config.dispatcher_name
@@ -287,21 +301,8 @@ function Presets:genPresetMenuItemTable(preset_config, text, enabled_func, build
     return items
 end
 
-function Presets:validateAndSavePreset(preset_name, preset_config, preset_data)
-    if preset_name == "" or preset_name:match("^%s*$") then return end
-    if preset_config.presets[preset_name] then
-        UIManager:show(InfoMessage:new{
-            text = T(_("A preset named '%1' already exists. Please choose a different name."), preset_name),
-            timeout = 2,
-        })
-        return false
-    end
-    preset_config.presets[preset_name] = preset_data
-    preset_config:save() -- Let the module handle its own saving
-    return true
-end
 
-function Presets:onLoadPreset(preset_config, preset_name, loadPresetFunc, show_notification)
+function Presets.onLoadPreset(preset_config, preset_name, loadPresetFunc, show_notification)
     local presets = preset_config.presets
     if presets and presets[preset_name] then
         loadPresetFunc(presets[preset_name])
@@ -312,14 +313,14 @@ function Presets:onLoadPreset(preset_config, preset_name, loadPresetFunc, show_n
     return true
 end
 
-function Presets:cycleThroughPresets(preset_config, loadPresetFunc, show_notification)
-    local preset_names = self:getPresets(preset_config)
+function Presets.cycleThroughPresets(preset_config, loadPresetFunc, show_notification)
+    local preset_names = Presets.getPresets(preset_config)
     if #preset_names == 0 then
         Notification:notify(_("No presets available"), Notification.SOURCE_ALWAYS_SHOW)
         return true -- we *must* return true here to prevent further event propagation, i.e multiple notifications
     end
     -- Get and increment index, wrap around if needed
-    local index = preset_config.cycle_index + 1
+    local index = (preset_config.cycle_index or 0) + 1
     if index > #preset_names then
         index = 1
     end
@@ -333,7 +334,7 @@ function Presets:cycleThroughPresets(preset_config, loadPresetFunc, show_notific
     return true
 end
 
-function Presets:getPresets(preset_config)
+function Presets.getPresets(preset_config)
     local presets = preset_config.presets
     local actions = {}
     if presets and next(presets) then
