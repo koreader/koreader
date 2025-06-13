@@ -1591,18 +1591,18 @@ function ReaderDictionary:genPresetMenuItemTable(touchmenu_instance)
 end
 
 function ReaderDictionary:onCycleDictionaryPresets()
-    return Presets:cycleThroughPresets(self.preset_config, function(preset) self:loadPreset(preset) end, true)
+    return Presets.cycleThroughPresets(self.preset_config, function(preset) self:loadPreset(preset) end, true)
 end
 
 function ReaderDictionary:onLoadDictionaryPreset(preset_name)
-    return Presets:onLoadPreset(self.preset_config, preset_name, function(preset) self:loadPreset(preset) end, true)
+    return Presets.onLoadPreset(self.preset_config, preset_name, function(preset) self:loadPreset(preset) end, true)
 end
 
 function ReaderDictionary.getPresets() -- for Dispatcher
     local dict_config = {
         presets = G_reader_settings:readSetting("dict_presets", {})
     }
-    return Presets:getPresets(dict_config)
+    return Presets.getPresets(dict_config)
 end
 
 return ReaderDictionary

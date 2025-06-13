@@ -7,14 +7,14 @@
 
         -- 1. Initialize preset configuration in your module's init() method:
             self.preset_config = {
-                presets = G_reader_settings:readSetting("my_module_presets", {}),                -- or custom storage
-                cycle_index = G_reader_settings:readSetting("my_module_presets_cycle_index", 0), -- optional, only needed if cycling through presets
-                dispatcher_name = "load_my_module_preset",                                       -- must match dispatcher.lua entry
-            save = function(config)                                                              -- Save presets to persistent storage
-                    G_reader_settings:saveSetting("my_module_presets", config.presets)
+                presets = G_reader_settings:readSetting("my_module_presets", {}),             -- or custom storage
+                cycle_index = G_reader_settings:readSetting("my_module_presets_cycle_index"), -- optional, only needed if cycling through presets
+                dispatcher_name = "load_my_module_preset",                                    -- must match dispatcher.lua entry
+                save = function(this)                                                         -- Save presets to persistent storage
+                    G_reader_settings:saveSetting("my_module_presets", this.presets)
                 end,
-                saveCycleIndex = function(config)
-                    G_reader_settings:saveSetting("my_module_presets_cycle_index", config.cycle_index)
+                saveCycleIndex = function(this)                                               -- Save cycle index to persistent storage
+                    G_reader_settings:saveSetting("my_module_presets_cycle_index", this.cycle_index)
                 end,
             }
 
@@ -39,7 +39,7 @@
 
         -- 3. Create menu items for presets:
             function MyModule:genPresetMenuItemTable(touchmenu_instance)
-                return Presets:genPresetMenuItemTable(
+                return Presets.genPresetMenuItemTable(
                     self.preset_config,                              -- preset configuration object
                     _("Create new preset from current settings"),    -- optional: custom text for UI menu
                     function() return self:hasValidSettings() end,   -- optional: function to enable/disable creating presets
@@ -52,21 +52,9 @@
                 )
             end
 
-        -- 4. Create a new preset from current settings (for UI):
-            function MyModule:createPresetFromCurrentSettings(touchmenu_instance)
-                return Presets:createPresetFromCurrentSettings(
-                    self.preset_config,
-                    function() return self:buildPreset() end,
-                    function()
-                        touchmenu_instance.item_table = self:genPresetMenuItemTable(touchmenu_instance)
-                        touchmenu_instance:updateItems()
-                    end
-                )
-            end
-
-        -- 5. Load a preset by name (for dispatcher/event handling):
+        -- 4. Load a preset by name (for dispatcher/event handling):
             function MyModule:onLoadMyModulePreset(preset_name)
-                return Presets:onLoadPreset(
+                return Presets.onLoadPreset(
                     self.preset_config,
                     preset_name,
                     function(preset) self:loadPreset(preset) end,
@@ -74,24 +62,24 @@
                 )
             end
 
-        -- 6. Cycle through presets (for dispatcher/event handling):
+        -- 5. Cycle through presets (for dispatcher/event handling):
             function MyModule:onCycleMyModulePresets()
-                return Presets:cycleThroughPresets(
+                return Presets.cycleThroughPresets(
                     self.preset_config,
                     function(preset) self:loadPreset(preset) end,
                     true  -- show notification
                 )
             end
 
-        -- 7. Get list of available presets (for dispatcher):
-            function MyModule.getPresets()
+        -- 6. Get list of available presets (for dispatcher):
+            function MyModule.getPresets() -- Note: This is a static method on MyModule
                 local config = {
                     presets = G_reader_settings:readSetting("my_module_presets", {})
                 }
-                return Presets:getPresets(config)
+                return Presets.getPresets(config)
             end
 
-        -- 8. Add to dispatcher.lua:
+        -- 7. Add to dispatcher.lua:
             load_my_module_preset = {
                 category = "string",
                 event = "LoadMyModulePreset",

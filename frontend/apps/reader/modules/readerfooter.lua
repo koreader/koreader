@@ -667,8 +667,8 @@ function ReaderFooter:init()
     self.preset_config = {
         presets = G_reader_settings:readSetting("footer_presets", {}),
         dispatcher_name = "load_footer_preset",
-        save = function(config)
-            G_reader_settings:saveSetting("footer_presets", config.presets)
+        save = function(this)
+            G_reader_settings:saveSetting("footer_presets", this.presets)
         end,
     }
 end
@@ -1981,14 +1981,14 @@ function ReaderFooter:loadPreset(preset)
 end
 
 function ReaderFooter:onLoadFooterPreset(preset_name)
-    return Presets:onLoadPreset(self.preset_config, preset_name, function(preset) self:loadPreset(preset) end, true)
+    return Presets.onLoadPreset(self.preset_config, preset_name, function(preset) self:loadPreset(preset) end, true)
 end
 
 function ReaderFooter.getPresets() -- for Dispatcher
     local footer_config = {
         presets = G_reader_settings:readSetting("footer_presets", {})
     }
-    return Presets:getPresets(footer_config)
+    return Presets.getPresets(footer_config)
 end
 
 function ReaderFooter:addAdditionalFooterContent(content_func)
