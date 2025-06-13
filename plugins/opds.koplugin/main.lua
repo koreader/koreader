@@ -125,10 +125,17 @@ function OPDS:getOPDSDownloadMenu()
 end
 
 function OPDS:checkSyncDownload(force)
+    if not G_reader_settings:readSetting("opds_sync_dir") then
+        self.setSyncDir()
+        return
+    end
+    self:checkServerList(force)
+end
+
+function OPDS:checkServerList(force)
     for _, item in ipairs(self.servers) do
         if item.sync then
             local last_download = OPDSBrowser:syncDownload(item, force)
-            print(last_download)
             if last_download then
                 logger.dbg("Updating opds last download for server " .. item.title)
                 self:appendFieldToCatalog(item, "last_download", last_download)
@@ -142,7 +149,7 @@ function OPDS:appendFieldToCatalog(item, new_name, new_value)
     self.updated = true
 end
 
-function OPDS:setSyncDir()
+function OPDS.setSyncDir()
     local force_chooser_dir
     if Device:isAndroid() then
         force_chooser_dir = Device.home_dir
