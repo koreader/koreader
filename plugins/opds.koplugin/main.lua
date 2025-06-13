@@ -127,21 +127,12 @@ function OPDS:checkSyncDownload(force)
         self.setSyncDir()
         return
     end
-    for i, item in ipairs(self.servers) do
+    for _, item in ipairs(self.servers) do
         if item.sync then
             local last_download = OPDSBrowser:syncDownload(item, force)
             if last_download then
                 logger.dbg("Updating opds last download for server " .. item.title)
                 self:updateFieldInCatalog(item, "last_download", last_download)
-            else
-                local top = UIManager:getTopmostVisibleWidget()
-                -- current info message logging connection error -- still need to sync
-                if not top.text then
-                    UIManager:show(InfoMessage:new{
-                        text = _("Already up to date. Nothing to do."),
-                        timeout = 2,
-                    })
-                end
             end
         end
     end
