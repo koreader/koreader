@@ -12,7 +12,6 @@ local T = require("ffi/util").template
 
 local logger = require("logger")
 local Device = require("device")
-local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 
 local OPDS = WidgetContainer:extend{
@@ -90,7 +89,6 @@ end
 
 function OPDS:getOPDSDownloadMenu()
     return {
-        -- TODO add feature to do background sync
         {
             text = _("Perform sync"),
             callback = function()

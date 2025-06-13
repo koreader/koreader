@@ -121,7 +121,7 @@ function OPDSBrowser:addEditCatalog(item)
         title = _("Add OPDS catalog")
     end
 
-    local dialog, check_button_raw_names
+    local dialog, check_button_raw_names, check_button_sync_catalog
     dialog = MultiInputDialog:new{
         title = title,
         fields = fields,
