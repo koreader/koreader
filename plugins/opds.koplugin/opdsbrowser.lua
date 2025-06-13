@@ -1161,10 +1161,9 @@ function OPDSBrowser:downloadDownloadList()
 end
 
 function OPDSBrowser:syncDownload(server, force)
-    local table = {}
     local new_last_download = nil
 
-    table = self:getSyncDownloadList(server)
+    local table = self:getSyncDownloadList(server)
     for i, entry in ipairs(table) do
         -- First entry in table is the newest
         -- If already downloaded, return
