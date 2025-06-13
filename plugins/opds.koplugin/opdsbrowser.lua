@@ -201,12 +201,12 @@ end
 -- Saves catalog properties from input dialog
 function OPDSBrowser:editCatalogFromInput(fields, item, no_refresh)
     local new_server = {
-        title      = fields[1],
-        url        = fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2],
-        username   = fields[3] ~= "" and fields[3] or nil,
-        password   = fields[4] ~= "" and fields[4] or nil,
-        raw_names  = fields[5],
-        sync       = fields[6],
+        title     = fields[1],
+        url       = fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2],
+        username  = fields[3] ~= "" and fields[3] or nil,
+        password  = fields[4] ~= "" and fields[4] or nil,
+        raw_names = fields[5],
+        sync      = fields[6],
     }
     local new_item = buildRootEntry(new_server)
     local new_idx, itemnumber
