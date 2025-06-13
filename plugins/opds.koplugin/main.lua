@@ -12,6 +12,8 @@ local T = require("ffi/util").template
 
 local logger = require("logger")
 local Device = require("device")
+local UIManager = require("ui/uimanager")
+local InfoMessage = require("ui/widget/infomessage")
 
 local OPDS = WidgetContainer:extend{
     name = "opds",
@@ -126,6 +128,9 @@ end
 
 function OPDS:checkSyncDownload(force)
     if not G_reader_settings:readSetting("opds_sync_dir") then
+        UIManager:show(InfoMessage:new{
+            text = _("Please select a directory for sync downloads first"),
+        })
         self.setSyncDir()
         return
     end
