@@ -1,18 +1,19 @@
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local Device = require("device")
 local Dispatcher = require("dispatcher")
+local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
+local NetworkMgr = require("ui/network/manager")
 local OPDSBrowser = require("opdsbrowser")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local logger = require("logger")
-local Device = require("device")
-local InfoMessage = require("ui/widget/infomessage")
 
 local OPDS = WidgetContainer:extend{
     name = "opds",
@@ -90,9 +91,11 @@ end
 function OPDS:getOPDSDownloadMenu()
     return {
         {
-            text = _("Perform sync"),
+            text = _("Synchronize now"),
             callback = function()
-                self:checkSyncDownload(false)
+                NetworkMgr:runWhenConnected(function()
+                    self:checkSyncDownload(false)
+                end)
             end,
         },
         {
@@ -103,7 +106,9 @@ function OPDS:getOPDSDownloadMenu()
                     icon = "notice-warning",
                     ok_text = "Force sync",
                     ok_callback = function()
-                        self:checkSyncDownload(true)
+                        NetworkMgr:runWhenConnected(function()
+                            self:checkSyncDownload(true)
+                        end)
                     end
                 })
             end,
@@ -111,7 +116,7 @@ function OPDS:getOPDSDownloadMenu()
         {
             text = _("Set OPDS sync directory"),
             callback = function()
-                self:setSyncDir()
+                self:setSyncDir(false)
             end,
         },
     }

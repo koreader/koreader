@@ -68,14 +68,14 @@ end
 
 local function buildRootEntry(server)
     return {
-        text         = server.title,
-        mandatory    = server.username and "\u{f2c0}",
-        url          = server.url,
-        username     = server.username,
-        password     = server.password,
-        raw_names    = server.raw_names, -- use server raw filenames for download
-        searchable   = server.url and server.url:match("%%s") and true or false,
-        sync         = server.sync,
+        text       = server.title,
+        mandatory  = server.username and "\u{f2c0}",
+        url        = server.url,
+        username   = server.username,
+        password   = server.password,
+        raw_names  = server.raw_names, -- use server raw filenames for download
+        searchable = server.url and server.url:match("%%s") and true or false,
+        sync       = server.sync,
     }
 end
 
@@ -201,12 +201,12 @@ end
 -- Saves catalog properties from input dialog
 function OPDSBrowser:editCatalogFromInput(fields, item, no_refresh)
     local new_server = {
-        title        = fields[1],
-        url          = fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2],
-        username     = fields[3] ~= "" and fields[3] or nil,
-        password     = fields[4] ~= "" and fields[4] or nil,
-        raw_names    = fields[5],
-        sync         = fields[6],
+        title      = fields[1],
+        url        = fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2],
+        username   = fields[3] ~= "" and fields[3] or nil,
+        password   = fields[4] ~= "" and fields[4] or nil,
+        raw_names  = fields[5],
+        sync       = fields[6],
     }
     local new_item = buildRootEntry(new_server)
     local new_idx, itemnumber
@@ -1162,34 +1162,42 @@ end
 
 function OPDSBrowser:syncDownload(server, force)
     local new_last_download = nil
-
     local table = self:getSyncDownloadList(server)
+
     for i, entry in ipairs(table) do
         -- First entry in table is the newest
         -- If already downloaded, return
-        for _, link in ipairs(entry.acquisitions) do
+        for j, link in ipairs(entry.acquisitions) do
             if link.href == server.last_download and not force then
                 return new_last_download
             end
-            if i == 1 then
+            -- Only save first link in case of several file types
+            if i == 1 and j == 1 then
                 new_last_download = link.href
             end
-            local filetype = util.getFileNameSuffix(link.href)
-            if not DocumentRegistry:hasProvider("dummy." .. filetype) then
-                filetype = nil
-            end
-            if not filetype and DocumentRegistry:hasProvider(nil, link.type) then
-                filetype = DocumentRegistry:mimeToExt(link.type)
-            end
-            logger.dbg("Filetype for sync download is", filetype)
-            local download_path = self:getLocalDownloadPath(entry.title, filetype, link.href, true)
-            NetworkMgr:runWhenConnected(function()
+            -- Don't want kepub
+            if not util.stringEndsWith(link.href, "/kepub/") then
+                local filetype = self.getFiletype(link)
+                logger.dbg("Filetype for sync download is", filetype)
+                local download_path = self:getLocalDownloadPath(entry.title, filetype, link.href, true)
                 OPDSBrowser:checkDownloadFile(download_path, link.href, server.username, server.password, nil, true, force)
-            end)
+            end
         end
     end
     return new_last_download
 end
+
+function OPDSBrowser.getFiletype(link)
+    local filetype = util.getFileNameSuffix(link.href)
+    if not DocumentRegistry:hasProvider("dummy." .. filetype) then
+        filetype = nil
+    end
+    if not filetype and DocumentRegistry:hasProvider(nil, link.type) then
+        filetype = DocumentRegistry:mimeToExt(link.type)
+    end
+    return filetype
+end
+
 
 function OPDSBrowser:getSyncDownloadList(server)
     self.root_catalog_password  = server.password
