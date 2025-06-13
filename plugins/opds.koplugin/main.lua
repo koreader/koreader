@@ -90,15 +90,7 @@ end
 
 function OPDS:getOPDSDownloadMenu()
     return {
-        {
-            text = _("OPDS sync"),
-            checked_func = function()
-                return G_reader_settings:isTrue("opds_sync")
-            end,
-            callback = function()
-                G_reader_settings:toggle("opds_sync")
-            end,
-        },
+        -- TODO add feature to do background sync
         {
             text = _("Perform sync"),
             callback = function()
@@ -110,6 +102,7 @@ function OPDS:getOPDSDownloadMenu()
             callback = function()
                 UIManager:show(ConfirmBox: new{
                     text = "Are you sure you want to force sync? This may overwrite existing data.",
+                    icon = "notice-warning",
                     ok_text = "Force sync",
                     ok_callback = function()
                         self:checkSyncDownload(true)
@@ -134,22 +127,27 @@ function OPDS:checkSyncDownload(force)
         self.setSyncDir()
         return
     end
-    self:checkServerList(force)
-end
-
-function OPDS:checkServerList(force)
-    for _, item in ipairs(self.servers) do
+    for i, item in ipairs(self.servers) do
         if item.sync then
             local last_download = OPDSBrowser:syncDownload(item, force)
             if last_download then
                 logger.dbg("Updating opds last download for server " .. item.title)
-                self:appendFieldToCatalog(item, "last_download", last_download)
+                self:updateFieldInCatalog(item, "last_download", last_download)
+            else
+                local top = UIManager:getTopmostVisibleWidget()
+                -- current info message logging connection error -- still need to sync
+                if not top.text then
+                    UIManager:show(InfoMessage:new{
+                        text = _("Already up to date. Nothing to do."),
+                        timeout = 2,
+                    })
+                end
             end
         end
     end
 end
 
-function OPDS:appendFieldToCatalog(item, new_name, new_value)
+function OPDS:updateFieldInCatalog(item, new_name, new_value)
     item[new_name] = new_value
     self.updated = true
 end
