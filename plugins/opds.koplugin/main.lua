@@ -1,14 +1,19 @@
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local Device = require("device")
 local Dispatcher = require("dispatcher")
+local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
+local NetworkMgr = require("ui/network/manager")
 local OPDSBrowser = require("opdsbrowser")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
+
 
 local OPDS = WidgetContainer:extend{
     name = "opds",
@@ -64,12 +69,95 @@ end
 function OPDS:addToMainMenu(menu_items)
     if not self.ui.document then -- FileManager menu only
         menu_items.opds = {
-            text = _("OPDS catalog"),
-            callback = function()
-                self:onShowOPDSCatalog()
-            end,
+            text = _("OPDS"),
+            sub_item_table = {
+                {
+                    text = _("Catalogs"),
+                    keep_menu_open = true,
+                    callback = function()
+                        self:onShowOPDSCatalog()
+                    end,
+                },
+                {
+                    text = _("Sync"),
+                    keep_menu_open = true,
+                    sub_item_table = self:getOPDSDownloadMenu(),
+                },
+            },
         }
     end
+end
+
+function OPDS:getOPDSDownloadMenu()
+    return {
+        {
+            text = _("Synchronize now"),
+            callback = function()
+                NetworkMgr:runWhenConnected(function()
+                    self:checkSyncDownload(false)
+                end)
+            end,
+        },
+        {
+            text = _("Force sync"),
+            callback = function()
+                UIManager:show(ConfirmBox: new{
+                    text = "Are you sure you want to force sync? This may overwrite existing data.",
+                    icon = "notice-warning",
+                    ok_text = "Force sync",
+                    ok_callback = function()
+                        NetworkMgr:runWhenConnected(function()
+                            self:checkSyncDownload(true)
+                        end)
+                    end
+                })
+            end,
+        },
+        {
+            text = _("Set OPDS sync directory"),
+            callback = function()
+                self:setSyncDir(false)
+            end,
+        },
+    }
+end
+
+function OPDS:checkSyncDownload(force)
+    if not G_reader_settings:readSetting("opds_sync_dir") then
+        UIManager:show(InfoMessage:new{
+            text = _("Please select a directory for sync downloads first"),
+        })
+        self.setSyncDir()
+        return
+    end
+    for _, item in ipairs(self.servers) do
+        if item.sync then
+            local last_download = OPDSBrowser:syncDownload(item, force)
+            if last_download then
+                logger.dbg("Updating opds last download for server " .. item.title)
+                self:updateFieldInCatalog(item, "last_download", last_download)
+            end
+        end
+    end
+end
+
+function OPDS:updateFieldInCatalog(item, new_name, new_value)
+    item[new_name] = new_value
+    self.updated = true
+end
+
+function OPDS.setSyncDir()
+    local force_chooser_dir
+    if Device:isAndroid() then
+        force_chooser_dir = Device.home_dir
+    end
+
+    require("ui/downloadmgr"):new{
+        onConfirm = function(inbox)
+            logger.info("set opds sync directory", inbox)
+            G_reader_settings:saveSetting("opds_sync_dir", inbox)
+        end,
+    }:chooseDir(force_chooser_dir)
 end
 
 function OPDS:onShowOPDSCatalog()

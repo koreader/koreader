@@ -75,6 +75,7 @@ local function buildRootEntry(server)
         password   = server.password,
         raw_names  = server.raw_names, -- use server raw filenames for download
         searchable = server.url and server.url:match("%%s") and true or false,
+        sync       = server.sync,
     }
 end
 
@@ -120,7 +121,7 @@ function OPDSBrowser:addEditCatalog(item)
         title = _("Add OPDS catalog")
     end
 
-    local dialog, check_button_raw_names
+    local dialog, check_button_raw_names, check_button_sync_catalog
     dialog = MultiInputDialog:new{
         title = title,
         fields = fields,
@@ -138,6 +139,7 @@ function OPDSBrowser:addEditCatalog(item)
                     callback = function()
                         local new_fields = dialog:getFields()
                         new_fields[5] = check_button_raw_names.checked or nil
+                        new_fields[6] = check_button_sync_catalog.checked or nil
                         self:editCatalogFromInput(new_fields, item)
                         UIManager:close(dialog)
                     end,
@@ -150,7 +152,13 @@ function OPDSBrowser:addEditCatalog(item)
         checked = item and item.raw_names,
         parent = dialog,
     }
+    check_button_sync_catalog = CheckButton:new{
+        text = _("Sync catalog"),
+        checked = item and item.sync,
+        parent = dialog,
+    }
     dialog:addWidget(check_button_raw_names)
+    dialog:addWidget(check_button_sync_catalog)
     UIManager:show(dialog)
     dialog:onShowKeyboard()
 end
@@ -198,6 +206,7 @@ function OPDSBrowser:editCatalogFromInput(fields, item, no_refresh)
         username  = fields[3] ~= "" and fields[3] or nil,
         password  = fields[4] ~= "" and fields[4] or nil,
         raw_names = fields[5],
+        sync      = fields[6],
     }
     local new_item = buildRootEntry(new_server)
     local new_idx, itemnumber
@@ -332,7 +341,7 @@ function OPDSBrowser:getSearchTemplate(osd_url)
 end
 
 -- Generates menu items from the fetched list of catalog entries
-function OPDSBrowser:genItemTableFromURL(item_url)
+function OPDSBrowser:genItemTableFromURL(item_url, sync)
     local ok, catalog = pcall(self.parseFeed, self, item_url)
     if not ok then
         logger.info("Cannot get catalog info from", item_url, catalog)
@@ -341,10 +350,10 @@ function OPDSBrowser:genItemTableFromURL(item_url)
         })
         catalog = nil
     end
-    return self:genItemTableFromCatalog(catalog, item_url)
+    return self:genItemTableFromCatalog(catalog, item_url, sync)
 end
 
-function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
+function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, sync)
     local item_table = {}
     if not catalog then
         return item_table
@@ -356,41 +365,43 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
         return url.absolute(item_url, href)
     end
 
-    local has_opensearch = false
-    local hrefs = {}
-    if feed.link then
-        for __, link in ipairs(feed.link) do
-            if link.type ~= nil then
-                if link.type:find(self.catalog_type) then
-                    if link.rel and link.href then
-                        hrefs[link.rel] = build_href(link.href)
+    if not sync then
+        local has_opensearch = false
+        local hrefs = {}
+        if feed.link then
+            for __, link in ipairs(feed.link) do
+                if link.type ~= nil then
+                    if link.type:find(self.catalog_type) then
+                        if link.rel and link.href then
+                            hrefs[link.rel] = build_href(link.href)
+                        end
                     end
-                end
-                -- OpenSearch
-                if link.type:find(self.search_type) then
-                    if link.href then
-                        table.insert(item_table, { -- the first item in each subcatalog
-                            text       = "\u{f002} " .. _("Search"), -- append SEARCH icon
-                            url        = build_href(self:getSearchTemplate(build_href(link.href))),
-                            searchable = true,
-                        })
-                        has_opensearch = true
+                    -- OpenSearch
+                    if link.type:find(self.search_type) then
+                        if link.href then
+                            table.insert(item_table, { -- the first item in each subcatalog
+                                text       = "\u{f002} " .. _("Search"), -- append SEARCH icon
+                                url        = build_href(self:getSearchTemplate(build_href(link.href))),
+                                searchable = true,
+                            })
+                            has_opensearch = true
+                        end
                     end
-                end
-                -- Calibre search (also matches the actual template for OpenSearch!)
-                if link.type:find(self.search_template_type) and link.rel and link.rel:find("search") then
-                    if link.href and not has_opensearch then
-                        table.insert(item_table, {
-                            text       = "\u{f002} " .. _("Search"),
-                            url        = build_href(link.href:gsub("{searchTerms}", "%%s")),
-                            searchable = true,
-                        })
+                    -- Calibre search (also matches the actual template for OpenSearch!)
+                    if link.type:find(self.search_template_type) and link.rel and link.rel:find("search") then
+                        if link.href and not has_opensearch then
+                            table.insert(item_table, {
+                                text       = "\u{f002} " .. _("Search"),
+                                url        = build_href(link.href:gsub("{searchTerms}", "%%s")),
+                                searchable = true,
+                            })
+                        end
                     end
                 end
             end
         end
+        item_table.hrefs = hrefs
     end
-    item_table.hrefs = hrefs
 
     for __, entry in ipairs(feed.entry or {}) do
         local item = {}
@@ -505,7 +516,7 @@ end
 
 -- Requests and shows updated list of catalog entries
 function OPDSBrowser:updateCatalog(item_url, paths_updated)
-    local menu_table = self:genItemTableFromURL(item_url)
+    local menu_table = self:genItemTableFromURL(item_url, false)
     if #menu_table > 0 then
         if not paths_updated then
             table.insert(self.paths, {
@@ -526,7 +537,7 @@ end
 
 -- Requests and adds more catalog entries to fill out the page
 function OPDSBrowser:appendCatalog(item_url)
-    local menu_table = self:genItemTableFromURL(item_url)
+    local menu_table = self:genItemTableFromURL(item_url, false)
     if #menu_table > 0 then
         for _, item in ipairs(menu_table) do
             -- Don't append multiple search entries
@@ -649,13 +660,13 @@ function OPDSBrowser:showDownloads(item)
                     text = text .. "\u{2B07}", -- append DOWNWARDS BLACK ARROW
                     callback = function()
                         UIManager:close(self.download_dialog)
-                        local local_path = self:getLocalDownloadPath(filename, filetype, acquisition.href)
-                        self:checkDownloadFile(local_path, acquisition.href, self.root_catalog_username, self.root_catalog_password, self.file_downloaded_callback)
+                        local local_path = self:getLocalDownloadPath(filename, filetype, acquisition.href, false)
+                        self:checkDownloadFile(local_path, acquisition.href, self.root_catalog_username, self.root_catalog_password, self.file_downloaded_callback, false, false)
                     end,
                     hold_callback = function()
                         UIManager:close(self.download_dialog)
                         table.insert(self.downloads, {
-                            file     = self:getLocalDownloadPath(filename, filetype, acquisition.href),
+                            file     = self:getLocalDownloadPath(filename, filetype, acquisition.href, false),
                             url      = acquisition.href,
                             info     = type(item.content) == "string" and util.htmlToPlainTextIfHtml(item.content) or "",
                             catalog  = self.root_catalog_title,
@@ -700,7 +711,7 @@ function OPDSBrowser:showDownloads(item)
                         G_reader_settings:saveSetting("download_dir", path)
                         self.download_dialog:setTitle(createTitle(path, filename))
                     end,
-                }:chooseDir(self.getCurrentDownloadDir())
+                }:chooseDir(self.getCurrentDownloadDir(false))
             end,
         },
         {
@@ -729,7 +740,7 @@ function OPDSBrowser:showDownloads(item)
                                         filename = filename_orig
                                     end
                                     UIManager:close(dialog)
-                                    self.download_dialog:setTitle(createTitle(self.getCurrentDownloadDir(), filename))
+                                    self.download_dialog:setTitle(createTitle(self.getCurrentDownloadDir(false), filename))
                                 end,
                             },
                         }
@@ -765,19 +776,23 @@ function OPDSBrowser:showDownloads(item)
     })
 
     self.download_dialog = ButtonDialog:new{
-        title = createTitle(self.getCurrentDownloadDir(), filename),
+        title = createTitle(self.getCurrentDownloadDir(false), filename),
         buttons = buttons,
     }
     UIManager:show(self.download_dialog)
 end
 
 -- Returns user selected or last opened folder
-function OPDSBrowser.getCurrentDownloadDir()
-    return G_reader_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+function OPDSBrowser.getCurrentDownloadDir(sync)
+    if sync then
+        return G_reader_settings:readSetting("opds_sync_dir")
+    else
+        return G_reader_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+    end
 end
 
-function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url)
-    local download_dir = OPDSBrowser.getCurrentDownloadDir()
+function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url, sync)
+    local download_dir = OPDSBrowser.getCurrentDownloadDir(sync)
     filename = filename and filename .. "." .. filetype:lower() or self:getServerFileName(remote_url)
     filename = util.getSafeFilename(filename, download_dir)
     filename = (download_dir ~= "/" and download_dir or "") .. '/' .. filename
@@ -785,7 +800,7 @@ function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url)
 end
 
 -- Downloads a book (with "File already exists" dialog)
-function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, password, caller_callback)
+function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, password, caller_callback, sync, force_sync)
     local function download()
         UIManager:scheduleIn(1, function()
             self:downloadFile(local_path, remote_url, username, password, caller_callback)
@@ -796,13 +811,21 @@ function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, passwor
         })
     end
     if lfs.attributes(local_path) then
-        UIManager:show(ConfirmBox:new{
-            text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filepath(local_path)),
-            ok_text = _("Overwrite"),
-            ok_callback = function()
-                download()
-            end,
-        })
+        if not sync then
+            UIManager:show(ConfirmBox:new{
+                text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filepath(local_path)),
+                ok_text = _("Overwrite"),
+                ok_callback = function()
+                    download()
+                end,
+            })
+        elseif not force_sync then
+            local file_name, file_extension = util.splitFileNameSuffix(local_path)
+            local_path = file_name .. "_1." .. file_extension
+            download()
+        else
+            download()
+        end
     else
         download()
     end
@@ -1029,7 +1052,7 @@ function OPDSBrowser:showDownloadListItemDialog(item)
                         self._manager.file_downloaded_callback(local_path)
                     end
                     NetworkMgr:runWhenConnected(function()
-                        self._manager:checkDownloadFile(dl_item.file, dl_item.url, dl_item.username, dl_item.password, file_downloaded_callback)
+                        self._manager:checkDownloadFile(dl_item.file, dl_item.url, dl_item.username, dl_item.password, file_downloaded_callback, false, false)
                     end)
                 end,
             },
@@ -1135,6 +1158,53 @@ function OPDSBrowser:downloadDownloadList()
         self._manager.updated = true
         UIManager:show(InfoMessage:new{ text = T(N_("1 book downloaded", "%1 books downloaded", dl_count), dl_count) })
     end
+end
+
+function OPDSBrowser:syncDownload(server, force)
+    local new_last_download = nil
+    local table = self:getSyncDownloadList(server)
+
+    for i, entry in ipairs(table) do
+        -- First entry in table is the newest
+        -- If already downloaded, return
+        for j, link in ipairs(entry.acquisitions) do
+            if link.href == server.last_download and not force then
+                return new_last_download
+            end
+            -- Only save first link in case of several file types
+            if i == 1 and j == 1 then
+                new_last_download = link.href
+            end
+            -- Don't want kepub
+            if not util.stringEndsWith(link.href, "/kepub/") then
+                local filetype = self.getFiletype(link)
+                logger.dbg("Filetype for sync download is", filetype)
+                local download_path = self:getLocalDownloadPath(entry.title, filetype, link.href, true)
+                OPDSBrowser:checkDownloadFile(download_path, link.href, server.username, server.password, nil, true, force)
+            end
+        end
+    end
+    return new_last_download
+end
+
+function OPDSBrowser.getFiletype(link)
+    local filetype = util.getFileNameSuffix(link.href)
+    if not DocumentRegistry:hasProvider("dummy." .. filetype) then
+        filetype = nil
+    end
+    if not filetype and DocumentRegistry:hasProvider(nil, link.type) then
+        filetype = DocumentRegistry:mimeToExt(link.type)
+    end
+    return filetype
+end
+
+
+function OPDSBrowser:getSyncDownloadList(server)
+    self.root_catalog_password  = server.password
+    self.root_catalog_raw_names = server.raw_names
+    self.root_catalog_username  = server.username
+    self.root_catalog_title     = server.title
+    return self:genItemTableFromURL(server.url, true)
 end
 
 return OPDSBrowser
