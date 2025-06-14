@@ -17,6 +17,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
@@ -80,6 +81,9 @@ function SkimToWidget:init()
     self.curr_page = self.ui:getCurrentPage()
     self.page_count = self.ui.document:getPageCount()
 
+    -- Determine if we need to invert the button functionality and labels
+    local invert_buttons = self.ui.view:shouldInvertBiDiLayoutMirroring()
+
     self.progress_bar = ProgressWidget:new{
         width = inner_width,
         height = progress_bar_height,
@@ -89,6 +93,7 @@ function SkimToWidget:init()
         last = self.page_count,
         alt = self.ui.document.flows,
         initial_pos_marker = true,
+        invert_direction = invert_buttons,
     }
 
     -- Bottom row buttons
@@ -176,13 +181,19 @@ function SkimToWidget:init()
     }
 
     -- Top row buttons
-    local chapter_next_text = "  ▷▏"
-    local chapter_prev_text = "▕◁  "
-    local bookmark_next_text = "\u{F097}\u{202F}▷"
-    local bookmark_prev_text = "◁\u{202F}\u{F097}"
+    local chapter_prev_text = "\u{2595}\u{25C1}\u{2002}"
+    local chapter_next_text = "\u{2002}\u{25B7}\u{258F}"
+    local bookmark_prev_text = "\u{F097}\u{25C1}"
+    local bookmark_next_text = "\u{25B7}\u{F097}"
     local bookmark_enabled_text = "\u{F02E}"
     local bookmark_disabled_text = "\u{F097}"
     if BD.mirroredUILayout() then
+        chapter_prev_text = BD.ltr(chapter_next_text)
+        -- (We need this trick to keep BiDi from reordering chapter_next_text's leading space in RTL)
+        chapter_next_text = "\u{2002}" .. BD.ltr("\u{2595}\u{25C1}")
+        bookmark_next_text, bookmark_prev_text = BD.ltr(bookmark_prev_text), BD.ltr(bookmark_next_text)
+    end
+    if invert_buttons then
         chapter_next_text, chapter_prev_text = chapter_prev_text, chapter_next_text
         bookmark_next_text, bookmark_prev_text = bookmark_prev_text, bookmark_next_text
     end
@@ -302,6 +313,10 @@ function SkimToWidget:init()
             button_plus_ten,
         }
         radius = Size.radius.window
+        if invert_buttons then
+            util.arrayReverse(top_buttons_row)
+            util.arrayReverse(bottom_buttons_row)
+        end
     else
         top_row_span = VerticalSpan:new{ width = Size.padding.default }
         top_buttons_row = HorizontalGroup:new{
@@ -328,6 +343,9 @@ function SkimToWidget:init()
             small_button_span,
             button_plus,
         }
+        if invert_buttons then
+            util.arrayReverse(top_buttons_row)
+        end
         if skim_dialog_position == "top" then
             bottom_row_span, bottom_buttons_row = top_row_span, top_buttons_row
             top_buttons_row = VerticalSpan:new{ width = 0 }
@@ -374,6 +392,15 @@ function SkimToWidget:init()
                 { button_chapter_prev, button_chapter_next, button_bookmark_prev, button_bookmark_next, self.button_bookmark_toggle,
                   self.current_page_text, button_orig_page, button_minus_ten, button_plus_ten, button_minus, button_plus },
             }
+        end
+        -- Invert D-Pad navigation layout to match visual button order
+        if invert_buttons then
+            if full_mode then
+                util.arrayReverse(self.layout[1])
+                util.arrayReverse(self.layout[2])
+            else
+                util.arrayReverse(self.layout[1])
+            end
         end
         self:moveFocusTo(1, 1)
     end
