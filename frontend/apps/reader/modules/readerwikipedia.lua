@@ -260,32 +260,40 @@ You can choose an existing folder, or use a default folder named "Wikipedia" in 
                 separator = true,
             },
             {
-                text = _("Enable Wikipedia history"),
+                text = _("Wikipedia lookup history"),
                 checked_func = function()
                     return not self.disable_history
                 end,
-                callback = function()
-                    self.disable_history = not self.disable_history
-                    G_reader_settings:saveSetting("wikipedia_disable_history", self.disable_history)
-                end,
-            },
-            {
-                text = _("Clean Wikipedia history"),
-                enabled_func = function()
-                    return wikipedia_history:has("wikipedia_history")
-                end,
-                keep_menu_open = true,
-                callback = function(touchmenu_instance)
-                    UIManager:show(ConfirmBox:new{
-                        text = _("Clean Wikipedia history?"),
-                        ok_text = _("Clean"),
-                        ok_callback = function()
-                            -- empty data table to replace current one
-                            wikipedia_history:reset{}
-                            touchmenu_instance:updateItems()
+                sub_item_table = {
+                    {
+                        text = _("Enable Wikipedia history"),
+                        checked_func = function()
+                            return not self.disable_history
                         end,
-                    })
-                end,
+                        callback = function()
+                            self.disable_history = not self.disable_history
+                            G_reader_settings:saveSetting("wikipedia_disable_history", self.disable_history)
+                        end,
+                    },
+                    {
+                        text = _("Clean Wikipedia history"),
+                        enabled_func = function()
+                            return wikipedia_history:has("wikipedia_history")
+                        end,
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Clean Wikipedia history?"),
+                                ok_text = _("Clean"),
+                                ok_callback = function()
+                                    -- empty data table to replace current one
+                                    wikipedia_history:reset{}
+                                    touchmenu_instance:updateItems()
+                                end,
+                            })
+                        end,
+                    },
+                },
                 separator = true,
             },
             { -- setting used in wikipedia.lua
