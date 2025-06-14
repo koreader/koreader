@@ -88,6 +88,9 @@ function KeyValueItem:init()
     local key_w = math.floor(frame_internal_width * ratio - middle_padding)
     local value_w = math.floor(frame_internal_width * (1-ratio))
 
+    if self.key_bold == false then
+        self.key_font_name = self.value_font_name
+    end
     local key_widget = TextWidget:new{
         text = self.key,
         max_width = available_width,
@@ -678,6 +681,7 @@ function KeyValuePage:_populateItems()
                 width = self.item_width,
                 width_ratio = width_ratio,
                 font_size = self.items_font_size,
+                key_bold = entry.key_bold,
                 key = entry[1],
                 value = entry[2],
                 value_lang = self.values_lang,
