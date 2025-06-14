@@ -134,12 +134,19 @@ end
 -- add a book to our books table
 function CalibreMetadata:addBook(book)
     -- prevent duplicate entries
+    if not self:updateBookIfExists(book) then
+        table.insert(self.books, #self.books + 1, slim(book))
+    end
+end
+
+-- update a book in our books table if exists
+function CalibreMetadata:updateBookIfExists(book)
     local _, index = self:getBookUuid(book.lpath)
     if index then
         self.books[index] = slim(book)
-    else
-        table.insert(self.books, #self.books + 1, slim(book))
+        return true
     end
+    return false
 end
 
 -- remove a book from our books table
