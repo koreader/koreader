@@ -8,11 +8,12 @@ of storing it.
 @module koplugin.calibre.metadata
 --]]--
 
+local DocSettings = require("docsettings")
 local lfs = require("libs/libkoreader-lfs")
-local rapidjson = require("rapidjson")
 local logger = require("logger")
-local util = require("util")
+local rapidjson = require("rapidjson")
 local time = require("ui/time")
+local util = require("util")
 
 local used_metadata = {
     "uuid",
@@ -76,6 +77,10 @@ local CalibreMetadata = {
     -- info about the books in this library. It should
     -- hold a table with the contents of "metadata.calibre"
     books = rapidjson.array({}),
+    -- this controls if we should store a json file on disk
+    -- with a mapping of Calibre books and Koreader sidecar location
+    keep_sidecar_path_map = G_reader_settings:nilOrTrue("calibre_metadata_keep_sidecar_path_map"),
+    book_to_sidecar_map = {},
 }
 
 --- loads driveinfo from JSON file
@@ -121,7 +126,19 @@ function CalibreMetadata:loadBookList()
             self.metadata, err))
         return rapidjson.array({})
     end
+
+    self:initSidecarMap(books)
+
     return books
+end
+
+function CalibreMetadata:initSidecarMap(books)
+    if not self.keep_sidecar_path_map then
+        return
+    end
+    for _, book in ipairs(books) do
+        self:addBookToSidecarMap(book)
+    end
 end
 
 -- saves books' metadata to JSON file
@@ -129,6 +146,11 @@ function CalibreMetadata:saveBookList()
     local file = self.metadata
     local books = self.books
     rapidjson.dump(books, file, { pretty = true })
+    if self.keep_sidecar_path_map then
+        logger.dbg("CalibreMetadata:saveBookList", self.book_to_sidecar_map)
+        local sidecar_map = self.book_to_sidecar_map
+        rapidjson.dump(sidecar_map, self.library_dir .. "/.sidecarmap.calibre.json", { pretty = true })
+    end
 end
 
 -- add a book to our books table
@@ -140,14 +162,29 @@ function CalibreMetadata:addBook(book)
     else
         table.insert(self.books, #self.books + 1, slim(book))
     end
+
+    self:addBookToSidecarMap(book)
+end
+
+function CalibreMetadata:addBookToSidecarMap(book)
+    logger.dbg("CalibreMetadata:addBookToSidecarMap", book)
+    if not self.keep_sidecar_path_map then
+        return
+    end
+    self.book_to_sidecar_map[book.uuid] = DocSettings:getSidecarDir(book["lpath"])
 end
 
 -- remove a book from our books table
 function CalibreMetadata:removeBook(lpath)
-    local function drop_lpath(t, i, j)
+    local function drop_lpath(t, i, _)
         return t[i].lpath ~= lpath
     end
     util.arrayRemove(self.books, drop_lpath)
+    local uuid, index = self:getBookUuid(lpath)
+    if not index then
+        return
+    end
+    self.book_to_sidecar_map[uuid] = nil
 end
 
 -- gets the uuid and index of a book from its path
@@ -209,10 +246,12 @@ end
 -- cleans all temp data stored for current library.
 function CalibreMetadata:clean()
     self.books = rapidjson.array({})
+    self.book_to_sidecar_map = {}
     self.drive = rapidjson.array({})
     self.path = nil
     self.driveinfo = nil
     self.metadata = nil
+    self.library_dir = nil
 end
 
 -- get keys from driveinfo.calibre
@@ -238,6 +277,10 @@ end
 
 function CalibreMetadata:init(dir, is_search)
     if not dir then return end
+
+    self.keep_sidecar_path_map = G_reader_settings:nilOrTrue("calibre_metadata_keep_sidecar_path_map")
+    self.library_dir = dir
+
     local start_time = time.now()
     self.path = dir
     local ok_meta, ok_drive, file_meta, file_drive = findCalibreFiles(dir)
