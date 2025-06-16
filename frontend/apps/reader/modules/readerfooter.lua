@@ -664,11 +664,17 @@ function ReaderFooter:init()
         tonumber(G_reader_settings:readSetting("reader_footer_custom_text_repetitions", "1"))
 
     -- Initialize preset configuration
-    self.preset_config = {
+    self.preset_object = {
         presets = G_reader_settings:readSetting("footer_presets", {}),
         dispatcher_name = "load_footer_preset",
         save = function(this)
             G_reader_settings:saveSetting("footer_presets", this.presets)
+        end,
+        buildPreset = function()
+            return self:buildPreset()
+        end,
+        loadPreset = function(preset)
+            self:loadPreset(preset)
         end,
     }
 end
@@ -1938,10 +1944,8 @@ end
 
 function ReaderFooter:genPresetMenuItemTable(touchmenu_instance)
     return Presets.genPresetMenuItemTable(
-        self.preset_config, nil, nil,          -- configuration object, text, enabled_func
-        function() return self:buildPreset() end,     -- buildPresetFunc
-        function(preset) self:loadPreset(preset) end, -- loadPresetFunc
-        function()                                    -- on_updated_callback
+        self.preset_object, nil, nil,          -- preset object, text, enabled_func
+        function()                             -- on_updated_callback
             touchmenu_instance.item_table = self:genPresetMenuItemTable(touchmenu_instance)
             touchmenu_instance:updateItems()
         end
@@ -1981,7 +1985,7 @@ function ReaderFooter:loadPreset(preset)
 end
 
 function ReaderFooter:onLoadFooterPreset(preset_name)
-    return Presets.onLoadPreset(self.preset_config, preset_name, function(preset) self:loadPreset(preset) end, true)
+    return Presets.onLoadPreset(self.preset_object, preset_name, true)
 end
 
 function ReaderFooter.getPresets() -- for Dispatcher

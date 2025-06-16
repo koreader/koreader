@@ -6,7 +6,7 @@
         local Presets = require("ui/presets")
 
         -- 1. Initialize preset configuration in your module's init() method:
-            self.preset_config = {
+            self.preset_object = {
                 presets = G_reader_settings:readSetting("my_module_presets", {}),             -- or custom storage
                 cycle_index = G_reader_settings:readSetting("my_module_presets_cycle_index"), -- optional, only needed if cycling through presets
                 dispatcher_name = "load_my_module_preset",                                    -- must match dispatcher.lua entry
@@ -40,7 +40,7 @@
         -- 3. Create menu items for presets:
             function MyModule:genPresetMenuItemTable(touchmenu_instance)
                 return Presets.genPresetMenuItemTable(
-                    self.preset_config,                              -- preset configuration object
+                    self.preset_object,                              -- preset configuration object
                     _("Create new preset from current settings"),    -- optional: custom text for UI menu
                     function() return self:hasValidSettings() end,   -- optional: function to enable/disable creating presets
                     function() return self:buildPreset() end,        -- function to build preset data
@@ -55,7 +55,7 @@
         -- 4. Load a preset by name (for dispatcher/event handling):
             function MyModule:onLoadMyModulePreset(preset_name)
                 return Presets.onLoadPreset(
-                    self.preset_config,
+                    self.preset_object,
                     preset_name,
                     function(preset) self:loadPreset(preset) end,
                     true  -- show notification
@@ -65,7 +65,7 @@
         -- 5. Cycle through presets (for dispatcher/event handling):
             function MyModule:onCycleMyModulePresets()
                 return Presets.cycleThroughPresets(
-                    self.preset_config,
+                    self.preset_object,
                     function(preset) self:loadPreset(preset) end,
                     true  -- show notification
                 )
@@ -94,7 +94,7 @@
                 reader = true
             },
 
-    Required preset_config fields:
+    Required preset_object fields:
         - presets: table containing saved presets
         - cycle_index: current index for cycling through presets (optional, defaults to 0)
         - dispatcher_name: string matching the dispatcher action name (for dispatcher integration)
@@ -128,10 +128,10 @@ local _ = require("gettext")
 
 local Presets = {}
 
-function Presets.createPresetFromCurrentSettings(preset_config, buildPresetFunc, on_updated_callback)
+function Presets.createPresetFromCurrentSettings(preset_object, on_updated_callback)
     Presets.editPresetName({},
         function(entered_preset_name, dialog_instance)
-        if Presets.validateAndSavePreset(entered_preset_name, preset_config, buildPresetFunc()) then
+        if Presets.validateAndSavePreset(entered_preset_name, preset_object, preset_object.buildPreset()) then
             UIManager:close(dialog_instance)
             on_updated_callback()
         end
@@ -169,29 +169,29 @@ function Presets.editPresetName(options, on_confirm_callback)
     input_dialog:onShowKeyboard()
 end
 
-function Presets.validateAndSavePreset(preset_name, preset_config, preset_data)
+function Presets.validateAndSavePreset(preset_name, preset_object, preset_data)
     if preset_name == "" or preset_name:match("^%s*$") then return end
-    if preset_config.presets[preset_name] then
+    if preset_object.presets[preset_name] then
         UIManager:show(InfoMessage:new{
             text = T(_("A preset named '%1' already exists. Please choose a different name."), preset_name),
             timeout = 2,
         })
         return false
     end
-    preset_config.presets[preset_name] = preset_data
-    preset_config:save() -- Let the module handle its own saving
+    preset_object.presets[preset_name] = preset_data
+    preset_object:save() -- Let the module handle its own saving
     return true
 end
 
-function Presets.genPresetMenuItemTable(preset_config, text, enabled_func, buildPresetFunc, loadPresetFunc, on_updated_callback)
-    local presets = preset_config.presets
+function Presets.genPresetMenuItemTable(preset_object, text, enabled_func, on_updated_callback)
+    local presets = preset_object.presets
     local items = {
         {
             text = text or _("Create new preset from current settings"),
             keep_menu_open = true,
             enabled_func = enabled_func,
             callback = function()
-                Presets.createPresetFromCurrentSettings(preset_config, buildPresetFunc, on_updated_callback)
+                Presets.createPresetFromCurrentSettings(preset_object, on_updated_callback)
             end,
             separator = true,
         },
@@ -201,7 +201,8 @@ function Presets.genPresetMenuItemTable(preset_config, text, enabled_func, build
             text = preset_name,
             keep_menu_open = true,
             callback = function()
-                loadPresetFunc(presets[preset_name])
+                preset_object.loadPreset(presets[preset_name])
+                print("XXX", presets[preset_name], preset_object, preset_name)
                 -- There's no guarantee that it'll be obvious to the user that the preset was loaded so, we show a notification.
                 UIManager:show(InfoMessage:new{
                     text = T(_("Preset '%1' loaded successfully."), preset_name),
@@ -217,8 +218,8 @@ function Presets.genPresetMenuItemTable(preset_config, text, enabled_func, build
                         UIManager:show(ConfirmBox:new{
                             text = T(_("Are you sure you want to overwrite preset '%1' with current settings?"), preset_name),
                             ok_callback = function()
-                                presets[preset_name] = buildPresetFunc()
-                                preset_config:save()
+                                presets[preset_name] = preset_object.buildPreset()
+                                preset_object:save()
                                 UIManager:show(InfoMessage:new{
                                     text = T(_("Preset '%1' was updated with current settings"), preset_name),
                                     timeout = 2,
@@ -237,8 +238,8 @@ function Presets.genPresetMenuItemTable(preset_config, text, enabled_func, build
                                         ok_text = _("Delete"),
                                         ok_callback = function()
                                             presets[preset_name] = nil
-                                            preset_config:save()
-                                            local action_key = preset_config.dispatcher_name
+                                            preset_object:save()
+                                            local action_key = preset_object.dispatcher_name
                                             if action_key then
                                                 UIManager:broadcastEvent(Event:new("DispatcherActionValueChanged", {
                                                     name = action_key,
@@ -263,10 +264,10 @@ function Presets.genPresetMenuItemTable(preset_config, text, enabled_func, build
                                             UIManager:close(dialog_instance) -- no change?, just close then
                                             return
                                         end
-                                        if Presets.validateAndSavePreset(new_name, preset_config, presets[preset_name]) then
+                                        if Presets.validateAndSavePreset(new_name, preset_object, presets[preset_name]) then
                                             presets[preset_name] = nil
-                                            preset_config:save()
-                                            local action_key = preset_config.dispatcher_name
+                                            preset_object:save()
+                                            local action_key = preset_object.dispatcher_name
                                             if action_key then
                                                 UIManager:broadcastEvent(Event:new("DispatcherActionValueChanged", {
                                                     name = action_key,
@@ -290,10 +291,10 @@ function Presets.genPresetMenuItemTable(preset_config, text, enabled_func, build
 end
 
 
-function Presets.onLoadPreset(preset_config, preset_name, loadPresetFunc, show_notification)
-    local presets = preset_config.presets
+function Presets.onLoadPreset(preset_object, preset_name, show_notification)
+    local presets = preset_object.presets
     if presets and presets[preset_name] then
-        loadPresetFunc(presets[preset_name])
+        preset_object.loadPreset(presets[preset_name])
         if show_notification then
             Notification:notify(T(_("Preset '%1' was loaded"), preset_name))
         end
@@ -301,29 +302,29 @@ function Presets.onLoadPreset(preset_config, preset_name, loadPresetFunc, show_n
     return true
 end
 
-function Presets.cycleThroughPresets(preset_config, loadPresetFunc, show_notification)
-    local preset_names = Presets.getPresets(preset_config)
+function Presets.cycleThroughPresets(preset_object, show_notification)
+    local preset_names = Presets.getPresets(preset_object)
     if #preset_names == 0 then
         Notification:notify(_("No presets available"), Notification.SOURCE_ALWAYS_SHOW)
         return true -- we *must* return true here to prevent further event propagation, i.e multiple notifications
     end
     -- Get and increment index, wrap around if needed
-    local index = (preset_config.cycle_index or 0) + 1
+    local index = (preset_object.cycle_index or 0) + 1
     if index > #preset_names then
         index = 1
     end
     local next_preset_name = preset_names[index]
-    loadPresetFunc(preset_config.presets[next_preset_name])
-    preset_config.cycle_index = index
-    preset_config:saveCycleIndex()
+    preset_object.loadPreset(preset_object.presets[next_preset_name])
+    preset_object.cycle_index = index
+    preset_object:saveCycleIndex()
     if show_notification then
         Notification:notify(T(_("Loaded preset: %1"), next_preset_name))
     end
     return true
 end
 
-function Presets.getPresets(preset_config)
-    local presets = preset_config.presets
+function Presets.getPresets(preset_object)
+    local presets = preset_object.presets
     local actions = {}
     if presets and next(presets) then
         for preset_name in pairs(presets) do

@@ -168,7 +168,7 @@ function ReaderDictionary:init()
     end
 
     -- Initialize preset configuration
-    self.preset_config = {
+    self.preset_object = {
         presets = G_reader_settings:readSetting("dict_presets", {}),
         cycle_index = G_reader_settings:readSetting("dict_presets_cycle_index"),
         dispatcher_name = "load_dictionary_preset",
@@ -178,6 +178,8 @@ function ReaderDictionary:init()
         saveCycleIndex = function(this)
             G_reader_settings:saveSetting("dict_presets_cycle_index", this.cycle_index)
         end,
+        buildPreset = function() return self:buildPreset() end,
+        loadPreset = function(preset) self:loadPreset(preset) end,
     }
 end
 
@@ -890,7 +892,7 @@ end
 
 function ReaderDictionary:onShowDictionaryLookup()
     local buttons = {}
-    local preset_names = Presets:getPresets(self.preset_config)
+    local preset_names = Presets:getPresets(self.preset_object)
     if preset_names and #preset_names > 0 then
         table.insert(buttons, {
             {
@@ -906,7 +908,7 @@ function ReaderDictionary:onShowDictionaryLookup()
                                 align = "left",
                                 text = preset_name,
                                 callback = function()
-                                    self:loadPreset(self.preset_config.presets[preset_name], true)
+                                    self:loadPreset(self.preset_object.presets[preset_name], true)
                                     UIManager:close(button_dialog)
                                     UIManager:close(self.dictionary_lookup_dialog)
                                     self:onLookupWord(text, true, nil, nil, nil,
@@ -1579,10 +1581,8 @@ function ReaderDictionary:loadPreset(preset, skip_notification)
 end
 
 function ReaderDictionary:genPresetMenuItemTable(touchmenu_instance)
-    return Presets.genPresetMenuItemTable( self.preset_config, _("Create new preset from enabled dictionaries"),
+    return Presets.genPresetMenuItemTable( self.preset_object, _("Create new preset from enabled dictionaries"),
         function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end, -- enabled_func
-        function() return self:buildPreset() end,                                       -- buildPresetFunc
-        function(preset) self:loadPreset(preset) end,                                   -- loadPresetFunc
         function()                                                                      -- on_updated_callback
             touchmenu_instance.item_table = self:genPresetMenuItemTable(touchmenu_instance)
             touchmenu_instance:updateItems()
@@ -1591,11 +1591,11 @@ function ReaderDictionary:genPresetMenuItemTable(touchmenu_instance)
 end
 
 function ReaderDictionary:onCycleDictionaryPresets()
-    return Presets.cycleThroughPresets(self.preset_config, function(preset) self:loadPreset(preset) end, true)
+    return Presets.cycleThroughPresets(self.preset_object, true)
 end
 
 function ReaderDictionary:onLoadDictionaryPreset(preset_name)
-    return Presets.onLoadPreset(self.preset_config, preset_name, function(preset) self:loadPreset(preset) end, true)
+    return Presets.onLoadPreset(self.preset_object, preset_name, true)
 end
 
 function ReaderDictionary.getPresets() -- for Dispatcher
