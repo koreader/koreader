@@ -710,12 +710,11 @@ function CalibreWireless:sendBook(arg)
 end
 
 function CalibreWireless:sendBookMetadata(arg)
-    local idx = arg.index + 1
-    logger.dbg(string.format("SEND_BOOK_METADATA %d/%d", idx, arg.count), arg)
+    logger.dbg("SEND_BOOK_METADATA", arg)
 
-    CalibreMetadata:updateBookIfExists(arg.data)
+    CalibreMetadata:updateBook(arg.data)
 
-    if idx == arg.count then
+    if (arg.index + 1) == arg.count then
         CalibreMetadata:saveBookList()
     end
 end
