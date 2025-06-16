@@ -5,7 +5,7 @@
     Usage:
         local Presets = require("ui/presets")
 
-        -- 1. Initialize preset configuration in your module's init() method:
+        -- 1. In your module's init() method, set up a preset object:
             self.preset_object = {
                 presets = G_reader_settings:readSetting("my_module_presets", {}),             -- or custom storage
                 cycle_index = G_reader_settings:readSetting("my_module_presets_cycle_index"), -- optional, only needed if cycling through presets
@@ -16,6 +16,8 @@
                 saveCycleIndex = function(this)                                               -- Save cycle index to persistent storage
                     G_reader_settings:saveSetting("my_module_presets_cycle_index", this.cycle_index)
                 end,
+                buildPreset = function() return self:buildPreset() end,                       -- Closure to build a preset from current state
+                loadPreset = function(preset) self:loadPreset(preset) end,                    -- Closure to apply a preset to the module
             }
 
         -- 2. Implement required methods in your module:
@@ -40,11 +42,9 @@
         -- 3. Create menu items for presets:
             function MyModule:genPresetMenuItemTable(touchmenu_instance)
                 return Presets.genPresetMenuItemTable(
-                    self.preset_object,                              -- preset configuration object
+                    self.preset_object,                              -- preset object
                     _("Create new preset from current settings"),    -- optional: custom text for UI menu
                     function() return self:hasValidSettings() end,   -- optional: function to enable/disable creating presets
-                    function() return self:buildPreset() end,        -- function to build preset data
-                    function(preset) self:loadPreset(preset) end,    -- function to load preset data
                     function()                                       -- callback when presets are updated
                         touchmenu_instance.item_table = self:genPresetMenuItemTable(touchmenu_instance)
                         touchmenu_instance:updateItems()
@@ -57,7 +57,6 @@
                 return Presets.onLoadPreset(
                     self.preset_object,
                     preset_name,
-                    function(preset) self:loadPreset(preset) end,
                     true  -- show notification
                 )
             end
@@ -66,7 +65,6 @@
             function MyModule:onCycleMyModulePresets()
                 return Presets.cycleThroughPresets(
                     self.preset_object,
-                    function(preset) self:loadPreset(preset) end,
                     true  -- show notification
                 )
             end
