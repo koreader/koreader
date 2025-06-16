@@ -2671,7 +2671,7 @@ end
 
 -- dpad/keys support
 
-function ReaderHighlight:onHighlightPress()
+function ReaderHighlight:onHighlightPress(skip_tap_check)
     if not self._current_indicator_pos then return false end
     if self._start_indicator_highlight then
         self:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
@@ -2679,7 +2679,7 @@ function ReaderHighlight:onHighlightPress()
         return true
     end
     -- Attempt to open an existing highlight
-    if self:onTap(nil, self:_createHighlightGesture("tap")) then
+    if not skip_tap_check and self:onTap(nil, self:_createHighlightGesture("tap")) then
         self:onStopHighlightIndicator(true) -- need_clear_selection=true
         return true
     end
@@ -2763,8 +2763,11 @@ function ReaderHighlight:onHighlightPress()
 end
 
 function ReaderHighlight:onHighlightModifierPress()
-    if not self._current_indicator_pos then return false end -- let hotkeys run its course
-    if not self._start_indicator_highlight then return true end -- don't trigger hotkeys during text selection
+    if not self._current_indicator_pos then return false end -- let event propagate to hotkeys
+    if not self._start_indicator_highlight then
+        self:onHighlightPress(true)
+        return true -- don't trigger hotkeys during text selection
+    end
     -- Simulate very long-long press by setting the long hold flag. This will trigger the long-press dialog.
     self.long_hold_reached = true
     self:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
