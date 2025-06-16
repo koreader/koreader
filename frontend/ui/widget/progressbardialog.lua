@@ -66,7 +66,7 @@ function ProgressbarDialog:init()
     self.last_redraw_time_ms = 0
 
     -- create the dialog
-    local progress_bar_width = Screen:scaleBySize(360)
+    local progress_bar_width = Screen:getWidth() - Screen:scaleBySize(80)
     local progress_bar_height = Screen:scaleBySize(18)
 
     -- only add relevant widgets
@@ -167,12 +167,12 @@ end
 
 --- opens dialog
 function ProgressbarDialog:show()
-    UIManager:show(self)
+    UIManager:show(self, "ui")
 end
 
 ---- closes dialog
 function ProgressbarDialog:close()
-    UIManager:close(self)
+   UIManager:close(self, "ui")
 end
 
 return ProgressbarDialog
