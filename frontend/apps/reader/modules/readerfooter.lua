@@ -1713,7 +1713,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
     table.insert(sub_items, {
         text = _("Status bar presets"),
         separator = true,
-        sub_item_table_func = function(touchmenu_instance)
+        sub_item_table_func = function()
             return Presets.genPresetMenuItemTable(self.preset_obj, nil, nil)
         end,
     })

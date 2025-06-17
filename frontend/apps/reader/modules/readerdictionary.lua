@@ -296,8 +296,8 @@ function ReaderDictionary:addToMainMenu(menu_items)
             {
                 text = _("Dictionary presets"),
                 help_text = _("This feature allows you to organize dictionaries into presets (for example, by language). You can quickly switch between these presets to change which dictionaries are used for lookups.\n\nNote: presets only store dictionaries, no other settings."),
-                sub_item_table_func = function(touchmenu_instance)
-                    return Presets.genPresetMenuItemTable( self.preset_obj, _("Create new preset from enabled dictionaries"),
+                sub_item_table_func = function()
+                    return Presets.genPresetMenuItemTable(self.preset_obj, _("Create new preset from enabled dictionaries"),
                         function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end)
                 end,
             },
