@@ -167,14 +167,10 @@ function ReaderDictionary:init()
         lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", "LookupHistory")
     end
 
-    -- Initialize preset configuration
-    self.preset_object = {
+    self.preset_obj = {
         presets = G_reader_settings:readSetting("dict_presets", {}),
         cycle_index = G_reader_settings:readSetting("dict_presets_cycle_index"),
         dispatcher_name = "load_dictionary_preset",
-        save = function(this)
-            G_reader_settings:saveSetting("dict_presets", this.presets)
-        end,
         saveCycleIndex = function(this)
             G_reader_settings:saveSetting("dict_presets_cycle_index", this.cycle_index)
         end,
@@ -301,7 +297,8 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 text = _("Dictionary presets"),
                 help_text = _("This feature allows you to organize dictionaries into presets (for example, by language). You can quickly switch between these presets to change which dictionaries are used for lookups.\n\nNote: presets only store dictionaries, no other settings."),
                 sub_item_table_func = function(touchmenu_instance)
-                    return self:genPresetMenuItemTable(touchmenu_instance)
+                    return Presets.genPresetMenuItemTable( self.preset_obj, _("Create new preset from enabled dictionaries"),
+                        function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end)
                 end,
             },
             {
@@ -892,7 +889,7 @@ end
 
 function ReaderDictionary:onShowDictionaryLookup()
     local buttons = {}
-    local preset_names = Presets:getPresets(self.preset_object)
+    local preset_names = Presets:getPresets(self.preset_obj)
     if preset_names and #preset_names > 0 then
         table.insert(buttons, {
             {
@@ -908,7 +905,7 @@ function ReaderDictionary:onShowDictionaryLookup()
                                 align = "left",
                                 text = preset_name,
                                 callback = function()
-                                    self:loadPreset(self.preset_object.presets[preset_name], true)
+                                    self:loadPreset(self.preset_obj.presets[preset_name], true)
                                     UIManager:close(button_dialog)
                                     UIManager:close(self.dictionary_lookup_dialog)
                                     self:onLookupWord(text, true, nil, nil, nil,
@@ -1580,22 +1577,12 @@ function ReaderDictionary:loadPreset(preset, skip_notification)
     end
 end
 
-function ReaderDictionary:genPresetMenuItemTable(touchmenu_instance)
-    return Presets.genPresetMenuItemTable( self.preset_object, _("Create new preset from enabled dictionaries"),
-        function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end, -- enabled_func
-        function()                                                                      -- on_updated_callback
-            touchmenu_instance.item_table = self:genPresetMenuItemTable(touchmenu_instance)
-            touchmenu_instance:updateItems()
-        end
-    )
-end
-
 function ReaderDictionary:onCycleDictionaryPresets()
-    return Presets.cycleThroughPresets(self.preset_object, true)
+    return Presets.cycleThroughPresets(self.preset_obj, true)
 end
 
 function ReaderDictionary:onLoadDictionaryPreset(preset_name)
-    return Presets.onLoadPreset(self.preset_object, preset_name, true)
+    return Presets.onLoadPreset(self.preset_obj, preset_name, true)
 end
 
 function ReaderDictionary.getPresets() -- for Dispatcher

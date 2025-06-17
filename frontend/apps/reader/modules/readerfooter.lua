@@ -663,19 +663,11 @@ function ReaderFooter:init()
     self.custom_text_repetitions =
         tonumber(G_reader_settings:readSetting("reader_footer_custom_text_repetitions", "1"))
 
-    -- Initialize preset configuration
-    self.preset_object = {
+    self.preset_obj = {
         presets = G_reader_settings:readSetting("footer_presets", {}),
         dispatcher_name = "load_footer_preset",
-        save = function(this)
-            G_reader_settings:saveSetting("footer_presets", this.presets)
-        end,
-        buildPreset = function()
-            return self:buildPreset()
-        end,
-        loadPreset = function(preset)
-            self:loadPreset(preset)
-        end,
+        buildPreset = function() return self:buildPreset() end,
+        loadPreset = function(preset) self:loadPreset(preset) end,
     }
 end
 
@@ -1722,7 +1714,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
         text = _("Status bar presets"),
         separator = true,
         sub_item_table_func = function(touchmenu_instance)
-            return self:genPresetMenuItemTable(touchmenu_instance)
+            return Presets.genPresetMenuItemTable(self.preset_obj, nil, nil)
         end,
     })
     table.insert(sub_items, {
@@ -1942,16 +1934,6 @@ function ReaderFooter:genAlignmentMenuItems(value)
     }
 end
 
-function ReaderFooter:genPresetMenuItemTable(touchmenu_instance)
-    return Presets.genPresetMenuItemTable(
-        self.preset_object, nil, nil,          -- preset object, text, enabled_func
-        function()                             -- on_updated_callback
-            touchmenu_instance.item_table = self:genPresetMenuItemTable(touchmenu_instance)
-            touchmenu_instance:updateItems()
-        end
-    )
-end
-
 function ReaderFooter:buildPreset()
     return {
         footer = util.tableDeepCopy(self.settings),
@@ -1985,7 +1967,7 @@ function ReaderFooter:loadPreset(preset)
 end
 
 function ReaderFooter:onLoadFooterPreset(preset_name)
-    return Presets.onLoadPreset(self.preset_object, preset_name, true)
+    return Presets.onLoadPreset(self.preset_obj, preset_name, true)
 end
 
 function ReaderFooter.getPresets() -- for Dispatcher
