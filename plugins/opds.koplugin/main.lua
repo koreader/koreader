@@ -114,12 +114,37 @@ function OPDS:getOPDSDownloadMenu()
             end,
         },
         {
+            text = _("Set maximum sync size"),
+            keep_menu_open = true,
+            callback = function()
+                self:setMaxSyncDownload()
+            end,
+        },
+        {
             text = _("Set OPDS sync directory"),
             callback = function()
                 self:setSyncDir(false)
             end,
         },
     }
+end
+
+function OPDS:setMaxSyncDownload()
+    local current_max_dl = G_reader_settings:readSetting("opds_sync_max_dl") or 50
+    local SpinWidget = require("ui/widget/spinwidget")
+    local spin = SpinWidget:new{
+        title_text = "Set maximum sync size",
+        info_text = "Set the max number of books to download at a time",
+        value = current_max_dl,
+        value_min = 0,
+        value_max = 999,
+        wrap = true,
+        ok_text = "Save",
+        callback = function(spin)
+            G_reader_settings:saveSetting("opds_sync_max_dl", spin.value)
+        end,
+    }
+    UIManager:show(spin)
 end
 
 function OPDS:checkSyncDownload(force)
@@ -132,10 +157,25 @@ function OPDS:checkSyncDownload(force)
     end
     for _, item in ipairs(self.servers) do
         if item.sync then
-            local last_download = OPDSBrowser:syncDownload(item, force)
+            local last_download, new_syncs = OPDSBrowser:syncDownload(item, force, self)
             if last_download then
                 logger.dbg("Updating opds last download for server " .. item.title)
                 self:updateFieldInCatalog(item, "last_download", last_download)
+            end
+            if new_syncs then
+                local function dump(o)
+                    if type(o) == 'table' then
+                        local s = '{ '
+                        for k,v in pairs(o) do
+                            if type(k) ~= 'number' then k = '"'..k..'"' end
+                            s = s .. '['..k..'] = ' .. dump(v) .. ','
+                        end
+                        return s .. '} '
+                    else
+                        return tostring(o)
+                    end
+                end
+                self:updateFieldInCatalog(item, "pending_syncs", new_syncs)
             end
         end
     end

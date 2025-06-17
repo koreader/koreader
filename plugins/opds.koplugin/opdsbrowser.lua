@@ -12,6 +12,7 @@ local NetworkMgr = require("ui/network/manager")
 local Notification = require("ui/widget/notification")
 local OPDSParser = require("opdsparser")
 local OPDSPSE = require("opdspse")
+local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local http = require("socket.http")
 local lfs = require("libs/libkoreader-lfs")
@@ -365,17 +366,17 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, sync)
         return url.absolute(item_url, href)
     end
 
-    if not sync then
-        local has_opensearch = false
-        local hrefs = {}
-        if feed.link then
-            for __, link in ipairs(feed.link) do
-                if link.type ~= nil then
-                    if link.type:find(self.catalog_type) then
-                        if link.rel and link.href then
-                            hrefs[link.rel] = build_href(link.href)
-                        end
+    local has_opensearch = false
+    local hrefs = {}
+    if feed.link then
+        for __, link in ipairs(feed.link) do
+            if link.type ~= nil then
+                if link.type:find(self.catalog_type) then
+                    if link.rel and link.href then
+                        hrefs[link.rel] = build_href(link.href)
                     end
+                end
+                if not sync then
                     -- OpenSearch
                     if link.type:find(self.search_type) then
                         if link.href then
@@ -400,8 +401,8 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, sync)
                 end
             end
         end
-        item_table.hrefs = hrefs
     end
+    item_table.hrefs = hrefs
 
     for __, entry in ipairs(feed.entry or {}) do
         local item = {}
@@ -1086,7 +1087,6 @@ function OPDSBrowser:showDownloadListItemDialog(item)
                         ok_text = _("Download"),
                         ok_callback = function()
                             NetworkMgr:runWhenConnected(function()
-                                local Trapper = require("ui/trapper")
                                 Trapper:wrap(function()
                                     self._manager:downloadDownloadList()
                                 end)
@@ -1118,14 +1118,31 @@ function OPDSBrowser:showDownloadListItemDialog(item)
     return true
 end
 
-function OPDSBrowser:downloadDownloadList()
+function OPDSBrowser:downloadDownloadList(sync, manager)
     local info = InfoMessage:new{ text = _("Downloading… (tap to cancel)") }
     UIManager:show(info)
     UIManager:forceRePaint()
-    local Trapper = require("ui/trapper")
+    local dl_list
+    local function dump(o)
+        if type(o) == 'table' then
+            local s = '{ '
+            for k,v in pairs(o) do
+                if type(k) ~= 'number' then k = '"'..k..'"' end
+                s = s .. '['..k..'] = ' .. dump(v) .. ','
+            end
+            return s .. '} '
+        else
+            return tostring(o)
+        end
+    end
+    if sync then
+        dl_list = self.pending_syncs
+    else
+        dl_list = self.dowloads
+    end
     local completed, downloaded = Trapper:dismissableRunInSubprocess(function()
         local dl = {}
-        for _, item in ipairs(self.downloads) do
+        for _, item in ipairs(dl_list) do
             if self:downloadFile(item.file, item.url, item.username, item.password) then
                 dl[item.file] = true
             end
@@ -1135,36 +1152,62 @@ function OPDSBrowser:downloadDownloadList()
     if completed then
         UIManager:close(info)
     end
-    local dl_count = #self.downloads
+    local dl_count = #dl_list
     for i = dl_count, 1, -1 do
-        local item = self.downloads[i]
+        local item = dl_list[i]
         if downloaded and downloaded[item.file] then
-            table.remove(self.downloads, i)
+            table.remove(dl_list, i)
         else -- if subprocess has been interrupted, check for the downloaded file
             local attr = lfs.attributes(item.file)
             if attr then
                 if attr.size > 0 then
-                    table.remove(self.downloads, i)
+                    table.remove(dl_list, i)
                 else -- incomplete download
                     os.remove(item.file)
                 end
             end
         end
     end
-    dl_count = dl_count - #self.downloads
+    dl_count = dl_count - #dl_list
     if dl_count > 0 then
-        self:updateDownloadListItemTable()
-        self.download_list_updated = true
-        self._manager.updated = true
-        UIManager:show(InfoMessage:new{ text = T(N_("1 book downloaded", "%1 books downloaded", dl_count), dl_count) })
+        if not sync then
+            self:updateDownloadListItemTable()
+            self.download_list_updated = true
+            self._manager.updated = true
+            UIManager:show(InfoMessage:new{ text = T(N_("1 book downloaded", "%1 books downloaded", dl_count), dl_count) })
+        else
+        end
     end
 end
 
-function OPDSBrowser:syncDownload(server, force)
-    local new_last_download = nil
-    local table = self:getSyncDownloadList(server)
 
-    for i, entry in ipairs(table) do
+function OPDSBrowser:syncDownload(server, force, manager)
+    self.root_catalog_password  = server.password
+    self.root_catalog_raw_names = server.raw_names
+    self.root_catalog_username  = server.username
+    self.root_catalog_title     = server.title
+    self.sync_max_dl = G_reader_settings:readSetting("opds_sync_max_dl") or 50
+    self.sync_manager = manager
+    self.pending_syncs = server.pending_syncs or {}
+
+    local new_last_download = nil
+    local dl_count = 1
+
+    local function dump(o)
+        if type(o) == 'table' then
+            local s = '{ '
+            for k,v in pairs(o) do
+                if type(k) ~= 'number' then k = '"'..k..'"' end
+                s = s .. '['..k..'] = ' .. dump(v) .. ','
+            end
+            return s .. '} '
+        else
+            return tostring(o)
+        end
+    end
+    self.sync_list = self:getSyncDownloadList(server.url)
+    for i, entry in ipairs(self.sync_list) do
+        print("here")
         -- First entry in table is the newest
         -- If already downloaded, return
         for j, link in ipairs(entry.acquisitions) do
@@ -1180,11 +1223,30 @@ function OPDSBrowser:syncDownload(server, force)
                 local filetype = self.getFiletype(link)
                 logger.dbg("Filetype for sync download is", filetype)
                 local download_path = self:getLocalDownloadPath(entry.title, filetype, link.href, true)
-                OPDSBrowser:checkDownloadFile(download_path, link.href, server.username, server.password, nil, true, force)
+                -- Download only up to max_dl
+                if dl_count <= self.sync_max_dl then
+                    print(dl_count)
+                    table.insert(self.pending_syncs, {
+                        file = download_path,
+                        url = link.href,
+                        username = self.root_catalog_username,
+                        password = self.root_catalog_password,
+                    })
+                    dl_count = dl_count + 1
+                end
+                --TODO download in background using downloadDownloadList
+                --TODO implement self.sync_list
+                --TODO parse more feed
+--                 OPDSBrowser:checkDownloadFile(download_path, link.href, server.username, server.password, nil, true, force)
             end
         end
     end
-    return new_last_download
+--     Trapper:wrap(function()
+--         self:downloadDownloadList(true, manager)
+--     end)
+--     print(dump(self.syncs))
+    print(dump(self.pending_syncs))
+    return new_last_download, self.pending_syncs
 end
 
 function OPDSBrowser.getFiletype(link)
@@ -1199,12 +1261,32 @@ function OPDSBrowser.getFiletype(link)
 end
 
 
-function OPDSBrowser:getSyncDownloadList(server)
-    self.root_catalog_password  = server.password
-    self.root_catalog_raw_names = server.raw_names
-    self.root_catalog_username  = server.username
-    self.root_catalog_title     = server.title
-    return self:genItemTableFromURL(server.url, true)
+function OPDSBrowser:getSyncDownloadList(url)
+    local sync_table = {}
+    local fetch_url = url
+    local sub_table
+        local function dump(o)
+        if type(o) == 'table' then
+            local s = '{ '
+            for k,v in pairs(o) do
+                if type(k) ~= 'number' then k = '"'..k..'"' end
+                s = s .. '['..k..'] = ' .. dump(v) .. ','
+            end
+            return s .. '} '
+        else
+            return tostring(o)
+        end
+    end
+    -- Create table at least as long as max_dl
+    while #sync_table < self.sync_max_dl do
+        sub_table = self:genItemTableFromURL(fetch_url, true)
+        for _, entry in ipairs(sub_table) do
+            table.insert(sync_table, entry)
+        end
+        url = sub_table.hrefs.next
+    end
+    sync_table.hrefs = sub_table.hrefs
+    return sync_table
 end
 
 return OPDSBrowser
