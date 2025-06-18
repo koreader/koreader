@@ -70,7 +70,7 @@ function ProgressbarDialog:init()
     if self.title then
         vertical_group[#vertical_group + 1] = TextWidget:new {
             text = self.title or "",
-            face = Font:getFace("cfont", 18),
+            face = Font:getFace("ffont"),
             bold = true,
             max_width = progress_bar_width,
         }
@@ -78,7 +78,7 @@ function ProgressbarDialog:init()
     if self.subtitle then
         vertical_group[#vertical_group + 1] = TextWidget:new {
             text = self.subtitle or "",
-            face = Font:getFace("cfont", 16),
+            face = Font:getFace("smallffont"),
             max_width = progress_bar_width,
         }
     end
