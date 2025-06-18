@@ -1,3 +1,39 @@
+--[[--
+A dialog that shows a progress bar with a title and subtitle.
+
+@usage
+local progressbar_dialog = ProgressbarDialog:new {
+    title = nil,
+    subtitle = nil,
+    progress_max = nil
+    refresh_time_seconds = 3,
+}
+Note: provide at least one of title, subtitle or progress_max
+@param title string the title of the dialog
+@param subtitle string the subtitle of the dialog
+@param progress_max number the maximum progress (e.g. size of the file in bytes for file downloads)
+                    reportProgress() should be called with the current
+                    progress (value between 0-progress_max) to update the progress bar
+                    optional: if `progress_max` is nil, the progress bar will be hidden
+@param refresh_time_seconds number refresh time in seconds
+
+-- Attach progress callback and call show()
+progressbar_dialog:show()
+
+-- Call close() when download is done
+progressbar_dialog:close()
+
+-- To report progress, you can either:
+-- manually call reportProgress with the current progress (value between 0-progress_max)
+progressbar_dialog:reportProgress( <progress value> )
+
+-- or when using luasocket sinks, chain the callback:
+local sink = ltn12.sink.file(io.open(local_path, "w"))
+sink = socketutil.chainSinkWithProgressCallback(sink, function(progress)
+    progressbar_dialog:reportProgress(progress)
+end)
+--]]
+
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local Font = require("ui/font")
@@ -12,46 +48,6 @@ local dbg = require("dbg")
 local time = require("ui/time")
 local Screen = Device.screen
 
---[[--
-A dialog that shows a progress bar with a title and subtitle
-
-@usage
-local progressbar_dialog = ProgressbarDialog:new {
-    title = nil,
-    subtitle = nil,
-    progress_max = nil
-    refresh_time_seconds = 3,
-}
-
--- attach progress callback and call show()
-progressbar_dialog:show()
-
--- call close() when download is done
-progressbar_dialog:close()
-
------------------------general use case-----------------------------------------
--- manually call reportProgress with the current progress (value between 0-progress_max)
-progressbar_dialog:reportProgress( <progress value> )
-----------------------------------------------------------------------------------
-
-------------------use case with luasocket sink----------------------------------
-local sink = ltn12.sink.file(io.open(local_path, "w"))
-sink = socketutil.chainSinkWithProgressCallback(sink, function(progress)
-    progressbar_dialog:reportProgress(progress)
-end)
--- start pushing data to the sink, this is usually some function that accepts a luasocket sink
-something:startDownload(sink)
-----------------------------------------------------------------------------------
-
-Note: provide at least one of title, subtitle or progress_max
-@param title string the title of the dialog
-@param subtitle string the subtitle of the dialog
-@param progress_max number the maximum progress (e.g. size of the file in bytes for file downloads)
-                    reportProgress() should be called with the current
-                    progress (value between 0-progress_max) to update the progress bar
-                    optional: if `progress_max` is nil, the progress bar will be hidden
-@param refresh_time_seconds number refresh time in seconds
---]]
 local ProgressbarDialog = WidgetContainer:extend {
     refresh_time_seconds = 3,
 }
@@ -124,7 +120,7 @@ dbg:guard(ProgressbarDialog, "init",
             "No values defined, dialog would be empty. Please provide at least one of title, subtitle or progress_max")
     end)
 
---- updates the UI to show the current percentage of the progress bar when needed see `ProgressbarDialog.refresh_mode`
+--- Updates the UI to show the current percentage of the progress bar when needed.
 function ProgressbarDialog:redrawProgressbarIfNeeded()
     -- grab the current percentage from the progress bar
     local current_percentage = self.progress_bar.percentage
@@ -151,7 +147,7 @@ function ProgressbarDialog:redrawProgressbar()
     UIManager:forceRePaint()
 end
 
---- notify about a progress update i.e. when a new chunk on a file download has been received
+--- Used to notify about a progress update.
 -- @param progress number the current progress (e.g. size of the file in bytes for file downloads)
 function ProgressbarDialog:reportProgress(progress)
     if not self.progress_bar_visible then
@@ -165,12 +161,12 @@ function ProgressbarDialog:reportProgress(progress)
     self:redrawProgressbarIfNeeded()
 end
 
---- opens dialog
+--- Opens dialog.
 function ProgressbarDialog:show()
     UIManager:show(self, "ui")
 end
 
----- closes dialog
+---- Closes dialog.
 function ProgressbarDialog:close()
    UIManager:close(self, "ui")
 end
