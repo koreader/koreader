@@ -5,6 +5,7 @@ This module manages widgets.
 local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
+local BlockedPoints = require("ui/blockedpoints") -- Added for blocked points functionality
 local dbg = require("dbg")
 local logger = require("logger")
 local ffiUtil = require("ffi/util")
@@ -1416,6 +1417,14 @@ end
 -- NOTE: The Event hook mechanism used to dispatch for *every* event, and would actually pass the event along.
 --       We've simplified that to once per input frame, and without passing anything (as we, in fact, have never made use of it).
 function UIManager:handleInputEvent(input_event)
+    -- Check for blocked points before processing the event
+    if type(input_event) == "table" and input_event.pos and type(input_event.pos.x) == "number" and type(input_event.pos.y) == "number" then
+        if BlockedPoints:isBlocked(input_event.pos.x, input_event.pos.y) then
+            logger.dbg("UIManager: Blocked input event at", input_event.pos.x, input_event.pos.y)
+            return -- Stop processing this event
+        end
+    end
+
     local handler = self.event_handlers[input_event]
     if handler then
         handler(input_event)
