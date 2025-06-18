@@ -168,7 +168,7 @@ end
 
 ---- Closes dialog.
 function ProgressbarDialog:close()
-   UIManager:close(self, "ui")
+    UIManager:close(self, "ui")
 end
 
 return ProgressbarDialog
