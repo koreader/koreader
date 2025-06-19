@@ -909,7 +909,7 @@ function TouchMenu:onMenuSelect(item, tap_on_checkmark)
     else
         local sub_item_table = item.sub_item_table
         if item.sub_item_table_func then
-            sub_item_table = item.sub_item_table_func(self)
+            sub_item_table = item.sub_item_table_func()
         end
         if sub_item_table == nil then
             -- keep menu opened if this item is a check option

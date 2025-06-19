@@ -118,21 +118,7 @@ local _ = require("gettext")
 
 local Presets = {}
 
-function Presets.createPresetFromCurrentSettings(preset_obj, touchmenu_instance)
-    Presets.editPresetName({},
-        function(entered_preset_name, dialog_instance)
-            if Presets.validateAndSavePreset(entered_preset_name, preset_obj, preset_obj.buildPreset()) then
-                UIManager:close(dialog_instance)
-                touchmenu_instance.item_table = Presets.genPresetMenuItemTable(preset_obj)
-                touchmenu_instance:updateItems()
-            end
-            -- If validateAndSavePreset returns false, it means validation failed (e.g., duplicate name),
-            -- an InfoMessage was shown by validateAndSavePreset, and the dialog remains open.
-        end
-    )
-end
-
-function Presets.editPresetName(options, on_confirm_callback)
+function Presets.editPresetName(options, preset_obj, on_success_callback)
     local input_dialog
     input_dialog = InputDialog:new{
         title = options.title or _("Enter preset name"),
@@ -150,8 +136,28 @@ function Presets.editPresetName(options, on_confirm_callback)
                     text = options.confirm_button_text or _("Create"),
                     is_enter_default = true,
                     callback = function()
-                        local entered_text = input_dialog:getInputText()
-                        on_confirm_callback(entered_text, input_dialog)
+                        local entered_preset_name = input_dialog:getInputText()
+                        if entered_preset_name == "" or entered_preset_name:match("^%s*$") then
+                            UIManager:show(InfoMessage:new{
+                                text = _("Invalid preset name. Please choose a different name."),
+                                timeout = 2,
+                            })
+                            return false
+                        end
+                        if options.initial_value and entered_preset_name == options.initial_value then
+                            UIManager:close(input_dialog)
+                            return false
+                        end
+                        if preset_obj.presets[entered_preset_name] then
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("A preset named '%1' already exists. Please choose a different name."), entered_preset_name),
+                                timeout = 2,
+                            })
+                            return false
+                        end
+
+                        -- If all validation passes, call the success callback
+                        on_success_callback(entered_preset_name, input_dialog)
                     end,
                 },
             },
@@ -159,19 +165,6 @@ function Presets.editPresetName(options, on_confirm_callback)
     }
     UIManager:show(input_dialog)
     input_dialog:onShowKeyboard()
-end
-
-function Presets.validateAndSavePreset(preset_name, preset_obj, preset_data)
-    if preset_name == "" or preset_name:match("^%s*$") then return end
-    if preset_obj.presets[preset_name] then
-        UIManager:show(InfoMessage:new{
-            text = T(_("A preset named '%1' already exists. Please choose a different name."), preset_name),
-            timeout = 2,
-        })
-        return false
-    end
-    preset_obj.presets[preset_name] = preset_data
-    return true
 end
 
 function Presets.genPresetMenuItemTable(preset_obj, text, enabled_func)
@@ -182,7 +175,15 @@ function Presets.genPresetMenuItemTable(preset_obj, text, enabled_func)
             keep_menu_open = true,
             enabled_func = enabled_func,
             callback = function(touchmenu_instance)
-                Presets.createPresetFromCurrentSettings(preset_obj, touchmenu_instance)
+                Presets.editPresetName({}, preset_obj,
+                    function(entered_preset_name, dialog_instance)
+                        local preset_data = preset_obj.buildPreset()
+                        preset_obj.presets[entered_preset_name] = preset_data
+                        UIManager:close(dialog_instance)
+                        touchmenu_instance.item_table = Presets.genPresetMenuItemTable(preset_obj)
+                        touchmenu_instance:updateItems()
+                    end
+                )
             end,
             separator = true,
         },
@@ -248,25 +249,21 @@ function Presets.genPresetMenuItemTable(preset_obj, text, enabled_func)
                                         title = _("Enter new preset name"),
                                         initial_value = preset_name,
                                         confirm_button_text = _("Rename"),
-                                    }, function(new_name, dialog_instance)
-                                        if new_name == preset_name then
-                                            UIManager:close(dialog_instance) -- no change?, just close then
-                                            return
+                                    }, preset_obj,
+                                    function(new_name, dialog_instance)
+                                        presets[new_name] = presets[preset_name]
+                                        presets[preset_name] = nil
+                                        local action_key = preset_obj.dispatcher_name
+                                        if action_key then
+                                            UIManager:broadcastEvent(Event:new("DispatcherActionValueChanged", {
+                                                name = action_key,
+                                                old_value = preset_name,
+                                                new_value = new_name
+                                            }))
                                         end
-                                        if Presets.validateAndSavePreset(new_name, preset_obj, presets[preset_name]) then
-                                            presets[preset_name] = nil
-                                            local action_key = preset_obj.dispatcher_name
-                                            if action_key then
-                                                UIManager:broadcastEvent(Event:new("DispatcherActionValueChanged", {
-                                                    name = action_key,
-                                                    old_value = preset_name,
-                                                    new_value = new_name
-                                                }))
-                                            end
-                                            touchmenu_instance.item_table = Presets.genPresetMenuItemTable(preset_obj)
-                                            touchmenu_instance:updateItems()
-                                            UIManager:close(dialog_instance)
-                                        end
+                                        UIManager:close(dialog_instance)
+                                        touchmenu_instance.item_table = Presets.genPresetMenuItemTable(preset_obj)
+                                        touchmenu_instance:updateItems()
                                     end) -- editPresetName
                                 end, -- rename callback
                             },
