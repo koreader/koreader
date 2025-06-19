@@ -4,9 +4,10 @@ local ftp = require("socket.ftp")
 local ltn12 = require("ltn12")
 local util = require("util")
 local url = require("socket.url")
+local logger = require("logger")
+local _ = require("gettext")
 
-local FtpApi = {
-}
+local FtpApi = {}
 
 function FtpApi:generateUrl(address, user, pass)
     local colon_sign = ""
@@ -29,10 +30,13 @@ function FtpApi:ftpGet(u, command, sink)
     p.sink = sink
     p.type = "i"  -- binary
     local r, e = ftp.get(p)
+    if not r then
+        logger.err("FtpApi:ftpGet failed:", e)
+    end
     return r, e
 end
 
-function FtpApi:listFolder(address_path, folder_path)
+function FtpApi:listFolder(address_path, folder_path, folder_mode)
     local ftp_list = {}
     local ftp_file = {}
     local type
@@ -42,11 +46,22 @@ function FtpApi:listFolder(address_path, folder_path)
     local sink = ltn12.sink.table(tbl)
     local ls_ftp, e = self:ftpGet(address_path, "nlst", sink)
     if ls_ftp == nil then
-        return false, e
+        logger.err("FtpApi:listFolder failed:", e)
+        return nil, e  -- Return nil and error instead of empty table
     end
     if folder_path == "/" then
         folder_path = ""
     end
+
+    -- Add folder selection item if in folder_mode
+    if folder_mode then
+        table.insert(ftp_list, {
+            text = _("Long-press to select current folder"),
+            url = folder_path,
+            type = "folder_long_press",
+        })
+    end
+
     for item in (table.concat(tbl)..'\n'):gmatch'(.-)\r?\n' do
         if item ~= '' then
             file_name = item:match("([^/]+)$")
@@ -55,22 +70,20 @@ function FtpApi:listFolder(address_path, folder_path)
                 type = "folder"
                 table.insert(ftp_list, {
                     text = file_name .. "/",
-                    url = string.format("%s/%s",folder_path, file_name),
+                    url = string.format("%s/%s", folder_path, file_name), -- Full absolute path for consistency
                     type = type,
                 })
-            --show only file with supported formats
-            elseif extension  and (DocumentRegistry:hasProvider(item)
+            elseif extension and (DocumentRegistry:hasProvider(item)
                 or G_reader_settings:isTrue("show_unsupported")) then
                 type = "file"
                 table.insert(ftp_file, {
                     text = file_name,
-                    url = string.format("%s/%s",folder_path, file_name),
+                    url = string.format("%s/%s", folder_path, file_name), -- Full absolute path for consistency
                     type = type,
                 })
             end
         end
     end
-    --sort
     table.sort(ftp_list, function(v1,v2)
         return ffiUtil.strcoll(v1.text, v2.text)
     end)
@@ -94,7 +107,11 @@ function FtpApi:delete(file_path)
     p.argument = string.gsub(p.path, "^/", "")
     p.command = "dele"
     p.check = 250
-    return ftp.command(p)
+    local success, err = ftp.command(p)
+    if not success then
+        logger.err("FtpApi:delete failed:", err)
+    end
+    return success, err
 end
 
 return FtpApi
