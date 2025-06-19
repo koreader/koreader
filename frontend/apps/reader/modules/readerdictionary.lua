@@ -1559,9 +1559,9 @@ function ReaderDictionary:loadPreset(preset, skip_notification)
     self:onSaveSettings()
     self:updateSdcvDictNamesOptions()
     -- Show a message if any dictionaries from the preset are missing.
-    if not skip_notification and #preset.enabled_dict_names > #valid_enabled_names then
+    if not skip_notification and util.tableSize(preset.enabled_dict_names) > #valid_enabled_names then
         local missing_dicts = {}
-        for _, preset_name in ipairs(preset.enabled_dict_names) do
+        for preset_name, _ in pairs(preset.enabled_dict_names) do
             if not available_dict_names[preset_name] then
                 table.insert(missing_dicts, preset_name)
             end
