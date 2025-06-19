@@ -200,7 +200,7 @@ function GetText_mt.__index.changeLang(new_lang)
                     local n = tonumber(k:match("msgstr%[([0-9]+)%]"))
                     local msgstr = v
 
-                    if n and msgstr then
+                    if n and msgstr and msgstr ~= "" then
                         addTranslation(data.msgctxt, data.msgid, msgstr, n)
                     end
                 end
