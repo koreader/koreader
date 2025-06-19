@@ -1091,7 +1091,7 @@ function ReaderStatistics:onToggleStatistics(arg)
             self:initData()
             self.start_current_period = os.time()
             if self.use_pagemap_for_stats then
-                self.curr_page = select(2,self.ui.pagemap:getCurrentPageLabel())
+                self.curr_page = select(2, self.ui.pagemap:getCurrentPageLabel())
             else
                 self.curr_page = self.ui:getCurrentPage()
             end
