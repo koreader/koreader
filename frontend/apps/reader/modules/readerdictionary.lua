@@ -889,7 +889,7 @@ end
 
 function ReaderDictionary:onShowDictionaryLookup()
     local buttons = {}
-    local preset_names = Presets:getPresets(self.preset_obj)
+    local preset_names = Presets.getPresets(self.preset_obj)
     if preset_names and #preset_names > 0 then
         table.insert(buttons, {
             {
@@ -1528,9 +1528,11 @@ The current default (★) is enabled.]])
 end
 
 function ReaderDictionary:buildPreset()
-    return { -- Only store the names of enabled dictionaries.
-        enabled_dict_names = util.tableDeepCopy(self.enabled_dict_names),
-    }
+    local preset = { enabled_dict_names = {} } -- Only store the names of enabled dictionaries.
+    for _, name in ipairs(self.enabled_dict_names) do
+        preset.enabled_dict_names[name] = true
+    end
+    return preset
 end
 
 function ReaderDictionary:loadPreset(preset, skip_notification)
@@ -1543,18 +1545,11 @@ function ReaderDictionary:loadPreset(preset, skip_notification)
     -- Only enable dictionaries from the preset that are still available, and re-build self.dicts_disabled
     -- to make sure dicts added after the creation of the preset, are disabled as well.
     local dicts_disabled, valid_enabled_names = {}, {}
-    -- first disable all current dictionaries
     for _, ifo in ipairs(available_ifos) do
-        dicts_disabled[ifo.file] = true
-    end
-    -- then enable only those from the preset that still exist
-    for _, ifo in ipairs(available_ifos) do
-        for _, enabled_name in ipairs(preset.enabled_dict_names) do
-            if ifo.name == enabled_name then
-                dicts_disabled[ifo.file] = nil -- enable this dictionary
-                table.insert(valid_enabled_names, enabled_name)
-                break
-            end
+        if preset.enabled_dict_names[ifo.name] then
+            table.insert(valid_enabled_names, ifo.name)
+        else
+            dicts_disabled[ifo.file] = true
         end
     end
     -- update both settings and save

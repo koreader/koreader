@@ -1452,7 +1452,7 @@ function DictQuickLookup:onLookupInputWord(hint)
             },
         },
     }
-    local preset_names = Presets:getPresets(self.ui.dictionary.preset_config)
+    local preset_names = Presets.getPresets(self.ui.dictionary.preset_obj)
     if preset_names and #preset_names > 0 then
         table.insert(buttons, 1, {
             {
@@ -1468,7 +1468,7 @@ function DictQuickLookup:onLookupInputWord(hint)
                                 align = "left",
                                 text = preset_name,
                                 callback = function()
-                                    self.ui.dictionary:loadPreset(self.ui.dictionary.preset_config.presets[preset_name], true)
+                                    self.ui.dictionary:loadPreset(self.ui.dictionary.preset_obj.presets[preset_name], true)
                                     UIManager:close(button_dialog)
                                     UIManager:close(self.input_dialog)
                                     self.ui:handleEvent(Event:new("LookupWord", text, true, nil, nil, nil,

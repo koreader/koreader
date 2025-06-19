@@ -157,7 +157,8 @@ function Presets.editPresetName(options, preset_obj, on_success_callback)
                         end
 
                         -- If all validation passes, call the success callback
-                        on_success_callback(entered_preset_name, input_dialog)
+                        on_success_callback(entered_preset_name)
+                        UIManager:close(input_dialog)
                     end,
                 },
             },
@@ -176,10 +177,9 @@ function Presets.genPresetMenuItemTable(preset_obj, text, enabled_func)
             enabled_func = enabled_func,
             callback = function(touchmenu_instance)
                 Presets.editPresetName({}, preset_obj,
-                    function(entered_preset_name, dialog_instance)
+                    function(entered_preset_name)
                         local preset_data = preset_obj.buildPreset()
                         preset_obj.presets[entered_preset_name] = preset_data
-                        UIManager:close(dialog_instance)
                         touchmenu_instance.item_table = Presets.genPresetMenuItemTable(preset_obj)
                         touchmenu_instance:updateItems()
                     end
@@ -250,7 +250,7 @@ function Presets.genPresetMenuItemTable(preset_obj, text, enabled_func)
                                         initial_value = preset_name,
                                         confirm_button_text = _("Rename"),
                                     }, preset_obj,
-                                    function(new_name, dialog_instance)
+                                    function(new_name)
                                         presets[new_name] = presets[preset_name]
                                         presets[preset_name] = nil
                                         local action_key = preset_obj.dispatcher_name
@@ -261,7 +261,6 @@ function Presets.genPresetMenuItemTable(preset_obj, text, enabled_func)
                                                 new_value = new_name
                                             }))
                                         end
-                                        UIManager:close(dialog_instance)
                                         touchmenu_instance.item_table = Presets.genPresetMenuItemTable(preset_obj)
                                         touchmenu_instance:updateItems()
                                     end) -- editPresetName
