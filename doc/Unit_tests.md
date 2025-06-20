@@ -1,16 +1,14 @@
 # Unit Tests
 
-Unit tests are automatically performed using [busted](http://olivinelabs.com/busted/). It depends on `luarocks`.
+Unit tests are written for [busted](https://lunarmodules.github.io/busted/)
+(a version is automatically provided by the build system), and executed in
+parallel with the meson test runner.
 
-To grab busted, install the same version [as used in the automated tests](https://github.com/koreader/koreader/blob/master/.ci/install.sh). At the time of writing that is 2.0.0-1:
-```bash
-mkdir $HOME/.luarocks
-cp /etc/luarocks/config.lua $HOME/.luarocks/config.lua
-echo "wrap_bin_scripts = false" >> $HOME/.luarocks/config.lua
-luarocks --local install busted 2.0.0-1
-```
-Then you can set up the environment variables with `./kodev activate`.
+You can run them with `./kodev test`, examples:
 
-If all went well, you'll now be able to run `./kodev test front` (for the frontend) or `./kodev test base` (for koreader-base).
+- to run all tests (frontend & base): `./kodev test`
+- frontend only: `./kodev test front`
+- to run one specific base test: `./kodev test base util`
+- to list available tests: `./kodev test -l`
 
-You can run individual tests using `./kodev test front testname_spec.lua`.
+Check the output of `./kodev test -h` for the full usage.

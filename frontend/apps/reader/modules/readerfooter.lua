@@ -446,7 +446,7 @@ footerTextGeneratorMap = {
             tmp:free()
         end
         local separator_width = is_filler_inside and footer.separator_width or 0
-        local filler_space = "\u{200A}" -- HAIR SPACE
+        local filler_space = " "
         if footer.filler_space_width == nil then
             tmp = TextWidget:new{
                 text = filler_space,
@@ -2038,7 +2038,7 @@ function ReaderFooter:genAllFooterText(gen_to_skip)
         local text, merge = gen(self)
         if text and text ~= "" then
             count = count + 1
-            if self.settings.item_prefix == "compact_items" then
+            if self.settings.item_prefix == "compact_items" and gen ~= footerTextGeneratorMap.dynamic_filler then
                 -- remove whitespace from footer items if symbol_type is compact_items
                 -- use a hair-space to avoid issues with RTL display
                 text = text:gsub("%s", "\u{200A}")
