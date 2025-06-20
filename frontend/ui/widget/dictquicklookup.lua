@@ -1454,7 +1454,7 @@ function DictQuickLookup:onLookupInputWord(hint)
     }
     local preset_names = Presets.getPresets(self.ui.dictionary.preset_obj)
     if preset_names and #preset_names > 0 then
-        table.insert(buttons, 1, {
+        table.insert(buttons, 2, {
             {
                 text = _("One-time search with preset"),
                 callback = function()
