@@ -1,109 +1,109 @@
---[[
-    This module provides a unified interface for managing presets across different KOReader modules.
-    It handles creation, loading, updating, and deletion of presets, as well as menu generation.
+--[[--
+This module provides a unified interface for managing presets across different KOReader modules.
+It handles creation, loading, updating, and deletion of presets, as well as menu generation.
 
-    Usage:
-        local Presets = require("ui/presets")
+Usage:
+    local Presets = require("ui/presets")
 
-        -- 1. In your module's init() method, set up a preset object:
-            self.preset_obj = {
-                presets = G_reader_settings:readSetting("my_module_presets", {}),             -- or custom storage
-                cycle_index = G_reader_settings:readSetting("my_module_presets_cycle_index"), -- optional, only needed if cycling through presets
-                dispatcher_name = "load_my_module_preset",                                    -- must match dispatcher.lua entry
-                saveCycleIndex = function(this)                                               -- Save cycle index to persistent storage
-                    G_reader_settings:saveSetting("my_module_presets_cycle_index", this.cycle_index)
-                end,
-                buildPreset = function() return self:buildPreset() end,                       -- Closure to build a preset from current state
-                loadPreset = function(preset) self:loadPreset(preset) end,                    -- Closure to apply a preset to the module
+    -- 1. In your module's init() method, set up a preset object:
+        self.preset_obj = {
+            presets = G_reader_settings:readSetting("my_module_presets", {}),             -- or custom storage
+            cycle_index = G_reader_settings:readSetting("my_module_presets_cycle_index"), -- optional, only needed if cycling through presets
+            dispatcher_name = "load_my_module_preset",                                    -- must match dispatcher.lua entry
+            saveCycleIndex = function(this)                                               -- Save cycle index to persistent storage
+                G_reader_settings:saveSetting("my_module_presets_cycle_index", this.cycle_index)
+            end,
+            buildPreset = function() return self:buildPreset() end,                       -- Closure to build a preset from current state
+            loadPreset = function(preset) self:loadPreset(preset) end,                    -- Closure to apply a preset to the module
+        }
+
+    -- 2. Implement required methods in your module:
+        function MyModule:buildPreset()
+            return {
+                -- Return a table with the settings you want to save in the preset
+                setting1 = self.setting1,
+                setting2 = self.setting2,
+                enabled_features = self.enabled_features,
             }
+        end
 
-        -- 2. Implement required methods in your module:
-            function MyModule:buildPreset()
-                return {
-                    -- Return a table with the settings you want to save in the preset
-                    setting1 = self.setting1,
-                    setting2 = self.setting2,
-                    enabled_features = self.enabled_features,
-                }
-            end
+        function MyModule:loadPreset(preset)
+            -- Apply the preset settings to your module
+            self.setting1 = preset.setting1
+            self.setting2 = preset.setting2
+            self.enabled_features = preset.enabled_features
+            -- Update UI or perform other necessary changes
+            self:refresh()
+        end
 
-            function MyModule:loadPreset(preset)
-                -- Apply the preset settings to your module
-                self.setting1 = preset.setting1
-                self.setting2 = preset.setting2
-                self.enabled_features = preset.enabled_features
-                -- Update UI or perform other necessary changes
-                self:refresh()
-            end
+    -- 3. Create menu items for presets: (Alternatively, you could call Presets.genPresetMenuItemTable directly from touchmenu_instance)
+        function MyModule:genPresetMenuItemTable(touchmenu_instance)
+            return Presets.genPresetMenuItemTable(
+                self.preset_obj,                                 -- preset object
+                _("Create new preset from current settings"),    -- optional: custom text for UI menu
+                function() return self:hasValidSettings() end,   -- optional: function to enable/disable creating presets
+            )
+        end
 
-        -- 3. Create menu items for presets: (Alternatively, you could call Presets.genPresetMenuItemTable directly from touchmenu_instance)
-            function MyModule:genPresetMenuItemTable(touchmenu_instance)
-                return Presets.genPresetMenuItemTable(
-                    self.preset_obj,                                 -- preset object
-                    _("Create new preset from current settings"),    -- optional: custom text for UI menu
-                    function() return self:hasValidSettings() end,   -- optional: function to enable/disable creating presets
-                )
-            end
+    -- 4. Load a preset by name (for dispatcher/event handling):
+        function MyModule:onLoadMyModulePreset(preset_name)
+            return Presets.onLoadPreset(
+                self.preset_obj,
+                preset_name,
+                true  -- show notification
+            )
+        end
 
-        -- 4. Load a preset by name (for dispatcher/event handling):
-            function MyModule:onLoadMyModulePreset(preset_name)
-                return Presets.onLoadPreset(
-                    self.preset_obj,
-                    preset_name,
-                    true  -- show notification
-                )
-            end
+    -- 5. Cycle through presets (for dispatcher/event handling):
+        function MyModule:onCycleMyModulePresets()
+            return Presets.cycleThroughPresets(
+                self.preset_obj,
+                true  -- show notification
+            )
+        end
 
-        -- 5. Cycle through presets (for dispatcher/event handling):
-            function MyModule:onCycleMyModulePresets()
-                return Presets.cycleThroughPresets(
-                    self.preset_obj,
-                    true  -- show notification
-                )
-            end
+    -- 6. Get list of available presets (for dispatcher):
+        function MyModule.getPresets() -- Note: This is a static method on MyModule
+            local config = {
+                presets = G_reader_settings:readSetting("my_module_presets", {})
+            }
+            return Presets.getPresets(config)
+        end
 
-        -- 6. Get list of available presets (for dispatcher):
-            function MyModule.getPresets() -- Note: This is a static method on MyModule
-                local config = {
-                    presets = G_reader_settings:readSetting("my_module_presets", {})
-                }
-                return Presets.getPresets(config)
-            end
+    -- 7. Add to dispatcher.lua:
+        load_my_module_preset = {
+            category = "string",
+            event = "LoadMyModulePreset",
+            title = _("Load my module preset"),
+            args_func = MyModule.getPresets,
+            reader = true
+        },
+        cycle_my_module_preset = {
+            category = "none",
+            event = "CycleMyModulePresets",
+            title = _("Cycle through my module presets"),
+            reader = true
+        },
 
-        -- 7. Add to dispatcher.lua:
-            load_my_module_preset = {
-                category = "string",
-                event = "LoadMyModulePreset",
-                title = _("Load my module preset"),
-                args_func = MyModule.getPresets,
-                reader = true
-            },
-            cycle_my_module_preset = {
-                category = "none",
-                event = "CycleMyModulePresets",
-                title = _("Cycle through my module presets"),
-                reader = true
-            },
+Required preset_obj fields:
+    - presets: table containing saved presets
+    - cycle_index: current index for cycling through presets (optional, defaults to 0)
+    - dispatcher_name: string matching the dispatcher action name (for dispatcher integration)
+    - saveCycleIndex(this): function to save cycle index (optional, only needed if cycling is used)
 
-    Required preset_obj fields:
-        - presets: table containing saved presets
-        - cycle_index: current index for cycling through presets (optional, defaults to 0)
-        - dispatcher_name: string matching the dispatcher action name (for dispatcher integration)
-        - saveCycleIndex(this): function to save cycle index (optional, only needed if cycling is used)
+Required module methods:
+    - buildPreset(): returns a table with the current settings to save as a preset
+    - loadPreset(preset): applies the settings from the preset table to the module
 
-    Required module methods:
-        - buildPreset(): returns a table with the current settings to save as a preset
-        - loadPreset(preset): applies the settings from the preset table to the module
-
-    The preset system handles:
-        - Creating, updating, deleting, and renaming presets through UI dialogs
-        - Generating menu items with hold actions for preset management
-        - Saving/loading presets to/from G_reader_settings (or custom storage)
-        - Cycling through presets with wrap-around
-        - User notifications when presets are loaded/updated/created
-        - Integration with Dispatcher for gesture/hotkey/profile support
-        - Broadcasting events to update dispatcher when presets change
-        - Input validation and duplicate name prevention
+The preset system handles:
+    - Creating, updating, deleting, and renaming presets through UI dialogs
+    - Generating menu items with hold actions for preset management
+    - Saving/loading presets to/from G_reader_settings (or custom storage)
+    - Cycling through presets with wrap-around
+    - User notifications when presets are loaded/updated/created
+    - Integration with Dispatcher for gesture/hotkey/profile support
+    - Broadcasting events to update dispatcher when presets change
+    - Input validation and duplicate name prevention
 --]]
 
 local ConfirmBox = require("ui/widget/confirmbox")
