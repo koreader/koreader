@@ -36,10 +36,10 @@
                 self:refresh()
             end
 
-        -- 3. Create menu items for presets:
+        -- 3. Create menu items for presets: (Alternatively, you could call Presets.genPresetMenuItemTable directly from touchmenu_instance)
             function MyModule:genPresetMenuItemTable(touchmenu_instance)
                 return Presets.genPresetMenuItemTable(
-                    self.preset_obj,                              -- preset object
+                    self.preset_obj,                                 -- preset object
                     _("Create new preset from current settings"),    -- optional: custom text for UI menu
                     function() return self:hasValidSettings() end,   -- optional: function to enable/disable creating presets
                 )
