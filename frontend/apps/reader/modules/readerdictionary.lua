@@ -893,7 +893,7 @@ function ReaderDictionary:onShowDictionaryLookup()
     if preset_names and #preset_names > 0 then
         table.insert(buttons, {
             {
-                text = _("One-time search with preset"),
+                text = _("Search with preset"),
                 callback = function()
                     local text = self.dictionary_lookup_dialog:getInputText()
                     if text == "" or text:match("^%s*$") then return end

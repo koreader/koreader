@@ -1456,7 +1456,7 @@ function DictQuickLookup:onLookupInputWord(hint)
     if preset_names and #preset_names > 0 then
         table.insert(buttons, 2, {
             {
-                text = _("One-time search with preset"),
+                text = _("Search with preset"),
                 callback = function()
                     local text = self.input_dialog:getInputText()
                     if text == "" or text:match("^%s*$") then return end
