@@ -34,6 +34,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local FileManager = require("apps/filemanager/filemanager")
 local Notification = require("ui/widget/notification")
+local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
@@ -60,6 +61,8 @@ local settingsList = {
     collections_search = {category="none", event="ShowCollectionsSearchDialog", title=_("Collections search"), general=true, separator=true},
     ----
     dictionary_lookup = {category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), general=true},
+    load_dictionary_preset = {category="string", event="LoadDictionaryPreset", title=_("Load dictionary preset"), args_func=ReaderDictionary.getPresets, general=true},
+    cycle_dictionary_preset = {category="none", event="CycleDictionaryPresets", title=_("Cycle through dictionary presets"), general=true,},
     wikipedia_lookup = {category="none", event="ShowWikipediaLookup", title=_("Wikipedia lookup"), general=true, separator=true},
     ----
     show_menu = {category="none", event="ShowMenu", title=_("Show menu"), general=true},
@@ -300,6 +303,8 @@ local dispatcher_menu_order = {
     "collections_search",
     ----
     "dictionary_lookup",
+    "load_dictionary_preset",
+    "cycle_dictionary_preset",
     "wikipedia_lookup",
     ----
     "show_menu",
