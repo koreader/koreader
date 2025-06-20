@@ -8,6 +8,7 @@ local ReaderUI = require("apps/reader/readerui")
 local UIManager = require("ui/uimanager")
 local ltn12 = require("ltn12")
 local logger = require("logger")
+local socketutil = require("socketutil")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -19,7 +20,7 @@ function Ftp:run(address, user, pass, path)
     return FtpApi:listFolder(url, path)
 end
 
-function Ftp:downloadFile(item, address, user, pass, path, callback_close)
+function Ftp:downloadFile(item, address, user, pass, path, callback_close, progress_callback)
     local url = FtpApi:generateUrl(address, util.urlEncode(user), util.urlEncode(pass)) .. item.url
     logger.dbg("downloadFile url", url)
     path = util.fixUtf8(path, "_")
@@ -30,7 +31,11 @@ function Ftp:downloadFile(item, address, user, pass, path, callback_close)
         })
         return
     end
-    local response = FtpApi:ftpGet(url, "retr", ltn12.sink.file(file))
+
+    local handle = ltn12.sink.file(file)
+    handle = socketutil.chainSinkWithProgressCallback(handle, progress_callback)
+
+    local response = FtpApi:ftpGet(url, "retr", handle)
     if response ~= nil then
         local __, filename = util.splitFilePathName(path)
         if G_reader_settings:isTrue("show_unsupported") and not DocumentRegistry:hasProvider(filename) then

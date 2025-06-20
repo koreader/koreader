@@ -189,6 +189,7 @@ function GetText_mt.__index.changeLang(new_lang)
     end
 
     local data = {}
+    local in_comments = false
     local fuzzy = false
     local headers
     local what = nil
@@ -200,7 +201,7 @@ function GetText_mt.__index.changeLang(new_lang)
                     local n = tonumber(k:match("msgstr%[([0-9]+)%]"))
                     local msgstr = v
 
-                    if n and msgstr then
+                    if n and msgstr and msgstr ~= "" then
                         addTranslation(data.msgctxt, data.msgid, msgstr, n)
                     end
                 end
@@ -258,7 +259,18 @@ function GetText_mt.__index.changeLang(new_lang)
             what = nil
         else
             -- comment
-            if not line:match("^#") then
+            if line:match("^#") then
+                if not in_comments then
+                    in_comments = true
+                    fuzzy = false
+                end
+                if line:match(", fuzzy") then
+                    fuzzy = true
+                end
+            elseif fuzzy then
+                in_comments = false
+            else
+                in_comments = false
                 -- new data item (msgid, msgstr, ...
                 local w, s = line:match("^%s*([%a_%[%]0-9]+)%s+\"(.*)\"%s*$")
                 if w then
@@ -267,7 +279,7 @@ function GetText_mt.__index.changeLang(new_lang)
                     -- string continuation
                     s = line:match("^%s*\"(.*)\"%s*$")
                 end
-                if what and s and not fuzzy then
+                if what and s then
                     -- unescape \n or msgid won't match
                     s = s:gsub("\\n", "\n")
                     -- unescape " or msgid won't match
@@ -275,14 +287,7 @@ function GetText_mt.__index.changeLang(new_lang)
                     -- unescape \\ or msgid won't match
                     s = s:gsub("\\\\", "\\")
                     data[what] = (data[what] or "") .. s
-                elseif what and s == "" and fuzzy then -- luacheck: ignore 542
-                    -- Ignore the likes of msgid "" and msgstr ""
-                else
-                    -- Don't save this fuzzy string and unset fuzzy for the next one.
-                    fuzzy = false
                 end
-            elseif line:match("#, fuzzy") then
-                fuzzy = true
             end
         end
     end
