@@ -1160,12 +1160,7 @@ function DictQuickLookup:changeDictionary(index, skip_update)
         -- add queried word to 1st result's definition, so we can see
         -- what was the selected text and if we selected wrong
         if index == 1 then
-            if self.is_html then
-                self.definition = self.definition.."<br/>_______<br/>"
-            else
-                self.definition = self.definition.."\n_______\n"
-            end
-            self.definition = self.definition..T(_("(query : %1)"), self.word)
+            self:addQueryWordToResult()
         end
     end
     self.displaydictname = self.dictionary
@@ -1186,6 +1181,16 @@ function DictQuickLookup:changeDictionary(index, skip_update)
     if not skip_update then
         self:update()
     end
+end
+
+function DictQuickLookup:addQueryWordToResult()
+    -- Extracted to a separate method so it can be removed by user patches.
+    if self.is_html then
+        self.definition = self.definition.."<br/>_______<br/>"
+    else
+        self.definition = self.definition.."\n_______\n"
+    end
+    self.definition = self.definition..T(_("(query : %1)"), self.word)
 end
 
 --[[ No longer used
