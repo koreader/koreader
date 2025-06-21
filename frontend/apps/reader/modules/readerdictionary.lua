@@ -921,6 +921,7 @@ function ReaderDictionary:onShowDictionaryLookup()
                         buttons = dialog_buttons,
                         shrink_unneeded_width = true,
                     }
+                    self.dictionary_lookup_dialog:onCloseKeyboard()
                     UIManager:show(button_dialog)
                 end,
             }
