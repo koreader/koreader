@@ -105,6 +105,7 @@ endef
 define UPDATE_PATH_EXCLUDES +=
 dummy-test-file*
 file.sdr*
+i18n-test
 readerbookmark.*
 readerhighlight.*
 testdata
