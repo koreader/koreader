@@ -24,8 +24,8 @@ function DropBox:showFiles(url, password)
     return DropBoxApi:showFiles(url, password)
 end
 
-function DropBox:downloadFile(item, password, path, callback_close)
-    local code_response = DropBoxApi:downloadFile(item.url, password, path)
+function DropBox:downloadFile(item, password, path, callback_close, progress_callback)
+    local code_response = DropBoxApi:downloadFile(item.url, password, path, progress_callback)
     if code_response == 200 then
         local __, filename = util.splitFilePathName(path)
         if G_reader_settings:isTrue("show_unsupported") and not DocumentRegistry:hasProvider(filename) then

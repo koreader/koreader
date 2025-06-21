@@ -311,7 +311,6 @@ function kodev-activate() {
     parse_options '' '' '0' "$@"
     info "adding ${CURDIR} to \$PATH..."
     export PATH="${PATH}:${CURDIR}"
-    eval "$(luarocks --lua-version=5.1 path --bin)"
     exec "${SHELL}"
 }
 

@@ -148,10 +148,12 @@ end
 
 function ReadCollection:addRemoveItemMultiple(file, collections_to_add)
     file = ffiUtil.realpath(file) or file
+    local attr
     for coll_name, coll in pairs(self.coll) do
         if collections_to_add[coll_name] then
             if not coll[file] then
-                coll[file] = buildEntry(file, self:getCollectionNextOrder(coll_name))
+                attr = attr or lfs.attributes(file)
+                coll[file] = buildEntry(file, self:getCollectionNextOrder(coll_name), attr)
             end
         else
             if coll[file] then
@@ -165,10 +167,12 @@ function ReadCollection:addItemsMultiple(files, collections_to_add)
     local count = 0
     for file in pairs(files) do
         file = ffiUtil.realpath(file) or file
+        local attr
         for coll_name in pairs(collections_to_add) do
             local coll = self.coll[coll_name]
             if not coll[file] then
-                coll[file] = buildEntry(file, self:getCollectionNextOrder(coll_name))
+                attr = attr or lfs.attributes(file)
+                coll[file] = buildEntry(file, self:getCollectionNextOrder(coll_name), attr)
                 count = count + 1
             end
         end
@@ -290,20 +294,22 @@ function ReadCollection:updateCollectionFromFolder(collection_name, folders)
     local count = 0
     if folders then
         local coll = self.coll[collection_name]
-        local filetypes = util.tableGetValue(self.coll_settings[collection_name], "filter", "add", "filetype")
+        local filetypes
+        local str = util.tableGetValue(self.coll_settings[collection_name], "filter", "add", "filetype")
+        if str then -- string of comma separated file types
+            filetypes = {}
+            for filetype in util.gsplit(str, ",") do
+                filetypes[util.trim(filetype)] = true
+            end
+        end
         local function add_item_callback(file, f, attr)
             file = ffiUtil.realpath(file)
-            local does_match = coll[file] == nil and not util.stringStartsWith(f, "._") and DocumentRegistry:hasProvider(file)
+            local does_match = coll[file] == nil and not util.stringStartsWith(f, "._")
+                and (filetypes or DocumentRegistry:hasProvider(file))
             if does_match then
                 if filetypes then
-                    does_match = false
                     local _, fileext = require("apps/filemanager/filemanagerutil").splitFileNameType(file)
-                    for filetype in util.gsplit(filetypes, ",") do
-                        if util.trim(filetype) == fileext then
-                            does_match = true
-                            break
-                        end
-                    end
+                    does_match = filetypes[fileext]
                 end
                 if does_match then
                     self:addItem(file, collection_name, attr)

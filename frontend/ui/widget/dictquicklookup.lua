@@ -21,6 +21,7 @@ local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local TitleBar = require("ui/widget/titlebar")
 local Translator = require("ui/translator")
+local Presets = require("ui/presets")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -1404,57 +1405,96 @@ function DictQuickLookup:onForwardingPanRelease(arg, ges)
 end
 
 function DictQuickLookup:onLookupInputWord(hint)
+    local buttons = {
+        {
+            {
+                text = _("Translate"),
+                callback = function()
+                    local text = self.input_dialog:getInputText()
+                    if text ~= "" then
+                        UIManager:close(self.input_dialog)
+                        Translator:showTranslation(text, true)
+                    end
+                end,
+            },
+            {
+                text = _("Search Wikipedia"),
+                is_enter_default = self.is_wiki,
+                callback = function()
+                    local text = self.input_dialog:getInputText()
+                    if text ~= "" then
+                        UIManager:close(self.input_dialog)
+                        self.is_wiki = true
+                        self:lookupWikipedia(false, text, true)
+                    end
+                end,
+            },
+        },
+        {
+            {
+                text = _("Cancel"),
+                id = "close",
+                callback = function()
+                    UIManager:close(self.input_dialog)
+                end,
+            },
+            {
+                text = _("Search dictionary"),
+                is_enter_default = not self.is_wiki,
+                callback = function()
+                    local text = self.input_dialog:getInputText()
+                    if text ~= "" then
+                        UIManager:close(self.input_dialog)
+                        self.is_wiki = false
+                        self.ui:handleEvent(Event:new("LookupWord", text, true))
+                    end
+                end,
+            },
+        },
+    }
+    local preset_names = Presets.getPresets(self.ui.dictionary.preset_obj)
+    if preset_names and #preset_names > 0 then
+        table.insert(buttons, 2, {
+            {
+                text = _("Search with preset"),
+                callback = function()
+                    local text = self.input_dialog:getInputText()
+                    if text == "" or text:match("^%s*$") then return end
+                    local current_dict_state = self.ui.dictionary:buildPreset()
+                    local button_dialog, dialog_buttons = nil, {} -- CI won't like it if we call it buttons :( so dialog_buttons
+                    for _, preset_name in ipairs(preset_names) do
+                        table.insert(dialog_buttons, {
+                            {
+                                align = "left",
+                                text = preset_name,
+                                callback = function()
+                                    self.ui.dictionary:loadPreset(self.ui.dictionary.preset_obj.presets[preset_name], true)
+                                    UIManager:close(button_dialog)
+                                    UIManager:close(self.input_dialog)
+                                    self.ui:handleEvent(Event:new("LookupWord", text, true, nil, nil, nil,
+                                        function()
+                                            -- Restore original preset _after_ lookup is complete
+                                            self.ui.dictionary:loadPreset(current_dict_state, true)
+                                        end
+                                    ))
+                                end
+                            }
+                        })
+                    end
+                    button_dialog = ButtonDialog:new{
+                        buttons = dialog_buttons,
+                        shrink_unneeded_width = true,
+                    }
+                    UIManager:show(button_dialog)
+                end,
+            }
+        })
+    end
     self.input_dialog = InputDialog:new{
         title = _("Enter a word or phrase to look up"),
         input = hint,
         input_hint = hint,
-        buttons = {
-            {
-                {
-                    text = _("Translate"),
-                    callback = function()
-                        local text = self.input_dialog:getInputText()
-                        if text ~= "" then
-                            UIManager:close(self.input_dialog)
-                            Translator:showTranslation(text, true)
-                        end
-                    end,
-                },
-                {
-                    text = _("Search Wikipedia"),
-                    is_enter_default = self.is_wiki,
-                    callback = function()
-                        local text = self.input_dialog:getInputText()
-                        if text ~= "" then
-                            UIManager:close(self.input_dialog)
-                            self.is_wiki = true
-                            self:lookupWikipedia(false, text, true)
-                        end
-                    end,
-                },
-            },
-            {
-                {
-                    text = _("Cancel"),
-                    id = "close",
-                    callback = function()
-                        UIManager:close(self.input_dialog)
-                    end,
-                },
-                {
-                    text = _("Search dictionary"),
-                    is_enter_default = not self.is_wiki,
-                    callback = function()
-                        local text = self.input_dialog:getInputText()
-                        if text ~= "" then
-                            UIManager:close(self.input_dialog)
-                            self.is_wiki = false
-                            self.ui:handleEvent(Event:new("LookupWord", text, true))
-                        end
-                    end,
-                },
-            },
-        },
+        buttons = buttons,
     }
     UIManager:show(self.input_dialog)
     self.input_dialog:onShowKeyboard()
