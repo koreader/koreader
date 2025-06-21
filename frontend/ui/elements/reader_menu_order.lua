@@ -158,6 +158,7 @@ local order = {
     },
     taps_and_gestures = {
         "gesture_manager",
+        "gesture_overview",
         "gesture_intervals",
         "----------------------------",
         "ignore_hold_corners",
