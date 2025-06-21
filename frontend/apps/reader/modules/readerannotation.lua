@@ -240,6 +240,7 @@ function ReaderAnnotation:setNeedsUpdateFlag()
 end
 
 ReaderAnnotation.onDocumentRerendered = ReaderAnnotation.setNeedsUpdateFlag
+ReaderAnnotation.onUsePageLabelsUpdated = ReaderAnnotation.setNeedsUpdateFlag
 
 function ReaderAnnotation:onCloseDocument()
     self:updatePageNumbers()
