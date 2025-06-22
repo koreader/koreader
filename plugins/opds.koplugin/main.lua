@@ -1,7 +1,6 @@
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
-local Device = require("device")
 local Dispatcher = require("dispatcher")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
@@ -69,152 +68,21 @@ function OPDS:onDispatcherRegisterActions()
 end
 
 function OPDS:addToMainMenu(menu_items)
-    --TODO revert changes to original setup
     if not self.ui.document then -- FileManager menu only
         menu_items.opds = {
-            text = _("OPDS"),
-            sub_item_table = {
-                {
-                    text = _("Catalogs"),
-                    keep_menu_open = true,
-                    callback = function()
-                        self:onShowOPDSCatalog()
-                    end,
-                },
-                {
-                    text = _("Sync"),
-                    keep_menu_open = true,
-                    sub_item_table = self:getOPDSDownloadMenu(),
-                },
-            },
+            text = _("OPDS catalogs"),
+            callback = function()
+                self:onShowOPDSCatalog()
+            end,
         }
     end
-end
-
-function OPDS:getOPDSDownloadMenu()
-    return {
-        {
-            text = _("Synchronize now"),
-            callback = function()
-                NetworkMgr:runWhenConnected(function()
-                    self.sync = true
-                    self.force = false
-                    self:checkSyncDownload()
-                end)
-            end,
-        },
-        {
-            text = _("Force sync"),
-            callback = function()
-                UIManager:show(ConfirmBox: new{
-                    text = "Are you sure you want to force sync? This may overwrite existing data.",
-                    icon = "notice-warning",
-                    ok_text = "Force sync",
-                    ok_callback = function()
-                        NetworkMgr:runWhenConnected(function()
-                            self.sync = true
-                            self.force = true
-                            self:checkSyncDownload()
-                        end)
-                    end
-                })
-            end,
-        },
-        {
-            text = _("Set maximum sync size"),
-            keep_menu_open = true,
-            callback = function()
-                self:setMaxSyncDownload()
-            end,
-        },
-        {
-            text = _("Set OPDS sync folder"),
-            callback = function()
-                self:setSyncDir(false)
-            end,
-        },
-    }
-end
-
-function OPDS:setMaxSyncDownload()
---     local current_max_dl = G_reader_settings:readSetting("opds_sync_max_dl") or 50
-    local current_max_dl = self.settings.opds_sync_max_dl or 50
-    local spin = SpinWidget:new{
-        title_text = "Set maximum sync size",
-        info_text = "Set the max number of books to download at a time",
-        value = current_max_dl,
-        value_min = 10,
-        value_max = 1000,
-        value_step = 10,
-        value_hold_step = 50,
-        wrap = true,
-        ok_text = "Save",
-        callback = function(spin)
-            self.settings.opds_sync_max_dl = spin.value
-            self.updated = true
---             G_reader_settings:saveSetting("opds_sync_max_dl", spin.value)
-        end,
-    }
-    UIManager:show(spin)
-end
-
-function OPDS:checkSyncDownload(force)
---     if not G_reader_settings:readSetting("opds_sync_dir") then
-    if not self.settings.opds_sync_dir then
-        UIManager:show(InfoMessage:new{
-            text = _("Please select a folder for sync downloads first"),
-        })
-        self:setSyncDir()
-        return
-    end
-    self.sync_opds_browser = OPDSBrowser:new{
-        servers = self.servers,
-        downloads = self.downloads,
-        settings = self.settings,
-        sync = self.sync,
-        sync_force = self.force,
-        _manager = self,
-        file_downloaded_callback = function(file)
-            self:showFileDownloadedDialog(file)
-        end,
-    }
-    for _, item in ipairs(self.servers) do
-        if item.sync then
-            local last_download = self.sync_opds_browser:syncDownload(item, force)
-            if last_download then
-                logger.dbg("Updating opds last download for server " .. item.title)
-                self:updateFieldInCatalog(item, "last_download", last_download)
-            end
-        end
-    end
-end
-
-function OPDS:updateFieldInCatalog(item, new_name, new_value)
-    item[new_name] = new_value
-    self.updated = true
-end
-
-function OPDS:setSyncDir()
-    local force_chooser_dir
-    if Device:isAndroid() then
-        force_chooser_dir = Device.home_dir
-    end
-
-    require("ui/downloadmgr"):new{
-        onConfirm = function(inbox)
-            logger.info("set opds sync folder", inbox)
-            self.settings.opds_sync_dir = inbox
-            self.updated = true
-            logger.dbg(self.settings)
---             G_reader_settings:saveSetting("opds_sync_dir", inbox)
-        end,
-    }:chooseDir(force_chooser_dir)
 end
 
 function OPDS:onShowOPDSCatalog()
     self.opds_browser = OPDSBrowser:new{
         servers = self.servers,
         downloads = self.downloads,
+        settings = self.settings,
         title = _("OPDS catalog"),
         is_popout = false,
         is_borderless = true,
