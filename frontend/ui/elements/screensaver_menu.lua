@@ -128,7 +128,17 @@ return {
                             G_reader_settings:flipNilOrFalse("screensaver_rotate_auto_for_best_fit")
                             touchmenu_instance:updateItems()
                         end,
+                    },
+                    {
+                        text = _("Scale cover to fill screen"),
+                        checked_func = function()
+                            return G_reader_settings:isTrue("screensaver_scale_cover_images")
+                        end,
+                        callback = function(touchmenu_instance)
+                            G_reader_settings:flipNilOrFalse("screensaver_scale_cover_images")
+                        end
                     }
+
                 },
             },
             {

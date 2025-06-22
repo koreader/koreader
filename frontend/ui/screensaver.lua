@@ -610,6 +610,25 @@ function Screensaver:show()
             stretch_limit_percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage"),
         }
         if self.image then
+            if G_reader_settings:isTrue("screensaver_scale_cover_images") then
+                local image_w = self.image:getWidth()
+                local image_h = self.image:getHeight()
+                local screen_w = Screen:getWidth()
+                local screen_h = Screen:getHeight()
+
+                if G_reader_settings:isTrue("screensaver_rotate_auto_for_best_fit") then
+                    if(image_w > image_h) {
+                        local tmp = image_w
+                        image_w = image_h
+                        image_h = tmp
+                    }
+                end
+
+                if widget_settings.scale_factor == 0 then
+                    widget_settings.scale_factor = math.max(screen_w / image_w, screen_h / image_h)
+                end
+            end
+
             widget_settings.image = self.image
             widget_settings.image_disposable = true
         elseif self.image_file then
