@@ -221,6 +221,7 @@ function BookStatusWidget:setStar(num)
     local stars_group = HorizontalGroup:new{ align = "center" }
     local row = {}
     if num then
+        num = (num == 1 and self.summary.rating == 1) and 0 or num
         self.summary.rating = num
         self.updated = true
 
@@ -454,7 +455,7 @@ function BookStatusWidget:genSummaryGroup(width)
         padding = text_padding,
         parent = self,
         readonly = self.readonly,
-        hint = _("A few words about the book"),
+        hint = not self.readonly and _("A few words about the book"),
     }
     table.insert(self.layout, {self.input_note})
 

@@ -6,8 +6,11 @@ describe("NewsDownloader module", function()
     local NewsDownloader
 
     setup(function()
-        package.path = "plugins/newsdownloader.koplugin/?.lua;" .. package.path
+        local plugin_path = "plugins/newsdownloader.koplugin"
+        package.path = plugin_path.."/?.lua;" .. package.path
         NewsDownloader = require("main")
+        NewsDownloader.path = plugin_path
+        NewsDownloader:lazyInitialization()
     end)
 
     describe("RSS feed parsing", function()

@@ -430,6 +430,8 @@ function CalibreWireless:onReceiveJSON(data)
                 self:getBookCount(arg)
             elseif opcode == OPCODES.SEND_BOOK then
                 self:sendBook(arg)
+            elseif opcode == OPCODES.SEND_BOOK_METADATA then
+                self:sendBookMetadata(arg)
             elseif opcode == OPCODES.DELETE_BOOK then
                 self:deleteBook(arg)
             elseif opcode == OPCODES.GET_BOOK_FILE_SEGMENT then
@@ -704,6 +706,16 @@ function CalibreWireless:sendBook(arg)
                 end)
             end,
         })
+    end
+end
+
+function CalibreWireless:sendBookMetadata(arg)
+    logger.dbg("SEND_BOOK_METADATA", arg)
+
+    CalibreMetadata:updateBook(arg.data)
+
+    if (arg.index + 1) == arg.count then
+        CalibreMetadata:saveBookList()
     end
 end
 
