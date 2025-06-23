@@ -2,14 +2,10 @@ local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Dispatcher = require("dispatcher")
-local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
-local NetworkMgr = require("ui/network/manager")
 local OPDSBrowser = require("opdsbrowser")
-local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -57,6 +53,7 @@ function OPDS:init()
     self.servers = self.opds_settings:readSetting("servers", self.default_servers)
     self.downloads = self.opds_settings:readSetting("downloads", {})
     self.settings = self.opds_settings:readSetting("settings", {})
+    self.pending_syncs = self.opds_settings:readSetting("pending_syncs", {})
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 end
@@ -83,6 +80,7 @@ function OPDS:onShowOPDSCatalog()
         servers = self.servers,
         downloads = self.downloads,
         settings = self.settings,
+        pending_syncs = self.pending_syncs,
         title = _("OPDS catalog"),
         is_popout = false,
         is_borderless = true,

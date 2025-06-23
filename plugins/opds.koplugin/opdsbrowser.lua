@@ -70,30 +70,39 @@ function OPDSBrowser:init()
 end
 
 function OPDSBrowser:showOPDSMenu()
-    UIManager:show(ButtonDialog:new{
+    local dialog
+    dialog = ButtonDialog:new{
         buttons = {
             {{
                     text = _("Add catalog"),
                     callback = function()
+                        UIManager:close(dialog)
                         self:addEditCatalog()
                     end,
                     align = "left",
             }},
+            {},
             {{
                     text = _("Sync all catalogs"),
                     callback = function()
-                        self.sync = true
-                        self.sync_force = false
-                        self:checkSyncDownload()
+                        UIManager:close(dialog)
+                        NetworkMgr:runWhenConnected(function()
+                            self.sync = true
+                            self.sync_force = false
+                            self:checkSyncDownload()
+                        end)
                     end,
                     align = "left",
             }},
             {{
                     text = _("Force sync all catalogs"),
                     callback = function()
-                        self.sync = true
-                        self.sync_force = true
-                        self:checkSyncDownload()
+                        UIManager:close(dialog)
+                        NetworkMgr:runWhenConnected(function()
+                            self.sync = true
+                            self.sync_force = true
+                            self:checkSyncDownload()
+                        end)
                     end,
                     align = "left",
             }},
@@ -116,7 +125,8 @@ function OPDSBrowser:showOPDSMenu()
         anchor = function()
             return self.title_bar.left_button.image.dimen
         end,
-    })
+    }
+    UIManager:show(dialog)
 end
 
 
@@ -130,7 +140,9 @@ function OPDSBrowser:checkSyncDownload(server)
     end
     local last_download = nil
     if server then
-       last_download = self:syncDownload(server)
+
+        last_download = self:syncDownload(server)
+        self.sync_server_list = server.url
         if last_download then
             logger.dbg("Updating opds last download for server " .. server.title)
             self:updateFieldInCatalog(server, "last_download", last_download)
@@ -139,6 +151,7 @@ function OPDSBrowser:checkSyncDownload(server)
         for _, item in ipairs(self.servers) do
             if item.sync then
                 last_download = self:syncDownload(item)
+                self.sync_server_list = self.sync_server_list .. item.url
             end
             if last_download then
                 logger.dbg("Updating opds last download for server " .. item.title)
@@ -146,6 +159,9 @@ function OPDSBrowser:checkSyncDownload(server)
             end
         end
     end
+    Trapper:wrap(function()
+        self:downloadDownloadList()
+    end)
 end
 
 function OPDSBrowser:updateFieldInCatalog(item, new_name, new_value)
@@ -182,7 +198,6 @@ function OPDSBrowser:setSyncDir()
     require("ui/downloadmgr"):new{
         onConfirm = function(inbox)
             logger.info("set opds sync folder", inbox)
-            print("HERE")
             self.settings.opds_sync_dir = inbox
             self._manager.updated = true
         end,
@@ -1298,6 +1313,7 @@ function OPDSBrowser:showDownloadListItemDialog(item)
     return true
 end
 
+--TODO do something with the pending_syncs catalog entry
 function OPDSBrowser:downloadDownloadList()
     local dl_list
     if self.sync then
@@ -1306,7 +1322,7 @@ function OPDSBrowser:downloadDownloadList()
         dl_list = self.downloads
     end
     local function dismissable_download()
-    local info = InfoMessage:new{ text = _("Downloading… (tap to cancel)") }
+        local info = InfoMessage:new{ text = _("Downloading… (tap to cancel)") }
         UIManager:show(info)
         UIManager:forceRePaint()
         local completed, downloaded, duplicate_list = Trapper:dismissableRunInSubprocess(function()
@@ -1314,12 +1330,14 @@ function OPDSBrowser:downloadDownloadList()
             local dupe_list = {}
             for _, item in ipairs(dl_list) do
                 --Maybe add duplicate_list creation for non-sync download list?
-                if self.sync and not self.sync_force then
-                    if lfs.attributes(item.file) then
-                        table.insert(dupe_list, item)
-                    else
-                        if self:downloadFile(item.file, item.url, item.username, item.password) then
-                            dl[item.file] = true
+                if self.sync then
+                    if string.find(self.sync_server_list, item.catalog) then
+                        if lfs.attributes(item.file) and not self.sync_force then
+                            table.insert(dupe_list, item)
+                        else
+                            if self:downloadFile(item.file, item.url, item.username, item.password) then
+                                dl[item.file] = true
+                            end
                         end
                     end
                 else
@@ -1375,14 +1393,15 @@ function OPDSBrowser:downloadDownloadList()
             self.download_list_updated = true
             self._manager.updated = true
         else
-            self.sync_server.pending_syncs = dl_list
+            self.pending_syncs = dl_list
             self._manager.updated = true
         end
         return duplicate_list
     end
 
     local duplicate_list = dismissable_download()
-    if #duplicate_list > 0 then
+
+    if duplicate_list and #duplicate_list > 0 then
         local textviewer
         local text = _("These files are already on the device: \n")
         for _, entry in ipairs(duplicate_list) do
@@ -1451,8 +1470,8 @@ function OPDSBrowser:syncDownload(server)
     self.root_catalog_username  = server.username
     self.root_catalog_title     = server.title
     self.sync_server            = server
-    self.sync_max_dl = self.settings.opds_sync_max_dl or 50
-    self.pending_syncs          = server.pending_syncs or {}
+    self.sync_server_list       = self.sync_server_list or ""
+    self.sync_max_dl            = self.settings.opds_sync_max_dl or 50
 
     local new_last_download = nil
     local dl_count = 1
@@ -1482,6 +1501,7 @@ function OPDSBrowser:syncDownload(server)
                             url = link.href,
                             username = self.root_catalog_username,
                             password = self.root_catalog_password,
+                            catalog = server.url,
                         })
                         dl_count = dl_count + 1
                     end
@@ -1489,9 +1509,6 @@ function OPDSBrowser:syncDownload(server)
             end
         end
     end
-    Trapper:wrap(function()
-        self:downloadDownloadList()
-    end)
     return new_last_download
 end
 
@@ -1514,7 +1531,6 @@ function OPDSBrowser:getSyncDownloadList()
     local up_to_date = false
     while #sync_table < self.sync_max_dl and not up_to_date do
         sub_table = self:genItemTableFromURL(fetch_url, true)
-        logger.dbg(sub_table)
         if sub_table[1].acquisitions[1].href == self.sync_server.last_download and not self.sync_force then
             return nil
         end
@@ -1532,7 +1548,6 @@ function OPDSBrowser:getSyncDownloadList()
         end
         fetch_url = sub_table.hrefs.next
     end
-    sync_table.hrefs = sub_table.hrefs
     return sync_table
 end
 
