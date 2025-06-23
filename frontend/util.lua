@@ -955,7 +955,7 @@ end
 ---- @treturn string sanitized filename
 local function replaceAllInvalidChars(str)
     if str then
-        return str:gsub('[\\,%/,:,%*,%?,%",%<,%>,%|]','_')
+        return str:gsub('[\\%/:%*%?%"%<%>%|]', '_')
     end
 end
 
