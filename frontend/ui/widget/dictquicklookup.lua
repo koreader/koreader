@@ -1490,6 +1490,7 @@ function DictQuickLookup:onLookupInputWord(hint)
                         buttons = dialog_buttons,
                         shrink_unneeded_width = true,
                     }
+                    self.input_dialog:onCloseKeyboard()
                     UIManager:show(button_dialog)
                 end,
             }

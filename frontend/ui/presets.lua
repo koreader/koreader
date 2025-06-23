@@ -180,7 +180,7 @@ function Presets.genPresetMenuItemTable(preset_obj, text, enabled_func)
                     function(entered_preset_name)
                         local preset_data = preset_obj.buildPreset()
                         preset_obj.presets[entered_preset_name] = preset_data
-                        touchmenu_instance.item_table = Presets.genPresetMenuItemTable(preset_obj)
+                        touchmenu_instance.item_table = Presets.genPresetMenuItemTable(preset_obj, text, enabled_func)
                         touchmenu_instance:updateItems()
                     end
                 )
@@ -261,7 +261,7 @@ function Presets.genPresetMenuItemTable(preset_obj, text, enabled_func)
                                                 new_value = new_name
                                             }))
                                         end
-                                        touchmenu_instance.item_table = Presets.genPresetMenuItemTable(preset_obj)
+                                        touchmenu_instance.item_table = Presets.genPresetMenuItemTable(preset_obj, text, enabled_func)
                                         touchmenu_instance:updateItems()
                                     end) -- editPresetName
                                 end, -- rename callback
