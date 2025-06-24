@@ -19,3 +19,6 @@
 	path = l10n
 	url = https://github.com/koreader/koreader-translations.git
 	shallow = true
+[submodule "plugins/kochess.koplugin"]
+	path = plugins/kochess.koplugin
+	url = https://github.com/bateast/kochess
