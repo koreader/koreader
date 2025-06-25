@@ -507,7 +507,7 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 buttonprogress = true,
                 -- For pdf reflowing mode (kopt_contrast):
                 values = {0x808080, 0x606060, 0x404040, 0x202020, 0x000000},
-                default_pos = 2,
+                default_pos = 5,
                 default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_BLACK_HEX"),
                 event = "BlackLevelUpdate",
                 -- For pdf non-reflowing mode (mupdf):
@@ -521,7 +521,7 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 buttonprogress = true,
                 -- For pdf reflowing mode (kopt_contrast):
                 values = {0xFFFFFF, 0xE0E0E0, 0xC0C0C0, 0xA0A0A0, 0x808080},
-                default_pos = 2,
+                default_pos = 1,
                 default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_WHITE_HEX"),
                 event = "WhiteLevelUpdate",
                 -- For pdf non-reflowing mode (mupdf):

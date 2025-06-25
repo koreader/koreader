@@ -537,13 +537,13 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, hint
     end
 end
 
-function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
+function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, black_hex, white_hex)
     if doc.configurable.text_wrap == 1 then
         self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
         self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
     else
-        Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
+        Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, black_hex, white_hex)
     end
 end
 

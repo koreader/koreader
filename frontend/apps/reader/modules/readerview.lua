@@ -86,6 +86,8 @@ function ReaderView:init()
         zoom = 1.0,
         rotation = 0,
         gamma = 1.0,
+        black_hex = 0x000000,
+        white_hex = 0xFFFFFF,
         offset = nil,
         bbox = nil,
     }
@@ -384,7 +386,9 @@ function ReaderView:drawScrollPages(bb, x, y)
             state.page,
             state.zoom,
             state.rotation,
-            state.gamma)
+            state.gamma,
+            state.black_hex,
+            state.white_hex)
         pos.y = pos.y + state.visible_area.h
         -- draw page gap if not the last part
         if page ~= #self.page_states then
@@ -458,7 +462,9 @@ function ReaderView:drawSinglePage(bb, x, y)
         self.state.page,
         self.state.zoom,
         self.state.rotation,
-        self.state.gamma)
+        self.state.gamma,
+        self.state.black_hex,
+        self.state.white_hex)
     UIManager:nextTick(self.emitHintPageEvent)
 end
 
@@ -871,6 +877,8 @@ function ReaderView:getViewContext()
                 zoom = self.state.zoom,
                 rotation = self.state.rotation,
                 gamma = self.state.gamma,
+                black_hex = self.state.black_hex,
+                white_hex = self.state.white_hex,
                 offset = self.state.offset:copy(),
                 bbox = self.state.bbox,
             },
