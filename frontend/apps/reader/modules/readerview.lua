@@ -1106,7 +1106,7 @@ function ReaderView:onBlackLevelUpdate(black_hex, no_notification)
         self.ui:handleEvent(Event:new("UpdateScrollPageBlackLevel", black_hex))
     end
     if not no_notification then
-        Notification:notify(T(_("Black level set to: %1."), string.format("#%x", black_hex)))
+        Notification:notify(T(_("Black level set to: %1."), string.format("#%X", black_hex)))
     end
 end
 
@@ -1116,7 +1116,7 @@ function ReaderView:onWhiteLevelUpdate(white_hex, no_notification)
         self.ui:handleEvent(Event:new("UpdateScrollPageWhiteLevel", white_hex))
     end
     if not no_notification then
-        Notification:notify(T(_("White level set to: %1."), string.format("#%x", white_hex)))
+        Notification:notify(T(_("White level set to: %1."), string.format("#%X", white_hex)))
     end
 end
 

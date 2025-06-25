@@ -71,6 +71,8 @@ describe("Readerview module", function()
                 page = 1,
                 pos = 0,
                 gamma = 1,
+                black_hex = 0x000000,
+                white_hex = 0xFFFFFF,
                 offset = {
                     x = 17, y = 0,
                     h = 0, w = 0,
@@ -124,6 +126,8 @@ describe("Readerview module", function()
         local saved_ctx = {
             {
                  gamma = 1,
+                 black_hex = 0x000000,
+                 white_hex = 0xFFFFFF,
                  offset = {x = 17, y = 0},
                  page = 1,
                  page_area = {
