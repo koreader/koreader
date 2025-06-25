@@ -13,6 +13,7 @@ local NetworkMgr = require("ui/network/manager")
 local Notification = require("ui/widget/notification")
 local OPDSParser = require("opdsparser")
 local OPDSPSE = require("opdspse")
+local SpinWidget = require("ui/widget/spinwidget")
 local TextViewer = require("ui/widget/textviewer")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
@@ -120,6 +121,13 @@ function OPDSBrowser:showOPDSMenu()
                     end,
                     align = "left",
             }},
+            {{
+                    text = _("File types to sync"),
+                    callback = function()
+                        self:setSyncFiletypes()
+                    end,
+                    align = "left",
+            }},
         },
         shrink_unneeded_width = true,
         anchor = function()
@@ -129,6 +137,36 @@ function OPDSBrowser:showOPDSMenu()
     UIManager:show(dialog)
 end
 
+function OPDSBrowser:setSyncFiletypes(filetype_list)
+    local input = self.settings.filetypes
+    local dialog
+    dialog = InputDialog:new{
+        title = _("File types to sync"),
+        input_hint = _("epub, mobi"),
+        input = input,
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(dialog)
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    is_enter_default = true,
+                    callback = function()
+                        self.settings.filetypes = dialog:getInputText()
+                        self._manager.updated = true
+                        UIManager:close(dialog)
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(dialog)
+end
 
 function OPDSBrowser:checkSyncDownload(server)
     if not self.settings.opds_sync_dir then
@@ -140,7 +178,6 @@ function OPDSBrowser:checkSyncDownload(server)
     end
     local last_download = nil
     if server then
-
         last_download = self:syncDownload(server)
         self.sync_server_list = server.url
         if last_download then
@@ -210,10 +247,8 @@ local function buildRootEntry(server)
         icons = "\u{f2c0}"
     end
     if server.sync then
-        icons = "\u{f2c1} " .. icons
+        icons = "\u{f46a} " .. icons
     end
-
-
     return {
         text       = server.title,
         mandatory  = icons,
@@ -497,10 +532,10 @@ function OPDSBrowser:genItemTableFromURL(item_url, sync)
         })
         catalog = nil
     end
-    return self:genItemTableFromCatalog(catalog, item_url, sync)
+    return self:genItemTableFromCatalog(catalog, item_url)
 end
 
-function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, sync)
+function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
     local item_table = {}
     if not catalog then
         return item_table
@@ -522,7 +557,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, sync)
                         hrefs[link.rel] = build_href(link.href)
                     end
                 end
-                if not sync then
+                if not self.sync then
                     -- OpenSearch
                     if link.type:find(self.search_type) then
                         if link.href then
@@ -914,7 +949,6 @@ function OPDSBrowser:showDownloads(item)
             text = _("Book information"),
             enabled = type(item.content) == "string",
             callback = function()
-                local TextViewer = require("ui/widget/textviewer")
                 UIManager:show(TextViewer:new{
                     title = item.text,
                     title_multilines = true,
@@ -1041,10 +1075,14 @@ function OPDSBrowser:onMenuSelect(item)
                     buttons = {
                         {
                             {
-                                text = _("Open"),
+                                text = _("Sync"),
                                 callback = function()
                                     UIManager:close(dialog)
-                                    self:runCatalogCallback(item)
+                                    NetworkMgr:runWhenConnected(function()
+                                        self.sync = true
+                                        self.sync_force = false
+                                        self:checkSyncDownload(self.servers[item.idx-1])
+                                    end)
                                 end,
                             },
                             {
@@ -1059,14 +1097,14 @@ function OPDSBrowser:onMenuSelect(item)
                                 end,
                             },
                             {
-                                text = _("Sync"),
+                                text = _("Open"),
                                 callback = function()
                                     UIManager:close(dialog)
-                                    NetworkMgr:runWhenConnected(function()
-                                        self.sync = true
-                                        self.sync_force = false
-                                        self:checkSyncDownload(self.servers[item.idx-1])
-                                    end)
+                                    self.root_catalog_title     = item.text
+                                    self.root_catalog_username  = item.username
+                                    self.root_catalog_password  = item.password
+                                    self.root_catalog_raw_names = item.raw_names
+                                    self:runCatalogCallback(item)
                                 end,
                             },
                         },
@@ -1302,7 +1340,6 @@ function OPDSBrowser:showDownloadListItemDialog(item)
         TextBoxWidget.PTF_BOLD_START, _("Description"), TextBoxWidget.PTF_BOLD_END, "\n",
         dl_item.info,
     })
-    local TextViewer = require("ui/widget/textviewer")
     textviewer = TextViewer:new{
         title = dl_item.catalog,
         text = text,
@@ -1331,7 +1368,7 @@ function OPDSBrowser:downloadDownloadList()
             for _, item in ipairs(dl_list) do
                 --Maybe add duplicate_list creation for non-sync download list?
                 if self.sync then
-                    if string.find(self.sync_server_list, item.catalog) then
+                    if string.find(self.sync_server_list, item.catalog, 1, true) then
                         if lfs.attributes(item.file) and not self.sync_force then
                             table.insert(dupe_list, item)
                         else
@@ -1438,15 +1475,15 @@ function OPDSBrowser:downloadDownloadList()
                         callback = function()
                             self.sync_force = true
                             textviewer:onClose()
-                            local copy_download_dir, original_dir, copies_dir, file_name, copy_download_path
+                            local copy_download_dir, original_dir, copies_dir, copy_download_path
                             copies_dir = "copies"
-                            original_dir, file_name = util.splitFilePathName(duplicate_list[1].file)
+                            original_dir, _ = util.splitFilePathName(duplicate_list[1].file)
                             copy_download_dir = original_dir .. copies_dir .. "/"
                             if not util.pathExists(copy_download_dir) then
                                 util.makePath(copy_download_dir)
                             end
                             for _, entry in ipairs(duplicate_list) do
-                                original_dir, file_name = util.splitFilePathName(entry.file)
+                                _, file_name = util.splitFilePathName(entry.file)
                                 copy_download_path = copy_download_dir .. file_name
                                 entry.file = copy_download_path
                                 table.insert(dl_list, entry)
@@ -1473,9 +1510,17 @@ function OPDSBrowser:syncDownload(server)
     self.sync_server_list       = self.sync_server_list or ""
     self.sync_max_dl            = self.settings.opds_sync_max_dl or 50
 
+    local file_list
+    local file_str = self.settings.filetypes
     local new_last_download = nil
     local dl_count = 1
 
+    if file_str then
+        file_list = {}
+        for filetype in util.gsplit(file_str, ",") do
+            file_list[util.trim(filetype)] = true
+        end
+    end
     local sync_list = self:getSyncDownloadList()
     if not sync_list then
         if #self.pending_syncs == 0 then
@@ -1483,17 +1528,18 @@ function OPDSBrowser:syncDownload(server)
         end
     else
         for i, entry in ipairs(sync_list) do
-            -- First entry in table is the newest
-            -- If already downloaded, return
+            -- for project gutenburg
+            -- need to parse one step deeper?
+            if entry.url then
+
+            end
             for j, link in ipairs(entry.acquisitions) do
                 -- Only save first link in case of several file types
                 if i == 1 and j == 1 then
                     new_last_download = link.href
                 end
-                -- Don't want kepub
-                -- Add feature for file types to not sync?
-                if not util.stringEndsWith(link.href, "/kepub/") then
-                    local filetype = self.getFiletype(link)
+                local filetype = self.getFiletype(link)
+                if filetype and file_list[filetype] then
                     local download_path = self:getLocalDownloadPath(entry.title, filetype, link.href, true)
                     if dl_count <= self.sync_max_dl then -- Append only max_dl entries... may still have sync backlog
                         table.insert(self.pending_syncs, {
@@ -1505,6 +1551,7 @@ function OPDSBrowser:syncDownload(server)
                         })
                         dl_count = dl_count + 1
                     end
+                    break
                 end
             end
         end
@@ -1530,12 +1577,46 @@ function OPDSBrowser:getSyncDownloadList()
     local sub_table
     local up_to_date = false
     while #sync_table < self.sync_max_dl and not up_to_date do
-        sub_table = self:genItemTableFromURL(fetch_url, true)
-        if sub_table[1].acquisitions[1].href == self.sync_server.last_download and not self.sync_force then
+        sub_table = self:genItemTableFromURL(fetch_url)
+        local count = 1
+        local acquisitions_empty = false
+        while #sub_table[count].acquisitions == 0 do
+            if util.stringEndsWith(sub_table[count].url, ".opds") then
+                acquisitions_empty = true
+                break
+            end
+            if count == #sub_table then
+                return sync_table
+            end
+            count = count + 1
+        end
+        -- First entry in table is the newest
+        -- If already downloaded, return
+        local href
+--         if acquisitions_empty then
+--             href = sub_table[count].url
+--         else
+        href = sub_table[1].acquisitions[1].href
+--         end
+        if href == self.sync_server.last_download and not self.sync_force then
             return nil
         end
+--         if acquisitions_empty then
+--             for i=count,#sub_table do
+--                 if sub_table[i].url == self.sync_server.last_download and not self.sync_force then
+--                     up_to_date = true
+--                     break
+--                 else
+--                     local link = {
+--                         href = sub_table[i].url,
+--                         type = "",
+--                     }
+--                     table.insert(sub_table[i].acquisitions, link)
+--                     table.insert(sync_table, sub_table[i])
+--                 end
+--             end
+--         else
         for _, entry in ipairs(sub_table) do
-            --TODO fix this so it doesn't crash for project gutenburg and maybe others'
             if entry.acquisitions[1].href == self.sync_server.last_download and not self.sync_force then
                 up_to_date = true
                 break
@@ -1543,6 +1624,7 @@ function OPDSBrowser:getSyncDownloadList()
                 table.insert(sync_table, entry)
             end
         end
+--         end
         if not sub_table.hrefs.next then
             break
         end

@@ -10,7 +10,6 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-
 local OPDS = WidgetContainer:extend{
     name = "opds",
     opds_settings_file = DataStorage:getSettingsDir() .. "/opds.lua",
