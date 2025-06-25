@@ -99,8 +99,8 @@ function KoptInterface:setDefaultConfigurable(configurable)
     configurable.page_margin = G_defaults:readSetting("DKOPTREADER_CONFIG_PAGE_MARGIN")
     configurable.quality = G_defaults:readSetting("DKOPTREADER_CONFIG_RENDER_QUALITY")
     configurable.contrast = G_defaults:readSetting("DKOPTREADER_CONFIG_CONTRAST")
-	configurable.black_hex = G_defaults:readSetting("DKOPTREADER_CONFIG_BLACK_HEX")
-	configurable.white_hex = G_defaults:readSetting("DKOPTREADER_CONFIG_WHITE_HEX")
+    configurable.black_hex = G_defaults:readSetting("DKOPTREADER_CONFIG_BLACK_HEX")
+    configurable.white_hex = G_defaults:readSetting("DKOPTREADER_CONFIG_WHITE_HEX")
     configurable.defect_size = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFECT_SIZE")
     configurable.line_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_LINE_SPACING")
     configurable.word_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING")
@@ -152,8 +152,8 @@ function KoptInterface:createContext(doc, pageno, bbox)
     kc:setQuality(doc.configurable.quality)
     -- k2pdfopt (for reflowing) and mupdf use different algorithms to apply gamma when rendering
     kc:setContrast(1 / doc.configurable.contrast)
-	kc:setForegroundHex(doc.configurable.black_hex)
-	kc:setBackgroundHex(doc.configurable.white_hex)
+    kc:setBlackHex(doc.configurable.black_hex)
+    kc:setWhiteHex(doc.configurable.white_hex)
     kc:setDefectSize(doc.configurable.defect_size)
     kc:setLineSpacing(doc.configurable.line_spacing)
     kc:setWordSpacing(doc.configurable.word_spacing)
@@ -553,7 +553,7 @@ Draw cached tile pixels into target blitbuffer.
 Inherited from common document interface.
 --]]
 function KoptInterface:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
-    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 1.0)
+    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 1.0, 0x000000, 0xFFFFFF)
     target:blitFrom(tile.bb,
         x, y,
         rect.x - tile.excerpt.x,

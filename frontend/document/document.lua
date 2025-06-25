@@ -392,9 +392,8 @@ end
 
 function Document:getFullPageHash(pageno, zoom, rotation, gamma, black_hex, white_hex)
     return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
-                    ..zoom.."|"
-                    ..rotation.."|"..gamma.."|"..black_hex.."|"..white_hex
-					..self.render_mode..(self.render_color and "|color" or "|bw")
+                    ..zoom.."|"..rotation.."|"..gamma.."|"..black_hex.."|"..white_hex
+                    ..self.render_mode..(self.render_color and "|color" or "|bw")
                     ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
 end
 
@@ -402,7 +401,7 @@ function Document:getPagePartHash(pageno, zoom, rotation, gamma, black_hex, whit
     return "renderpgpart|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
                     ..tostring(rect).."|"..zoom.."|"..tostring(rect.scaled_rect).."|"
                     ..rotation.."|"..gamma.."|"..black_hex.."|"..white_hex
-					..self.render_mode..(self.render_color and "|color" or "|bw")
+                    ..self.render_mode..(self.render_color and "|color" or "|bw")
                     ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
 end
 
@@ -504,8 +503,8 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, black_hex, whi
         dc:setGamma(gamma)
     end
 
-	dc:setBlackHex(black_hex)
-	dc:setWhiteHex(white_hex)
+    dc:setBlackHex(black_hex)
+    dc:setWhiteHex(white_hex)
 
     -- And finally, render the page in our BB
     local page = self._document:openPage(pageno)
