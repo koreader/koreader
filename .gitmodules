@@ -1,6 +1,6 @@
 [submodule "koreader-base"]
 	path = base
-	url = https://github.com/koreader/koreader-base.git
+	url = https://github.com/kerivin/koreader-base.git
 [submodule "platform/android/luajit-launcher"]
 	path = platform/android/luajit-launcher
 	url = https://github.com/koreader/android-luajit-launcher.git

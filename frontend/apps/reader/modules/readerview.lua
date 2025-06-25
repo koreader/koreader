@@ -1092,6 +1092,26 @@ function ReaderView:onGammaUpdate(gamma, no_notification)
     end
 end
 
+function ReaderView:onBlackLevelUpdate(black_hex, no_notification)
+    self.state.black_hex = black_hex
+    if self.page_scroll then
+        self.ui:handleEvent(Event:new("UpdateScrollPageBlackLevel", black_hex))
+    end
+    if not no_notification then
+        Notification:notify(T(_("Black level set to: %1."), black_hex))
+    end
+end
+
+function ReaderView:onWhiteLevelUpdate(white_hex, no_notification)
+    self.state.white_hex = white_hex
+    if self.page_scroll then
+        self.ui:handleEvent(Event:new("UpdateScrollPageWhiteLevel", white_hex))
+    end
+    if not no_notification then
+        Notification:notify(T(_("White level set to: %1."), white_hex))
+    end
+end
+
 -- For ReaderKOptListener
 function ReaderView:onDitheringUpdate()
     -- Do the device cap checks again, to avoid snafus when sharing configs between devices

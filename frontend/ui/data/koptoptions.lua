@@ -502,6 +502,34 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 },
             },
             {
+                name = "black_hex",
+                name_text = _("Black Level"),
+                buttonprogress = true,
+                -- For pdf reflowing mode (kopt_contrast):
+                values = {0x808080, 0x606060, 0x404040, 0x202020, 0x000000},
+                default_pos = 2,
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_BLACK_HEX"),
+                event = "BlackLevelUpdate",
+                -- For pdf non-reflowing mode (mupdf):
+                args =   {0x808080, 0x606060, 0x404040, 0x202020, 0x000000},
+                labels = { #808080, #606060, #404040, #202020, #000000},
+                name_text_hold_callback = optionsutil.showValues,
+            },
+            {
+                name = "white_hex",
+                name_text = _("White Level"),
+                buttonprogress = true,
+                -- For pdf reflowing mode (kopt_contrast):
+                values = {0xFFFFFF, 0xE0E0E0, 0xC0C0C0, 0xA0A0A0, 0x808080},
+                default_pos = 2,
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_WHITE_HEX"),
+                event = "WhiteLevelUpdate",
+                -- For pdf non-reflowing mode (mupdf):
+                args =   {0xFFFFFF, 0xE0E0E0, 0xC0C0C0, 0xA0A0A0, 0x808080},
+                labels = { #FFFFFF, #E0E0E0, #C0C0C0, #A0A0A0, #808080},
+                name_text_hold_callback = optionsutil.showValues,
+            },
+            {
                 name = "page_opt",
                 name_text = _("Dewatermark"),
                 toggle = {_("off"), _("on")},

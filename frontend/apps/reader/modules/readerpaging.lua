@@ -705,6 +705,20 @@ function ReaderPaging:onUpdateScrollPageGamma(gamma)
     return true
 end
 
+function ReaderPaging:onUpdateScrollPageBlackLevel(black_hex)
+    for _, state in ipairs(self.view.page_states) do
+        state.black_hex = black_hex
+    end
+    return true
+end
+
+function ReaderPaging:onUpdateScrollPageWhiteLevel(white_hex)
+    for _, state in ipairs(self.view.page_states) do
+        state.white_hex = white_hex
+    end
+    return true
+end
+
 function ReaderPaging:getNextPageState(blank_area, image_offset)
     local page_area = self.view:getPageArea(
         self.view.state.page,
