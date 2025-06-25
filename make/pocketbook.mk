@@ -3,7 +3,7 @@ PB_PACKAGE = koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).zip
 PB_PACKAGE_OTA = koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).targz
 
 define UPDATE_PATH_EXCLUDES +=
-tools
+$(filter-out tools/kobo%,$(wildcard tools/*))
 endef
 
 update: all

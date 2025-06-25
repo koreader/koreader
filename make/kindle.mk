@@ -9,7 +9,7 @@ ifeq ($(TARGET), kindle-legacy)
 endif
 
 define UPDATE_PATH_EXCLUDES +=
-tools
+$(filter-out tools/zipsync.lua,$(wildcard tools/*))
 endef
 
 update: all

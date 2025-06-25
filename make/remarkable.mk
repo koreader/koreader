@@ -4,7 +4,7 @@ REMARKABLE_PACKAGE_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).targz
 
 define UPDATE_PATH_EXCLUDES +=
 plugins/SSH.koplugin
-tools
+$(filter-out tools/kobo%,$(wildcard tools/*))
 endef
 
 update: all

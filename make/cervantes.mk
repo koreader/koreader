@@ -3,7 +3,7 @@ CERVANTES_PACKAGE = koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).zip
 CERVANTES_PACKAGE_OTA = koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).targz
 
 define UPDATE_PATH_EXCLUDES +=
-tools
+$(filter-out tools/zipsync.lua,$(wildcard tools/*))
 endef
 
 update: all
