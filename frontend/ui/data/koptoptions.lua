@@ -514,6 +514,12 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 args =   {255, 224, 192, 160, 128, 96, 64, 32},
                 labels = {255, 224, 192, 160, 128, 96, 64, 32},
                 name_text_hold_callback = optionsutil.showValues,
+                more_options = true,
+                more_options_param = {
+                    value_step = 1, value_hold_step = 5,
+                    value_min = 0, value_max = 255,
+                    precision = "%.0f",
+                },
             },
             {
                 name = "page_opt",
