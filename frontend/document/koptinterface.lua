@@ -386,7 +386,7 @@ function KoptInterface:getCoverPageImage(doc)
     local native_size = Document.getNativePageDimensions(doc, 1)
     local canvas_size = CanvasContext:getSize()
     local zoom = math.min(canvas_size.w / native_size.w, canvas_size.h / native_size.h)
-    local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1.0, 0x000000, 0xFFFFFF)
+    local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1.0, 255)
     if tile then
         return tile.bb:copy()
     end
@@ -551,7 +551,7 @@ Draw cached tile pixels into target blitbuffer.
 Inherited from common document interface.
 --]]
 function KoptInterface:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
-    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 1.0, 0x000000, 0xFFFFFF)
+    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 1.0, 255)
     target:blitFrom(tile.bb,
         x, y,
         rect.x - tile.excerpt.x,

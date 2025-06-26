@@ -573,7 +573,7 @@ function Document:drawPagePart(pageno, native_rect, rotation)
     rect.scaled_rect = scaled_rect
 
     -- Enable SMP via the hinting flag
-    local tile = self:renderPage(pageno, rect, zoom, rotation, 1.0, 0x000000, 0xFFFFFF, true)
+    local tile = self:renderPage(pageno, rect, zoom, rotation, 1.0, 255, true)
     return tile.bb, rotate
 end
 
