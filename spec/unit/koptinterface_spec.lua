@@ -47,7 +47,7 @@ describe("Koptinterface module", function()
         it("should render optimized page to de-watermark", function()
             local page_dimen = doc:getPageDimensions(1, 1.0, 0)
             local tile = Koptinterface:renderOptimizedPage(doc, 1, nil,
-            1.0, 0, 0)
+            1.0, 0, false)
             assert.truthy(tile)
             assert.are.same(page_dimen, tile.excerpt)
         end)
@@ -60,7 +60,7 @@ describe("Koptinterface module", function()
 
         it("should hint reflowed page in background", function()
             doc.configurable.text_wrap = 1
-            Koptinterface:hintReflowedPage(doc, 1, 1.0, 0, 1.0, 0)
+            Koptinterface:hintReflowedPage(doc, 1, 1.0, 0, 1.0, 255, false)
             -- and wait for reflowing to complete
             local kc = Koptinterface:getCachedContext(doc, 1)
             assert.truthy(kc)

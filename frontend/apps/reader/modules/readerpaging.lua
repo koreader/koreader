@@ -19,8 +19,7 @@ local function copyPageState(page_state)
         zoom = page_state.zoom,
         rotation = page_state.rotation,
         gamma = page_state.gamma,
-        black_hex = page_state.black_hex,
-        white_hex = page_state.white_hex,
+        white_threshold = page_state.white_threshold,
         offset = page_state.offset:copy(),
         visible_area = page_state.visible_area:copy(),
         page_area = page_state.page_area:copy(),
@@ -707,16 +706,9 @@ function ReaderPaging:onUpdateScrollPageGamma(gamma)
     return true
 end
 
-function ReaderPaging:onUpdateScrollPageBlackLevel(black_hex)
+function ReaderPaging:onUpdateScrollPageWhiteThreshold(white_threshold)
     for _, state in ipairs(self.view.page_states) do
-        state.black_hex = black_hex
-    end
-    return true
-end
-
-function ReaderPaging:onUpdateScrollPageWhiteLevel(white_hex)
-    for _, state in ipairs(self.view.page_states) do
-        state.white_hex = white_hex
+        state.white_threshold = white_threshold
     end
     return true
 end
@@ -741,8 +733,7 @@ function ReaderPaging:getNextPageState(blank_area, image_offset)
         zoom = self.view.state.zoom,
         rotation = self.view.state.rotation,
         gamma = self.view.state.gamma,
-        black_hex = self.view.state.black_hex,
-        white_hex = self.view.state.white_hex,
+        white_threshold = self.view.state.white_threshold,
         offset = page_offset,
         visible_area = visible_area,
         page_area = page_area,
@@ -770,8 +761,7 @@ function ReaderPaging:getPrevPageState(blank_area, image_offset)
         zoom = self.view.state.zoom,
         rotation = self.view.state.rotation,
         gamma = self.view.state.gamma,
-        black_hex = self.view.state.black_hex,
-        white_hex = self.view.state.white_hex,
+        white_threshold = self.view.state.white_threshold,
         offset = page_offset,
         visible_area = visible_area,
         page_area = page_area,

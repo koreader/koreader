@@ -99,8 +99,7 @@ function KoptInterface:setDefaultConfigurable(configurable)
     configurable.page_margin = G_defaults:readSetting("DKOPTREADER_CONFIG_PAGE_MARGIN")
     configurable.quality = G_defaults:readSetting("DKOPTREADER_CONFIG_RENDER_QUALITY")
     configurable.contrast = G_defaults:readSetting("DKOPTREADER_CONFIG_CONTRAST")
-    configurable.black_hex = G_defaults:readSetting("DKOPTREADER_CONFIG_BLACK_HEX")
-    configurable.white_hex = G_defaults:readSetting("DKOPTREADER_CONFIG_WHITE_HEX")
+    configurable.white_threshold = G_defaults:readSetting("DKOPTREADER_CONFIG_WHITE_THRESHOLD")
     configurable.defect_size = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFECT_SIZE")
     configurable.line_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_LINE_SPACING")
     configurable.word_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING")
@@ -152,8 +151,7 @@ function KoptInterface:createContext(doc, pageno, bbox)
     kc:setQuality(doc.configurable.quality)
     -- k2pdfopt (for reflowing) and mupdf use different algorithms to apply gamma when rendering
     kc:setContrast(1 / doc.configurable.contrast)
-    kc:setBlackHex(doc.configurable.black_hex)
-    kc:setWhiteHex(doc.configurable.white_hex)
+    kc:setWhite(doc.configurable.white_threshold)
     kc:setDefectSize(doc.configurable.defect_size)
     kc:setLineSpacing(doc.configurable.line_spacing)
     kc:setWordSpacing(doc.configurable.word_spacing)
@@ -394,13 +392,13 @@ function KoptInterface:getCoverPageImage(doc)
     end
 end
 
-function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, black_hex, white_hex, hinting)
+function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, white_threshold, hinting)
     if doc.configurable.text_wrap == 1 then
         return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, hinting)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
         return self:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hinting)
     else
-        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, black_hex, white_hex, hinting)
+        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, white_threshold, hinting)
     end
 end
 
@@ -495,16 +493,16 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hi
     end
 end
 
-function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, black_hex, white_hex)
+function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, white_threshold)
     --- @note: Crappy safeguard around memory issues like in #7627: if we're eating too much RAM, drop half the cache...
     DocCache:memoryPressureCheck()
 
     if doc.configurable.text_wrap == 1 then
-        self:hintReflowedPage(doc, pageno, zoom, rotation, gamma, black_hex, white_hex, true)
+        self:hintReflowedPage(doc, pageno, zoom, rotation, gamma, white_threshold, true)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
-        self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, gamma, black_hex, white_hex, true)
+        self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, true)
     else
-        Document.hintPage(doc, pageno, zoom, rotation, gamma, black_hex, white_hex)
+        Document.hintPage(doc, pageno, zoom, rotation, gamma, white_threshold)
     end
 end
 
@@ -517,7 +515,7 @@ off by calling self:waitForContext(kctx)
 
 Inherited from common document interface.
 --]]
-function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, hinting)
+function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, white_threshold, hinting)
     local bbox = doc:getPageBBox(pageno)
     local hash_list = { "kctx" }
     self:getContextHash(doc, pageno, bbox, hash_list)
@@ -537,13 +535,13 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, hint
     end
 end
 
-function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, black_hex, white_hex)
+function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, white_threshold)
     if doc.configurable.text_wrap == 1 then
         self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
         self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
     else
-        Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, black_hex, white_hex)
+        Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, white_threshold)
     end
 end
 

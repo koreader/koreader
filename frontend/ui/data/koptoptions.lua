@@ -497,36 +497,22 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 more_options = true,
                 more_options_param = {
                     value_step = 0.1, value_hold_step = 1,
-                    value_min = 0.8, value_max = 50,
+                    value_min = 0.1, value_max = 50,
                     precision = "%.1f",
                 },
             },
             {
-                name = "black_hex",
-                name_text = _("Black Level"),
+                name = "white_threshold",
+                name_text = _("White Threshold"),
                 buttonprogress = true,
-                -- For pdf reflowing mode (kopt_contrast):
-                values = {0x808080, 0x606060, 0x404040, 0x202020, 0x000000},
-                default_pos = 5,
-                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_BLACK_HEX"),
-                event = "BlackLevelUpdate",
-                -- For pdf non-reflowing mode (mupdf):
-                args =   {0x808080, 0x606060, 0x404040, 0x202020, 0x000000},
-                labels = {"#808080", "#606060", "#404040", "#202020", "#000000"},
-                name_text_hold_callback = optionsutil.showValues,
-            },
-            {
-                name = "white_hex",
-                name_text = _("White Level"),
-                buttonprogress = true,
-                -- For pdf reflowing mode (kopt_contrast):
-                values = {0xFFFFFF, 0xE0E0E0, 0xC0C0C0, 0xA0A0A0, 0x808080},
+                -- For pdf reflowing mode (k2pdfopt):
+                values = {255, 224, 192, 160, 128, 96, 64, 32},
                 default_pos = 1,
-                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_WHITE_HEX"),
-                event = "WhiteLevelUpdate",
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_WHITE_THRESHOLD"),
+                event = "WhiteThresholdUpdate",
                 -- For pdf non-reflowing mode (mupdf):
-                args =   {0xFFFFFF, 0xE0E0E0, 0xC0C0C0, 0xA0A0A0, 0x808080},
-                labels = {"#FFFFFF", "#E0E0E0", "#C0C0C0", "#A0A0A0", "#808080"},
+                args =   {255, 224, 192, 160, 128, 96, 64, 32},
+                labels = {255, 224, 192, 160, 128, 96, 64, 32},
                 name_text_hold_callback = optionsutil.showValues,
             },
             {

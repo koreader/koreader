@@ -86,8 +86,7 @@ function ReaderView:init()
         zoom = 1.0,
         rotation = 0,
         gamma = 1.0,
-        black_hex = 0x000000,
-        white_hex = 0xFFFFFF,
+        white_threshold = 255,
         offset = nil,
         bbox = nil,
     }
@@ -387,8 +386,7 @@ function ReaderView:drawScrollPages(bb, x, y)
             state.zoom,
             state.rotation,
             state.gamma,
-            state.black_hex,
-            state.white_hex)
+            state.white_threshold)
         pos.y = pos.y + state.visible_area.h
         -- draw page gap if not the last part
         if page ~= #self.page_states then
@@ -463,8 +461,7 @@ function ReaderView:drawSinglePage(bb, x, y)
         self.state.zoom,
         self.state.rotation,
         self.state.gamma,
-        self.state.black_hex,
-        self.state.white_hex)
+        self.state.white_threshold)
     UIManager:nextTick(self.emitHintPageEvent)
 end
 
@@ -877,8 +874,7 @@ function ReaderView:getViewContext()
                 zoom = self.state.zoom,
                 rotation = self.state.rotation,
                 gamma = self.state.gamma,
-                black_hex = self.state.black_hex,
-                white_hex = self.state.white_hex,
+                white_threshold = self.state.white_threshold,
                 offset = self.state.offset:copy(),
                 bbox = self.state.bbox,
             },
@@ -1100,23 +1096,13 @@ function ReaderView:onGammaUpdate(gamma, no_notification)
     end
 end
 
-function ReaderView:onBlackLevelUpdate(black_hex, no_notification)
-    self.state.black_hex = black_hex
+function ReaderView:onWhiteThresholdUpdate(white_threshold, no_notification)
+    self.state.white_threshold = white_threshold
     if self.page_scroll then
-        self.ui:handleEvent(Event:new("UpdateScrollPageBlackLevel", black_hex))
+        self.ui:handleEvent(Event:new("UpdateScrollPageWhiteThreshold", white_threshold))
     end
     if not no_notification then
-        Notification:notify(T(_("Black level set to: %1."), string.format("#%X", black_hex)))
-    end
-end
-
-function ReaderView:onWhiteLevelUpdate(white_hex, no_notification)
-    self.state.white_hex = white_hex
-    if self.page_scroll then
-        self.ui:handleEvent(Event:new("UpdateScrollPageWhiteLevel", white_hex))
-    end
-    if not no_notification then
-        Notification:notify(T(_("White level set to: %1."), string.format("#%X", white_hex)))
+        Notification:notify(T(_("White threshold set to: %1."), white_threshold))
     end
 end
 

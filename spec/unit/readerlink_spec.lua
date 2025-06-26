@@ -111,8 +111,7 @@ describe("ReaderLink module", function()
             local expected_page_states = {
                 {
                     gamma = 1,
-                    black_hex = 0x000000,
-                    white_hex = 0xFFFFFF,
+                    white_threshold = 255,
                     offset = {x = 17, y = 0},
                     page = 3,
                     page_area = {
@@ -128,8 +127,7 @@ describe("ReaderLink module", function()
                 },
                 {
                     gamma = 1,
-                    black_hex = 0x000000,
-                    white_hex = 0xFFFFFF,
+                    white_threshold = 255,
                     offset = {x = 17, y = 0},
                     page = 4,
                     page_area = {
