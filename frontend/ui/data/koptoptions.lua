@@ -497,7 +497,7 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 more_options = true,
                 more_options_param = {
                     value_step = 0.1, value_hold_step = 1,
-                    value_min = 0.1, value_max = 50,
+                    value_min = 0.8, value_max = 50,
                     precision = "%.1f",
                 },
             },
