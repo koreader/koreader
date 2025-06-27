@@ -170,8 +170,8 @@ function SSH:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text = _("SSH server"),
-                keep_menu_open = true,
                 checked_func = function() return self:isRunning() end,
+                on_check_updated_in_callback = true,
                 callback = function(touchmenu_instance)
                     self:onToggleSSHServer()
                     -- sleeping might not be needed, but it gives the feeling
