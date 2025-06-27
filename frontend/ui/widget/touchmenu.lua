@@ -206,8 +206,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
         -- Unhighlight
         --
         self.item_frame.invert = false
-        -- NOTE: If the menu is going to be closed, we can safely drop that.
-        if self.item.keep_menu_open then
+        if self.item.keep_menu_open or self.item.on_check_updated_in_callback then
             UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
             UIManager:setDirty(nil, "ui", highlight_dimen)
         end
@@ -924,7 +923,7 @@ function TouchMenu:onMenuSelect(item, tap_on_checkmark)
                 -- must set keep_menu_open=true if that is wished)
                 callback(self)
                 if refresh then
-                    if not item.no_refresh_on_check then
+                    if not (item.on_check_updated_in_callback or item.on_check_closed_in_callback) then
                         self:updateItems()
                     end
                 elseif not item.keep_menu_open then
