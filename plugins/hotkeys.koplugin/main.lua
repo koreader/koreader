@@ -192,11 +192,10 @@ function HotKeys:genMenu(hotkey)
         local default_text = default_action and Dispatcher:menuTextFunc(default_action) or _("No action")
         table.insert(sub_items, {
             text = T(_("%1 (default)"), default_text),
-            keep_menu_open = true,
-            no_refresh_on_check = true,
             checked_func = function()
                 return util.tableEquals(self.hotkeys[hotkey], self.defaults[hotkey])
             end,
+            on_check_updated_in_callback = true,
             callback = function(touchmenu_instance)
                 local function do_remove()
                     self.hotkeys[hotkey] = util.tableDeepCopy(self.defaults[hotkey])
@@ -209,12 +208,10 @@ function HotKeys:genMenu(hotkey)
     end
     table.insert(sub_items, {
         text = _("No action"),
-        keep_menu_open = true,
-        no_refresh_on_check = true,
-        separator = true,
         checked_func = function()
             return self.hotkeys[hotkey] == nil or next(self.hotkeys[hotkey]) == nil
         end,
+        on_check_updated_in_callback = true,
         callback = function(touchmenu_instance)
             local function do_remove()
                 self.hotkeys[hotkey] = nil
@@ -223,6 +220,7 @@ function HotKeys:genMenu(hotkey)
             end
             Dispatcher.removeActions(self.hotkeys[hotkey], do_remove)
         end,
+        separator = true,
     })
     Dispatcher:addSubMenu(self, sub_items, self.hotkeys, hotkey)
     -- Since we are already handling potential conflicts via overrideConflictingKeyEvents(), both "No action" and "Nothing",
