@@ -502,6 +502,7 @@ function CoverImage:menuEntryCache()
                 checked_func = function()
                     return self.cover_image_cache_maxfiles >= 0
                 end,
+                on_check_updated_in_callback = true,
                 callback = function(touchmenu_instance)
                     self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxfiles", _("Number of covers"), -1, 100, 36, self.cleanCache)
                 end,
@@ -522,6 +523,7 @@ function CoverImage:menuEntryCache()
                 checked_func = function()
                     return self.cover_image_cache_maxsize >= 0
                 end,
+                on_check_updated_in_callback = true,
                 callback = function(touchmenu_instance)
                     self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxsize", _("Cache size"), -1, 100, 5, self.cleanCache, C_("Data storage size", "MB"))
                 end,
@@ -574,6 +576,7 @@ function CoverImage:menuEntrySetPath(key, title, help, info, default, folder_onl
         checked_func = function()
             return isFileOk(self[key]) or (isPathAllowed(self[key]) and folder_only)
         end,
+        on_check_updated_in_callback = true,
         callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
                 text = info,
