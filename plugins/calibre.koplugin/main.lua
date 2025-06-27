@@ -303,6 +303,7 @@ function Calibre:getWirelessMenuTable()
                     checked_func = function()
                         return G_reader_settings:has("calibre_wireless_url")
                     end,
+                    on_check_updated_in_callback = true,
                     callback = function(touchmenu_instance)
                         local MultiInputDialog = require("ui/widget/multiinputdialog")
                         local url_dialog
