@@ -50,6 +50,8 @@ local TouchMenuItem = InputContainer:extend{
     dimen = nil,
     face = Font:getFace("smallinfofont"),
     show_parent = nil,
+    on_check_updated_in_callback = nil, -- set to true for item with checkmark if its callback updates menu
+    on_check_closed_in_callback = nil, -- set to true for item with checkmark if its callback closes menu
 }
 
 function TouchMenuItem:init()
