@@ -608,6 +608,7 @@ function AutoWarmth:getSubMenuItems()
                 return not self.easy_mode
             end,
             help_text = _("In the expert mode, different types of twilight can be used in addition to civil twilight."),
+            on_check_updated_in_callback = true,
             callback = function(touchmenu_instance)
                 self.easy_mode = not self.easy_mode
                 G_reader_settings:saveSetting("autowarmth_easy_mode", self.easy_mode)
@@ -662,6 +663,7 @@ function AutoWarmth:getFlOffDuringDayMenu()
                 return _("Frontlight off during day")
             end
         end,
+        on_check_updated_in_callback = true,
         callback = function(touchmenu_instance)
             if self.easy_mode then
                 self.fl_off_during_day = not self.fl_off_during_day
@@ -889,6 +891,7 @@ function AutoWarmth:getScheduleMenu()
             checked_func = function()
                 return self.scheduler_times[num] ~= nil
             end,
+            on_check_updated_in_callback = true,
             callback = function(touchmenu_instance)
                 local hh = 12
                 local mm = 0
@@ -1112,6 +1115,7 @@ function AutoWarmth:getWarmthMenu()
                     })
                 end
             end,
+            on_check_updated_in_callback = true,
             callback = function(touchmenu_instance)
                 if Device:hasNaturalLight() then
                     if self.control_warmth and self.control_nightmode then
