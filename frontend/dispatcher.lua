@@ -995,11 +995,10 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     menu.ignored_by_menu_search = true -- all those would be duplicated
     table.insert(menu, {
         text = _("Nothing"),
-        keep_menu_open = true,
-        no_refresh_on_check = true,
         checked_func = function()
             return location[settings] ~= nil and Dispatcher:_itemsCount(location[settings]) == 0
         end,
+        on_check_updated_in_callback = true,
         callback = function(touchmenu_instance)
             local function do_remove()
                 local actions = location[settings]
