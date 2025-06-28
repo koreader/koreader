@@ -50,8 +50,8 @@ local TouchMenuItem = InputContainer:extend{
     dimen = nil,
     face = Font:getFace("smallinfofont"),
     show_parent = nil,
-    on_check_updated_in_callback = nil, -- set to true for item with checkmark if its callback updates menu
-    on_check_closed_in_callback = nil, -- set to true for item with checkmark if its callback closes menu
+    check_callback_updates_menu = nil, -- set to true for item with checkmark if its callback updates menu
+    check_callback_closes_menu = nil, -- set to true for item with checkmark if its callback closes menu
 }
 
 function TouchMenuItem:init()
@@ -208,7 +208,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
         -- Unhighlight
         --
         self.item_frame.invert = false
-        if self.item.keep_menu_open or self.item.on_check_updated_in_callback then
+        if self.item.keep_menu_open or self.item.check_callback_updates_menu then
             UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
             UIManager:setDirty(nil, "ui", highlight_dimen)
         end
@@ -925,7 +925,7 @@ function TouchMenu:onMenuSelect(item, tap_on_checkmark)
                 -- must set keep_menu_open=true if that is wished)
                 callback(self)
                 if refresh then
-                    if not (item.on_check_updated_in_callback or item.on_check_closed_in_callback) then
+                    if not (item.check_callback_updates_menu or item.check_callback_closes_menu) then
                         self:updateItems()
                     end
                 elseif not item.keep_menu_open then
