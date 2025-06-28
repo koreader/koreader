@@ -137,112 +137,6 @@ function OPDSBrowser:showOPDSMenu()
     UIManager:show(dialog)
 end
 
--- Set string for desired filetypes
-function OPDSBrowser:setSyncFiletypes(filetype_list)
-    local input = self.settings.filetypes
-    local dialog
-    dialog = InputDialog:new{
-        title = _("File types to sync"),
-        description = _("A comma separated list of desired filetypes"),
-        input_hint = _("epub, mobi"),
-        input = input,
-        buttons = {
-            {
-                {
-                    text = _("Cancel"),
-                    id = "close",
-                    callback = function()
-                        UIManager:close(dialog)
-                    end,
-                },
-                {
-                    text = _("Save"),
-                    is_enter_default = true,
-                    callback = function()
-                        self.settings.filetypes = dialog:getInputText()
-                        self._manager.updated = true
-                        UIManager:close(dialog)
-                    end,
-                },
-            },
-        },
-    }
-    UIManager:show(dialog)
-    dialog:onShowKeyboard()
-end
-
-function OPDSBrowser:checkSyncDownload(server)
-    if not self.settings.opds_sync_dir then
-        UIManager:show(InfoMessage:new{
-            text = _("Please select a folder for sync downloads first"),
-        })
-        self:setSyncDir()
-        return
-    end
-    local last_download = nil
-    if server then
-        last_download = self:fillPendingSyncs(server)
-        self.sync_server_list[server.url] = true
-        if last_download then
-            logger.dbg("Updating opds last download for server " .. server.title)
-            self:updateFieldInCatalog(server, "last_download", last_download)
-        end
-    else
-        for _, item in ipairs(self.servers) do
-            if item.sync then
-                last_download = self:fillPendingSyncs(item)
-                self.sync_server_list[item.url] = true
-            end
-            if last_download then
-                logger.dbg("Updating opds last download for server " .. item.title)
-                self:updateFieldInCatalog(item, "last_download", last_download)
-            end
-        end
-    end
-    Trapper:wrap(function()
-        self:downloadDownloadList()
-    end)
-end
-
-function OPDSBrowser:updateFieldInCatalog(item, new_name, new_value)
-    item[new_name] = new_value
-    self.updated = true
-end
-
-function OPDSBrowser:setMaxSyncDownload()
-    local current_max_dl = self.settings.opds_sync_max_dl or 50
-    local spin = SpinWidget:new{
-        title_text = "Set maximum sync size",
-        info_text = "Set the max number of books to download at a time",
-        value = current_max_dl,
-        value_min = 10,
-        value_max = 1000,
-        value_step = 10,
-        value_hold_step = 50,
-        wrap = true,
-        ok_text = "Save",
-        callback = function(spin)
-            self.settings.opds_sync_max_dl = spin.value
-            self._manager.updated = true
-        end,
-    }
-    UIManager:show(spin)
-end
-
-function OPDSBrowser:setSyncDir()
-    local force_chooser_dir
-    if Device:isAndroid() then
-        force_chooser_dir = Device.home_dir
-    end
-
-    require("ui/downloadmgr"):new{
-        onConfirm = function(inbox)
-            logger.info("set opds sync folder", inbox)
-            self.settings.opds_sync_dir = inbox
-            self._manager.updated = true
-        end,
-    }:chooseDir(force_chooser_dir)
-end
 
 local function buildRootEntry(server)
     local icons = ""
@@ -253,14 +147,15 @@ local function buildRootEntry(server)
         icons = "\u{f46a} " .. icons
     end
     return {
-        text       = server.title,
-        mandatory  = icons,
-        url        = server.url,
-        username   = server.username,
-        password   = server.password,
-        raw_names  = server.raw_names, -- use server raw filenames for download
-        searchable = server.url and server.url:match("%%s") and true or false,
-        sync       = server.sync
+        text            = server.title,
+        mandatory       = icons,
+        url             = server.url,
+        username        = server.username,
+        password        = server.password,
+        raw_names       = server.raw_names, -- use server raw filenames for download
+        searchable      = server.url and server.url:match("%%s") and true or false,
+        sync            = server.sync,
+        last_download   = server.last_download,
     }
 end
 
@@ -1063,52 +958,6 @@ function OPDSBrowser:onMenuSelect(item)
         self:showDownloads(item)
     else -- catalog or Search item
         if #self.paths == 0 then -- root list
-            if item.sync then
-                local dialog
-                dialog = ButtonDialog:new{
-                    title = item.text,
-                    title_align = "center",
-                    buttons = {
-                        {
-                            {
-                                text = _("Sync"),
-                                callback = function()
-                                    UIManager:close(dialog)
-                                    NetworkMgr:runWhenConnected(function()
-                                        self.sync = true
-                                        self.sync_force = false
-                                        self:checkSyncDownload(self.servers[item.idx-1])
-                                    end)
-                                end,
-                            },
-                            {
-                                text = _("Force sync"),
-                                callback = function()
-                                    UIManager:close(dialog)
-                                    NetworkMgr:runWhenConnected(function()
-                                        self.sync = true
-                                        self.sync_force = true
-                                        self:checkSyncDownload(self.servers[item.idx-1])
-                                    end)
-                                end,
-                            },
-                            {
-                                text = _("Open"),
-                                callback = function()
-                                    UIManager:close(dialog)
-                                    self.root_catalog_title     = item.text
-                                    self.root_catalog_username  = item.username
-                                    self.root_catalog_password  = item.password
-                                    self.root_catalog_raw_names = item.raw_names
-                                    self:runCatalogCallback(item)
-                                end,
-                            },
-                        },
-                    },
-                }
-                UIManager:show(dialog)
-                return true
-            end
             if item.idx == 1 then
                 if #self.downloads > 0 then
                     self:showDownloadList()
@@ -1148,6 +997,33 @@ function OPDSBrowser:onMenuHold(item)
         title = item.text,
         title_align = "center",
         buttons = {
+            {
+                {
+                    text = _("Force sync"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        NetworkMgr:runWhenConnected(function()
+                            self.sync = true
+                            self.sync_force = true
+                            self:checkSyncDownload(item)
+                        end)
+                    end,
+                },
+                {
+                    text = _("Sync"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        NetworkMgr:runWhenConnected(function()
+                            self.sync = true
+                            self.sync_force = false
+                            self:checkSyncDownload(item)
+                        end)
+                    end,
+                },
+            },
+            {
+                hidden = hide_button,
+            },
             {
                 {
                     text = _("Delete"),
@@ -1436,10 +1312,11 @@ function OPDSBrowser:downloadDownloadList()
 
     if duplicate_list and #duplicate_list > 0 then
         local textviewer
-        local text = _("These files are already on the device: \n")
+        local duplicate_files = {}
         for _, entry in ipairs(duplicate_list) do
-            text = text .. entry.file .. "\n"
+            table.insert(duplicate_files, entry.file)
         end
+        local text = _("These files are already on the device: \n" .. table.concat(duplicate_files, "\n"))
         textviewer = TextViewer:new{
             title = _("Duplicate files"),
             text = text,
@@ -1449,8 +1326,7 @@ function OPDSBrowser:downloadDownloadList()
                         text = _("Do nothing"),
                         callback = function()
                             textviewer:onClose()
-                            self.sync_server.pending_syncs = self.pending_syncs
-                            self._manager.updated = true
+                            self:updateFieldInCatalog(self.sync_server, "pending_syncs", self.pending_syncs)
                         end
                     },
                     {
@@ -1496,6 +1372,113 @@ function OPDSBrowser:downloadDownloadList()
     end
 end
 
+-- Set string for desired filetypes
+function OPDSBrowser:setSyncFiletypes(filetype_list)
+    local input = self.settings.filetypes
+    local dialog
+    dialog = InputDialog:new{
+        title = _("File types to sync"),
+        description = _("A comma separated list of desired filetypes"),
+        input_hint = _("epub, mobi"),
+        input = input,
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(dialog)
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    is_enter_default = true,
+                    callback = function()
+                        self.settings.filetypes = dialog:getInputText()
+                        self._manager.updated = true
+                        UIManager:close(dialog)
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(dialog)
+    dialog:onShowKeyboard()
+end
+
+function OPDSBrowser:checkSyncDownload(server)
+    if not self.settings.opds_sync_dir then
+        UIManager:show(InfoMessage:new{
+            text = _("Please select a folder for sync downloads first"),
+        })
+        self:setSyncDir()
+        return
+    end
+    local last_download = nil
+    if server then
+        last_download = self:fillPendingSyncs(server)
+        self.sync_server_list[server.url] = true
+        if last_download then
+            logger.dbg("Updating opds last download for server " .. server.text)
+            self:updateFieldInCatalog(self.servers[server.idx - 1], "last_download", last_download)
+        end
+    else
+        for _, item in ipairs(self.servers) do
+            if item.sync then
+                last_download = self:fillPendingSyncs(item)
+                self.sync_server_list[item.url] = true
+                if last_download then
+                    logger.dbg("Updating opds last download for server " .. item.title)
+                    self:updateFieldInCatalog(item, "last_download", last_download)
+                end
+            end
+        end
+    end
+    Trapper:wrap(function()
+        self:downloadDownloadList()
+    end)
+end
+
+function OPDSBrowser:updateFieldInCatalog(item, name, value)
+    item[name] = value
+    self._manager.updated = true
+end
+
+function OPDSBrowser:setMaxSyncDownload()
+    local current_max_dl = self.settings.opds_sync_max_dl or 50
+    local spin = SpinWidget:new{
+        title_text = "Set maximum sync size",
+        info_text = "Set the max number of books to download at a time",
+        value = current_max_dl,
+        value_min = 10,
+        value_max = 1000,
+        value_step = 10,
+        value_hold_step = 50,
+        wrap = true,
+        ok_text = "Save",
+        callback = function(spin)
+            self.settings.opds_sync_max_dl = spin.value
+            self._manager.updated = true
+        end,
+    }
+    UIManager:show(spin)
+end
+
+function OPDSBrowser:setSyncDir()
+    local force_chooser_dir
+    if Device:isAndroid() then
+        force_chooser_dir = Device.home_dir
+    end
+
+    require("ui/downloadmgr"):new{
+        onConfirm = function(inbox)
+            logger.info("set opds sync folder", inbox)
+            self.settings.opds_sync_dir = inbox
+            self._manager.updated = true
+        end,
+    }:chooseDir(force_chooser_dir)
+end
+
 -- Add entries to self.pending_syncs
 function OPDSBrowser:fillPendingSyncs(server)
     self.root_catalog_password  = server.password
@@ -1524,7 +1507,8 @@ function OPDSBrowser:fillPendingSyncs(server)
     else
         for i, entry in ipairs(sync_list) do
             -- for project gutenburg
-            local sub_table, item
+            local sub_table = {}
+            local item
             if entry.url then
                 sub_table = self:getSyncDownloadList(entry.url)
             end
