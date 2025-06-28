@@ -998,7 +998,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
         checked_func = function()
             return location[settings] ~= nil and Dispatcher:_itemsCount(location[settings]) == 0
         end,
-        on_check_updated_in_callback = true,
+        check_callback_updates_menu = true,
         callback = function(touchmenu_instance)
             local function do_remove()
                 local actions = location[settings]
