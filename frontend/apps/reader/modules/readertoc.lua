@@ -1122,7 +1122,7 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]])
             checked_func = function()
                 return self.ui.document:isTocAlternativeToc()
             end,
-            on_check_closed_in_callback = true,
+            check_callback_closes_menu = true,
             callback = function(touchmenu_instance)
                 if self.ui.document:isTocAlternativeToc() then
                     UIManager:show(ConfirmBox:new{
