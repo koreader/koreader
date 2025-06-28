@@ -155,7 +155,6 @@ local function buildRootEntry(server)
         raw_names       = server.raw_names, -- use server raw filenames for download
         searchable      = server.url and server.url:match("%%s") and true or false,
         sync            = server.sync,
-        last_download   = server.last_download,
     }
 end
 
@@ -297,7 +296,7 @@ function OPDSBrowser:editCatalogFromInput(fields, item, no_refresh)
         new_idx = #self.servers + 2
         itemnumber = new_idx
     end
-    self.servers[new_idx - 1] = new_server
+    self.servers[new_idx - 1] = new_server -- first item is "Downloads"
     self.item_table[new_idx] = new_item
     if not no_refresh then
         self:switchItemTable(nil, self.item_table, itemnumber)
@@ -1005,7 +1004,7 @@ function OPDSBrowser:onMenuHold(item)
                         NetworkMgr:runWhenConnected(function()
                             self.sync = true
                             self.sync_force = true
-                            self:checkSyncDownload(item)
+                            self:checkSyncDownload(item.idx)
                         end)
                     end,
                 },
@@ -1016,7 +1015,7 @@ function OPDSBrowser:onMenuHold(item)
                         NetworkMgr:runWhenConnected(function()
                             self.sync = true
                             self.sync_force = false
-                            self:checkSyncDownload(item)
+                            self:checkSyncDownload(item.idx)
                         end)
                     end,
                 },
@@ -1310,11 +1309,11 @@ function OPDSBrowser:downloadDownloadList()
 
     if duplicate_list and #duplicate_list > 0 then
         local textviewer
-        local duplicate_files = {}
+        local duplicate_files = { _("These files are already on the device: \n") }
         for _, entry in ipairs(duplicate_list) do
             table.insert(duplicate_files, entry.file)
         end
-        local text = _("These files are already on the device: \n" .. table.concat(duplicate_files, "\n"))
+        local text = table.concat(duplicate_files, "\n")
         textviewer = TextViewer:new{
             title = _("Duplicate files"),
             text = text,
@@ -1345,15 +1344,13 @@ function OPDSBrowser:downloadDownloadList()
                         callback = function()
                             self.sync_force = true
                             textviewer:onClose()
-                            local copy_download_dir, original_dir, copies_dir, copy_download_path, file_name
+                            local copy_download_dir, original_dir, copies_dir, copy_download_path
                             copies_dir = "copies"
                             original_dir, _ = util.splitFilePathName(duplicate_list[1].file)
                             copy_download_dir = original_dir .. copies_dir .. "/"
-                            if not util.pathExists(copy_download_dir) then
-                                util.makePath(copy_download_dir)
-                            end
+                            util.makePath(copy_download_dir)
                             for _, entry in ipairs(duplicate_list) do
-                                _, file_name = util.splitFilePathName(entry.file)
+                                local _, file_name = util.splitFilePathName(entry.file)
                                 copy_download_path = copy_download_dir .. file_name
                                 entry.file = copy_download_path
                                 table.insert(dl_list, entry)
@@ -1404,7 +1401,8 @@ function OPDSBrowser:setSyncFiletypes(filetype_list)
     dialog:onShowKeyboard()
 end
 
-function OPDSBrowser:checkSyncDownload(server)
+function OPDSBrowser:checkSyncDownload(idx)
+    local server = idx and self.servers[idx-1] -- first item is "Downloads"
     if not self.settings.opds_sync_dir then
         UIManager:show(InfoMessage:new{
             text = _("Please select a folder for sync downloads first"),
@@ -1417,8 +1415,8 @@ function OPDSBrowser:checkSyncDownload(server)
         last_download = self:fillPendingSyncs(server)
         self.sync_server_list[server.url] = true
         if last_download then
-            logger.dbg("Updating opds last download for server " .. server.text)
-            self:updateFieldInCatalog(self.servers[server.idx - 1], "last_download", last_download)
+            logger.dbg("Updating opds last download for server " .. server.title)
+            self:updateFieldInCatalog(server, "last_download", last_download)
         end
     else
         for _, item in ipairs(self.servers) do
@@ -1523,7 +1521,7 @@ function OPDSBrowser:fillPendingSyncs(server)
                 end
                 local filetype = self.getFiletype(link)
                 if filetype then
-                    if file_list and file_list[filetype] then
+                    if file_str == "" or file_list and file_list[filetype] then
                         local download_path = self:getLocalDownloadPath(item.title, filetype, link.href, true)
                         if dl_count <= self.sync_max_dl then -- Append only max_dl entries... may still have sync backlog
                             table.insert(self.pending_syncs, {
