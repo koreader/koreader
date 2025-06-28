@@ -14,7 +14,7 @@ local function genMenuItem(text, mode)
             return Screen:getRotationMode() == mode
         end,
         radio = true,
-        on_check_closed_in_callback = true,
+        check_callback_closes_menu = true,
         callback = function(touchmenu_instance)
             UIManager:broadcastEvent(Event:new("SetRotationMode", mode))
             touchmenu_instance:closeMenu()
