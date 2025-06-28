@@ -1021,9 +1021,7 @@ function OPDSBrowser:onMenuHold(item)
                     end,
                 },
             },
-            {
-                hidden = hide_button,
-            },
+            {},
             {
                 {
                     text = _("Delete"),
@@ -1414,7 +1412,7 @@ function OPDSBrowser:checkSyncDownload(server)
         self:setSyncDir()
         return
     end
-    local last_download = nil
+    local last_download
     if server then
         last_download = self:fillPendingSyncs(server)
         self.sync_server_list[server.url] = true
