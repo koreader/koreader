@@ -99,7 +99,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
             checked_func = function()
                 return self.ui.paging.bookmark_flipping_mode
             end,
-            on_check_closed_in_callback = true,
+            check_callback_closes_menu = true,
             callback = function(touchmenu_instance)
                 self.ui.paging:onToggleBookmarkFlipping()
                 touchmenu_instance:closeMenu()
