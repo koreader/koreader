@@ -195,7 +195,7 @@ function HotKeys:genMenu(hotkey)
             checked_func = function()
                 return util.tableEquals(self.hotkeys[hotkey], self.defaults[hotkey])
             end,
-            on_check_updated_in_callback = true,
+            check_callback_updates_menu = true,
             callback = function(touchmenu_instance)
                 local function do_remove()
                     self.hotkeys[hotkey] = util.tableDeepCopy(self.defaults[hotkey])
@@ -211,7 +211,7 @@ function HotKeys:genMenu(hotkey)
         checked_func = function()
             return self.hotkeys[hotkey] == nil or next(self.hotkeys[hotkey]) == nil
         end,
-        on_check_updated_in_callback = true,
+        check_callback_updates_menu = true,
         callback = function(touchmenu_instance)
             local function do_remove()
                 self.hotkeys[hotkey] = nil
