@@ -1471,7 +1471,7 @@ function OPDSBrowser:downloadDownloadList()
                         callback = function()
                             self.sync_force = true
                             textviewer:onClose()
-                            local copy_download_dir, original_dir, copies_dir, copy_download_path
+                            local copy_download_dir, original_dir, copies_dir, copy_download_path, file_name
                             copies_dir = "copies"
                             original_dir, _ = util.splitFilePathName(duplicate_list[1].file)
                             copy_download_dir = original_dir .. copies_dir .. "/"
@@ -1575,9 +1575,9 @@ function OPDSBrowser.getFiletype(link)
 end
 
 -- Get list of books to download bigger than opds_sync_max_dl
-function OPDSBrowser:getSyncDownloadList(url)
+function OPDSBrowser:getSyncDownloadList(url_arg)
     local sync_table = {}
-    local fetch_url = url or self.sync_server.url
+    local fetch_url = url_arg or self.sync_server.url
     local sub_table
     local up_to_date = false
     while #sync_table < self.sync_max_dl and not up_to_date do
