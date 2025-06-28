@@ -632,7 +632,7 @@ function Profiles:genAutoExecPathChangedMenuItem(text, event, profile_name, sepa
                     checked_func = function()
                         return util.tableGetValue(self.autoexec, event, profile_name, condition)
                     end,
-                    on_check_updated_in_callback = true,
+                    check_callback_updates_menu = true,
                     callback = function(touchmenu_instance)
                         local dialog
                         local buttons = {{
@@ -763,7 +763,7 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                                 checked_func = function()
                                     return util.tableGetValue(self.autoexec, event, profile_name, condition, prop) and true
                                 end,
-                                on_check_updated_in_callback = true,
+                                check_callback_updates_menu = true,
                                 callback = function(touchmenu_instance)
                                     local dialog
                                     local buttons = self.document == nil and {} or {{
@@ -833,7 +833,7 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                     checked_func = function()
                         return util.tableGetValue(self.autoexec, event, profile_name, conditions[3][2]) and true
                     end,
-                    on_check_updated_in_callback = true,
+                    check_callback_updates_menu = true,
                     callback = function(touchmenu_instance)
                         local condition = conditions[3][2]
                         local dialog
@@ -898,7 +898,7 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                     checked_func = function()
                         return util.tableGetValue(self.autoexec, event, profile_name, conditions[4][2]) and true
                     end,
-                    on_check_updated_in_callback = true,
+                    check_callback_updates_menu = true,
                     callback = function(touchmenu_instance)
                         local condition = conditions[4][2]
                         local collections = util.tableGetValue(self.autoexec, event, profile_name, condition)
