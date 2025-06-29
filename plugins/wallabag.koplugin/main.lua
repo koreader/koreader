@@ -566,11 +566,6 @@ function Wallabag:getBearerToken()
         return false
     end
 
-    -- Add trailing slash if it is missing
-    if string.sub(self.directory, -1) ~= "/" then
-        self.directory = self.directory .. "/"
-    end
-
     -- Check if token is valid for at least 5 minutes. If so, no need to renew
     local now = os.time()
     if self.token_expiry - now > 300 then
@@ -1528,9 +1523,9 @@ end
 function Wallabag:setDownloadDirectory(touchmenu_instance)
     require("ui/downloadmgr"):new{
         onConfirm = function(path)
-            self.directory = path
+            self.directory = path .. "/"
             self:saveSettings()
-            logger.dbg("Wallabag:setDownloadDirectory: set download directory to", path)
+            logger.dbg("Wallabag:setDownloadDirectory: set download directory to", self.directory)
             if touchmenu_instance then
                 touchmenu_instance:updateItems()
             end
@@ -1542,9 +1537,9 @@ end
 function Wallabag:setArchiveDirectory(touchmenu_instance)
     require("ui/downloadmgr"):new{
         onConfirm = function(path)
-            self.archive_directory = path
+            self.archive_directory = path .. "/"
             self:saveSettings()
-            logger.dbg("Wallabag:setArchiveDirectory: set archive directory to", path)
+            logger.dbg("Wallabag:setArchiveDirectory: set archive directory to", self.archive_directory)
             if touchmenu_instance then
                 touchmenu_instance:updateItems()
             end
