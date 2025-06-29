@@ -898,12 +898,12 @@ if last_migration_date < 20250629 then
         local wb_settings = LuaSettings:open(wb_lua)
         wb_settings:readSetting("wallabag")
 
-        if wb_settings.data.wallabag.directory:sub(-1) ~= "/" then
-            wb_settings.data.wallabag.directory = wb_settings.data.wallabag.directory .. "/"
+        if wb_settings.data.wallabag.directory:sub(-1) == "/" then
+            wb_settings.data.wallabag.directory = wb_settings.data.wallabag.directory:gsub("/$", "")
         end
 
-        if wb_settings.data.wallabag.archive_directory:sub(-1) ~= "/" then
-            wb_settings.data.wallabag.archive_directory = wb_settings.data.wallabag.archive_directory .. "/"
+        if wb_settings.data.wallabag.archive_directory:sub(-1) == "/" then
+            wb_settings.data.wallabag.archive_directory = wb_settings.data.wallabag.archive_directory:gsub("/$", "")
         end
 
         wb_settings:saveSetting("wallabag", wb_settings.data.wallabag)
