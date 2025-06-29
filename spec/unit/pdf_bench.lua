@@ -23,7 +23,7 @@ describe("PDF benchmark:", function()
         end
         for pageno = 1, math.min(9, doc.info.number_of_pages) do
             local secs, usecs = util.gettime()
-            assert.truthy(doc:renderPage(pageno, nil, 1, 0, 1.0))
+            assert.truthy(doc:renderPage(pageno, nil, 1, 0, 1.0, 255))
             local nsecs, nusecs = util.gettime()
             local dur = nsecs - secs + (nusecs - usecs) / 1000000
             logDuration(logfile, pageno, dur)

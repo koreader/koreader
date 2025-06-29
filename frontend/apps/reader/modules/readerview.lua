@@ -86,6 +86,7 @@ function ReaderView:init()
         zoom = 1.0,
         rotation = 0,
         gamma = 1.0,
+        white_threshold = 255,
         offset = nil,
         bbox = nil,
     }
@@ -384,7 +385,8 @@ function ReaderView:drawScrollPages(bb, x, y)
             state.page,
             state.zoom,
             state.rotation,
-            state.gamma)
+            state.gamma,
+            state.white_threshold)
         pos.y = pos.y + state.visible_area.h
         -- draw page gap if not the last part
         if page ~= #self.page_states then
@@ -458,7 +460,8 @@ function ReaderView:drawSinglePage(bb, x, y)
         self.state.page,
         self.state.zoom,
         self.state.rotation,
-        self.state.gamma)
+        self.state.gamma,
+        self.state.white_threshold)
     UIManager:nextTick(self.emitHintPageEvent)
 end
 
@@ -871,6 +874,7 @@ function ReaderView:getViewContext()
                 zoom = self.state.zoom,
                 rotation = self.state.rotation,
                 gamma = self.state.gamma,
+                white_threshold = self.state.white_threshold,
                 offset = self.state.offset:copy(),
                 bbox = self.state.bbox,
             },
@@ -1089,6 +1093,16 @@ function ReaderView:onGammaUpdate(gamma, no_notification)
     end
     if not no_notification then
         Notification:notify(T(_("Contrast set to: %1."), gamma))
+    end
+end
+
+function ReaderView:onWhiteThresholdUpdate(white_threshold, no_notification)
+    self.state.white_threshold = white_threshold
+    if self.page_scroll then
+        self.ui:handleEvent(Event:new("UpdateScrollPageWhiteThreshold", white_threshold))
+    end
+    if not no_notification then
+        Notification:notify(T(_("White threshold set to: %1."), white_threshold))
     end
 end
 

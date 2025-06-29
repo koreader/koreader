@@ -19,6 +19,7 @@ local function copyPageState(page_state)
         zoom = page_state.zoom,
         rotation = page_state.rotation,
         gamma = page_state.gamma,
+        white_threshold = page_state.white_threshold,
         offset = page_state.offset:copy(),
         visible_area = page_state.visible_area:copy(),
         page_area = page_state.page_area:copy(),
@@ -705,6 +706,13 @@ function ReaderPaging:onUpdateScrollPageGamma(gamma)
     return true
 end
 
+function ReaderPaging:onUpdateScrollPageWhiteThreshold(white_threshold)
+    for _, state in ipairs(self.view.page_states) do
+        state.white_threshold = white_threshold
+    end
+    return true
+end
+
 function ReaderPaging:getNextPageState(blank_area, image_offset)
     local page_area = self.view:getPageArea(
         self.view.state.page,
@@ -725,6 +733,7 @@ function ReaderPaging:getNextPageState(blank_area, image_offset)
         zoom = self.view.state.zoom,
         rotation = self.view.state.rotation,
         gamma = self.view.state.gamma,
+        white_threshold = self.view.state.white_threshold,
         offset = page_offset,
         visible_area = visible_area,
         page_area = page_area,
@@ -752,6 +761,7 @@ function ReaderPaging:getPrevPageState(blank_area, image_offset)
         zoom = self.view.state.zoom,
         rotation = self.view.state.rotation,
         gamma = self.view.state.gamma,
+        white_threshold = self.view.state.white_threshold,
         offset = page_offset,
         visible_area = visible_area,
         page_area = page_area,
