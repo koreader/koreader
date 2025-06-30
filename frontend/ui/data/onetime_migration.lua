@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20250629
+local CURRENT_MIGRATION_DATE = 20250601
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -888,28 +888,6 @@ if last_migration_date < 20250601 then
     SettingsMigration:migrateSettings(G_reader_settings)
 end
 
--- 20250629, Fix trailing slashes in wallabag directories #13987
--- https://github.com/koreader/koreader/issues/13987
-if last_migration_date < 20250629 then
-    logger.info("Performing one-time migration for 20250629")
-
-    local wb_lua = DataStorage:getSettingsDir() .. "/wallabag.lua"
-    if lfs.attributes(wb_lua, "mode") == "file" then
-        local wb_settings = LuaSettings:open(wb_lua)
-        wb_settings:readSetting("wallabag")
-
-        if wb_settings.data.wallabag.directory:sub(-1) == "/" then
-            wb_settings.data.wallabag.directory = wb_settings.data.wallabag.directory:gsub("/$", "")
-        end
-
-        if wb_settings.data.wallabag.archive_directory:sub(-1) == "/" then
-            wb_settings.data.wallabag.archive_directory = wb_settings.data.wallabag.archive_directory:gsub("/$", "")
-        end
-
-        wb_settings:saveSetting("wallabag", wb_settings.data.wallabag)
-        wb_settings:flush()
-    end
-end
 
 -- We're done, store the current migration date
 G_reader_settings:saveSetting("last_migration_date", CURRENT_MIGRATION_DATE)
