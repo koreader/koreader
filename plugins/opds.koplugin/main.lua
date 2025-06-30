@@ -66,7 +66,7 @@ end
 function OPDS:addToMainMenu(menu_items)
     if not self.ui.document then -- FileManager menu only
         menu_items.opds = {
-            text = _("OPDS catalogs"),
+            text = _("OPDS catalog"),
             callback = function()
                 self:onShowOPDSCatalog()
             end,

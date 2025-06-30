@@ -147,14 +147,14 @@ local function buildRootEntry(server)
         icons = "\u{f46a} " .. icons
     end
     return {
-        text            = server.title,
-        mandatory       = icons,
-        url             = server.url,
-        username        = server.username,
-        password        = server.password,
-        raw_names       = server.raw_names, -- use server raw filenames for download
-        searchable      = server.url and server.url:match("%%s") and true or false,
-        sync            = server.sync,
+        text        = server.title,
+        mandatory   = icons,
+        url         = server.url,
+        username    = server.username,
+        password    = server.password,
+        raw_names   = server.raw_names, -- use server raw filenames for download
+        searchable  = server.url and server.url:match("%%s") and true or false,
+        sync        = server.sync,
     }
 end
 
@@ -749,7 +749,7 @@ function OPDSBrowser:showDownloads(item)
                             password = self.root_catalog_password,
                         })
                         self._manager.updated = true
-                        Notification:notify(_("Book added to download list"), 0x8000)
+                        Notification:notify(_("Book added to download list"), Notification.SOURCE_OTHER)
                     end,
                 })
             end
@@ -874,7 +874,7 @@ function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url, sync)
 end
 
 -- Downloads a book (with "File already exists" dialog)
-function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, password, caller_callback, sync, force_sync)
+function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, password, caller_callback)
     local function download()
         UIManager:scheduleIn(1, function()
             self:downloadFile(local_path, remote_url, username, password, caller_callback)
@@ -968,24 +968,20 @@ function OPDSBrowser:onMenuSelect(item)
             self.root_catalog_password  = item.password
             self.root_catalog_raw_names = item.raw_names
         end
-        self:runCatalogCallback(item)
-    end
+        local connect_callback
+        if item.searchable then
+            connect_callback = function()
+                self:searchCatalog(item.url)
+            end
+        else
+            self.catalog_title = item.text or self.catalog_title or self.root_catalog_title
+            connect_callback = function()
+                self:updateCatalog(item.url)
+            end
+        end
+        NetworkMgr:runWhenConnected(connect_callback)
+        end
     return true
-end
-
-function OPDSBrowser:runCatalogCallback(item)
-    local connect_callback
-    if item.searchable then
-        connect_callback = function()
-            self:searchCatalog(item.url)
-        end
-    else
-        self.catalog_title = item.text or self.catalog_title or self.root_catalog_title
-        connect_callback = function()
-            self:updateCatalog(item.url)
-        end
-    end
-    NetworkMgr:runWhenConnected(connect_callback)
 end
 
 -- Menu action on item long-press (dialog Edit / Delete catalog)
@@ -1221,12 +1217,49 @@ end
 
 -- Download whole download or pending_syncs list
 function OPDSBrowser:downloadDownloadList()
-    local dl_list
-    if self.sync then
-        dl_list = self.pending_syncs
-    else
-        dl_list = self.downloads
+    local info = InfoMessage:new{ text = _("Downloading… (tap to cancel)") }
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    local Trapper = require("ui/trapper")
+    local completed, downloaded = Trapper:dismissableRunInSubprocess(function()
+        local dl = {}
+        for _, item in ipairs(self.downloads) do
+            if self:downloadFile(item.file, item.url, item.username, item.password) then
+                dl[item.file] = true
+            end
+        end
+        return dl
+    end, info)
+    if completed then
+        UIManager:close(info)
     end
+    local dl_count = #self.downloads
+    for i = dl_count, 1, -1 do
+        local item = self.downloads[i]
+        if downloaded and downloaded[item.file] then
+            table.remove(self.downloads, i)
+        else -- if subprocess has been interrupted, check for the downloaded file
+            local attr = lfs.attributes(item.file)
+            if attr then
+                if attr.size > 0 then
+                    table.remove(self.downloads, i)
+                else -- incomplete download
+                    os.remove(item.file)
+                end
+            end
+        end
+    end
+    dl_count = dl_count - #self.downloads
+    if dl_count > 0 then
+        self:updateDownloadListItemTable()
+        self.download_list_updated = true
+        self._manager.updated = true
+        UIManager:show(InfoMessage:new{ text = T(N_("1 book downloaded", "%1 books downloaded", dl_count), dl_count) })
+    end
+end
+
+function OPDSBrowser:downloadPendingSyncs()
+    local dl_list = self.pending_syncs
     local function dismissable_download()
         local info = InfoMessage:new{ text = _("Downloading… (tap to cancel)") }
         UIManager:show(info)
@@ -1235,20 +1268,13 @@ function OPDSBrowser:downloadDownloadList()
             local dl = {}
             local dupe_list = {}
             for _, item in ipairs(dl_list) do
-                --Maybe add duplicate_list creation for non-sync download list?
-                if self.sync then
-                    if self.sync_server_list[item.catalog] then
-                        if lfs.attributes(item.file) and not self.sync_force then
-                            table.insert(dupe_list, item)
-                        else
-                            if self:downloadFile(item.file, item.url, item.username, item.password) then
-                                dl[item.file] = true
-                            end
+                if self.sync_server_list[item.catalog] then
+                    if lfs.attributes(item.file) and not self.sync_force then
+                        table.insert(dupe_list, item)
+                    else
+                        if self:downloadFile(item.file, item.url, item.username, item.password) then
+                            dl[item.file] = true
                         end
-                    end
-                else
-                    if self:downloadFile(item.file, item.url, item.username, item.password) then
-                        dl[item.file] = true
                     end
                 end
             end
@@ -1294,14 +1320,7 @@ function OPDSBrowser:downloadDownloadList()
         if dl_count > 0 then
             UIManager:show(InfoMessage:new{ text = T(N_("1 book downloaded", "%1 books downloaded", dl_count), dl_count), timeout = timeout,})
         end
-        if not self.sync then
-            self:updateDownloadListItemTable()
-            self.download_list_updated = true
-            self._manager.updated = true
-        else
-            self.pending_syncs = dl_list
-            self._manager.updated = true
-        end
+        self._manager.updated = true
         return duplicate_list
     end
 
@@ -1389,7 +1408,8 @@ function OPDSBrowser:setSyncFiletypes(filetype_list)
                     text = _("Save"),
                     is_enter_default = true,
                     callback = function()
-                        self.settings.filetypes = dialog:getInputText()
+                        local str = dialog:getInputText()
+                        self.settings.filetypes = str ~= "" and str or nil
                         self._manager.updated = true
                         UIManager:close(dialog)
                     end,
@@ -1431,7 +1451,7 @@ function OPDSBrowser:checkSyncDownload(idx)
         end
     end
     Trapper:wrap(function()
-        self:downloadDownloadList()
+        self:downloadPendingSyncs()
     end)
 end
 
@@ -1521,7 +1541,7 @@ function OPDSBrowser:fillPendingSyncs(server)
                 end
                 local filetype = self.getFiletype(link)
                 if filetype then
-                    if file_str == "" or file_list and file_list[filetype] then
+                    if file_str or file_list and file_list[filetype] then
                         local download_path = self:getLocalDownloadPath(item.title, filetype, link.href, true)
                         if dl_count <= self.sync_max_dl then -- Append only max_dl entries... may still have sync backlog
                             table.insert(self.pending_syncs, {
