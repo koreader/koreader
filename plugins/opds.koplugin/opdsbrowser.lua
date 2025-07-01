@@ -1540,7 +1540,7 @@ function OPDSBrowser:fillPendingSyncs(server)
     UIManager:close(info)
     self.sync_server_list[server.url] = true
     if new_last_download then
-        logger.dbg("Updating opds last download for server", server.title, "to", last_download)
+        logger.dbg("Updating opds last download for server", server.title, "to", new_last_download)
         self:updateFieldInCatalog(server, "last_download", new_last_download)
     end
 
