@@ -1241,7 +1241,6 @@ function OPDSBrowser:downloadDownloadList()
     local info = InfoMessage:new{ text = _("Downloading… (tap to cancel)") }
     UIManager:show(info)
     UIManager:forceRePaint()
-    local Trapper = require("ui/trapper")
     local completed, downloaded = Trapper:dismissableRunInSubprocess(function()
         local dl = {}
         for _, item in ipairs(self.downloads) do
