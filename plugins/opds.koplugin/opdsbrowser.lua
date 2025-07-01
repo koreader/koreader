@@ -1537,6 +1537,9 @@ function OPDSBrowser:fillPendingSyncs(server)
             file_list[util.trim(filetype)] = true
         end
     end
+    print("file_list")
+    logger.dbg(file_list)
+
     local sync_list = self:getSyncDownloadList()
     if not sync_list then
         if #self.pending_syncs == 0 then
@@ -1563,7 +1566,7 @@ function OPDSBrowser:fillPendingSyncs(server)
                 end
                 local filetype = self.getFiletype(link)
                 if filetype then
-                    if file_str or file_list and file_list[filetype] then
+                    if not file_str or file_list and file_list[filetype] then
                         local download_path = self:getLocalDownloadPath(item.title, filetype, link.href)
                         if dl_count <= self.sync_max_dl then -- Append only max_dl entries... may still have sync backlog
                             table.insert(self.pending_syncs, {
