@@ -1448,7 +1448,7 @@ function OPDSBrowser:checkSyncDownload(idx)
         last_download = self:fillPendingSyncs(server)
         self.sync_server_list[server.url] = true
         if last_download then
-            logger.dbg("Updating opds last download for server " .. server.title)
+            logger.dbg("Updating opds last download for server", server.title, "to", last_download)
             self:updateFieldInCatalog(server, "last_download", last_download)
         end
     else
@@ -1457,7 +1457,7 @@ function OPDSBrowser:checkSyncDownload(idx)
                 last_download = self:fillPendingSyncs(item)
                 self.sync_server_list[item.url] = true
                 if last_download then
-                    logger.dbg("Updating opds last download for server " .. item.title)
+                    logger.dbg("Updating opds last download for server", item.title, "to", last_download)
                     self:updateFieldInCatalog(item, "last_download", last_download)
                 end
             end
