@@ -1015,13 +1015,10 @@ function ReaderHighlight:onTapSelectModeIcon()
 end
 
 function ReaderHighlight:onTap(_, ges)
-    -- We only actually need to clear if we have something to clear in the first place.
-    -- (We mainly want to avoid CRe's clearSelection,
-    -- which may incur a redraw as it invalidates the cache, c.f., #6854)
-    -- ReaderHighlight:clear can only return true if self.hold_pos was set anyway.
-    local cleared = self.hold_pos and self:clear()
-    -- We only care about potential taps on existing highlights, not on taps that closed a highlight menu.
-    if not cleared and ges and #self.view.highlight.visible_boxes > 0 then
+    if self.hold_pos then -- accidental tap while long-pressing
+        return self:onHoldRelease()
+    end
+    if ges and #self.view.highlight.visible_boxes > 0 then
         local pos = self.view:screenToPageTransform(ges.pos)
         local highlights_tapped = {}
         for _, box in ipairs(self.view.highlight.visible_boxes) do
@@ -1487,7 +1484,6 @@ function ReaderHighlight:showHighlightDialog(index)
         end,
     }
     UIManager:show(edit_highlight_dialog)
-    return true
 end
 
 function ReaderHighlight:addToHighlightDialog(idx, fn_button)
@@ -1526,7 +1522,11 @@ function ReaderHighlight:onShowHighlightMenu(index)
         anchor = function()
             return self:_getDialogAnchor(self.highlight_dialog, index)
         end,
-        tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
+        tap_close_callback = function()
+            if self.hold_pos then
+                self:clear()
+            end
+        end,
     }
     -- NOTE: Disable merging for this update,
     --       or the buggy Sage kernel may alpha-blend it into the page (with a bogus alpha value, to boot)...
