@@ -894,35 +894,6 @@ function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, passwor
         download()
     end
 end
---     local function download()
---         UIManager:scheduleIn(1, function()
---             self:downloadFile(local_path, remote_url, username, password, caller_callback)
---         end)
---         UIManager:show(InfoMessage:new{
---             text = _("Downloading…"),
---             timeout = 1,
---         })
---     end
---     if lfs.attributes(local_path) then
---         if not sync then
---             UIManager:show(ConfirmBox:new{
---                 text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filepath(local_path)),
---                 ok_text = _("Overwrite"),
---                 ok_callback = function()
---                     download()
---                 end,
---             })
---         elseif not force_sync then
---             local file_name, file_extension = util.splitFileNameSuffix(local_path)
---             local_path = file_name .. "_1." .. file_extension
---             download()
---         else
---             download()
---         end
---     else
---         download()
---     end
--- end
 
 function OPDSBrowser:downloadFile(local_path, remote_url, username, password, caller_callback)
     logger.dbg("Downloading file", local_path, "from", remote_url)
@@ -1354,7 +1325,6 @@ function OPDSBrowser:downloadPendingSyncs()
                         text = _("Do nothing"),
                         callback = function()
                             textviewer:onClose()
-                            self:updateFieldInCatalog(self.sync_server, "pending_syncs", self.pending_syncs)
                         end
                     },
                     {
@@ -1434,38 +1404,32 @@ function OPDSBrowser:setSyncFiletypes(filetype_list)
 end
 
 function OPDSBrowser:checkSyncDownload(idx)
-    self.sync = true
-    local server = idx and self.servers[idx-1] -- first item is "Downloads"
-    if not self.settings.opds_sync_dir then
-        UIManager:show(InfoMessage:new{
-            text = _("Please select a folder for sync downloads first"),
-        })
-        self:setSyncDir()
-        return
-    end
-    local last_download
-    if server then
-        last_download = self:fillPendingSyncs(server)
-        self.sync_server_list[server.url] = true
-        if last_download then
-            logger.dbg("Updating opds last download for server", server.title, "to", last_download)
-            self:updateFieldInCatalog(server, "last_download", last_download)
-        end
-    else
-        for _, item in ipairs(self.servers) do
-            if item.sync then
-                last_download = self:fillPendingSyncs(item)
-                self.sync_server_list[item.url] = true
-                if last_download then
-                    logger.dbg("Updating opds last download for server", item.title, "to", last_download)
-                    self:updateFieldInCatalog(item, "last_download", last_download)
+    if self.settings.opds_sync_dir then
+        self.sync = true
+        if idx then
+            self:fillPendingSyncs(self.servers[idx-1]) -- First item is "Downloads"
+        else
+            for _, item in ipairs(self.servers) do
+                if item.sync then
+                    self:fillPendingSyncs(item)
                 end
             end
         end
+        if #self.pending_syncs > 0 then
+            Trapper:wrap(function()
+                self:downloadPendingSyncs()
+            end)
+        else
+            UIManager:show(InfoMessage:new{
+                text = _("Up to date!"),
+            })
+        end
+        self.sync = false
+    else
+        UIManager:show(InfoMessage:new{
+            text = _("Please select a folder for sync downloads first"),
+        })
     end
-    Trapper:wrap(function()
-        self:downloadPendingSyncs()
-    end)
 end
 
 function OPDSBrowser:updateFieldInCatalog(item, name, value)
@@ -1528,21 +1492,22 @@ function OPDSBrowser:fillPendingSyncs(server)
             file_list[util.trim(filetype)] = true
         end
     end
+    local info = InfoMessage:new{
+        text = _("Synchronizing lists..."),
+    }
+    UIManager:show(info)
+    UIManager:forceRePaint()
     local sync_list = self:getSyncDownloadList()
-    if not sync_list then
-        if #self.pending_syncs == 0 then
-            return new_last_download
-        end
-    else
+    if sync_list then
         for i, entry in ipairs(sync_list) do
-            -- for project gutenburg
+            -- for project gutenberg
             local sub_table = {}
             local item
             if entry.url then
                 sub_table = self:getSyncDownloadList(entry.url)
             end
             if #sub_table > 0 then
-                -- The first element seems to be most compatible. Second element has files that have images etc
+                -- The first element seems to be most compatible. Second element has most options
                 item = sub_table[2]
             else
                 item = entry
@@ -1572,7 +1537,13 @@ function OPDSBrowser:fillPendingSyncs(server)
             end
         end
     end
-    return new_last_download
+    UIManager:close(info)
+    self.sync_server_list[server.url] = true
+    if new_last_download then
+        logger.dbg("Updating opds last download for server", server.title, "to", last_download)
+        self:updateFieldInCatalog(server, "last_download", new_last_download)
+    end
+
 end
 
 -- Helper function to get the filetype from an acquisitions table
@@ -1601,7 +1572,7 @@ function OPDSBrowser:getSyncDownloadList(url_arg)
         end
         local count = 1
         local acquisitions_empty = false
-        -- For project gutenburg
+        -- For project gutenberg
         while #sub_table[count].acquisitions == 0 do
             if util.stringEndsWith(sub_table[count].url, ".opds") then
                 acquisitions_empty = true
