@@ -1537,9 +1537,6 @@ function OPDSBrowser:fillPendingSyncs(server)
             file_list[util.trim(filetype)] = true
         end
     end
-    print("file_list")
-    logger.dbg(file_list)
-
     local sync_list = self:getSyncDownloadList()
     if not sync_list then
         if #self.pending_syncs == 0 then
