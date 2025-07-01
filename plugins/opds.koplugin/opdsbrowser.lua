@@ -147,14 +147,14 @@ local function buildRootEntry(server)
         icons = "\u{f46a} " .. icons
     end
     return {
-        text        = server.title,
-        mandatory   = icons,
-        url         = server.url,
-        username    = server.username,
-        password    = server.password,
-        raw_names   = server.raw_names, -- use server raw filenames for download
-        searchable  = server.url and server.url:match("%%s") and true or false,
-        sync        = server.sync,
+        text       = server.title,
+        mandatory  = icons,
+        url        = server.url,
+        username   = server.username,
+        password   = server.password,
+        raw_names  = server.raw_names, -- use server raw filenames for download
+        searchable = server.url and server.url:match("%%s") and true or false,
+        sync       = server.sync,
     }
 end
 
@@ -420,7 +420,7 @@ function OPDSBrowser:getSearchTemplate(osd_url)
 end
 
 -- Generates menu items from the fetched list of catalog entries
-function OPDSBrowser:genItemTableFromURL(item_url, sync)
+function OPDSBrowser:genItemTableFromURL(item_url)
     local ok, catalog = pcall(self.parseFeed, self, item_url)
     if not ok then
         logger.info("Cannot get catalog info from", item_url, catalog)
@@ -598,7 +598,7 @@ end
 
 -- Requests and shows updated list of catalog entries
 function OPDSBrowser:updateCatalog(item_url, paths_updated)
-    local menu_table = self:genItemTableFromURL(item_url, false)
+    local menu_table = self:genItemTableFromURL(item_url)
     if #menu_table > 0 then
         if not paths_updated then
             table.insert(self.paths, {
@@ -619,7 +619,7 @@ end
 
 -- Requests and adds more catalog entries to fill out the page
 function OPDSBrowser:appendCatalog(item_url)
-    local menu_table = self:genItemTableFromURL(item_url, false)
+    local menu_table = self:genItemTableFromURL(item_url)
     if #menu_table > 0 then
         for _, item in ipairs(menu_table) do
             -- Don't append multiple search entries
@@ -735,13 +735,13 @@ function OPDSBrowser:showDownloads(item)
                     text = text .. "\u{2B07}", -- append DOWNWARDS BLACK ARROW
                     callback = function()
                         UIManager:close(self.download_dialog)
-                        local local_path = self:getLocalDownloadPath(filename, filetype, acquisition.href, false)
-                        self:checkDownloadFile(local_path, acquisition.href, self.root_catalog_username, self.root_catalog_password, self.file_downloaded_callback, false, false)
+                        local local_path = self:getLocalDownloadPath(filename, filetype, acquisition.href)
+                        self:checkDownloadFile(local_path, acquisition.href, self.root_catalog_username, self.root_catalog_password, self.file_downloaded_callback)
                     end,
                     hold_callback = function()
                         UIManager:close(self.download_dialog)
                         table.insert(self.downloads, {
-                            file     = self:getLocalDownloadPath(filename, filetype, acquisition.href, false),
+                            file     = self:getLocalDownloadPath(filename, filetype, acquisition.href),
                             url      = acquisition.href,
                             info     = type(item.content) == "string" and util.htmlToPlainTextIfHtml(item.content) or "",
                             catalog  = self.root_catalog_title,
@@ -865,7 +865,7 @@ function OPDSBrowser:getCurrentDownloadDir()
     end
 end
 
-function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url, sync)
+function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url)
     local download_dir = self:getCurrentDownloadDir()
     filename = filename and filename .. "." .. filetype:lower() or self:getServerFileName(remote_url)
     filename = util.getSafeFilename(filename, download_dir)
@@ -885,25 +885,46 @@ function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, passwor
         })
     end
     if lfs.attributes(local_path) then
-        if not sync then
-            UIManager:show(ConfirmBox:new{
-                text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filepath(local_path)),
-                ok_text = _("Overwrite"),
-                ok_callback = function()
-                    download()
-                end,
-            })
-        elseif not force_sync then
-            local file_name, file_extension = util.splitFileNameSuffix(local_path)
-            local_path = file_name .. "_1." .. file_extension
-            download()
-        else
-            download()
-        end
+        UIManager:show(ConfirmBox:new{
+            text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filepath(local_path)),
+            ok_text = _("Overwrite"),
+            ok_callback = function()
+                download()
+            end,
+        })
     else
         download()
     end
 end
+--     local function download()
+--         UIManager:scheduleIn(1, function()
+--             self:downloadFile(local_path, remote_url, username, password, caller_callback)
+--         end)
+--         UIManager:show(InfoMessage:new{
+--             text = _("Downloading…"),
+--             timeout = 1,
+--         })
+--     end
+--     if lfs.attributes(local_path) then
+--         if not sync then
+--             UIManager:show(ConfirmBox:new{
+--                 text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filepath(local_path)),
+--                 ok_text = _("Overwrite"),
+--                 ok_callback = function()
+--                     download()
+--                 end,
+--             })
+--         elseif not force_sync then
+--             local file_name, file_extension = util.splitFileNameSuffix(local_path)
+--             local_path = file_name .. "_1." .. file_extension
+--             download()
+--         else
+--             download()
+--         end
+--     else
+--         download()
+--     end
+-- end
 
 function OPDSBrowser:downloadFile(local_path, remote_url, username, password, caller_callback)
     logger.dbg("Downloading file", local_path, "from", remote_url)
@@ -980,7 +1001,7 @@ function OPDSBrowser:onMenuSelect(item)
             end
         end
         NetworkMgr:runWhenConnected(connect_callback)
-        end
+    end
     return true
 end
 
@@ -1151,7 +1172,7 @@ function OPDSBrowser:showDownloadListItemDialog(item)
                         self._manager.file_downloaded_callback(local_path)
                     end
                     NetworkMgr:runWhenConnected(function()
-                        self._manager:checkDownloadFile(dl_item.file, dl_item.url, dl_item.username, dl_item.password, file_downloaded_callback, false, false)
+                        self._manager:checkDownloadFile(dl_item.file, dl_item.url, dl_item.username, dl_item.password, file_downloaded_callback)
                     end)
                 end,
             },
@@ -1215,7 +1236,7 @@ function OPDSBrowser:showDownloadListItemDialog(item)
     return true
 end
 
--- Download whole download or pending_syncs list
+-- Download whole download list
 function OPDSBrowser:downloadDownloadList()
     local info = InfoMessage:new{ text = _("Downloading… (tap to cancel)") }
     UIManager:show(info)
@@ -1258,6 +1279,7 @@ function OPDSBrowser:downloadDownloadList()
     end
 end
 
+-- Download pending syncs list
 function OPDSBrowser:downloadPendingSyncs()
     local dl_list = self.pending_syncs
     local function dismissable_download()
@@ -1542,7 +1564,7 @@ function OPDSBrowser:fillPendingSyncs(server)
                 local filetype = self.getFiletype(link)
                 if filetype then
                     if file_str or file_list and file_list[filetype] then
-                        local download_path = self:getLocalDownloadPath(item.title, filetype, link.href, true)
+                        local download_path = self:getLocalDownloadPath(item.title, filetype, link.href)
                         if dl_count <= self.sync_max_dl then -- Append only max_dl entries... may still have sync backlog
                             table.insert(self.pending_syncs, {
                                 file = download_path,
