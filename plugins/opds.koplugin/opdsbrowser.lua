@@ -88,7 +88,6 @@ function OPDSBrowser:showOPDSMenu()
                     callback = function()
                         UIManager:close(dialog)
                         NetworkMgr:runWhenConnected(function()
-                            self.sync = true
                             self.sync_force = false
                             self:checkSyncDownload()
                         end)
@@ -100,7 +99,6 @@ function OPDSBrowser:showOPDSMenu()
                     callback = function()
                         UIManager:close(dialog)
                         NetworkMgr:runWhenConnected(function()
-                            self.sync = true
                             self.sync_force = true
                             self:checkSyncDownload()
                         end)
@@ -1019,7 +1017,6 @@ function OPDSBrowser:onMenuHold(item)
                     callback = function()
                         UIManager:close(dialog)
                         NetworkMgr:runWhenConnected(function()
-                            self.sync = true
                             self.sync_force = true
                             self:checkSyncDownload(item.idx)
                         end)
@@ -1030,7 +1027,6 @@ function OPDSBrowser:onMenuHold(item)
                     callback = function()
                         UIManager:close(dialog)
                         NetworkMgr:runWhenConnected(function()
-                            self.sync = true
                             self.sync_force = false
                             self:checkSyncDownload(item.idx)
                         end)
@@ -1313,7 +1309,7 @@ function OPDSBrowser:downloadPendingSyncs()
                 dl_count = dl_count + 1
                 table.remove(dl_list, i)
             else -- if subprocess has been interrupted, check for the downloaded file
-            local attr = lfs.attributes(item.file)
+                local attr = lfs.attributes(item.file)
                 if attr then
                     if attr.size > 0 then
                         table.remove(dl_list, i)
@@ -1326,12 +1322,7 @@ function OPDSBrowser:downloadPendingSyncs()
                 end
             end
         end
-        local duplicate_count
-        if duplicate_list then
-            duplicate_count = #duplicate_list
-        else
-            duplicate_count = 0
-        end
+        local duplicate_count = duplicate_list and #duplicate_list or 0
         dl_count = dl_count - duplicate_count
         -- Make downloaded count timeout if there's a duplicate file prompt
         local timeout = nil
@@ -1349,7 +1340,7 @@ function OPDSBrowser:downloadPendingSyncs()
 
     if duplicate_list and #duplicate_list > 0 then
         local textviewer
-        local duplicate_files = { _("These files are already on the device: \n") }
+        local duplicate_files = { _("These files are already on the device:") }
         for _, entry in ipairs(duplicate_list) do
             table.insert(duplicate_files, entry.file)
         end
@@ -1443,6 +1434,7 @@ function OPDSBrowser:setSyncFiletypes(filetype_list)
 end
 
 function OPDSBrowser:checkSyncDownload(idx)
+    self.sync = true
     local server = idx and self.servers[idx-1] -- first item is "Downloads"
     if not self.settings.opds_sync_dir then
         UIManager:show(InfoMessage:new{
