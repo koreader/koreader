@@ -1213,14 +1213,12 @@ function OPDSBrowser:downloadDownloadList()
     local info = InfoMessage:new{ text = _("Downloading… (tap to cancel)") }
     UIManager:show(info)
     UIManager:forceRePaint()
-    print("DOWNLOAD")
-    logger.dbg(self.downloads)
     local completed, downloaded = Trapper:dismissableRunInSubprocess(function()
         local dl = {}
         for _, item in ipairs(self.downloads) do
---             if self:downloadFile(item.file, item.url, item.username, item.password) then
---                 dl[item.file] = true
---             end
+            if self:downloadFile(item.file, item.url, item.username, item.password) then
+                dl[item.file] = true
+            end
         end
         return dl
     end, info)
@@ -1511,8 +1509,6 @@ end
 -- Download pending syncs list
 function OPDSBrowser:downloadPendingSyncs()
     local dl_list = self.pending_syncs
-    print("SYNC")
-    logger.dbg(dl_list)
     local function dismissable_download()
         local info = InfoMessage:new{ text = _("Downloading… (tap to cancel)") }
         UIManager:show(info)
@@ -1525,9 +1521,9 @@ function OPDSBrowser:downloadPendingSyncs()
                     if lfs.attributes(item.file) and not self.sync_force then
                         table.insert(dupe_list, item)
                     else
---                         if self:downloadFile(item.file, item.url, item.username, item.password) then
---                             dl[item.file] = true
---                         end
+                        if self:downloadFile(item.file, item.url, item.username, item.password) then
+                            dl[item.file] = true
+                        end
                     end
                 end
             end
