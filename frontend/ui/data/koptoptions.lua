@@ -502,6 +502,26 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 },
             },
             {
+                name = "white_threshold",
+                name_text = _("White Threshold"),
+                buttonprogress = true,
+                -- For pdf reflowing mode (k2pdfopt):
+                values = {255, 224, 192, 160, 128, 96, 64, 32},
+                default_pos = 1,
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_WHITE_THRESHOLD"),
+                event = "WhiteThresholdUpdate",
+                -- For pdf non-reflowing mode (mupdf):
+                args =   {255, 224, 192, 160, 128, 96, 64, 32},
+                labels = {255, 224, 192, 160, 128, 96, 64, 32},
+                name_text_hold_callback = optionsutil.showValues,
+                more_options = true,
+                more_options_param = {
+                    value_step = 1, value_hold_step = 5,
+                    value_min = 0, value_max = 255,
+                    precision = "%.0f",
+                },
+            },
+            {
                 name = "page_opt",
                 name_text = _("Dewatermark"),
                 toggle = {_("off"), _("on")},
