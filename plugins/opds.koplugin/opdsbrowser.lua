@@ -668,7 +668,7 @@ end
 -- Shows dialog to download / stream a book
 function OPDSBrowser:showDownloads(item)
     local acquisitions = item.acquisitions
-    local filename = self:getFileName(item)
+    local filename, filename_orig = self:getFileName(item)
 
     local function createTitle(path, file) -- title for ButtonDialog
         return T(_("Download folder:\n%1\n\nDownload filename:\n%2\n\nDownload file type:"),
@@ -1321,6 +1321,7 @@ function OPDSBrowser:setSyncFiletypes(filetype_list)
     dialog:onShowKeyboard()
 end
 
+-- Helper function to get filename and set nil if using raw names
 function OPDSBrowser:getFileName(item)
     local filename = item.title
     if item.author then
@@ -1330,7 +1331,7 @@ function OPDSBrowser:getFileName(item)
     if self.root_catalog_raw_names then
         filename = nil
     end
-    return filename
+    return filename, filename_orig
 end
 
 function OPDSBrowser:updateFieldInCatalog(item, name, value)
@@ -1416,7 +1417,7 @@ function OPDSBrowser:fillPendingSyncs(server)
                 local filetype = self.getFiletype(link)
                 if filetype then
                     if not file_str or file_list and file_list[filetype] then
-                        local filename = self:getFileName(item)
+                        local filename = self:getFileName(entry)
                         local download_path = self:getLocalDownloadPath(filename, filetype, link.href)
                         if dl_count <= self.sync_max_dl then -- Append only max_dl entries... may still have sync backlog
                             table.insert(self.pending_syncs, {
@@ -1608,7 +1609,7 @@ function OPDSBrowser:downloadPendingSyncs()
                             textviewer:onClose()
                             local copy_download_dir, original_dir, copies_dir, copy_download_path
                             copies_dir = "copies"
-                            original_dir, _ = util.splitFilePathName(duplicate_list[1].file)
+                            original_dir = util.splitFilePathName(duplicate_list[1].file)
                             copy_download_dir = original_dir .. copies_dir .. "/"
                             util.makePath(copy_download_dir)
                             for _, entry in ipairs(duplicate_list) do
