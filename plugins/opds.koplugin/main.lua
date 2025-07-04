@@ -45,12 +45,14 @@ local OPDS = WidgetContainer:extend{
 }
 
 function OPDS:init()
-    self.settings = LuaSettings:open(self.opds_settings_file)
-    if next(self.settings.data) == nil then
+    self.opds_settings = LuaSettings:open(self.opds_settings_file)
+    if next(self.opds_settings.data) == nil then
         self.updated = true -- first run, force flush
     end
-    self.servers = self.settings:readSetting("servers", self.default_servers)
-    self.downloads = self.settings:readSetting("downloads", {})
+    self.servers = self.opds_settings:readSetting("servers", self.default_servers)
+    self.downloads = self.opds_settings:readSetting("downloads", {})
+    self.settings = self.opds_settings:readSetting("settings", {})
+    self.pending_syncs = self.opds_settings:readSetting("pending_syncs", {})
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 end
@@ -76,6 +78,8 @@ function OPDS:onShowOPDSCatalog()
     self.opds_browser = OPDSBrowser:new{
         servers = self.servers,
         downloads = self.downloads,
+        settings = self.settings,
+        pending_syncs = self.pending_syncs,
         title = _("OPDS catalog"),
         is_popout = false,
         is_borderless = true,
@@ -121,7 +125,7 @@ end
 
 function OPDS:onFlushSettings()
     if self.updated then
-        self.settings:flush()
+        self.opds_settings:flush()
         self.updated = nil
     end
 end
