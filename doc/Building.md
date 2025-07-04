@@ -133,6 +133,15 @@ brew install ccache gettext luacheck p7zip
 export MACOSX_DEPLOYMENT_TARGET=10.09
 ```
 
+### Nix
+
+Ensure the [nix is installed](https://nixos.org/download/).
+
+Then simply run the included nix shell:
+```
+nix-shell
+```
+
 ## Getting the source
 
 
