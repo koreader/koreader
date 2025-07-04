@@ -139,7 +139,7 @@ Ensure the [nix is installed](https://nixos.org/download/).
 
 Then simply run the included nix shell:
 ```
-nix-shell
+nix-shell tools/shell.nix
 ```
 
 ## Getting the source
