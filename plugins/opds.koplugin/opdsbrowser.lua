@@ -862,7 +862,7 @@ end
 -- Returns user selected or last opened folder
 function OPDSBrowser:getCurrentDownloadDir()
     if self.sync then
-        return self.settings.opds_sync_dir
+        return self.settings.sync_dir
     else
         return G_reader_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
     end
@@ -1251,7 +1251,7 @@ function OPDSBrowser:downloadDownloadList()
 end
 
 function OPDSBrowser:setMaxSyncDownload()
-    local current_max_dl = self.settings.opds_sync_max_dl or 50
+    local current_max_dl = self.settings.sync_max_dl or 50
     local spin = SpinWidget:new{
         title_text = "Set maximum sync size",
         info_text = "Set the max number of books to download at a time",
@@ -1264,7 +1264,7 @@ function OPDSBrowser:setMaxSyncDownload()
         wrap = true,
         ok_text = "Save",
         callback = function(spin)
-            self.settings.opds_sync_max_dl = spin.value
+            self.settings.sync_max_dl = spin.value
             self._manager.updated = true
         end,
     }
@@ -1280,7 +1280,7 @@ function OPDSBrowser:setSyncDir()
     require("ui/downloadmgr"):new{
         onConfirm = function(inbox)
             logger.info("set opds sync folder", inbox)
-            self.settings.opds_sync_dir = inbox
+            self.settings.sync_dir = inbox
             self._manager.updated = true
         end,
     }:chooseDir(force_chooser_dir)
@@ -1340,7 +1340,7 @@ function OPDSBrowser:updateFieldInCatalog(item, name, value)
 end
 
 function OPDSBrowser:checkSyncDownload(idx)
-    if self.settings.opds_sync_dir then
+    if self.settings.sync_dir then
         self.sync = true
         local info = InfoMessage:new{
             text = _("Synchronizing lists…"),
@@ -1382,7 +1382,7 @@ function OPDSBrowser:fillPendingSyncs(server)
     self.root_catalog_title     = server.title
     self.sync_server            = server
     self.sync_server_list       = self.sync_server_list or {}
-    self.sync_max_dl            = self.settings.opds_sync_max_dl or 50
+    self.sync_max_dl            = self.settings.sync_max_dl or 50
 
     local file_list
     local file_str = self.settings.filetypes
@@ -1443,7 +1443,7 @@ function OPDSBrowser:fillPendingSyncs(server)
 
 end
 
--- Get list of books to download bigger than opds_sync_max_dl
+-- Get list of books to download bigger than sync_max_dl
 function OPDSBrowser:getSyncDownloadList(url_arg)
     local sync_table = {}
     local fetch_url = url_arg or self.sync_server.url
