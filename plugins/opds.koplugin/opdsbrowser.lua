@@ -1089,6 +1089,10 @@ function OPDSBrowser:showDownloadList()
         title_bar_fm_style = true,
         onMenuSelect = self.showDownloadListItemDialog,
         _manager = self,
+        title_bar_left_icon = "plus",
+        onLeftButtonTap = function()
+            self:showDownloadListMenu()
+        end
     }
     self.download_list.close_callback = function()
         UIManager:close(self.download_list)
@@ -1103,6 +1107,35 @@ function OPDSBrowser:showDownloadList()
     UIManager:show(self.download_list)
 end
 
+function OPDSBrowser:showDownloadListMenu()
+    local dialog
+    dialog = ButtonDialog:new{
+        buttons = {
+            {{
+                    text = _("Remove all"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:confirmClearDownloadList()
+                    end,
+                    align = "left",
+            }},
+            {{
+                    text = _("Download all"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:confirmDownloadDownloadList()
+                    end,
+                    align = "left",
+            }},
+        },
+        shrink_unneeded_width = true,
+        anchor = function()
+            return self.title_bar.left_button.image.dimen
+        end,
+    }
+    UIManager:show(dialog)
+end
+
 function OPDSBrowser:updateDownloadListItemTable(item_table)
     if item_table == nil then
         item_table = {}
@@ -1115,6 +1148,35 @@ function OPDSBrowser:updateDownloadListItemTable(item_table)
     end
     local title = T(_("Downloads (%1)"), #item_table)
     self.download_list:switchItemTable(title, item_table)
+end
+
+function OPDSBrowser:confirmDownloadDownloadList()
+    UIManager:show(ConfirmBox:new{
+        text = _("Download all books?\nExisting files will be overwritten."),
+        ok_text = _("Download"),
+        ok_callback = function()
+            NetworkMgr:runWhenConnected(function()
+                Trapper:wrap(function()
+                    self:downloadDownloadList()
+                end)
+            end)
+        end,
+    })
+end
+
+function OPDSBrowser:confirmClearDownloadList()
+    UIManager:show(ConfirmBox:new{
+        text = _("Remove all downloads?"),
+        ok_text = _("Remove"),
+        ok_callback = function()
+            for i in ipairs(self.downloads) do
+                self.downloads[i] = nil
+            end
+            self.download_list_updated = true
+            self._manager.updated = true
+            self.download_list:close_callback()
+        end,
+    })
 end
 
 function OPDSBrowser:showDownloadListItemDialog(item)
@@ -1155,35 +1217,14 @@ function OPDSBrowser:showDownloadListItemDialog(item)
                 text = _("Remove all"),
                 callback = function()
                     textviewer:onClose()
-                    UIManager:show(ConfirmBox:new{
-                        text = _("Remove all downloads?"),
-                        ok_text = _("Remove"),
-                        ok_callback = function()
-                            for i in ipairs(self._manager.downloads) do
-                                self._manager.downloads[i] = nil
-                            end
-                            self._manager.download_list_updated = true
-                            self._manager._manager.updated = true
-                            self:close_callback()
-                        end,
-                    })
+                    self._manager:confirmClearDownloadList()
                 end,
             },
             {
                 text = _("Download all"),
                 callback = function()
                     textviewer:onClose()
-                    UIManager:show(ConfirmBox:new{
-                        text = _("Download all books?\nExisting files will be overwritten."),
-                        ok_text = _("Download"),
-                        ok_callback = function()
-                            NetworkMgr:runWhenConnected(function()
-                                Trapper:wrap(function()
-                                    self._manager:downloadDownloadList()
-                                end)
-                            end)
-                        end,
-                    })
+                    self._manager:confirmDownloadDownloadList()
                 end,
             },
         },
