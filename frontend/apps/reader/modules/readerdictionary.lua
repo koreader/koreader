@@ -853,8 +853,8 @@ function ReaderDictionary:cleanSelection(text, is_sane)
         -- Strip punctuation characters around selection
         text = util.stripPunctuation(text)
         -- In some dictionaries, both interpuncts and pipes are used to delimiter syllables.
-        text = text:gsub("·", "")  -- interpunct
-        text = text:gsub("|", "")  -- pipe
+        text = text:gsub("·", "") -- interpunct
+        text = text:gsub("|", "") -- pipe
         text = text:gsub("↑", "") -- and up arrow, used in some dictionaries to indicate related words
         -- Strip some common english grammatical construct
         text = text:gsub("'s$", '') -- english possessive
