@@ -1089,10 +1089,10 @@ function OPDSBrowser:showDownloadList()
         title_bar_fm_style = true,
         onMenuSelect = self.showDownloadListItemDialog,
         _manager = self,
-        title_bar_left_icon = "plus",
+        title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function()
             self:showDownloadListMenu()
-        end
+        end,
     }
     self.download_list.close_callback = function()
         UIManager:close(self.download_list)
