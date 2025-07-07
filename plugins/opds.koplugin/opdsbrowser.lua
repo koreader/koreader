@@ -63,7 +63,7 @@ local OPDSBrowser = Menu:extend{
 function OPDSBrowser:init()
     self.item_table = self:genItemTableFromRoot()
     self.catalog_title = nil
-    self.title_bar_left_icon = "plus"
+    self.title_bar_left_icon = "appbar.menu"
     self.onLeftButtonTap = function()
         self:showOPDSMenu()
     end
@@ -951,6 +951,7 @@ function OPDSBrowser:onMenuSelect(item)
         logger.dbg("Downloads available:", item)
         self:showDownloads(item)
     else -- catalog or Search item
+        self.title_bar.left_button.title_bar_left_icon = "plus"
         if #self.paths == 0 then -- root list
             if item.idx == 1 then
                 if #self.downloads > 0 then
@@ -1340,13 +1341,14 @@ function OPDSBrowser:updateFieldInCatalog(item, name, value)
 end
 
 function OPDSBrowser:checkSyncDownload(idx)
-    if self.settings.sync_dir then
+    if self.settings.sync_dir and util.pathExists(self.settings.sync_dir) then
         self.sync = true
         local info = InfoMessage:new{
             text = _("Synchronizing lists…"),
         }
         UIManager:show(info)
         UIManager:forceRePaint()
+        self.pending_syncs_insert_pos = #self.pending_syncs + 1 -- Start adding books after all leftover pending DLs
         if idx then
             self:fillPendingSyncs(self.servers[idx-1]) -- First item is "Downloads"
         else
@@ -1369,7 +1371,7 @@ function OPDSBrowser:checkSyncDownload(idx)
         self.sync = false
     else
         UIManager:show(InfoMessage:new{
-            text = _("Please choose a folder for sync downloads first"),
+            text = _("Please choose a folder for sync downloads first."),
         })
     end
 end
@@ -1384,14 +1386,12 @@ function OPDSBrowser:fillPendingSyncs(server)
     self.sync_server_list       = self.sync_server_list or {}
     self.sync_max_dl            = self.settings.sync_max_dl or 50
 
-    local file_list
-    local file_str = self.settings.filetypes
     local new_last_download = nil
     local dl_count = 1
-    if file_str then
-        file_list = {}
-        for filetype in util.gsplit(file_str, ",") do
-            file_list[util.trim(filetype)] = true
+    if self.settings.filetypes then
+        self.file_list = {}
+        for filetype in util.gsplit(self.settings.filetypes, ",") do
+            self.file_list[util.trim(filetype)] = true
         end
     end
     local sync_list = self:getSyncDownloadList()
@@ -1409,30 +1409,21 @@ function OPDSBrowser:fillPendingSyncs(server)
             else
                 item = entry
             end
-            for j, link in ipairs(item.acquisitions) do
-                -- Only save first link in case of several file types
-                if i == 1 and j == 1 then
-                    new_last_download = link.href
-                end
-                local filetype = self.getFiletype(link)
-                if filetype then
-                    if not file_str or file_list and file_list[filetype] then
-                        local filename = self:getFileName(entry)
-                        local download_path = self:getLocalDownloadPath(filename, filetype, link.href)
-                        if dl_count <= self.sync_max_dl then -- Append only max_dl entries... may still have sync backlog
-                            table.insert(self.pending_syncs, {
-                                file = download_path,
-                                url = link.href,
-                                username = self.root_catalog_username,
-                                password = self.root_catalog_password,
-                                catalog = server.url,
-                            })
-                            dl_count = dl_count + 1
-                        end
-                        break
-                    end
-                end
+            -- Only save first link in case of several file types
+            if i == 1 then
+                new_last_download = entry.dl_href
             end
+            local filetype = entry.filetype
+            local filename = self:getFileName(entry)
+            local download_path = self:getLocalDownloadPath(filename, filetype, entry.dl_href)
+            table.insert(self.pending_syncs, self.pending_syncs_insert_pos, {
+                file = download_path,
+                url = entry.dl_href,
+                username = self.root_catalog_username,
+                password = self.root_catalog_password,
+                catalog = server.url,
+            })
+            dl_count = dl_count + 1
         end
     end
     self.sync_server_list[server.url] = true
@@ -1447,10 +1438,35 @@ end
 function OPDSBrowser:getSyncDownloadList(url_arg)
     local sync_table = {}
     local fetch_url = url_arg or self.sync_server.url
-    local sub_table
+    local sub_table = {}
     local up_to_date = false
-    while #sync_table < self.sync_max_dl and not up_to_date do
-        sub_table = self:genItemTableFromURL(fetch_url)
+    local sub_table_full = false
+    while not sub_table_full do
+        local temp_table = self:genItemTableFromURL(fetch_url)
+        for i, entry in ipairs(temp_table) do
+            if #sub_table >= self.sync_max_dl then
+                sub_table_full = true
+                break
+            else
+                for _, link in ipairs(entry.acquisitions) do
+                    local filetype = self.getFiletype(link)
+                    if filetype then
+                        if not self.settings.filetypes or self.file_list and self.file_list[filetype] then
+                            entry.filetype = filetype
+                            entry.dl_href = link.href
+                            table.insert(sub_table, entry)
+                            break
+                        end
+                    end
+                end
+            end
+        end
+        if not temp_table.hrefs.next then
+            break
+        end
+        fetch_url = temp_table.hrefs.next
+    end
+    while #sync_table < #sub_table and not up_to_date do
         -- timeout
         if #sub_table == 0 then
             return sync_table
@@ -1499,10 +1515,6 @@ function OPDSBrowser:getSyncDownloadList(url_arg)
                 end
             end
         end
-        if not sub_table.hrefs.next then
-            break
-        end
-        fetch_url = sub_table.hrefs.next
     end
     return sync_table
 end
