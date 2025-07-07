@@ -16,7 +16,7 @@ local _ = require("gettext")
 local T = ffiUtil.template
 
 local device_id = G_reader_settings:readSetting("device_id", random.uuid())
-local root_path = DataStorage:getFullDataDir():sub(1,-10) -- remove ending "/koreader"
+local root_path = DataStorage:getFullDataDir():match("(.*)/.*") -- remove ending "/koreader"
 local data_dir = DataStorage:getDataDir()
 local default_backup_folder = data_dir .. "/backup"
 local settings = G_reader_settings:readSetting("backup", {})
