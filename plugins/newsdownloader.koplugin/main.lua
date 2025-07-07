@@ -857,7 +857,7 @@ function NewsDownloader:viewFeedList()
                 -- Prepare the view with all the callbacks for editing the attributes
                 local feed_item_vc = FeedView:getItem(
                     #feed_config + 1,
-                    self.getEmptyFeed(),
+                    getEmptyFeed(),
                     function(id, edit_key, value)
                         self:editFeedAttribute(id, edit_key, value)
                     end
@@ -1021,7 +1021,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
     if id > #feed_config then
         table.insert(
             feed_config,
-            self.getEmptyFeed()
+            getEmptyFeed()
         )
     end
 

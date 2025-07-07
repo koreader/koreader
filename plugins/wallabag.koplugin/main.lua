@@ -114,7 +114,7 @@ function Wallabag:init()
     self.archive_directory = self.wb_settings.data.wallabag.archive_directory
     if not self.archive_directory or self.archive_directory == "" then
         if self.directory and self.directory ~= "" then
-            self.archive_directory = self.directory.."archive/"
+            self.archive_directory = FFIUtil.joinPath(self.directory, "archive")
         end
     end
 
@@ -566,11 +566,6 @@ function Wallabag:getBearerToken()
         return false
     end
 
-    -- Add trailing slash if it is missing
-    if string.sub(self.directory, -1) ~= "/" then
-        self.directory = self.directory .. "/"
-    end
-
     -- Check if token is valid for at least 5 minutes. If so, no need to renew
     local now = os.time()
     if self.token_expiry - now > 300 then
@@ -762,7 +757,7 @@ function Wallabag:downloadArticle(article)
         end
     end
 
-    local local_path = self.directory .. article_id_prefix .. article.id .. article_id_postfix .. title .. file_ext
+    local local_path = FFIUtil.joinPath(self.directory, article_id_prefix..article.id..article_id_postfix..title..file_ext)
     logger.dbg("Wallabag:downloadArticle: downloading", article.id, "to", local_path)
 
     local attr = lfs.attributes(local_path)
@@ -1084,7 +1079,7 @@ function Wallabag:processRemoteDeletes(remote_ids)
     local count = 0
 
     for entry in lfs.dir(self.directory) do
-        local entry_path = self.directory .. entry
+        local entry_path = FFIUtil.joinPath(self.directory, entry)
 
         if entry ~= "." and entry ~= ".." and lfs.attributes(entry_path, "mode") == "file" then
             local local_id = self:getArticleID(entry_path)
@@ -1133,7 +1128,7 @@ function Wallabag:uploadStatuses(quiet)
             local skip = false
 
             if entry ~= "." and entry ~= ".." then
-                local entry_path = self.directory .. entry
+                local entry_path = FFIUtil.joinPath(self.directory, entry)
 
                 if DocSettings:hasSidecarFile(entry_path) then
                     logger.dbg("Wallabag:uploadStatuses:", entry_path, "has sidecar file")
@@ -1329,7 +1324,7 @@ function Wallabag:archiveLocalArticle(path)
 
     if lfs.attributes(path, "mode") == "file" then
         local _, file = util.splitFilePathName(path)
-        local new_path = self.archive_directory..file
+        local new_path = FFIUtil.joinPath(self.archive_directory, file)
         if FileManager:moveFile(path, new_path) then
             result = 1
         end
@@ -1530,7 +1525,7 @@ function Wallabag:setDownloadDirectory(touchmenu_instance)
         onConfirm = function(path)
             self.directory = path
             self:saveSettings()
-            logger.dbg("Wallabag:setDownloadDirectory: set download directory to", path)
+            logger.dbg("Wallabag:setDownloadDirectory: set download directory to", self.directory)
             if touchmenu_instance then
                 touchmenu_instance:updateItems()
             end
@@ -1544,7 +1539,7 @@ function Wallabag:setArchiveDirectory(touchmenu_instance)
         onConfirm = function(path)
             self.archive_directory = path
             self:saveSettings()
-            logger.dbg("Wallabag:setArchiveDirectory: set archive directory to", path)
+            logger.dbg("Wallabag:setArchiveDirectory: set archive directory to", self.archive_directory)
             if touchmenu_instance then
                 touchmenu_instance:updateItems()
             end
@@ -1612,7 +1607,7 @@ function Wallabag:saveSettings()
         remove_read_from_history      = self.remove_read_from_history,
         remove_abandoned_from_history = self.remove_abandoned_from_history,
         download_original_document    = self.download_original_document,
-        offline_queue                  = self.offline_queue,
+        offline_queue                 = self.offline_queue,
         use_local_archive             = self.use_local_archive,
         archive_directory             = self.archive_directory,
         file_block_timeout            = self.file_block_timeout,

@@ -13,6 +13,7 @@ local UIManager = require("ui/uimanager")
 local Version = require("version")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
@@ -303,6 +304,15 @@ function OTAManager:_buildLocalPackage()
         return nil
     end
 
+    local tar_cmd = {
+        './tar',
+        '--create', '--file='..self.installed_package,
+        '--mtime', tostring(Version:getBuildDate()),
+        '--numeric-owner', '--owner=0', '--group=0',
+        '--ignore-failed-read', '--no-recursion', '-C', '..',
+        '--verbatim-files-from', '--files-from', self.package_indexfile,
+    }
+
     -- With visual feedback if supported...
     if self.can_pretty_print then
         os.execute("./fbink -q -y -7 -pmh 'Preparing local OTA package'")
@@ -328,14 +338,10 @@ function OTAManager:_buildLocalPackage()
         end
         -- And since we want a percentage, devise the exact value we need for tar to spit out exactly 100 checkpoints ;).
         local cpoints = blocks * (1/100)
-        return os.execute(string.format(
-            "./tar --no-recursion -cf %s -C .. -T %s --checkpoint=%d --checkpoint-action=exec='./fbink -q -y -6 -P $(($TAR_CHECKPOINT/%d))'",
-            self.installed_package, self.package_indexfile, cpoints, cpoints))
-    else
-        return os.execute(string.format(
-            "./tar --no-recursion -cf %s -C .. -T %s",
-            self.installed_package, self.package_indexfile))
+        table.insert(tar_cmd, string.format('--checkpoint=%d', cpoints))
+        table.insert(tar_cmd, string.format('--checkpoint-action=exec=./fbink -q -y -6 -P $(($TAR_CHECKPOINT/%d))', cpoints))
     end
+    return os.execute(util.shell_escape(tar_cmd))
 end
 
 function OTAManager:zsync(full_dl)

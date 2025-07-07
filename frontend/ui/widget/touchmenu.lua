@@ -50,6 +50,8 @@ local TouchMenuItem = InputContainer:extend{
     dimen = nil,
     face = Font:getFace("smallinfofont"),
     show_parent = nil,
+    check_callback_updates_menu = nil, -- set to true for item with checkmark if its callback updates menu
+    check_callback_closes_menu = nil, -- set to true for item with checkmark if its callback closes menu
 }
 
 function TouchMenuItem:init()
@@ -206,8 +208,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
         -- Unhighlight
         --
         self.item_frame.invert = false
-        -- NOTE: If the menu is going to be closed, we can safely drop that.
-        if self.item.keep_menu_open then
+        if self.item.keep_menu_open or self.item.check_callback_updates_menu then
             UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
             UIManager:setDirty(nil, "ui", highlight_dimen)
         end
@@ -692,11 +693,13 @@ function TouchMenu:updateItems()
     table.insert(self.item_group, self.bar)
     table.insert(self.layout, self.bar.icon_widgets) -- for the focusmanager
 
+    local idx_offset = (self.page - 1) * self.perpage
     for c = 1, self.perpage do
         -- calculate index in item_table
-        local i = (self.page - 1) * self.perpage + c
+        local i = idx_offset + c
         if i <= #self.item_table then
             local item = self.item_table[i]
+            item.idx = i
             local item_tmp = TouchMenuItem:new{
                 item = item,
                 menu = self,
@@ -922,7 +925,7 @@ function TouchMenu:onMenuSelect(item, tap_on_checkmark)
                 -- must set keep_menu_open=true if that is wished)
                 callback(self)
                 if refresh then
-                    if not item.no_refresh_on_check then
+                    if not (item.check_callback_updates_menu or item.check_callback_closes_menu) then
                         self:updateItems()
                     end
                 elseif not item.keep_menu_open then
@@ -978,7 +981,7 @@ function TouchMenu:onMenuHold(item, text_truncated)
             end
             -- Provide callback with us, so it can call our
             -- closemenu() or updateItems() when it sees fit
-            callback(self)
+            callback(self, item)
         end
     elseif item.help_text or type(item.help_text_func) == "function" then
         local help_text = item.help_text

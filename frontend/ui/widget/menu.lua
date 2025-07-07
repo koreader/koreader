@@ -1125,6 +1125,7 @@ end
 
 -- merge TitleBar layout into self FocusManager layout
 function Menu:mergeTitleBarIntoLayout()
+    if not self.title_bar then return end
     if Device:hasSymKey() or Device:hasScreenKB() then
         -- Title bar items can be accessed through key mappings on kindle
         return

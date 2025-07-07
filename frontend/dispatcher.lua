@@ -34,6 +34,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local FileManager = require("apps/filemanager/filemanager")
 local Notification = require("ui/widget/notification")
+local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
@@ -51,6 +52,7 @@ local Dispatcher = {
 -- See above for description.
 local settingsList = {
     -- General
+    gesture_overview = {category="none", event="ShowGestureOverview", title=_("Gesture overview"), general=true},
     filemanager = {category="none", event="Home", title=_("File browser"), general=true},
     open_previous_document = {category="none", event="OpenLastDoc", title=_("Open previous document"), general=true},
     history = {category="none", event="ShowHist", title=_("History"), general=true},
@@ -60,6 +62,8 @@ local settingsList = {
     collections_search = {category="none", event="ShowCollectionsSearchDialog", title=_("Collections search"), general=true, separator=true},
     ----
     dictionary_lookup = {category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), general=true},
+    load_dictionary_preset = {category="string", event="LoadDictionaryPreset", title=_("Load dictionary preset"), args_func=ReaderDictionary.getPresets, general=true},
+    cycle_dictionary_preset = {category="none", event="CycleDictionaryPresets", title=_("Cycle through dictionary presets"), general=true,},
     wikipedia_lookup = {category="none", event="ShowWikipediaLookup", title=_("Wikipedia lookup"), general=true, separator=true},
     ----
     show_menu = {category="none", event="ShowMenu", title=_("Show menu"), general=true},
@@ -291,6 +295,7 @@ local settingsList = {
 -- array for item order in menu
 local dispatcher_menu_order = {
     -- General
+    "gesture_overview",
     "filemanager",
     "open_previous_document",
     "history",
@@ -300,6 +305,8 @@ local dispatcher_menu_order = {
     "collections_search",
     ----
     "dictionary_lookup",
+    "load_dictionary_preset",
+    "cycle_dictionary_preset",
     "wikipedia_lookup",
     ----
     "show_menu",
@@ -626,7 +633,7 @@ function Dispatcher:removeAction(name)
     return true
 end
 
-local function iter_func(settings)
+function Dispatcher.iter_func(settings)
     local order = util.tableGetValue(settings, "settings", "order")
     if order and #order > 1 then
         return ipairs(order)
@@ -760,7 +767,7 @@ function Dispatcher.getDisplayList(settings, for_sorting)
     local item_table = {}
     if not settings then return item_table end
     local is_check_mark = for_sorting and settings.settings and settings.settings.show_as_quickmenu
-    for item, v in iter_func(settings) do
+    for item, v in Dispatcher.iter_func(settings) do
         if type(item) == "number" then item = v end
         if settingsList[item] ~= nil and settingsList[item].condition ~= false then
             table.insert(item_table, {
@@ -988,11 +995,10 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     menu.ignored_by_menu_search = true -- all those would be duplicated
     table.insert(menu, {
         text = _("Nothing"),
-        keep_menu_open = true,
-        no_refresh_on_check = true,
         checked_func = function()
             return location[settings] ~= nil and Dispatcher:_itemsCount(location[settings]) == 0
         end,
+        check_callback_updates_menu = true,
         callback = function(touchmenu_instance)
             local function do_remove()
                 local actions = location[settings]
@@ -1193,7 +1199,7 @@ function Dispatcher:execute(settings, exec_props)
         Notification:notify(T(_("Executing profile: %1"), settings.settings.name))
     end
     local gesture = exec_props and exec_props.gesture
-    for k, v in iter_func(settings) do
+    for k, v in Dispatcher.iter_func(settings) do
         if type(k) == "number" then
             k = v
             v = settings[k]

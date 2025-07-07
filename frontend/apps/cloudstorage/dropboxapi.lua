@@ -106,9 +106,13 @@ function DropBoxApi:fetchListFolders(path, token)
     logger.warn("DropBoxApi: error:", result_response)
 end
 
-function DropBoxApi:downloadFile(path, token, local_path)
+function DropBoxApi:downloadFile(path, token, local_path, progress_callback)
     local data1 = "{\"path\": \"" .. path .. "\"}"
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+
+    local handle = ltn12.sink.file(io.open(local_path, "w"))
+    handle = socketutil.chainSinkWithProgressCallback(handle, progress_callback)
+
     local code, headers, status = socket.skip(1, http.request{
         url     = API_DOWNLOAD_FILE,
         method  = "GET",
@@ -116,7 +120,7 @@ function DropBoxApi:downloadFile(path, token, local_path)
             ["Authorization"]   = "Bearer ".. token,
             ["Dropbox-API-Arg"] = data1,
         },
-        sink    = ltn12.sink.file(io.open(local_path, "w")),
+        sink    = handle,
     })
     socketutil:reset_timeout()
     if code ~= 200 then
@@ -195,6 +199,7 @@ function DropBoxApi:listFolder(path, token, folder_mode)
             table.insert(dropbox_file, {
                 text = text,
                 mandatory = util.getFriendlySize(files.size),
+                filesize = files.size,
                 url = files.path_display,
                 type = tag,
             })
@@ -221,6 +226,7 @@ function DropBoxApi:listFolder(path, token, folder_mode)
             mandatory = files.mandatory,
             url = files.url,
             type = files.type,
+            filesize = files.filesize,
         })
     end
     return dropbox_list

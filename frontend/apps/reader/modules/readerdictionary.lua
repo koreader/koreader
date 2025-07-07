@@ -14,9 +14,11 @@ local KeyValuePage = require("ui/widget/keyvaluepage")
 local LuaData = require("luadata")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
+local Presets = require("ui/presets")
 local SortWidget = require("ui/widget/sortwidget")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
+local Utf8Proc = require("ffi/utf8proc")
 local ffi = require("ffi")
 local C = ffi.C
 local ffiUtil  = require("ffi/util")
@@ -164,6 +166,17 @@ function ReaderDictionary:init()
     if not lookup_history then
         lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", "LookupHistory")
     end
+
+    self.preset_obj = {
+        presets = G_reader_settings:readSetting("dict_presets", {}),
+        cycle_index = G_reader_settings:readSetting("dict_presets_cycle_index"),
+        dispatcher_name = "load_dictionary_preset",
+        saveCycleIndex = function(this)
+            G_reader_settings:saveSetting("dict_presets_cycle_index", this.cycle_index)
+        end,
+        buildPreset = function() return self:buildPreset() end,
+        loadPreset = function(preset) self:loadPreset(preset) end,
+    }
 end
 
 function ReaderDictionary:registerKeyEvents()
@@ -281,8 +294,17 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 end,
             },
             {
+                text = _("Dictionary presets"),
+                help_text = _("This feature allows you to organize dictionaries into presets (for example, by language). You can quickly switch between these presets to change which dictionaries are used for lookups.\n\nNote: presets only store dictionaries, no other settings."),
+                sub_item_table_func = function()
+                    return Presets.genPresetMenuItemTable(self.preset_obj, _("Create new preset from enabled dictionaries"),
+                        function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end)
+                end,
+            },
+            {
                 text = _("Download dictionaries"),
                 sub_item_table_func = function() return self:_genDownloadDictionariesMenu() end,
+                separator = true,
             },
             {
                 text_func = function()
@@ -312,32 +334,40 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 separator = true,
             },
             {
-                text = _("Enable dictionary lookup history"),
+                text = _("Dictionary lookup history"),
                 checked_func = function()
                     return not self.disable_lookup_history
                 end,
-                callback = function()
-                    self.disable_lookup_history = not self.disable_lookup_history
-                    G_reader_settings:saveSetting("disable_lookup_history", self.disable_lookup_history)
-                end,
-            },
-            {
-                text = _("Clean dictionary lookup history"),
-                enabled_func = function()
-                    return lookup_history:has("lookup_history")
-                end,
-                keep_menu_open = true,
-                callback = function(touchmenu_instance)
-                    UIManager:show(ConfirmBox:new{
-                        text = _("Clean dictionary lookup history?"),
-                        ok_text = _("Clean"),
-                        ok_callback = function()
-                            -- empty data table to replace current one
-                            lookup_history:reset{}
-                            touchmenu_instance:updateItems()
+                sub_item_table = {
+                    {
+                        text = _("Enable dictionary lookup history"),
+                        checked_func = function()
+                            return not self.disable_lookup_history
                         end,
-                    })
-                end,
+                        callback = function()
+                            self.disable_lookup_history = not self.disable_lookup_history
+                            G_reader_settings:saveSetting("disable_lookup_history", self.disable_lookup_history)
+                        end,
+                    },
+                    {
+                        text = _("Clean dictionary lookup history"),
+                        enabled_func = function()
+                            return lookup_history:has("lookup_history")
+                        end,
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Clean dictionary lookup history?"),
+                                ok_text = _("Clean"),
+                                ok_callback = function()
+                                    -- empty data table to replace current one
+                                    lookup_history:reset{}
+                                    touchmenu_instance:updateItems()
+                                end,
+                            })
+                        end,
+                    },
+                },
                 separator = true,
             },
             { -- setting used by dictquicklookup
@@ -384,7 +414,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
         }
     }
     if not is_docless then
-        table.insert(menu_items.dictionary_settings.sub_item_table, 3, {
+        table.insert(menu_items.dictionary_settings.sub_item_table, 2, {
             keep_menu_open = true,
             text = _("Set dictionary priority for this book"),
             help_text = _("This feature enables you to specify dictionary priorities on a per-book basis. Results from higher-priority dictionaries will be displayed first when looking up words. Only dictionaries that are currently active can be selected and prioritized."),
@@ -858,31 +888,71 @@ function ReaderDictionary:dismissLookupInfo()
 end
 
 function ReaderDictionary:onShowDictionaryLookup()
+    local buttons = {}
+    local preset_names = Presets.getPresets(self.preset_obj)
+    if preset_names and #preset_names > 0 then
+        table.insert(buttons, {
+            {
+                text = _("Search with preset"),
+                callback = function()
+                    local text = self.dictionary_lookup_dialog:getInputText()
+                    if text == "" or text:match("^%s*$") then return end
+                    local current_dict_state = self:buildPreset()
+                    local button_dialog, dialog_buttons = nil, {} -- CI won't like it if we call it buttons :( so dialog_buttons
+                    for _, preset_name in ipairs(preset_names) do
+                        table.insert(dialog_buttons, {
+                            {
+                                align = "left",
+                                text = preset_name,
+                                callback = function()
+                                    self:loadPreset(self.preset_obj.presets[preset_name], true)
+                                    UIManager:close(button_dialog)
+                                    UIManager:close(self.dictionary_lookup_dialog)
+                                    self:onLookupWord(text, true, nil, nil, nil,
+                                        function()
+                                            self:loadPreset(current_dict_state, true)
+                                        end
+                                    )
+                                end,
+                            }
+                        })
+                    end
+                    button_dialog = ButtonDialog:new{
+                        buttons = dialog_buttons,
+                        shrink_unneeded_width = true,
+                    }
+                    self.dictionary_lookup_dialog:onCloseKeyboard()
+                    UIManager:show(button_dialog)
+                end,
+            }
+        })
+    end
+
+    table.insert(buttons, {
+        {
+            text = _("Cancel"),
+            id = "close",
+            callback = function()
+                UIManager:close(self.dictionary_lookup_dialog)
+            end,
+        },
+        {
+            text = _("Search dictionary"),
+            is_enter_default = true,
+            callback = function()
+                if self.dictionary_lookup_dialog:getInputText() == "" then return end
+                UIManager:close(self.dictionary_lookup_dialog)
+                -- Trust that input text does not need any cleaning (allows querying for "-suffix")
+                self:onLookupWord(self.dictionary_lookup_dialog:getInputText(), true)
+            end,
+        },
+    })
+
     self.dictionary_lookup_dialog = InputDialog:new{
         title = _("Enter a word or phrase to look up"),
         input = "",
         input_type = "text",
-        buttons = {
-            {
-                {
-                    text = _("Cancel"),
-                    id = "close",
-                    callback = function()
-                        UIManager:close(self.dictionary_lookup_dialog)
-                    end,
-                },
-                {
-                    text = _("Search dictionary"),
-                    is_enter_default = true,
-                    callback = function()
-                        if self.dictionary_lookup_dialog:getInputText() == "" then return end
-                        UIManager:close(self.dictionary_lookup_dialog)
-                        -- Trust that input text does not need any cleaning (allows querying for "-suffix")
-                        self:onLookupWord(self.dictionary_lookup_dialog:getInputText(), true)
-                    end,
-                },
-            }
-        },
+        buttons = buttons,
     }
     UIManager:show(self.dictionary_lookup_dialog)
     self.dictionary_lookup_dialog:onShowKeyboard()
@@ -999,6 +1069,13 @@ end
 
 function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     local words = {word}
+    -- If a word starts with a capital letter, add lowercase version to words array.
+    if not fuzzy_search then
+        local lowercased = Utf8Proc.lowercase(word, false)
+        if word ~= lowercased then
+            table.insert(words, lowercased)
+        end
+    end
 
     if self.ui.languagesupport and self.ui.languagesupport:hasActiveLanguagePlugins() then
         -- Get any other candidates from any language-specific plugins we have.
@@ -1449,6 +1526,66 @@ The current default (★) is enabled.]])
             touchmenu_instance:updateItems()
         end,
     })
+end
+
+function ReaderDictionary:buildPreset()
+    local preset = { enabled_dict_names = {} } -- Only store the names of enabled dictionaries.
+    for _, name in ipairs(self.enabled_dict_names) do
+        preset.enabled_dict_names[name] = true
+    end
+    return preset
+end
+
+function ReaderDictionary:loadPreset(preset, skip_notification)
+    if not preset.enabled_dict_names then return end
+    -- build a list of currently available dictionary names for validation
+    local available_dict_names = {}
+    for _, ifo in ipairs(available_ifos) do
+        available_dict_names[ifo.name] = true
+    end
+    -- Only enable dictionaries from the preset that are still available, and re-build self.dicts_disabled
+    -- to make sure dicts added after the creation of the preset, are disabled as well.
+    local dicts_disabled, valid_enabled_names = {}, {}
+    for _, ifo in ipairs(available_ifos) do
+        if preset.enabled_dict_names[ifo.name] then
+            table.insert(valid_enabled_names, ifo.name)
+        else
+            dicts_disabled[ifo.file] = true
+        end
+    end
+    -- update both settings and save
+    self.dicts_disabled = dicts_disabled
+    self.enabled_dict_names = valid_enabled_names
+    G_reader_settings:saveSetting("dicts_disabled", self.dicts_disabled)
+    self:onSaveSettings()
+    self:updateSdcvDictNamesOptions()
+    -- Show a message if any dictionaries from the preset are missing.
+    if not skip_notification and util.tableSize(preset.enabled_dict_names) > #valid_enabled_names then
+        local missing_dicts = {}
+        for preset_name, _ in pairs(preset.enabled_dict_names) do
+            if not available_dict_names[preset_name] then
+                table.insert(missing_dicts, preset_name)
+            end
+        end
+        UIManager:show(InfoMessage:new{
+            text = _("Some dictionaries from this preset have been deleted or are no longer available:") .. "\n\n• " .. table.concat(missing_dicts, "\n• "),
+        })
+    end
+end
+
+function ReaderDictionary:onCycleDictionaryPresets()
+    return Presets.cycleThroughPresets(self.preset_obj, true)
+end
+
+function ReaderDictionary:onLoadDictionaryPreset(preset_name)
+    return Presets.onLoadPreset(self.preset_obj, preset_name, true)
+end
+
+function ReaderDictionary.getPresets() -- for Dispatcher
+    local dict_config = {
+        presets = G_reader_settings:readSetting("dict_presets", {})
+    }
+    return Presets.getPresets(dict_config)
 end
 
 return ReaderDictionary

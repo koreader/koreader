@@ -3,6 +3,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local Cache = require("cache")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
+local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -12,6 +13,9 @@ local NetworkMgr = require("ui/network/manager")
 local Notification = require("ui/widget/notification")
 local OPDSParser = require("opdsparser")
 local OPDSPSE = require("opdspse")
+local SpinWidget = require("ui/widget/spinwidget")
+local TextViewer = require("ui/widget/textviewer")
+local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local http = require("socket.http")
 local lfs = require("libs/libkoreader-lfs")
@@ -61,20 +65,94 @@ function OPDSBrowser:init()
     self.catalog_title = nil
     self.title_bar_left_icon = "plus"
     self.onLeftButtonTap = function()
-        self:addEditCatalog()
+        self:showOPDSMenu()
     end
     Menu.init(self) -- call parent's init()
 end
 
+function OPDSBrowser:showOPDSMenu()
+    local dialog
+    dialog = ButtonDialog:new{
+        buttons = {
+            {{
+                    text = _("Add catalog"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:addEditCatalog()
+                    end,
+                    align = "left",
+            }},
+            {},
+            {{
+                    text = _("Sync all catalogs"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        NetworkMgr:runWhenConnected(function()
+                            self.sync_force = false
+                            self:checkSyncDownload()
+                        end)
+                    end,
+                    align = "left",
+            }},
+            {{
+                    text = _("Force sync all catalogs"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        NetworkMgr:runWhenConnected(function()
+                            self.sync_force = true
+                            self:checkSyncDownload()
+                        end)
+                    end,
+                    align = "left",
+            }},
+            {{
+                    text = _("Set max number of files to sync"),
+                    callback = function()
+                        self:setMaxSyncDownload()
+                    end,
+                    align = "left",
+            }},
+            {{
+                    text = _("Set sync folder"),
+                    callback = function()
+                        self:setSyncDir()
+                    end,
+                    align = "left",
+            }},
+            {{
+                    text = _("Set file types to sync"),
+                    callback = function()
+                        self:setSyncFiletypes()
+                    end,
+                    align = "left",
+            }},
+        },
+        shrink_unneeded_width = true,
+        anchor = function()
+            return self.title_bar.left_button.image.dimen
+        end,
+    }
+    UIManager:show(dialog)
+end
+
+
 local function buildRootEntry(server)
+    local icons = ""
+    if server.username then
+        icons = "\u{f2c0}"
+    end
+    if server.sync then
+        icons = "\u{f46a} " .. icons
+    end
     return {
         text       = server.title,
-        mandatory  = server.username and "\u{f2c0}",
+        mandatory  = icons,
         url        = server.url,
         username   = server.username,
         password   = server.password,
         raw_names  = server.raw_names, -- use server raw filenames for download
         searchable = server.url and server.url:match("%%s") and true or false,
+        sync       = server.sync,
     }
 end
 
@@ -120,7 +198,7 @@ function OPDSBrowser:addEditCatalog(item)
         title = _("Add OPDS catalog")
     end
 
-    local dialog, check_button_raw_names
+    local dialog, check_button_raw_names, check_button_sync_catalog
     dialog = MultiInputDialog:new{
         title = title,
         fields = fields,
@@ -138,6 +216,7 @@ function OPDSBrowser:addEditCatalog(item)
                     callback = function()
                         local new_fields = dialog:getFields()
                         new_fields[5] = check_button_raw_names.checked or nil
+                        new_fields[6] = check_button_sync_catalog.checked or nil
                         self:editCatalogFromInput(new_fields, item)
                         UIManager:close(dialog)
                     end,
@@ -150,7 +229,13 @@ function OPDSBrowser:addEditCatalog(item)
         checked = item and item.raw_names,
         parent = dialog,
     }
+    check_button_sync_catalog = CheckButton:new{
+        text = _("Sync catalog"),
+        checked = item and item.sync,
+        parent = dialog,
+    }
     dialog:addWidget(check_button_raw_names)
+    dialog:addWidget(check_button_sync_catalog)
     UIManager:show(dialog)
     dialog:onShowKeyboard()
 end
@@ -198,6 +283,7 @@ function OPDSBrowser:editCatalogFromInput(fields, item, no_refresh)
         username  = fields[3] ~= "" and fields[3] or nil,
         password  = fields[4] ~= "" and fields[4] or nil,
         raw_names = fields[5],
+        sync      = fields[6],
     }
     local new_item = buildRootEntry(new_server)
     local new_idx, itemnumber
@@ -208,7 +294,7 @@ function OPDSBrowser:editCatalogFromInput(fields, item, no_refresh)
         new_idx = #self.servers + 2
         itemnumber = new_idx
     end
-    self.servers[new_idx - 1] = new_server
+    self.servers[new_idx - 1] = new_server -- first item is "Downloads"
     self.item_table[new_idx] = new_item
     if not no_refresh then
         self:switchItemTable(nil, self.item_table, itemnumber)
@@ -366,25 +452,27 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                         hrefs[link.rel] = build_href(link.href)
                     end
                 end
-                -- OpenSearch
-                if link.type:find(self.search_type) then
-                    if link.href then
-                        table.insert(item_table, { -- the first item in each subcatalog
-                            text       = "\u{f002} " .. _("Search"), -- append SEARCH icon
-                            url        = build_href(self:getSearchTemplate(build_href(link.href))),
-                            searchable = true,
-                        })
-                        has_opensearch = true
+                if not self.sync then
+                    -- OpenSearch
+                    if link.type:find(self.search_type) then
+                        if link.href then
+                            table.insert(item_table, { -- the first item in each subcatalog
+                                text       = "\u{f002} " .. _("Search"), -- append SEARCH icon
+                                url        = build_href(self:getSearchTemplate(build_href(link.href))),
+                                searchable = true,
+                            })
+                            has_opensearch = true
+                        end
                     end
-                end
-                -- Calibre search (also matches the actual template for OpenSearch!)
-                if link.type:find(self.search_template_type) and link.rel and link.rel:find("search") then
-                    if link.href and not has_opensearch then
-                        table.insert(item_table, {
-                            text       = "\u{f002} " .. _("Search"),
-                            url        = build_href(link.href:gsub("{searchTerms}", "%%s")),
-                            searchable = true,
-                        })
+                    -- Calibre search (also matches the actual template for OpenSearch!)
+                    if link.type:find(self.search_template_type) and link.rel and link.rel:find("search") then
+                        if link.href and not has_opensearch then
+                            table.insert(item_table, {
+                                text       = "\u{f002} " .. _("Search"),
+                                url        = build_href(link.href:gsub("{searchTerms}", "%%s")),
+                                searchable = true,
+                            })
+                        end
                     end
                 end
             end
@@ -460,13 +548,16 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                         -- Check for the presence of the pdf suffix and add it
                         -- if it's missing.
                         local href = link.href
-                        if util.getFileNameSuffix(href) ~= "pdf" then
-                            href = href .. ".pdf"
+                        -- Calibre web OPDS download links end with "/<filetype>/"
+                        if not util.stringEndsWith(href, "/pdf/") then
+                            if util.getFileNameSuffix(href) ~= "pdf" then
+                                href = href .. ".pdf"
+                            end
+                            table.insert(item.acquisitions, {
+                                type = link.title,
+                                href = build_href(href),
+                            })
                         end
-                        table.insert(item.acquisitions, {
-                            type = link.title,
-                            href = build_href(href),
-                        })
                     end
                 end
             end
@@ -577,14 +668,7 @@ end
 -- Shows dialog to download / stream a book
 function OPDSBrowser:showDownloads(item)
     local acquisitions = item.acquisitions
-    local filename = item.title
-    if item.author then
-        filename = item.author .. " - " .. filename
-    end
-    local filename_orig = filename
-    if self.root_catalog_raw_names then
-        filename = nil
-    end
+    local filename, filename_orig = self:getFileName(item)
 
     local function createTitle(path, file) -- title for ButtonDialog
         return T(_("Download folder:\n%1\n\nDownload filename:\n%2\n\nDownload file type:"),
@@ -635,14 +719,7 @@ function OPDSBrowser:showDownloads(item)
                 enabled = false,
             })
         else
-            local filetype = util.getFileNameSuffix(acquisition.href)
-            logger.dbg("Filetype for download is", filetype)
-            if not DocumentRegistry:hasProvider("dummy." .. filetype) then
-                filetype = nil
-            end
-            if not filetype and DocumentRegistry:hasProvider(nil, acquisition.type) then
-                filetype = DocumentRegistry:mimeToExt(acquisition.type)
-            end
+            local filetype = self.getFiletype(acquisition)
             if filetype then -- supported file type
                 local text = url.unescape(acquisition.title or string.upper(filetype))
                 table.insert(download_buttons, {
@@ -663,7 +740,7 @@ function OPDSBrowser:showDownloads(item)
                             password = self.root_catalog_password,
                         })
                         self._manager.updated = true
-                        Notification:notify(_("Book added to download list"))
+                        Notification:notify(_("Book added to download list"), Notification.SOURCE_OTHER)
                     end,
                 })
             end
@@ -700,7 +777,7 @@ function OPDSBrowser:showDownloads(item)
                         G_reader_settings:saveSetting("download_dir", path)
                         self.download_dialog:setTitle(createTitle(path, filename))
                     end,
-                }:chooseDir(self.getCurrentDownloadDir())
+                }:chooseDir(self:getCurrentDownloadDir())
             end,
         },
         {
@@ -729,7 +806,7 @@ function OPDSBrowser:showDownloads(item)
                                         filename = filename_orig
                                     end
                                     UIManager:close(dialog)
-                                    self.download_dialog:setTitle(createTitle(self.getCurrentDownloadDir(), filename))
+                                    self.download_dialog:setTitle(createTitle(self:getCurrentDownloadDir(), filename))
                                 end,
                             },
                         }
@@ -753,7 +830,6 @@ function OPDSBrowser:showDownloads(item)
             text = _("Book information"),
             enabled = type(item.content) == "string",
             callback = function()
-                local TextViewer = require("ui/widget/textviewer")
                 UIManager:show(TextViewer:new{
                     title = item.text,
                     title_multilines = true,
@@ -765,19 +841,35 @@ function OPDSBrowser:showDownloads(item)
     })
 
     self.download_dialog = ButtonDialog:new{
-        title = createTitle(self.getCurrentDownloadDir(), filename),
+        title = createTitle(self:getCurrentDownloadDir(), filename),
         buttons = buttons,
     }
     UIManager:show(self.download_dialog)
 end
 
+-- Helper function to get the filetype from an acquisitions table
+function OPDSBrowser.getFiletype(link)
+    local filetype = util.getFileNameSuffix(link.href)
+    if not DocumentRegistry:hasProvider("dummy." .. filetype) then
+        filetype = nil
+    end
+    if not filetype and DocumentRegistry:hasProvider(nil, link.type) then
+        filetype = DocumentRegistry:mimeToExt(link.type)
+    end
+    return filetype
+end
+
 -- Returns user selected or last opened folder
-function OPDSBrowser.getCurrentDownloadDir()
-    return G_reader_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+function OPDSBrowser:getCurrentDownloadDir()
+    if self.sync then
+        return self.settings.sync_dir
+    else
+        return G_reader_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+    end
 end
 
 function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url)
-    local download_dir = OPDSBrowser.getCurrentDownloadDir()
+    local download_dir = self:getCurrentDownloadDir()
     filename = filename and filename .. "." .. filetype:lower() or self:getServerFileName(remote_url)
     filename = util.getSafeFilename(filename, download_dir)
     filename = (download_dir ~= "/" and download_dir or "") .. '/' .. filename
@@ -895,6 +987,29 @@ function OPDSBrowser:onMenuHold(item)
         title = item.text,
         title_align = "center",
         buttons = {
+            {
+                {
+                    text = _("Force sync"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        NetworkMgr:runWhenConnected(function()
+                            self.sync_force = true
+                            self:checkSyncDownload(item.idx)
+                        end)
+                    end,
+                },
+                {
+                    text = _("Sync"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        NetworkMgr:runWhenConnected(function()
+                            self.sync_force = false
+                            self:checkSyncDownload(item.idx)
+                        end)
+                    end,
+                },
+            },
+            {},
             {
                 {
                     text = _("Delete"),
@@ -1063,7 +1178,6 @@ function OPDSBrowser:showDownloadListItemDialog(item)
                         ok_text = _("Download"),
                         ok_callback = function()
                             NetworkMgr:runWhenConnected(function()
-                                local Trapper = require("ui/trapper")
                                 Trapper:wrap(function()
                                     self._manager:downloadDownloadList()
                                 end)
@@ -1084,7 +1198,6 @@ function OPDSBrowser:showDownloadListItemDialog(item)
         TextBoxWidget.PTF_BOLD_START, _("Description"), TextBoxWidget.PTF_BOLD_END, "\n",
         dl_item.info,
     })
-    local TextViewer = require("ui/widget/textviewer")
     textviewer = TextViewer:new{
         title = dl_item.catalog,
         text = text,
@@ -1095,11 +1208,11 @@ function OPDSBrowser:showDownloadListItemDialog(item)
     return true
 end
 
+-- Download whole download list
 function OPDSBrowser:downloadDownloadList()
     local info = InfoMessage:new{ text = _("Downloading… (tap to cancel)") }
     UIManager:show(info)
     UIManager:forceRePaint()
-    local Trapper = require("ui/trapper")
     local completed, downloaded = Trapper:dismissableRunInSubprocess(function()
         local dl = {}
         for _, item in ipairs(self.downloads) do
@@ -1137,4 +1250,383 @@ function OPDSBrowser:downloadDownloadList()
     end
 end
 
+function OPDSBrowser:setMaxSyncDownload()
+    local current_max_dl = self.settings.sync_max_dl or 50
+    local spin = SpinWidget:new{
+        title_text = "Set maximum sync size",
+        info_text = "Set the max number of books to download at a time",
+        value = current_max_dl,
+        value_min = 0,
+        value_max = 1000,
+        value_step = 10,
+        value_hold_step = 50,
+        default_value = 50,
+        wrap = true,
+        ok_text = "Save",
+        callback = function(spin)
+            self.settings.sync_max_dl = spin.value
+            self._manager.updated = true
+        end,
+    }
+    UIManager:show(spin)
+end
+
+function OPDSBrowser:setSyncDir()
+    local force_chooser_dir
+    if Device:isAndroid() then
+        force_chooser_dir = Device.home_dir
+    end
+
+    require("ui/downloadmgr"):new{
+        onConfirm = function(inbox)
+            logger.info("set opds sync folder", inbox)
+            self.settings.sync_dir = inbox
+            self._manager.updated = true
+        end,
+    }:chooseDir(force_chooser_dir)
+end
+
+-- Set string for desired filetypes
+function OPDSBrowser:setSyncFiletypes(filetype_list)
+    local input = self.settings.filetypes
+    local dialog
+    dialog = InputDialog:new{
+        title = _("File types to sync"),
+        description = _("A comma separated list of desired filetypes"),
+        input_hint = _("epub, mobi"),
+        input = input,
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(dialog)
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    is_enter_default = true,
+                    callback = function()
+                        local str = dialog:getInputText()
+                        self.settings.filetypes = str ~= "" and str or nil
+                        self._manager.updated = true
+                        UIManager:close(dialog)
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(dialog)
+    dialog:onShowKeyboard()
+end
+
+-- Helper function to get filename and set nil if using raw names
+function OPDSBrowser:getFileName(item)
+    local filename = item.title
+    if item.author then
+        filename = item.author .. " - " .. filename
+    end
+    local filename_orig = filename
+    if self.root_catalog_raw_names then
+        filename = nil
+    end
+    return filename, filename_orig
+end
+
+function OPDSBrowser:updateFieldInCatalog(item, name, value)
+    item[name] = value
+    self._manager.updated = true
+end
+
+function OPDSBrowser:checkSyncDownload(idx)
+    if self.settings.sync_dir then
+        self.sync = true
+        local info = InfoMessage:new{
+            text = _("Synchronizing lists…"),
+        }
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        if idx then
+            self:fillPendingSyncs(self.servers[idx-1]) -- First item is "Downloads"
+        else
+            for _, item in ipairs(self.servers) do
+                if item.sync then
+                    self:fillPendingSyncs(item)
+                end
+            end
+        end
+        UIManager:close(info)
+        if #self.pending_syncs > 0 then
+            Trapper:wrap(function()
+                self:downloadPendingSyncs()
+            end)
+        else
+            UIManager:show(InfoMessage:new{
+                text = _("Up to date!"),
+            })
+        end
+        self.sync = false
+    else
+        UIManager:show(InfoMessage:new{
+            text = _("Please choose a folder for sync downloads first"),
+        })
+    end
+end
+
+-- Add entries to self.pending_syncs
+function OPDSBrowser:fillPendingSyncs(server)
+    self.root_catalog_password  = server.password
+    self.root_catalog_raw_names = server.raw_names
+    self.root_catalog_username  = server.username
+    self.root_catalog_title     = server.title
+    self.sync_server            = server
+    self.sync_server_list       = self.sync_server_list or {}
+    self.sync_max_dl            = self.settings.sync_max_dl or 50
+
+    local file_list
+    local file_str = self.settings.filetypes
+    local new_last_download = nil
+    local dl_count = 1
+    if file_str then
+        file_list = {}
+        for filetype in util.gsplit(file_str, ",") do
+            file_list[util.trim(filetype)] = true
+        end
+    end
+    local sync_list = self:getSyncDownloadList()
+    if sync_list then
+        for i, entry in ipairs(sync_list) do
+            -- for project gutenberg
+            local sub_table = {}
+            local item
+            if entry.url then
+                sub_table = self:getSyncDownloadList(entry.url)
+            end
+            if #sub_table > 0 then
+                -- The first element seems to be most compatible. Second element has most options
+                item = sub_table[2]
+            else
+                item = entry
+            end
+            for j, link in ipairs(item.acquisitions) do
+                -- Only save first link in case of several file types
+                if i == 1 and j == 1 then
+                    new_last_download = link.href
+                end
+                local filetype = self.getFiletype(link)
+                if filetype then
+                    if not file_str or file_list and file_list[filetype] then
+                        local filename = self:getFileName(entry)
+                        local download_path = self:getLocalDownloadPath(filename, filetype, link.href)
+                        if dl_count <= self.sync_max_dl then -- Append only max_dl entries... may still have sync backlog
+                            table.insert(self.pending_syncs, {
+                                file = download_path,
+                                url = link.href,
+                                username = self.root_catalog_username,
+                                password = self.root_catalog_password,
+                                catalog = server.url,
+                            })
+                            dl_count = dl_count + 1
+                        end
+                        break
+                    end
+                end
+            end
+        end
+    end
+    self.sync_server_list[server.url] = true
+    if new_last_download then
+        logger.dbg("Updating opds last download for server", server.title, "to", new_last_download)
+        self:updateFieldInCatalog(server, "last_download", new_last_download)
+    end
+
+end
+
+-- Get list of books to download bigger than sync_max_dl
+function OPDSBrowser:getSyncDownloadList(url_arg)
+    local sync_table = {}
+    local fetch_url = url_arg or self.sync_server.url
+    local sub_table
+    local up_to_date = false
+    while #sync_table < self.sync_max_dl and not up_to_date do
+        sub_table = self:genItemTableFromURL(fetch_url)
+        -- timeout
+        if #sub_table == 0 then
+            return sync_table
+        end
+        local count = 1
+        local acquisitions_empty = false
+        -- For project gutenberg
+        while #sub_table[count].acquisitions == 0 do
+            if util.stringEndsWith(sub_table[count].url, ".opds") then
+                acquisitions_empty = true
+                break
+            end
+            if count == #sub_table then
+                return sync_table
+            end
+            count = count + 1
+        end
+        -- First entry in table is the newest
+        -- If already downloaded, return
+        local first_href
+        if acquisitions_empty then
+            first_href = sub_table[count].url
+        else
+            first_href = sub_table[1].acquisitions[1].href
+        end
+        if first_href == self.sync_server.last_download and not self.sync_force then
+            return nil
+        end
+        local href
+        for i, entry in ipairs(sub_table) do
+            if acquisitions_empty then
+                if i >= count then
+                    href = entry.url
+                else
+                    href = nil
+                end
+            else
+                href = entry.acquisitions[1].href
+            end
+            if href then
+                if href == self.sync_server.last_download and not self.sync_force then
+                    up_to_date = true
+                    break
+                else
+                    table.insert(sync_table, entry)
+                end
+            end
+        end
+        if not sub_table.hrefs.next then
+            break
+        end
+        fetch_url = sub_table.hrefs.next
+    end
+    return sync_table
+end
+
+-- Download pending syncs list
+function OPDSBrowser:downloadPendingSyncs()
+    local dl_list = self.pending_syncs
+    local function dismissable_download()
+        local info = InfoMessage:new{ text = _("Downloading… (tap to cancel)") }
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        local completed, downloaded, duplicate_list = Trapper:dismissableRunInSubprocess(function()
+            local dl = {}
+            local dupe_list = {}
+            for _, item in ipairs(dl_list) do
+                if self.sync_server_list[item.catalog] then
+                    if lfs.attributes(item.file) and not self.sync_force then
+                        table.insert(dupe_list, item)
+                    else
+                        if self:downloadFile(item.file, item.url, item.username, item.password) then
+                            dl[item.file] = true
+                        end
+                    end
+                end
+            end
+            return dl, dupe_list
+        end, info)
+
+        if completed then
+            UIManager:close(info)
+        end
+        local dl_count = 0
+        local dl_size = #dl_list
+        for i = dl_size, 1, -1 do
+            local item = dl_list[i]
+            if downloaded and downloaded[item.file] then
+                dl_count = dl_count + 1
+                table.remove(dl_list, i)
+            else -- if subprocess has been interrupted, check for the downloaded file
+                local attr = lfs.attributes(item.file)
+                if attr then
+                    if attr.size > 0 then
+                        table.remove(dl_list, i)
+                        if attr.modification > os.time() - 300 then -- Only count files touched in the last 5 mins
+                            dl_count = dl_count + 1
+                        end
+                    else -- incomplete download
+                        os.remove(item.file)
+                    end
+                end
+            end
+        end
+        local duplicate_count = duplicate_list and #duplicate_list or 0
+        dl_count = dl_count - duplicate_count
+        -- Make downloaded count timeout if there's a duplicate file prompt
+        local timeout = nil
+        if duplicate_count > 0 then
+            timeout = 3
+        end
+        if dl_count > 0 then
+            UIManager:show(InfoMessage:new{ text = T(N_("1 book downloaded", "%1 books downloaded", dl_count), dl_count), timeout = timeout,})
+        end
+        self._manager.updated = true
+        return duplicate_list
+    end
+
+    local duplicate_list = dismissable_download()
+
+    if duplicate_list and #duplicate_list > 0 then
+        local textviewer
+        local duplicate_files = { _("These files are already on the device:") }
+        for _, entry in ipairs(duplicate_list) do
+            table.insert(duplicate_files, entry.file)
+        end
+        local text = table.concat(duplicate_files, "\n")
+        textviewer = TextViewer:new{
+            title = _("Duplicate files"),
+            text = text,
+            buttons_table = {
+                {
+                    {
+                        text = _("Do nothing"),
+                        callback = function()
+                            textviewer:onClose()
+                        end
+                    },
+                    {
+                        text = _("Overwrite"),
+                        callback = function()
+                            self.sync_force = true
+                            textviewer:onClose()
+                            for _, entry in ipairs(duplicate_list) do
+                                table.insert(dl_list, entry)
+                            end
+                            Trapper:wrap(function()
+                                dismissable_download()
+                            end)
+                        end
+                    },
+                    {
+                        text = _("Download copies"),
+                        callback = function()
+                            self.sync_force = true
+                            textviewer:onClose()
+                            local copy_download_dir, original_dir, copies_dir, copy_download_path
+                            copies_dir = "copies"
+                            original_dir = util.splitFilePathName(duplicate_list[1].file)
+                            copy_download_dir = original_dir .. copies_dir .. "/"
+                            util.makePath(copy_download_dir)
+                            for _, entry in ipairs(duplicate_list) do
+                                local _, file_name = util.splitFilePathName(entry.file)
+                                copy_download_path = copy_download_dir .. file_name
+                                entry.file = copy_download_path
+                                table.insert(dl_list, entry)
+                            end
+                            Trapper:wrap(function()
+                                dismissable_download()
+                            end)
+                        end
+                    },
+                },
+            },
+        }
+        UIManager:show(textviewer)
+    end
+end
 return OPDSBrowser
