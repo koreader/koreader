@@ -165,7 +165,7 @@ local function validateUser(user, pass)
 end
 
 function KOSync:onDispatcherRegisterActions()
-    Dispatcher:registerAction("kosync_set_autosync", 
+    Dispatcher:registerAction("kosync_set_autosync",
         { category="string", event="KOSyncToggleAutoSync", title=_("Set auto progress sync"), reader=true,
         args={true, false}, toggle={_("on"), _("off")},})
     Dispatcher:registerAction("kosync_toggle_autosync", { category="none", event="KOSyncToggleAutoSync", title=_("Toggle auto progress sync"), reader=true,})
