@@ -164,6 +164,7 @@ local function validateUser(user, pass)
 end
 
 function KOSync:onDispatcherRegisterActions()
+    Dispatcher:registerAction("kosync_toggle_autosync", { category="none", event="KOSyncToggleAutoSync", title=_("Toggle auto progress sync"), reader=true,})
     Dispatcher:registerAction("kosync_push_progress", { category="none", event="KOSyncPushProgress", title=_("Push progress from this device"), reader=true,})
     Dispatcher:registerAction("kosync_pull_progress", { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), reader=true, separator=true,})
 end
@@ -917,6 +918,17 @@ end
 
 function KOSync:onKOSyncPullProgress()
     self:getProgress(true, true)
+end
+
+function KOSync:onKOSyncToggleAutoSync()
+    self.settings.auto_sync = not self.settings.auto_sync
+    local notify_text
+    if self.settings.auto_sync then
+        notify_text = _("Auto Sync ON")
+    else
+        notify_text = _("Auto Sync OFF")
+    end
+    Notification:notify(notify_text)
 end
 
 function KOSync:registerEvents()
