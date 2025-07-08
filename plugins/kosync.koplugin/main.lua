@@ -927,12 +927,25 @@ end
 function KOSync:onKOSyncToggleAutoSync(newValue)
     if newValue == self.settings.auto_sync then return end
     self.settings.auto_sync = not self.settings.auto_sync
+
+    if Device:hasSeamlessWifiToggle() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" and not self.settings.auto_sync then
+        UIManager:show(InfoMessage:new{ text = _("You will have to switch the 'Action when Wi-Fi is off' Network setting to 'turn on' to be able to enable this feature!") })
+        return
+    end
+
     local notify_text
     if self.settings.auto_sync then
         notify_text = _("Auto progress sync: on")
     else
         notify_text = _("Auto progress sync: off")
     end
+
+    if self.settings.auto_sync then
+        -- Since we will update the progress when closing the document,
+        -- pull the current progress now so as not to silently overwrite it.
+        self:getProgress(true, true)
+    end
+
     Notification:notify(notify_text)
 end
 
