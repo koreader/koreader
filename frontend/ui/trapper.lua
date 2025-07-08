@@ -686,4 +686,330 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
     return completed
 end
 
+---
+--- @module Trapper.Async
+--- @brief Provides asynchronous operation capabilities for the Trapper framework.
+--- This module allows submitting long-running functions to be executed in separate "Lanes" (presumably
+--- a concurrency mechanism), polling their status, and waiting for their completion.
+--- It integrates with a UI manager for scheduling and displaying messages.
+---
+
+local lanes       = require("lanes").configure()
+local linda       = lanes.linda()
+
+-- ticket generator
+local _next_ticket = 0
+local function new_ticket()
+    _next_ticket = _next_ticket + 1
+    return "ticket_" .. tostring(_next_ticket)
+end
+-- lane wrapper: runs user func, captures success/error, sends via Linda
+local function lane_wrapper(user_func, ticket, ...)
+    local args = {...}
+    local ok, res_or_err = pcall(function()
+            return user_func(table.unpack(args))
+    end)
+    if ok then
+        linda:send(ticket, "done")
+        linda:send(ticket, res_or_err)
+    else
+        linda:send(ticket, "error")
+        linda:send(ticket, res_or_err)
+    end
+end
+-- single worker-lane factory (star = inherit all globals/modules)
+local worker_lane = lanes.gen("*", lane_wrapper)
+local function submit_async(func, ...)
+    assert(type(func) == "function", "submit_async: expected function")
+    local ticket = new_ticket()
+    local lane_obj = worker_lane(func, ticket, ...)
+    return { ticket = ticket, lane = lane_obj }
+end
+-- poll a future; non-blocking. Returns:
+--   ready:boolean,
+--   status:string ("done" or "error"),
+--   result (value or error message)
+local function poll_async(future)
+    assert(future and future.ticket, "poll_async: invalid future")
+    local key, status = linda:receive(0, future.ticket)
+    local _, res = linda:receive(0, future.ticket)
+    if key then
+        return true, status, res
+    else
+        return false
+    end
+end
+-- wait for a future, optional timeout in seconds (nil = infinite)
+-- Returns status ("done"/"error") or nil+"timeout", and result or error.
+local function wait_async(future, timeout)
+    assert(future and future.ticket, "wait_async: invalid future")
+    local key, status = linda:receive(timeout, future.ticket)
+    local _, res = linda:receive(timeout, future.ticket)
+    if key then
+        return status, res
+    else
+        return nil, "timeout"
+    end
+end
+
+---
+--- @function Trapper:async
+--- @brief Submits a function for asynchronous execution in a separate Lane.
+--- @param func function The function to be executed asynchronously.
+--- @param ... any Optional arguments to pass to the function.
+--- @return table A future object representing the asynchronous operation. This object typically
+---         contains a `ticket` field used by the underlying async system.
+--- @usage
+--- local myFuture = Trapper:async(function(a, b) return a + b end, 10, 20)
+---
+function Trapper:async(func, ...)
+    assert(type(func) == "function", "Trapper:async: Expected 'func' to be a function.")
+
+    -- Submit the function along with its arguments to the asynchronous execution system.
+    -- The 'future' object returned by 'submit_async' is a handle to the ongoing operation.
+    local future = submit_async(func, ...)
+    return future
+end
+
+---
+--- @function Trapper:poll
+--- @brief Polls the status of an asynchronous future.
+--- If the future is not yet ready, it returns false. If ready, it returns true,
+--- the status of the operation (e.g., "success", "error"), and the result (or error message).
+--- When called within a wrapped coroutine, it automatically yields to allow UI event processing.
+--- @param future table The future object obtained from `Trapper:async`. Must have a `ticket` field.
+--- @return boolean ready True if the future is ready, false otherwise.
+--- @return string|nil status The status of the operation if ready (e.g., "success", "error").
+--- @return any|nil result The result of the operation or an error message if ready.
+--- @usage
+--- local ready, status, result = Trapper:poll(myFuture)
+--- if ready then
+---     if status == "success" then
+---         print("Async operation completed with result:", result)
+---     else
+---         print("Async operation failed with error:", result)
+---     end
+--- end
+---
+function Trapper:poll(future)
+    assert(future and type(future) == "table" and future.ticket, "Trapper:poll: Expected 'future' to be a valid future object with a 'ticket'.")
+
+    -- Attempt to poll the future.
+    local ready, status, result = poll_async(future)
+    return ready, status, result
+end
+
+---
+--- @function Trapper:wait
+--- @brief Blocks execution until an asynchronous future completes.
+--- If `timeout` is provided, it will wait for at most that many seconds.
+--- If called inside a wrapped coroutine, it will yield periodically; otherwise, it blocks normally.
+--- @param future table The future object obtained from `Trapper:async`. Must have a `ticket` field.
+--- @param timeout number|nil Optional. The maximum number of seconds to wait.
+--- @return string status The final status of the operation (e.g., "success", "error", "timeout").
+--- @return any result The result of the operation or an error message.
+--- @usage
+--- local status, result = Trapper:wait(myFuture, 5) -- Wait up to 5 seconds
+--- if status == "success" then
+---     print("Operation successful:", result)
+--- else
+---     print("Operation failed or timed out:", result)
+--- end
+---
+function Trapper:wait(future, timeout)
+    assert(future and type(future) == "table" and future.ticket, "Trapper:wait: Expected 'future' to be a valid future object with a 'ticket'.")
+    if timeout ~= nil then
+        assert(type(timeout) == "number" and timeout >= 0, "Trapper:wait: Expected 'timeout' to be a non-negative number or nil.")
+    end
+
+    local status, result = wait_async(future, timeout)
+    return status, result
+end
+
+--- @private
+--- @function _process_actions
+--- @brief Helper function to execute a list of actions with given status and result.
+--- @param actions table A list of functions (actions) to execute.
+--- @param status string The status returned from the async operation.
+--- @param result any The result returned from the async operation.
+--- @return string The potentially updated status after actions.
+--- @return any The potentially updated result after actions.
+local function _process_actions(actions, status, result)
+    -- If the result is a table, unpack it as multiple arguments for the action.
+    -- Otherwise, pass it as a single argument.
+    local currentResult = result
+    local currentStatus = status
+
+    for _, action in ipairs(actions) do
+        if type(action) == "function" then
+            if currentResult ~= nil then
+                if type(currentResult) == "table" then
+                    currentStatus, currentResult = action(currentStatus, unpack(currentResult))
+                else
+                    currentStatus, currentResult = action(currentStatus, currentResult)
+                end
+            else
+                currentStatus, currentResult = action(currentStatus)
+            end
+        end
+    end
+    return currentStatus, currentResult
+end
+
+---
+--- @function Trapper:pollAndThen
+--- @brief Repeatedly polls a future at a specified delay until it's ready or a max count is reached,
+---        then executes a sequence of actions.
+--- This is useful for non-blocking asynchronous operations where you want to wait for
+--- completion and then perform subsequent steps.
+--- @param delay number The delay in seconds between polls.
+--- @param maxcount number The maximum number of times to poll before giving up.
+--- @param immediately boolean If true, the first poll happens immediately (0 delay).
+--- @param future table The future object to poll.
+--- @param ... function A variable list of functions (actions) to execute once the future is ready.
+---         Each action function receives `(status, result)` as arguments, where `result` might be unpacked
+---         if it's a table. Actions can modify and return `(newStatus, newResult)` for the next action.
+--- @usage
+--- Trapper:pollAndThen(0.1, 100, true, myFuture,
+---     function(status, data)
+---         if status == "success" then print("Data loaded:", data) end
+---         return status, data -- Pass on to the next action
+---     end,
+---     Trapper:check("Loading"), -- Use a predefined check action
+---     function(status)
+---         print("Finished polling.")
+---     end
+--- )
+---
+function Trapper:pollAndThen(delay, maxcount, immediately, future, ...)
+    assert(type(delay) == "number" and delay >= 0, "Trapper:pollAndThen: Expected 'delay' to be a non-negative number.")
+    assert(type(maxcount) == "number" and maxcount >= 0, "Trapper:pollAndThen: Expected 'maxcount' to be a non-negative number.")
+    assert(type(immediately) == "boolean", "Trapper:pollAndThen: Expected 'immediately' to be a boolean.")
+    assert(future and type(future) == "table" and future.ticket, "Trapper:pollAndThen: Expected 'future' to be a valid future object with a 'ticket'.")
+
+    local actions = {...}
+    local count = 0
+    local loop_function
+
+    loop_function = function()
+        local ready, status, res = Trapper:poll(future)
+
+        if not ready then
+            -- If not ready, and we haven't exceeded max polls, schedule another poll.
+            if count < maxcount then
+                count = count + 1
+                UIManager:scheduleIn(delay, loop_function)
+            else
+                -- Max polls reached, operation effectively failed or timed out.
+                -- Trigger actions with a "timeout" status.
+                _process_actions(actions, "timeout", "Max poll count reached.")
+            end
+        else
+            -- Future is ready, process the actions.
+            _process_actions(actions, status, res)
+        end
+    end
+
+    -- Schedule the first poll.
+    UIManager:scheduleIn(immediately and 0 or delay, loop_function)
+end
+
+---
+--- @function Trapper:waitAndThen
+--- @brief Waits for a future to complete (optionally with a timeout), then executes a sequence of actions.
+--- This is a blocking operation, ideal for situations where the program flow must pause until
+--- the asynchronous task finishes.
+--- @param timeout number|nil The maximum number of seconds to wait for the future. Can be nil for no timeout.
+--- @param future table The future object to wait for.
+--- @param ... function A variable list of functions (actions) to execute once the future is ready.
+---         Each action function receives `(status, result)` as arguments, where `result` might be unpacked
+---         if it's a table. Actions can modify and return `(newStatus, newResult)` for the next action.
+--- @return string The final status of the operation after actions.
+--- @return any The final result of the operation after actions.
+--- @usage
+--- local finalStatus, finalResult = Trapper:waitAndThen(10, anotherFuture,
+---     function(status, data)
+---         if status == "success" then print("Operation data:", data) end
+---         return status, data
+---     end,
+---     Trapper:onlineAction(function(s) print("Wait finished with status:", s) end)
+--- )
+---
+function Trapper:waitAndThen(timeout, future, ...)
+    -- Input validation is handled by Trapper:wait internally.
+    local actions = {...}
+
+    -- Wait for the future to complete. This is a blocking call.
+    local status, res = Trapper:wait(future, timeout)
+
+    -- Process the chain of actions immediately after the wait completes.
+    return _process_actions(actions, status, res)
+end
+
+---
+--- @function Trapper:onlineAction
+--- @brief Creates a wrapper function that executes a given action and then preserves
+---        the original status and result for subsequent actions in a chain.
+--- This is useful for creating intermediate actions that perform side effects
+--- without altering the main flow of status/results.
+--- @param action function The function to wrap. It receives `(status, ...)` as arguments.
+--- @return function A new function that, when called, executes the original `action`
+---         and returns the original status and a table containing all original results.
+--- @usage
+--- local myAction = Trapper:onlineAction(function(status, val1, val2)
+---     print("Processing values:", val1, val2)
+--- end)
+--- -- This can then be used in pollAndThen or waitAndThen:
+--- -- Trapper:waitAndThen(nil, myFuture, myAction)
+---
+function Trapper:onlineAction(action)
+    assert(type(action) == "function", "Trapper:onlineAction: Expected 'action' to be a function.")
+
+    return function(status, ...)
+        -- Execute the original action with the provided status and results.
+        action(status, ...)
+        -- Return the original status and results (packed into a table for consistency)
+        -- so they can be passed to the next action in the chain.
+        return status, table.pack(...)
+    end
+end
+
+---
+--- @function Trapper:check
+--- @brief Creates an action that displays an error message if the preceding operation failed.
+--- This is a convenience function for common error handling scenarios.
+--- @param txt string|nil Optional. An additional prefix text for the error message (e.g., "Loading failed.").
+--- @return function A new function suitable for use as an action in `pollAndThen` or `waitAndThen`.
+---         This function returns the original status and results unchanged.
+--- @usage
+--- Trapper:pollAndThen(0.1, 100, true, myFuture,
+---     function(s, r) return s, r end, -- Some processing
+---     Trapper:check("Data download") -- If the previous step failed, shows "Data download Failed."
+--- )
+---
+function Trapper:check(txt)
+    if txt ~= nil then
+        assert(type(txt) == "string", "Trapper:check: Expected 'txt' to be a string or nil.")
+    end
+
+    return Trapper:onlineAction(
+        function(status, ...)
+            -- If the status indicates failure (e.g., false or "error"), display an info message.
+            if not status or status == "error" then -- Added explicit "error" check for robustness
+                local message = ""
+                if txt then
+                    message = txt .. " "
+                end
+                message = message .. _("Failed.")
+
+                UIManager:show(
+                    InfoMessage:new{text = message}
+                )
+            end
+            -- The 'onlineAction' wrapper ensures that the original status and results
+            -- are passed through to any subsequent actions.
+        end
+    )
+end
+
 return Trapper

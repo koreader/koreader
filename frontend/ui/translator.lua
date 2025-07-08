@@ -13,6 +13,7 @@ local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
+local Trapper = require("ui/trapper")
 local JSON = require("json")
 local Screen = require("device").screen
 local ffiUtil  = require("ffi/util")
@@ -378,74 +379,144 @@ Returns decoded JSON table from translate server.
 @treturn string result, or nil
 --]]
 function Translator:loadPage(text, target_lang, source_lang)
-    local socket = require("socket")
-    local socketutil = require("socketutil")
+    -- Dependencies for URL parsing and query building (used in main thread)
     local url = require("socket.url")
-    local http = require("socket.http")
-    local ltn12 = require("ltn12")
 
     local query = ""
+    self.trans_params = self.trans_params or {} -- Ensure trans_params exists
     self.trans_params.tl = target_lang
     self.trans_params.sl = source_lang
 
+    -- Build the query string
     for k,v in pairs(self.trans_params) do
         if type(v) == "table" then
             for _, v2 in ipairs(v) do
-                query = query .. k .. '=' .. v2 .. '&'
+                query = query .. url.escape(k) .. '=' .. url.escape(tostring(v2)) .. '&'
             end
         else
-            query = query .. k .. '=' .. v .. '&'
+            query = query .. url.escape(k) .. '=' .. url.escape(tostring(v)) .. '&'
         end
     end
     if G_reader_settings:isTrue("translator_with_romanizations") then
-       query = query .. "dt=rm&"
+        query = query .. "dt=rm&"
     end
-    local parsed = url.parse(self:getTransServer())
-    parsed.path = self.trans_path
-    parsed.query = query .. "q=" .. url.escape(text)
 
-    -- HTTP request
-    local sink = {}
-    socketutil:set_timeout()
-    local request = {
-        url     = url.build(parsed),
+    local parsed_url = url.parse(self:getTransServer())
+    parsed_url.path = self.trans_path or "/translate_a/single" -- Default path if not set
+    parsed_url.query = query .. "q=" .. url.escape(text)
+
+    -- Construct the HTTP request table
+    local request_table = {
+        url     = url.build(parsed_url),
         method  = "GET",
-        sink    = ltn12.sink.table(sink),
+        timeout = 10,
     }
-    logger.dbg("Calling", request.url)
-    -- Skip first argument (body, goes to the sink)
-    local code, headers, status = socket.skip(1, http.request(request))
-    socketutil:reset_timeout()
+    logger.dbg("Calling translation URL:", request_table.url)
 
-    -- raise error message when network is unavailable
-    if headers == nil then
-        error(status or code or "network unreachable")
-    end
+    -- Submit the HTTP request to run asynchronously in a separate Lane.
+    local future = Trapper:async(
+        function(req_param)
+            local socket = require("socket")
+            local http = require("socket.http")
+            local ltn12 = require("ltn12")
 
-    if code ~= 200 then
-        logger.warn("translator HTTP status not okay:", status or code or "network unreachable")
-        logger.dbg("Response headers:", headers)
-        return
-    end
+            local sink = {}
+            req_param.sink = ltn12.sink.table(sink)
 
-    local content = table.concat(sink)
-    -- logger.dbg("translator content:", content)
-    local first_char = content:sub(1, 1)
-    if content ~= "" and (first_char == "{" or first_char == "[") then
-        -- Get nil instead of functions for 'null' by using JSON.decode.simple
-        -- (so the result can be fully serialized when used
-        -- with Trapper:dismissableRunInSubprocess())
-        local ok, result = pcall(JSON.decode, content, JSON.decode.simple)
-        if ok and result then
-            logger.dbg("translator json:", result)
-            return result
-        else
-            logger.warn("translator error:", result)
+            local success, r, code, headers, status_message = pcall(http.request, req_param)
+            if not success then
+                -- Handle cases where http.request itself throws an error (e.g., invalid URL format).
+                return {"error", {
+                    code = nil, -- No HTTP status code as the request didn't complete
+                    headers = nil,
+                    http_status = nil,
+                    error_message = "HTTP request failed to initialize: " .. tostring(body_source) -- body_source here is the error message
+                                }}
+            end
+            -- Get the collected content. table.concat handles empty tables gracefully.
+            local content = table.concat(sink)
+
+            -- Checking 'status_message' for existence is good, but 'code' is the primary indicator.
+            if code and code >= 200 and code < 300 then -- Check for 2xx success codes
+                return {"done", {
+                    code = code,
+                    headers = headers,
+                    http_status = status_message,
+                    content = content
+                               }}
+            else
+                local error_msg = "HTTP request failed or non-2xx status."
+                if status_message then
+                    error_msg = error_msg .. " Status: " .. status_message
+                elseif not code then
+                    error_msg = "HTTP request failed entirely (no status code received)."
+                end
+                if content ~= "" then
+                    error_msg = error_msg .. " Response content: " .. content:sub(1, 200) .. (content:len() > 200 and "..." or "") -- Truncate long content for error message
+                end
+
+                return {"error", {
+                    code = code,
+                    headers = headers,
+                    http_status = status_message,
+                    content = content, -- Include content even on error for debugging
+                    error_message = error_msg
+                                }}
+            end
+        end, request_table) -- Pass the request_table as an argument to the async function
+
+    -- This 'decode_action' function remains the same as previously reviewed.
+    local decode_action = function(trapper_status, async_status, async_result)
+        if trapper_status == "timeout" then
+            logger.warn("Translation request timed out.")
+            return false, nil
         end
-    else
-        logger.warn("not JSON in translator response:", content)
+
+        if trapper_status == "error" then
+            logger.warn("Translator async operation failed:", async_result.error_message or "Unknown error")
+            logger.dbg("Error details:", async_result.code, async_result.headers, async_result.http_status, async_result.content)
+            return false, nil
+        end
+
+        if async_status ~= "done" then
+            logger.warn("Translation request error:", async_status, async_result)
+            return false, nil
+        end
+
+        local code = async_result.code
+        local headers = async_result.headers
+        local http_status = async_result.http_status
+        local content = async_result.content
+
+        if not headers then
+            logger.warn("Translator: Network unavailable or no headers received.")
+            return false, nil
+        end
+
+        if code ~= 200 then
+            logger.warn("Translator HTTP status not okay:", http_status or code or "network unreachable")
+            logger.dbg("Response headers:", headers)
+            return false, nil
+        end
+
+        local first_char = content:sub(1, 1)
+        if content ~= "" and (first_char == "{" or first_char == "[") then
+            local ok, result = pcall(JSON.decode, content, JSON.decode.simple)
+            if ok and result then
+                return "done", result
+            else
+                logger.warn("Translator JSON decoding error:", result)
+                return "error", nil
+            end
+        else
+            logger.warn("Not JSON in translator response:", content)
+            return "error", nil
+        end
     end
+
+    return future, decode_action
 end
+
 -- The JSON result is a list of 9 to 15 items:
 --    1: translation
 --    2: all-translations
@@ -468,8 +539,9 @@ Tries to automatically detect language of `text`.
 @treturn string lang (`"en"`, `"fr"`, `…`)
 --]]
 function Translator:detect(text)
-    local result = self:loadPage(text, "en", AUTODETECT_LANGUAGE)
-    if result and result[3] then
+    local future, decode = self:loadPage(text, "en", AUTODETECT_LANGUAGE)
+    local status, result = Trapper:pollAndThen(0.3, 30, true, future, decode)
+    if status and result and result[3] then
         local src_lang = result[3]
         logger.dbg("detected language:", src_lang)
         return src_lang
@@ -493,17 +565,35 @@ function Translator:translate(text, target_lang, source_lang)
     if not source_lang then
         source_lang = self:getSourceLanguage()
     end
-    local result = self:loadPage(text, target_lang, source_lang)
-    if result and result[1] and type(result[1]) == "table" then
-        local translated = {}
-        for i, r in ipairs(result[1]) do
-            table.insert(translated, r[1])
-        end
-        return table.concat(translated, "")
-    end
-    return nil
-end
+    local future, decode_action = self:loadPage(text, target_lang, source_lang)
 
+    -- Wait for the translation to complete, with a 10-second timeout.
+    -- The 'decode_action' will process the raw HTTP response.
+    local status, processed_result = Trapper:waitAndThen(10, future, decode_action)
+
+    logger.dbg("TRANSLATE inside:", status, processed_result)
+
+    -- Check if the overall operation was successful and if the result structure is as expected.
+    -- Assuming 'processed_result' is the decoded JSON object (table).
+    -- And assuming the translated text is found in result.sentences[i].trans
+    if status == "done" and processed_result and processed_result.sentences and type(processed_result.sentences) == "table" then
+        local translated_parts = {}
+        for i, sentence_obj in ipairs(processed_result.sentences) do
+            -- Ensure sentence_obj exists and has a 'trans' field
+            if sentence_obj and sentence_obj.trans then
+                table.insert(translated_parts, sentence_obj.trans)
+            end
+        end
+        return table.concat(translated_parts, "") -- Join translated parts
+    elseif status == "timeout" then
+        logger.warn("Translation timed out for text:", text)
+        return nil
+    else
+        logger.warn("Translation failed for text:", text, "Status:", status, "Result:", processed_result)
+        -- Trapper:check already displayed a UI message if used in the chain
+        return nil
+    end
+end
 --[[--
 Show translated text in TextViewer, with alternate translations
 
@@ -526,7 +616,6 @@ function Translator:showTranslation(text, detailed_view, source_lang, target_lan
 
     -- Wrap next function with Trapper to be able to interrupt
     -- translation service query.
-    local Trapper = require("ui/trapper")
     Trapper:wrap(function()
         self:_showTranslation(text, detailed_view, source_lang, target_lang, from_highlight, index)
     end)
@@ -540,175 +629,187 @@ function Translator:_showTranslation(text, detailed_view, source_lang, target_la
         source_lang = self:getSourceLanguage()
     end
 
-    local Trapper = require("ui/trapper")
-    local completed, result = Trapper:dismissableRunInSubprocess(function()
-        return self:loadPage(text, target_lang, source_lang)
-    end, _("Querying translation service…"))
-    if not completed then
-        UIManager:show(InfoMessage:new{
-            text = _("Translation interrupted.")
-        })
-        return
-    end
-    if not result or type(result) ~= "table" then
-        UIManager:show(InfoMessage:new{
-            text = _("Translation failed.")
-        })
-        return
-    end
+    local future, decode = self:loadPage(text, target_lang, source_lang)
+    local check_failed = Trapper:check("Translation")
+    local extract_text = function(status, ...)
+        local result = {...}
+        if not status
+            or not result or type(result) ~= "table" then
+            return status
+        end
 
-    if result[3] then
-        source_lang = result[3]
-    end
-    local output = {}
-    local text_main = ""
+        if result[3] then
+            source_lang = result[3]
+        end
+        local output = {}
+        local text_main = ""
 
-    local function is_result_valid(res)
-        return res and type(res) == "table" and #res > 0
-    end
+        local function is_result_valid(res)
+            return res and type(res) == "table" and #res > 0
+        end
 
-    -- For both main and alternate translations, we may get multiple slices
-    -- of the original text and its translations.
-    if is_result_valid(result[1]) then
-        -- Main translation: we can make a single string from the multiple parts
-        -- for easier quick reading
-        local source = {}
-        local translated = {}
-        local romanized = {}
-        for i, r in ipairs(result[1]) do
+        -- For both main and alternate translations, we may get multiple slices
+        -- of the original text and its translations.
+        if is_result_valid(result[1]) then
+            -- Main translation: we can make a single string from the multiple parts
+            -- for easier quick reading
+            local source = {}
+            local translated = {}
+            local romanized = {}
+            for i, r in ipairs(result[1]) do
+                if detailed_view then
+                    local s = type(r[2]) == "string" and r[2] or ""
+                    table.insert(source, s)
+                    if type(r[4]) == "string" then
+                        table.insert(romanized, r[4])
+                    end
+                end
+                local t = type(r[1]) == "string" and r[1] or ""
+                table.insert(translated, t)
+            end
+            text_main = table.concat(translated, " ")
             if detailed_view then
-                local s = type(r[2]) == "string" and r[2] or ""
-                table.insert(source, s)
-                if type(r[4]) == "string" then
-                    table.insert(romanized, r[4])
+                text_main = "● " .. text_main
+                table.insert(output, "▣ " .. table.concat(source, " "))
+                if #romanized > 0 then
+                    table.insert(output, table.concat(romanized, " "))
                 end
             end
-            local t = type(r[1]) == "string" and r[1] or ""
-            table.insert(translated, t)
+            table.insert(output, text_main)
         end
-        text_main = table.concat(translated, " ")
+
         if detailed_view then
-            text_main = "● " .. text_main
-            table.insert(output, "▣ " .. table.concat(source, " "))
-            if #romanized > 0 then
-                table.insert(output, table.concat(romanized, " "))
+            if is_result_valid(result[6]) then
+                -- Alternative translations:
+                table.insert(output, "")
+                table.insert(output, _("Alternate translations:"))
+                for i, r in ipairs(result[6]) do
+                    if type(r[3]) == "table" then
+                        local s = type(r[1]) == "string" and r[1]:gsub("\n", "") or ""
+                        table.insert(output, "▣ " .. s)
+                        for j, rt in ipairs(r[3]) do
+                            -- Use number in solid black circle symbol (U+2776...277F)
+                            local symbol = util.unicodeCodepointToUtf8(10101 + (j < 10 and j or 10))
+                            local t = type(rt[1]) == "string" and rt[1]:gsub("\n", "") or ""
+                            table.insert(output, symbol .. " " .. t)
+                        end
+                    end
+                end
             end
-        end
-        table.insert(output, text_main)
-    end
-
-    if detailed_view then
-        if is_result_valid(result[6]) then
-            -- Alternative translations:
-            table.insert(output, "")
-            table.insert(output, _("Alternate translations:"))
-            for i, r in ipairs(result[6]) do
-                if type(r[3]) == "table" then
-                    local s = type(r[1]) == "string" and r[1]:gsub("\n", "") or ""
-                    table.insert(output, "▣ " .. s)
-                    for j, rt in ipairs(r[3]) do
-                        -- Use number in solid black circle symbol (U+2776...277F)
-                        local symbol = util.unicodeCodepointToUtf8(10101 + (j < 10 and j or 10))
-                        local t = type(rt[1]) == "string" and rt[1]:gsub("\n", "") or ""
-                        table.insert(output, symbol .. " " .. t)
+            if is_result_valid(result[13]) then
+                -- Definition(word)
+                table.insert(output, "")
+                table.insert(output, _("Definition:"))
+                for i, r in ipairs(result[13]) do
+                    if r[2] and type(r[2]) == "table" then
+                        local symbol = util.unicodeCodepointToUtf8(10101 + (i < 10 and i or 10))
+                        table.insert(output, symbol.. " ".. r[1])
+                        for j, res in ipairs(r[2]) do
+                            table.insert(output, "\t● ".. res[1])
+                        end
                     end
                 end
             end
         end
-        if is_result_valid(result[13]) then
-            -- Definition(word)
-            table.insert(output, "")
-            table.insert(output, _("Definition:"))
-            for i, r in ipairs(result[13]) do
-                if r[2] and type(r[2]) == "table" then
-                    local symbol = util.unicodeCodepointToUtf8(10101 + (i < 10 and i or 10))
-                    table.insert(output, symbol.. " ".. r[1])
-                    for j, res in ipairs(r[2]) do
-                        table.insert(output, "\t● ".. res[1])
+
+        -- table.insert(output, require("dump")(result)) -- for debugging
+        local text_all = table.concat(output, "\n")
+        return true, {text_main, text_all}
+    end
+
+    local diplay_translation = function(status, text_main, text_all)
+        if not status or not text_main then
+            return status
+        end
+
+        local textviewer, height, buttons_table, close_callback
+        if detailed_view then
+            height = math.floor(Screen:getHeight() * 0.8)
+            buttons_table = {}
+            if from_highlight then
+                local ui = require("apps/reader/readerui").instance
+                table.insert(buttons_table,
+                             {
+                                 {
+                                     text = _("Save main translation to note"),
+                                     callback = function()
+                                         UIManager:close(textviewer)
+                                         UIManager:close(ui.highlight.highlight_dialog)
+                                         ui.highlight.highlight_dialog = nil
+                                         if index then
+                                             ui.highlight:editNote(index, false, text_main)
+                                         else
+                                             ui.highlight:addNote(text_main)
+                                         end
+                                     end,
+                                 },
+                                 {
+                                     text = _("Save all to note"),
+                                     callback = function()
+                                         UIManager:close(textviewer)
+                                         UIManager:close(ui.highlight.highlight_dialog)
+                                         ui.highlight.highlight_dialog = nil
+                                         if index then
+                                             ui.highlight:editNote(index, false, text_all)
+                                         else
+                                             ui.highlight:addNote(text_all)
+                                         end
+                                     end,
+                                 },
+                             }
+                )
+                close_callback = function()
+                    if not ui.highlight.highlight_dialog then
+                        ui.highlight:clear()
                     end
                 end
             end
-        end
-    end
-
-    -- table.insert(output, require("dump")(result)) -- for debugging
-    local text_all = table.concat(output, "\n")
-
-    local textviewer, height, buttons_table, close_callback
-    if detailed_view then
-        height = math.floor(Screen:getHeight() * 0.8)
-        buttons_table = {}
-        if from_highlight then
-            local ui = require("apps/reader/readerui").instance
-            table.insert(buttons_table,
-                {
-                    {
-                        text = _("Save main translation to note"),
-                        callback = function()
-                            UIManager:close(textviewer)
-                            UIManager:close(ui.highlight.highlight_dialog)
-                            ui.highlight.highlight_dialog = nil
-                            if index then
-                                ui.highlight:editNote(index, false, text_main)
-                            else
-                                ui.highlight:addNote(text_main)
-                            end
-                        end,
-                    },
-                    {
-                        text = _("Save all to note"),
-                        callback = function()
-                            UIManager:close(textviewer)
-                            UIManager:close(ui.highlight.highlight_dialog)
-                            ui.highlight.highlight_dialog = nil
-                            if index then
-                                ui.highlight:editNote(index, false, text_all)
-                            else
-                                ui.highlight:addNote(text_all)
-                            end
-                        end,
-                    },
-                }
-            )
-            close_callback = function()
-                if not ui.highlight.highlight_dialog then
-                    ui.highlight:clear()
-                end
+            if Device:hasClipboard() then
+                table.insert(buttons_table,
+                             {
+                                 {
+                                     text = _("Copy main translation"),
+                                     callback = function()
+                                         Device.input.setClipboardText(text_main)
+                                     end,
+                                 },
+                                 {
+                                     text = _("Copy all"),
+                                     callback = function()
+                                         Device.input.setClipboardText(text_all)
+                                     end,
+                                 },
+                             }
+                )
             end
         end
-        if Device:hasClipboard() then
-            table.insert(buttons_table,
-                {
-                    {
-                        text = _("Copy main translation"),
-                        callback = function()
-                            Device.input.setClipboardText(text_main)
-                        end,
-                    },
-                    {
-                        text = _("Copy all"),
-                        callback = function()
-                            Device.input.setClipboardText(text_all)
-                        end,
-                    },
-                }
-            )
-        end
-    end
 
-    textviewer = TextViewer:new{
-        title = T(_("Translation from %1"), self:getLanguageName(source_lang, "?")),
-        title_multilines = true,
+        textviewer = TextViewer:new{
+            title = T(_("Translation from %1"), self:getLanguageName(source_lang, "?")),
+            title_multilines = true,
             -- Showing the translation target language in this title may make
             -- it quite long and wrapped, taking valuable vertical spacing
-        text = text_all,
-        text_type = "lookup",
-        height = height,
-        add_default_buttons = true,
-        buttons_table = buttons_table,
-        close_callback = close_callback,
-    }
-    UIManager:show(textviewer)
+            text = text_all,
+            text_type = "lookup",
+            height = height,
+            add_default_buttons = true,
+            buttons_table = buttons_table,
+            close_callback = close_callback,
+        }
+        UIManager:show(textviewer)
+
+        return true
+    end
+
+    return Trapper:pollAndThen(0.3, 30, true, future,
+                               Trapper:onlineAction(function(status, ...) logger.dbg("TRANS loadpage",status, ...) end),
+                               decode,
+                               Trapper:onlineAction(function(status, ...) logger.dbg("TRANS decode",status, ...) end),
+                               extract_text,
+                               Trapper:onlineAction(function(status, ...) logger.dbg("TRANS extract",status, ...) end),
+                               diplay_translation,
+                               Trapper:onlineAction(function(status, ...) logger.dbg("TRANS display",status, ...) end),
+                               check_failed)
 end
 
 return Translator
