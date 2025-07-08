@@ -925,9 +925,9 @@ function KOSync:onKOSyncToggleAutoSync()
     self.settings.auto_sync = not self.settings.auto_sync
     local notify_text
     if self.settings.auto_sync then
-        notify_text = _("Auto Sync ON")
+        notify_text = _("Auto progress sync: on")
     else
-        notify_text = _("Auto Sync OFF")
+        notify_text = _("Auto progress sync: off")
     end
     Notification:notify(notify_text)
 end
