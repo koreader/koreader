@@ -924,14 +924,15 @@ function KOSync:onKOSyncPullProgress()
     self:getProgress(true, true)
 end
 
-function KOSync:onKOSyncToggleAutoSync(newValue)
-    if newValue == self.settings.auto_sync then return end
-    self.settings.auto_sync = not self.settings.auto_sync
+function KOSync:onKOSyncToggleAutoSync(toggle)
+    if toggle == self.settings.auto_sync then return end
 
     if Device:hasSeamlessWifiToggle() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" and not self.settings.auto_sync then
         UIManager:show(InfoMessage:new{ text = _("You will have to switch the 'Action when Wi-Fi is off' Network setting to 'turn on' to be able to enable this feature!") })
         return
     end
+
+    self.settings.auto_sync = not self.settings.auto_sync
 
     local notify_text
     if self.settings.auto_sync then
