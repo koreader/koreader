@@ -652,6 +652,7 @@ function TouchMenu:init()
 end
 
 function TouchMenu:updateItems(target_page, target_item_id)
+    if #self.item_table == 0 then return end
     self.perpage = math.min(self.max_per_page, self.item_table.max_per_page or self.max_per_page_default)
     self.page_num = math.ceil(#self.item_table / self.perpage)
     if target_item_id ~= nil then -- show menu page with target item
