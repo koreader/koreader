@@ -63,7 +63,7 @@ local OPDSBrowser = Menu:extend{
 function OPDSBrowser:init()
     self.item_table = self:genItemTableFromRoot()
     self.catalog_title = nil
-    self.title_bar_left_icon = "plus"
+    self.title_bar_left_icon = "appbar.menu"
     self.onLeftButtonTap = function()
         self:showOPDSMenu()
     end
@@ -951,6 +951,8 @@ function OPDSBrowser:onMenuSelect(item)
         logger.dbg("Downloads available:", item)
         self:showDownloads(item)
     else -- catalog or Search item
+        self.title_bar_left_icon = "plus"
+        Menu.init(self)
         if #self.paths == 0 then -- root list
             if item.idx == 1 then
                 if #self.downloads > 0 then
@@ -1090,9 +1092,7 @@ function OPDSBrowser:showDownloadList()
         onMenuSelect = self.showDownloadListItemDialog,
         _manager = self,
         title_bar_left_icon = "appbar.menu",
-        onLeftButtonTap = function()
-            self:showDownloadListMenu()
-        end,
+        onLeftButtonTap = self.showDownloadListMenu
     }
     self.download_list.close_callback = function()
         UIManager:close(self.download_list)
@@ -1102,8 +1102,10 @@ function OPDSBrowser:showDownloadList()
             self.item_table[1].mandatory = #self.downloads
             self:updateItems(1, true)
         end
+        self:init()
     end
     self:updateDownloadListItemTable()
+    logger.dbg(self.download_list.title_bar)
     UIManager:show(self.download_list)
 end
 
@@ -1112,18 +1114,18 @@ function OPDSBrowser:showDownloadListMenu()
     dialog = ButtonDialog:new{
         buttons = {
             {{
-                    text = _("Remove all"),
+                    text = _("Download all"),
                     callback = function()
                         UIManager:close(dialog)
-                        self:confirmClearDownloadList()
+                        self._manager:confirmDownloadDownloadList()
                     end,
                     align = "left",
             }},
             {{
-                    text = _("Download all"),
+                    text = _("Remove all"),
                     callback = function()
                         UIManager:close(dialog)
-                        self:confirmDownloadDownloadList()
+                        self._manager:confirmClearDownloadList()
                     end,
                     align = "left",
             }},
