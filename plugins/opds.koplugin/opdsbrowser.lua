@@ -605,6 +605,7 @@ function OPDSBrowser:updateCatalog(item_url, paths_updated)
             })
         end
         self:switchItemTable(self.catalog_title, menu_table)
+        Menu.setTitleBarLeftIcon(self, "plus")
         self.onLeftButtonTap = function()
             self:addSubCatalog(item_url)
         end
@@ -951,8 +952,6 @@ function OPDSBrowser:onMenuSelect(item)
         logger.dbg("Downloads available:", item)
         self:showDownloads(item)
     else -- catalog or Search item
-        self.title_bar_left_icon = "plus"
-        Menu.init(self)
         if #self.paths == 0 then -- root list
             if item.idx == 1 then
                 if #self.downloads > 0 then
@@ -965,6 +964,7 @@ function OPDSBrowser:onMenuSelect(item)
             self.root_catalog_password  = item.password
             self.root_catalog_raw_names = item.raw_names
         end
+--         UIManager:forceRePaint()
         local connect_callback
         if item.searchable then
             connect_callback = function()
@@ -1102,7 +1102,6 @@ function OPDSBrowser:showDownloadList()
             self.item_table[1].mandatory = #self.downloads
             self:updateItems(1, true)
         end
-        self:init()
     end
     self:updateDownloadListItemTable()
     UIManager:show(self.download_list)
