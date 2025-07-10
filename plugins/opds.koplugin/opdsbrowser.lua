@@ -1105,7 +1105,6 @@ function OPDSBrowser:showDownloadList()
         self:init()
     end
     self:updateDownloadListItemTable()
-    logger.dbg(self.download_list.title_bar)
     UIManager:show(self.download_list)
 end
 
