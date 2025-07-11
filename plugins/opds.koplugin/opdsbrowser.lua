@@ -605,7 +605,7 @@ function OPDSBrowser:updateCatalog(item_url, paths_updated)
             })
         end
         self:switchItemTable(self.catalog_title, menu_table)
-        Menu.setTitleBarLeftIcon(self, "plus")
+        self:setTitleBarLeftIcon("plus")
         self.onLeftButtonTap = function()
             self:addSubCatalog(item_url)
         end
@@ -964,7 +964,6 @@ function OPDSBrowser:onMenuSelect(item)
             self.root_catalog_password  = item.password
             self.root_catalog_raw_names = item.raw_names
         end
---         UIManager:forceRePaint()
         local connect_callback
         if item.searchable then
             connect_callback = function()
