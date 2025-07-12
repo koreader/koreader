@@ -88,6 +88,7 @@ function Wallabag:init()
 
     -- These settings do have defaults
     self.filter_tag                    = self.wb_settings.data.wallabag.filter_tag or ""
+    self.filter_starred                = self.wb_settings.data.wallabag.filter_starred or false
     self.ignore_tags                   = self.wb_settings.data.wallabag.ignore_tags or ""
     self.auto_tags                     = self.wb_settings.data.wallabag.auto_tags or ""
     self.archive_finished              = self.wb_settings.data.wallabag.archive_finished or true
@@ -258,6 +259,17 @@ function Wallabag:addToMainMenu(menu_items)
                                             self.ignore_tags = tags
                                         end
                                     )
+                                end,
+                            },
+                            {
+                                text = _("Download only starred articles"),
+                                keep_menu_open = true,
+                                checked_func = function()
+                                    return self.filter_starred or false
+                                end,
+                                callback = function()
+                                    self.filter_starred = not self.filter_starred
+                                    self:saveSettings()
                                 end,
                             },
                             {
@@ -614,6 +626,10 @@ function Wallabag:getArticleList()
 
     if self.filter_tag ~= "" then
         filtering = "&tags=" .. self.filter_tag
+    end
+
+    if self.filter_starred then
+        filtering = filtering .. "&starred=1"
     end
 
     local article_list = {}
@@ -1593,6 +1609,7 @@ function Wallabag:saveSettings()
         password                      = self.password,
         directory                     = self.directory,
         filter_tag                    = self.filter_tag,
+        filter_starred                = self.filter_starred,
         ignore_tags                   = self.ignore_tags,
         auto_tags                     = self.auto_tags,
         archive_finished              = self.archive_finished,
