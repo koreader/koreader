@@ -1682,7 +1682,7 @@ function ReaderHighlight:onHold(arg, ges)
         local ImageViewer = require("ui/widget/imageviewer")
         UIManager:show(ImageViewer:new{
             image = image,
-            with_title_bar = false,
+            with_title_bar = false, -- more room for image
             fullscreen = true,
         })
         self:onStopHighlightIndicator()
