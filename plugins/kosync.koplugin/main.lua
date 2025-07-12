@@ -167,8 +167,8 @@ end
 function KOSync:onDispatcherRegisterActions()
     Dispatcher:registerAction("kosync_set_autosync",
         { category="string", event="KOSyncToggleAutoSync", title=_("Set auto progress sync"), reader=true,
-        args={true, false}, toggle={_("on"), _("off")}, from_menu=false})
-    Dispatcher:registerAction("kosync_toggle_autosync", { category="none", event="KOSyncToggleAutoSync", title=_("Toggle auto progress sync"), reader=true, from_menu=false})
+        args={true, false}, toggle={_("on"), _("off")},})
+    Dispatcher:registerAction("kosync_toggle_autosync", { category="none", event="KOSyncToggleAutoSync", title=_("Toggle auto progress sync"), reader=true,})
     Dispatcher:registerAction("kosync_push_progress", { category="none", event="KOSyncPushProgress", title=_("Push progress from this device"), reader=true,})
     Dispatcher:registerAction("kosync_pull_progress", { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), reader=true, separator=true,})
 end
@@ -910,6 +910,9 @@ end
 
 function KOSync:onKOSyncToggleAutoSync(toggle, from_menu)
     if toggle == self.settings.auto_sync then return end
+    if top_widget:handleEvent(event) then
+        return
+    end
     -- Actively recommend switching the before wifi action to "turn_on" instead of prompt,
     -- as prompt will just not be practical (or even plain usable) here.
     if not self.settings.auto_sync
