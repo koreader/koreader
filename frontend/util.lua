@@ -957,7 +957,7 @@ end
 local function replaceAllInvalidChars(str)
     if str then
         str = str:gsub('[\\/:*?"<>|]', '_')
-        str = str:gsub("[%.%s]+$", "")
+        str = str:gsub("[.%s]+$", "")
         return str
     end
 end
