@@ -948,14 +948,17 @@ end
 
 --- Replaces characters that are invalid filenames.
 --
--- Replaces the characters <code>\/:*?"<>|</code> with an <code>_</code>.
+-- Replaces the characters <code>\/:*?"<>|</code> with an <code>_</code>
+-- and removes trailing dots and spaces, in line with <https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions>.
 -- These characters are problematic on Windows filesystems. On Linux only
 -- <code>/</code> poses a problem.
 ---- @string str filename
 ---- @treturn string sanitized filename
 local function replaceAllInvalidChars(str)
     if str then
-        return str:gsub('[\\/:*?"<>|]', '_')
+        str = str:gsub('[\\/:*?"<>|]', '_')
+        str = str:gsub("[.%s]+$", "")
+        return str
     end
 end
 
