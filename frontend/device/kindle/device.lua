@@ -1322,7 +1322,7 @@ function KindleOasis:init()
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
-        -- NOTE: Points to the embedded battery. The one in the cover is codenamed "soda".
+        -- NOTE: Points to the embedded battery. The one in the cover is codenamed "soda", see aux_batt_capacity_file below.
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
         aux_batt_capacity_file = "/sys/devices/platform/soda/power_supply/soda_fg/capacity",
