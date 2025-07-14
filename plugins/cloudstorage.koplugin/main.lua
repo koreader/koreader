@@ -279,12 +279,6 @@ function CloudStorageMenu:downloadFile(item)
         end)
 
         progressbar_dialog:show()
-            provider.download(unit_item, address, username, password, path_dir, callback_close)
-        end)
-        UIManager:show(InfoMessage:new{
-            text = _("Downloading. This might take a moment."),
-            timeout = 1,
-        })
     end
 
     local function createTitle(filename_orig, filesize, filename, path)
