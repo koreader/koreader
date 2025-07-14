@@ -477,6 +477,9 @@ function Terminal:generateInputDialog()
             end,
             },
         }},
+        del_word_callback = function()
+            self:transmit("\023") -- Ctrl+U
+        end,
         enter_callback = function()
             self:transmit("\r")
         end,
