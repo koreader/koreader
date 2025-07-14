@@ -10,6 +10,7 @@ local LuaSettings = require("luasettings")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local PathChooser = require("ui/widget/pathchooser")
+local ProgressbarDialog = require("ui/widget/progressbardialog")
 local Provider = require("provider")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -261,7 +262,23 @@ function CloudStorageMenu:downloadFile(item)
     end
 
     local function startDownloadFile(unit_item, address, username, password, path_dir, callback_close)
+        local progressbar_dialog = ProgressbarDialog:new {
+            title = _("Downloading…"),
+            subtitle = unit_item.text,
+            progress_max = unit_item.filesize,
+        }
+
         UIManager:scheduleIn(1, function()
+            local progress_callback = function(progress)
+                progressbar_dialog:reportProgress(progress)
+            end
+
+            provider.download(unit_item, address, username, password, path_dir, callback_close, progress_callback)
+
+            progressbar_dialog:close()
+        end)
+
+        progressbar_dialog:show()
             provider.download(unit_item, address, username, password, path_dir, callback_close)
         end)
         UIManager:show(InfoMessage:new{

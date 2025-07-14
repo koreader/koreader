@@ -1,7 +1,11 @@
+local Device = require("device")
+if not Device:isTouchDevice() then
+    return { disabled = true }
+end
+
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
-local Device = require("device")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
@@ -23,10 +27,6 @@ local _ = require("gettext")
 local C_ = _.pgettext
 local T = ffiUtil.template
 
-if not Device:isTouchDevice() then
-    return { disabled = true, }
-end
-
 local Gestures = WidgetContainer:extend{
     name = "gestures",
     settings_data = nil,
@@ -34,8 +34,80 @@ local Gestures = WidgetContainer:extend{
     defaults = nil,
     custom_multiswipes = nil,
     updated = false,
+    has_multitouch = Device:hasMultitouch(),
 }
 local gestures_path = ffiUtil.joinPath(DataStorage:getSettingsDir(), "gestures.lua")
+
+local section_titles = {
+    tap_corner          = _("Tap corner"),
+    hold_corner         = _("Long-press on corner"),
+    one_finger_swipe    = _("One-finger swipe"),
+    double_tap          = _("Double tap"),
+    two_finger_tap      = _("Two-finger tap corner"),
+    two_finger_swipe    = _("Two-finger swipe"),
+    spread_and_pinch    = _("Spread and pinch"),
+    two_finger_rotation = _("Two-finger rotation"),
+    multiswipes         = _("Multiswipes"),
+    custom_multiswipes  = _("Custom multiswipes"),
+}
+
+local section_items = {
+    tap_corner = {
+        "tap_top_left_corner",
+        "tap_top_right_corner",
+        "tap_left_bottom_corner",
+        "tap_right_bottom_corner",
+    },
+    hold_corner = {
+        "hold_top_left_corner",
+        "hold_top_right_corner",
+        "hold_bottom_left_corner",
+        "hold_bottom_right_corner",
+    },
+    one_finger_swipe = {
+        "short_diagonal_swipe",
+        "one_finger_swipe_left_edge_down",
+        "one_finger_swipe_left_edge_up",
+        "one_finger_swipe_right_edge_down",
+        "one_finger_swipe_right_edge_up",
+        "one_finger_swipe_top_edge_right",
+        "one_finger_swipe_top_edge_left",
+        "one_finger_swipe_bottom_edge_right",
+        "one_finger_swipe_bottom_edge_left",
+    },
+    double_tap = {
+        "double_tap_left_side",
+        "double_tap_right_side",
+        "double_tap_top_left_corner",
+        "double_tap_top_right_corner",
+        "double_tap_bottom_left_corner",
+        "double_tap_bottom_right_corner",
+    },
+    two_finger_tap = {
+        "two_finger_tap_top_left_corner",
+        "two_finger_tap_top_right_corner",
+        "two_finger_tap_bottom_left_corner",
+        "two_finger_tap_bottom_right_corner",
+    },
+    two_finger_swipe = {
+        "two_finger_swipe_east",
+        "two_finger_swipe_west",
+        "two_finger_swipe_south",
+        "two_finger_swipe_north",
+        "two_finger_swipe_northeast",
+        "two_finger_swipe_northwest",
+        "two_finger_swipe_southeast",
+        "two_finger_swipe_southwest",
+    },
+    spread_and_pinch = {
+        "spread_gesture",
+        "pinch_gesture",
+    },
+    two_finger_rotation = {
+        "rotate_cw",
+        "rotate_ccw",
+    },
+}
 
 local gestures_list = {
     tap_top_left_corner = _("Top left"),
@@ -141,7 +213,7 @@ function Gestures:init()
     local defaults_path = ffiUtil.joinPath(self.path, "defaults.lua")
     self.ignore_hold_corners = G_reader_settings:isTrue("ignore_hold_corners")
     self.multiswipes_enabled = G_reader_settings:isTrue("multiswipes_enabled")
-    self.is_docless = self.ui == nil or self.ui.document == nil
+    self.is_docless = self.ui.document == nil
     self.ges_mode = self.is_docless and "gesture_fm" or "gesture_reader"
     self.defaults = LuaSettings:open(defaults_path).data[self.ges_mode]
     if not self.settings_data then
@@ -223,11 +295,10 @@ function Gestures:genMenu(ges)
     if gestures_list[ges] ~= nil then
         table.insert(sub_items, {
             text = T(_("%1 (default)"), Dispatcher:menuTextFunc(self.defaults[ges])),
-            keep_menu_open = true,
-            no_refresh_on_check = true,
             checked_func = function()
                 return util.tableEquals(self.gestures[ges], self.defaults[ges])
             end,
+            check_callback_updates_menu = true,
             callback = function(touchmenu_instance)
                 local function do_remove()
                     self.gestures[ges] = util.tableDeepCopy(self.defaults[ges])
@@ -241,11 +312,10 @@ function Gestures:genMenu(ges)
     end
     table.insert(sub_items, {
         text = _("Pass through"),
-        keep_menu_open = true,
-        no_refresh_on_check = true,
         checked_func = function()
             return self.gestures[ges] == nil
         end,
+        check_callback_updates_menu = true,
         callback = function(touchmenu_instance)
             local function do_remove()
                 self.gestures[ges] = nil
@@ -321,8 +391,7 @@ function Gestures:genSubItemTable(gestures)
     return sub_item_table
 end
 
-function Gestures:genMultiswipeMenu()
-    local sub_item_table = {}
+function Gestures:genMultiswipeMenu(get_list)
     -- { multiswipe name, separator }
     local multiswipe_list = {
         {"multiswipe_west_east",},
@@ -361,6 +430,10 @@ function Gestures:genMultiswipeMenu()
         {"multiswipe_southeast_southwest_northwest",},
         {"multiswipe_southeast_northeast_northwest",},
     }
+    if get_list then
+        return multiswipe_list
+    end
+    local sub_item_table = {}
     for _, item in ipairs(multiswipe_list) do
         table.insert(sub_item_table, self:genSubItem(item[1], item[2]))
     end
@@ -465,7 +538,7 @@ function Gestures:genCustomMultiswipeSubmenu()
                 self:multiswipeRecorder(touchmenu_instance)
             end,
             help_text = _("The number of possible multiswipe gestures is theoretically infinite. With the multiswipe recorder you can easily record your own."),
-        }
+        },
     }
     for item in ffiUtil.orderedPairs(self.custom_multiswipes) do
         local hold_callback = function(touchmenu_instance)
@@ -497,6 +570,78 @@ function Gestures:genCustomMultiswipeSubmenu()
         table.insert(submenu, self:genSubItem(item, nil, hold_callback))
     end
     return submenu
+end
+
+function Gestures:onShowGestureOverview()
+    local KeyValuePage = require("ui/widget/keyvaluepage")
+    local nothing = Dispatcher:menuTextFunc({})
+    local kv_pairs = {}
+    local function add_section(section_id, items)
+        items = items or section_items[section_id]
+        local pos = #kv_pairs + 1
+        local added
+        for _, ges_name in ipairs(items) do
+            if section_id == "multiswipes" then
+                ges_name = ges_name[1]
+            end
+            local gest = self.gestures[ges_name]
+            if gest then
+                local value = Dispatcher:menuTextFunc(gest)
+                if value ~= nothing then
+                    local key = gestures_list[ges_name] or self:friendlyMultiswipeName(ges_name)
+                    local callback
+                    if Dispatcher:_itemsCount(gest) > 1 then -- multi-action gesture
+                        local text = {}
+                        for item, v in Dispatcher.iter_func(gest) do
+                            if type(item) == "number" then item = v end
+                            if gest[item] ~= nil then
+                                table.insert(text, " " .. Dispatcher:getNameFromItem(item, gest))
+                            end
+                        end
+                        callback = function()
+                            UIManager:show(InfoMessage:new{
+                                text = table.concat(text, "\n"),
+                                show_icon = false,
+                            })
+                        end
+                    end
+                    table.insert(kv_pairs, { key, value, callback = callback, key_bold = false })
+                    added = true
+                end
+            end
+        end
+        if added then
+            table.insert(kv_pairs, pos, { section_titles[section_id], " " })
+            kv_pairs[#kv_pairs].separator = true
+        end
+    end
+    add_section("tap_corner")
+    add_section("hold_corner")
+    add_section("one_finger_swipe")
+    if not self.is_docless and self.ui.disable_double_tap ~= true then
+        add_section("double_tap")
+    end
+    if self.has_multitouch then
+        add_section("two_finger_tap")
+        add_section("two_finger_swipe")
+        add_section("spread_and_pinch")
+        add_section("two_finger_rotation")
+    end
+    if self.multiswipes_enabled then
+        add_section("multiswipes", self:genMultiswipeMenu(true))
+        if next(self.custom_multiswipes) then
+            local items = {}
+            for item in ffiUtil.orderedPairs(self.custom_multiswipes) do
+                table.insert(items, item)
+            end
+            add_section("custom_multiswipes", items)
+        end
+    end
+    UIManager:show(KeyValuePage:new{
+        title = self.is_docless and _("Gestures in file browser") or _("Gestures in reader"),
+        value_overflow_align = "right",
+        kv_pairs = kv_pairs,
+    })
 end
 
 function Gestures:addIntervals(menu_items)
@@ -702,6 +847,7 @@ function Gestures:addToMainMenu(menu_items)
     menu_items.gesture_manager = {
         text = _("Gesture manager"),
         sub_item_table = {
+            max_per_page = 11,
             {
                 text = _("Turn on multiswipes"),
                 checked_func = function() return self.multiswipes_enabled end,
@@ -712,56 +858,64 @@ function Gestures:addToMainMenu(menu_items)
                 help_text = multiswipes_info_text,
             },
             {
-                text = _("Multiswipes"),
+                text = section_titles.multiswipes,
                 sub_item_table = self:genMultiswipeMenu(),
                 enabled_func = function() return self.multiswipes_enabled end,
             },
             {
-                text = _("Custom multiswipes"),
+                text = section_titles.custom_multiswipes,
                 sub_item_table = self:genCustomMultiswipeSubmenu(),
                 enabled_func = function() return self.multiswipes_enabled end,
                 separator = true,
             },
             {
-                text = _("Tap corner"),
-                sub_item_table = self:genSubItemTable({"tap_top_left_corner", "tap_top_right_corner", "tap_left_bottom_corner", "tap_right_bottom_corner"}),
+                text = section_titles.tap_corner,
+                sub_item_table = self:genSubItemTable(section_items.tap_corner),
             },
             {
-                text = _("Long-press on corner"),
-                sub_item_table = self:genSubItemTable({"hold_top_left_corner", "hold_top_right_corner", "hold_bottom_left_corner", "hold_bottom_right_corner"}),
+                text = section_titles.hold_corner,
+                sub_item_table = self:genSubItemTable(section_items.hold_corner),
             },
             {
-                text = _("One-finger swipe"),
-                sub_item_table = self:genSubItemTable({"short_diagonal_swipe", "one_finger_swipe_left_edge_down", "one_finger_swipe_left_edge_up", "one_finger_swipe_right_edge_down", "one_finger_swipe_right_edge_up", "one_finger_swipe_top_edge_right", "one_finger_swipe_top_edge_left", "one_finger_swipe_bottom_edge_right", "one_finger_swipe_bottom_edge_left"}),
+                text = section_titles.one_finger_swipe,
+                sub_item_table = self:genSubItemTable(section_items.one_finger_swipe),
             },
             {
-                text = _("Double tap"),
+                text = section_titles.double_tap,
                 enabled_func = function()
-                    return self.ges_mode == "gesture_reader" and self.ui.disable_double_tap ~= true
+                    return not self.is_docless and self.ui.disable_double_tap ~= true
                 end,
-                sub_item_table = self:genSubItemTable({"double_tap_left_side", "double_tap_right_side", "double_tap_top_left_corner", "double_tap_top_right_corner", "double_tap_bottom_left_corner", "double_tap_bottom_right_corner"}),
+                sub_item_table = self:genSubItemTable(section_items.double_tap),
             },
         },
     }
 
-    if Device:hasMultitouch() then
+    if self.has_multitouch then
         table.insert(menu_items.gesture_manager.sub_item_table, {
-            text = _("Two-finger tap corner"),
-            sub_item_table = self:genSubItemTable({"two_finger_tap_top_left_corner", "two_finger_tap_top_right_corner", "two_finger_tap_bottom_left_corner", "two_finger_tap_bottom_right_corner"}),
+            text = section_titles.two_finger_tap,
+            sub_item_table = self:genSubItemTable(section_items.two_finger_tap),
         })
         table.insert(menu_items.gesture_manager.sub_item_table, {
-            text = _("Two-finger swipe"),
-            sub_item_table = self:genSubItemTable({"two_finger_swipe_east", "two_finger_swipe_west", "two_finger_swipe_south", "two_finger_swipe_north", "two_finger_swipe_northeast", "two_finger_swipe_northwest", "two_finger_swipe_southeast", "two_finger_swipe_southwest"}),
+            text = section_titles.two_finger_swipe,
+            sub_item_table = self:genSubItemTable(section_items.two_finger_swipe),
         })
         table.insert(menu_items.gesture_manager.sub_item_table, {
-            text = _("Spread and pinch"),
-            sub_item_table = self:genSubItemTable({"spread_gesture", "pinch_gesture"}),
+            text = section_titles.spread_and_pinch,
+            sub_item_table = self:genSubItemTable(section_items.spread_and_pinch),
         })
         table.insert(menu_items.gesture_manager.sub_item_table, {
-            text = _("Two-finger rotation"),
-            sub_item_table = self:genSubItemTable({"rotate_cw", "rotate_ccw"}),
+            text = section_titles.two_finger_rotation,
+            sub_item_table = self:genSubItemTable(section_items.two_finger_rotation),
         })
     end
+
+    menu_items.gesture_overview = {
+        text = _("Gesture overview"),
+        keep_menu_open = true,
+        callback = function()
+            self:onShowGestureOverview()
+        end,
+    }
 
     self:addIntervals(menu_items)
 end

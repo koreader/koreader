@@ -178,12 +178,14 @@ function WebDavApi:listFolder(address, user, pass, folder_path, options)
     return webdav_list
 end
 
-function WebDavApi:downloadFile(url, user, pass, local_path)
-    logger.dbg("WebDavApi:downloadFile url=", url, " local_path=", local_path)
+function WebDavApi:downloadFile(file_url, user, pass, local_path, progress_callback)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local code, _, status = socket.skip(1, http.request{
-        url = url,
-        user = user,
+    logger.dbg("WebDavApi: downloading file: ", file_url)
+    local code, headers, status = socket.skip(1, http.request{
+        url      = file_url,
+        method   = "GET",
+        sink     = ltn12.sink.file(io.open(local_path, "w")),
+        user     = user,
         password = pass,
         sink = ltn12.sink.file(io.open(local_path, "w")),
     })

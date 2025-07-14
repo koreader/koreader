@@ -106,75 +106,44 @@ msgstr "Fuzzy translated"
 
 describe("GetText module", function()
     local GetText
-    local test_po_ar
-    local test_po_nl, test_po_ru
-    local test_po_none, test_po_simple
-    local test_po_many
 
     setup(function()
         require("commonrequire")
         GetText = require("gettext")
-        GetText.dirname = "i18n-test"
+        GetText.dirname = (os.getenv("KO_HOME") or ".").."/i18n-test"
 
         local lfs = require("libs/libkoreader-lfs")
+
         lfs.mkdir(GetText.dirname)
-        lfs.mkdir(GetText.dirname.."/nl_NL")
-        lfs.mkdir(GetText.dirname.."/none")
-        lfs.mkdir(GetText.dirname.."/ar")
-        lfs.mkdir(GetText.dirname.."/ru")
-        lfs.mkdir(GetText.dirname.."/simple")
-        lfs.mkdir(GetText.dirname.."/many")
 
-        test_po_nl = GetText.dirname.."/nl_NL/koreader.po"
-        local f = io.open(test_po_nl, "w")
-        f:write(test_po_part1, test_plurals_nl, test_po_part2)
-        f:close()
+        local pocreate = function(lang, ...)
+            local dir = GetText.dirname.."/"..lang
+            local po = dir.."/koreader.po"
+            local mo = dir.."/koreader.mo"
+            lfs.mkdir(dir)
+            local f = io.open(po, "w")
+            f:write(...)
+            f:close()
+            local ok = os.execute(string.format("msgfmt --no-hash -o %s %s", mo, po))
+            assert(ok == 0)
+        end
 
-        -- same file, just different plural for testing
-        test_po_none = GetText.dirname.."/none/koreader.po"
-        f = io.open(test_po_none, "w")
-        f:write(test_po_part1, test_plurals_none, test_po_part2)
-        f:close()
+        pocreate("nl_NL", test_po_part1, test_plurals_nl, test_po_part2)
 
         -- same file, just different plural for testing
-        test_po_ar = GetText.dirname.."/ar/koreader.po"
-        f = io.open(test_po_ar, "w")
-        f:write(test_po_part1, test_plurals_ar, test_po_part2)
-        f:close()
+        pocreate("none", test_po_part1, test_plurals_none, test_po_part2)
 
         -- same file, just different plural for testing
-        test_po_ru = GetText.dirname.."/ru/koreader.po"
-        f = io.open(test_po_ru, "w")
-        f:write(test_po_part1, test_plurals_ru, test_po_part2)
-        f:close()
+        pocreate("ar", test_po_part1, test_plurals_ar, test_po_part2)
 
         -- same file, just different plural for testing
-        test_po_simple = GetText.dirname.."/simple/koreader.po"
-        f = io.open(test_po_simple, "w")
-        f:write(test_po_part1, test_plurals_simple, test_po_part2)
-        f:close()
+        pocreate("ru", test_po_part1, test_plurals_ru, test_po_part2)
 
         -- same file, just different plural for testing
-        test_po_many = GetText.dirname.."/many/koreader.po"
-        f = io.open(test_po_many, "w")
-        f:write(test_po_part1, test_plurals_many, test_po_part2)
-        f:close()
-    end)
+        pocreate("simple", test_po_part1, test_plurals_simple, test_po_part2)
 
-    teardown(function()
-        os.remove(test_po_nl)
-        os.remove(test_po_none)
-        os.remove(test_po_ar)
-        os.remove(test_po_ru)
-        os.remove(test_po_simple)
-        os.remove(test_po_many)
-        os.remove(GetText.dirname.."/nl_NL")
-        os.remove(GetText.dirname.."/none")
-        os.remove(GetText.dirname.."/ar")
-        os.remove(GetText.dirname.."/ru")
-        os.remove(GetText.dirname.."/simple")
-        os.remove(GetText.dirname.."/many")
-        os.remove(GetText.dirname)
+        -- same file, just different plural for testing
+        pocreate("many", test_po_part1, test_plurals_many, test_po_part2)
     end)
 
     describe("changeLang", function()
