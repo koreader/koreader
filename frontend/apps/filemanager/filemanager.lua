@@ -129,7 +129,7 @@ function FileManager:setupLayout()
         button_padding = Screen:scaleBySize(5),
         left_icon = "home",
         left_icon_size_ratio = 1,
-        left_icon_tap_callback = function() self:goHome() end,
+        left_icon_tap_callback = function() self:onHome() end,
         left_icon_hold_callback = function() self:onShowFolderMenu() end,
         right_icon = self.selected_files and "check" or "plus",
         right_icon_size_ratio = 1,
@@ -163,7 +163,7 @@ function FileManager:setupLayout()
         if file_manager.selected_files then -- toggle selection
             item.dim = not item.dim and true or nil
             file_manager.selected_files[item.path] = item.dim
-            self:updateItems()
+            self:updateItems(1, true)
         else
             file_manager:openFile(item.path)
         end
@@ -212,7 +212,7 @@ function FileManager:setupLayout()
                         if is_file then
                             file_manager.selected_files[file] = true
                             item.dim = true
-                            self:updateItems()
+                            self:updateItems(1, true)
                         end
                     end,
                 },
@@ -649,10 +649,11 @@ function FileManager:tapPlus()
         end
 
     else -- no selected files
+        local folder = self.file_chooser.path
         local function refresh_titlebar_callback()
-            self:updateTitleBarPath()
+            self:updateTitleBarPath(folder)
         end
-        title = BD.dirpath(filemanagerutil.abbreviate(self.file_chooser.path))
+        title = BD.dirpath(filemanagerutil.abbreviate(folder))
         buttons = {
             {
                 {
@@ -696,7 +697,7 @@ function FileManager:tapPlus()
                     text = _("Go to HOME folder"),
                     callback = function()
                         UIManager:close(plus_dialog)
-                        self:goHome()
+                        self:onHome()
                     end
                 },
             },
@@ -706,12 +707,12 @@ function FileManager:tapPlus()
                     callback = function()
                         UIManager:close(plus_dialog)
                         -- any random document
-                        self:openRandomFile(self.file_chooser.path, false)
+                        self:openRandomFile(folder, false)
                     end,
                     hold_callback = function()
                         UIManager:close(plus_dialog)
                         -- only previously unopened
-                        self:openRandomFile(self.file_chooser.path, true)
+                        self:openRandomFile(folder, true)
                     end
                 },
             },
@@ -719,7 +720,7 @@ function FileManager:tapPlus()
                 self.folder_shortcuts:genShowFolderShortcutsButton(close_dialog_callback),
             },
             {
-                self.folder_shortcuts:genAddRemoveShortcutButton(self.file_chooser.path, close_dialog_callback, refresh_titlebar_callback),
+                self.folder_shortcuts:genAddRemoveShortcutButton(folder, close_dialog_callback, refresh_titlebar_callback),
             },
         }
 
@@ -727,12 +728,12 @@ function FileManager:tapPlus()
             table.insert(buttons, 4, { -- after "Paste" or "Import files here" button
                 {
                     text_func = function()
-                        return Device:isValidPath(self.file_chooser.path)
+                        return Device:isValidPath(folder)
                             and _("Switch to SDCard") or _("Switch to internal storage")
                     end,
                     callback = function()
                         UIManager:close(plus_dialog)
-                        if Device:isValidPath(self.file_chooser.path) then
+                        if Device:isValidPath(folder) then
                             local ok, sd_path = Device:hasExternalSD()
                             if ok then
                                 self.file_chooser:changeToPath(sd_path)
@@ -749,10 +750,10 @@ function FileManager:tapPlus()
             table.insert(buttons, 4, { -- always after "Paste" button
                 {
                     text = _("Import files here"),
-                    enabled = Device:isValidPath(self.file_chooser.path),
+                    enabled = Device:isValidPath(folder),
                     callback = function()
                         UIManager:close(plus_dialog)
-                        Device.importFile(self.file_chooser.path)
+                        Device.importFile(folder)
                     end,
                 },
             })
@@ -847,7 +848,10 @@ function FileManager:onRefresh()
     return true
 end
 
-function FileManager:goHome()
+FileManager.onRefreshContent = FileManager.onRefresh
+FileManager.onBookMetadataChanged = FileManager.onRefresh
+
+function FileManager:onHome()
     if not self.file_chooser:goHome() then
         self:setHome()
     end
@@ -1305,18 +1309,6 @@ end
 -- @treturn boolean result of cp command
 function FileManager:copyRecursive(from, to)
     return ffiUtil.execute(self.cp_bin, "-r", from, to ) == 0
-end
-
-function FileManager:onHome()
-    return self:goHome()
-end
-
-function FileManager:onRefreshContent()
-    self:onRefresh()
-end
-
-function FileManager:onBookMetadataChanged()
-    self:onRefresh()
 end
 
 function FileManager:onShowFolderMenu()

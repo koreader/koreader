@@ -264,6 +264,8 @@ function HtmlBoxWidget:setContent(body, css, default_font_size, is_xhtml, no_css
     self.document:layoutDocument(self.dimen.w, self.dimen.h, default_font_size)
 
     self.page_count = self.document:getPages()
+    self.page_boxes = nil
+    self:clearHighlight()
 end
 
 function HtmlBoxWidget:_render()

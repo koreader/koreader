@@ -629,10 +629,10 @@ function Profiles:genAutoExecPathChangedMenuItem(text, event, profile_name, sepa
                         local value = util.tableGetValue(self.autoexec, event, profile_name, condition)
                         return value and txt .. ": " .. value or txt
                     end,
-                    no_refresh_on_check = true,
                     checked_func = function()
                         return util.tableGetValue(self.autoexec, event, profile_name, condition)
                     end,
+                    check_callback_updates_menu = true,
                     callback = function(touchmenu_instance)
                         local dialog
                         local buttons = {{
@@ -760,10 +760,10 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                                     local txt = util.tableGetValue(self.autoexec, event, profile_name, condition, prop)
                                     return txt and title .. " " .. txt or title:sub(1, -2)
                                 end,
-                                no_refresh_on_check = true,
                                 checked_func = function()
                                     return util.tableGetValue(self.autoexec, event, profile_name, condition, prop) and true
                                 end,
+                                check_callback_updates_menu = true,
                                 callback = function(touchmenu_instance)
                                     local dialog
                                     local buttons = self.document == nil and {} or {{
@@ -830,10 +830,10 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                     enabled_func = function()
                         return not util.tableGetValue(self.autoexec, event_always, profile_name)
                     end,
-                    no_refresh_on_check = true,
                     checked_func = function()
                         return util.tableGetValue(self.autoexec, event, profile_name, conditions[3][2]) and true
                     end,
+                    check_callback_updates_menu = true,
                     callback = function(touchmenu_instance)
                         local condition = conditions[3][2]
                         local dialog
@@ -895,10 +895,10 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                     enabled_func = function()
                         return not util.tableGetValue(self.autoexec, event_always, profile_name)
                     end,
-                    no_refresh_on_check = true,
                     checked_func = function()
                         return util.tableGetValue(self.autoexec, event, profile_name, conditions[4][2]) and true
                     end,
+                    check_callback_updates_menu = true,
                     callback = function(touchmenu_instance)
                         local condition = conditions[4][2]
                         local collections = util.tableGetValue(self.autoexec, event, profile_name, condition)
