@@ -154,6 +154,9 @@ local settingsList = {
     ----
 
     -- Reader
+    show_alarm_menu = {category="none", event="ShowAlarmMenu", title=_("Set reader alarm"), reader=true},
+    show_timer_menu = {category="none", event="ShowTimerMenu", title=_("Set reader timer"), reader=true},
+    stop_timer = {category="none", event="StopTimer", title=_("Stop reader timer"), reader=true},
     show_config_menu = {category="none", event="ShowConfigMenu", title=_("Show bottom menu"), reader=true},
     toggle_status_bar = {category="none", event="ToggleFooterMode", title=_("Toggle status bar"), reader=true},
     toggle_chapter_progress_bar = {category="none", event="ToggleChapterProgressBar", title=_("Toggle chapter progress bar"), reader=true},
@@ -397,6 +400,9 @@ local dispatcher_menu_order = {
     ----
 
     -- Reader
+    "show_alarm_menu",
+    "show_timer_menu",
+    "stop_timer",
     "show_config_menu",
     "toggle_status_bar",
     "toggle_chapter_progress_bar",
