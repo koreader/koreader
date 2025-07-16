@@ -43,7 +43,7 @@ function KindlePowerD:init()
             -- "Discharging" when discharging
             -- "Full" when full
             -- "Charging" when charging via DCP
-            return this:read_str_file(this.aux_batt_status_file) ~= "Discharging"
+            return this:read_str_file(this.aux_batt_status_file) == "Charging"
         end
 
         self.isAuxChargedHW = function(this)
