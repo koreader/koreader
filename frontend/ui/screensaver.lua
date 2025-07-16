@@ -220,13 +220,8 @@ function Screensaver:expandSpecial(message)
     end
     if Device:hasBattery() then
         local powerd = Device:getPowerDevice()
-        if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
-            batt_lvl = powerd:getCapacity() + powerd:getAuxCapacity()
-            batt_symbol = powerd:getBatterySymbol(powerd:isAuxCharged(), powerd:isAuxCharging(), batt_lvl / 2)
-        else
-            batt_lvl = powerd:getCapacity()
-            batt_symbol = powerd:getBatterySymbol(powerd:isCharged(), powerd:isCharging(), batt_lvl)
-        end
+        batt_lvl = powerd:getCombinedCapacity()
+        batt_symbol = powerd:getBatterySymbol(powerd:isCharged(), powerd:isCharging(), batt_lvl)
     end
 
     local replace = {
