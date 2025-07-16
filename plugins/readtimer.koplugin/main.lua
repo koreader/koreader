@@ -21,6 +21,7 @@ function ReadTimer:init()
     self.timer_symbol = "\u{23F2}"  -- ⏲ timer symbol
     self.timer_letter = "T"
 
+
     self.alarm_callback = function()
         -- Don't do anything if we were unscheduled
         if self.time == 0 then return end
@@ -248,85 +249,14 @@ function ReadTimer:addToMainMenu(menu_items)
                 text = _("Set time"),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
-                    local now_t = os.date("*t")
-                    local curr_hour = now_t.hour
-                    local curr_min = now_t.min
-                    local time_widget = DateTimeWidget:new{
-                        hour = curr_hour,
-                        min = curr_min,
-                        ok_text = _("Set alarm"),
-                        title_text =  _("New alarm"),
-                        info_text = _("Enter a time in hours and minutes."),
-                        callback = function(alarm_time)
-                            self.last_interval_time = 0
-                            self:unschedule()
-                            local then_t = now_t
-                            then_t.hour = alarm_time.hour
-                            then_t.min = alarm_time.min
-                            then_t.sec = 0
-                            local seconds = os.difftime(os.time(then_t), os.time())
-                            if seconds <= 0 then
-                                then_t.day = then_t.day + 1
-                                seconds = os.difftime(os.time(then_t), os.time())
-                            end
-                            self:rescheduleIn(seconds)
-                            local user_duration_format = G_reader_settings:readSetting("duration_format")
-                            UIManager:show(InfoMessage:new{
-                                -- @translators %1:%2 is a clock time (HH:MM), %3 is a duration
-                                text = T(_("Timer set for %1:%2.\n\nThat's %3 from now."),
-                                    string.format("%02d", alarm_time.hour), string.format("%02d", alarm_time.min),
-                                    datetime.secondsToClockDuration(user_duration_format, seconds, false)),
-                                timeout = 5,
-                            })
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end
-                    }
-                    self:addCheckboxes(time_widget)
-                    UIManager:show(time_widget)
+                    self:onShowAlarmMenu(touchmenu_instance)
                 end,
             },
             {
                 text = _("Set interval"),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
-                    local remain_time = {}
-                    local remain_hours, remain_minutes = self:remainingTime()
-                    if not remain_hours and not remain_minutes then
-                        remain_time = G_reader_settings:readSetting("reader_timer_remain_time")
-                        if remain_time then
-                            remain_hours = remain_time[1]
-                            remain_minutes = remain_time[2]
-                        end
-                    end
-                    local time_widget = DateTimeWidget:new{
-                        hour = remain_hours or 0,
-                        min = remain_minutes or 0,
-                        hour_max = 17,
-                        ok_text = _("Set timer"),
-                        title_text =  _("Set reader timer"),
-                        info_text = _("Enter a time in hours and minutes."),
-                        callback = function(timer_time)
-                            self:unschedule()
-                            local seconds = timer_time.hour * 3600 + timer_time.min * 60
-                            if seconds > 0 then
-                                self.last_interval_time = seconds
-                                self:rescheduleIn(seconds)
-                                local user_duration_format = G_reader_settings:readSetting("duration_format")
-                                UIManager:show(InfoMessage:new{
-                                    -- @translators This is a duration
-                                    text = T(_("Timer will expire in %1."),
-                                             datetime.secondsToClockDuration(user_duration_format, seconds, true)),
-                                    timeout = 5,
-                                })
-                                remain_time = {timer_time.hour, timer_time.min}
-                                G_reader_settings:saveSetting("reader_timer_remain_time", remain_time)
-                                if touchmenu_instance then touchmenu_instance:updateItems() end
-                            end
-                        end
-                    }
-
-                    self:addCheckboxes(time_widget)
-                    UIManager:show(time_widget)
+                    self:onShowTimerMenu(touchmenu_instance)
                 end,
             },
             {
@@ -336,9 +266,7 @@ function ReadTimer:addToMainMenu(menu_items)
                     return self:scheduled()
                 end,
                 callback = function(touchmenu_instance)
-                    self.last_interval_time = 0
-                    self:unschedule()
-                    touchmenu_instance:updateItems()
+                    self:onStopTimer(touchmenu_instance)
                 end,
             },
         },
@@ -363,6 +291,140 @@ function ReadTimer:onResume()
         end
 
     end
+end
+
+function ReadTimer:onShowAlarmMenu(touchmenu_instance)
+    print("here")
+    self.now_t = os.date("*t")
+    local curr_hour = self.now_t.hour
+    local curr_min = self.now_t.min
+    local time_widget = DateTimeWidget:new{
+        hour = curr_hour,
+        min = curr_min,
+        ok_text = _("Set alarm"),
+        title_text =  _("New alarm"),
+        info_text = _("Enter a time in hours and minutes."),
+        callback = function(alarm_time)
+            self:onSetAlarm(alarm_time, function(seconds)
+                local user_duration_format = G_reader_settings:readSetting("duration_format")
+                UIManager:show(InfoMessage:new{
+                    -- @translators %1:%2 is a clock time (HH:MM), %3 is a duration
+                    text = T(_("Timer set for %1:%2.\n\nThat's %3 from now."),
+                        string.format("%02d", alarm_time.hour), string.format("%02d", alarm_time.min),
+                        datetime.secondsToClockDuration(user_duration_format, seconds, false)),
+                    timeout = 5,
+                })
+                if touchmenu_instance then touchmenu_instance:updateItems() end
+            end)
+        end
+    }
+    self:addCheckboxes(time_widget)
+    UIManager:show(time_widget)
+
+end
+
+function ReadTimer:onSetAlarm(alarm_time, callback)
+    local then_t
+    if not self.now_t then
+        local now_t = os.date("*t")
+        then_t = now_t
+    else
+        then_t = self.now_t
+    end
+    then_t.hour = alarm_time.hour
+    then_t.min = alarm_time.min
+    then_t.sec = 0
+    local seconds = os.difftime(os.time(then_t), os.time())
+    if seconds <= 0 then
+        then_t.day = then_t.day + 1
+        seconds = os.difftime(os.time(then_t), os.time())
+    end
+    self.last_interval_time = 0
+    self:unschedule()
+    self:rescheduleIn(seconds)
+
+    if callback then
+        callback(seconds)
+    else
+        local user_duration_format = G_reader_settings:readSetting("duration_format")
+        UIManager:show(InfoMessage:new{
+            -- @translators %1:%2 is a clock time (HH:MM), %3 is a duration
+            text = T(_("Timer set for %1:%2.\n\nThat's %3 from now."),
+                string.format("%02d", alarm_time.hour), string.format("%02d", alarm_time.min),
+                datetime.secondsToClockDuration(user_duration_format, seconds, false)),
+            timeout = 5,
+        })
+    end
+    return seconds
+end
+
+function ReadTimer:onShowTimerMenu(touchmenu_instance)
+    local remain_time = {}
+    local remain_hours, remain_minutes = self:remainingTime()
+    if not remain_hours and not remain_minutes then
+        remain_time = G_reader_settings:readSetting("reader_timer_remain_time")
+        if remain_time then
+            remain_hours = remain_time[1]
+            remain_minutes = remain_time[2]
+        end
+    end
+    local time_widget = DateTimeWidget:new{
+        hour = remain_hours or 0,
+        min = remain_minutes or 0,
+        hour_max = 17,
+        ok_text = _("Set timer"),
+        title_text =  _("Set reader timer"),
+        info_text = _("Enter a time in hours and minutes."),
+        callback = function(timer_time)
+            self:onSetInterval(timer_time, function(seconds)
+                local user_duration_format = G_reader_settings:readSetting("duration_format")
+                UIManager:show(InfoMessage:new{
+                    -- @translators This is a duration
+                    text = T(_("Timer will expire in %1."),
+                                datetime.secondsToClockDuration(user_duration_format, seconds, true)),
+                    timeout = 5,
+                })
+                remain_time = {timer_time.hour, timer_time.min}
+                G_reader_settings:saveSetting("reader_timer_remain_time", remain_time)
+                if touchmenu_instance then touchmenu_instance:updateItems() end
+            end)
+        end
+    }
+
+    self:addCheckboxes(time_widget)
+    UIManager:show(time_widget)
+end
+
+function ReadTimer:onSetInterval(timer_time, callback)
+    local seconds = timer_time.hour * 3600 + timer_time.min * 60
+    if seconds > 0 then
+        self:unschedule()
+        self.last_interval_time = seconds
+        self:rescheduleIn(seconds)
+
+        if callback then
+            callback(seconds)
+        else
+            local user_duration_format = G_reader_settings:readSetting("duration_format")
+            UIManager:show(InfoMessage:new{
+                -- @translators This is a duration
+                text = T(_("Timer will expire in %1."),
+                         datetime.secondsToClockDuration(user_duration_format, seconds, true)),
+                timeout = 5,
+            })
+        end
+
+        -- Save settings
+        local remain_time = {timer_time.hour, timer_time.min}
+        G_reader_settings:saveSetting("reader_timer_remain_time", remain_time)
+    end
+    return seconds
+end
+
+function ReadTimer:onStopTimer(touchmenu_instance)
+    self.last_interval_time = 0
+    self:unschedule()
+    if touchmenu_instance then touchmenu_instance:updateItems() end
 end
 
 return ReadTimer
