@@ -21,7 +21,6 @@ function ReadTimer:init()
     self.timer_symbol = "\u{23F2}"  -- ⏲ timer symbol
     self.timer_letter = "T"
 
-
     self.alarm_callback = function()
         -- Don't do anything if we were unscheduled
         if self.time == 0 then return end
@@ -294,10 +293,9 @@ function ReadTimer:onResume()
 end
 
 function ReadTimer:onShowAlarmMenu(touchmenu_instance)
-    print("here")
-    self.now_t = os.date("*t")
-    local curr_hour = self.now_t.hour
-    local curr_min = self.now_t.min
+    now_t = os.date("*t")
+    local curr_hour = now_t.hour
+    local curr_min = now_t.min
     local time_widget = DateTimeWidget:new{
         hour = curr_hour,
         min = curr_min,
@@ -315,7 +313,7 @@ function ReadTimer:onShowAlarmMenu(touchmenu_instance)
                     timeout = 5,
                 })
                 if touchmenu_instance then touchmenu_instance:updateItems() end
-            end)
+            end, now_t)
         end
     }
     self:addCheckboxes(time_widget)
@@ -323,13 +321,10 @@ function ReadTimer:onShowAlarmMenu(touchmenu_instance)
 
 end
 
-function ReadTimer:onSetAlarm(alarm_time, callback)
-    local then_t
-    if not self.now_t then
+function ReadTimer:onSetAlarm(alarm_time, callback, then_t)
+    if not then_t then
         local now_t = os.date("*t")
         then_t = now_t
-    else
-        then_t = self.now_t
     end
     then_t.hour = alarm_time.hour
     then_t.min = alarm_time.min
