@@ -12,10 +12,12 @@ local BasePowerD = {
     fl_warmth = nil,                  -- warmth level
     batt_capacity = 0,                -- battery capacity
     aux_batt_capacity = 0,            -- auxiliary battery capacity
+    combined_batt_capacity = 0,       -- combined battery capacity
     device = nil,                     -- device object
 
-    last_capacity_pull_time = time.s(-61),      -- timestamp of last pull
-    last_aux_capacity_pull_time = time.s(-61),  -- timestamp of last pull
+    last_capacity_pull_time = time.s(-61),           -- timestamp of last pull
+    last_aux_capacity_pull_time = time.s(-61),       -- timestamp of last pull
+    last_combined_capacity_pull_time = time.s(-61),  -- timestamp of last pull
 
     is_fl_on = false,                 -- whether the frontlight is on
     fl_was_on = nil,                  -- whether the frontlight *was* on before suspend
@@ -53,6 +55,7 @@ end
 function BasePowerD:setWarmthHW(warmth) end
 function BasePowerD:getCapacityHW() return 0 end
 function BasePowerD:getAuxCapacityHW() return 0 end
+function BasePowerD:getCombinedCapacityHW() return self.getCapacityHW end
 function BasePowerD:isAuxBatteryConnectedHW() return false end
 function BasePowerD:getDismissBatteryStatus() return self.battery_warning end
 function BasePowerD:setDismissBatteryStatus(status) self.battery_warning = status end
@@ -294,6 +297,31 @@ function BasePowerD:getAuxCapacity()
         end
     end
     return self.aux_batt_capacity
+end
+
+function BasePowerD:getCombinedCapacity()
+    if not self.isAuxBatteryConnected then
+        return self:getCapacity()
+    end
+
+    local now
+
+    if UIManager then
+        now = UIManager:getElapsedTimeSinceBoot()
+    else
+        -- Add time the device was in standby and suspend
+        now = time.now() + self.device.total_standby_time + self.device.total_suspend_time
+    end
+
+    if now - self.last_combined_capacity_pull_time >= time.s(60) then
+        local combined_batt_capa = self:getCombinedCapacityHW()
+        -- If the read failed, don't update our cache, and retry next time.
+        if combined_batt_capa then
+            self.combined_batt_capacity = combined_batt_capa
+            self.last_combined_capacity_pull_time = now
+        end
+    end
+    return self.combined_batt_capacity
 end
 
 function BasePowerD:invalidateCapacityCache()
