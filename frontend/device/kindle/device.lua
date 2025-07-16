@@ -1354,7 +1354,7 @@ function KindleOasis:init()
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
         -- NOTE: Points to the embedded battery. The one in the cover is codenamed "soda", see aux_batt_capacity_file below.
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
-        is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+        is_charging_file = "/sys/devices/platform/soda/power_supply/soda_chg/device/soda_usb_charger_conn",
         aux_batt_capacity_file = "/sys/devices/platform/soda/power_supply/soda_fg/capacity",
         aux_batt_status_file = "/sys/devices/platform/soda/power_supply/soda_fg/status",
         hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
