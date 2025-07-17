@@ -314,15 +314,15 @@ function ReadTimer:onShowAlarm(touchmenu_instance)
         title_text =  _("New alarm"),
         info_text = _("Enter a time in hours and minutes."),
         callback = function(alarm_time)
-            self:SetAlarm(alarm_time, now_t, touchmenu_instance)
+            self:setAlarm(alarm_time, now_t, touchmenu_instance)
         end
     }
     self:addCheckboxes(time_widget)
     UIManager:show(time_widget)
-
+    return true
 end
 
-function ReadTimer:SetAlarm(alarm_time, then_t, touchmenu_instance)
+function ReadTimer:setAlarm(alarm_time, then_t, touchmenu_instance)
     then_t.hour = alarm_time.hour
     then_t.min = alarm_time.min
     then_t.sec = 0
@@ -363,15 +363,16 @@ function ReadTimer:onShowTimer(touchmenu_instance)
         title_text =  _("Set reader timer"),
         info_text = _("Enter a time in hours and minutes."),
         callback = function(timer_time)
-            self:SetInterval(timer_time, touchmenu_instance)
+            self:setInterval(timer_time, touchmenu_instance)
         end
     }
 
     self:addCheckboxes(time_widget)
     UIManager:show(time_widget)
+    return true
 end
 
-function ReadTimer:SetInterval(timer_time, touchmenu_instance)
+function ReadTimer:setInterval(timer_time, touchmenu_instance)
     local seconds = timer_time.hour * 3600 + timer_time.min * 60
     if seconds > 0 then
         self:unschedule()
@@ -403,6 +404,7 @@ function ReadTimer:onStopTimer(touchmenu_instance)
             UIManager:show(InfoMessage:new{text=_("Timer stopped")})
         end
     end
+    return true
 end
 
 return ReadTimer
