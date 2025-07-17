@@ -136,7 +136,7 @@ end
 
 -- Helper function: This logic runs in a Lua Lane.
 -- It must be pure Lua and only accept/return simple data types.
-local function _getFileMatchesInLane(cancel_flag, params)
+local function _getFileMatchesInLane(cancel_checker, params)
     local lfs = require("libs/libkoreader-lfs")
     -- IMPORTANT: Utf8Proc and util.fixUtf8 are NOT used here to avoid FFI issues in the lane.
     local stringStartsWith = function(str, start)
@@ -160,20 +160,20 @@ local function _getFileMatchesInLane(cancel_flag, params)
 
     local scan_dirs = { params.search_path }
     while #scan_dirs ~= 0 do
-        if cancel_flag[1] then
+        if cancel_checker() then
             print("CANCELLED")
             return matched_items
         end -- Cooperative cancellation check
         local new_dirs = {}
         for _, d in ipairs(scan_dirs) do
-            if cancel_flag[1] then
+            if cancel_checker() then
                 print("CANCELLED")
                 return matched_items
             end -- Cooperative cancellation check
             local ok, iter, dir_obj = pcall(lfs.dir, d)
             if ok then
                 for f in iter, dir_obj do
-                    if cancel_flag[1] then
+                    if cancel_checker() then
                         print("CANCELLED")
                         return matched_items
                     end -- Cooperative cancellation check
@@ -308,8 +308,8 @@ function FileSearcher:doSearch()
             show_hidden = FileChooser.show_hidden, -- Assuming this is a static value available globally
         }
 
-        local bound_lane_task = function(cancel_flag)
-            return _getFileMatchesInLane(cancel_flag, lane_params)
+        local bound_lane_task = function(cancel_checker)
+            return _getFileMatchesInLane(cancel_checker, lane_params)
         end
         local matched_items_from_lane = Trapper:dismissableRunInLane(
             bound_lane_task, -- Pass the lane helper function

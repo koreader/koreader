@@ -686,7 +686,6 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
     return completed
 end
 
-
 local lanes  = require("lanes").configure(
     {demote_full_userdata =  true}
 )
@@ -712,9 +711,16 @@ local _active_futures = {}
 -- and sends a single message into the linda, then returns so we can join().
 local function lane_wrapper(user_func, ticket, cancel_flag, ...)
     local args = { ... }
+
+    -- Create a cancel checker that uses Linda for inter-lane communication
+    local cancel_checker = function()
+        local key, val = linda:receive(0, ticket .. "_cancel")
+        return key ~= nil  -- returns true if cancel signal was sent
+    end
+
     local ok, result_or_err = pcall(function()
-            -- user_func may inspect cancel_flag[1] to bail early if it's true
-            return table.pack(user_func(cancel_flag, table.unpack(args)))
+            -- user_func gets a function to check for cancellation via Linda
+            return table.pack(user_func(cancel_checker, table.unpack(args)))
     end)
 
     if not ok then
@@ -748,12 +754,11 @@ end
 --------------------------------------------------------------------------------
 
 --- Submit a function for async execution. Returns a future object.
---- user_func :: function(cancel_flag, ...) -> any
----    If user_func periodically checks cancel_flag[1], it can bail early.
+--- user_func :: function(cancel_checker, ...) -> any
+---    If user_func periodically calls cancel_checker(), it can bail early if it returns true.
 function submit_async(func, ...)
     assert(type(func) == "function", "submit_async: Expected a function")
     local ticket     = new_ticket()
-    local cancel_flag = { false }        -- a single-element flag
     local lane_obj   = worker_lane(func, ticket, cancel_flag, ...)
     local future     = {
         ticket      = ticket,
@@ -794,35 +799,36 @@ function wait_async(future, timeout)
 end
 
 --- Cancel a running future.
---- Signals the cancel_flag, and also cancels the lane if it’s still alive.
+--- Signals the cancel_flag via Linda, and also cancels the lane if it's still alive.
 function cancel_async(future)
     assert(future and future.ticket, "cancel_async: invalid future")
-    -- set the flag; well-behaved user_func should check and bail out
-    future.cancel_flag[1] = true
-    -- forcibly cancel the lane if it’s still running
-    UIManager:scheduleIn(5,
-                         function()
-                             future.lane:cancel()
-                             cleanup_future(future)
+    -- Send cancel signal through Linda (shared between lanes)
+    linda:send(future.ticket .. "_cancel", true)
+    -- forcibly cancel the lane if it's still running
+    UIManager:scheduleIn(5, function()
+        if future.lane then
+            future.lane:cancel()
+            cleanup_future(future)
+        end
     end)
-
 end
 
 --------------------------------------------------------------------------------
 -- Public API on Trapper
 --------------------------------------------------------------------------------
+
 --- @module Trapper.Async
---- @brief Enhanced async “futures” for Trapper, with cleanup, cancellation,
+--- @brief Enhanced async "futures" for Trapper, with cleanup, cancellation,
 ---        full stack traces, and cooperative cancellation tokens.
 ---
 --- Example:
 ---   local Trapper = require("Trapper.Async")
 ---
 ---   -- submit a job
----   local future = Trapper:async(function(cancel_flag, x, y)
+---   local future = Trapper:async(function(cancel_checker, x, y)
 ---     -- simulate work in chunks, check for cancel
 ---     for i=1,10 do
----       if cancel_flag[1] then
+---       if cancel_checker() then
 ---         return nil, "job cancelled by user"
 ---       end
 ---       -- do a piece of work…
@@ -864,11 +870,10 @@ end
 ---
 
 --- Asynchronously run a function in a separate lane.
---- @param func function  A function of the form `f(cancel_flag, ...)`.
----                      Inside the function, `cancel_flag` is a single-element
----                      table. If the function sees `cancel_flag[1] == true`,
----                      it should bail out cooperatively.
---- @param ...  any       Arguments to pass to `func` after the cancel_flag.
+--- @param func function  A function of the form `f(cancel_checker, ...)`.
+---                      Inside the function, `cancel_checker` is a function that
+---                      returns true if cancellation was requested.
+--- @param ...  any       Arguments to pass to `func` after the cancel_checker.
 --- @return table future  An opaque future object. Store this to poll, wait, or cancel.
 function Trapper:async(func, ...)
     return submit_async(func, ...)
@@ -901,8 +906,7 @@ function Trapper:poll(delay, maxcount, immediately, future, callback, progress_c
             progress_callback(count)
         end
 
-        local ready, status, packed_res, res
-        ready, status, packed_res = poll_async(future)
+        local ready, status, packed_res = poll_async(future)
 
         if not ready then
             if count < maxcount then
@@ -932,10 +936,17 @@ end
 ---                              • done=true, status="done" or "error", additional values follow.
 function Trapper:wait(timeout, future, callback)
     assert(type(callback) == "function", "wait: callback must be function")
-    local ready, status, packed_res, res
-    ready, status, packed_res = wait_async(future, timeout)
-    res = table.unpack(packed_res)
-    callback(ready, status, res)
+    local ready, status, packed_res = wait_async(future, timeout)
+
+    if ready then
+        if status == "done" then
+            callback(true, status, table.unpack(packed_res))
+        else
+            callback(true, status, packed_res)
+        end
+    else
+        callback(false, "timeout")
+    end
 end
 
 --- Cancel a running future.
@@ -946,16 +957,16 @@ function Trapper:cancel(future)
 end
 
 --- Run `task` in its own Lua‐Lanes lane, catch taps in a TrapWidget,
---- let the user dismiss, and return the task’s results.
+--- let the user dismiss, and return the task's results.
 ---
---- @param task function(cancel_flag, ...)
----        A function which may optionally check `cancel_flag[1] == true`
----        and return early if so.
+--- @param task function(cancel_checker, ...)
+---        A function which may optionally call `cancel_checker()`
+---        and return early if it returns true.
 --- @param widget_spec string|table|nil
 ---          • table = an already‐shown widget with `dismiss_callback`
 ---          • string = text for a new TrapWidget
 ---          • nil/true/false = an invisible TrapWidget;
----            false = don’t resend taps, true = resend.
+---            false = don't resend taps, true = resend.
 --- @return boolean completed
 ---        `true` if the task ran to completion, `false` if dismissed.
 --- @return ...
@@ -995,9 +1006,9 @@ function Trapper:dismissableRunInLane(task, widget_spec)
     end
 
     -- 3) Launch the task in its own lane via Trapper.Async
-    --    The task must accept a cancel_flag table as its first arg.
-    local future = Trapper:async(function(cancel_flag)
-            return task(cancel_flag)
+    --    The task must accept a cancel_checker function as its first arg.
+    local future = Trapper:async(function(cancel_checker)
+            return task(cancel_checker)
     end)
 
     -- 4) Poll until done or dismissed
@@ -1032,11 +1043,15 @@ function Trapper:dismissableRunInLane(task, widget_spec)
     -- 7) If dismissed, cancel the lane and return false
     if was_dismissed then
         Trapper:cancel(future)
+        return false
     end
 
     -- 8) Otherwise return true plus any results
-
-    return table.unpack(result_vals)
+    if result_vals then
+        return true, table.unpack(result_vals)
+    else
+        return true
+    end
 end
 
 return Trapper
