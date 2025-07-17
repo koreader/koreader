@@ -212,8 +212,9 @@ end
 -- Helper function: This logic runs on the Main Thread.
 -- It relies on `self` to access UI/document-related objects.
 function FileSearcher:_processLaneResultsOnMainThread(matched_items_from_lane, original_search_string, case_sensitive_flag, include_metadata_flag)
-    local logger = require("logger")
-    logger.dbg("Main :", matched_items_from_lane, original_search_string, case_sensitive_flag, include_metadata_flag)
+    local info = InfoMessage:new{ text = _("Processing found files.") }
+    UIManager:show(info)
+    UIManager:forceRePaint()
 
     local fc = self.ui.file_chooser or FileChooser:new{ ui = self.ui }
     local collate = fc:getCollate()
@@ -282,6 +283,8 @@ function FileSearcher:_processLaneResultsOnMainThread(matched_items_from_lane, o
             end
         end
     end
+
+    UIManager:close(info)
     return final_dirs, final_files, self.no_metadata_count
 end
 
@@ -311,7 +314,7 @@ function FileSearcher:doSearch()
         local bound_lane_task = function(cancel_checker)
             return _getFileMatchesInLane(cancel_checker, lane_params)
         end
-        local matched_items_from_lane = Trapper:dismissableRunInLane(
+        local status, matched_items_from_lane = Trapper:dismissableRunInLane(
             bound_lane_task, -- Pass the lane helper function
             info
         )

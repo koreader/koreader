@@ -709,7 +709,7 @@ local _active_futures = {}
 
 -- Lane wrapper: runs the user_func, captures success or error + stacktrace,
 -- and sends a single message into the linda, then returns so we can join().
-local function lane_wrapper(user_func, ticket, cancel_flag, ...)
+local function lane_wrapper(user_func, ticket, ...)
     local args = { ... }
 
     -- Create a cancel checker that uses Linda for inter-lane communication
@@ -759,11 +759,10 @@ end
 function submit_async(func, ...)
     assert(type(func) == "function", "submit_async: Expected a function")
     local ticket     = new_ticket()
-    local lane_obj   = worker_lane(func, ticket, cancel_flag, ...)
+    local lane_obj   = worker_lane(func, ticket, ...)
     local future     = {
         ticket      = ticket,
         lane        = lane_obj,
-        cancel_flag = cancel_flag,
     }
     _active_futures[ticket] = future
     return future
@@ -913,14 +912,14 @@ function Trapper:poll(delay, maxcount, immediately, future, callback, progress_c
                 count = count + 1
                 UIManager:scheduleIn(delay, step)
             else
-                callback(false, "timeout")
+                callback(ready, "timeout")
             end
         else
             if status == "done" then
-                callback(true, status, table.unpack(packed_res))
+                callback(ready, status, table.unpack(packed_res))
             else
                 logger.warn("Async: error in async function", status, packed_res)
-                callback(true, status, packed_res)
+                callback(ready, status, packed_res)
             end
         end
     end
@@ -972,6 +971,7 @@ end
 --- @return ...
 ---        Any return values from `task` (only if completed).
 function Trapper:dismissableRunInLane(task, widget_spec)
+    local future
     local co = coroutine.running()
     if not co then
         logger.warn("Running dismissableRunInLane outside a coroutine—fallback to blocking")
@@ -1001,20 +1001,19 @@ function Trapper:dismissableRunInLane(task, widget_spec)
     local was_dismissed = false
     trap_w.dismiss_callback = function()
         was_dismissed = true
-        -- resume the main coroutine so we can tear down
-        coroutine.resume(co)
+        Trapper:cancel(future)
     end
 
     -- 3) Launch the task in its own lane via Trapper.Async
     --    The task must accept a cancel_checker function as its first arg.
-    local future = Trapper:async(function(cancel_checker)
+    future = Trapper:async(function(cancel_checker)
             return task(cancel_checker)
     end)
 
     -- 4) Poll until done or dismissed
     local result_vals = nil
     local function on_done(done, status, ...)
-        if done and status == "done" then
+        if done then --  and status == "done" then
             result_vals = { ... }
         else
             result_vals = { nil }
@@ -1043,7 +1042,11 @@ function Trapper:dismissableRunInLane(task, widget_spec)
     -- 7) If dismissed, cancel the lane and return false
     if was_dismissed then
         Trapper:cancel(future)
-        return false
+        if result_vals then
+            return false, table.unpack(result_vals)
+        else
+            return false
+        end
     end
 
     -- 8) Otherwise return true plus any results

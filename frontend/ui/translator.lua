@@ -415,7 +415,7 @@ function Translator:loadPage(text, target_lang, source_lang)
 
     -- Submit the HTTP request to run asynchronously in a separate Lane.
     local future = Trapper:async(
-        function(cancel_flag, req_param)
+        function(cancel_checker, req_param)
             local socket = require("socket")
             local http = require("socket.http")
             local ltn12 = require("ltn12")
@@ -424,7 +424,7 @@ function Translator:loadPage(text, target_lang, source_lang)
             req_param.sink = ltn12.sink.table(sink)
 
             local success, r, code, headers, status_message = pcall(http.request, req_param)
-            if cancel_flag[1] then
+            if cancel_checker() then
                 error("Job Cancelled")
             end
             if not success then
