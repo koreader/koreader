@@ -24,7 +24,7 @@ function ReadTimer:onDispatcherRegisterActions()
     Dispatcher:registerAction("show_timer",
         {category="none", event="ShowTimer", title=_("Set reader timer"), general=true})
     Dispatcher:registerAction("stop_timer",
-        {category="none", event="StopTimer", title=_("Stop reader timer"), general=true, args={true, nil}, arg=true, separator=true})
+        {category="none", event="StopTimer", title=_("Stop reader timer"), general=true, separator=true})
 end
 
 function ReadTimer:init()
@@ -276,7 +276,7 @@ function ReadTimer:addToMainMenu(menu_items)
                     return self:scheduled()
                 end,
                 callback = function(touchmenu_instance)
-                    self:onStopTimer(false, touchmenu_instance)
+                    self:onStopTimer(touchmenu_instance)
                 end,
             },
         },
@@ -323,10 +323,6 @@ function ReadTimer:onShowAlarm(touchmenu_instance)
 end
 
 function ReadTimer:SetAlarm(alarm_time, then_t, touchmenu_instance)
-    if not then_t then
-        local now_t = os.date("*t")
-        then_t = now_t
-    end
     then_t.hour = alarm_time.hour
     then_t.min = alarm_time.min
     then_t.sec = 0
@@ -397,14 +393,14 @@ function ReadTimer:SetInterval(timer_time, touchmenu_instance)
     end
 end
 
-function ReadTimer:onStopTimer(is_event, touchmenu_instance)
+function ReadTimer:onStopTimer(touchmenu_instance)
     if self:scheduled() then
         self.last_interval_time = 0
         self:unschedule()
-        if is_event then
-            UIManager:show(InfoMessage:new{text=_("Timer stopped")})
+        if touchmenu_instance then
+            touchmenu_instance:updateItems()
         else
-            if touchmenu_instance then touchmenu_instance:updateItems() end
+            UIManager:show(InfoMessage:new{text=_("Timer stopped")})
         end
     end
 end
