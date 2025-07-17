@@ -351,10 +351,9 @@ function ReadTimer:SetAlarm(alarm_time, then_t, touchmenu_instance)
 end
 
 function ReadTimer:onShowTimer(touchmenu_instance)
-    local remain_time = {}
     local remain_hours, remain_minutes = self:remainingTime()
     if not remain_hours and not remain_minutes then
-        remain_time = G_reader_settings:readSetting("reader_timer_remain_time")
+        local remain_time = G_reader_settings:readSetting("reader_timer_remain_time")
         if remain_time then
             remain_hours = remain_time[1]
             remain_minutes = remain_time[2]
