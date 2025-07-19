@@ -134,94 +134,71 @@ function FileSearcher:onShowFileSearch(search_string)
     return true
 end
 
-function FileSearcher:doSearch()
-    local search_hash = FileSearcher.search_path .. (FileSearcher.search_string or "") ..
-        tostring(self.case_sensitive) .. tostring(self.include_subfolders) .. tostring(self.include_metadata)
-    local not_cached = FileSearcher.search_hash ~= search_hash
-    if not_cached then
-        local Trapper = require("ui/trapper")
-        local info = InfoMessage:new{ text = _("Searching… (tap to cancel)") }
-        UIManager:show(info)
-        UIManager:forceRePaint()
-        local completed, dirs, files, no_metadata_count = Trapper:dismissableRunInSubprocess(function()
-            return self:getList()
-        end, info)
-        if not completed then return end
-        UIManager:close(info)
-        FileSearcher.search_hash = search_hash
-        self.no_metadata_count = no_metadata_count
-        -- Cannot do this in getList() within Trapper (cannot serialize function)
-        local fc = self.ui.file_chooser or FileChooser:new{ ui = self.ui }
-        local collate = fc:getCollate()
-        for i, v in ipairs(dirs) do
-            local f, fullpath, attributes = unpack(v)
-            dirs[i] = fc:getListItem(nil, f, fullpath, attributes, collate)
-        end
-        for i, v in ipairs(files) do
-            local f, fullpath, attributes = unpack(v)
-            files[i] = fc:getListItem(nil, f, fullpath, attributes, collate)
-        end
-        FileSearcher.search_results = fc:genItemTable(dirs, files)
+-- Helper function: This logic runs in a Lua Lane.
+-- It must be pure Lua and only accept/return simple data types.
+local function _getFileMatchesInLane(cancel_checker, params)
+    local lfs = require("libs/libkoreader-lfs")
+    -- IMPORTANT: Utf8Proc and util.fixUtf8 are NOT used here to avoid FFI issues in the lane.
+    local stringStartsWith = function(str, start)
+        return str:sub(1, #start) == start
     end
-    if #FileSearcher.search_results > 0 then
-        self:onShowSearchResults(not_cached)
-    else
-        self:showSearchResultsMessage(true)
-    end
-end
 
-function FileSearcher:getList()
-    self.no_metadata_count = 0 -- will be updated in doSearch() with result from subprocess
-    local sys_folders = { -- do not search in sys_folders
-        ["/dev"] = true,
-        ["/proc"] = true,
-        ["/sys"] = true,
-        ["/mnt/base-us"] = true, -- Kindle
+    local sys_folders = {
+        ["/dev"] = true, ["/proc"] = true, ["/sys"] = true, ["/mnt/base-us"] = true,
     }
-    local search_string = FileSearcher.search_string
-    if search_string ~= "*" then -- one * to show all files
-        if not self.case_sensitive then
-            search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
-        end
-        -- replace '.' with '%.'
-        search_string = search_string:gsub("%.","%%%.")
-        -- replace '*' with '.*'
-        search_string = search_string:gsub("%*","%.%*")
-        -- replace '?' with '.'
-        search_string = search_string:gsub("%?","%.")
+
+    -- Prepare search string pattern for the lane (NO lowercasing here)
+    local search_string_pattern_lane = params.search_string
+    if search_string_pattern_lane ~= "*" then
+        -- Escape magic characters for string.find pattern matching
+        search_string_pattern_lane = search_string_pattern_lane:gsub("%.","%%%.")
+        search_string_pattern_lane = search_string_pattern_lane:gsub("%*","%.%*")
+        search_string_pattern_lane = search_string_pattern_lane:gsub("%?","%.")
     end
 
-    local dirs, files = {}, {}
-    local scan_dirs = { FileSearcher.search_path }
+    local matched_items = {} -- Stores { type, f, fullpath, attributes }
+
+    local scan_dirs = { params.search_path }
     while #scan_dirs ~= 0 do
+        if cancel_checker() then
+            print("CANCELLED")
+            return matched_items
+        end -- Cooperative cancellation check
         local new_dirs = {}
-        -- handle each dir
         for _, d in ipairs(scan_dirs) do
-            -- handle files in d
+            if cancel_checker() then
+                print("CANCELLED")
+                return matched_items
+            end -- Cooperative cancellation check
             local ok, iter, dir_obj = pcall(lfs.dir, d)
             if ok then
                 for f in iter, dir_obj do
+                    if cancel_checker() then
+                        print("CANCELLED")
+                        return matched_items
+                    end -- Cooperative cancellation check
                     local fullpath = "/" .. f
                     if d ~= "/" then
                         fullpath = d .. fullpath
                     end
                     local attributes = lfs.attributes(fullpath) or {}
-                    -- Don't traverse hidden folders if we're not showing them
+
+                    local is_hidden = stringStartsWith(f, ".")
+
+                    -- Filename matching in lane is now strictly case-sensitive
+                    local name_matches_lane = (search_string_pattern_lane == "*" or f:find(search_string_pattern_lane))
+
                     if attributes.mode == "directory" and f ~= "." and f ~= ".."
-                            and (FileChooser.show_hidden or not util.stringStartsWith(f, "."))
-                            and FileChooser:show_dir(f) then
-                        if self.include_subfolders and not sys_folders[fullpath] then
+                            and (params.show_hidden or not is_hidden) then
+                        if params.include_subfolders and not sys_folders[fullpath] then
                             table.insert(new_dirs, fullpath)
                         end
-                        if self:isFileMatch(f, fullpath, search_string) then
-                            table.insert(dirs, { f, fullpath, attributes })
+                        if name_matches_lane then
+                            table.insert(matched_items, { type = "dir", f = f, fullpath = fullpath, attributes = attributes })
                         end
-                    -- Always ignore macOS resource forks, too.
-                    elseif attributes.mode == "file" and not util.stringStartsWith(f, "._")
-                            and (FileChooser.show_unsupported or DocumentRegistry:hasProvider(fullpath))
-                            and FileChooser:show_file(f) then
-                        if self:isFileMatch(f, fullpath, search_string, true) then
-                            table.insert(files, { f, fullpath, attributes })
+                    elseif attributes.mode == "file" and not stringStartsWith(f, "._") then
+                        if name_matches_lane then
+                            table.insert(matched_items, { type = "file", f = f, fullpath = fullpath, attributes = attributes })
                         end
                     end
                 end
@@ -229,26 +206,138 @@ function FileSearcher:getList()
         end
         scan_dirs = new_dirs
     end
-    return dirs, files, self.no_metadata_count
+    return matched_items
 end
 
-function FileSearcher:isFileMatch(filename, fullpath, search_string, is_file)
-    if search_string == "*" then
-        return true
-    end
-    if not self.case_sensitive then
-        filename = Utf8Proc.lowercase(util.fixUtf8(filename, "?"))
-    end
-    if string.find(filename, search_string) then
-        return true
-    end
-    if self.include_metadata and is_file and DocumentRegistry:hasProvider(fullpath) then
-        local book_props = self.ui.bookinfo:getDocProps(fullpath, nil, true) -- do not open the document
-        if next(book_props) ~= nil then
-            return self.ui.bookinfo:findInProps(book_props, search_string, self.case_sensitive)
-        else
-            self.no_metadata_count = self.no_metadata_count + 1
+-- Helper function: This logic runs on the Main Thread.
+-- It relies on `self` to access UI/document-related objects.
+function FileSearcher:_processLaneResultsOnMainThread(matched_items_from_lane, original_search_string, case_sensitive_flag, include_metadata_flag)
+    local info = InfoMessage:new{ text = _("Processing found files.") }
+    UIManager:show(info)
+    UIManager:forceRePaint()
+
+    local fc = self.ui.file_chooser or FileChooser:new{ ui = self.ui }
+    local collate = fc:getCollate()
+
+    local final_dirs, final_files = {}, {}
+    self.no_metadata_count = 0 -- Reset, counted here
+
+    -- Prepare search string pattern for the main thread (with Utf8Proc and case sensitivity)
+    local main_thread_search_string_pattern = original_search_string
+    if main_thread_search_string_pattern ~= "*" then
+        if not case_sensitive_flag then
+            main_thread_search_string_pattern = Utf8Proc.lowercase(util.fixUtf8(main_thread_search_string_pattern, "?"))
         end
+        -- Escape magic characters for string.find pattern matching
+        main_thread_search_string_pattern = main_thread_search_string_pattern:gsub("%.","%%%.")
+        main_thread_search_string_pattern = main_thread_search_string_pattern:gsub("%*","%.%*")
+        main_thread_search_string_pattern = main_thread_search_string_pattern:gsub("%?","%.")
+    end
+
+    -- Internal helper for full matching logic (filename and metadata) on main thread
+    local function _isMatchFull(filename_original, fullpath, is_file_type)
+        if original_search_string == "*" then return true end
+
+        local filename_for_match_mt = filename_original
+        if not case_sensitive_flag then
+            filename_for_match_mt = Utf8Proc.lowercase(util.fixUtf8(filename_original, "?"))
+        end
+
+        -- Check filename match
+        if filename_for_match_mt:find(main_thread_search_string_pattern) then
+            return true
+        end
+
+        -- Check metadata match (only for files, and if include_metadata_flag is true)
+        if include_metadata_flag and is_file_type and DocumentRegistry:hasProvider(fullpath) then
+            local book_props = self.ui.bookinfo:getDocProps(fullpath, nil, true)
+            if next(book_props) ~= nil then
+                return self.ui.bookinfo:findInProps(book_props, original_search_string, case_sensitive_flag)
+            else
+                self.no_metadata_count = self.no_metadata_count + 1
+                -- If metadata search is enabled but no metadata found, consider it not a match
+                return false
+            end
+        end
+        return false
+    end
+
+
+    for _, item in ipairs(matched_items_from_lane) do
+        local f, fullpath, attributes = item.f, item.fullpath, item.attributes
+
+        if item.type == "dir" then
+            -- Directories matched by name from lane get full re-evaluation
+            if _isMatchFull(f, fullpath, false) then
+                table.insert(final_dirs, fc:getListItem(nil, f, fullpath, attributes, collate))
+            end
+        elseif item.type == "file" then
+            -- Files need full main-thread checks (supported type, FileChooser:show_file, and then name/metadata match)
+            local is_supported = DocumentRegistry:hasProvider(fullpath)
+            local file_passes_main_checks = (FileChooser.show_unsupported or is_supported) and fc:show_file(f)
+
+            if file_passes_main_checks then
+                if _isMatchFull(f, fullpath, true) then
+                    table.insert(final_files, fc:getListItem(nil, f, fullpath, attributes, collate))
+                end
+            end
+        end
+    end
+
+    UIManager:close(info)
+    return final_dirs, final_files, self.no_metadata_count
+end
+
+-- FileSearcher:doSearch() orchestrates the lane and main thread processing
+function FileSearcher:doSearch()
+    local search_hash = FileSearcher.search_path .. (FileSearcher.search_string or "") ..
+        tostring(self.case_sensitive) .. tostring(self.include_subfolders) .. tostring(self.include_metadata)
+    local not_cached = FileSearcher.search_hash ~= search_hash
+
+    if not_cached then
+        local Trapper = require("ui/trapper")
+        local InfoMessage = require("ui/widget/infomessage")
+        local UIManager = require("ui/uimanager")
+
+        local info = InfoMessage:new{ text = _("Searching… (tap to cancel)") }
+        UIManager:show(info)
+        UIManager:forceRePaint()
+
+        -- Prepare parameters for the lane (only simple values, no Utf8Proc/self/etc.)
+        local lane_params = {
+            search_path = FileSearcher.search_path,
+            search_string = FileSearcher.search_string, -- Lane gets original string for case-sensitive find
+            include_subfolders = self.include_subfolders,
+            show_hidden = FileChooser.show_hidden, -- Assuming this is a static value available globally
+        }
+
+        local bound_lane_task = function(cancel_checker)
+            return _getFileMatchesInLane(cancel_checker, lane_params)
+        end
+        local status, matched_items_from_lane = Trapper:dismissableRunInLane(
+            bound_lane_task, -- Pass the lane helper function
+            info
+        )
+
+        UIManager:close(info)
+        FileSearcher.search_hash = search_hash
+
+        -- Process results from the lane on the main thread
+        local final_dirs, final_files, no_metadata_count = self:_processLaneResultsOnMainThread(
+            matched_items_from_lane,
+            FileSearcher.search_string, -- Pass original search string for main thread processing
+            self.case_sensitive,        -- Pass case_sensitive flag for main thread processing
+            self.include_metadata       -- Pass include_metadata flag for main thread processing
+        )
+        self.no_metadata_count = no_metadata_count
+
+        FileSearcher.search_results = (self.ui.file_chooser or FileChooser:new{ ui = self.ui }):genItemTable(final_dirs, final_files)
+    end
+
+    if #FileSearcher.search_results > 0 then
+        self:onShowSearchResults(not_cached)
+    else
+        self:showSearchResultsMessage(true)
     end
 end
 

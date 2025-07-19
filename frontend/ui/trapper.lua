@@ -686,4 +686,375 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
     return completed
 end
 
+local lanes  = require("lanes").configure(
+    {demote_full_userdata =  true}
+)
+local linda  = lanes.linda()
+local debug  = debug
+
+--------------------------------------------------------------------------------
+-- Internals
+--------------------------------------------------------------------------------
+
+-- A simple counter to make even our timestamp-based tickets unique.
+local _internal_counter = 0
+local function new_ticket()
+    _internal_counter = _internal_counter + 1
+    -- use os.time() to reduce re-load collisions, plus a counter
+    return string.format("ticket_%d_%d", os.time(), _internal_counter)
+end
+
+-- track active futures so we can join() lanes when they complete
+local _active_futures = {}
+
+-- Lane wrapper: runs the user_func, captures success or error + stacktrace,
+-- and sends a single message into the linda, then returns so we can join().
+local function lane_wrapper(user_func, ticket, ...)
+    local args = { ... }
+
+    -- Create a cancel checker that uses Linda for inter-lane communication
+    local cancel_checker = function()
+        local key, val = linda:receive(0, ticket .. "_cancel")
+        return key ~= nil  -- returns true if cancel signal was sent
+    end
+
+    local ok, result_or_err = pcall(function()
+            -- user_func gets a function to check for cancellation via Linda
+            return table.pack(user_func(cancel_checker, table.unpack(args)))
+    end)
+
+    if not ok then
+        -- attach stack trace
+        result_or_err = debug.traceback(result_or_err, 2)
+        linda:send(ticket, "error", result_or_err)
+    else
+        -- note: if the function returns multiple values, we wrap them in a table
+        linda:send(ticket, "done", result_or_err)
+    end
+
+    -- Return ticket so the caller can join()
+    return ticket
+end
+
+-- generate a worker lane
+local worker_lane = lanes.gen("*", lane_wrapper)
+
+-- Internal: once we receive the final message for a ticket, we can join() the lane
+local function cleanup_future(future)
+    if future and future.lane then
+        -- join will not block as the lane already returned (in our wrapper)
+        future.lane:join(0)  -- 0 means non-blocking join
+        future.lane = nil
+        _active_futures[future.ticket] = nil
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Core async primitives
+--------------------------------------------------------------------------------
+
+--- Submit a function for async execution. Returns a future object.
+--- user_func :: function(cancel_checker, ...) -> any
+---    If user_func periodically calls cancel_checker(), it can bail early if it returns true.
+function submit_async(func, ...)
+    assert(type(func) == "function", "submit_async: Expected a function")
+    local ticket     = new_ticket()
+    local lane_obj   = worker_lane(func, ticket, ...)
+    local future     = {
+        ticket      = ticket,
+        lane        = lane_obj,
+    }
+    _active_futures[ticket] = future
+    return future
+end
+
+--- Poll without blocking. Returns:
+---   ready :: boolean
+---   status :: "done" | "error"
+---   results* :: any
+function poll_async(future)
+    assert(future and future.ticket, "poll_async: invalid future")
+    local key, status, result_table = linda:receive(0, linda.batched, future.ticket, 2, 2)
+    if key then
+        -- cleanup our lane resources
+        cleanup_future(future)
+        return true, status, result_table
+    end
+    return false
+end
+
+--- Wait with optional timeout (seconds). Returns:
+---   ready  :: boolean
+---   status :: "done" | "error" | "timeout"
+---   results* :: any
+function wait_async(future, timeout)
+    assert(future and future.ticket, "wait_async: invalid future")
+    local key, status, result_table = linda:receive(timeout, linda.batched, future.ticket, 2, 2)
+    if key then
+        cleanup_future(future)
+        return true, status, table.unpack(result_table)
+    end
+    return false, "timeout"
+end
+
+--- Cancel a running future.
+--- Signals the cancel_flag via Linda, and also cancels the lane if it's still alive.
+function cancel_async(future)
+    assert(future and future.ticket, "cancel_async: invalid future")
+    -- Send cancel signal through Linda (shared between lanes)
+    linda:send(future.ticket .. "_cancel", true)
+    -- forcibly cancel the lane if it's still running
+    UIManager:scheduleIn(5, function()
+        if future.lane then
+            future.lane:cancel()
+            cleanup_future(future)
+        end
+    end)
+end
+
+--------------------------------------------------------------------------------
+-- Public API on Trapper
+--------------------------------------------------------------------------------
+
+--- @module Trapper.Async
+--- @brief Enhanced async "futures" for Trapper, with cleanup, cancellation,
+---        full stack traces, and cooperative cancellation tokens.
+---
+--- Example:
+---   local Trapper = require("Trapper.Async")
+---
+---   -- submit a job
+---   local future = Trapper:async(function(cancel_checker, x, y)
+---     -- simulate work in chunks, check for cancel
+---     for i=1,10 do
+---       if cancel_checker() then
+---         return nil, "job cancelled by user"
+---       end
+---       -- do a piece of work…
+---     end
+---     return x + y  -- final result
+---   end, 5, 7)
+---
+---   -- poll with progress
+---   Trapper:poll(
+---     0.5,         -- delay between polls (seconds)
+---     20,          -- max attempts
+---     true,        -- immediately poll once
+---     future,      -- the future object returned above
+---     function(done, status, ...)
+---       if not done then
+---         print("Timed out waiting for result")
+---       elseif status == "done" then
+---         print("Result:", ...)
+---       else
+---         print("Error:", ...)
+---       end
+---     end,
+---     function(count)
+---       print("Poll attempt #", count)
+---     end
+---   )
+---
+---   -- or block until done (or timeout):
+---   Trapper:wait(10, future, function(done, status, ...)
+---     if status == "done" then
+---       print("Got:", ...)
+---     else
+---       print("Wait ended with", status)
+---     end
+---   end)
+---
+---   -- cancel if needed:
+---   Trapper:cancel(future)
+---
+
+--- Asynchronously run a function in a separate lane.
+--- @param func function  A function of the form `f(cancel_checker, ...)`.
+---                      Inside the function, `cancel_checker` is a function that
+---                      returns true if cancellation was requested.
+--- @param ...  any       Arguments to pass to `func` after the cancel_checker.
+--- @return table future  An opaque future object. Store this to poll, wait, or cancel.
+function Trapper:async(func, ...)
+    return submit_async(func, ...)
+end
+
+--- Poll a future repeatedly via the UIManager scheduler.
+--- @param delay number              Seconds between polls (>=0).
+--- @param maxcount number           Maximum number of polls before timeout.
+--- @param immediately boolean       If true, poll once immediately (zero delay).
+--- @param future table              The future returned by `:async`.
+--- @param callback function         Called once when done or timed out:
+---                                  `(done:boolean, status:string, ...)`.
+---                                    • done=false, status="timeout"
+---                                    • done=true, status="done" or "error",
+---                                      extra return values follow.
+--- @param progress_callback function Optional. Called on each poll with `(count:number)`.
+function Trapper:poll(delay, maxcount, immediately, future, callback, progress_callback)
+    assert(type(delay)        == "number" , "poll: delay must be ≥0")
+    assert(type(maxcount)     == "number" , "poll: maxcount must be ≥0")
+    assert(type(immediately)  == "boolean", "poll: immediately must be boolean")
+    assert(type(callback)     == "function", "poll: callback must be function")
+    assert(progress_callback == nil or type(progress_callback) == "function",
+           "poll: progress_callback must be function or nil")
+    assert(future and future.ticket, "poll: invalid future")
+
+    local count = 0
+
+    local function step()
+        if progress_callback then
+            progress_callback(count)
+        end
+
+        local ready, status, packed_res = poll_async(future)
+
+        if not ready then
+            if count < maxcount then
+                count = count + 1
+                UIManager:scheduleIn(delay, step)
+            else
+                callback(ready, "timeout")
+            end
+        else
+            if status == "done" then
+                callback(ready, status, table.unpack(packed_res))
+            else
+                logger.warn("Async: error in async function", status, packed_res)
+                callback(ready, status, packed_res)
+            end
+        end
+    end
+
+    UIManager:scheduleIn(immediately and 0 or delay, step)
+end
+
+--- Block until a future completes or the timeout elapses.
+--- @param timeout number|nil  Seconds to wait, or nil for infinite.
+--- @param future  table       The future returned by `:async`.
+--- @param callback function   Called once with `(done:boolean, status:string, ...)`.
+---                              • done=false, status="timeout"
+---                              • done=true, status="done" or "error", additional values follow.
+function Trapper:wait(timeout, future, callback)
+    assert(type(callback) == "function", "wait: callback must be function")
+    local ready, status, packed_res = wait_async(future, timeout)
+
+    if ready then
+        if status == "done" then
+            callback(true, status, table.unpack(packed_res))
+        else
+            callback(true, status, packed_res)
+        end
+    else
+        callback(false, "timeout")
+    end
+end
+
+--- Cancel a running future.
+--- Signals cooperative cancel_flag and forcibly cancels the lane.
+--- @param future table  The future returned by `:async`.
+function Trapper:cancel(future)
+    cancel_async(future)
+end
+
+--- Run `task` in its own Lua‐Lanes lane, catch taps in a TrapWidget,
+--- let the user dismiss, and return the task's results.
+---
+--- @param task function(cancel_checker, ...)
+---        A function which may optionally call `cancel_checker()`
+---        and return early if it returns true.
+--- @param widget_spec string|table|nil
+---          • table = an already‐shown widget with `dismiss_callback`
+---          • string = text for a new TrapWidget
+---          • nil/true/false = an invisible TrapWidget;
+---            false = don't resend taps, true = resend.
+--- @return boolean completed
+---        `true` if the task ran to completion, `false` if dismissed.
+--- @return ...
+---        Any return values from `task` (only if completed).
+function Trapper:dismissableRunInLane(task, widget_spec)
+    local future
+    local co = coroutine.running()
+    if not co then
+        logger.warn("Running dismissableRunInLane outside a coroutine—fallback to blocking")
+        return task({false})
+    end
+
+    -- 1) Build or reuse the trap widget
+    local trap_w, own_w, invisible = nil, false, false
+    if type(widget_spec) == "table" then
+        trap_w = widget_spec
+    else
+        own_w = true
+        if type(widget_spec) == "string" then
+            trap_w = TrapWidget:new{ text = widget_spec }
+        else
+            trap_w = TrapWidget:new{
+                text         = nil,
+                resend_event = (widget_spec ~= false)
+            }
+            invisible = true
+        end
+        UIManager:show(trap_w)
+        if not invisible then UIManager:forceRePaint() end
+    end
+
+    -- 2) Prepare a place to capture dismissal
+    local was_dismissed = false
+    trap_w.dismiss_callback = function()
+        was_dismissed = true
+        Trapper:cancel(future)
+    end
+
+    -- 3) Launch the task in its own lane via Trapper.Async
+    --    The task must accept a cancel_checker function as its first arg.
+    future = Trapper:async(function(cancel_checker)
+            return task(cancel_checker)
+    end)
+
+    -- 4) Poll until done or dismissed
+    local result_vals = nil
+    local function on_done(done, status, ...)
+        if done then --  and status == "done" then
+            result_vals = { ... }
+        else
+            result_vals = { nil }
+        end
+        -- resume the coroutine to finish up
+        coroutine.resume(co)
+    end
+
+    Trapper:poll(
+        0.1,             -- 100ms between polls
+        math.huge,       -- unlimited attempts
+        true,            -- immediate first poll
+        future,
+        on_done
+    )
+
+    -- 5) Yield until either dismiss_callback or on_done resumes us
+    coroutine.yield()
+
+    -- 6) Tear down widget
+    if own_w then
+        UIManager:close(trap_w)
+        if not invisible then UIManager:forceRePaint() end
+    end
+
+    -- 7) If dismissed, cancel the lane and return false
+    if was_dismissed then
+        Trapper:cancel(future)
+        if result_vals then
+            return false, table.unpack(result_vals)
+        else
+            return false
+        end
+    end
+
+    -- 8) Otherwise return true plus any results
+    if result_vals then
+        return true, table.unpack(result_vals)
+    else
+        return true
+    end
+end
+
 return Trapper
