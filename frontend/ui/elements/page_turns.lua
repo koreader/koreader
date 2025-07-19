@@ -1,4 +1,5 @@
 local Device = require("device")
+local Event = require("ui/event")
 local ReaderUI = require("apps/reader/readerui")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
@@ -151,18 +152,16 @@ local PageTurns = {
             end,
         },
         {
-            text = _("Also invert document-related dialogs"),
+            text = _("Invert document-related dialogs"),
             checked_func = function()
                 return G_reader_settings:isTrue("invert_ui_layout_mirroring")
             end,
-            enabled_func = function()
-                return ReaderUI.instance.view.inverse_reading_order
-            end,
             callback = function()
-                G_reader_settings:flipNilOrFalse("invert_ui_layout_mirroring")
+                UIManager:broadcastEvent(Event:new("ToggleUILayoutMiroring"))
             end,
             help_text = _([[
-When enabled the UI direction for the Table of Contents, Book Map, and Page Browser dialogs will follow the page turn direction instead of the default UI direction.]]),
+When enabled the UI direction for the Table of Contents, Book Map, and Page Browser dialogs will mirror the default UI direction.
+Useful when used alongside Invert page turns.]]),
             separator = true,
         },
         Device:canDoSwipeAnimation() and {
