@@ -129,7 +129,7 @@ function ProgressbarDialog:redrawProgressbarIfNeeded()
     -- if we are at 100% always redraw
     if current_percentage >= 1 then
         self:redrawProgressbar()
-        return
+        return true
     end
 
     -- check if enough time has passed
@@ -139,6 +139,7 @@ function ProgressbarDialog:redrawProgressbarIfNeeded()
     if time_delta_ms >= refresh_time_ms then
         self.last_redraw_time_ms = current_time_ms
         self:redrawProgressbar()
+        return true
     end
 end
 
@@ -159,7 +160,7 @@ function ProgressbarDialog:reportProgress(progress)
     self.progress_bar:setPercentage(progress / self.progress_max)
 
     -- actually draw the progress bar update
-    self:redrawProgressbarIfNeeded()
+    return self:redrawProgressbarIfNeeded()
 end
 
 --- Opens dialog.
