@@ -936,6 +936,7 @@ function KOSync:onKOSyncToggleAutoSync(toggle, from_menu)
     if not from_menu then
         Notification:notify(self.settings.auto_sync and _("Auto progress sync: on") or _("Auto progress sync: off"))
     end
+    return true
 end
 
 function KOSync:registerEvents()
