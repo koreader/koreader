@@ -475,12 +475,18 @@ ANDROID TARGET:
                 if [[ -n "${VALUE}" ]]; then
                     declare -a "wrap=(${VALUE})"
                 else
-                    # Try to use friendly defaults for GDB:
-                    # - DDD is a slightly less nice GUI
-                    # - cgdb is a nice curses-based GDB front
-                    # - GDB standard CLI has a fallback
-                    if ! wrap=("$(command -v ddd cgdb gdb | head -n1)"); then
-                        die 1 "Couldn't find GDB."
+                    if is_system macOS; then
+                        if ! wrap=("$(command -v lldb | head -n1)"); then
+                            die 1 "Couldn't find LLDB."
+                        fi
+                    else
+                        # Try to use friendly defaults for GDB:
+                        # - DDD is a slightly less nice GUI
+                        # - cgdb is a nice curses-based GDB front
+                        # - GDB standard CLI has a fallback
+                        if ! wrap=("$(command -v ddd cgdb gdb | head -n1)"); then
+                            die 1 "Couldn't find GDB."
+                        fi
                     fi
                 fi
                 if [[ ${#wrap[@]} -eq 1 ]]; then
