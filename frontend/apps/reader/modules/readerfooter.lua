@@ -530,6 +530,7 @@ ReaderFooter.default_settings = {
     progress_pct_format = "0",
     pages_left_includes_current_page = false,
     initial_marker = false,
+    invert_progress_direction = false,
 }
 
 function ReaderFooter:init()
@@ -2454,6 +2455,13 @@ function ReaderFooter:onToggleChapterProgressBar()
         self.progress_bar.initial_percentage = self.initial_pageno / self.pages
     end
     self:refreshFooter(true)
+end
+
+function ReaderFooter:setUILayoutMiroring(invert_direction)
+    if self.progress_bar then
+        self.progress_bar.invert_direction = invert_direction
+        self:maybeUpdateFooter()
+    end
 end
 
 function ReaderFooter:getBookProgress()
