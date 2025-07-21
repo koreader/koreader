@@ -960,6 +960,7 @@ function ReaderFooter:disableFooter()
     self.onReaderReady = function() end
     self.resetLayout = function() end
     self.updateFooter = function() end
+    self.onUpdateFooter = function() end
     self.mode = self.mode_list.off
     self.view.footer_visible = false
 end
