@@ -18,6 +18,7 @@ return {--do NOT change this line
  --[[
     ["/mnt/us/documents/hebrew"] = {
         ["inverse_reading_order"] = true
+        ["inverse_reading_order"] = true
     },
     ["/mnt/onboard/smalltext"] = {
         ["copt_font_size"] = 34,
