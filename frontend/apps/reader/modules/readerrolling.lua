@@ -1123,19 +1123,11 @@ end
 --]]
 function ReaderRolling:_gotoPos(new_pos, do_dim_area)
     if new_pos == self.current_pos then return end
-    if new_pos < 0 then
-        new_pos = 0
-    else
-        local max_pos = self.ui.document.info.doc_height - self.ui.dimen.h + self.view.footer:getHeight()
-        if max_pos < 0 then -- single-page document
-            new_pos = 0
-        elseif new_pos > max_pos then
-            -- Don't go past end of document, and ensure last line of the document
-            -- is shown just above the footer, whether footer is visible or not
-            new_pos = max_pos
-        end
-    end
---    if max_pos > 0 and new_pos > max_pos then new_pos = max_pos end
+    if new_pos < 0 then new_pos = 0 end
+    -- Don't go past end of document, and ensure last line of the document
+    -- is shown just above the footer, whether footer is visible or not
+    local max_pos = self.ui.document.info.doc_height - self.ui.dimen.h + self.view.footer:getHeight()
+    if new_pos > max_pos then new_pos = max_pos end
     -- adjust dim_area according to new_pos
     if self.view.view_mode ~= "page" and self.view.page_overlap_enable and do_dim_area then
         local footer_height = ((self.view.footer_visible and not self.view.footer.settings.reclaim_height) and 1 or 0) * self.view.footer:getHeight()
