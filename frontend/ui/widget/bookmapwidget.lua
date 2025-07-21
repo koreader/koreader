@@ -618,7 +618,7 @@ function BookMapRow:paintTo(bb, x, y)
             alt_bb = glyph.bb:rotatedCopy(indicator.rotation)
         end
         -- Glyph's bb fit the blackbox of the glyph, so there's no cropping
-        -- or complicated positionning to do
+        -- or complicated positioning to do
         -- By default, just center the glyph at x
         local d_x_pct = indicator.shift_x_pct or 0.5
         local d_x = math.floor(glyph.bb:getWidth() * d_x_pct)
@@ -759,7 +759,7 @@ function BookMapWidget:init()
         }
     end
 
-    -- No real need for any explicite edge and inter-row padding:
+    -- No real need for any explicit edge and inter-row padding:
     -- we use the scrollbar width on both sides for balance (we may put a start
     -- page number on the left space), and each BookMapRow will have itself some
     -- blank space at bottom below page slots (where we may put hanging markers
