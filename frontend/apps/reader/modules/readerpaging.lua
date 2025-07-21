@@ -87,6 +87,7 @@ ReaderPaging.onPhysicalKeyboardConnected = ReaderPaging.registerKeyEvents
 
 function ReaderPaging:onReaderReady()
     self:setupTouchZones()
+    self.view.footer:onUpdateFooter()
 end
 
 function ReaderPaging:setupTouchZones()
