@@ -1433,7 +1433,7 @@ end
 local function get_pattern_list(pattern, case_insensitive)
     -- pattern list of single words
     local plist = {}
-    -- (as in util.splitToWords(), but only splitting on spaces, keeping punctuation)
+    -- (as in util.splitToWords(), but only splitting on spaces, keeping punctuation marks)
     for word in util.gsplit(pattern, "%s+") do
         if util.hasCJKChar(word) then
             for char in util.gsplit(word, "[\192-\255][\128-\191]+", true) do
