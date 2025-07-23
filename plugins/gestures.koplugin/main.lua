@@ -295,11 +295,10 @@ function Gestures:genMenu(ges)
     if gestures_list[ges] ~= nil then
         table.insert(sub_items, {
             text = T(_("%1 (default)"), Dispatcher:menuTextFunc(self.defaults[ges])),
-            keep_menu_open = true,
-            no_refresh_on_check = true,
             checked_func = function()
                 return util.tableEquals(self.gestures[ges], self.defaults[ges])
             end,
+            check_callback_updates_menu = true,
             callback = function(touchmenu_instance)
                 local function do_remove()
                     self.gestures[ges] = util.tableDeepCopy(self.defaults[ges])
@@ -313,11 +312,10 @@ function Gestures:genMenu(ges)
     end
     table.insert(sub_items, {
         text = _("Pass through"),
-        keep_menu_open = true,
-        no_refresh_on_check = true,
         checked_func = function()
             return self.gestures[ges] == nil
         end,
+        check_callback_updates_menu = true,
         callback = function(touchmenu_instance)
             local function do_remove()
                 self.gestures[ges] = nil

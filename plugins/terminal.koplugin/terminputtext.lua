@@ -779,6 +779,12 @@ function TermInputText:delChar()
     InputText.delChar(self)
 end
 
+function TermInputText:delWord(left_to_cursor)
+    if self.parent and self.parent.del_word_callback then
+        self.parent.del_word_callback(left_to_cursor)
+    end
+end
+
 function TermInputText:delToStartOfLine()
     return
 end

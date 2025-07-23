@@ -67,7 +67,7 @@ function Calibre:onDispatcherRegisterActions()
     Dispatcher:registerAction("calibre_browse_authors", { category="none", event="CalibreBrowseBy", arg="authors", title=_("Browse all calibre authors"), general=true,})
     Dispatcher:registerAction("calibre_browse_titles", { category="none", event="CalibreBrowseBy", arg="title", title=_("Browse all calibre titles"), general=true, separator=true,})
     Dispatcher:registerAction("calibre_start_connection", { category="none", event="StartWirelessConnection", title=_("Calibre wireless connect"), general=true,})
-    Dispatcher:registerAction("calibre_close_connection", { category="none", event="CloseWirelessConnection", title=_("Calibre wireless disconnect"), general=true,})
+    Dispatcher:registerAction("calibre_close_connection", { category="none", event="CloseWirelessConnection", title=_("Calibre wireless disconnect"), general=true, separator=true,})
 end
 
 function Calibre:init()
@@ -303,6 +303,7 @@ function Calibre:getWirelessMenuTable()
                     checked_func = function()
                         return G_reader_settings:has("calibre_wireless_url")
                     end,
+                    check_callback_updates_menu = true,
                     callback = function(touchmenu_instance)
                         local MultiInputDialog = require("ui/widget/multiinputdialog")
                         local url_dialog

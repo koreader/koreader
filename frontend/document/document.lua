@@ -487,7 +487,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, white_threshol
     -- Make the context match the rotation,
     -- by pointing at the rotated origin via coordinates offsets.
     -- NOTE: We rotate our *Screen* bb on rotation (SetRotationMode), not the document,
-    --       so we hardly ever exercize this codepath...
+    --       so we hardly ever exercise this codepath...
     --       AFAICT, the only thing that *ever* (attempted to) rotate the document was ReaderRotation's key bindings (RotationUpdate).
     --- @note: It was broken as all hell (it had likely never worked outside of its original implementation in KPV), and has been removed in #12658
     if rotation == 90 then
