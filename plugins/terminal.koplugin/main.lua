@@ -286,12 +286,7 @@ function Terminal:receive()
     return self.chunk:commit(CHUNK_SIZE - free):get()
 end
 
-function Terminal:refresh(reset)
-    if reset then
-        self.refresh_time = 1/32
-        UIManager:unschedule(Terminal.refresh)
-    end
-
+function Terminal:refresh()
     local next_text = self:receive()
     if next_text ~= "" then
         self.input_widget:interpretAnsiSeq(next_text)
@@ -317,7 +312,11 @@ end
 
 function Terminal:transmit(chars)
     C.write(self.ptmx, chars, #chars)
-    self:refresh(true)
+    self.refresh_time = 1/32
+    UIManager:unschedule(Terminal.refresh)
+    UIManager:tickAfterNext(function()
+        UIManager:scheduleIn(self.refresh_time, Terminal.refresh, self)
+    end)
 end
 
 --- kills a running shell
