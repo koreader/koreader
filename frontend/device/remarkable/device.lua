@@ -4,6 +4,7 @@ local logger = require("logger")
 local time = require("ui/time")
 local ffi = require("ffi")
 local C = ffi.C
+local util = require("util")
 require("ffi/linux_input_h")
 
 local function yes() return true end
@@ -312,7 +313,7 @@ function Remarkable:supportsScreensaver() return true end
 
 function Remarkable:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback, interactive)
-        if isRmPaperPro then
+        if util.pathExists("/usr/bin/csl") then
             os.execute("/usr/bin/csl wifi -p on")
         else
             os.execute("./enable-wifi.sh")
@@ -321,7 +322,7 @@ function Remarkable:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
-        if isRmPaperPro then
+        if util.pathExists("/usr/bin/csl") then
             os.execute("/usr/bin/csl wifi -p off")
         else
             os.execute("./disable-wifi.sh")
@@ -337,7 +338,10 @@ function Remarkable:initNetworkManager(NetworkMgr)
 
     NetworkMgr:setWirelessBackend("wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/wlan0"})
 
-    NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
+    function NetworkMgr:isWifiOn()
+        -- When disabling wifi by using the csl command, wpa_supplicant service will be disabled
+        return os.execute("systemctl is-active --quiet wpa_supplicant") == 0
+    end
     NetworkMgr.isConnected = NetworkMgr.ifHasAnAddress
 end
 
@@ -367,7 +371,7 @@ function Remarkable:saveSettings()
 end
 
 function Remarkable:resume()
-    if isRmPaperPro then
+    if util.pathExists("/usr/bin/csl") then
         os.execute("csl wifi -p on")
     else
         os.execute("./enable-wifi.sh")
@@ -375,7 +379,7 @@ function Remarkable:resume()
 end
 
 function Remarkable:suspend()
-    if isRmPaperPro then
+    if util.pathExists("/usr/bin/csl") then
         os.execute("csl wifi -p off")
     else
         os.execute("./disable-wifi.sh")
