@@ -213,6 +213,7 @@ function ReaderMenu:setUpdateItemTable()
             {
                 text = _("Save document settings as default"),
                 keep_menu_open = true,
+                separator = true,
                 callback = function()
                     UIManager:show(ConfirmBox:new{
                         text = _("Save current document settings as default values?"),
@@ -229,6 +230,23 @@ function ReaderMenu:setUpdateItemTable()
             },
         },
     }
+
+    if not Device:isTouchDevice() then
+        -- This menu entry is a duplicate of the one found in page_turns for touch devices
+        -- but we need to add it here for non-touch devices.
+        table.insert(self.menu_items.document_settings.sub_item_table, {
+            text = _("Invert document-related UI dialogs"),
+            checked_func = function()
+                return G_reader_settings:isTrue("invert_ui_layout_mirroring")
+            end,
+            callback = function()
+                UIManager:broadcastEvent(Event:new("ToggleUILayoutMiroring"))
+            end,
+            help_text = _([[
+When enabled the UI direction for the Table of Contents, Book Map, and Page Browser dialogs will mirror the default UI direction.
+Useful together with Invert page turns above.]]),
+        })
+    end
 
     self.menu_items.page_overlap = dofile("frontend/ui/elements/page_overlap.lua")
 
