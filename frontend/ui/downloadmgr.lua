@@ -57,13 +57,14 @@ function DownloadMgr:chooseDir(dir)
 end
 
 function DownloadMgr:chooseCloudDir()
-    local cloud_storage = require("apps/cloudstorage/cloudstorage"):new{
+    local CloudStorageMenu = require("plugins/cloudstorage.koplugin/main").CloudStorageMenu
+    local cloud_storage_menu = CloudStorageMenu:new{
         item = self.item,
         onConfirm = function(dir_path)
             self.onConfirm(dir_path)
         end,
     }
-    UIManager:show(cloud_storage)
+    UIManager:show(cloud_storage_menu)
 end
 
 return DownloadMgr
