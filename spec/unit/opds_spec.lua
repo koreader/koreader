@@ -186,6 +186,39 @@ One Thousand Mythological Characters Briefly Described
 </feed>
 ]]
 
+-- https://www.gutenberg.org/catalog/osd-books.xml
+local opensearch_sample = [[
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+   <LongName>Project Gutenberg</LongName>
+   <ShortName>Gutenberg</ShortName>
+   <Description>Search the Project Gutenberg ebook catalog.</Description>
+   <Tags>free ebooks books public domain</Tags>
+   <Developer>Marcello Perathoner</Developer>
+   <Contact>webmaster@gutenberg.org</Contact>
+
+   <Url type="text/html"
+        template="http://www.gutenberg.org/ebooks/search/?query={searchTerms}"/>
+
+   <Url type="application/atom+xml"
+        template="http://m.gutenberg.org/ebooks/search.opds/?query={searchTerms}"/>
+
+   <Url type="application/x-suggestions+json"
+    rel="suggestions"
+        template="http://www.gutenberg.org/ebooks/suggest/?query={searchTerms}"/>
+
+   <Query role="example" searchTerms="shakespeare hamlet" />
+   <Query role="example" searchTerms="doyle detective" />
+   <Query role="example" searchTerms="love stories" />
+
+   <Attribution>Search Data Copyright 1971-2012, Project Gutenberg, All Rights Reserved.</Attribution>
+   <SyndicationRight>open</SyndicationRight>
+   <Language>en-us</Language>
+   <OutputEncoding>UTF-8</OutputEncoding>
+   <InputEncoding>UTF-8</InputEncoding>
+</OpenSearchDescription>
+]]
+
 local popular_new_sample = [[
 <?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xml:lang="en" xmlns:app="http://www.w3.org/2007/app" xmlns:thr="http://purl.org/syndication/thread/1.0" xmlns:opds="http://opds-spec.org/2010/catalog">
@@ -320,38 +353,70 @@ describe("OPDS module", function()
     end)
 
     describe("OPDS browser module", function()
+        before_each(function()
+            local Cache = require("cache")
+            stub(Cache, "check", function() return nil end)
+        end)
+
+        after_each(function()
+            local Cache = require("cache")
+            if Cache.check.revert then
+                Cache.check:revert()
+            end
+        end)
+
         describe("URL generation", function()
-            it("should generate search item #internet", function()
-                local catalog = OPDSParser:parse(navigation_sample)
-                local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "https://www.gutenberg.org/ebooks.opds/?format=opds")
+            it("should generate search url and catalog items #internet", function()
+                local fetch_feed_stub = stub(OPDSBrowser, "getSearchTemplate", function(self, osd_url)
+                    local search_descriptor = OPDSParser:parse(opensearch_sample)
+                    if search_descriptor and search_descriptor.OpenSearchDescription and search_descriptor.OpenSearchDescription.Url then
+                        for _, candidate in ipairs(search_descriptor.OpenSearchDescription.Url) do
+                            if candidate.type and candidate.template and candidate.type:find(self.search_template_type) then
+                                return candidate.template:gsub("{searchTerms}", "%%s")
+                            end
+                        end
+                    end
+                    return nil
+                end)
+
+                local main_catalog = OPDSParser:parse(navigation_sample)
+                local item_table = OPDSBrowser:genItemTableFromCatalog(main_catalog, "https://www.gutenberg.org/ebooks.opds/?format=opds")
+
+                assert.truthy(OPDSBrowser.search_url)
+                assert.are.same("http://m.gutenberg.org/ebooks/search.opds/?query=%s", OPDSBrowser.search_url)
 
                 assert.truthy(item_table)
-                assert.are.same(item_table[1].text, "\u{f002} " .. "Search")
+                assert.are.same(3, #item_table)
+                assert.are.same("Popular", item_table[1].title)
+                assert.are.same("Latest", item_table[2].title)
+                assert.are.same("Random", item_table[3].title)
+
+                fetch_feed_stub:revert()
             end)
             it("should generate URL on rel=subsection #internet", function()
                 local catalog = OPDSParser:parse(navigation_sample)
                 local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "https://www.gutenberg.org/ebooks.opds/?format=opds")
 
                 assert.truthy(item_table)
-                assert.are.same(item_table[2].title, "Popular")
-                assert.are.same(item_table[2].url, "https://www.gutenberg.org/ebooks/search.opds/?sort_order=downloads")
+                assert.are.same(item_table[1].title, "Popular")
+                assert.are.same(item_table[1].url, "https://www.gutenberg.org/ebooks/search.opds/?sort_order=downloads")
             end)
             it("should generate URL on rel=popular and rel=new #internet", function()
                 local catalog = OPDSParser:parse(popular_new_sample)
                 local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://www.feedbooks.com/publicdomain/catalog.atom")
 
                 assert.truthy(item_table)
-                assert.are.same(item_table[2].title, "Most popular")
-                assert.are.same(item_table[2].url, "https://catalog.feedbooks.com/publicdomain/browse/top.atom?lang=en")
-                assert.are.same(item_table[3].title, "Recently added")
-                assert.are.same(item_table[3].url, "https://catalog.feedbooks.com/publicdomain/browse/recent.atom?lang=en")
+                assert.are.same(item_table[1].title, "Most popular")
+                assert.are.same(item_table[1].url, "https://catalog.feedbooks.com/publicdomain/browse/top.atom?lang=en")
+                assert.are.same(item_table[2].title, "Recently added")
+                assert.are.same(item_table[2].url, "https://catalog.feedbooks.com/publicdomain/browse/recent.atom?lang=en")
             end)
             it("should use the main URL for faceted links as long as faceted links aren't properly supported #internet", function()
                 local catalog = OPDSParser:parse(facet_sample)
                 local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://flibusta.is/opds")
 
                 assert.truthy(item_table)
-                assert.are.same(item_table[2].url, "http://flibusta.is/opds/author/75357")
+                assert.are.same(item_table[1].url, "http://flibusta.is/opds/author/75357")
             end)
         end)
 
@@ -360,7 +425,7 @@ describe("OPDS module", function()
             local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://flibusta.is/opds")
 
             assert.truthy(item_table)
-            assert.are_not.same(item_table[2].image, "http://flibusta.is/opds/author/75357")
+            assert.are_not.same(item_table[1].image, "http://flibusta.is/opds/author/75357")
         end)
     end)
 end)
