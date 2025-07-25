@@ -28,6 +28,7 @@ local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
 local T = require("ffi/util").template
+local ffiUtil = require("ffi/util")
 
 -- cache catalog parsed from feed xml
 local CatalogCache = Cache:new{
@@ -56,9 +57,77 @@ local OPDSBrowser = Menu:extend{
     root_catalog_title    = nil,
     root_catalog_username = nil,
     root_catalog_password = nil,
+    facet_groups          = nil, -- Stores OPDS facet groups
 
     title_shrink_font_to_fit = true,
 }
+
+-- Shows facet menu for OPDS catalogs with facets/search support
+function OPDSBrowser:showFacetMenu()
+    local buttons = {}
+    local dialog
+
+    -- Add sub-catalog to bookmarks option first
+    table.insert(buttons, {{
+        text = _("Add sub-catalog to bookmarks"),
+        callback = function()
+            UIManager:close(dialog)
+            self:addSubCatalog(self.paths[#self.paths].url)
+        end,
+        align = "left",
+    }})
+    table.insert(buttons, {}) -- separator
+
+    -- Add search option if available
+    if self.search_url then
+        table.insert(buttons, {{
+            text = "\u{f002} " .. _("Search"),
+            callback = function()
+                UIManager:close(dialog)
+                self:searchCatalog(self.search_url)
+            end,
+            align = "left",
+        }})
+        table.insert(buttons, {}) -- separator
+    end
+
+    -- Add facet groups
+    if self.facet_groups then
+        for group_name, facets in ffiUtil.orderedPairs(self.facet_groups) do
+            table.insert(buttons, {
+                { text = group_name, enabled = false, align = "left" }
+            })
+
+            for __, link in ipairs(facets) do
+                local facet_text = link.title
+                if link["thr:count"] then
+                    facet_text = T(_("%1 (%2)"), facet_text, link["thr:count"])
+                end
+                if link["opds:activeFacet"] == "true" then
+                    facet_text = "✓ " .. facet_text
+                end
+                table.insert(buttons, {{
+                    text = facet_text,
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:updateCatalog(url.absolute(self.paths[#self.paths].url, link.href))
+                    end,
+                    align = "left",
+                }})
+            end
+            table.insert(buttons, {}) -- separator between groups
+        end
+    end
+
+    dialog = ButtonDialog:new{
+        buttons = buttons,
+        shrink_unneeded_width = true,
+        anchor = function()
+            return self.title_bar.left_button.image.dimen
+        end,
+    }
+    UIManager:show(dialog)
+end
 
 function OPDSBrowser:init()
     self.item_table = self:genItemTableFromRoot()
@@ -67,6 +136,7 @@ function OPDSBrowser:init()
     self.onLeftButtonTap = function()
         self:showOPDSMenu()
     end
+    self.facet_groups = nil -- Initialize facet groups storage
     Menu.init(self) -- call parent's init()
 end
 
@@ -430,57 +500,53 @@ function OPDSBrowser:genItemTableFromURL(item_url)
     return self:genItemTableFromCatalog(catalog, item_url)
 end
 
+-- Generates catalog item table and processes OPDS facets/search links
 function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
     local item_table = {}
+    self.facet_groups = nil -- Reset facets
+    self.search_url = nil   -- Reset search URL
+
     if not catalog then
         return item_table
     end
 
     local feed = catalog.feed or catalog
+    self.facet_groups = {} -- Initialize table to store facet groups
 
     local function build_href(href)
         return url.absolute(item_url, href)
     end
 
-    local has_opensearch = false
-    local hrefs = {}
     if feed.link then
         for __, link in ipairs(feed.link) do
-            if link.type ~= nil then
-                if link.type:find(self.catalog_type) then
-                    if link.rel and link.href then
-                        hrefs[link.rel] = build_href(link.href)
-                    end
+            if link.type ~= nil and not self.sync then
+                -- Process OPDS search links
+                if link.type:find(self.search_type) and link.href then
+                    self.search_url = build_href(self:getSearchTemplate(build_href(link.href)))
+                elseif link.type:find(self.search_template_type) and link.rel and link.rel:find("search") and link.href then
+                    self.search_url = build_href(link.href:gsub("{searchTerms}", "%%s"))
                 end
-                if not self.sync then
-                    -- OpenSearch
-                    if link.type:find(self.search_type) then
-                        if link.href then
-                            table.insert(item_table, { -- the first item in each subcatalog
-                                text       = "\u{f002} " .. _("Search"), -- append SEARCH icon
-                                url        = build_href(self:getSearchTemplate(build_href(link.href))),
-                                searchable = true,
-                            })
-                            has_opensearch = true
-                        end
+
+                -- Process OPDS facets
+                if link.rel == "http://opds-spec.org/facet" then
+                    local group_name = link["opds:facetGroup"] or _("Filters")
+                    if not self.facet_groups[group_name] then
+                        self.facet_groups[group_name] = {}
                     end
-                    -- Calibre search (also matches the actual template for OpenSearch!)
-                    if link.type:find(self.search_template_type) and link.rel and link.rel:find("search") then
-                        if link.href and not has_opensearch then
-                            table.insert(item_table, {
-                                text       = "\u{f002} " .. _("Search"),
-                                url        = build_href(link.href:gsub("{searchTerms}", "%%s")),
-                                searchable = true,
-                            })
-                        end
-                    end
+                    table.insert(self.facet_groups[group_name], link)
                 end
+            end
+
+            -- Process navigation links (next, prev, etc.)
+            if link.type and link.type:find(self.catalog_type) and link.rel and link.href then
+                item_table.hrefs = item_table.hrefs or {}
+                item_table.hrefs[link.rel] = build_href(link.href)
             end
         end
     end
-    item_table.hrefs = hrefs
 
     for __, entry in ipairs(feed.entry or {}) do
+        -- Process catalog entries and create book items
         local item = {}
         item.acquisitions = {}
         if entry.link then
@@ -494,14 +560,9 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                              or link.rel == "http://opds-spec.org/sort/new") then
                     item.url = link_href
                 end
-                -- Some catalogs do not use the rel attribute to denote
-                -- a publication. Arxiv uses title. Specifically, it uses
-                -- a title attribute that contains pdf. (title="pdf")
                 if link.rel or link.title then
                     if link.rel == self.borrow_rel then
-                        table.insert(item.acquisitions, {
-                            type = "borrow",
-                        })
+                        table.insert(item.acquisitions, { type = "borrow" })
                     elseif link.rel and link.rel:match(self.acquisition_rel) then
                         table.insert(item.acquisitions, {
                             type  = link.type,
@@ -509,24 +570,15 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                             title = link.title,
                         })
                     elseif link.rel == self.stream_rel then
-                        -- https://vaemendis.net/opds-pse/
-                        -- «count» MUST provide the number of pages of the document
-                        -- namespace may be not "pse"
                         local count, last_read
                         for k, v in pairs(link) do
-                            if k:sub(-6) == ":count" then
-                                count = tonumber(v)
-                            elseif k:sub(-9) == ":lastRead" then
-                                last_read = tonumber(v)
-                            end
+                            if k:sub(-6) == ":count" then count = tonumber(v)
+                            elseif k:sub(-9) == ":lastRead" then last_read = tonumber(v) end
                         end
                         if count then
                             table.insert(item.acquisitions, {
-                                type  = link.type,
-                                href  = link_href,
-                                title = link.title,
-                                count = count,
-                                last_read = last_read and last_read > 0 and last_read or nil
+                                type  = link.type, href  = link_href, title = link.title,
+                                count = count, last_read = last_read and last_read > 0 and last_read or nil
                             })
                         end
                     elseif self.thumbnail_rel[link.rel] then
@@ -535,28 +587,14 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                         item.image = link_href
                     elseif link.rel ~= "alternate" and DocumentRegistry:hasProvider(nil, link.type) then
                         table.insert(item.acquisitions, {
-                            type  = link.type,
-                            href  = link_href,
-                            title = link.title,
+                            type  = link.type, href  = link_href, title = link.title,
                         })
                     end
-                    -- This statement grabs the catalog items that are
-                    -- indicated by title="pdf" or whose type is
-                    -- "application/pdf"
-                    if link.title == "pdf" or link.type == "application/pdf"
-                        and link.rel ~= "subsection" then
-                        -- Check for the presence of the pdf suffix and add it
-                        -- if it's missing.
+                    if (link.title == "pdf" or link.type == "application/pdf") and link.rel ~= "subsection" then
                         local href = link.href
-                        -- Calibre web OPDS download links end with "/<filetype>/"
                         if not util.stringEndsWith(href, "/pdf/") then
-                            if util.getFileNameSuffix(href) ~= "pdf" then
-                                href = href .. ".pdf"
-                            end
-                            table.insert(item.acquisitions, {
-                                type = link.title,
-                                href = build_href(href),
-                            })
+                            if util.getFileNameSuffix(href) ~= "pdf" then href = href .. ".pdf" end
+                            table.insert(item.acquisitions, { type = link.title, href = build_href(href) })
                         end
                     end
                 end
@@ -578,26 +616,26 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                 if #author > 0 then
                     author = table.concat(author, ", ")
                 else
-                    -- we may get an empty table on https://gallica.bnf.fr/opds
                     author = nil
                 end
             end
-            if author then
-                item.text = title .. " - " .. author
-            end
+            if author then item.text = title .. " - " .. author end
         end
         item.title = title
         item.author = author
         item.content = entry.content or entry.summary
         table.insert(item_table, item)
     end
+
+    if next(self.facet_groups) == nil then self.facet_groups = nil end -- Clear if empty
+
     return item_table
 end
 
--- Requests and shows updated list of catalog entries
+-- Requests and shows updated list of catalog entries with facet support
 function OPDSBrowser:updateCatalog(item_url, paths_updated)
     local menu_table = self:genItemTableFromURL(item_url)
-    if #menu_table > 0 then
+    if #menu_table > 0 or self.facet_groups then
         if not paths_updated then
             table.insert(self.paths, {
                 url   = item_url,
@@ -605,12 +643,21 @@ function OPDSBrowser:updateCatalog(item_url, paths_updated)
             })
         end
         self:switchItemTable(self.catalog_title, menu_table)
-        self:setTitleBarLeftIcon("plus")
-        self.onLeftButtonTap = function()
-            self:addSubCatalog(item_url)
+
+        -- Set appropriate title bar icon based on content
+        if self.facet_groups or self.search_url then
+            self:setTitleBarLeftIcon("appbar.settings")
+            self.onLeftButtonTap = function()
+                self:showFacetMenu()
+            end
+        else
+            self:setTitleBarLeftIcon("plus")
+            self.onLeftButtonTap = function()
+                self:addSubCatalog(item_url)
+            end
         end
+
         if self.page_num <= 1 then
-            -- Request more content, but don't change the page
             self:onNextPage(true)
         end
     end
@@ -620,13 +667,15 @@ end
 function OPDSBrowser:appendCatalog(item_url)
     local menu_table = self:genItemTableFromURL(item_url)
     if #menu_table > 0 then
-        for _, item in ipairs(menu_table) do
-            -- Don't append multiple search entries
-            if not item.searchable then
+        for __, item in ipairs(menu_table) do
+            -- Don't append UI elements from subsequent pages
+            if not item.searchable and not item.is_facet and not item.is_header and not item.separator then
                 table.insert(self.item_table, item)
             end
         end
-        self.item_table.hrefs = menu_table.hrefs
+        if menu_table.hrefs then
+            self.item_table.hrefs = menu_table.hrefs
+        end
         self:switchItemTable(self.catalog_title, self.item_table, -1)
         return true
     end
