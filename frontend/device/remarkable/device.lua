@@ -312,7 +312,7 @@ function Remarkable:supportsScreensaver() return true end
 
 function Remarkable:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback, interactive)
-        if isRmPaperPro then
+        if isRmPaperPro or isRm2 then
             os.execute("/usr/bin/csl wifi -p on")
         else
             os.execute("./enable-wifi.sh")
@@ -321,7 +321,7 @@ function Remarkable:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
-        if isRmPaperPro then
+        if isRmPaperPro or isRm2 then
             os.execute("/usr/bin/csl wifi -p off")
         else
             os.execute("./disable-wifi.sh")
@@ -367,7 +367,7 @@ function Remarkable:saveSettings()
 end
 
 function Remarkable:resume()
-    if isRmPaperPro then
+    if isRmPaperPro or isRm2 then
         os.execute("csl wifi -p on")
     else
         os.execute("./enable-wifi.sh")
@@ -375,7 +375,7 @@ function Remarkable:resume()
 end
 
 function Remarkable:suspend()
-    if isRmPaperPro then
+    if isRmPaperPro or isRm2 then
         os.execute("csl wifi -p off")
     else
         os.execute("./disable-wifi.sh")
