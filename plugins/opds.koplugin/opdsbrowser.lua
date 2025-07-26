@@ -147,7 +147,7 @@ function OPDSBrowser:showFacetMenu()
 
     -- Add sub-catalog to bookmarks option first
     table.insert(buttons, {{
-        text = _("Add catalog"),
+        text = "\u{f067} " .. _("Add catalog"),
         callback = function()
             UIManager:close(dialog)
             self:addSubCatalog(catalog_url)
@@ -173,7 +173,7 @@ function OPDSBrowser:showFacetMenu()
     if self.facet_groups then
         for group_name, facets in ffiUtil.orderedPairs(self.facet_groups) do
             table.insert(buttons, {
-                { text = group_name, enabled = false, align = "left" }
+                { text = "\u{f0b0} " .. group_name, enabled = false, align = "left" }
             })
 
             for __, link in ipairs(facets) do
@@ -688,7 +688,7 @@ function OPDSBrowser:updateCatalog(item_url, paths_updated)
 
         -- Set appropriate title bar icon based on content
         if self.facet_groups or self.search_url then
-            self:setTitleBarLeftIcon("appbar.settings")
+            self:setTitleBarLeftIcon("appbar.menu")
             self.onLeftButtonTap = function()
                 self:showFacetMenu()
             end
