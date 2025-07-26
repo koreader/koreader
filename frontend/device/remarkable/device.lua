@@ -213,28 +213,7 @@ function Remarkable:init()
         wacom_protocol = true,
     }
 
-    -- Assume input stuff is saner on mainline kernels...
-    -- (c.f., https://github.com/koreader/koreader/issues/10012)
-    local is_mainline = false
-    --- @fixme: Find a better way to discriminate mainline from stock...
-    local std_out = io.popen("uname -r", "r")
-    if std_out then
-        local release = std_out:read("*line")
-        std_out:close()
-        release = release:match("^(%d+%.%d+)%.%d+.*$")
-        release = tonumber(release)
-        if release and release >= 6.2 and not isRmPaperPro then -- seems like it triggers on rMPP 3.19+ so just disable it on rMPP
-            is_mainline = true
-        end
-    end
-
-    if is_mainline then
-        self.input_wacom = "/dev/input/by-path/platform-30a20000.i2c-event-mouse"
-        self.input_buttons = "/dev/input/by-path/platform-30370000.snvs:snvs-powerkey-event"
-        self.input_ts = "/dev/input/touchscreen0"
-    end
-
-    self.input:open(self.input_wacom) -- Wacom (it's not Wacom on Paper Pro but it should work)
+    self.input:open(self.input_wacom) -- Wacom (it's not Wacom on Paper Pro but it does work)
     self.input:open(self.input_ts) -- Touchscreen
     self.input:open(self.input_buttons) -- Buttons
 
@@ -254,32 +233,8 @@ function Remarkable:init()
     local scalex = screen_width / self.mt_width
     local scaley = screen_height / self.mt_height
 
-    if is_mainline then
-        -- NOTE: The panel sends *both* ABS_MT_ & ABS_ coordinates, while the pen only sends ABS_ coordinates.
-        --       Since we have to apply *different* mangling to each of them,
-        --       we use a custom input handler that'll ignore ABS_ coordinates from the panel...
-        self.input.handleTouchEv = self.input.handleMixedTouchEv
-        local mt_height = self.mt_height
-        local mainlineInputMangling = function(this, ev)
-            if ev.type == C.EV_ABS then
-                -- Mirror Y for the touch panel
-                if ev.code == C.ABS_MT_POSITION_Y then
-                    ev.value = mt_height - ev.value
-                -- Handle the Wacom pen
-                elseif ev.code == C.ABS_X then
-                    ev.code = C.ABS_Y
-                    ev.value = (wacom_height - ev.value) * wacom_scale_y
-                elseif ev.code == C.ABS_Y then
-                    ev.code = C.ABS_X
-                    ev.value = ev.value * wacom_scale_x
-                end
-            end
-        end
-        self.input:registerEventAdjustHook(mainlineInputMangling)
-    else
-        self.input:registerEventAdjustHook(adjustAbsEvt)
-        self.input:registerEventAdjustHook(self.adjustTouchEvent, {mt_scale_x=scalex, mt_scale_y=scaley})
-    end
+    self.input:registerEventAdjustHook(adjustAbsEvt)
+    self.input:registerEventAdjustHook(self.adjustTouchEvent, {mt_scale_x=scalex, mt_scale_y=scaley})
 
     -- USB plug/unplug, battery charge/not charging are generated as fake events
     self.input:open("fake_events")
@@ -312,20 +267,12 @@ function Remarkable:supportsScreensaver() return true end
 
 function Remarkable:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback, interactive)
-        if isRmPaperPro then
-            os.execute("/usr/bin/csl wifi -p on")
-        else
-            os.execute("./enable-wifi.sh")
-        end
+        os.execute("/usr/bin/csl wifi -p on")
         return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
-        if isRmPaperPro then
-            os.execute("/usr/bin/csl wifi -p off")
-        else
-            os.execute("./disable-wifi.sh")
-        end
+        os.execute("/usr/bin/csl wifi -p off")
         if complete_callback then
             complete_callback()
         end
@@ -367,19 +314,11 @@ function Remarkable:saveSettings()
 end
 
 function Remarkable:resume()
-    if isRmPaperPro then
-        os.execute("csl wifi -p on")
-    else
-        os.execute("./enable-wifi.sh")
-    end
+    os.execute("csl wifi -p on")
 end
 
 function Remarkable:suspend()
-    if isRmPaperPro then
-        os.execute("csl wifi -p off")
-    else
-        os.execute("./disable-wifi.sh")
-    end
+    os.execute("csl wifi -p off")
     os.execute("systemctl suspend")
 end
 
@@ -431,13 +370,13 @@ function Remarkable:setEventHandlers(UIManager)
 end
 
 if isRm2 then
-    if not os.getenv("RM2FB_SHIM") then
-        error("reMarkable2 requires RM2FB to work (https://github.com/ddvk/remarkable2-framebuffer)")
+    if not os.getenv("RM2FB_SHIM") or not os.getenv("LD_PRELOAD") then
+        error("reMarkable 2 requires RM2FB (legacy firmware) or qtfb with rmpp-qtfb-shim (current firmware) to work (https://github.com/ddvk/remarkable2-framebuffer)")
     end
     return Remarkable2
 elseif isRmPaperPro then
     if not os.getenv("LD_PRELOAD") then
-        error("reMarkable Paper Pro requires qtfb and qtfb-rmpp-shim to work")
+        error("reMarkable Paper Pro requires qtfb and rmpp-qtfb-shim to work")
     end
     if os.getenv("QTFB_SHIM_INPUT") ~= "false" or os.getenv("QTFB_SHIM_MODEL") ~= "false" then
         error("You must set both QTFB_SHIM_INPUT and QTFB_SHIM_MODEL to false")
