@@ -43,6 +43,7 @@ local OPDSBrowser = Menu:extend{
     acquisition_rel      = "^http://opds%-spec%.org/acquisition",
     borrow_rel           = "http://opds-spec.org/acquisition/borrow",
     stream_rel           = "http://vaemendis.net/opds-pse/stream",
+    facet_rel            = "http://opds-spec.org/facet",
     image_rel            = {
         ["http://opds-spec.org/image"] = true,
         ["http://opds-spec.org/cover"] = true, -- ManyBooks.net, not in spec
@@ -61,73 +62,6 @@ local OPDSBrowser = Menu:extend{
 
     title_shrink_font_to_fit = true,
 }
-
--- Shows facet menu for OPDS catalogs with facets/search support
-function OPDSBrowser:showFacetMenu()
-    local buttons = {}
-    local dialog
-
-    -- Add sub-catalog to bookmarks option first
-    table.insert(buttons, {{
-        text = _("Add sub-catalog to bookmarks"),
-        callback = function()
-            UIManager:close(dialog)
-            self:addSubCatalog(self.paths[#self.paths].url)
-        end,
-        align = "left",
-    }})
-    table.insert(buttons, {}) -- separator
-
-    -- Add search option if available
-    if self.search_url then
-        table.insert(buttons, {{
-            text = "\u{f002} " .. _("Search"),
-            callback = function()
-                UIManager:close(dialog)
-                self:searchCatalog(self.search_url)
-            end,
-            align = "left",
-        }})
-        table.insert(buttons, {}) -- separator
-    end
-
-    -- Add facet groups
-    if self.facet_groups then
-        for group_name, facets in ffiUtil.orderedPairs(self.facet_groups) do
-            table.insert(buttons, {
-                { text = group_name, enabled = false, align = "left" }
-            })
-
-            for __, link in ipairs(facets) do
-                local facet_text = link.title
-                if link["thr:count"] then
-                    facet_text = T(_("%1 (%2)"), facet_text, link["thr:count"])
-                end
-                if link["opds:activeFacet"] == "true" then
-                    facet_text = "✓ " .. facet_text
-                end
-                table.insert(buttons, {{
-                    text = facet_text,
-                    callback = function()
-                        UIManager:close(dialog)
-                        self:updateCatalog(url.absolute(self.paths[#self.paths].url, link.href))
-                    end,
-                    align = "left",
-                }})
-            end
-            table.insert(buttons, {}) -- separator between groups
-        end
-    end
-
-    dialog = ButtonDialog:new{
-        buttons = buttons,
-        shrink_unneeded_width = true,
-        anchor = function()
-            return self.title_bar.left_button.image.dimen
-        end,
-    }
-    UIManager:show(dialog)
-end
 
 function OPDSBrowser:init()
     self.item_table = self:genItemTableFromRoot()
@@ -197,6 +131,74 @@ function OPDSBrowser:showOPDSMenu()
                     align = "left",
             }},
         },
+        shrink_unneeded_width = true,
+        anchor = function()
+            return self.title_bar.left_button.image.dimen
+        end,
+    }
+    UIManager:show(dialog)
+end
+
+-- Shows facet menu for OPDS catalogs with facets/search support
+function OPDSBrowser:showFacetMenu()
+    local buttons = {}
+    local dialog
+    local catalog_url = self.paths[#self.paths].url
+
+    -- Add sub-catalog to bookmarks option first
+    table.insert(buttons, {{
+        text = _("Add catalog"),
+        callback = function()
+            UIManager:close(dialog)
+            self:addSubCatalog(catalog_url)
+        end,
+        align = "left",
+    }})
+    table.insert(buttons, {}) -- separator
+
+    -- Add search option if available
+    if self.search_url then
+        table.insert(buttons, {{
+            text = "\u{f002} " .. _("Search"),
+            callback = function()
+                UIManager:close(dialog)
+                self:searchCatalog(self.search_url)
+            end,
+            align = "left",
+        }})
+        table.insert(buttons, {}) -- separator
+    end
+
+    -- Add facet groups
+    if self.facet_groups then
+        for group_name, facets in ffiUtil.orderedPairs(self.facet_groups) do
+            table.insert(buttons, {
+                { text = group_name, enabled = false, align = "left" }
+            })
+
+            for __, link in ipairs(facets) do
+                local facet_text = link.title
+                if link["thr:count"] then
+                    facet_text = T(_("%1 (%2)"), facet_text, link["thr:count"])
+                end
+                if link["opds:activeFacet"] == "true" then
+                    facet_text = "✓ " .. facet_text
+                end
+                table.insert(buttons, {{
+                    text = facet_text,
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:updateCatalog(url.absolute(catalog_url, link.href))
+                    end,
+                    align = "left",
+                }})
+            end
+            table.insert(buttons, {}) -- separator between groups
+        end
+    end
+
+    dialog = ButtonDialog:new{
+        buttons = buttons,
         shrink_unneeded_width = true,
         anchor = function()
             return self.title_bar.left_button.image.dimen
@@ -542,7 +544,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                         end
                     end
                     -- Process OPDS facets
-                    if link.rel == "http://opds-spec.org/facet" then
+                    if link.rel == self.facet_rel then
                         local group_name = link["opds:facetGroup"] or _("Filters")
                         if not self.facet_groups[group_name] then
                             self.facet_groups[group_name] = {}
@@ -675,7 +677,7 @@ end
 -- Requests and shows updated list of catalog entries
 function OPDSBrowser:updateCatalog(item_url, paths_updated)
     local menu_table = self:genItemTableFromURL(item_url)
-    if #menu_table > 0 or self.facet_groups then
+    if #menu_table > 0 or self.facet_groups or self.search_url then
         if not paths_updated then
             table.insert(self.paths, {
                 url   = item_url,
@@ -709,14 +711,9 @@ function OPDSBrowser:appendCatalog(item_url)
     local menu_table = self:genItemTableFromURL(item_url)
     if #menu_table > 0 then
         for __, item in ipairs(menu_table) do
-            -- Don't append UI elements from subsequent pages
-            if not item.searchable and not item.is_facet and not item.is_header and not item.separator then
-                table.insert(self.item_table, item)
-            end
+            table.insert(self.item_table, item)
         end
-        if menu_table.hrefs then
-            self.item_table.hrefs = menu_table.hrefs
-        end
+        self.item_table.hrefs = menu_table.hrefs
         self:switchItemTable(self.catalog_title, self.item_table, -1)
         return true
     end
