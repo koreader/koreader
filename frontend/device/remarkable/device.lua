@@ -3,8 +3,8 @@ local PluginShare = require("pluginshare")
 local logger = require("logger")
 local time = require("ui/time")
 local ffi = require("ffi")
-local C = ffi.C
 local util = require("util")
+local C = ffi.C
 require("ffi/linux_input_h")
 
 local function yes() return true end
@@ -29,6 +29,7 @@ local wacom_height = 20967 -- unscaled_size_check: ignore
 local rm_model = getModel()
 local isRm2 = rm_model == "reMarkable 2.0"
 local isRmPaperPro = rm_model == "reMarkable Ferrari"
+local hasCsl = util.which("csl")
 
 if isRmPaperPro then
     screen_width = 1620 -- unscaled_size_check: ignore
@@ -313,7 +314,7 @@ function Remarkable:supportsScreensaver() return true end
 
 function Remarkable:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback, interactive)
-        if util.pathExists("/usr/bin/csl") then
+        if hasCsl then
             os.execute("/usr/bin/csl wifi -p on")
         else
             os.execute("./enable-wifi.sh")
@@ -322,7 +323,7 @@ function Remarkable:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
-        if util.pathExists("/usr/bin/csl") then
+        if hasCsl then
             os.execute("/usr/bin/csl wifi -p off")
         else
             os.execute("./disable-wifi.sh")
@@ -371,7 +372,7 @@ function Remarkable:saveSettings()
 end
 
 function Remarkable:resume()
-    if util.pathExists("/usr/bin/csl") then
+    if hasCsl then
         os.execute("csl wifi -p on")
     else
         os.execute("./enable-wifi.sh")
@@ -379,10 +380,12 @@ function Remarkable:resume()
 end
 
 function Remarkable:suspend()
-    if util.pathExists("/usr/bin/csl") then
-        os.execute("csl wifi -p off")
-    else
-        os.execute("./disable-wifi.sh")
+    if Remarkable:hasWifiManager() then
+        if hasCsl then
+            os.execute("csl wifi -p off")
+        else
+            os.execute("./disable-wifi.sh")
+        end
     end
     os.execute("systemctl suspend")
 end
