@@ -338,10 +338,13 @@ function Remarkable:initNetworkManager(NetworkMgr)
     end
 
     NetworkMgr:setWirelessBackend("wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/wlan0"})
-
-    function NetworkMgr:isWifiOn()
-        -- When disabling wifi by using the csl command, wpa_supplicant service will be disabled
-        return os.execute("systemctl is-active --quiet wpa_supplicant") == 0
+    if hasCsl then
+        function NetworkMgr:isWifiOn()
+            -- When disabling wifi by using the csl command, wpa_supplicant service will be disabled
+            return os.execute("systemctl is-active --quiet wpa_supplicant") == 0
+        end
+    else
+        NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
     end
     NetworkMgr.isConnected = NetworkMgr.ifHasAnAddress
 end
