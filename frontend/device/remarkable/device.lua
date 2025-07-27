@@ -442,13 +442,13 @@ function Remarkable:setEventHandlers(UIManager)
 end
 
 if isRm2 then
-    if not os.getenv("RM2FB_SHIM") then
-        error("reMarkable2 requires RM2FB to work (https://github.com/ddvk/remarkable2-framebuffer)")
+    if not os.getenv("RM2FB_SHIM") or not os.getenv("LD_PRELOAD") then
+        error("reMarkable 2 requires a RM2FB server and client to work (https://github.com/ddvk/remarkable2-framebuffer or https://github.com/asivery/rmpp-qtfb-shim)")
     end
     return Remarkable2
 elseif isRmPaperPro then
     if not os.getenv("LD_PRELOAD") then
-        error("reMarkable Paper Pro requires qtfb and qtfb-rmpp-shim to work")
+        error("reMarkable Paper Pro requires a RM2FB server and client to work (https://github.com/asivery/rmpp-qtfb-shim)")
     end
     if os.getenv("QTFB_SHIM_INPUT") ~= "false" or os.getenv("QTFB_SHIM_MODEL") ~= "false" then
         error("You must set both QTFB_SHIM_INPUT and QTFB_SHIM_MODEL to false")
