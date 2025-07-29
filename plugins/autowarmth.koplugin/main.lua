@@ -352,7 +352,7 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
         self.current_times_h[1] = nil   -- Solar midnight prev. day
         self.current_times_h[2] = nil   -- Astronomical dawn
         self.current_times_h[3] = nil   -- Nautical dawn
-        self.current_times_h[6] = nil   -- Solar noon
+        -- self.current_times_h[6] = nil   -- Solar noon
         self.current_times_h[9] = nil   -- Nautical dusk
         self.current_times_h[10] = nil  -- Astronomical dusk
         self.current_times_h[11] = nil  -- Solar midnight
@@ -1148,7 +1148,7 @@ function AutoWarmth:getWarmthMenu()
             text = Device:hasNaturalLight() and _("Set warmth and night mode for:") or _("Set night mode for:"),
             enabled = false,
         },
-        getWarmthMenuEntry(_("Solar noon"), 6, false),
+        getWarmthMenuEntry(_("Solar noon"), 6),
         getWarmthMenuEntry(_("Sunset and sunrise"), 5),
         getWarmthMenuEntry(_("Darkest time of civil twilight"), 4),
         getWarmthMenuEntry(_("Darkest time of nautical twilight"), 3, false),
@@ -1247,7 +1247,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
     local face = Font:getFace("scfont")
     UIManager:show(InfoMessage:new{
         face = face,
-        width = math.floor(Screen:getWidth() * (self.easy_mode and 0.75 or 0.90)),
+        width = math.floor(Screen:getWidth() * (self.easy_mode and 0.85 or 0.90)),
         text = title .. location_string .. ":\n\n" ..
             info_line(0, _("Solar midnight:"), times[1], 1, face, request_easy) ..
             add_line(2, _("Dawn"), request_easy) ..
@@ -1258,8 +1258,8 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
             add_line(2, _("Dawn"), request_easy) ..
             info_line(0, _("Sunrise:"), times[5], 5, face) ..
             "\n" ..
-            info_line(0, _("Solar noon:"), times[6], 6, face, request_easy) ..
-            add_line(0, "", request_easy) ..
+            info_line(0, _("Solar noon:"), times[6], 6, face) ..
+            "\n" ..
             info_line(0, _("Sunset:"), times[7], 7, face) ..
             add_line(2, _("Dusk"), request_easy) ..
             info_line(request_easy and 0 or 4,
