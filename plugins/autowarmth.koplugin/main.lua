@@ -641,7 +641,7 @@ function AutoWarmth:getSubMenuItems()
                 return self.activate ~= 0
             end,
             text = Device:hasNaturalLight() and _("Warmth and night mode settings") or _("Night mode settings"),
-            sub_item_table = self:getWarmthMenu(),
+            sub_item_table_func = function() return self:getWarmthMenu() end,
         },
         self:getFlOffDuringDayMenu(),
         self:getTimesMenu(_("Currently active parameters")),
