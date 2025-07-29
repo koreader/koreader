@@ -66,7 +66,6 @@ function AutoWarmth:init()
     self.longitude = G_reader_settings:readSetting("autowarmth_longitude") or -20.30
     self.altitude = G_reader_settings:readSetting("autowarmth_altitude") or 200
     self.timezone = G_reader_settings:readSetting("autowarmth_timezone") or 0
-    self.hide_nightmode_warning = G_reader_settings:isTrue("autowarmth_hide_nightmode_warning")
     self.scheduler_times = G_reader_settings:readSetting("autowarmth_scheduler_times")
         or {0.0, 5.5, 6.0, 6.5, 7.0, 13.0, 21.5, 22.0, 22.5, 23.0, 24.0}
     self.warmth = G_reader_settings:readSetting("autowarmth_warmth")
@@ -80,6 +79,7 @@ function AutoWarmth:init()
 
     self.control_warmth = G_reader_settings:nilOrTrue("autowarmth_control_warmth")
     self.control_nightmode = G_reader_settings:nilOrTrue("autowarmth_control_nightmode")
+    self.hide_nightmode_warning = G_reader_settings:isTrue("autowarmth_hide_nightmode_warning")
     if not Device:hasNaturalLight() then
         self.control_nightmode = true
     elseif not self.control_warmth and not self.control_nightmode then
@@ -226,8 +226,8 @@ function AutoWarmth:_onToggleNightMode()
                 text = _("Hide this warning permanently"),
                 provider = function()
                     self.hide_nightmode_warning = true
-                    G_reader_settings:makeTrue("hide_nightmode_warning")
-                end
+                    G_reader_settings:makeTrue("autowarmth_hide_nightmode_warning")
+                end,
             }},
             {{
                 text = _("Disable AutoWarmth's nightmode control"),
@@ -611,16 +611,6 @@ function AutoWarmth:getSubMenuItems()
             sub_item_table = self:getActivateMenu(),
         },
         {
-            text = _("Enable night mode warning"),
-            checked_func = function()
-                return not self.hide_nightmode_warning
-            end,
-            callback = function()
-                self.hide_nightmode_warning = not self.hide_nightmode_warning
-                G_reader_settings:saveSetting("hide_nightmode_warning", self.hide_nightmode_warning)
-            end
-        },
-        {
             text = _("Expert mode"),
             checked_func = function()
                 return not self.easy_mode
@@ -663,6 +653,17 @@ function AutoWarmth:getSubMenuItems()
             sub_item_table_func = function() return self:getWarmthMenu() end,
         },
         self:getFlOffDuringDayMenu(),
+        {
+            text = _("Enable night mode warning"),
+            checked_func = function()
+                return not self.hide_nightmode_warning
+            end,
+            callback = function()
+                self.hide_nightmode_warning = not self.hide_nightmode_warning
+                G_reader_settings:saveSetting("autowarmth_hide_nightmode_warning", self.hide_nightmode_warning)
+            end,
+            separator = true,
+        },
         self:getTimesMenu(_("Currently active parameters")),
         self:getTimesMenu(_("Sun position information for"), true, activate_sun),
         self:getTimesMenu(_("Fixed schedule information"), false, activate_schedule),
@@ -740,7 +741,6 @@ For cloudy autumn days, the switch-on/off time can be shifted by an offset.]]),
             })
         end,
         keep_menu_open = true,
-        separator = true,
     }
 end
 
