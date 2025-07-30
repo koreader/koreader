@@ -229,14 +229,9 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     end
     if enabled == false then
         -- Allow help_text to be displayed even if menu item disabled
-        if self.item.help_text or self.item.help_text_func then
-            local help_text = self.item.help_text
-            if self.item.help_text_func then
-                help_text = self.item.help_text_func(self)
-            end
-            if help_text then
-                UIManager:show(InfoMessage:new{ text = help_text, })
-            end
+        local help_text = self.item.help_text_func and self.item.help_text_func(self) or self.item.help_text
+        if help_text then
+            UIManager:show(InfoMessage:new{ text = help_text, })
         end
         return true -- don't propagate
     end
