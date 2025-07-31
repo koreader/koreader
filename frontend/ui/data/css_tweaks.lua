@@ -950,7 +950,8 @@ ol.references > li > .mw-cite-backlink { display: none; }
 Show footnotes with classic classnames at the bottom of pages.
 This tweak can be duplicated as a user style tweak when books contain footnotes wrapped with other class names.]]),
             css = [[
-.footnote, .footnotes, .fn,
+.footnote, .footnote1,
+.footnotes, .fn,
 .note, .note1, .note2, .note3,
 .ntb, .ntb-txt, .ntb-txt-j,
 .fnote, .fnote1,
