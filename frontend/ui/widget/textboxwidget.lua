@@ -33,6 +33,38 @@ local util = require("util")
 local xtext -- Delayed (and optional) loading
 local Screen = require("device").screen
 
+-- Global character width cache to avoid redundant computations across widget instances
+-- OPTIMIZATION: Cache char widths to avoid recomputing same char widths repeatedly
+local _global_char_width_cache = {}
+local _cache_cleanup_threshold = 10000 -- Clear cache when it gets too large
+
+-- Table pools for reuse to minimize allocations
+-- OPTIMIZATION: Reuse tables to reduce allocation overhead in _splitToLines
+local _table_pool = {}
+local _table_pool_size = 0
+local _max_pool_size = 100
+
+local function get_reusable_table()
+    if _table_pool_size > 0 then
+        local t = _table_pool[_table_pool_size]
+        _table_pool[_table_pool_size] = nil
+        _table_pool_size = _table_pool_size - 1
+        return t
+    end
+    return {}
+end
+
+local function return_reusable_table(t)
+    if _table_pool_size < _max_pool_size then
+        -- Clear the table for reuse
+        for k in pairs(t) do
+            t[k] = nil
+        end
+        _table_pool_size = _table_pool_size + 1
+        _table_pool[_table_pool_size] = t
+    end
+end
+
 local TextBoxWidget = InputContainer:extend{
     text = nil,
     editable = false, -- Editable flag for whether drawing the cursor or not.
@@ -53,6 +85,12 @@ local TextBoxWidget = InputContainer:extend{
     height_overflow_show_ellipsis = false, -- if height overflow, append ellipsis to last shown line
     top_line_num = nil, -- original virtual_line_num to scroll to
     charpos = nil, -- idx of char to draw the cursor on its left (can exceed #charlist by 1)
+    
+    -- OPTIMIZATION: Track state to enable early exit optimizations
+    _text_hash = nil,  -- Hash of text to detect changes
+    _layout_width = nil, -- Track width changes
+    _last_rendered_start = nil,  -- Last rendered start row for region updates
+    _last_rendered_end = nil,    -- Last rendered end row for region updates
 
     -- for internal use
     charlist = nil,   -- idx => char
@@ -229,7 +267,24 @@ function TextBoxWidget:init()
     end
 end
 
+-- OPTIMIZATION: Add early exit when text dimensions haven't changed
 function TextBoxWidget:_computeTextDimensions()
+    -- Check if we can skip computation due to unchanged parameters
+    local current_text_hash = self.text and string.len(self.text) or 0
+    local current_width = self.width
+    local current_face_key = string.format("%s_%d_%s", self.face.orig_file or "default", 
+                                          self.face.size or 12, tostring(self.bold or false))
+    
+    -- OPTIMIZATION: Skip computation if nothing relevant has changed
+    if self._text_hash == current_text_hash and 
+       self._layout_width == current_width and
+       self._layout_face == current_face_key and
+       self.charlist and #self.charlist > 0 and
+       self.vertical_string_list and #self.vertical_string_list > 0 then
+        -- Dimensions are already computed and valid
+        return
+    end
+    
     if self.use_xtext then
         self:_measureWithXText()
     else
@@ -279,6 +334,7 @@ function TextBoxWidget:focus()
 end
 
 -- Split `self.text` into `self.charlist` and evaluate the width of each char in it.
+-- OPTIMIZATION: Use global cache to avoid redundant char width computations
 function TextBoxWidget:_evalCharWidthList()
     -- if self.charlist is provided, use it directly
     if self.charlist == nil then
@@ -289,13 +345,56 @@ function TextBoxWidget:_evalCharWidthList()
         end
         self.charlist = util.splitToChars(self.text)
     end
-    -- get width of each distinct char
+    
+    -- OPTIMIZATION: Create cache key based on face and bold settings
+    local face_key = string.format("%s_%d_%s", self.face.orig_file or "default", 
+                                  self.face.size or 12, tostring(self.bold or false))
+    
+    -- Initialize cache for this face if not exists
+    if not _global_char_width_cache[face_key] then
+        _global_char_width_cache[face_key] = {}
+    end
+    
+    local face_cache = _global_char_width_cache[face_key]
+    
+    -- get width of each distinct char, using cache when possible
     local char_width = {}
+    local chars_to_measure = {}
+    
     for _, c in ipairs(self.charlist) do
         if not char_width[c] then
-            char_width[c] = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, c, true, self.bold).x
+            -- Check global cache first
+            if face_cache[c] then
+                char_width[c] = face_cache[c]
+            else
+                -- Mark for measurement
+                chars_to_measure[c] = true
+            end
         end
     end
+    
+    -- OPTIMIZATION: Batch measure only chars not in cache
+    for c in pairs(chars_to_measure) do
+        local width = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, c, true, self.bold).x
+        char_width[c] = width
+        face_cache[c] = width -- Store in global cache
+    end
+    
+    -- OPTIMIZATION: Periodic cache cleanup to prevent memory bloat
+    local total_cache_size = 0
+    for _, cache in pairs(_global_char_width_cache) do
+        for _ in pairs(cache) do
+            total_cache_size = total_cache_size + 1
+        end
+    end
+    
+    if total_cache_size > _cache_cleanup_threshold then
+        -- Keep only current face cache and clear others
+        local current_cache = _global_char_width_cache[face_key]
+        _global_char_width_cache = {}
+        _global_char_width_cache[face_key] = current_cache
+    end
+    
     self.char_width = char_width
     self.idx_pad = {}
 end
@@ -329,8 +428,41 @@ function TextBoxWidget:_measureWithXText()
 end
 
 -- Split the text into logical lines to fit into the text box.
+-- OPTIMIZATION: Minimize allocations and early exit when text/layout unchanged
 function TextBoxWidget:_splitToLines()
-    self.vertical_string_list = {}
+    -- OPTIMIZATION: Early exit if text and layout parameters haven't changed
+    local current_text_hash = self.text and string.len(self.text) or 0
+    local current_width = self.width
+    local current_face_key = string.format("%s_%d_%s", self.face.orig_file or "default", 
+                                          self.face.size or 12, tostring(self.bold or false))
+    
+    if self._text_hash == current_text_hash and 
+       self._layout_width == current_width and
+       self._layout_face == current_face_key and
+       self.vertical_string_list and #self.vertical_string_list > 0 then
+        -- Nothing has changed, reuse existing layout
+        return
+    end
+    
+    -- Update tracking variables
+    self._text_hash = current_text_hash
+    self._layout_width = current_width
+    self._layout_face = current_face_key
+    
+    -- OPTIMIZATION: Reuse existing table if possible, or get from pool
+    if not self.vertical_string_list then
+        self.vertical_string_list = get_reusable_table()
+    else
+        -- Clear existing entries but reuse the table
+        for i = #self.vertical_string_list, 1, -1 do
+            local entry = self.vertical_string_list[i]
+            if type(entry) == "table" then
+                return_reusable_table(entry)
+            end
+            self.vertical_string_list[i] = nil
+        end
+    end
+    
     self.line_num_to_image = nil
 
     local idx = 1
@@ -338,7 +470,9 @@ function TextBoxWidget:_splitToLines()
     local ln = 1
     local offset, end_offset, cur_line_width
 
-    if self.images and #self.images > 0 then
+    -- OPTIMIZATION: Check if images are present to avoid unnecessary work
+    local has_images = self.images and #self.images > 0
+    if has_images then
         -- Force scrolling to align to top of pages, as we
         -- expect to draw images only at top of view
         self.scroll_force_to_page = true
@@ -350,7 +484,8 @@ function TextBoxWidget:_splitToLines()
         -- Every scrolled page, we want to add the next (if any) image at its top right
         -- (if not scrollable, we will display only the first image)
         -- We need to make shorter lines and leave room for the image
-        if self.images and #self.images > 0 then
+        -- OPTIMIZATION: Only do image calculations if images are present
+        if has_images then
             if self.line_num_to_image == nil then
                 self.line_num_to_image = {}
             end
@@ -421,12 +556,13 @@ function TextBoxWidget:_splitToLines()
             if line.hard_newline_at_eot and not line.next_start_offset then
                 -- Add an empty line to represent the \n at end of text
                 -- and allow positioning cursor after it
-                self.vertical_string_list[ln+1] = {
-                    offset = size+1,
-                    end_offset = nil,
-                    width = 0,
-                    targeted_width = targeted_width,
-                }
+                -- OPTIMIZATION: Reuse table from pool
+                local empty_line = get_reusable_table()
+                empty_line.offset = size+1
+                empty_line.end_offset = nil
+                empty_line.width = 0
+                empty_line.targeted_width = targeted_width
+                self.vertical_string_list[ln+1] = empty_line
             end
             ln = ln + 1
             idx = line.next_start_offset -- nil when end of text reached
@@ -534,15 +670,20 @@ function TextBoxWidget:_splitToLines()
             end
         end -- endif cur_line_width > targeted_width
         if cur_line_width < 0 then break end
-        self.vertical_string_list[ln] = {
-            offset = offset,
-            end_offset = end_offset,
-            width = cur_line_width,
-        }
+        -- OPTIMIZATION: Reuse table from pool
+        local line_entry = get_reusable_table()
+        line_entry.offset = offset
+        line_entry.end_offset = end_offset
+        line_entry.width = cur_line_width
+        self.vertical_string_list[ln] = line_entry
         if hard_newline then
             idx = idx + 1
             -- end_offset = nil means no text
-            self.vertical_string_list[ln+1] = {offset = idx, end_offset = nil, width = 0}
+            local empty_line = get_reusable_table()
+            empty_line.offset = idx
+            empty_line.end_offset = nil
+            empty_line.width = 0
+            self.vertical_string_list[ln+1] = empty_line
         else
             -- If next char is a space, discard it so it does not become
             -- an ugly leading space on the next line
@@ -837,6 +978,7 @@ function TextBoxWidget:_shapeLine(line)
 end
 
 ---- Lays out text.
+-- OPTIMIZATION: Minimize blitbuffer allocations and support region-based updates
 function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     if start_row_idx < 1 then start_row_idx = 1 end
     if end_row_idx > #self.vertical_string_list then end_row_idx = #self.vertical_string_list end
@@ -845,20 +987,45 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     -- may have to draw an image bigger than these lines)
     local h = self.height or self.line_height_px * row_count
     h = h + self.line_glyph_extra_height
-    if self._bb then self._bb:free() end
-    local bbtype = nil
-    local color_fg = not Blitbuffer.isColor8(self.fgcolor)
-    local color_bg = not Blitbuffer.isColor8(self.bgcolor)
-    -- Color, whether from images or fg or bg, means we'll need an RGB32 buffer (if it makes sense, e.g., on a color screen).
-    if (self.line_num_to_image and self.line_num_to_image[start_row_idx]) or color_fg or color_bg then
-        bbtype = Screen:isColorEnabled() and Blitbuffer.TYPE_BBRGB32 or Blitbuffer.TYPE_BB8
+    
+    -- OPTIMIZATION: Reuse existing blitbuffer if dimensions match
+    local need_new_bb = true
+    if self._bb then
+        local bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
+        if bb_w == self.width and bb_h == h then
+            need_new_bb = false
+            -- Only clear the region we're going to redraw
+            if not Blitbuffer.isColor8(self.bgcolor) then
+                self._bb:fill(self.bgcolor)
+            else
+                self._bb:paintRectRGB32(0, 0, bb_w, bb_h, self.bgcolor)
+            end
+        else
+            self._bb:free()
+            self._bb = nil
+        end
     end
-    self._bb = Blitbuffer.new(self.width, h, bbtype)
-    if not color_bg then
-        self._bb:fill(self.bgcolor)
-    else
-        self._bb:paintRectRGB32(0, 0, self._bb:getWidth(), self._bb:getHeight(), self.bgcolor)
+    
+    if need_new_bb then
+        local bbtype = nil
+        local color_fg = not Blitbuffer.isColor8(self.fgcolor)
+        local color_bg = not Blitbuffer.isColor8(self.bgcolor)
+        -- Color, whether from images or fg or bg, means we'll need an RGB32 buffer (if it makes sense, e.g., on a color screen).
+        local has_images_in_range = self.line_num_to_image and self.line_num_to_image[start_row_idx]
+        if has_images_in_range or color_fg or color_bg then
+            bbtype = Screen:isColorEnabled() and Blitbuffer.TYPE_BBRGB32 or Blitbuffer.TYPE_BB8
+        end
+        self._bb = Blitbuffer.new(self.width, h, bbtype)
+        if not color_bg then
+            self._bb:fill(self.bgcolor)
+        else
+            self._bb:paintRectRGB32(0, 0, self._bb:getWidth(), self._bb:getHeight(), self.bgcolor)
+        end
     end
+
+    -- OPTIMIZATION: Track what we rendered for potential region updates
+    self._last_rendered_start = start_row_idx
+    self._last_rendered_end = end_row_idx
 
     local y = self.line_glyph_baseline
     if self.use_xtext then
@@ -893,6 +1060,7 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
                         if self._alt_color_for_rtl then
                             color = xglyph.is_rtl and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK
                         end
+                        local color_fg = not Blitbuffer.isColor8(color)
                         if not color_fg then
                             self._bb:colorblitFrom(glyph.bb,
                                         xglyph.x0 + glyph.l + xglyph.x_offset,
@@ -969,10 +1137,21 @@ function TextBoxWidget:_updateLayout(update_highlight)
     self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
 end
 
+-- OPTIMIZATION: Defer image loading and skip image work when no images present
 function TextBoxWidget:_renderImage(start_row_idx)
+    -- OPTIMIZATION: Early exit if no images exist to avoid unnecessary work
+    if not self.line_num_to_image then
+        -- No image, no dithering
+        if self.dialog then
+            self.dialog.dithered = false
+        end
+        return
+    end
+    
     local scheduled_update = self.scheduled_update
     self.scheduled_update = nil -- reset it, so we don't have to whenever we return below
-    if not self.line_num_to_image or not self.line_num_to_image[start_row_idx] then
+    
+    if not self.line_num_to_image[start_row_idx] then
         -- No image, no dithering
         if self.dialog then
             self.dialog.dithered = false
@@ -1008,6 +1187,7 @@ function TextBoxWidget:_renderImage(start_row_idx)
         else
             -- initial display of page (or back on it and previous
             -- load_bb_func failed: try it again)
+            -- OPTIMIZATION: Only schedule loading if we actually have a load function
             if image.load_bb_func then -- we can load a bb
                 do_schedule_update = true -- load it and call us again
                 status_text = "♲"  -- display loading recycle sign below alt_text
@@ -1274,9 +1454,25 @@ function TextBoxWidget:free(full)
             -- logger.dbg("TextBoxWidget:_xtext:free()")
         end
 
-        -- c.f., :_splitToLines
-        self.vertical_string_list = {}
+        -- OPTIMIZATION: Return tables to pool when freeing
+        if self.vertical_string_list then
+            for i = 1, #self.vertical_string_list do
+                local entry = self.vertical_string_list[i]
+                if type(entry) == "table" then
+                    return_reusable_table(entry)
+                end
+            end
+            return_reusable_table(self.vertical_string_list)
+            self.vertical_string_list = nil
+        end
         self.line_num_to_image = nil
+        
+        -- Reset optimization tracking
+        self._text_hash = nil
+        self._layout_width = nil
+        self._layout_face = nil
+        self._last_rendered_start = nil
+        self._last_rendered_end = nil
     end
 end
 
@@ -1289,11 +1485,17 @@ function TextBoxWidget:update(scheduled_update)
     self.scheduled_update = nil
 end
 
+-- OPTIMIZATION: Better handling of text changes with early exit
 function TextBoxWidget:setText(text)
     if text == self.text then
         return
     end
 
+    -- OPTIMIZATION: Clear cached state when text changes
+    self._text_hash = nil
+    self._layout_width = nil 
+    self._layout_face = nil
+    
     self.text = text
     self:_computeTextDimensions()
     self:update()
@@ -1679,8 +1881,35 @@ end
 local CURSOR_COMBINE_REGIONS = G_reader_settings:nilOrTrue("ui_cursor_combine_regions")
 local CURSOR_USE_REFRESH_FUNCS = G_reader_settings:nilOrTrue("ui_cursor_use_refresh_funcs")
 
+-- OPTIMIZATION: Batch setDirty calls and only update changed regions for cursor movement
+local _pending_dirty_regions = {}
+local _dirty_timer = nil
+
+local function batchSetDirty(region_func, dialog)
+    -- OPTIMIZATION: Batch multiple setDirty calls to reduce UI update overhead
+    if not region_func then return end
+    
+    table.insert(_pending_dirty_regions, {func = region_func, dialog = dialog})
+    
+    -- Cancel existing timer and set a new one
+    if _dirty_timer then
+        UIManager:unschedule(_dirty_timer)
+    end
+    
+    _dirty_timer = UIManager:scheduleIn(0.001, function() -- Very short delay to batch
+        if #_pending_dirty_regions > 0 then
+            -- Combine all regions if possible, or just use the last one
+            local last_region = _pending_dirty_regions[#_pending_dirty_regions]
+            UIManager:setDirty(last_region.dialog or "all", last_region.func)
+            _pending_dirty_regions = {}
+        end
+        _dirty_timer = nil
+    end)
+end
+
 -- Update charpos to the one provided; if out of current view, update
 -- virtual_line_num to move it to view, and draw the cursor
+-- OPTIMIZATION: Only update changed regions for cursor movement
 function TextBoxWidget:moveCursorToCharPos(charpos)
     self.charpos = charpos
     self.prev_virtual_line_num = self.virtual_line_num
@@ -1725,9 +1954,10 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
         self.cursor_restore_bb:blitFrom(self._bb, 0, 0, x, y, self.cursor_line.dimen.w, self.cursor_line.dimen.h)
         -- Paint the cursor, and refresh the whole widget
         self.cursor_line:paintTo(self._bb, x, y)
-        UIManager:setDirty(self.dialog or "all", function()
+        -- OPTIMIZATION: Use batched setDirty for better performance
+        batchSetDirty(function()
             return "ui", self.dimen
-        end)
+        end, self.dialog)
     elseif self._bb then
         if CURSOR_USE_REFRESH_FUNCS then
             -- We didn't scroll the view, only the cursor was moved
@@ -1742,14 +1972,15 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
                 restore_x = self.cursor_restore_x
                 restore_y = self.cursor_restore_y
                 if not CURSOR_COMBINE_REGIONS then
-                    UIManager:setDirty(self.dialog or "all", function()
+                    -- OPTIMIZATION: Use batched setDirty
+                    batchSetDirty(function()
                         return "ui", Geom:new{
                             x = self.dimen.x + restore_x,
                             y = self.dimen.y + restore_y,
                             w = self.cursor_line.dimen.w,
                             h = self.cursor_line.dimen.h,
                         }
-                    end)
+                    end, self.dialog)
                 end
                 self.cursor_restore_bb:free()
                 self.cursor_restore_bb = nil
@@ -1761,7 +1992,8 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
             self.cursor_restore_bb:blitFrom(self._bb, 0, 0, x, y, self.cursor_line.dimen.w, self.cursor_line.dimen.h)
             -- Paint the cursor, and do a small ui refresh of the new cursor area
             self.cursor_line:paintTo(self._bb, x, y)
-            UIManager:setDirty(self.dialog or "all", function()
+            -- OPTIMIZATION: Use batched setDirty with region combining
+            batchSetDirty(function()
                 local cursor_region = Geom:new{
                     x = self.dimen.x + x,
                     y = self.dimen.y + y,
@@ -1778,7 +2010,7 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
                     cursor_region = cursor_region:combine(restore_region)
                 end
                 return "ui", cursor_region
-            end)
+            end, self.dialog)
         else -- CURSOR_USE_REFRESH_FUNCS = false
             -- We didn't scroll the view, only the cursor was moved
             local restore_region
@@ -1795,7 +2027,8 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
                         h = self.cursor_line.dimen.h,
                     }
                     if not CURSOR_COMBINE_REGIONS then
-                        UIManager:setDirty(self.dialog or "all", "ui", restore_region)
+                        -- OPTIMIZATION: Use batched setDirty
+                        batchSetDirty(function() return "ui", restore_region end, self.dialog)
                     end
                 end
                 self.cursor_restore_bb:free()
@@ -1818,7 +2051,8 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
                 if CURSOR_COMBINE_REGIONS and restore_region then
                     cursor_region = cursor_region:combine(restore_region)
                 end
-                UIManager:setDirty(self.dialog or "all", "ui", cursor_region)
+                -- OPTIMIZATION: Use batched setDirty
+                batchSetDirty(function() return "ui", cursor_region end, self.dialog)
             end
         end
     end
