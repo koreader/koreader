@@ -3,6 +3,7 @@ local PluginShare = require("pluginshare")
 local logger = require("logger")
 local time = require("ui/time")
 local ffi = require("ffi")
+local util = require("util")
 local C = ffi.C
 require("ffi/linux_input_h")
 
@@ -28,6 +29,7 @@ local wacom_height = 20967 -- unscaled_size_check: ignore
 local rm_model = getModel()
 local isRm2 = rm_model == "reMarkable 2.0"
 local isRmPaperPro = rm_model == "reMarkable Ferrari"
+local hasCsl = util.which("csl")
 
 if isRmPaperPro then
     screen_width = 1620 -- unscaled_size_check: ignore
@@ -47,7 +49,8 @@ local Remarkable = Generic:extend{
     needsScreenRefreshAfterResume = no,
     hasOTAUpdates = yes,
     hasFastWifiStatusQuery = yes,
-    hasWifiManager = yes,
+    hasWifiManager = os.getenv("KO_DONT_MANAGE_NETWORK") ~= "1" and yes or no,
+    hasWifiToggle = os.getenv("KO_DONT_MANAGE_NETWORK") ~= "1" and yes or no,
     canReboot = yes,
     canPowerOff = yes,
     canSuspend = yes,
@@ -312,7 +315,7 @@ function Remarkable:supportsScreensaver() return true end
 
 function Remarkable:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback, interactive)
-        if isRmPaperPro then
+        if hasCsl then
             os.execute("/usr/bin/csl wifi -p on")
         else
             os.execute("./enable-wifi.sh")
@@ -321,7 +324,7 @@ function Remarkable:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
-        if isRmPaperPro then
+        if hasCsl then
             os.execute("/usr/bin/csl wifi -p off")
         else
             os.execute("./disable-wifi.sh")
@@ -336,17 +339,23 @@ function Remarkable:initNetworkManager(NetworkMgr)
     end
 
     NetworkMgr:setWirelessBackend("wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/wlan0"})
-
-    NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
+    if hasCsl then
+        function NetworkMgr:isWifiOn()
+            -- When disabling wifi by using the csl command, wpa_supplicant service will be disabled
+            return os.execute("systemctl is-active --quiet wpa_supplicant") == 0
+        end
+    else
+        NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
+    end
     NetworkMgr.isConnected = NetworkMgr.ifHasAnAddress
 end
 
 function Remarkable:exit()
     if isRmPaperPro then
         os.execute("mv -f ~/.config/remarkable/xochitl.conf.bak ~/.config/remarkable/xochitl.conf")
-        if os.getenv("KO_DONT_GRAB_INPUT") == "1" then
-            os.execute("~/xovi/start")
-        end
+    end
+    if os.getenv("KO_RESTART_XOVI_ON_EXIT") == "1" then
+        os.execute("~/xovi/start")
     end
     Generic.exit(self)
 end
@@ -367,7 +376,7 @@ function Remarkable:saveSettings()
 end
 
 function Remarkable:resume()
-    if isRmPaperPro then
+    if hasCsl then
         os.execute("csl wifi -p on")
     else
         os.execute("./enable-wifi.sh")
@@ -375,10 +384,12 @@ function Remarkable:resume()
 end
 
 function Remarkable:suspend()
-    if isRmPaperPro then
-        os.execute("csl wifi -p off")
-    else
-        os.execute("./disable-wifi.sh")
+    if Remarkable:hasWifiManager() then
+        if hasCsl then
+            os.execute("csl wifi -p off")
+        else
+            os.execute("./disable-wifi.sh")
+        end
     end
     os.execute("systemctl suspend")
 end
@@ -431,13 +442,13 @@ function Remarkable:setEventHandlers(UIManager)
 end
 
 if isRm2 then
-    if not os.getenv("RM2FB_SHIM") then
-        error("reMarkable2 requires RM2FB to work (https://github.com/ddvk/remarkable2-framebuffer)")
+    if not os.getenv("RM2FB_SHIM") or not os.getenv("LD_PRELOAD") then
+        error("reMarkable 2 requires a RM2FB server and client to work (https://github.com/ddvk/remarkable2-framebuffer or https://github.com/asivery/rmpp-qtfb-shim)")
     end
     return Remarkable2
 elseif isRmPaperPro then
     if not os.getenv("LD_PRELOAD") then
-        error("reMarkable Paper Pro requires qtfb and qtfb-rmpp-shim to work")
+        error("reMarkable Paper Pro requires a RM2FB server and client to work (https://github.com/asivery/rmpp-qtfb-shim)")
     end
     if os.getenv("QTFB_SHIM_INPUT") ~= "false" or os.getenv("QTFB_SHIM_MODEL") ~= "false" then
         error("You must set both QTFB_SHIM_INPUT and QTFB_SHIM_MODEL to false")
