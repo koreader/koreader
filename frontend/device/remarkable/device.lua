@@ -354,6 +354,9 @@ function Remarkable:exit()
     if isRmPaperPro then
         os.execute("mv -f ~/.config/remarkable/xochitl.conf.bak ~/.config/remarkable/xochitl.conf")
     end
+    if os.getenv("KO_RESTART_XOVI_ON_EXIT") == "1" then
+        os.execute("~/xovi/start")
+    end
     Generic.exit(self)
 end
 
