@@ -852,9 +852,12 @@ function ReaderDictionary:cleanSelection(text, is_sane)
         text = text:gsub("\u{2019}", "'") -- Right single quotation mark
         -- Strip punctuation characters around selection
         text = util.stripPunctuation(text)
-        -- In some dictionaries, both interpuncts (·) and pipes (|) are used to delimiter syllables.
-        -- Up arrows (↑), are used in some dictionaries to indicate related words.
-        text = text:gsub("[·|↑]", "")
+        -- Note: although it seems innocuous to use a character class [·|↑] to perform a single gsub,
+        --       doing so will cause byte corruption in some languages (e.g. Greek).
+        -- In some dictionaries, both interpuncts and pipes are used to delimiter syllables.
+        text = text:gsub("·", "") -- interpunct
+        text = text:gsub("|", "") -- pipe
+        text = text:gsub("↑", "") -- and up arrow, used in some dictionaries to indicate related words
         -- Strip some common english grammatical construct
         text = text:gsub("'s$", '') -- english possessive
         -- Strip some common french grammatical constructs
