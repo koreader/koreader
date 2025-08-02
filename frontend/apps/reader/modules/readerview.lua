@@ -993,6 +993,12 @@ function ReaderView:onReadSettings(config)
     else
         self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
     end
+    if config:has("invert_ui_layout_mirroring") then
+        self.invert_ui_layout_mirroring = config:isTrue("invert_ui_layout_mirroring")
+    else
+        self.invert_ui_layout_mirroring = G_reader_settings:isTrue("invert_ui_layout_mirroring")
+    end
+    self.footer:setUILayoutMiroring(self.invert_ui_layout_mirroring)
     self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or G_defaults:readSetting("DSHOWOVERLAP")
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
     self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height")
@@ -1001,8 +1007,18 @@ function ReaderView:onReadSettings(config)
 end
 
 function ReaderView:shouldInvertBiDiLayoutMirroring()
-    -- A few widgets may temporarily invert UI layout mirroring when both these settings are true
-    return self.inverse_reading_order and G_reader_settings:isTrue("invert_ui_layout_mirroring")
+    return self.invert_ui_layout_mirroring
+end
+
+function ReaderView:onToggleUILayoutMiroring(toggle)
+    if toggle == nil then
+        toggle = not self.invert_ui_layout_mirroring
+    end
+    if self.invert_ui_layout_mirroring ~= toggle then
+        self.invert_ui_layout_mirroring = toggle
+        self.footer:setUILayoutMiroring(self.invert_ui_layout_mirroring)
+    end
+    return true
 end
 
 function ReaderView:onPageUpdate(new_page_no)
@@ -1208,6 +1224,7 @@ function ReaderView:onSaveSettings()
         self.document.configurable.rotation_mode = Screen:getRotationMode() -- will be saved by ReaderConfig
     end
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
+    self.ui.doc_settings:saveSetting("invert_ui_layout_mirroring", self.invert_ui_layout_mirroring)
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.page_overlap_enable)
     self.ui.doc_settings:saveSetting("page_overlap_style", self.page_overlap_style)
 end
