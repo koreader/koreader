@@ -2058,14 +2058,27 @@ function VocabBuilder:onDictButtonsReady(dict_popup, buttons)
         text = _("Add to vocabulary builder"),
         font_bold = false,
         callback = function()
-            local book_title = (dict_popup.ui.doc_props and dict_popup.ui.doc_props.display_title) or _("Dictionary lookup")
-            dict_popup.ui:handleEvent(Event:new("WordLookedUp", dict_popup.lookupword, book_title, true)) -- is_manual: true
             local button = dict_popup.button_table.button_by_id["vocabulary"]
-            if button then
-                button:disable()
+            if not button then return end
+            if button.text == _("Add to vocabulary builder") then
+                local book_title = (dict_popup.ui.doc_props and dict_popup.ui.doc_props.display_title) or _("Dictionary lookup")
+                dict_popup.ui:handleEvent(Event:new("WordLookedUp", dict_popup.lookupword, book_title, true)) -- is_manual: true
+                button:setText(_("Remove from vocabulary builder"), button.width)
                 UIManager:setDirty(dict_popup, function()
                     return "ui", button.dimen
                 end)
+            else
+                UIManager:show(ConfirmBox:new{
+                    text = T(_("Remove word \"%1\" from vocabulary builder?"), dict_popup.lookupword),
+                    ok_text = _("Remove"),
+                    ok_callback = function()
+                        DB:remove({word = dict_popup.lookupword})
+                        button:setText(_("Add to vocabulary builder"), button.width)
+                        UIManager:setDirty(dict_popup, function()
+                            return "ui", button.dimen
+                        end)
+                    end
+                })
             end
         end
     }})
