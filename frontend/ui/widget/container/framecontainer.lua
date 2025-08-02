@@ -151,11 +151,11 @@ function FrameContainer:paintTo(bb, x, y)
             y + self.margin + self.bordersize + self._padding_top)
     end
     if self.inner_bordersize > 0 then
-        --- @warning This doesn't actually support radius, it'll always be a square.
-        bb:paintInnerBorder(x + self.margin, y + self.margin,
-            container_width - self.margin * 2,
-            container_height - self.margin * 2,
-            self.inner_bordersize, self.color, self.radius)
+        local anti_alias = G_reader_settings:nilOrTrue("anti_alias_ui")
+        bb:paintBorder(x + self.margin + self.bordersize, y + self.margin + self.bordersize,
+            container_width - (self.margin + self.bordersize) * 2,
+            container_height - (self.margin + self.bordersize) * 2,
+            self.inner_bordersize, self.color, self.radius, anti_alias)
     end
     if self.stripe_width and self.stripe_color and self.stripe_over then
         -- (No support for radius when hatched/stripe)
