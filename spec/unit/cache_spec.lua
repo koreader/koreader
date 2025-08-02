@@ -20,7 +20,7 @@ describe("Cache module", function()
 
     it("should serialize blitbuffer", function()
         for pageno = 1, math.min(max_page, doc.info.number_of_pages) do
-            doc:renderPage(pageno, nil, 1, 0, 1.0)
+            doc:renderPage(pageno, nil, 1, 0, 1.0, 255)
             DocCache:serialize()
         end
         DocCache:clear()
@@ -28,7 +28,7 @@ describe("Cache module", function()
 
     it("should deserialize blitbuffer", function()
         for pageno = 1, math.min(max_page, doc.info.number_of_pages) do
-            doc:hintPage(pageno, 1, 0, 1.0, 0)
+            doc:hintPage(pageno, 1, 0, 1.0, 255)
         end
         DocCache:clear()
     end)
@@ -36,7 +36,7 @@ describe("Cache module", function()
     it("should serialize koptcontext", function()
         doc.configurable.text_wrap = 1
         for pageno = 1, math.min(max_page, doc.info.number_of_pages) do
-            doc:renderPage(pageno, nil, 1, 0, 1.0)
+            doc:renderPage(pageno, nil, 1, 0, 1.0, 255)
             doc:getPageDimensions(pageno)
             DocCache:serialize()
         end
@@ -46,7 +46,7 @@ describe("Cache module", function()
 
     it("should deserialize koptcontext", function()
         for pageno = 1, math.min(max_page, doc.info.number_of_pages) do
-            doc:renderPage(pageno, nil, 1, 0, 1.0)
+            doc:renderPage(pageno, nil, 1, 0, 1.0, 255)
         end
         DocCache:clear()
     end)
