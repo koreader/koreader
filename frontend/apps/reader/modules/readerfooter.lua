@@ -182,23 +182,11 @@ footerTextGeneratorMap = {
         local is_charging = false
 
         if Device:hasBattery() then
-            local main_batt_lvl = powerd:getCapacity()
+            batt_lvl = powerd:getCombinedCapacity()
 
-            if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
-                local aux_batt_lvl = powerd:getAuxCapacity()
-                is_charging = powerd:isAuxCharging()
-                -- Sum both batteries for the actual text
-                batt_lvl = main_batt_lvl + aux_batt_lvl
-                -- But average 'em to compute the icon...
-                if symbol_type == "icons" or symbol_type == "compact_items" then
-                    prefix = powerd:getBatterySymbol(powerd:isAuxCharged(), is_charging, batt_lvl / 2)
-                end
-            else
-                is_charging = powerd:isCharging()
-                batt_lvl = main_batt_lvl
-                if symbol_type == "icons" or symbol_type == "compact_items" then
-                   prefix = powerd:getBatterySymbol(powerd:isCharged(), is_charging, main_batt_lvl)
-                end
+            is_charging = powerd:isCharging()
+            if symbol_type == "icons" or symbol_type == "compact_items" then
+                prefix = powerd:getBatterySymbol(powerd:isCharged(), is_charging, batt_lvl)
             end
         end
 
