@@ -162,6 +162,8 @@ function Profiles:getSubMenuItems()
                         },
                         {
                             text = _("Execute promptly"),
+                            help_text = _([[Enable this option to execute the profile before some other operations triggered by the event.
+For example, with a trigger "on document closing" the profile will be executed before the document is closed.]]),
                             checked_func = function()
                                 return v.settings.auto_exec_promptly
                             end,
