@@ -822,6 +822,15 @@ function Input:handlePowerManagementOnlyEv(ev)
         return keycode
     end
 
+    -- Treat page turn button like the latest kobo firmware when suspended
+    if G_reader_settings:isTrue("pageturn_power") then
+        if keycode == "RPgBack" or keycode == "LPgBack"
+        or keycode == "RPgFwd" or keycode == "LPgFwd" then
+            -- When suspended we pretend that the page turn button is a power button
+            return "PowerRelease"
+        end
+    end
+
     if self.fake_event_set[keycode] then
         if self.fake_event_args[keycode] then
             table.insert(self.fake_event_args[keycode], ev.value)
