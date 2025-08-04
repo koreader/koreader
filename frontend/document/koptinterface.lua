@@ -153,6 +153,7 @@ function KoptInterface:createContext(doc, pageno, bbox)
     kc:setContrast(1 / doc.configurable.contrast)
     if doc.configurable.white_threshold ~= 255 then
         kc:setWhite(doc.configurable.white_threshold)
+        kc:setPaintWhite(1)
     end
     kc:setDefectSize(doc.configurable.defect_size)
     kc:setLineSpacing(doc.configurable.line_spacing)
