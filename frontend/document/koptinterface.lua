@@ -151,7 +151,9 @@ function KoptInterface:createContext(doc, pageno, bbox)
     kc:setQuality(doc.configurable.quality)
     -- k2pdfopt (for reflowing) and mupdf use different algorithms to apply gamma when rendering
     kc:setContrast(1 / doc.configurable.contrast)
-    kc:setWhite(doc.configurable.white_threshold)
+    if doc.configurable.white_threshold ~= 255 then
+        kc:setWhite(doc.configurable.white_threshold)
+    end
     kc:setDefectSize(doc.configurable.defect_size)
     kc:setLineSpacing(doc.configurable.line_spacing)
     kc:setWordSpacing(doc.configurable.word_spacing)
