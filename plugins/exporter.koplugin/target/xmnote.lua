@@ -3,10 +3,13 @@ local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
+local SQ3 = require("lua-ljsqlite3/init")
 local logger = require("logger")
 local util = require("ffi/util")
 local T = util.template
 local _ = require("gettext")
+
+local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
 
 -- xmnote exporter
 local XMNoteExporter = require("base"):new {
@@ -71,14 +74,75 @@ function XMNoteExporter:getMenuTable()
     }
 end
 
+function XMNoteExporter:getBookReadingDurations(id_book)
+    local conn = SQ3.open(db_location)
+    local sql_smt = [[
+        SELECT date(start_time, 'unixepoch', 'localtime') AS dates,
+               max(page)                       			  AS last_page,
+               sum(duration)                              AS durations,
+               min(start_time)                            AS min_start_time
+        FROM   page_stat
+        WHERE  id_book = %d
+        GROUP  BY Date(start_time, 'unixepoch', 'localtime')
+        ORDER  BY dates DESC;
+    ]]
+    local result = conn:exec(string.format(sql_smt, id_book))
+    conn:close()
+
+    if result == nil then
+        return {}
+    end
+
+    local reading_durations = {}
+    for i = 1, #result.dates do
+        local entry = {
+            date = tonumber(result[4][i]) * 1000,
+            durationSeconds = tonumber(result[3][i]),
+            position = tonumber(result[2][i]),
+        }
+        table.insert(reading_durations, entry)
+    end
+    return reading_durations
+end
+
+function XMNoteExporter:getBookIdByTitle(title)
+    local conn = SQ3.open(db_location)
+    local sql_smt = [[
+        SELECT
+            id
+        FROM
+            book
+        WHERE
+            title = "%s"
+        LIMIT 1
+    ]]
+    local result = conn:exec(string.format(sql_smt, title))
+    conn:close()
+
+    if result == nil then
+        return {}
+    end
+
+    if not result or not result[1] or not result[1][1] then
+        return nil
+    end
+    return tonumber(result[1][1])
+end
+
 function XMNoteExporter:createRequestBody(booknotes)
     local book = {
         title = booknotes.title or "",
         author = booknotes.author or "",
         type = 1,
         locationUnit = 1,
+        source = "KOReader"
     }
+
     local entries = {}
+
+    local book_id = self:getBookIdByTitle(book.title)
+    local reading_durations = self:getBookReadingDurations(book_id)
+
     for _, chapter in ipairs(booknotes) do
         for _, clipping in ipairs(chapter) do
             local entry = {
@@ -95,6 +159,7 @@ function XMNoteExporter:createRequestBody(booknotes)
         end
     end
     book.entries = entries
+    book.fuzzyReadingDurations = reading_durations
     return book
 end
 
@@ -111,7 +176,6 @@ function XMNoteExporter:createHighlights(booknotes)
     logger.dbg("createHighlights result", result)
     return true
 end
-
 
 function XMNoteExporter:isReadyToExport()
     if self.settings.ip then return true end
