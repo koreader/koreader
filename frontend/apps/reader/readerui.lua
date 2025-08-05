@@ -531,6 +531,62 @@ function ReaderUI:registerKeyEvents()
             end
         end
     end
+    .    -- =================== CORRECT PAGE CAPTURE HOOK ===================
+    -- Add the required modules here, inside the init function
+    local UIManager = require("ui/uimanager")
+    local crengine_hook = require("ffi/crengine-hooks")
+    local logger = require("logger")
+
+    -- Use a small delay to ensure the paging module is fully initialized
+    UIManager:scheduleIn(0.1, function()
+        -- Get a reference to the paging module, which is self.paging
+        local ReaderPaging = self.paging
+        if ReaderPaging and not ReaderPaging.onGotoPageRel_original then
+            -- Store the original function so we can still call it
+            ReaderPaging.onGotoPageRel_original = ReaderPaging.onGotoPageRel
+
+            -- Create our new, wrapped function
+            ReaderPaging.onGotoPageRel = function(self_paging,...)
+                -- First, call the original function to perform the page turn
+                ReaderPaging.onGotoPageRel_original(self_paging,...)
+
+                -- Now, schedule our capture logic to run after the render is complete
+                UIManager:scheduleIn(0.1, function()
+                    -- Enable capture in the C++ backend
+                    crengine_hook.enable_capture(true)
+                    -- Force a repaint to trigger the Draw() method with the capture flag set
+                    self.view:paintTo(UIManager.screen)
+                    UIManager:forceRePaint()
+
+                    -- Schedule the buffer retrieval to run after the repaint has finished
+                    UIManager:scheduleIn(0.1, function()
+                        local current_page_data = crengine_hook.get_current_page_buffer()
+                        if current_page_data then
+                            logger.info("Captured current page buffer, size:", #current_page_data)
+                            pcall(function()
+                                local file = io.open("/tmp/current.raw", "wb")
+                                file:write(current_page_data)
+                                file:close()
+                            end)
+
+                            local next_page_data = crengine_hook.get_next_page_buffer()
+                            if next_page_data then
+                                pcall(function()
+                                    local file_next = io.open("/tmp/next.raw", "wb")
+                                    file_next:write(next_page_data)
+                                    file_next:close()
+                                end)
+                            end
+
+                            crengine_hook.clear_buffers()
+                            logger.info("Cleared C++ page buffers.")
+                        end
+                    end)
+                end)
+            end
+        end
+    end)
+    -- =================================================================
 end
 
 ReaderUI.onPhysicalKeyboardConnected = ReaderUI.registerKeyEvents
