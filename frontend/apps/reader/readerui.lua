@@ -531,7 +531,7 @@ function ReaderUI:registerKeyEvents()
             end
         end
     end
-    .    -- =================== CORRECT PAGE CAPTURE HOOK ===================
+  -- =================== CORRECT PAGE CAPTURE HOOK ===================
     -- Add the required modules here, inside the init function
     local UIManager = require("ui/uimanager")
     local crengine_hook = require("ffi/crengine-hooks")
