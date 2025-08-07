@@ -1678,15 +1678,13 @@ function ReaderHighlight:onHold(arg, ges)
     local image = self.ui.document:getImageFromPosition(self.hold_pos, true, true)
     if image then
         logger.dbg("hold on image")
+        self.hold_pos = nil
         local ImageViewer = require("ui/widget/imageviewer")
-        local imgviewer = ImageViewer:new{
+        UIManager:show(ImageViewer:new{
             image = image,
-            -- title_text = _("Document embedded image"),
-            -- No title, more room for image
-            with_title_bar = false,
+            with_title_bar = false, -- more room for image
             fullscreen = true,
-        }
-        UIManager:show(imgviewer)
+        })
         self:onStopHighlightIndicator()
         return true
     end

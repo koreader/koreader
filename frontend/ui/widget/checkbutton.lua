@@ -127,7 +127,7 @@ function CheckButton:onTapCheckButton()
     if not self.enabled then return true end
     if self.tap_input then
         self:onInput(self.tap_input)
-    elseif type(self.tap_input_func) == "function" then
+    elseif self.tap_input_func then
         self:onInput(self.tap_input_func())
     else
         if G_reader_settings:isFalse("flash_ui") then
@@ -184,7 +184,7 @@ function CheckButton:onHoldCheckButton()
         elseif self.hold_input then
             self:onInput(self.hold_input, true)
             self._hold_handled = true
-        elseif type(self.hold_input_func) == "function" then
+        elseif self.hold_input_func then
             self:onInput(self.hold_input_func(), true)
             self._hold_handled = true
         end

@@ -79,6 +79,7 @@ function AutoWarmth:init()
 
     self.control_warmth = G_reader_settings:nilOrTrue("autowarmth_control_warmth")
     self.control_nightmode = G_reader_settings:nilOrTrue("autowarmth_control_nightmode")
+    self.hide_nightmode_warning = G_reader_settings:isTrue("autowarmth_hide_nightmode_warning")
     if not Device:hasNaturalLight() then
         self.control_nightmode = true
     elseif not self.control_warmth and not self.control_nightmode then
@@ -222,6 +223,13 @@ function AutoWarmth:_onToggleNightMode()
                 end,
             }},
             {{
+                text = _("Hide this warning permanently"),
+                provider = function()
+                    self.hide_nightmode_warning = true
+                    G_reader_settings:makeTrue("autowarmth_hide_nightmode_warning")
+                end,
+            }},
+            {{
                 text = _("Disable AutoWarmth's nightmode control"),
                 provider = function()
                     self.control_nightmode = false
@@ -352,7 +360,7 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
         self.current_times_h[1] = nil   -- Solar midnight prev. day
         self.current_times_h[2] = nil   -- Astronomical dawn
         self.current_times_h[3] = nil   -- Nautical dawn
-        self.current_times_h[6] = nil   -- Solar noon
+        -- self.current_times_h[6] = nil   -- Solar noon
         self.current_times_h[9] = nil   -- Nautical dusk
         self.current_times_h[10] = nil  -- Astronomical dusk
         self.current_times_h[11] = nil  -- Solar midnight
@@ -642,9 +650,20 @@ function AutoWarmth:getSubMenuItems()
                 return self.activate ~= 0
             end,
             text = Device:hasNaturalLight() and _("Warmth and night mode settings") or _("Night mode settings"),
-            sub_item_table = self:getWarmthMenu(),
+            sub_item_table_func = function() return self:getWarmthMenu() end,
         },
         self:getFlOffDuringDayMenu(),
+        {
+            text = _("Enable night mode warning"),
+            checked_func = function()
+                return not self.hide_nightmode_warning
+            end,
+            callback = function()
+                self.hide_nightmode_warning = not self.hide_nightmode_warning
+                G_reader_settings:saveSetting("autowarmth_hide_nightmode_warning", self.hide_nightmode_warning)
+            end,
+            separator = true,
+        },
         self:getTimesMenu(_("Currently active parameters")),
         self:getTimesMenu(_("Sun position information for"), true, activate_sun),
         self:getTimesMenu(_("Fixed schedule information"), false, activate_schedule),
@@ -722,7 +741,6 @@ For cloudy autumn days, the switch-on/off time can be shifted by an offset.]]),
             })
         end,
         keep_menu_open = true,
-        separator = true,
     }
 end
 
@@ -1148,7 +1166,7 @@ function AutoWarmth:getWarmthMenu()
             text = Device:hasNaturalLight() and _("Set warmth and night mode for:") or _("Set night mode for:"),
             enabled = false,
         },
-        getWarmthMenuEntry(_("Solar noon"), 6, false),
+        getWarmthMenuEntry(_("Solar noon"), 6),
         getWarmthMenuEntry(_("Sunset and sunrise"), 5),
         getWarmthMenuEntry(_("Darkest time of civil twilight"), 4),
         getWarmthMenuEntry(_("Darkest time of nautical twilight"), 3, false),
@@ -1247,7 +1265,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
     local face = Font:getFace("scfont")
     UIManager:show(InfoMessage:new{
         face = face,
-        width = math.floor(Screen:getWidth() * (self.easy_mode and 0.75 or 0.90)),
+        width = math.floor(Screen:getWidth() * (self.easy_mode and 0.85 or 0.90)),
         text = title .. location_string .. ":\n\n" ..
             info_line(0, _("Solar midnight:"), times[1], 1, face, request_easy) ..
             add_line(2, _("Dawn"), request_easy) ..
@@ -1258,8 +1276,8 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
             add_line(2, _("Dawn"), request_easy) ..
             info_line(0, _("Sunrise:"), times[5], 5, face) ..
             "\n" ..
-            info_line(0, _("Solar noon:"), times[6], 6, face, request_easy) ..
-            add_line(0, "", request_easy) ..
+            info_line(0, _("Solar noon:"), times[6], 6, face) ..
+            "\n" ..
             info_line(0, _("Sunset:"), times[7], 7, face) ..
             add_line(2, _("Dusk"), request_easy) ..
             info_line(request_easy and 0 or 4,

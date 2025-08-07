@@ -156,7 +156,19 @@ function Profiles:getSubMenuItems()
                                 return v.settings.auto_exec_ask
                             end,
                             callback = function()
-                                self.data[k].settings.auto_exec_ask = not v.settings.auto_exec_ask and true or nil
+                                self.data[k].settings.auto_exec_ask = not v.settings.auto_exec_ask or nil
+                                self.updated = true
+                            end,
+                        },
+                        {
+                            text = _("Execute promptly"),
+                            help_text = _([[Enable this option to execute the profile before some other operations triggered by the event.
+For example, with a trigger "on document closing" the profile will be executed before the document is closed.]]),
+                            checked_func = function()
+                                return v.settings.auto_exec_promptly
+                            end,
+                            callback = function()
+                                self.data[k].settings.auto_exec_promptly = not v.settings.auto_exec_promptly or nil
                                 self.updated = true
                             end,
                         },
@@ -236,7 +248,7 @@ function Profiles:getSubMenuItems()
                     return v.settings.notify
                 end,
                 callback = function()
-                    self.data[k].settings.notify = not v.settings.notify and true or nil
+                    self.data[k].settings.notify = not v.settings.notify or nil
                     self.updated = true
                 end,
                 separator = true,
@@ -1053,20 +1065,25 @@ function Profiles:executeAutoExec(profile_name, event)
             ok_callback = function()
                 logger.dbg("Profiles - auto executing:", profile_name)
                 UIManager:nextTick(function()
-                    Dispatcher:execute(self.data[profile_name])
+                    Dispatcher:execute(profile)
                 end)
             end,
         })
     else
-        logger.dbg("Profiles - auto executing:", profile_name)
-        if event == "CloseDocument" or event == "CloseDocumentAll" then
-            UIManager:tickAfterNext(function()
-                Dispatcher:execute(self.data[profile_name])
-            end)
+        if profile.settings.auto_exec_promptly then
+            logger.dbg("Profiles - auto executing promptly:", profile_name)
+            Dispatcher:execute(profile)
         else
-            UIManager:nextTick(function()
-                Dispatcher:execute(self.data[profile_name])
-            end)
+            logger.dbg("Profiles - auto executing:", profile_name)
+            if event == "CloseDocument" or event == "CloseDocumentAll" then
+                UIManager:tickAfterNext(function()
+                    Dispatcher:execute(profile)
+                end)
+            else
+                UIManager:nextTick(function()
+                    Dispatcher:execute(profile)
+                end)
+            end
         end
     end
 end

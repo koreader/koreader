@@ -80,7 +80,7 @@ function Button:init()
     end
 
     -- Prefer an optional text_func over text
-    if self.text_func and type(self.text_func) == "function" then
+    if self.text_func then
         self.text = self.text_func()
     end
 
@@ -507,7 +507,7 @@ function Button:onTapSelectButton()
             end
         elseif self.tap_input then
             self:onInput(self.tap_input)
-        elseif type(self.tap_input_func) == "function" then
+        elseif self.tap_input_func then
             self:onInput(self.tap_input_func())
         end
     end
@@ -546,7 +546,7 @@ function Button:onHoldSelectButton()
         elseif self.hold_input then
             self:onInput(self.hold_input, true)
             self._hold_handled = true
-        elseif type(self.hold_input_func) == "function" then
+        elseif self.hold_input_func then
             self:onInput(self.hold_input_func(), true)
             self._hold_handled = true
         end

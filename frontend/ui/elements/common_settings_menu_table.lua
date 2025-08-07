@@ -237,6 +237,18 @@ if Device:isKobo() then
             UIManager:askForRestart()
         end
     }
+
+    if Device:hasKeys() and Device:isMTK() then
+        common_settings.pageturn_power = {
+            text = _("Wake up on page-turn button press"),
+            checked_func = function()
+                return G_reader_settings:isTrue("pageturn_power")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("pageturn_power")
+            end
+        }
+    end
 end
 
 if PowerD:hasHallSensor() then

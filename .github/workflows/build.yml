@@ -35,6 +35,7 @@ jobs:
       # Bump first number to reset all caches.
       CACHE_KEY: "1-macOS-${{ matrix.image }}-${{ matrix.platform }}-XC${{ matrix.xcode_version }}-DT${{ matrix.deployment_target }}"
       CLICOLOR_FORCE: '1'
+      KODEBUG: ""
       MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
       MAKEFLAGS: 'OUTPUT_DIR=build INSTALL_DIR=install TARGET=macos'
 
