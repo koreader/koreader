@@ -1475,6 +1475,36 @@ function ReaderHighlight:showHighlightDialog(index)
                 end,
             },
         },
+        {
+            {
+                text = _("◁ Char"),
+                enabled = change_boundaries_enabled,
+                callback = function()
+                    self:updateHighlight(index, 0, -1, true)
+                end,
+            },
+            {
+                text = _("▷ Char"),
+                enabled = change_boundaries_enabled,
+                callback = function()
+                    self:updateHighlight(index, 0, 1, true)
+                end,
+            },
+            {
+                text = _("Char ◁"),
+                enabled = change_boundaries_enabled,
+                callback = function()
+                    self:updateHighlight(index, 1, -1, true)
+                end,
+            },
+            {
+                text = _("Char ▷"),
+                enabled = change_boundaries_enabled,
+                callback = function()
+                    self:updateHighlight(index, 1, 1, true)
+                end,
+            },
+        },
     }
     edit_highlight_dialog = ButtonDialog:new{
         name = "edit_highlight_dialog", -- for unit tests
