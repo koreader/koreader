@@ -1525,7 +1525,7 @@ end
 function ReaderHighlight:onShowHighlightMenu(index)
     if not self.selected_text then
         return
-    end
+    enda
 
     local highlight_buttons = {{}}
 
