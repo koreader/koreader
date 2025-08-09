@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local BlitBuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
+local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DoubleSpinWidget = require("ui/widget/doublespinwidget")
@@ -1385,7 +1386,21 @@ function ReaderHighlight:showHighlightDialog(index)
         start_prev, start_next = start_next, start_prev
         end_prev, end_next = end_next, end_prev
     end
+
+    if self.showHighlightDialog_move_by_char == nil then
+        self.showHighlightDialog_move_by_char = false
+    end
+    local move_by_char = self.showHighlightDialog_move_by_char
+
     local edit_highlight_dialog
+
+    local move_by_char_text
+    if move_by_char then
+        move_by_char_text = C_("checkbox", "[v]") .. " " .. _("by char")
+    else
+        move_by_char_text = C_("checkbox", "[ ]") .. " " .. _("by char")
+    end
+
     local buttons = {
         {
             {
@@ -1425,6 +1440,13 @@ function ReaderHighlight:showHighlightDialog(index)
                 end,
             },
             {
+                text = _("Dictionary"),
+                callback = function()
+                    self.selected_text = util.tableDeepCopy(item)
+                    self:lookupDict(index)
+                end,
+            },
+            {
                 text = "…",
                 callback = function()
                     self.selected_text = util.tableDeepCopy(item)
@@ -1435,84 +1457,56 @@ function ReaderHighlight:showHighlightDialog(index)
         },
         {
             {
+                text = move_by_char_text,
+                enabled = change_boundaries_enabled and self.ui.rolling,
+                callback = function()
+                    self.showHighlightDialog_move_by_char = not self.showHighlightDialog_move_by_char
+                    UIManager:close(edit_highlight_dialog)
+                    self:showHighlightDialog(index)
+                end,
+            },
+            {
                 text = start_prev,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 0, -1, false)
-                end,
-                hold_callback = function()
-                    self:updateHighlight(index, 0, -1, true)
+                    self:updateHighlight(index, 0, -1, move_by_char)
                 end,
             },
             {
                 text = start_next,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 0, 1, false)
-                end,
-                hold_callback = function()
-                    self:updateHighlight(index, 0, 1, true)
+                    self:updateHighlight(index, 0, 1, move_by_char)
                 end,
             },
             {
                 text = end_prev,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 1, -1, false)
-                end,
-                hold_callback = function()
-                    self:updateHighlight(index, 1, -1, true)
+                    self:updateHighlight(index, 1, -1, move_by_char)
                 end,
             },
             {
                 text = end_next,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 1, 1, false)
-                end,
-                hold_callback = function()
-                    self:updateHighlight(index, 1, 1, true)
-                end,
-            },
-        },
-        {
-            {
-                text = _("◁ Char"),
-                enabled = change_boundaries_enabled,
-                callback = function()
-                    self:updateHighlight(index, 0, -1, true)
-                end,
-            },
-            {
-                text = _("▷ Char"),
-                enabled = change_boundaries_enabled,
-                callback = function()
-                    self:updateHighlight(index, 0, 1, true)
-                end,
-            },
-            {
-                text = _("Char ◁"),
-                enabled = change_boundaries_enabled,
-                callback = function()
-                    self:updateHighlight(index, 1, -1, true)
-                end,
-            },
-            {
-                text = _("Char ▷"),
-                enabled = change_boundaries_enabled,
-                callback = function()
-                    self:updateHighlight(index, 1, 1, true)
+                    self:updateHighlight(index, 1, 1, move_by_char)
                 end,
             },
         },
     }
+
     edit_highlight_dialog = ButtonDialog:new{
         name = "edit_highlight_dialog", -- for unit tests
         buttons = buttons,
         anchor = function()
             return self:_getDialogAnchor(edit_highlight_dialog, index)
         end,
+        onclose = function()
+            self.showHighlightDialog_move_by_char = nil
+        end,
     }
+
     UIManager:show(edit_highlight_dialog)
 end
 
