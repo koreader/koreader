@@ -1525,7 +1525,7 @@ end
 function ReaderHighlight:onShowHighlightMenu(index)
     if not self.selected_text then
         return
-    enda
+    end
 
     local highlight_buttons = {{}}
 
@@ -2931,5 +2931,6 @@ function ReaderHighlight:_createHighlightGesture(gesture)
         time = time.realtime(),
     }
 end
+
 
 return ReaderHighlight
