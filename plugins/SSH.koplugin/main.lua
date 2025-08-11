@@ -29,11 +29,22 @@ local SSH = WidgetContainer:extend{
 function SSH:init()
     self.SSH_port = G_reader_settings:readSetting("SSH_port") or "2222"
     self.allow_no_password = G_reader_settings:isTrue("SSH_allow_no_password")
+    self.autostart = G_reader_settings:isTrue("SSH_autostart")
+
+    if self.autostart then
+        self:start()
+    end
+
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
 end
 
 function SSH:start()
+    if self:isRunning() then
+        logger.dbg("[Network] Not starting SSH server, already running.")
+        return
+    end
+
     local cmd = string.format("%s %s %s %s%s %s",
         "./dropbear",
         "-E",
@@ -159,8 +170,8 @@ function SSH:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text = _("SSH server"),
-                keep_menu_open = true,
                 checked_func = function() return self:isRunning() end,
+                check_callback_updates_menu = true,
                 callback = function(touchmenu_instance)
                     self:onToggleSSHServer()
                     -- sleeping might not be needed, but it gives the feeling
@@ -198,6 +209,15 @@ function SSH:addToMainMenu(menu_items)
                 callback = function()
                     self.allow_no_password = not self.allow_no_password
                     G_reader_settings:flipNilOrFalse("SSH_allow_no_password")
+                end,
+            },
+            {
+                text = _("Start SSH server with KOReader"),
+                checked_func = function() return self.autostart end,
+                enabled_func = function() return not self:isRunning() end,
+                callback = function()
+                    self.autostart = not self.autostart
+                    G_reader_settings:flipNilOrFalse("SSH_autostart")
                 end,
             },
        }

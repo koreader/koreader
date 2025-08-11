@@ -104,6 +104,7 @@ local order = {
         "autostandby",
         "autosuspend",
         "autoshutdown",
+        "pageturn_power", -- if Device:isKobo() and Device:hasKeys()
         "ignore_sleepcover",
         "ignore_open_sleepcover",
         "cover_events",
@@ -158,6 +159,7 @@ local order = {
     },
     taps_and_gestures = {
         "gesture_manager",
+        "gesture_overview",
         "gesture_intervals",
         "----------------------------",
         "ignore_hold_corners",

@@ -12,6 +12,7 @@ local LuaSettings = require("luasettings")
 local Menu = require("ui/widget/menu")
 local NetworkMgr = require("ui/network/manager")
 local PathChooser = require("ui/widget/pathchooser")
+local ProgressbarDialog = require("ui/widget/progressbardialog")
 local UIManager = require("ui/uimanager")
 local WebDav = require("apps/cloudstorage/webdav")
 local lfs = require("libs/libkoreader-lfs")
@@ -213,19 +214,29 @@ end
 
 function CloudStorage:downloadFile(item)
     local function startDownloadFile(unit_item, address, username, password, path_dir, callback_close)
+        local progressbar_dialog = ProgressbarDialog:new {
+            title = _("Downloading…"),
+            subtitle = unit_item.text,
+            progress_max = unit_item.filesize,
+        }
+
         UIManager:scheduleIn(1, function()
-            if self.type == "dropbox" then
-                DropBox:downloadFile(unit_item, password, path_dir, callback_close)
-            elseif self.type == "ftp" then
-                Ftp:downloadFile(unit_item, address, username, password, path_dir, callback_close)
-            elseif self.type == "webdav" then
-                WebDav:downloadFile(unit_item, address, username, password, path_dir, callback_close)
+            local progress_callback = function(progress)
+                progressbar_dialog:reportProgress(progress)
             end
+
+            if self.type == "dropbox" then
+                DropBox:downloadFile(unit_item, password, path_dir, callback_close, progress_callback)
+            elseif self.type == "ftp" then
+                Ftp:downloadFile(unit_item, address, username, password, path_dir, callback_close, nil)
+            elseif self.type == "webdav" then
+                WebDav:downloadFile(unit_item, address, username, password, path_dir, callback_close, progress_callback)
+            end
+
+            progressbar_dialog:close()
         end)
-        UIManager:show(InfoMessage:new{
-            text = _("Downloading. This might take a moment."),
-            timeout = 1,
-        })
+
+        progressbar_dialog:show()
     end
 
     local function createTitle(filename_orig, filesize, filename, path) -- title for ButtonDialog

@@ -61,6 +61,7 @@ local linux_evdev_key_code_map = {
     [C.BTN_TOUCH] = "BTN_TOUCH",
     [C.BTN_STYLUS] = "BTN_STYLUS",
     [C.BTN_STYLUS2] = "BTN_STYLUS2",
+    [C.BTN_TOOL_DOUBLETAP] = "BTN_TOOL_DOUBLETAP",
 }
 
 local linux_evdev_abs_code_map = {
@@ -704,6 +705,14 @@ function Input:handleKeyBoardEv(ev)
             return
         end
     end
+    -- On (some?) Kindles, cyttsp will report BTN_TOOL_DOUBLETAP on a two-slot contact... but with no data in the second slot :/.
+    -- c.f., https://github.com/koreader/koreader/pull/13714
+    if ev.code == C.BTN_TOOL_DOUBLETAP and ev.value == 1 and self.cur_slot ~= self.main_finger_slot and (self:getCurrentMtSlotData("x") == nil or self:getCurrentMtSlotData("y") == nil) then
+        -- Drop the empty slot to avoid breaking GestureDetector
+        self:setCurrentMtSlot("id", -1)
+
+        return
+    end
 
     local keycode = self.event_map[ev.code]
     if not keycode then
@@ -820,6 +829,15 @@ function Input:handlePowerManagementOnlyEv(ev)
     if keycode == "SleepCoverClosed" or keycode == "SleepCoverOpened"
     or keycode == "Suspend" or keycode == "Resume" then
         return keycode
+    end
+
+    -- Treat page turn button like the latest kobo firmware when suspended
+    if G_reader_settings:isTrue("pageturn_power") then
+        if keycode == "RPgBack" or keycode == "LPgBack"
+        or keycode == "RPgFwd" or keycode == "LPgFwd" then
+            -- When suspended we pretend that the page turn button is a power button
+            return "PowerRelease"
+        end
     end
 
     if self.fake_event_set[keycode] then

@@ -21,6 +21,12 @@ See @{ffi.util.template}() for more information about the template function.
 
 local isAndroid, android = pcall(require, "android")
 local logger = require("logger")
+local buffer = require("string.buffer")
+local ffi = require("ffi")
+local C = ffi.C
+
+require "table.new"
+require "ffi/posix_h"
 
 local GetText = {
     context = {},
@@ -59,21 +65,6 @@ Returns a translation.
 --]]
 function GetText_mt.__call(gettext, msgid)
     return gettext.translation[msgid] and gettext.translation[msgid][0] or gettext.translation[msgid] or gettext.wrapUntranslated(msgid)
-end
-
-local function c_escape(what_full, what)
-    if what == "\n" then return ""
-    elseif what == "a" then return "\a"
-    elseif what == "b" then return "\b"
-    elseif what == "f" then return "\f"
-    elseif what == "n" then return "\n"
-    elseif what == "r" then return "\r"
-    elseif what == "t" then return "\t"
-    elseif what == "v" then return "\v"
-    elseif what == "0" then return "\0" -- shouldn't happen, though
-    else
-        return what_full
-    end
 end
 
 --- Converts C logical operators to Lua.
@@ -137,9 +128,13 @@ local function getPluralFunc(pl_tests, nplurals, plural_default)
 end
 
 local function addTranslation(msgctxt, msgid, msgstr, n)
-    -- translated string
-    local unescaped_string = string.gsub(msgstr, "(\\(.))", c_escape)
-    if msgctxt and msgctxt ~= "" then
+    assert(not msgctxt or msgctxt ~= "")
+    assert(msgid and msgid ~= "")
+    assert(msgstr)
+    if msgstr == "" then
+        return
+    end
+    if msgctxt then
         if not GetText.context[msgctxt] then
             GetText.context[msgctxt] = {}
         end
@@ -147,25 +142,21 @@ local function addTranslation(msgctxt, msgid, msgstr, n)
             if not GetText.context[msgctxt][msgid] then
                 GetText.context[msgctxt][msgid] = {}
             end
-            GetText.context[msgctxt][msgid][n] = unescaped_string ~= "" and unescaped_string or nil
+            GetText.context[msgctxt][msgid][n] = msgstr
         else
-            GetText.context[msgctxt][msgid] = unescaped_string ~= "" and unescaped_string or nil
+            GetText.context[msgctxt][msgid] = msgstr
         end
     else
         if n then
             if not GetText.translation[msgid] then
                 GetText.translation[msgid] = {}
             end
-            GetText.translation[msgid][n] = unescaped_string ~= "" and unescaped_string or nil
+            GetText.translation[msgid][n] = msgstr
         else
-            GetText.translation[msgid] = unescaped_string ~= "" and unescaped_string or nil
+            GetText.translation[msgid] = msgstr
         end
     end
 end
-
--- for PO file syntax, see
--- https://www.gnu.org/software/gettext/manual/html_node/PO-Files.html
--- we only implement a sane subset for now
 
 function GetText_mt.__index.changeLang(new_lang)
     GetText.context = {}
@@ -180,114 +171,210 @@ function GetText_mt.__index.changeLang(new_lang)
     -- strip encoding suffix in locale like "zh_CN.utf8"
     new_lang = new_lang:sub(1, new_lang:find(".%."))
 
-    local file = GetText.dirname .. "/" .. new_lang .. "/" .. GetText.textdomain .. ".po"
-    local po = io.open(file, "r")
-
-    if not po then
-        logger.dbg("cannot open translation file:", file)
+    local mo = GetText.dirname .. "/" .. new_lang .. "/" .. GetText.textdomain .. ".mo"
+    if not GetText.loadMO(mo) then
         return false
     end
 
-    local data = {}
-    local fuzzy = false
-    local headers
-    local what = nil
-    while true do
-        local line = po:read("*l")
-        if line == nil or line == "" then
-            if data.msgid and data.msgid_plural and data["msgstr[0]"] then
-                for k, v in pairs(data) do
-                    local n = tonumber(k:match("msgstr%[([0-9]+)%]"))
-                    local msgstr = v
+    GetText.current_lang = new_lang
+    return true
+end
 
-                    if n and msgstr then
-                        addTranslation(data.msgctxt, data.msgid, msgstr, n)
-                    end
-                end
-            elseif data.msgid and data.msgstr and data.msgstr ~= "" then
-                -- header
-                if not headers and data.msgid == "" then
-                    headers = data.msgstr
-                    local plural_forms = data.msgstr:match("Plural%-Forms: (.*)")
-                    local nplurals = plural_forms:match("nplurals=([0-9]+);") or 2
-                    local plurals = plural_forms:match("plural=%((.*)%);")
+local function parse_headers(headers)
+    local plural_forms = headers:match("Plural%-Forms: (.*)")
+    local nplurals = plural_forms:match("nplurals=([0-9]+);") or 2
+    local plurals = plural_forms:match("plural=%((.*)%);")
 
-                    -- Hardcoded workaround for Hebrew which has 4 plural forms.
-                    if plurals == "n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && n % 10 == 0) ? 2 : 3)" then
-                        plurals = "n == 1 ? 0 : (n == 2) ? 1 : (n > 10 && n % 10 == 0) ? 2 : 3"
-                    end
-                    -- Hardcoded workaround for Latvian.
-                    if plurals == "n % 10 == 0 || n % 100 >= 11 && n % 100 <= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2" then
-                        plurals = "n % 10 == 0 || n % 100 >= 11 && n % 100 <= 19 ? 0 : (n % 10 == 1 && n % 100 != 11) ? 1 : 2"
-                    end
-                    -- Hardcoded workaround for Romanian which has 3 plural forms.
-                    if plurals == "n == 1) ? 0 : ((n == 0 || n != 1 && n % 100 >= 1 && n % 100 <= 19) ? 1 : 2" then
-                        plurals = "n == 1 ? 0 : (n == 0 || n != 1 && n % 100 >= 1 && n % 100 <= 19) ? 1 : 2"
-                    end
+    -- Hardcoded workaround for Hebrew which has 4 plural forms.
+    if plurals == "n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && n % 10 == 0) ? 2 : 3)" then
+        plurals = "n == 1 ? 0 : (n == 2) ? 1 : (n > 10 && n % 10 == 0) ? 2 : 3"
+    end
+    -- Hardcoded workaround for Latvian.
+    if plurals == "n % 10 == 0 || n % 100 >= 11 && n % 100 <= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2" then
+        plurals = "n % 10 == 0 || n % 100 >= 11 && n % 100 <= 19 ? 0 : (n % 10 == 1 && n % 100 != 11) ? 1 : 2"
+    end
+    -- Hardcoded workaround for Romanian which has 3 plural forms.
+    if plurals == "n == 1) ? 0 : ((n == 0 || n != 1 && n % 100 >= 1 && n % 100 <= 19) ? 1 : 2" then
+        plurals = "n == 1 ? 0 : (n == 0 || n != 1 && n % 100 >= 1 && n % 100 <= 19) ? 1 : 2"
+    end
 
-                    if not plurals then
-                        -- Some languages (e.g., Arabic) may not use parentheses.
-                        -- However, the following more inclusive match is more likely
-                        -- to accidentally include junk and seldom relevant.
-                        -- We might also be dealing with a language without plurals.
-                        -- That would look like `plural=0`.
-                        plurals = plural_forms:match("plural=(.*);")
-                    end
+    if not plurals then
+        -- Some languages (e.g., Arabic) may not use parentheses.
+        -- However, the following more inclusive match is more likely
+        -- to accidentally include junk and seldom relevant.
+        -- We might also be dealing with a language without plurals.
+        -- That would look like `plural=0`.
+        plurals = plural_forms:match("plural=(.*);")
+    end
 
-                    if plurals:find("[^n!=%%<>&:%(%)|?0-9 ]") then
-                        -- we don't trust this input, go with default instead
-                        plurals = GetText.plural_default
-                    end
+    if plurals:find("[^n!=%%<>&:%(%)|?0-9 ]") then
+        -- we don't trust this input, go with default instead
+        plurals = GetText.plural_default
+    end
 
-                    local pl_tests = {}
-                    for pl_test in plurals:gmatch("[^:]+") do
-                        table.insert(pl_tests, pl_test)
-                    end
+    local pl_tests = {}
+    for pl_test in plurals:gmatch("[^:]+") do
+        table.insert(pl_tests, pl_test)
+    end
 
-                    GetText.getPlural = getPluralFunc(pl_tests, nplurals, GetText.plural_default)
-                    if not GetText.getPlural then
-                        GetText.getPlural = getDefaultPlural
-                    end
-                end
+    GetText.getPlural = getPluralFunc(pl_tests, nplurals, GetText.plural_default)
+    if not GetText.getPlural then
+        GetText.getPlural = getDefaultPlural
+    end
+end
 
-                addTranslation(data.msgctxt, data.msgid, data.msgstr)
+-- for MO file format, see
+-- https://www.gnu.org/software/gettext/manual/html_node/MO-Files.html
+
+ffi.cdef[[
+struct __attribute__((packed)) mo_header {
+    uint32_t magic;
+    uint16_t revision_major;
+    uint16_t revision_minor;
+    uint32_t nb_strings;
+    uint32_t original_strings_table_offset;
+    uint32_t translated_strings_table_offset;
+    uint32_t hash_table_size;
+    uint32_t hash_table_offset;
+};
+
+struct __attribute__((packed)) mo_string_table {
+    uint32_t length;
+    uint32_t offset;
+};
+]]
+local MO_MAGIC = 0x950412de
+
+function GetText_mt.__index.loadMO(file)
+    local fd = C.open(file, C.O_RDONLY)
+    if fd < 0 then
+        logger.dbg(string.format("cannot open translation file: %s", file))
+        return false
+    end
+    local strerror = function()
+        return ffi.string(C.strerror(ffi.errno()))
+    end
+    local seek_and_read = function(off, ptr, len)
+        local ret
+        ret = C.lseek(fd, off, C.SEEK_SET)
+        if ret ~= off then
+            logger.err(string.format("loading translation file failed: %s [%s]", file, ret < 0 and strerror() or "lseek"))
+            return false
+        end
+        ret = C.read(fd, ptr, len)
+        if ret ~= len then
+            logger.err(string.format("loading translation file failed: %s [%s]", file), ret < 0 and strerror() or "short read")
+            return false
+        end
+        return true
+    end
+    local mo_hdr = ffi.new("struct mo_header")
+    if not seek_and_read(0, mo_hdr, ffi.sizeof(mo_hdr)) then
+        C.close(fd)
+        return false
+    end
+    if mo_hdr.magic ~= MO_MAGIC then
+        logger.err(string.format("bad translation file: %s [magic]", file))
+        C.close(fd)
+        return false
+    end
+    if mo_hdr.revision_major ~= 0 then
+        logger.err(string.format("bad translation file: %s [revision]", file))
+        C.close(fd)
+        return false
+    end
+    local table_buf = buffer:new()
+    local table_size = mo_hdr.nb_strings * ffi.sizeof("struct mo_string_table")
+    local table_ptr = table_buf:reserve(table_size)
+    local read_strings_count
+    local read_strings = function(check_for_context)
+        local m_str_tbl = ffi.cast("struct mo_string_table *", table_ptr)
+        local str_buf = buffer:new()
+        read_strings_count = -1
+        return function()
+            read_strings_count = read_strings_count + 1
+            if read_strings_count >= mo_hdr.nb_strings then
+                return
             end
-            -- stop at EOF:
-            if line == nil then break end
-            data = {}
-            what = nil
-        else
-            -- comment
-            if not line:match("^#") then
-                -- new data item (msgid, msgstr, ...
-                local w, s = line:match("^%s*([%a_%[%]0-9]+)%s+\"(.*)\"%s*$")
-                if w then
-                    what = w
-                else
-                    -- string continuation
-                    s = line:match("^%s*\"(.*)\"%s*$")
+            local str_len = m_str_tbl[read_strings_count].length
+            local str_off = m_str_tbl[read_strings_count].offset
+            local str_ptr = str_buf:reserve(str_len)
+            if not seek_and_read(str_off, str_ptr, str_len) then
+                return
+            end
+            local ctx
+            local pos = 0
+            if check_for_context then
+                -- 4: ␄ (End of Transmission).
+                local p = C.memchr(str_ptr, 4, str_len)
+                if p ~= nil then
+                    local l = ffi.cast("ssize_t", p) - ffi.cast("ssize_t", str_ptr)
+                    ctx = ffi.string(str_ptr, l)
+                    pos = l + 1
                 end
-                if what and s and not fuzzy then
-                    -- unescape \n or msgid won't match
-                    s = s:gsub("\\n", "\n")
-                    -- unescape " or msgid won't match
-                    s = s:gsub('\\"', '"')
-                    -- unescape \\ or msgid won't match
-                    s = s:gsub("\\\\", "\\")
-                    data[what] = (data[what] or "") .. s
-                elseif what and s == "" and fuzzy then -- luacheck: ignore 542
-                    -- Ignore the likes of msgid "" and msgstr ""
-                else
-                    -- Don't save this fuzzy string and unset fuzzy for the next one.
-                    fuzzy = false
+            end
+            local l = C.strnlen(str_ptr + pos, str_len - pos)
+            if l + pos < str_len then
+                -- Plurals!
+                local strings = {ffi.string(str_ptr + pos, l)}
+                pos = pos + l + 1
+                while pos < str_len do
+                    l = C.strnlen(str_ptr + pos, str_len - pos)
+                    table.insert(strings, ffi.string(str_ptr + pos, l))
+                    pos = pos + l + 1
                 end
-            elseif line:match("#, fuzzy") then
-                fuzzy = true
+                return read_strings_count + 1, strings, ctx
+            else
+                return read_strings_count + 1, ffi.string(str_ptr + pos, str_len - pos), ctx
             end
         end
     end
-    po:close()
-    GetText.current_lang = new_lang
+    -- Read original strings.
+    if not seek_and_read(mo_hdr.original_strings_table_offset, table_ptr, table_size) then
+        C.close(fd)
+        return false
+    end
+    local original_context = {}
+    local original_strings = table.new(mo_hdr.nb_strings, 0)
+    for n, s, ctx in read_strings(true) do
+        if ctx then
+            original_context[n] = ctx
+        end
+        original_strings[n] = s
+    end
+    if read_strings_count ~= mo_hdr.nb_strings then
+        C.close(fd)
+        return false
+    end
+    -- Read translated strings.
+    if not seek_and_read(mo_hdr.translated_strings_table_offset, table_ptr, table_size) then
+        C.close(fd)
+        return false
+    end
+    for n, ts in read_strings() do
+        local ctx = original_context[n]
+        local os = original_strings[n]
+        if type(os) == "table" then
+            if type(ts) == "table" then
+                for pn, pts in ipairs(ts) do
+                    addTranslation(ctx, os[1], pts, pn - 1)
+                end
+            else
+                addTranslation(ctx, os[1], ts, 0)
+            end
+        elseif type(ts) == "table" then
+            logger.warn(string.format("bad translation file: %s [singular / plurals mismatch]", file))
+        else
+            if n == 1 and #os == 0 then
+                parse_headers(ts)
+            else
+                addTranslation(ctx, os, ts)
+            end
+        end
+    end
+    local ok = read_strings_count == mo_hdr.nb_strings
+    C.close(fd)
+    return ok
 end
 
 GetText_mt.__index.getPlural = getDefaultPlural
@@ -407,7 +494,6 @@ elseif os.getenv("LANG") then
 end
 
 if isAndroid then
-    local ffi = require("ffi")
     local buf = ffi.new("char[?]", 16)
     android.lib.AConfiguration_getLanguage(android.app.config, buf)
     local lang = ffi.string(buf)

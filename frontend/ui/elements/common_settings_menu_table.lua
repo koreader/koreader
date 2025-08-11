@@ -237,11 +237,23 @@ if Device:isKobo() then
             UIManager:askForRestart()
         end
     }
+
+    if Device:hasKeys() and Device:isMTK() then
+        common_settings.pageturn_power = {
+            text = _("Wake up on page-turn button press"),
+            checked_func = function()
+                return G_reader_settings:isTrue("pageturn_power")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("pageturn_power")
+            end
+        }
+    end
 end
 
-if Device:isKindle() and PowerD:hasHallSensor() then
+if PowerD:hasHallSensor() then
     common_settings.cover_events = {
-        text = _("Disable Kindle cover events"),
+        text = _("Disable cover events"),
         help_text = _([[Toggle the Hall effect sensor.
 This is used to detect if the cover is closed, which will automatically sleep and wake the device. If there is no cover present the sensor may cause spurious wakeups when located next to a magnetic source.]]),
         keep_menu_open = true,
@@ -280,7 +292,7 @@ if Device:isTouchDevice() then
             return G_reader_settings:isTrue("ignore_hold_corners")
         end,
         callback = function()
-            UIManager:broadcastEvent(Event:new("IgnoreHoldCorners"))
+            UIManager:broadcastEvent(Event:new("IgnoreHoldCorners", nil, true)) -- no notification
         end,
     }
     common_settings.screen_disable_double_tap = {

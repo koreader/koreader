@@ -3,6 +3,7 @@ local DataStorage = require("datastorage")
 local DateTimeWidget = require("ui/widget/datetimewidget")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
+local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
@@ -155,7 +156,19 @@ function Profiles:getSubMenuItems()
                                 return v.settings.auto_exec_ask
                             end,
                             callback = function()
-                                self.data[k].settings.auto_exec_ask = not v.settings.auto_exec_ask and true or nil
+                                self.data[k].settings.auto_exec_ask = not v.settings.auto_exec_ask or nil
+                                self.updated = true
+                            end,
+                        },
+                        {
+                            text = _("Execute promptly"),
+                            help_text = _([[Enable this option to execute the profile before some other operations triggered by the event.
+For example, with a trigger "on document closing" the profile will be executed before the document is closed.]]),
+                            checked_func = function()
+                                return v.settings.auto_exec_promptly
+                            end,
+                            callback = function()
+                                self.data[k].settings.auto_exec_promptly = not v.settings.auto_exec_promptly or nil
                                 self.updated = true
                             end,
                         },
@@ -235,7 +248,7 @@ function Profiles:getSubMenuItems()
                     return v.settings.notify
                 end,
                 callback = function()
-                    self.data[k].settings.notify = not v.settings.notify and true or nil
+                    self.data[k].settings.notify = not v.settings.notify or nil
                     self.updated = true
                 end,
                 separator = true,
@@ -248,7 +261,8 @@ function Profiles:getSubMenuItems()
                 callback = function()
                     if v.settings.registered then
                         dispatcherUnregisterProfile(k)
-                        self:updateProfiles(self.prefix..k)
+                        UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged",
+                            { old_name = self.prefix..k, new_name = nil }))
                         self.data[k].settings.registered = nil
                     else
                         dispatcherRegisterProfile(k)
@@ -279,7 +293,8 @@ function Profiles:getSubMenuItems()
                         if v.settings.registered then
                             dispatcherUnregisterProfile(k)
                             dispatcherRegisterProfile(new_name)
-                            self:updateProfiles(self.prefix..k, self.prefix..new_name)
+                            UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged",
+                                { old_name = self.prefix..k, new_name = self.prefix..new_name }))
                         end
                         self.data[k] = nil
                         self.updated = true
@@ -319,7 +334,8 @@ function Profiles:getSubMenuItems()
                             self:updateAutoExec(k)
                             if v.settings.registered then
                                 dispatcherUnregisterProfile(k)
-                                self:updateProfiles(self.prefix..k)
+                                UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged",
+                                    { old_name = self.prefix..k, new_name = nil }))
                             end
                             self.data[k] = nil
                             self.updated = true
@@ -461,17 +477,17 @@ function Profiles:getProfileFromCurrentBookSettings(new_name)
     return profile
 end
 
-function Profiles:updateProfiles(action_old_name, action_new_name)
+function Profiles:onDispatcherActionNameChanged(action)
     for _, profile in pairs(self.data) do
-        if profile[action_old_name] then
+        if profile[action.old_name] ~= nil then
             if profile.settings and profile.settings.order then
-                for i, action in ipairs(profile.settings.order) do
-                    if action == action_old_name then
-                        if action_new_name then
-                            profile.settings.order[i] = action_new_name
+                for i, action_in_order in ipairs(profile.settings.order) do
+                    if action_in_order == action.old_name then
+                        if action.new_name then
+                            profile.settings.order[i] = action.new_name
                         else
                             table.remove(profile.settings.order, i)
-                            if #profile.settings.order == 0 then
+                            if #profile.settings.order < 2 then
                                 profile.settings.order = nil
                             end
                         end
@@ -479,17 +495,34 @@ function Profiles:updateProfiles(action_old_name, action_new_name)
                     end
                 end
             end
-            profile[action_old_name] = nil
-            if action_new_name then
-                profile[action_new_name] = true
+            profile[action.old_name] = nil
+            if action.new_name then
+                profile[action.new_name] = true
             end
             self.updated = true
         end
     end
-    if self.ui.gestures then -- search and update the profile action in assigned gestures
-        self.ui.gestures:updateProfiles(action_old_name, action_new_name)
-    elseif self.ui.hotkeys then -- search and update the profile action in assigned keyboard shortcuts
-        self.ui.hotkeys:updateProfiles(action_old_name, action_new_name)
+end
+
+function Profiles:onDispatcherActionValueChanged(action)
+    for _, profile in pairs(self.data) do
+        if profile[action.name] == action.old_value then
+            profile[action.name] = action.new_value
+            if action.new_value == nil then
+                if profile.settings and profile.settings.order then
+                    for i, action_in_order in ipairs(profile.settings.order) do
+                        if action_in_order == action.name then
+                            table.remove(profile.settings.order, i)
+                            if #profile.settings.order < 2 then
+                                profile.settings.order = nil
+                            end
+                            break
+                        end
+                    end
+                end
+            end
+            self.updated = true
+        end
     end
 end
 
@@ -596,21 +629,23 @@ function Profiles:genAutoExecPathChangedMenuItem(text, event, profile_name, sepa
             local conditions = {
                 { _("if folder path contains"), "has" },
                 { _("if folder path does not contain"), "has_not" },
+                { _("if folder path is equal"), "is_equal" },
+                { _("if folder path is not equal"), "is_not_equal" },
             }
             local sub_item_table = {}
             for i, mode in ipairs(conditions) do
+                local condition = mode[2]
                 sub_item_table[i] = {
                     text_func = function()
-                        local txt = conditions[i][1]
-                        local value = util.tableGetValue(self.autoexec, event, profile_name, conditions[i][2])
+                        local txt = mode[1]
+                        local value = util.tableGetValue(self.autoexec, event, profile_name, condition)
                         return value and txt .. ": " .. value or txt
                     end,
-                    no_refresh_on_check = true,
                     checked_func = function()
-                        return util.tableGetValue(self.autoexec, event, profile_name, conditions[i][2])
+                        return util.tableGetValue(self.autoexec, event, profile_name, condition)
                     end,
+                    check_callback_updates_menu = true,
                     callback = function(touchmenu_instance)
-                        local condition = conditions[i][2]
                         local dialog
                         local buttons = {{
                             {
@@ -650,6 +685,10 @@ function Profiles:genAutoExecPathChangedMenuItem(text, event, profile_name, sepa
                         }
                         UIManager:show(dialog)
                         dialog:onShowKeyboard()
+                    end,
+                    hold_callback = function(touchmenu_instance)
+                        util.tableRemoveValue(self.autoexec, event, profile_name, condition)
+                        touchmenu_instance:updateItems()
                     end,
                 }
             end
@@ -733,10 +772,10 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                                     local txt = util.tableGetValue(self.autoexec, event, profile_name, condition, prop)
                                     return txt and title .. " " .. txt or title:sub(1, -2)
                                 end,
-                                no_refresh_on_check = true,
                                 checked_func = function()
                                     return util.tableGetValue(self.autoexec, event, profile_name, condition, prop) and true
                                 end,
+                                check_callback_updates_menu = true,
                                 callback = function(touchmenu_instance)
                                     local dialog
                                     local buttons = self.document == nil and {} or {{
@@ -803,10 +842,10 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                     enabled_func = function()
                         return not util.tableGetValue(self.autoexec, event_always, profile_name)
                     end,
-                    no_refresh_on_check = true,
                     checked_func = function()
                         return util.tableGetValue(self.autoexec, event, profile_name, conditions[3][2]) and true
                     end,
+                    check_callback_updates_menu = true,
                     callback = function(touchmenu_instance)
                         local condition = conditions[3][2]
                         local dialog
@@ -868,10 +907,10 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                     enabled_func = function()
                         return not util.tableGetValue(self.autoexec, event_always, profile_name)
                     end,
-                    no_refresh_on_check = true,
                     checked_func = function()
                         return util.tableGetValue(self.autoexec, event, profile_name, conditions[4][2]) and true
                     end,
+                    check_callback_updates_menu = true,
                     callback = function(touchmenu_instance)
                         local condition = conditions[4][2]
                         local collections = util.tableGetValue(self.autoexec, event, profile_name, condition)
@@ -964,11 +1003,19 @@ function Profiles:onPathChanged(path) -- global
     end
     for profile_name, conditions in pairs(self.autoexec[event]) do
         local do_execute
-        if conditions.has then
-            do_execute = is_match(path, conditions.has)
-        end
-        if do_execute == nil and conditions.has_not then
-            do_execute = not is_match(path, conditions.has_not)
+        for condition, trigger in pairs(conditions) do
+            if condition == "has" then
+                do_execute = is_match(path, trigger)
+            elseif condition == "has_not" then
+                do_execute = not is_match(path, trigger)
+            elseif condition == "is_equal" then
+                do_execute = path == trigger
+            elseif condition == "is_not_equal" then
+                do_execute = path ~= trigger
+            end
+            if do_execute then
+                break
+            end
         end
         if do_execute then
             self:executeAutoExec(profile_name)
@@ -1018,20 +1065,25 @@ function Profiles:executeAutoExec(profile_name, event)
             ok_callback = function()
                 logger.dbg("Profiles - auto executing:", profile_name)
                 UIManager:nextTick(function()
-                    Dispatcher:execute(self.data[profile_name])
+                    Dispatcher:execute(profile)
                 end)
             end,
         })
     else
-        logger.dbg("Profiles - auto executing:", profile_name)
-        if event == "CloseDocument" or event == "CloseDocumentAll" then
-            UIManager:tickAfterNext(function()
-                Dispatcher:execute(self.data[profile_name])
-            end)
+        if profile.settings.auto_exec_promptly then
+            logger.dbg("Profiles - auto executing promptly:", profile_name)
+            Dispatcher:execute(profile)
         else
-            UIManager:nextTick(function()
-                Dispatcher:execute(self.data[profile_name])
-            end)
+            logger.dbg("Profiles - auto executing:", profile_name)
+            if event == "CloseDocument" or event == "CloseDocumentAll" then
+                UIManager:tickAfterNext(function()
+                    Dispatcher:execute(profile)
+                end)
+            else
+                UIManager:nextTick(function()
+                    Dispatcher:execute(profile)
+                end)
+            end
         end
     end
 end

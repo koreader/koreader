@@ -776,11 +776,6 @@ function Kindle:readyToSuspend(delay)
     self.suspend_time = time.boottime_or_realtime_coarse()
 end
 
--- We add --no-same-permissions --no-same-owner to make the userstore fuse proxy happy...
-function Kindle:untar(archive, extract_to)
-    return os.execute(("./tar --no-same-permissions --no-same-owner -xf %q -C %q"):format(archive, extract_to))
-end
-
 function Kindle:UIManagerReady(uimgr)
     UIManager = uimgr
 end
@@ -958,6 +953,7 @@ local KindleOasis = Kindle:extend{
     hasKeys = yes,
     hasGSensor = yes,
     display_dpi = 300,
+    hasAuxBattery = yes,
     --[[
     -- NOTE: Points to event3 on Wi-Fi devices, event4 on 3G devices...
     --       3G devices apparently have an extra SX9500 Proximity/Capacitive controller for mysterious purposes...
@@ -1356,9 +1352,11 @@ function KindleOasis:init()
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
         fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
-        -- NOTE: Points to the embedded battery. The one in the cover is codenamed "soda".
+        -- NOTE: Points to the embedded battery. The one in the cover is codenamed "soda", see aux_batt_capacity_file below.
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
+        aux_batt_capacity_file = "/sys/devices/platform/soda/power_supply/soda_fg/capacity",
+        aux_batt_status_file = "/sys/devices/platform/soda/power_supply/soda_fg/status",
         hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
     }
 

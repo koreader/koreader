@@ -99,6 +99,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
             checked_func = function()
                 return self.ui.paging.bookmark_flipping_mode
             end,
+            check_callback_closes_menu = true,
             callback = function(touchmenu_instance)
                 self.ui.paging:onToggleBookmarkFlipping()
                 touchmenu_instance:closeMenu()
@@ -250,6 +251,15 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrFalse("annotations_export_on_closing")
+                end,
+            },
+            {
+                text = _("Keep all annotations on import"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("annotations_export_keep_all_on_import")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("annotations_export_keep_all_on_import")
                 end,
             },
             {
@@ -1178,6 +1188,36 @@ function ReaderBookmark:showBookmarkDetails(item_or_index)
     local buttons_table = {
         {
             {
+                text = "▕◁",
+                enabled = item_idx > 1,
+                callback = function()
+                    _showBookmarkDetails(1)
+                end,
+            },
+            {
+                text = "◁",
+                enabled = item_idx > 1,
+                callback = function()
+                    _showBookmarkDetails(item_idx - 1)
+                end,
+            },
+            {
+                text = "▷",
+                enabled = item_idx < items_nb,
+                callback = function()
+                    _showBookmarkDetails(item_idx + 1)
+                end,
+            },
+            {
+                text = "▷▏",
+                enabled = item_idx < items_nb,
+                callback = function()
+                    _showBookmarkDetails(items_nb)
+                end,
+            },
+        },
+        {
+            {
                 text = _("Reset text"),
                 enabled = item.text_edited and not_select_mode or false,
                 callback = function()
@@ -1221,12 +1261,6 @@ function ReaderBookmark:showBookmarkDetails(item_or_index)
         },
         {
             {
-                text = _("Close"),
-                callback = function()
-                    textviewer:onClose()
-                end,
-            },
-            {
                 text = _("Go to bookmark"),
                 enabled = not (bm_menu and bm_menu.select_count),
                 callback = function()
@@ -1236,34 +1270,10 @@ function ReaderBookmark:showBookmarkDetails(item_or_index)
                     end
                 end,
             },
-        },
-        {
             {
-                text = "▕◁",
-                enabled = item_idx > 1,
+                text = _("Close"),
                 callback = function()
-                    _showBookmarkDetails(1)
-                end,
-            },
-            {
-                text = "◁",
-                enabled = item_idx > 1,
-                callback = function()
-                    _showBookmarkDetails(item_idx - 1)
-                end,
-            },
-            {
-                text = "▷",
-                enabled = item_idx < items_nb,
-                callback = function()
-                    _showBookmarkDetails(item_idx + 1)
-                end,
-            },
-            {
-                text = "▷▏",
-                enabled = item_idx < items_nb,
-                callback = function()
-                    _showBookmarkDetails(items_nb)
+                    textviewer:onClose()
                 end,
             },
         },

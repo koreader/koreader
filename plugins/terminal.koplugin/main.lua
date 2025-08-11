@@ -6,6 +6,7 @@ This plugin provides a terminal emulator (VT52 (+some ANSI and some VT100))
 
 local Device = require("device")
 local logger = require("logger")
+local buffer = require("string.buffer")
 local util = require("util")
 local ffi = require("ffi")
 local C = ffi.C
@@ -135,8 +136,7 @@ function Terminal:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 
-    self.chunk_size = CHUNK_SIZE
-    self.chunk = ffi.new('uint8_t[?]', self.chunk_size)
+    self.chunk = buffer.new(CHUNK_SIZE)
 
     self.terminal_data = DataStorage:getDataDir()
     lfs.mkdir(self.terminal_data .. "/scripts")
@@ -272,23 +272,21 @@ function Terminal:spawnShell(cols, rows)
 end
 
 function Terminal:receive()
-    local last_result = ""
+    local ptr = self.chunk:reset():ref()
+    local free = CHUNK_SIZE
     repeat
         C.tcdrain(self.ptmx)
-        local count = tonumber(C.read(self.ptmx, self.chunk, self.chunk_size))
-        if count > 0 then
-            last_result = last_result .. string.sub(ffi.string(self.chunk), 1, count)
+        local count = tonumber(C.read(self.ptmx, ptr, free))
+        if count <= 0 then
+            break
         end
-    until count <= 0 or #last_result >= self.chunk_size - 1
-    return last_result
+        ptr = ptr + count
+        free = free - count
+    until free == 0
+    return self.chunk:commit(CHUNK_SIZE - free):get()
 end
 
-function Terminal:refresh(reset)
-    if reset then
-        self.refresh_time = 1/32
-        UIManager:unschedule(Terminal.refresh)
-    end
-
+function Terminal:refresh()
     local next_text = self:receive()
     if next_text ~= "" then
         self.input_widget:interpretAnsiSeq(next_text)
@@ -314,7 +312,11 @@ end
 
 function Terminal:transmit(chars)
     C.write(self.ptmx, chars, #chars)
-    self:refresh(true)
+    self.refresh_time = 1/32
+    UIManager:unschedule(Terminal.refresh)
+    UIManager:tickAfterNext(function()
+        UIManager:scheduleIn(self.refresh_time, Terminal.refresh, self)
+    end)
 end
 
 --- kills a running shell
@@ -477,6 +479,9 @@ function Terminal:generateInputDialog()
             end,
             },
         }},
+        del_word_callback = function()
+            self:transmit("\023") -- Ctrl+U
+        end,
         enter_callback = function()
             self:transmit("\r")
         end,

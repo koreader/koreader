@@ -50,6 +50,8 @@ local TouchMenuItem = InputContainer:extend{
     dimen = nil,
     face = Font:getFace("smallinfofont"),
     show_parent = nil,
+    check_callback_updates_menu = nil, -- set to true for item with checkmark if its callback updates menu
+    check_callback_closes_menu = nil, -- set to true for item with checkmark if its callback closes menu
 }
 
 function TouchMenuItem:init()
@@ -206,8 +208,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
         -- Unhighlight
         --
         self.item_frame.invert = false
-        -- NOTE: If the menu is going to be closed, we can safely drop that.
-        if self.item.keep_menu_open then
+        if self.item.keep_menu_open or self.item.check_callback_updates_menu then
             UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
             UIManager:setDirty(nil, "ui", highlight_dimen)
         end
@@ -228,14 +229,9 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     end
     if enabled == false then
         -- Allow help_text to be displayed even if menu item disabled
-        if self.item.help_text or type(self.item.help_text_func) == "function" then
-            local help_text = self.item.help_text
-            if self.item.help_text_func then
-                help_text = self.item.help_text_func(self)
-            end
-            if help_text then
-                UIManager:show(InfoMessage:new{ text = help_text, })
-            end
+        local help_text = self.item.help_text_func and self.item.help_text_func(self) or self.item.help_text
+        if help_text then
+            UIManager:show(InfoMessage:new{ text = help_text, })
         end
         return true -- don't propagate
     end
@@ -470,7 +466,6 @@ local TouchMenu = FocusManager:extend{
     fface = Font:getFace("ffont"),
     width = nil,
     height = nil,
-    page = 1,
     max_per_page_default = 10,
     -- for UIManager:setDirty
     show_parent = nil,
@@ -480,6 +475,7 @@ local TouchMenu = FocusManager:extend{
 }
 
 function TouchMenu:init()
+    self.screen_size = Screen:getSize()
     -- We won't include self.bordersize in our width calculations, so that
     -- borders are pushed off-(screen-)width and so not visible.
     -- We'll then be similar to bottom menu ConfigDialog (where this
@@ -499,8 +495,8 @@ function TouchMenu:init()
             ges = "tap",
             range = Geom:new{
                 x = 0, y = 0,
-                w = Screen:getWidth(),
-                h = Screen:getHeight(),
+                w = self.screen_size.w,
+                h = self.screen_size.h,
             }
         }
     }
@@ -623,7 +619,7 @@ function TouchMenu:init()
     -- This CenterContainer will make the left and right borders drawn
     -- off-screen
     self[1] = CenterContainer:new{
-        dimen = Screen:getSize(),
+        dimen = self.screen_size,
         ignore = "height",
         self.menu_frame
     }
@@ -642,61 +638,43 @@ function TouchMenu:init()
         HorizontalSpan:new{width = Size.span.horizontal_default},
     }
     self.footer_top_margin = VerticalSpan:new{width = Size.span.vertical_default}
+
+    local menu_height = self.height and math.min(self.height, self.screen_size.h) or self.screen_size.h
+    local items_height = menu_height - self.bar:getSize().h - self.footer_top_margin:getSize().h - self.footer:getSize().h
+    self.max_per_page = math.floor(items_height / (self.item_height + self.split_line:getSize().h))
+
     self.bar:switchToTab(self.last_index or 1)
 end
 
-function TouchMenu:onCloseWidget()
-    -- NOTE: We don't pass a region in order to ensure a full-screen flash to avoid ghosting,
-    --       but we only need to do that if we actually have a FM or RD below us.
-    -- Don't do anything when we're switching between the two, or if we don't actually have a live instance of 'em...
-    local FileManager = require("apps/filemanager/filemanager")
-    local ReaderUI = require("apps/reader/readerui")
-    if (FileManager.instance and not FileManager.instance.tearing_down)
-            or (ReaderUI.instance and not ReaderUI.instance.tearing_down) then
-        UIManager:setDirty(nil, "flashui")
-    end
-end
-
-function TouchMenu:_recalculatePageLayout()
-    local content_height  -- content == item_list + footer
-
-    local bar_height = self.bar:getSize().h
-    local footer_height = self.footer:getSize().h
-    if self.height then
-        content_height = self.height - bar_height
-    else
-        content_height = #self.item_table * self.item_height + footer_height
-        -- split line height
-        content_height = content_height + (#self.item_table - 1)
-        content_height = content_height + self.footer_top_margin:getSize().h
-    end
-    if content_height + bar_height > Screen:getHeight() then
-        content_height = Screen:getHeight() - bar_height
-    end
-
-    local item_list_content_height = content_height - footer_height
-    self.perpage = math.floor(item_list_content_height / self.item_height)
-    local max_per_page = self.item_table.max_per_page or self.max_per_page_default
-    if self.perpage > max_per_page then
-        self.perpage = max_per_page
-    end
-
+function TouchMenu:updateItems(target_page, target_item_id)
+    if #self.item_table == 0 then return end
+    self.perpage = math.min(self.max_per_page, self.item_table.max_per_page or self.max_per_page_default)
     self.page_num = math.ceil(#self.item_table / self.perpage)
-end
+    if target_item_id ~= nil then -- show menu page with target item
+        for i, v in ipairs(self.item_table) do
+            if v.menu_item_id == target_item_id then
+                target_page = math.floor( (i - 1) / self.perpage ) + 1
+                break
+            end
+        end
+    end
+    self.page = target_page or self.page
+    if self.page > self.page_num then
+        self.page = self.page_num
+    end
 
-function TouchMenu:updateItems()
-    local old_dimen = self.dimen and self.dimen:copy()
-    self:_recalculatePageLayout()
     self.item_group:clear()
     self.layout = {}
     table.insert(self.item_group, self.bar)
     table.insert(self.layout, self.bar.icon_widgets) -- for the focusmanager
 
+    local idx_offset = (self.page - 1) * self.perpage
     for c = 1, self.perpage do
         -- calculate index in item_table
-        local i = (self.page - 1) * self.perpage + c
+        local i = idx_offset + c
         if i <= #self.item_table then
             local item = self.item_table[i]
+            item.idx = i
             local item_tmp = TouchMenuItem:new{
                 item = item,
                 menu = self,
@@ -705,14 +683,12 @@ function TouchMenu:updateItems()
                     h = self.item_height,
                 },
                 show_parent = self.show_parent,
-                item_visible_index = c,
             }
             table.insert(self.item_group, item_tmp)
             if item_tmp:isEnabled() then
                 table.insert(self.layout, {[self.cur_tab] = item_tmp}) -- for the focusmanager
             end
             if item.separator and c ~= self.perpage and i ~= #self.item_table then
-                -- insert split line
                 table.insert(self.item_group, self.split_line)
             end
         else
@@ -740,7 +716,6 @@ function TouchMenu:updateItems()
         local batt_lvl = powerd:getCapacity()
         local batt_symbol = powerd:getBatterySymbol(powerd:isCharged(), powerd:isCharging(), batt_lvl)
         time_info_txt = BD.wrap(time_info_txt) .. " " .. BD.wrap("⌁") .. BD.wrap(batt_symbol) ..  BD.wrap(batt_lvl .. "%")
-
         if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
             local aux_batt_lvl = powerd:getAuxCapacity()
             local aux_batt_symbol = powerd:getBatterySymbol(powerd:isAuxCharged(), powerd:isAuxCharging(), aux_batt_lvl)
@@ -750,6 +725,7 @@ function TouchMenu:updateItems()
     self.time_info:setText(time_info_txt)
 
     -- recalculate dimen based on new layout
+    local old_dimen = self.dimen:copy()
     self.dimen.w = self.width
     self.dimen.h = self.item_group:getSize().h + self.bordersize*2 + self.padding -- (no padding at top)
     self:moveFocusTo(self.cur_tab, 1, FocusManager.NOT_FOCUS) -- reset the position of the focusmanager
@@ -788,13 +764,11 @@ function TouchMenu:switchMenuTab(tab_num)
     -- It's like getting a new menu every time we switch tab!
     -- Also, switching to the _same_ tab resets the stack and takes us back to
     -- the top of the menu tree
-    self.page = 1
-    -- clear item table stack
     self.item_table_stack = {}
     self.parent_id = nil
     self.cur_tab = tab_num
     self.item_table = self.tab_item_table[tab_num]
-    self:updateItems()
+    self:updateItems(1)
 end
 
 function TouchMenu:backToUpperMenu(no_close)
@@ -805,68 +779,40 @@ function TouchMenu:backToUpperMenu(no_close)
         if self.item_table.needs_refresh and self.item_table.refresh_func then
             self.item_table = self.item_table.refresh_func()
         end
-        self.page = 1
-        if self.parent_id then
-            self:_recalculatePageLayout() -- we need an accurate self.perpage
-            for i = 1, #self.item_table do
-                if self.item_table[i].menu_item_id == self.parent_id then
-                    self.page = math.floor( (i - 1) / self.perpage ) + 1
-                    break
-                end
-            end
-            self.parent_id = nil
-        end
-        self:updateItems()
+        self:updateItems(1, self.parent_id)
+        self.parent_id = nil
     elseif not no_close then
         self:closeMenu()
     end
 end
 
-function TouchMenu:closeMenu()
-    self.close_callback()
+function TouchMenu:onBack()
+    self:backToUpperMenu()
 end
 
 function TouchMenu:onNextPage()
-    if self.page < self.page_num then
-        self.page = self.page + 1
-    elseif self.page == self.page_num then
-        self.page = 1
-    end
-    self:updateItems()
-    return true
+    return self:onGotoPage(self.page + 1)
 end
 
 function TouchMenu:onPrevPage()
-    if self.page > 1 then
-        self.page = self.page - 1
-    elseif self.page == 1 then
-        self.page = self.page_num
-    end
-    self:updateItems()
-    return true
+    return self:onGotoPage(self.page - 1)
 end
 
 function TouchMenu:onFirstPage()
-    self.page = 1
-    self:updateItems()
-    return true
+    return self:onGotoPage(1)
 end
 
 function TouchMenu:onLastPage()
-    self.page = self.page_num
-    self:updateItems()
-    return true
+    return self:onGotoPage(self.page_num)
 end
 
 function TouchMenu:onGotoPage(nb)
-    if nb > self.page_num then
-        self.page = self.page_num
+    if nb > self.page_num then -- cycle by swipes only
+        nb = 1
     elseif nb < 1 then
-        self.page = 1
-    else
-        self.page = nb
+        nb = self.page_num
     end
-    self:updateItems()
+    self:updateItems(nb)
     return true
 end
 
@@ -890,62 +836,46 @@ function TouchMenu:onMenuSelect(item, tap_on_checkmark)
     if self.touch_menu_callback then
         self.touch_menu_callback()
     end
+
     if tap_on_checkmark and item.checkmark_callback then
         item.checkmark_callback()
         self:updateItems()
         return true
     end
-    if item.tap_input or type(item.tap_input_func) == "function" then
+
+    if item.tap_input or item.tap_input_func then
         if not item.keep_menu_open then
             self:closeMenu()
         end
-        if item.tap_input then
-            self:onInput(item.tap_input)
-        else
-            self:onInput(item.tap_input_func())
-        end
-    else
-        local sub_item_table = item.sub_item_table
-        if item.sub_item_table_func then
-            sub_item_table = item.sub_item_table_func()
-        end
-        if sub_item_table == nil then
-            -- keep menu opened if this item is a check option
-            local callback, refresh = item.callback, item.checked or item.checked_func
-            if item.callback_func then
-                callback = item.callback_func()
+        self:onInput(item.tap_input or item.tap_input_func())
+        return true
+    end
+
+    local sub_item_table = item.sub_item_table_func and item.sub_item_table_func() or item.sub_item_table
+    if sub_item_table then
+        table.insert(self.item_table_stack, self.item_table)
+        item.menu_item_id = item.menu_item_id or tostring(item) -- unique id
+        self.parent_id = item.menu_item_id
+        self.item_table = sub_item_table
+        self:updateItems(1, self.item_table.open_on_menu_item_id_func
+            and self.item_table.open_on_menu_item_id_func())
+        return true
+    end
+
+    -- keep menu opened if this item is a check option
+    local callback = item.callback_func and item.callback_func() or item.callback
+    if callback then
+        -- Provide callback with us, so it can call our
+        -- closemenu() or updateItems() when it sees fit
+        -- (if not providing checked or checked_func, caller
+        -- must set keep_menu_open=true if that is wished)
+        callback(self)
+        if item.checked or item.checked_func then -- refresh
+            if not (item.check_callback_updates_menu or item.check_callback_closes_menu) then
+                self:updateItems()
             end
-            if callback then
-                -- Provide callback with us, so it can call our
-                -- closemenu() or updateItems() when it sees fit
-                -- (if not providing checked or checked_func, caller
-                -- must set keep_menu_open=true if that is wished)
-                callback(self)
-                if refresh then
-                    if not item.no_refresh_on_check then
-                        self:updateItems()
-                    end
-                elseif not item.keep_menu_open then
-                    self:closeMenu()
-                end
-            end
-        else
-            table.insert(self.item_table_stack, self.item_table)
-            item.menu_item_id = item.menu_item_id or tostring(item) -- unique id
-            self.parent_id = item.menu_item_id
-            self.item_table = sub_item_table
-            self.page = 1
-            if self.item_table.open_on_menu_item_id_func then
-                self:_recalculatePageLayout() -- we need an accurate self.perpage
-                local open_id = self.item_table.open_on_menu_item_id_func()
-                for i = 1, #self.item_table do
-                    if self.item_table[i].menu_item_id == open_id then
-                        self.page = math.floor( (i - 1) / self.perpage ) + 1
-                        break
-                    end
-                end
-            end
-            self:updateItems()
+        elseif not item.keep_menu_open then
+            self:closeMenu()
         end
     end
     return true
@@ -955,46 +885,46 @@ function TouchMenu:onMenuHold(item, text_truncated)
     if self.touch_menu_callback then
         self.touch_menu_callback()
     end
-    if item.hold_input or type(item.hold_input_func) == "function" then
+
+    if item.hold_input or item.hold_input_func then
         if item.hold_keep_menu_open == false then
             self:closeMenu()
         end
-        if item.hold_input then
-            self:onInput(item.hold_input)
-        else
-            self:onInput(item.hold_input_func())
+        self:onInput(item.hold_input or item.hold_input_func())
+        return true
+    end
+
+    local hold_callback = item.hold_callback_func and item.hold_callback_func() or item.hold_callback
+    if hold_callback then
+        -- With hold, the default is to keep menu open, as we're
+        -- most often showing a ConfirmBox that can be cancelled
+        -- (provide hold_keep_menu_open=false to override)
+        if item.hold_keep_menu_open == false then
+            self:closeMenu()
         end
-    elseif item.hold_callback or type(item.hold_callback_func) == "function" then
-        local callback = item.hold_callback
-        if item.hold_callback_func then
-            callback = item.hold_callback_func()
-        end
-        if callback then
-            -- With hold, the default is to keep menu open, as we're
-            -- most often showing a ConfirmBox that can be cancelled
-            -- (provide hold_keep_menu_open=false to override)
-            if item.hold_keep_menu_open == false then
-                self:closeMenu()
-            end
-            -- Provide callback with us, so it can call our
-            -- closemenu() or updateItems() when it sees fit
-            callback(self)
-        end
-    elseif item.help_text or type(item.help_text_func) == "function" then
-        local help_text = item.help_text
-        if item.help_text_func then
-            help_text = item.help_text_func(self)
-        end
-        if help_text then
-            UIManager:show(InfoMessage:new{ text = help_text, })
-        end
-    elseif text_truncated then
+        -- Provide callback with us, so it can call our
+        -- closemenu() or updateItems() when it sees fit
+        hold_callback(self, item)
+        return true
+    end
+
+    local help_text = item.help_text_func and item.help_text_func(self) or item.help_text
+    if help_text then
+        UIManager:show(InfoMessage:new{ text = help_text, })
+        return true
+    end
+
+    if text_truncated then
         UIManager:show(InfoMessage:new{
             text = getMenuText(item),
             show_icon = false,
         })
     end
     return true
+end
+
+function TouchMenu:closeMenu()
+    self.close_callback()
 end
 
 function TouchMenu:onTapCloseAllMenus(arg, ges_ev)
@@ -1007,8 +937,16 @@ function TouchMenu:onClose()
     self:closeMenu()
 end
 
-function TouchMenu:onBack()
-    self:backToUpperMenu()
+function TouchMenu:onCloseWidget()
+    -- NOTE: We don't pass a region in order to ensure a full-screen flash to avoid ghosting,
+    --       but we only need to do that if we actually have a FM or RD below us.
+    -- Don't do anything when we're switching between the two, or if we don't actually have a live instance of 'em...
+    local FileManager = require("apps/filemanager/filemanager")
+    local ReaderUI = require("apps/reader/readerui")
+    if (FileManager.instance and not FileManager.instance.tearing_down)
+            or (ReaderUI.instance and not ReaderUI.instance.tearing_down) then
+        UIManager:setDirty(nil, "flashui")
+    end
 end
 
 -- Menu search feature
@@ -1016,7 +954,7 @@ function TouchMenu:search(search_for)
     local found_menu_items = {}
 
     local MAX_MENU_DEPTH = 10 -- our menu max depth is currently 6
-    local function recurse(item_table, path, text, icon, depth, is_disabled)
+    local function recurse(item_table, path, text, icon, depth)
         if item_table.ignored_by_menu_search then
             return
         end
@@ -1028,8 +966,7 @@ function TouchMenu:search(search_for)
             if type(v) == "table" and not v.ignored_by_menu_search then
                 local entry_text = v.text_func and v.text_func() or v.text
                 local entry_displayed_text = entry_text
-                is_disabled = is_disabled or v.enabled == false or (v.enabled_func and v.enabled_func() == false)
-                if is_disabled then
+                if v.enabled == false or (v.enabled_func and v.enabled_func() == false) then
                     entry_displayed_text = "\u{2592}\u{200A}" .. entry_displayed_text -- Medium Shade (▒) + Hair Space
                 end
                 local indent = "\u{2192}\u{200A}" -- Rightwards Arrow (→) + Hair Space
@@ -1046,7 +983,7 @@ function TouchMenu:search(search_for)
                     sub_item_table = v.sub_item_table_func()
                 end
                 if sub_item_table and not sub_item_table.ignored_by_menu_search then
-                    recurse(sub_item_table, walk_path, walk_text, icon, depth, is_disabled)
+                    recurse(sub_item_table, walk_path, walk_text, icon, depth)
                 end
             end
         end
@@ -1168,10 +1105,9 @@ function TouchMenu:openMenu(path, with_animation)
                 end
             end
         elseif step == STEPS.MENU_ITEM_HIGHLIGHT then
-            local item_visible_index = (item_nb - 1) % self.perpage + 1
             local item_widget
-            for i, w in ipairs(self.item_group) do
-                if w.item_visible_index == item_visible_index then
+            for _, w in ipairs(self.item_group) do
+                if w.item and w.item.idx == item_nb then
                     item_widget = w
                     break
                 end
@@ -1309,8 +1245,8 @@ function TouchMenu:onShowMenuSearch()
                 title = _("Search results"),
                 subtitle = T(_("Query: %1"), search_string),
                 item_table = get_current_search_results(),
-                width = math.floor(Screen:getWidth() * 0.9),
-                height = math.floor(Screen:getHeight() * 0.9),
+                width = math.floor(self.screen_size.w * 0.9),
+                height = math.floor(self.screen_size.h * 0.9),
                 single_line = true,
                 items_per_page = 10,
                 items_font_size = Menu.getItemFontSize(10),
@@ -1327,7 +1263,7 @@ function TouchMenu:onShowMenuSearch()
 
             -- build container
             self.results_menu_container = CenterContainer:new{
-                dimen = Screen:getSize(),
+                dimen = self.screen_size,
                 results_menu,
             }
 

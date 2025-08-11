@@ -466,6 +466,9 @@ function ImageViewer:onShow()
 end
 
 function ImageViewer:switchToImageNum(image_num)
+    if image_num == self._images_list_cur then
+        return
+    end
     if self.image and self.image_disposable and self.image.free then
         logger.dbg("ImageViewer:switchToImageNum: free self.image", self.image)
         self.image:free()

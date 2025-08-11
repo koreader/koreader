@@ -31,8 +31,6 @@ local FileChooser = BookList:extend{
         -- Kobo
         "^%.adobe%-digital%-editions$",
         "^certificates$",
-        "^custom%-dict$",
-        "^dict$",
         "^iink$",
         "^kepub$",
         "^markups$",
@@ -184,9 +182,8 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         else
             item.text = item.text.."/"
             item.bidi_wrap_func = BD.directory
-            item.is_file = false
             if collate.can_collate_mixed and collate.item_func ~= nil then -- used by user plugin/patch, don't remove
-                collate.item_func(item)
+                collate.item_func(item, self.ui)
             end
             if dirpath then -- file browser or PathChooser
                 item.mandatory = self:getMenuItemMandatory(item)
@@ -322,9 +319,6 @@ function FileChooser:refreshPath()
     local itemmatch
     if self.focused_path then
         itemmatch = {path = self.focused_path}
-        -- We use focused_path only once, but remember it
-        -- for CoverBrowser to re-apply it on startup if needed
-        self.prev_focused_path = self.focused_path
         self.focused_path = nil
     end
     local subtitle = self.name ~= "filemanager" and BD.directory(filemanagerutil.abbreviate(self.path)) -- PathChooser
@@ -381,19 +375,6 @@ function FileChooser:onFolderUp()
     if not (G_reader_settings:isTrue("lock_home_folder") and
             self.path == G_reader_settings:readSetting("home_dir")) then
         self:changeToPath(string.format("%s/..", self.path), self.path)
-    end
-end
-
-function FileChooser:changePageToPath(path)
-    if not path then return end
-    for num, item in ipairs(self.item_table) do
-        if not item.is_file and item.path == path then
-            local page = math.floor((num-1) / self.perpage) + 1
-            if page ~= self.page then
-                self:onGotoPage(page)
-            end
-            break
-        end
     end
 end
 

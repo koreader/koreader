@@ -68,13 +68,16 @@ function ReaderHighlight:init()
     self._highlight_buttons = {
         -- highlight and add_note are for the document itself,
         -- so we put them first.
-        ["01_select"] = function(this)
+        ["01_select"] = function(this, index)
             return {
-                text = _("Select"),
-                enabled = this.hold_pos ~= nil,
+                text = index and _("Extend") or _("Select"),
+                enabled = not (index and this.ui.annotation.annotations[index].text_edited),
                 callback = function()
-                    this:startSelection()
+                    this:startSelection(index)
                     this:onClose()
+                    if not Device:isTouchDevice() then
+                        self:onStartHighlightIndicator()
+                    end
                 end,
             }
         end,
@@ -245,20 +248,18 @@ function ReaderHighlight:registerKeyEvents()
         self.key_events.RightHighlightIndicator = { { "Right" }, event = "MoveHighlightIndicator", args = {1, 0} }
         self.key_events.HighlightPress          = { { "Press" } }
     end
-    if Device:hasKeyboard() then
+    if Device:hasScreenKB() or Device:hasKeyboard() then
+        local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
         -- Used for text selection with dpad/keys
         local QUICK_INDICATOR_MOVE = true
-        self.key_events.QuickUpHighlightIndicator    = { { "Shift", "Up" },    event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICATOR_MOVE} }
-        self.key_events.QuickDownHighlightIndicator  = { { "Shift", "Down" },  event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICATOR_MOVE} }
-        self.key_events.QuickLeftHighlightIndicator  = { { "Shift", "Left" },  event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICATOR_MOVE} }
-        self.key_events.QuickRightHighlightIndicator = { { "Shift", "Right" }, event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICATOR_MOVE} }
-        self.key_events.StartHighlightIndicator      = { { "H" } }
-    elseif Device:hasScreenKB() then
-        local QUICK_INDICATOR_MOVE = true
-        self.key_events.QuickUpHighlightIndicator    = { { "ScreenKB", "Up" },    event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICATOR_MOVE} }
-        self.key_events.QuickDownHighlightIndicator  = { { "ScreenKB", "Down" },  event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICATOR_MOVE} }
-        self.key_events.QuickLeftHighlightIndicator  = { { "ScreenKB", "Left" },  event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICATOR_MOVE} }
-        self.key_events.QuickRightHighlightIndicator = { { "ScreenKB", "Right" }, event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICATOR_MOVE} }
+        self.key_events.QuickUpHighlightIndicator    = { { modifier, "Up" },    event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICATOR_MOVE} }
+        self.key_events.QuickDownHighlightIndicator  = { { modifier, "Down" },  event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICATOR_MOVE} }
+        self.key_events.QuickLeftHighlightIndicator  = { { modifier, "Left" },  event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICATOR_MOVE} }
+        self.key_events.QuickRightHighlightIndicator = { { modifier, "Right" }, event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICATOR_MOVE} }
+        self.key_events.HighlightModifierPress       = { { modifier, "Press" } }
+        if Device:hasKeyboard() then
+            self.key_events.StartHighlightIndicator  = { { "H" } }
+        end
     end
 end
 
@@ -343,7 +344,7 @@ end
 
 function ReaderHighlight:onReaderReady()
     self:setupTouchZones()
-    if self.ui.paging and G_reader_settings:isTrue("highlight_write_into_pdf_notify") then
+    if self.document.is_pdf and G_reader_settings:isTrue("highlight_write_into_pdf_notify") then
         UIManager:show(Notification:new{
             text = T(_("Write highlights into PDF: %1"), self.highlight_write_into_pdf and _("on") or _("off")),
         })
@@ -1003,20 +1004,21 @@ function ReaderHighlight:onTapSelectModeIcon()
         cancel_text = _("Close"),
         ok_callback = function()
             self.select_mode = false
-            self:deleteHighlight(self.highlight_idx)
+            if self.ui.annotation.annotations[self.highlight_idx].is_tmp then
+                self:deleteHighlight(self.highlight_idx)
+            else
+                UIManager:setDirty(self.dialog, "ui", self.view.flipping:getRefreshRegion())
+            end
         end,
     })
     return true
 end
 
 function ReaderHighlight:onTap(_, ges)
-    -- We only actually need to clear if we have something to clear in the first place.
-    -- (We mainly want to avoid CRe's clearSelection,
-    -- which may incur a redraw as it invalidates the cache, c.f., #6854)
-    -- ReaderHighlight:clear can only return true if self.hold_pos was set anyway.
-    local cleared = self.hold_pos and self:clear()
-    -- We only care about potential taps on existing highlights, not on taps that closed a highlight menu.
-    if not cleared and ges and #self.view.highlight.visible_boxes > 0 then
+    if self.hold_pos then -- accidental tap while long-pressing
+        return self:onHoldRelease()
+    end
+    if ges and #self.view.highlight.visible_boxes > 0 then
         local pos = self.view:screenToPageTransform(ges.pos)
         local highlights_tapped = {}
         for _, box in ipairs(self.view.highlight.visible_boxes) do
@@ -1025,7 +1027,11 @@ function ReaderHighlight:onTap(_, ges)
                     if box.index == self.highlight_idx then
                         -- tap on the first fragment: abort select mode, clear highlight
                         self.select_mode = false
-                        self:deleteHighlight(box.index)
+                        if self.ui.annotation.annotations[box.index].is_tmp then
+                            self:deleteHighlight(box.index)
+                        else
+                            UIManager:setDirty(self.dialog, "ui", self.view.flipping:getRefreshRegion())
+                        end
                         return true
                     end
                 else
@@ -1373,7 +1379,7 @@ end
 function ReaderHighlight:showHighlightDialog(index)
     local item = self.ui.annotation.annotations[index]
     local change_boundaries_enabled = not item.text_edited
-    local start_prev, start_next, end_prev, end_next = "◁▒▒", "▷▒▒", "▒▒◁", "▒▒▷"
+    local start_prev, start_next, end_prev, end_next = "◁▒▒", "▷☓▒", "▒☓◁", "▒▒▷"
     if BD.mirroredUILayout() then
         -- BiDi will mirror the arrows, and this just works
         start_prev, start_next = start_next, start_prev
@@ -1478,7 +1484,6 @@ function ReaderHighlight:showHighlightDialog(index)
         end,
     }
     UIManager:show(edit_highlight_dialog)
-    return true
 end
 
 function ReaderHighlight:addToHighlightDialog(idx, fn_button)
@@ -1517,7 +1522,11 @@ function ReaderHighlight:onShowHighlightMenu(index)
         anchor = function()
             return self:_getDialogAnchor(self.highlight_dialog, index)
         end,
-        tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
+        tap_close_callback = function()
+            if self.hold_pos then
+                self:clear()
+            end
+        end,
     }
     -- NOTE: Disable merging for this update,
     --       or the buggy Sage kernel may alpha-blend it into the page (with a bogus alpha value, to boot)...
@@ -1669,15 +1678,13 @@ function ReaderHighlight:onHold(arg, ges)
     local image = self.ui.document:getImageFromPosition(self.hold_pos, true, true)
     if image then
         logger.dbg("hold on image")
+        self.hold_pos = nil
         local ImageViewer = require("ui/widget/imageviewer")
-        local imgviewer = ImageViewer:new{
+        UIManager:show(ImageViewer:new{
             image = image,
-            -- title_text = _("Document embedded image"),
-            -- No title, more room for image
-            with_title_bar = false,
+            with_title_bar = false, -- more room for image
             fullscreen = true,
-        }
-        UIManager:show(imgviewer)
+        })
         self:onStopHighlightIndicator()
         return true
     end
@@ -2046,7 +2053,7 @@ function ReaderHighlight:onHoldRelease()
         if self.selected_text then
             self.select_mode = false
             self:extendSelection()
-            if default_highlight_action == "select" then
+            if default_highlight_action == "select" or self.selected_text.is_extended then
                 self:saveHighlight(true)
                 self:clear()
             else
@@ -2203,8 +2210,10 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             pos0 = self.selected_text.pos0,
             pos1 = self.selected_text.pos1,
             text = util.cleanupSelectedText(self.selected_text.text),
-            drawer = self.view.highlight.saved_drawer,
-            color = self.view.highlight.saved_color,
+            datetime = self.selected_text.datetime,
+            drawer = self.selected_text.drawer or self.view.highlight.saved_drawer,
+            color = self.selected_text.color or self.view.highlight.saved_color,
+            note = self.selected_text.note,
             chapter = self.ui.toc:getTocTitleByPage(pg_or_xp),
         }
         if self.ui.paging then
@@ -2214,7 +2223,8 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
         end
         local index = self.ui.annotation:addItem(item)
         self.view.footer:maybeUpdateFooter()
-        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = 1, index_modified = index }))
+        self.ui:handleEvent(Event:new("AnnotationsModified",
+            { item, nb_highlights_added = 1, index_modified = index, modify_datetime = self.selected_text.is_extended }))
         return index
     end
 end
@@ -2435,8 +2445,14 @@ function ReaderHighlight:showNoteMarkerDialog()
     UIManager:show(dialog)
 end
 
-function ReaderHighlight:startSelection()
-    self.highlight_idx = self:saveHighlight()
+function ReaderHighlight:startSelection(index)
+    if index then -- extend existing highlight
+        UIManager:setDirty(self.dialog, "ui", self.view.flipping:getRefreshRegion())
+    else -- new highlight
+        index = self:saveHighlight()
+        self.ui.annotation.annotations[index].is_tmp = true
+    end
+    self.highlight_idx = index
     self.select_mode = true
 end
 
@@ -2494,6 +2510,11 @@ function ReaderHighlight:extendSelection()
     end
     self:deleteHighlight(self.highlight_idx) -- starting fragment
     self.selected_text = {
+        is_extended = not item1.is_tmp,
+        datetime = item1.datetime,
+        drawer = item1.drawer,
+        color = item1.color,
+        note = item1.note,
         text = new_text,
         pos0 = new_pos0,
         pos1 = new_pos1,
@@ -2651,15 +2672,22 @@ end
 
 -- dpad/keys support
 
-function ReaderHighlight:onHighlightPress()
+function ReaderHighlight:onHighlightPress(skip_tap_check)
     if not self._current_indicator_pos then return false end
     if self._start_indicator_highlight then
         self:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
         self:onStopHighlightIndicator()
         return true
     end
+    -- Check if we're in select mode (or extending an existing highlight)
+    if self.select_mode and self.highlight_idx then
+        self:onHold(nil, self:_createHighlightGesture("hold"))
+        self:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
+        self:onStopHighlightIndicator()
+        return true
+    end
     -- Attempt to open an existing highlight
-    if self:onTap(nil, self:_createHighlightGesture("tap")) then
+    if not skip_tap_check and self:onTap(nil, self:_createHighlightGesture("tap")) then
         self:onStopHighlightIndicator(true) -- need_clear_selection=true
         return true
     end
@@ -2742,6 +2770,19 @@ function ReaderHighlight:onHighlightPress()
     return true
 end
 
+function ReaderHighlight:onHighlightModifierPress()
+    if not self._current_indicator_pos then return false end -- let event propagate to hotkeys
+    if not self._start_indicator_highlight then
+        self:onHighlightPress(true)
+        return true -- don't trigger hotkeys during text selection
+    end
+    -- Simulate very long-long press by setting the long hold flag. This will trigger the long-press dialog.
+    self.long_hold_reached = true
+    self:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
+    self:onStopHighlightIndicator()
+    return true
+end
+
 function ReaderHighlight:onStartHighlightIndicator()
     -- disable long-press icon (poke-ball), as it is triggered constantly due to NT devices needing a workaround for text selection to work.
     self.long_hold_reached_action = function() end
@@ -2764,6 +2805,16 @@ function ReaderHighlight:onStartHighlightIndicator()
 end
 
 function ReaderHighlight:onStopHighlightIndicator(need_clear_selection)
+    -- If we're in select mode and user presses back, end the selection
+    if self.select_mode and self.highlight_idx then
+        self.select_mode = false
+        if self.ui.annotation.annotations[self.highlight_idx].is_tmp then
+            self:deleteHighlight(self.highlight_idx) -- temporary highlight, delete it
+        else
+            UIManager:setDirty(self.dialog, "ui", self.view.flipping:getRefreshRegion())
+        end
+        self.highlight_idx = nil
+    end
     if self._current_indicator_pos then
         local rect = self._current_indicator_pos
         self._previous_indicator_pos = rect
