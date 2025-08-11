@@ -1385,11 +1385,8 @@ function ReaderHighlight:showHighlightDialog(index)
         start_prev, start_next = start_next, start_prev
         end_prev, end_next = end_next, end_prev
     end
-
     local move_by_char = false
-
     local edit_highlight_dialog
-
     local buttons = {
         {
             {
@@ -1492,7 +1489,6 @@ function ReaderHighlight:showHighlightDialog(index)
             return self:_getDialogAnchor(edit_highlight_dialog, index)
         end,
     }
-
     UIManager:show(edit_highlight_dialog)
 end
 
@@ -2917,6 +2913,5 @@ function ReaderHighlight:_createHighlightGesture(gesture)
         time = time.realtime(),
     }
 end
-
 
 return ReaderHighlight
