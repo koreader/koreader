@@ -1481,7 +1481,6 @@ function ReaderHighlight:showHighlightDialog(index)
             },
         },
     }
-
     edit_highlight_dialog = ButtonDialog:new{
         name = "edit_highlight_dialog", -- for unit tests
         buttons = buttons,
