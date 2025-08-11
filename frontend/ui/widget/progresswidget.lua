@@ -37,7 +37,7 @@ local Widget = require("ui/widget/widget")
 local Screen = require("device").screen
 
 -- Somewhat empirically chosen threshold to switch between the two designs ;o)
-local INITIAL_MARKER_HEIGHT_THRESHOLD = Screen:scaleBySize(12)
+local INITIAL_MARKER_HEIGHT_THRESHOLD = Screen:scaleBySize(11)
 
 local ProgressWidget = Widget:extend{
     width = nil,
@@ -60,6 +60,7 @@ local ProgressWidget = Widget:extend{
     _orig_margin_v = nil,
     _orig_bordersize = nil,
     initial_pos_marker = false, -- overlay a marker at the initial percentage position
+    initial_pos_icon = nil,
     initial_percentage = nil,
 }
 
@@ -87,20 +88,25 @@ function ProgressWidget:renderMarkerIcon()
         return
     end
 
-    if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
-        self.initial_pos_icon = IconWidget:new{
-            icon = "position.marker.top",
-            width = Math.round(self.height / 2),
-            height = Math.round(self.height / 2),
-            alpha = true,
-        }
+    if self.bordersize == 0 then
+        -- If we're in "thin" mode, we'll do something entirely different
+        self.initial_pos_icon = nil
     else
-        self.initial_pos_icon = IconWidget:new{
-            icon = "position.marker",
-            width = self.height,
-            height = self.height,
-            alpha = true,
-        }
+        if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
+            self.initial_pos_icon = IconWidget:new{
+                icon = "position.marker.top",
+                width = Math.round(self.height / 1.5),
+                height = Math.round(self.height / 1.5),
+                alpha = true,
+            }
+        else
+            self.initial_pos_icon = IconWidget:new{
+                icon = "position.marker",
+                width = self.height,
+                height = self.height,
+                alpha = true,
+            }
+        end
     end
 end
 
@@ -170,8 +176,9 @@ function ProgressWidget:paintTo(bb, x, y)
     end
 
     -- Main fill bar for the specified percentage.
+    local fill_x
     if self.percentage >= 0 and self.percentage <= 1 then
-        local fill_x = x + self.margin_h + self.bordersize
+        fill_x = x + self.margin_h + self.bordersize
         if self.fill_from_right or (_mirroredUI and not self.fill_from_right) then
             fill_x = fill_x + (fill_width * (1 - self.percentage))
             fill_x = math.floor(fill_x)
@@ -182,15 +189,6 @@ function ProgressWidget:paintTo(bb, x, y)
                      math.ceil(fill_width * self.percentage),
                      math.ceil(fill_height),
                      self.fillcolor)
-
-        -- Overlay the initial position marker on top of that
-        if self.initial_pos_marker and self.initial_percentage >= 0 then
-            if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
-                self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.initial_percentage) - self.height / 4), y - Math.round(self.height / 6))
-            else
-                self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.initial_percentage) - self.height / 2), y)
-            end
-        end
     end
 
     -- ...then the tick(s).
@@ -207,6 +205,22 @@ function ProgressWidget:paintTo(bb, x, y)
                          self.tick_width,
                          math.ceil(fill_height),
                          self.bordercolor)
+        end
+    end
+
+    -- Overlay the initial position marker on top of everything
+    if self.initial_pos_marker and self.initial_percentage >= 0 and fill_x then
+        if not self.initial_pos_icon then
+            -- Just draw a tick, as thin mode precludes any other ticks anyway.
+            bb:paintRect(fill_x + math.ceil(fill_width * self.initial_percentage),
+                         fill_y,
+                         self.tick_width,
+                         math.ceil(fill_height),
+                         self.bordercolor)
+        elseif self.initial_pos_icon.icon == "position.marker.top" then
+            self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.initial_percentage) - self.height / 3), y - Math.round(self.height / 6))
+        else
+            self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.initial_percentage) - self.height / 2), y)
         end
     end
 end
