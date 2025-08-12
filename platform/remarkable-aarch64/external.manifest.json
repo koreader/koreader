@@ -1,6 +1,6 @@
 {
   "name": "KOReader",
-  "application": "reader.lua",
+  "application": "koreader.sh",
   "environment": {
     "LD_PRELOAD": "/home/root/shims/qtfb-shim.so",
     "QTFB_SHIM_MODEL": "false",
