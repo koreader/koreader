@@ -1,0 +1,9 @@
+{
+  "name": "KOReader",
+  "application": "koreader.sh",
+  "environment": {
+    "LD_PRELOAD": "/home/root/shims/qtfb-shim.so",
+    "KO_DONT_GRAB_INPUT": "1"
+  },
+  "qtfb": true
+}
