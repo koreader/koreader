@@ -450,6 +450,9 @@ elseif isRmPaperPro then
     if not os.getenv("LD_PRELOAD") then
         error("reMarkable Paper Pro requires a RM2FB server and client to work (https://github.com/asivery/rm-appload)")
     end
+    if os.getenv("QTFB_SHIM_MODE") ~= "RGB565" then
+        error("You must set QTFB_SHIM_MODE to RGB565")
+    end
     return RemarkablePaperPro
 else
     return Remarkable1
