@@ -119,11 +119,7 @@ function XMNoteExporter:getBookIdByTitle(title)
     local result = conn:exec(string.format(sql_smt, title))
     conn:close()
 
-    if result == nil then
-        return {}
-    end
-
-    if not result or not result[1] or not result[1][1] then
+    if not (result and result[1] and result[1][1]) then
         return nil
     end
     return tonumber(result[1][1])
@@ -141,7 +137,10 @@ function XMNoteExporter:createRequestBody(booknotes)
     local entries = {}
 
     local book_id = self:getBookIdByTitle(book.title)
-    local reading_durations = self:getBookReadingDurations(book_id)
+    local reading_durations = {}
+    if book_id ~= nil then
+        reading_durations = self:getBookReadingDurations(book_id)
+    end
 
     for _, chapter in ipairs(booknotes) do
         for _, clipping in ipairs(chapter) do
