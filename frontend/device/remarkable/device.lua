@@ -123,6 +123,7 @@ local RemarkablePaperPro = Remarkable:extend{
     mt_width = 2064, -- unscaled_size_check: ignore
     mt_height = 2832, -- unscaled_size_check: ignore
     display_dpi = 229,
+    ota_model = "remarkable-aarch64",
     input_wacom = "/dev/input/event2",
     input_ts = "/dev/input/event3",
     input_buttons = "/dev/input/event0",
@@ -226,7 +227,7 @@ function Remarkable:init()
         std_out:close()
         release = release:match("^(%d+%.%d+)%.%d+.*$")
         release = tonumber(release)
-        if release and release >= 6.2 and not isRmPaperPro then -- seems like it triggers on rMPP 3.19+ so just disable it on rMPP
+        if release and release >= 6.2 and not hasCsl then -- seems like it triggers on rMPP 3.19+ so just disable it on rMPP
             is_mainline = true
         end
     end
