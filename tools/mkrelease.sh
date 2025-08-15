@@ -78,7 +78,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -o | --options)
-            declare -a "a=($2)"
+            declare -a a="($2)"
             options+=("${a[@]}")
             shift
             ;;
