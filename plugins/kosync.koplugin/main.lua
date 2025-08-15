@@ -63,7 +63,6 @@ KOSync.default_settings = {
     sync_forward = SYNC_STRATEGY.PROMPT,
     sync_backward = SYNC_STRATEGY.DISABLE,
     checksum_method = CHECKSUM_METHOD.BINARY,
-    kosync_hostname = nil,
 }
 
 function KOSync:init()
@@ -191,13 +190,14 @@ end
 
 function KOSync:addToMainMenu(menu_items)
     menu_items.progress_sync = {
-        text = _("Progress sync 2"),
+        text = _("Progress sync"),
         sub_item_table = {
             {
                 text = _("Custom sync server"),
                 keep_menu_open = true,
                 tap_input_func = function()
                     return {
+                        -- @translators Server address defined by user for progress sync.
                         title = _("Custom progress sync server address"),
                         input = self.settings.custom_server or "https://",
                         callback = function(input)
@@ -205,7 +205,6 @@ function KOSync:addToMainMenu(menu_items)
                         end,
                     }
                 end,
-                separator = true, -- Added separator
             },
             {
                 text = _("Device Hostname"),
@@ -219,7 +218,6 @@ function KOSync:addToMainMenu(menu_items)
                         end,
                     }
                 end,
-                separator = true, -- Added separator
             },
             {
                 text_func = function()
