@@ -63,6 +63,7 @@ KOSync.default_settings = {
     sync_forward = SYNC_STRATEGY.PROMPT,
     sync_backward = SYNC_STRATEGY.DISABLE,
     checksum_method = CHECKSUM_METHOD.BINARY,
+    kosync_hostname = nil,
 }
 
 function KOSync:init()
@@ -190,14 +191,13 @@ end
 
 function KOSync:addToMainMenu(menu_items)
     menu_items.progress_sync = {
-        text = _("Progress sync"),
+        text = _("Progress sync 2"),
         sub_item_table = {
             {
                 text = _("Custom sync server"),
                 keep_menu_open = true,
                 tap_input_func = function()
                     return {
-                        -- @translators Server address defined by user for progress sync.
                         title = _("Custom progress sync server address"),
                         input = self.settings.custom_server or "https://",
                         callback = function(input)
@@ -205,6 +205,21 @@ function KOSync:addToMainMenu(menu_items)
                         end,
                     }
                 end,
+                separator = true, -- Added separator
+            },
+            {
+                text = _("Device Hostname"),
+                keep_menu_open = true,
+                tap_input_func = function()
+                    return {
+                        title = _("Hostname for sync"),
+                        input = self.settings.kosync_hostname or "",
+                        callback = function(input)
+                            self:setHostname(input)
+                        end,
+                    }
+                end,
+                separator = true, -- Added separator
             },
             {
                 text_func = function()
@@ -391,6 +406,11 @@ end
 function KOSync:setCustomServer(server)
     logger.dbg("KOSync: Setting custom server to:", server)
     self.settings.custom_server = server ~= "" and server or nil
+end
+
+function KOSync:setHostname(hostname)
+    logger.dbg("KOSync: Setting custom hostname to:", hostname)
+    self.settings.kosync_hostname = hostname ~= "" and hostname or nil
 end
 
 function KOSync:setSyncForward(strategy)
@@ -643,6 +663,7 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
     local doc_digest = self:getDocumentDigest()
     local progress = self:getLastProgress()
     local percentage = self:getLastPercent()
+    local chosen_device_name = self.settings.kosync_hostname or Device.model
     local ok, err = pcall(client.update_progress,
         client,
         self.settings.username,
@@ -650,7 +671,7 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
         doc_digest,
         progress,
         percentage,
-        Device.model,
+        chosen_device_name,
         self.device_id,
         function(ok, body)
             logger.dbg("KOSync: [Push] progress to", percentage * 100, "% =>", progress, "for", self.view.document.file)
