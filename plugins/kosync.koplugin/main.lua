@@ -207,6 +207,19 @@ function KOSync:addToMainMenu(menu_items)
                 end,
             },
             {
+                text = _("Device Hostname"),
+                keep_menu_open = true,
+                tap_input_func = function()
+                    return {
+                        title = _("Hostname for sync"),
+                        input = self.settings.kosync_hostname or "",
+                        callback = function(input)
+                            self:setHostname(input)
+                        end,
+                    }
+                end,
+            },
+            {
                 text_func = function()
                     return self.settings.userkey and (_("Logout"))
                         or _("Register") .. " / " .. _("Login")
@@ -391,6 +404,11 @@ end
 function KOSync:setCustomServer(server)
     logger.dbg("KOSync: Setting custom server to:", server)
     self.settings.custom_server = server ~= "" and server or nil
+end
+
+function KOSync:setHostname(hostname)
+    logger.dbg("KOSync: Setting custom hostname to:", hostname)
+    self.settings.kosync_hostname = hostname ~= "" and hostname or nil
 end
 
 function KOSync:setSyncForward(strategy)
@@ -643,6 +661,7 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
     local doc_digest = self:getDocumentDigest()
     local progress = self:getLastProgress()
     local percentage = self:getLastPercent()
+    local chosen_device_name = self.settings.kosync_hostname or Device.model
     local ok, err = pcall(client.update_progress,
         client,
         self.settings.username,
@@ -650,7 +669,7 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
         doc_digest,
         progress,
         percentage,
-        Device.model,
+        chosen_device_name,
         self.device_id,
         function(ok, body)
             logger.dbg("KOSync: [Push] progress to", percentage * 100, "% =>", progress, "for", self.view.document.file)
