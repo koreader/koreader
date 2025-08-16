@@ -1458,7 +1458,7 @@ function OPDSBrowser:getFileName(item)
     if self.root_catalog_raw_names then
         filename = nil
     end
-    return filename, filename_orig
+    return util.replaceAllInvalidChars(filename), util.replaceAllInvalidChars(filename_orig)
 end
 
 function OPDSBrowser:updateFieldInCatalog(item, name, value)
