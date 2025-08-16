@@ -13,7 +13,7 @@ update: all
 	# Remarkable scripts
 	$(SYMLINK) $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader/
 	$(SYMLINK) $(REMARKABLE_DIR)/koreader.sh $(INSTALL_DIR)/koreader/
-    $(SYMLINK) resources/koreader.png $(INSTALL_DIR)/koreader/icon.png
+	$(SYMLINK) resources/koreader.png $(INSTALL_DIR)/koreader/icon.png
 ifeq (remarkable,$(TARGET))
 	$(SYMLINK) $(REMARKABLE_DIR)/README.md $(INSTALL_DIR)/koreader/README_remarkable.md
 	$(SYMLINK) $(REMARKABLE_DIR)/button-listen.service $(INSTALL_DIR)/koreader/
