@@ -13,10 +13,12 @@ local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
+local Math = require("optmath")
 local Notification = require("ui/widget/notification")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local datetime = require("datetime")
 local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
@@ -938,6 +940,140 @@ function BookInfo.showBooksWithHashBasedMetadata()
         title_multilines = true,
         text = table.concat(file_info, "\n"),
     })
+end
+
+function BookInfo:expandString(str, file, timestamp)
+    if self == nil then
+        UIManager:show(InfoMessage:new{
+            text = _([[
+%T title
+%A author
+%S series
+%t total pages
+%c current page
+%p book percentage read
+%H time left in book
+%C chapter title
+%P chapter percentage read
+%h time left in chapter
+%F file path
+%f file name
+%b battery level
+%B battery symbol
+%D current date (yyyy-mm-dd)
+%d current date (mm-dd)
+%m current time (hh:mm)
+%M current time (hh-mm-ss)]]),
+            monospace_font = true,
+        })
+        return
+    end
+    
+    if not (str and str:find("%%")) then
+        return str
+    end
+
+    local na = _("N/A")
+    local doc_patterns, is_doc_required = "%T%A%S%t%c%p%H%C%P%h"
+    local patterns = {}
+    for p in str:gmatch("%%%a") do
+        patterns[p] = na -- calculate only needed items
+        if not is_doc_required and doc_patterns:find(p, 1, true) then
+            is_doc_required = true
+        end
+    end
+
+    file = file or G_reader_settings:readSetting("lastfile")
+    if file then
+        if is_doc_required then
+            local props
+            local doc = self.document and self.document.file == file and self.document
+            if doc then -- Reader, currently opened file
+                props = self.ui.doc_props
+                local pageno = self.ui.view.footer.pageno
+                if patterns["%t"] or patterns["%c"] then
+                    if doc:hasHiddenFlows() then
+                        patterns["%t"] = patterns["%t"] and doc:getTotalPagesInFlow(doc:getPageFlow(pageno))
+                        patterns["%c"] = patterns["%c"] and doc:getPageNumberInFlow(pageno)
+                    else
+                        patterns["%t"] = patterns["%t"] and self.ui.view.footer.pages
+                        patterns["%c"] = patterns["%c"] and pageno
+                    end
+                end
+                patterns["%p"] = patterns["%p"] and Math.round(self.ui.view.footer:getBookProgress() * 100)
+                if patterns["%C"] then
+                    local title = self.ui.toc:getTocTitleByPage(pageno)
+                    if title and title ~= "" then
+                        patterns["%C"] = title
+                    end
+                end
+                patterns["%P"] = patterns["%P"] and Math.round(self.ui.view.footer:getChapterProgress(true) * 100)
+                if (patterns["%H"] or patterns["%h"]) and self.ui.statistics then
+                    local pages = doc:getTotalPagesLeft(pageno)
+                    if patterns["%H"] then
+                        local time_left = self.ui.statistics:getTimeForPages(pages)
+                        if time_left then
+                            patterns["%H"] = time_left
+                        end
+                    end
+                    if patterns["%h"] then
+                        pages = self.ui.toc:getChapterPagesLeft(pageno) or pages
+                        local time_left = self.ui.statistics:getTimeForPages(pages)
+                        if time_left then
+                            patterns["%h"] = time_left
+                        end
+                    end
+                end
+            elseif BookList.hasBookBeenOpened(file) then -- do not open book, use sdr only
+                local doc_settings = BookList.getDocSettings(file)
+                props = BookInfo.extendProps(doc_settings:readSetting("doc_props"), file)
+                if patterns["%t"] or patterns["%c"] or patterns["%p"] then
+                    local pages = doc_settings:readSetting("doc_pages")
+                    if pages then
+                        patterns["%t"] = patterns["%t"] and pages
+                        local percent = doc_settings:readSetting("percent_finished")
+                        if percent then
+                            patterns["%c"] = patterns["%c"] and Math.round(percent * pages)
+                            patterns["%p"] = patterns["%p"] and Math.round(percent * 100)
+                        end
+                    end
+                end
+                -- %H %C %P %h unavailable
+            end
+            if props then
+                patterns["%T"] = patterns["%T"] and props.display_title
+                if patterns["%A"] and props.authors then
+                    patterns["%A"] = props.authors
+                end
+                if patterns["%S"] and props.series then
+                    patterns["%S"] = props.series_index and props.series .. " #" .. props.series_index or props.series
+                end
+            end
+        end
+
+        patterns["%F"] = patterns["%F"] and file
+        patterns["%f"] = patterns["%f"] and file:gsub(".*/", "")
+    end
+
+    if (patterns["%b"] or patterns["%B"]) and Device:hasBattery() then
+        local powerd = Device:getPowerDevice()
+        local batt_lvl = powerd:getCapacity()
+        if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
+            batt_lvl = batt_lvl + powerd:getAuxCapacity()
+            patterns["%B"] = patterns["%B"] and powerd:getBatterySymbol(powerd:isAuxCharged(), powerd:isAuxCharging(), batt_lvl / 2)
+        else
+            patterns["%B"] = patterns["%B"] and powerd:getBatterySymbol(powerd:isCharged(), powerd:isCharging(), batt_lvl)
+        end
+        patterns["%b"] = patterns["%b"] and batt_lvl
+    end
+
+    timestamp = timestamp or os.time()
+    patterns["%D"] = patterns["%D"] and os.date("%Y-%m-%d", timestamp)
+    patterns["%d"] = patterns["%d"] and os.date("%m-%d", timestamp)
+    patterns["%m"] = patterns["%m"] and datetime.secondsToHour(timestamp, G_reader_settings:isTrue("twelve_hour_clock"))
+    patterns["%M"] = patterns["%M"] and os.date("%H-%M-%S", timestamp)
+
+    return str:gsub("(%%%a)", patterns)
 end
 
 return BookInfo
