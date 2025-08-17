@@ -968,7 +968,7 @@ function BookInfo:expandString(str, file, timestamp)
         })
         return
     end
-    
+
     if not (str and str:find("%%")) then
         return str
     end
