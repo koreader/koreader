@@ -344,16 +344,16 @@ function PdfDocument:findAllText(pattern, case_insensitive, nb_context_words, ma
     return self.koptinterface:findAllText(self, pattern, case_insensitive, nb_context_words, max_hits)
 end
 
-function PdfDocument:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
-    return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, gamma, hinting)
+function PdfDocument:renderPage(pageno, rect, zoom, rotation, gamma, white_threshold, hinting)
+    return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, gamma, white_threshold, hinting)
 end
 
-function PdfDocument:hintPage(pageno, zoom, rotation, gamma)
-    return self.koptinterface:hintPage(self, pageno, zoom, rotation, gamma)
+function PdfDocument:hintPage(pageno, zoom, rotation, gamma, white_threshold)
+    return self.koptinterface:hintPage(self, pageno, zoom, rotation, gamma, white_threshold)
 end
 
-function PdfDocument:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma)
-    return self.koptinterface:drawPage(self, target, x, y, rect, pageno, zoom, rotation, gamma)
+function PdfDocument:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, white_threshold)
+    return self.koptinterface:drawPage(self, target, x, y, rect, pageno, zoom, rotation, gamma, white_threshold)
 end
 
 function PdfDocument:register(registry)
