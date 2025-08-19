@@ -811,13 +811,7 @@ To:
     self.menu_items.cloud_storage = {
         text = _("Cloud storage"),
         callback = function()
-            local cloud_storage = require("apps/cloudstorage/cloudstorage"):new{}
-            UIManager:show(cloud_storage)
-            local filemanagerRefresh = function() self.ui:onRefresh() end
-            function cloud_storage:onClose()
-                filemanagerRefresh()
-                UIManager:close(cloud_storage)
-            end
+            self:onShowCloudStorage()
         end,
     }
 
@@ -1129,6 +1123,12 @@ end
 
 function FileManagerMenu:registerToMainMenu(widget)
     table.insert(self.registered_widgets, widget)
+end
+
+function FileManagerMenu:onShowCloudStorage()
+    local CloudStorage = require("apps/cloudstorage/cloudstorage")
+    UIManager:show(CloudStorage:new{ ui = self.ui })
+    return true
 end
 
 return FileManagerMenu

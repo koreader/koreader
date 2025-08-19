@@ -152,6 +152,7 @@ local settingsList = {
     fm_go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), filemanager=true},
     fm_back = {category="none", event="Back", title=_("Back"), filemanager=true, separator=true},
     ----
+    cloud_storage = {category="none", event="ShowCloudStorage", title=_("Cloud storage"), filemanager=true},
 
     -- Reader
     show_config_menu = {category="none", event="ShowConfigMenu", title=_("Show bottom menu"), reader=true},
@@ -395,6 +396,7 @@ local dispatcher_menu_order = {
     "fm_go_to",
     "fm_back",
     ----
+    "cloud_storage",
 
     -- Reader
     "show_config_menu",
