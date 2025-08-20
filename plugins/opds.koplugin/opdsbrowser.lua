@@ -461,19 +461,42 @@ function OPDSBrowser:parseFeed(item_url)
     end
 end
 
-function OPDSBrowser:getServerFileName(item_url)
+function OPDSBrowser:getServerFileName(item_url, filetype)
     local headers = self:fetchFeed(item_url, true)
+    local filename
+
     if headers then
         logger.dbg("OPDSBrowser: server file headers", socketutil.redact_headers(headers))
-        local header = headers["content-disposition"]
-        if header then
-            return header:match('filename="*([^"]+)"*')
+        local disposition = headers["content-disposition"]
+        if disposition then
+            -- Try to get filename inside quotes (can contain spaces)
+            filename = disposition:match('filename="([^"]+)"')
+            if not filename then
+                -- Fallback: try filename without quotes, until end or semicolon
+                filename = disposition:match('filename=([^;]+)')
+            end
         end
-        header = headers["location"]
-        if header then
-            return header:gsub(".*/", "")
+
+        -- If not found, try from redirect URL (location)
+        if not filename and headers["location"] then
+            filename = headers["location"]:gsub(".*/", "")
         end
     end
+
+    -- If still no filename, extract from original URL (remove path and query params)
+    if not filename then
+        filename = item_url:gsub(".*/", ""):gsub("?.*", "")
+    end
+
+    if filename and filetype then
+        local current_suffix = util.getFileNameSuffix(filename)
+        -- Add extension if missing
+        if not current_suffix then
+            filename = filename .. "." .. filetype:lower()
+        end
+    end
+
+    return filename
 end
 
 -- Generates link to search in catalog
@@ -958,7 +981,7 @@ end
 
 function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url)
     local download_dir = self:getCurrentDownloadDir()
-    filename = filename and filename .. "." .. filetype:lower() or self:getServerFileName(remote_url)
+    filename = filename and filename .. "." .. filetype:lower() or self:getServerFileName(remote_url, filetype)
     filename = util.getSafeFilename(filename, download_dir)
     filename = (download_dir ~= "/" and download_dir or "") .. '/' .. filename
     return util.fixUtf8(filename, "_")
