@@ -1385,6 +1385,7 @@ function ReaderHighlight:showHighlightDialog(index)
         start_prev, start_next = start_next, start_prev
         end_prev, end_next = end_next, end_prev
     end
+    local move_by_char = false
     local edit_highlight_dialog
     local buttons = {
         {
@@ -1438,9 +1439,10 @@ function ReaderHighlight:showHighlightDialog(index)
                 text = start_prev,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 0, -1, false)
+                    self:updateHighlight(index, 0, -1, move_by_char)
                 end,
                 hold_callback = function()
+                    move_by_char = not move_by_char
                     self:updateHighlight(index, 0, -1, true)
                 end,
             },
@@ -1448,9 +1450,10 @@ function ReaderHighlight:showHighlightDialog(index)
                 text = start_next,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 0, 1, false)
+                    self:updateHighlight(index, 0, 1, move_by_char)
                 end,
                 hold_callback = function()
+                    move_by_char = not move_by_char
                     self:updateHighlight(index, 0, 1, true)
                 end,
             },
@@ -1458,9 +1461,10 @@ function ReaderHighlight:showHighlightDialog(index)
                 text = end_prev,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 1, -1, false)
+                    self:updateHighlight(index, 1, -1, move_by_char)
                 end,
                 hold_callback = function()
+                    move_by_char = not move_by_char
                     self:updateHighlight(index, 1, -1, true)
                 end,
             },
@@ -1468,9 +1472,10 @@ function ReaderHighlight:showHighlightDialog(index)
                 text = end_next,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 1, 1, false)
+                    self:updateHighlight(index, 1, 1, move_by_char)
                 end,
                 hold_callback = function()
+                    move_by_char = not move_by_char
                     self:updateHighlight(index, 1, 1, true)
                 end,
             },
