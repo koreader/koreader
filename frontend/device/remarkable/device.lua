@@ -30,6 +30,7 @@ local rm_model = getModel()
 local isRm2 = rm_model == "reMarkable 2.0"
 local isRmPaperPro = rm_model == "reMarkable Ferrari"
 local hasCsl = util.which("csl")
+local isQtfbShimmed = os.getenv("LD_PRELOAD"):find("qtfb%-shim") ~= nil
 
 if isRmPaperPro then
     screen_width = 1620 -- unscaled_size_check: ignore
@@ -181,6 +182,8 @@ function Remarkable:init()
     local oxide_running = os.execute("systemctl is-active --quiet tarnish") == 0
     logger.info(string.format("Oxide running?: %s", oxide_running))
 
+    logger.info(string.format("QTFB shimmed?: %s", isQtfbShimmed))
+
     -- experiment
     -- logger.info("PPID:")
     -- local parent_process = os.execute("echo $PPID")
@@ -292,15 +295,9 @@ function Remarkable:init()
     self.screen.native_rotation_mode = rotation_mode
     self.screen.cur_rotation_mode = rotation_mode
 
-    if oxide_running then
+    if oxide_running or isQtfbShimmed then
         -- Disable autosuspend on this device
         PluginShare.pause_auto_suspend = true
-    end
-
-    if isRmPaperPro then
-        -- disable autosuspend of xochitl
-        os.execute("cp -a ~/.config/remarkable/xochitl.conf ~/.config/remarkable/xochitl.conf.bak")
-        os.execute("sed -ri 's/IdleSuspendDelay=[0-9]+/IdleSuspendDelay=0/' ~/.config/remarkable/xochitl.conf")
     end
 
     if self.powerd:hasHallSensor() then
@@ -352,9 +349,6 @@ function Remarkable:initNetworkManager(NetworkMgr)
 end
 
 function Remarkable:exit()
-    if isRmPaperPro then
-        os.execute("mv -f ~/.config/remarkable/xochitl.conf.bak ~/.config/remarkable/xochitl.conf")
-    end
     if os.getenv("KO_RESTART_XOVI_ON_EXIT") == "1" then
         os.execute("~/xovi/start")
     end
@@ -396,16 +390,10 @@ function Remarkable:suspend()
 end
 
 function Remarkable:powerOff()
-    if isRmPaperPro then
-        os.execute("mv -f ~/.config/remarkable/xochitl.conf.bak ~/.config/remarkable/xochitl.conf")
-    end
     os.execute("systemctl poweroff")
 end
 
 function Remarkable:reboot()
-    if isRmPaperPro then
-        os.execute("mv -f ~/.config/remarkable/xochitl.conf.bak ~/.config/remarkable/xochitl.conf")
-    end
     os.execute("systemctl reboot")
 end
 
@@ -443,12 +431,12 @@ function Remarkable:setEventHandlers(UIManager)
 end
 
 if isRm2 then
-    if not os.getenv("RM2FB_SHIM") or not os.getenv("LD_PRELOAD") then
+    if not os.getenv("RM2FB_SHIM") or not isQtfbShimmed then
         error("reMarkable 2 requires a RM2FB server and client to work (https://github.com/ddvk/remarkable2-framebuffer or https://github.com/asivery/rmpp-qtfb-shim)")
     end
     return Remarkable2
 elseif isRmPaperPro then
-    if not os.getenv("LD_PRELOAD") then
+    if not isQtfbShimmed then
         error("reMarkable Paper Pro requires a RM2FB server and client to work (https://github.com/asivery/rm-appload)")
     end
     if os.getenv("QTFB_SHIM_MODE") ~= "RGB565" then
