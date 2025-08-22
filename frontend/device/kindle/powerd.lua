@@ -29,6 +29,16 @@ function KindlePowerD:init()
             return this:unchecked_read_int_file(self.aux_batt_capacity_file)
         end
 
+        self.getCombinedCapacityHW = function(this)
+            local size = this:unchecked_read_int_file(self.batt_size_file)
+            local auxSize = this:unchecked_read_int_file(self.aux_batt_size_file)
+            if auxSize == nil then
+                return self:getCapacityHW()
+            end
+            local totalSize = size + auxSize
+            return self:getCapacityHW() * (size/totalSize) + self:getAuxCapacityHW() * (auxSize/totalSize)
+        end
+
         self.isAuxBatteryConnectedHW = function(this)
             local status = this:read_str_file(self.aux_batt_status_file)
             if status == nil then
@@ -40,10 +50,11 @@ function KindlePowerD:init()
         end
 
         self.isAuxChargingHW = function(this)
-            -- "Discharging" when discharging
+            -- "Discharging" when discharging to charge the main battery
             -- "Full" when full
             -- "Charging" when charging via DCP
-            return this:read_str_file(this.aux_batt_status_file) ~= "Discharging"
+            -- "Not charging" when idle
+            return this:read_str_file(this.aux_batt_status_file) == "Charging"
         end
 
         self.isAuxChargedHW = function(this)
