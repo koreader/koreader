@@ -836,7 +836,11 @@ function Input:handlePowerManagementOnlyEv(ev)
         if keycode == "RPgBack" or keycode == "LPgBack"
         or keycode == "RPgFwd" or keycode == "LPgFwd" then
             -- When suspended we pretend that the page turn button is a power button
-            return "PowerRelease"
+            if ev.value == KEY_PRESS then
+                return "PowerPress"
+            elseif ev.value == KEY_RELEASE then
+                return "PowerRelease"
+            end
         end
     end
 
