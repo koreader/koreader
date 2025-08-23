@@ -30,7 +30,7 @@ local rm_model = getModel()
 local is_rm2 = rm_model == "reMarkable 2.0"
 local is_rmpp = rm_model == "reMarkable Ferrari"
 local has_csl = util.which("csl")
-local is_qtfb_shimmed = os.getenv("LD_PRELOAD"):find("qtfb%-shim") ~= nil
+local is_qtfb_shimmed = (os.getenv("LD_PRELOAD") or ""):find("qtfb%-shim") ~= nil
 
 if is_rmpp then
     screen_width = 1620 -- unscaled_size_check: ignore
