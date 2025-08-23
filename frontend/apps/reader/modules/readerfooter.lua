@@ -320,13 +320,15 @@ footerTextGeneratorMap = {
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].book_time_to_read
         local left = footer.ui.document:getTotalPagesLeft(footer.pageno)
-        return footer:getDataFromStatistics(prefix and (prefix .. " ") or "", left)
+        return (prefix and prefix .. " " or "") ..
+            (footer.ui.statistics and footer.ui.statistics:getTimeForPages(left) or _("N/A"))
     end,
     chapter_time_to_read = function(footer)
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].chapter_time_to_read
         local left = footer.ui.toc:getChapterPagesLeft(footer.pageno) or footer.ui.document:getTotalPagesLeft(footer.pageno)
-        return footer:getDataFromStatistics(prefix .. " ", left)
+        return prefix .. " " ..
+            (footer.ui.statistics and footer.ui.statistics:getTimeForPages(left) or _("N/A"))
     end,
     mem_usage = function(footer)
         local statm = io.open("/proc/self/statm", "r")
@@ -403,8 +405,8 @@ footerTextGeneratorMap = {
     custom_text = function(footer)
         -- if custom_text contains only spaces, request to merge it with the text before and after,
         -- in other words, don't add a separator then.
-        local merge = footer.custom_text:gsub(" ", ""):len() == 0
-        return footer.custom_text:rep(footer.custom_text_repetitions), merge
+        local merge = footer.custom_text:gsub(" ", "") == ""
+        return footer.ui.bookinfo:expandString(footer.custom_text):rep(footer.custom_text_repetitions), merge
     end,
     dynamic_filler = function(footer)
         local margin = footer.horizontal_margin
@@ -683,6 +685,10 @@ function ReaderFooter:set_custom_text(touchmenu_instance)
                     callback = function()
                         UIManager:close(text_dialog)
                     end,
+                },
+                {
+                    text = _("Info"),
+                    callback = self.ui.bookinfo.expandString,
                 },
                 {
                     text = _("Set"),
@@ -1396,21 +1402,21 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(footer_items, getMinibarOption("time"))
     table.insert(footer_items, getMinibarOption("chapter_progress"))
     table.insert(footer_items, getMinibarOption("pages_left"))
-    if Device:hasBattery() then
+    if MODE.battery then
         table.insert(footer_items, getMinibarOption("battery"))
     end
     table.insert(footer_items, getMinibarOption("bookmark_count"))
     table.insert(footer_items, getMinibarOption("percentage"))
     table.insert(footer_items, getMinibarOption("book_time_to_read"))
     table.insert(footer_items, getMinibarOption("chapter_time_to_read"))
-    if Device:hasFrontlight() then
+    if MODE.frontlight then
         table.insert(footer_items, getMinibarOption("frontlight"))
     end
-    if Device:hasNaturalLight() then
+    if MODE.frontlight_warmth then
         table.insert(footer_items, getMinibarOption("frontlight_warmth"))
     end
     table.insert(footer_items, getMinibarOption("mem_usage"))
-    if Device:hasFastWifiStatusQuery() then
+    if MODE.wifi_status then
         table.insert(footer_items, getMinibarOption("wifi_status"))
     end
     table.insert(footer_items, getMinibarOption("page_turning_inverted"))
@@ -1655,7 +1661,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
         }
     })
     local configure_items_sub_table = sub_items[#sub_items].sub_item_table -- will pick the last item of sub_items
-    if Device:hasBattery() then
+    if MODE.battery then
         table.insert(configure_items_sub_table, 5, {
             text_func = function()
                 if self.settings.battery_hide_threshold <= self.default_settings.battery_hide_threshold then
@@ -2099,19 +2105,6 @@ function ReaderFooter:setTocMarkers(reset)
     return true
 end
 
--- This is implemented by the Statistics plugin
-function ReaderFooter:getAvgTimePerPage() end
-
-function ReaderFooter:getDataFromStatistics(title, pages)
-    local sec = _("N/A")
-    local average_time_per_page = self:getAvgTimePerPage()
-    local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
-    if average_time_per_page then
-        sec = datetime.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true)
-    end
-    return title .. sec
-end
-
 function ReaderFooter:onUpdateFooter(force_repaint, full_repaint)
     if type(self.pageno) ~= "number" then return end
     if self.settings.chapter_progress_bar then
@@ -2476,7 +2469,7 @@ end
 
 function ReaderFooter:onResume()
     -- Reset the initial marker, if any
-    if self.progress_bar.initial_pos_marker then
+    if self.progress_bar and self.progress_bar.initial_pos_marker then
         self.initial_pageno = self.pageno
         self.progress_bar.initial_percentage = self.progress_bar.percentage
     end
