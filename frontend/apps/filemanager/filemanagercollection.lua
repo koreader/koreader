@@ -68,7 +68,7 @@ end
 
 function FileManagerCollection:onShowColl(collection_name)
     collection_name = collection_name or ReadCollection.default_collection_name
-    ReadCollection:updateCollectionFromFolder(collection_name)
+    ReadCollection:updateCollectionFromFolder(collection_name, nil, true)
     -- This may be hijacked by CoverBrowser plugin and needs to be known as booklist_menu.
     self.booklist_menu = BookList:new{
         name = "collections",
@@ -1040,9 +1040,17 @@ function FileManagerCollection:updateCollFolderListItemTable()
     local folders = ReadCollection.coll_settings[self.coll_folder_list.path].folders
     if folders then
         for folder, folder_settings in pairs(folders) do
+            local mandatory
+            if folder_settings.subfolders and folder_settings.scan_on_show then
+                mandatory = "\u{F441} \u{F114}"
+            elseif folder_settings.subfolders then
+                mandatory = "\u{F114}"
+            elseif folder_settings.scan_on_show then
+                mandatory = "\u{F441}"
+            end
             table.insert(item_table, {
                 text      = folder,
-                mandatory = folder_settings.subfolders and "\u{F114}" or nil,
+                mandatory = mandatory,
             })
         end
         if #item_table > 1 then
@@ -1082,12 +1090,30 @@ function FileManagerCollection:onCollFolderListHold(item)
                         coll_settings.folders = nil
                     end
                     self._manager:updateCollFolderListItemTable()
-                end
+                end,
             },
+        },
+        {}, -- separator
+        {
             {
-                text = coll_settings.folders[folder].subfolders and _("Exclude subfolders") or _("Include subfolders"),
+                text = _("Scan folder on showing collection"),
+                checked_func = function()
+                    return coll_settings.folders[folder].scan_on_show
+                end,
                 callback = function()
-                    UIManager:close(button_dialog)
+                    self._manager.updated_collections[coll_name] = true
+                    coll_settings.folders[folder].scan_on_show = not coll_settings.folders[folder].scan_on_show
+                    self._manager:updateCollFolderListItemTable()
+                end,
+            },
+        },
+        {
+            {
+                text = _("Include subfolders"),
+                checked_func = function()
+                    return coll_settings.folders[folder].subfolders
+                end,
+                callback = function()
                     self._manager.updated_collections[coll_name] = true
                     if coll_settings.folders[folder].subfolders then
                         coll_settings.folders[folder].subfolders = false
@@ -1096,7 +1122,7 @@ function FileManagerCollection:onCollFolderListHold(item)
                         ReadCollection:updateCollectionFromFolder(coll_name)
                     end
                     self._manager:updateCollFolderListItemTable()
-                end
+                end,
             },
         },
     }
