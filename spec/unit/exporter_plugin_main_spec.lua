@@ -78,10 +78,9 @@ describe("Exporter plugin module", function()
     end)
 
     it("should write clippings to a timestamped txt file", function()
-        local timestamp = os.time()
-        readerui.exporter.targets["text"].timestamp = timestamp
+        readerui.exporter.targets["text"].filepath = readerui.exporter.targets["text"]:getTimeStamp()
         local exportable = { sample_clippings.Title1 }
-        local file_path = readerui.exporter.targets["text"].filepath .. ".txt"
+        local file_path = readerui.exporter.targets["text"]:getFilePath()
         readerui.exporter.targets["text"]:export(exportable)
         local f = io.open(file_path, "r")
         assert.is.truthy(string.find(f:read("*all"), "Some important stuff 1"))
