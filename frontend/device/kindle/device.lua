@@ -464,7 +464,7 @@ function Kindle:initNetworkManager(NetworkMgr)
             logger.dbg("NetworkMgr:getCurrentNetwork: No current network profile found")
             return nil
         end
-        logger.dbg("NetworkMgr:getCurrentNetwork: Current network found")
+        logger.dbg("NetworkMgr:getCurrentNetwork: Current network:", nw.essid)
         return { ssid = nw.essid }
     end
 
