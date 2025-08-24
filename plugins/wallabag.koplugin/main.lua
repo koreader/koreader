@@ -91,7 +91,7 @@ function Wallabag:init()
     self.filter_starred                = self.wb_settings.data.wallabag.filter_starred or false
     self.ignore_tags                   = self.wb_settings.data.wallabag.ignore_tags or ""
     self.auto_tags                     = self.wb_settings.data.wallabag.auto_tags or ""
-    self.archive_finished              = self.wb_settings.data.wallabag.archive_finished or true
+    self.archive_finished              = self.archive_finished = self.wb_settings.data.wallabag.archive_finished == nil and true or self.wb_settings.data.wallabag.archive_finished
     self.archive_read                  = self.wb_settings.data.wallabag.archive_read or false
     self.archive_abandoned             = self.wb_settings.data.wallabag.archive_abandoned or false
     self.delete_instead                = self.wb_settings.data.wallabag.delete_instead or false
