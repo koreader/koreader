@@ -8,7 +8,7 @@ in KOReader. And it will delete or archive them locally when you finish them els
 @todo Make sure all menu labels and message texts are wrapped in _() for translation
 @todo An option to parse comma-separated reviews as tags, full text as review?
 
-@module koplugin.wallabag 
+@module koplugin.wallabag
 ]]
 
 local BD = require("ui/bidi")
