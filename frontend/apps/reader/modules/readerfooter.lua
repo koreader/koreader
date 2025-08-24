@@ -522,6 +522,7 @@ ReaderFooter.default_settings = {
     progress_pct_format = "0",
     pages_left_includes_current_page = false,
     initial_marker = false,
+    invert_progress_direction = false,
 }
 
 function ReaderFooter:init()
@@ -620,6 +621,7 @@ function ReaderFooter:init()
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
         initial_pos_marker = self.settings.initial_marker,
+        invert_direction = G_reader_settings:isTrue("invert_ui_layout_mirroring"),
     }
 
     if self.settings.progress_style_thin then
@@ -2400,6 +2402,11 @@ function ReaderFooter:onToggleChapterProgressBar()
     if self.progress_bar.initial_pos_marker and not self.settings.chapter_progress_bar then
         self.progress_bar.initial_percentage = self.initial_pageno / self.pages
     end
+    self:refreshFooter(true)
+end
+
+function ReaderFooter:onToggleUILayoutMiroring()
+    self.progress_bar.invert_direction = not self.progress_bar.invert_direction
     self:refreshFooter(true)
 end
 
