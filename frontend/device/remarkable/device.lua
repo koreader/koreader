@@ -431,7 +431,7 @@ function Remarkable:setEventHandlers(UIManager)
 end
 
 if is_rm2 then
-    if not os.getenv("RM2FB_SHIM") and not is_qtfb_shimmed then
+    if not os.getenv("RM2FB_SHIM") or not is_qtfb_shimmed then
         error("reMarkable 2 requires a RM2FB server and client to work (https://github.com/ddvk/remarkable2-framebuffer or https://github.com/asivery/rmpp-qtfb-shim)")
     end
     return Remarkable2
