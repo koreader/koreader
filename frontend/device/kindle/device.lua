@@ -459,6 +459,7 @@ function Kindle:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:getCurrentNetwork()
+        if not kindleGetCurrentProfile() then return {} end
         return { ssid = kindleGetCurrentProfile().essid }
     end
 
