@@ -835,10 +835,14 @@ function Input:handlePowerManagementOnlyEv(ev)
     if G_reader_settings:isTrue("pageturn_power") then
         if keycode == "RPgBack" or keycode == "LPgBack"
         or keycode == "RPgFwd" or keycode == "LPgFwd" then
-            -- When suspended we pretend that the page turn button is a power button
-            if ev.value == KEY_PRESS then
-                return "PowerPress"
+            -- When suspended, pretend that the page turn button is *almost* a power button...
+            if ev.value == KEY_PRESS or ev.value == KEY_REPEAT then
+                -- Swallow key press/release events to avoid sending unbalanced events for the actual key being pressed
+                return
             elseif ev.value == KEY_RELEASE then
+                -- We only want to deal with key release events,
+                -- to avoid tripping the Kobo-specific "poweroff on hold" PowerPress handler...
+                -- (i.e., Power is a very very specific case where unbalanced press/release events *should* be fine).
                 return "PowerRelease"
             end
         end
