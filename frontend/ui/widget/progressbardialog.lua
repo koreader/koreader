@@ -84,6 +84,7 @@ function ProgressbarDialog:init()
     end
     if self.progress_bar_visible then
         self.progress_bar = ProgressWidget:new {
+            fillcolor = Blitbuffer.COLOR_BLACK,
             width = progress_bar_width,
             height = progress_bar_height,
             padding = Size.padding.large,
