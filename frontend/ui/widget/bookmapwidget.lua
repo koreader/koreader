@@ -1963,7 +1963,6 @@ function BookMapWidget:onGoToFocusedPage()
         else
             should_go_to_page_browser = G_reader_settings:isFalse("book_map_tap_to_page_browser")
         end
-
         if should_go_to_page_browser then
             local PageBrowserWidget = require("ui/widget/pagebrowserwidget")
             UIManager:show(PageBrowserWidget:new{
