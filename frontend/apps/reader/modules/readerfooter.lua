@@ -621,7 +621,6 @@ function ReaderFooter:init()
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
         initial_pos_marker = self.settings.initial_marker,
-        invert_direction = G_reader_settings:isTrue("invert_ui_layout_mirroring"),
     }
 
     if self.settings.progress_style_thin then
