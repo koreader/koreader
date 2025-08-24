@@ -1943,7 +1943,7 @@ function BookMapWidget:onGoToFocusedPage()
 
     local target_page = nil
     -- Find the row containing the focused widget.
-    local row, row_idx, row_y, row_h = self:getVGroupRowAtY(self.cur_focused_widget.dimen.y - self.title_bar_h)
+    local row = self:getVGroupRowAtY(self.cur_focused_widget.dimen.y - self.title_bar_h)
     if row and row.start_page then
         -- Find the focused widget in the row's layout.
         local invisible_page_slots = row.focus_layout[#row.focus_layout] -- last row in focus_layout contains page slots
