@@ -460,12 +460,12 @@ function Kindle:initNetworkManager(NetworkMgr)
 
     function NetworkMgr:getCurrentNetwork()
         local nw = kindleGetCurrentProfile()
-        if nw ~= nil then
-            logger.dbg("NetworkMgr:getCurrentNetwork: Current network found")
-            return { ssid = nw.essid }
+        if nw == nil then
+            logger.dbg("NetworkMgr:getCurrentNetwork: No current network profile found")
+            return nil
         end
-        logger.dbg("NetworkMgr:getCurrentNetwork: No current network profile found")
-        return nil
+        logger.dbg("NetworkMgr:getCurrentNetwork: Current network found")
+        return { ssid = nw.essid }
     end
 
     NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
