@@ -2405,9 +2405,11 @@ function ReaderFooter:onToggleChapterProgressBar()
     self:refreshFooter(true)
 end
 
-function ReaderFooter:onToggleUILayoutMiroring()
-    self.progress_bar.invert_direction = not self.progress_bar.invert_direction
-    self:refreshFooter(true)
+function ReaderFooter:setUILayoutMiroring(invert_direction)
+    if self.progress_bar then
+        self.progress_bar.invert_direction = invert_direction
+        self:maybeUpdateFooter()
+    end
 end
 
 function ReaderFooter:getBookProgress()
