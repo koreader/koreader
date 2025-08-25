@@ -998,7 +998,7 @@ function ReaderView:onReadSettings(config)
     else
         self.invert_ui_layout_mirroring = G_reader_settings:isTrue("invert_ui_layout_mirroring")
     end
-    self.footer:setUILayoutMiroring(self.invert_ui_layout_mirroring)
+    self.footer:invertProgressBar(self.invert_ui_layout_mirroring)
     self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or G_defaults:readSetting("DSHOWOVERLAP")
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
     self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height")
@@ -1016,7 +1016,7 @@ function ReaderView:onToggleUILayoutMiroring(toggle)
     end
     if self.invert_ui_layout_mirroring ~= toggle then
         self.invert_ui_layout_mirroring = toggle
-        self.footer:setUILayoutMiroring(self.invert_ui_layout_mirroring)
+        self.footer:invertProgressBar(self.invert_ui_layout_mirroring)
     end
     return true
 end
