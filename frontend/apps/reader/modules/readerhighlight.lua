@@ -1695,7 +1695,10 @@ function ReaderHighlight:onHold(arg, ges)
     end
 
     -- otherwise, we must be holding on text
-    if self.view.highlight.disabled then return false end -- Long-press action "Do nothing" checked
+    if self.view.highlight.disabled then -- Long-press action "Do nothing" checked
+        self.hold_pos = nil
+        return false
+    end
     local ok, word = pcall(self.ui.document.getWordFromPosition, self.ui.document, self.hold_pos)
     if ok and word then
         logger.dbg("selected word:", word)
