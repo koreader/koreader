@@ -2379,7 +2379,7 @@ function ReaderFooter:onToggleFooterMode()
         for i, m in ipairs(self.mode_index) do
             if self.mode == self.mode_list.off then break end
             if self.mode == i then
-                if self.settings[m] then
+                if self.settings[m] and self.mode ~= self.mode_list.dynamic_filler then
                     break
                 else
                     self.mode = (self.mode + 1) % self.mode_nb
