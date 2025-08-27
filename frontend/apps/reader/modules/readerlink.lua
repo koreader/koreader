@@ -1611,7 +1611,7 @@ function ReaderLink:getButtonsForExternalLinkDialog(link_url)
         local button = fn_button(self, link_url)
         local show, button_title
 
-        if type(button.show_in_dialog_func) == "function" then
+        if button.show_in_dialog_func then
             show, button_title = button.show_in_dialog_func(link_url)
         else
             -- If the button doesn't have the show_in_dialog_func, then assume that the button
