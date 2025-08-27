@@ -1,4 +1,5 @@
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local formatters = {
     none = {
@@ -35,13 +36,13 @@ local formatters = {
     },
 }
 
-local function prepareBookContent(book, formatting_options, highlight_formatting)
+local function prepareBookContent(book, formatting_options, highlight_formatting, export_backlinks)
     local tbl = {}
     local current_chapter = nil
     table.insert(tbl, "# " .. book.title)
     local author = book.author or _("N/A")
     table.insert(tbl, "##### " .. author:gsub("\n", ", ") .. "\n")
-    for _, note in ipairs(book) do
+    for __, note in ipairs(book) do
         local entry = note[1]
         if entry.chapter ~= current_chapter then
             current_chapter = entry.chapter
@@ -56,11 +57,14 @@ local function prepareBookContent(book, formatting_options, highlight_formatting
         if entry.note then
             table.insert(tbl, "\n---\n" .. entry.note)
         end
+        if export_backlinks then
+            table.insert(tbl, "\n" .. T("[%1](<file:///%2?pn_xp=%3>)", _("View in book"), book.file, entry.pn_xp))
+        end
     end
     return tbl
 end
 
 return {
     prepareBookContent = prepareBookContent,
-    formatters = formatters
+    formatters = formatters,
 }
