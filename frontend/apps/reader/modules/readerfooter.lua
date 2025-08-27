@@ -237,65 +237,55 @@ footerTextGeneratorMap = {
         end
     end,
     page_progress = function(footer)
-        if footer.pageno then
-            if footer.ui.pagemap and footer.ui.pagemap:wantsPageLabels() then
-                -- (Page labels might not be numbers)
-                return ("%s / %s"):format(footer.ui.pagemap:getCurrentPageLabel(true),
-                                          footer.ui.pagemap:getLastPageLabel(true))
-            end
-            if footer.ui.document:hasHiddenFlows() then
-                -- i.e., if we are hiding non-linear fragments and there's anything to hide,
-                local flow = footer.ui.document:getPageFlow(footer.pageno)
-                local page = footer.ui.document:getPageNumberInFlow(footer.pageno)
-                local pages = footer.ui.document:getTotalPagesInFlow(flow)
-                if flow == 0 then
-                    return ("%d // %d"):format(page, pages)
-                else
-                    return ("[%d / %d]%d"):format(page, pages, flow)
-                end
+        if footer.ui.pagemap and footer.ui.pagemap:wantsPageLabels() then
+            -- (Page labels might not be numbers)
+            return ("%s / %s"):format(footer.ui.pagemap:getCurrentPageLabel(true),
+                                      footer.ui.pagemap:getLastPageLabel(true))
+        elseif footer.ui.document:hasHiddenFlows() then
+            -- i.e., if we are hiding non-linear fragments and there's anything to hide,
+            local flow = footer.ui.document:getPageFlow(footer.pageno)
+            local page = footer.ui.document:getPageNumberInFlow(footer.pageno)
+            local pages = footer.ui.document:getTotalPagesInFlow(flow)
+            if flow == 0 then
+                return ("%d // %d"):format(page, pages)
             else
-                return ("%d / %d"):format(footer.pageno, footer.pages)
+                return ("[%d / %d]%d"):format(page, pages, flow)
             end
-        elseif footer.position then
-            return ("%d / %d"):format(footer.position, footer.doc_height)
+        else
+            return ("%d / %d"):format(footer.pageno, footer.pages)
         end
     end,
     pages_left_book = function(footer)
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].pages_left_book
-        if footer.pageno then
-            if footer.ui.pagemap and footer.ui.pagemap:wantsPageLabels() then
-                -- (Page labels might not be numbers)
-                local label, idx, count = footer.ui.pagemap:getCurrentPageLabel(false) -- luacheck: no unused
-                local remaining = count - idx
-                if footer.settings.pages_left_includes_current_page then
-                    remaining = remaining + 1
-                end
-                return ("%s %s / %s"):format(prefix, remaining, footer.ui.pagemap:getLastPageLabel(true))
+        if footer.ui.pagemap and footer.ui.pagemap:wantsPageLabels() then
+            -- (Page labels might not be numbers)
+            local label, idx, count = footer.ui.pagemap:getCurrentPageLabel(false) -- luacheck: no unused
+            local remaining = count - idx
+            if footer.settings.pages_left_includes_current_page then
+                remaining = remaining + 1
             end
-            if footer.ui.document:hasHiddenFlows() then
-                -- i.e., if we are hiding non-linear fragments and there's anything to hide,
-                local flow = footer.ui.document:getPageFlow(footer.pageno)
-                local page = footer.ui.document:getPageNumberInFlow(footer.pageno)
-                local pages = footer.ui.document:getTotalPagesInFlow(flow)
-                local remaining = pages - page
-                if footer.settings.pages_left_includes_current_page then
-                    remaining = remaining + 1
-                end
-                if flow == 0 then
-                    return ("%s %d // %d"):format(prefix, remaining, pages)
-                else
-                    return ("%s [%d / %d]%d"):format(prefix, remaining, pages, flow)
-                end
+            return ("%s %s / %s"):format(prefix, remaining, footer.ui.pagemap:getLastPageLabel(true))
+        elseif footer.ui.document:hasHiddenFlows() then
+            -- i.e., if we are hiding non-linear fragments and there's anything to hide,
+            local flow = footer.ui.document:getPageFlow(footer.pageno)
+            local page = footer.ui.document:getPageNumberInFlow(footer.pageno)
+            local pages = footer.ui.document:getTotalPagesInFlow(flow)
+            local remaining = pages - page
+            if footer.settings.pages_left_includes_current_page then
+                remaining = remaining + 1
+            end
+            if flow == 0 then
+                return ("%s %d // %d"):format(prefix, remaining, pages)
             else
-                local remaining = footer.pages - footer.pageno
-                if footer.settings.pages_left_includes_current_page then
-                    remaining = remaining + 1
-                end
-                return ("%s %d / %d"):format(prefix, remaining, footer.pages)
+                return ("%s [%d / %d]%d"):format(prefix, remaining, pages, flow)
             end
-        elseif footer.position then
-            return ("%s %d / %d"):format(prefix, footer.doc_height - footer.position, footer.doc_height)
+        else
+            local remaining = footer.pages - footer.pageno
+            if footer.settings.pages_left_includes_current_page then
+                remaining = remaining + 1
+            end
+            return ("%s %d / %d"):format(prefix, remaining, footer.pages)
         end
     end,
     pages_left = function(footer)
@@ -330,13 +320,15 @@ footerTextGeneratorMap = {
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].book_time_to_read
         local left = footer.ui.document:getTotalPagesLeft(footer.pageno)
-        return footer:getDataFromStatistics(prefix and (prefix .. " ") or "", left)
+        return (prefix and prefix .. " " or "") ..
+            (footer.ui.statistics and footer.ui.statistics:getTimeForPages(left) or _("N/A"))
     end,
     chapter_time_to_read = function(footer)
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].chapter_time_to_read
         local left = footer.ui.toc:getChapterPagesLeft(footer.pageno) or footer.ui.document:getTotalPagesLeft(footer.pageno)
-        return footer:getDataFromStatistics(prefix .. " ", left)
+        return prefix .. " " ..
+            (footer.ui.statistics and footer.ui.statistics:getTimeForPages(left) or _("N/A"))
     end,
     mem_usage = function(footer)
         local statm = io.open("/proc/self/statm", "r")
@@ -413,8 +405,8 @@ footerTextGeneratorMap = {
     custom_text = function(footer)
         -- if custom_text contains only spaces, request to merge it with the text before and after,
         -- in other words, don't add a separator then.
-        local merge = footer.custom_text:gsub(" ", ""):len() == 0
-        return footer.custom_text:rep(footer.custom_text_repetitions), merge
+        local merge = footer.custom_text:gsub(" ", "") == ""
+        return footer.ui.bookinfo:expandString(footer.custom_text):rep(footer.custom_text_repetitions), merge
     end,
     dynamic_filler = function(footer)
         local margin = footer.horizontal_margin
@@ -602,7 +594,6 @@ function ReaderFooter:init()
         return
     end
 
-    self.pageno = self.view.state.page
     self.has_no_mode = true
     self.reclaim_height = self.settings.reclaim_height
     for _, m in ipairs(self.mode_index) do
@@ -694,6 +685,10 @@ function ReaderFooter:set_custom_text(touchmenu_instance)
                     callback = function()
                         UIManager:close(text_dialog)
                     end,
+                },
+                {
+                    text = _("Info"),
+                    callback = self.ui.bookinfo.expandString,
                 },
                 {
                     text = _("Set"),
@@ -970,8 +965,8 @@ end
 function ReaderFooter:disableFooter()
     self.onReaderReady = function() end
     self.resetLayout = function() end
-    self.updateFooterPage = function() end
-    self.updateFooterPos = function() end
+    self.updateFooter = function() end
+    self.onUpdateFooter = function() end
     self.mode = self.mode_list.off
     self.view.footer_visible = false
 end
@@ -1407,21 +1402,21 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(footer_items, getMinibarOption("time"))
     table.insert(footer_items, getMinibarOption("chapter_progress"))
     table.insert(footer_items, getMinibarOption("pages_left"))
-    if Device:hasBattery() then
+    if MODE.battery then
         table.insert(footer_items, getMinibarOption("battery"))
     end
     table.insert(footer_items, getMinibarOption("bookmark_count"))
     table.insert(footer_items, getMinibarOption("percentage"))
     table.insert(footer_items, getMinibarOption("book_time_to_read"))
     table.insert(footer_items, getMinibarOption("chapter_time_to_read"))
-    if Device:hasFrontlight() then
+    if MODE.frontlight then
         table.insert(footer_items, getMinibarOption("frontlight"))
     end
-    if Device:hasNaturalLight() then
+    if MODE.frontlight_warmth then
         table.insert(footer_items, getMinibarOption("frontlight_warmth"))
     end
     table.insert(footer_items, getMinibarOption("mem_usage"))
-    if Device:hasFastWifiStatusQuery() then
+    if MODE.wifi_status then
         table.insert(footer_items, getMinibarOption("wifi_status"))
     end
     table.insert(footer_items, getMinibarOption("page_turning_inverted"))
@@ -1666,7 +1661,7 @@ With this feature enabled, the current page is factored in, resulting in the cou
         }
     })
     local configure_items_sub_table = sub_items[#sub_items].sub_item_table -- will pick the last item of sub_items
-    if Device:hasBattery() then
+    if MODE.battery then
         table.insert(configure_items_sub_table, 5, {
             text_func = function()
                 if self.settings.battery_hide_threshold <= self.default_settings.battery_hide_threshold then
@@ -2100,7 +2095,7 @@ function ReaderFooter:setTocMarkers(reset)
                         table.insert(self.progress_bar.ticks, pos)
                     end
                 end
-                self.progress_bar.last = self.doc_height or self.ui.document.info.doc_height
+                self.progress_bar.last = self.ui.document.info.doc_height
             end
         end
     else
@@ -2110,28 +2105,7 @@ function ReaderFooter:setTocMarkers(reset)
     return true
 end
 
--- This is implemented by the Statistics plugin
-function ReaderFooter:getAvgTimePerPage() end
-
-function ReaderFooter:getDataFromStatistics(title, pages)
-    local sec = _("N/A")
-    local average_time_per_page = self:getAvgTimePerPage()
-    local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
-    if average_time_per_page then
-        sec = datetime.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true)
-    end
-    return title .. sec
-end
-
 function ReaderFooter:onUpdateFooter(force_repaint, full_repaint)
-    if self.pageno then
-        self:updateFooterPage(force_repaint, full_repaint)
-    else
-        self:updateFooterPos(force_repaint, full_repaint)
-    end
-end
-
-function ReaderFooter:updateFooterPage(force_repaint, full_repaint)
     if type(self.pageno) ~= "number" then return end
     if self.settings.chapter_progress_bar then
         if self.progress_bar.initial_pos_marker then
@@ -2144,23 +2118,6 @@ function ReaderFooter:updateFooterPage(force_repaint, full_repaint)
         self.progress_bar:setPercentage(self:getChapterProgress(true))
     else
         self.progress_bar:setPercentage(self:getBookProgress())
-    end
-    self:updateFooterText(force_repaint, full_repaint)
-end
-
-function ReaderFooter:updateFooterPos(force_repaint, full_repaint)
-    if type(self.position) ~= "number" then return end
-    if self.settings.chapter_progress_bar then
-        if self.progress_bar.initial_pos_marker then
-            if self.pageno and (self.ui.toc:getNextChapter(self.pageno) == self.ui.toc:getNextChapter(self.initial_pageno)) then
-                self.progress_bar.initial_percentage = self:getChapterProgress(true, self.initial_pageno)
-            else
-                self.progress_bar.initial_percentage = -1
-            end
-        end
-        self.progress_bar:setPercentage(self:getChapterProgress(true))
-    else
-        self.progress_bar:setPercentage(self.position / self.doc_height)
     end
     self:updateFooterText(force_repaint, full_repaint)
 end
@@ -2296,46 +2253,35 @@ end
 -- and will then emit a "TocReset" after the new ToC is made.
 function ReaderFooter:onTocReset()
     self:setTocMarkers(true)
-    if self.view.view_mode == "page" then
-        self:updateFooterPage()
-    else
-        self:updateFooterPos()
-    end
+    self:onUpdateFooter()
 end
 
 function ReaderFooter:onPageUpdate(pageno)
-    local toc_markers_update = false
+    local old_pageno = self.pageno
+    self.pageno = pageno
+    self.initial_pageno = self.initial_pageno or pageno
+    self.pages = self.ui.document:getPageCount()
+    self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
     if self.ui.document:hasHiddenFlows() then
-        local flow = self.pageno and self.ui.document:getPageFlow(self.pageno)
-        local new_flow = pageno and self.ui.document:getPageFlow(pageno)
-        if pageno and new_flow ~= flow then
-            toc_markers_update = true
+        if old_pageno == nil then
+            self:setTocMarkers(true)
+        else
+            local old_flow = self.ui.document:getPageFlow(old_pageno)
+            local new_flow = self.ui.document:getPageFlow(pageno)
+            if old_flow ~= new_flow then
+                self:setTocMarkers(true)
+            end
         end
     end
-    self.pageno = pageno
-    if not self.initial_pageno then
-        self.initial_pageno = pageno
-    end
-    self.pages = self.ui.document:getPageCount()
-    if toc_markers_update then
-        self:setTocMarkers(true)
-    end
-    self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
-    self:updateFooterPage()
+    self:onUpdateFooter()
 end
 
 function ReaderFooter:onPosUpdate(pos, pageno)
-    self.position = pos
-    self.doc_height = self.ui.document.info.doc_height
-    if pageno then
-        self.pageno = pageno
-        if not self.initial_pageno then
-            self.initial_pageno = pageno
-        end
-        self.pages = self.ui.document:getPageCount()
-        self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
-    end
-    self:updateFooterPos()
+    self.pageno = pageno
+    self.initial_pageno = self.initial_pageno or pageno
+    self.pages = self.ui.document:getPageCount()
+    self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
+    self:onUpdateFooter()
 end
 
 function ReaderFooter:onReaderReady()
@@ -2351,9 +2297,10 @@ function ReaderFooter:onReaderReady()
         self:updateFooterContainer()
     end
     self:resetLayout(self.settings.progress_margin) -- set widget dimen
-    self:setTocMarkers()
+    if not self.ui.document:hasHiddenFlows() then -- otherwise will be done in the first onPageUpdate()
+        self:setTocMarkers()
+    end
     self.updateFooterText = self._updateFooterText
-    self:onUpdateFooter()
     self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
@@ -2432,7 +2379,7 @@ function ReaderFooter:onToggleFooterMode()
         for i, m in ipairs(self.mode_index) do
             if self.mode == self.mode_list.off then break end
             if self.mode == i then
-                if self.settings[m] then
+                if self.settings[m] and self.mode ~= self.mode_list.dynamic_filler then
                     break
                 else
                     self.mode = (self.mode + 1) % self.mode_nb
@@ -2522,7 +2469,7 @@ end
 
 function ReaderFooter:onResume()
     -- Reset the initial marker, if any
-    if self.progress_bar.initial_pos_marker then
+    if self.progress_bar and self.progress_bar.initial_pos_marker then
         self.initial_pageno = self.pageno
         self.progress_bar.initial_percentage = self.progress_bar.percentage
     end
@@ -2550,13 +2497,8 @@ function ReaderFooter:onOutOfScreenSaver()
     self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
-function ReaderFooter:onSuspend()
-    self:unscheduleFooterAutoRefresh()
-end
-
-function ReaderFooter:onCloseDocument()
-    self:unscheduleFooterAutoRefresh()
-end
+ReaderFooter.onSuspend       = ReaderFooter.unscheduleFooterAutoRefresh
+ReaderFooter.onCloseDocument = ReaderFooter.unscheduleFooterAutoRefresh
 
 -- Used by event handlers that can trip without direct UI interaction...
 function ReaderFooter:maybeUpdateFooter()
@@ -2564,11 +2506,9 @@ function ReaderFooter:maybeUpdateFooter()
     self:onUpdateFooter(self:shouldBeRepainted())
 end
 
-function ReaderFooter:onFrontlightStateChanged()
-    self:maybeUpdateFooter()
-end
-ReaderFooter.onCharging    = ReaderFooter.onFrontlightStateChanged
-ReaderFooter.onNotCharging = ReaderFooter.onFrontlightStateChanged
+ReaderFooter.onFrontlightStateChanged = ReaderFooter.maybeUpdateFooter
+ReaderFooter.onCharging    = ReaderFooter.maybeUpdateFooter
+ReaderFooter.onNotCharging = ReaderFooter.maybeUpdateFooter
 
 function ReaderFooter:onNetworkConnected()
     if self.settings.wifi_status then

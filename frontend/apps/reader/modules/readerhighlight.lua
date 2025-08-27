@@ -1385,6 +1385,7 @@ function ReaderHighlight:showHighlightDialog(index)
         start_prev, start_next = start_next, start_prev
         end_prev, end_next = end_next, end_prev
     end
+    local move_by_char = false
     local edit_highlight_dialog
     local buttons = {
         {
@@ -1438,9 +1439,10 @@ function ReaderHighlight:showHighlightDialog(index)
                 text = start_prev,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 0, -1, false)
+                    self:updateHighlight(index, 0, -1, move_by_char)
                 end,
                 hold_callback = function()
+                    move_by_char = not move_by_char
                     self:updateHighlight(index, 0, -1, true)
                 end,
             },
@@ -1448,9 +1450,10 @@ function ReaderHighlight:showHighlightDialog(index)
                 text = start_next,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 0, 1, false)
+                    self:updateHighlight(index, 0, 1, move_by_char)
                 end,
                 hold_callback = function()
+                    move_by_char = not move_by_char
                     self:updateHighlight(index, 0, 1, true)
                 end,
             },
@@ -1458,9 +1461,10 @@ function ReaderHighlight:showHighlightDialog(index)
                 text = end_prev,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 1, -1, false)
+                    self:updateHighlight(index, 1, -1, move_by_char)
                 end,
                 hold_callback = function()
+                    move_by_char = not move_by_char
                     self:updateHighlight(index, 1, -1, true)
                 end,
             },
@@ -1468,9 +1472,10 @@ function ReaderHighlight:showHighlightDialog(index)
                 text = end_next,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 1, 1, false)
+                    self:updateHighlight(index, 1, 1, move_by_char)
                 end,
                 hold_callback = function()
+                    move_by_char = not move_by_char
                     self:updateHighlight(index, 1, 1, true)
                 end,
             },
@@ -1690,7 +1695,10 @@ function ReaderHighlight:onHold(arg, ges)
     end
 
     -- otherwise, we must be holding on text
-    if self.view.highlight.disabled then return false end -- Long-press action "Do nothing" checked
+    if self.view.highlight.disabled then -- Long-press action "Do nothing" checked
+        self.hold_pos = nil
+        return false
+    end
     local ok, word = pcall(self.ui.document.getWordFromPosition, self.ui.document, self.hold_pos)
     if ok and word then
         logger.dbg("selected word:", word)
@@ -2053,7 +2061,7 @@ function ReaderHighlight:onHoldRelease()
         if self.selected_text then
             self.select_mode = false
             self:extendSelection()
-            if default_highlight_action == "select" or not self.selected_text.is_tmp then
+            if default_highlight_action == "select" or self.selected_text.is_extended then
                 self:saveHighlight(true)
                 self:clear()
             else
@@ -2224,7 +2232,7 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
         local index = self.ui.annotation:addItem(item)
         self.view.footer:maybeUpdateFooter()
         self.ui:handleEvent(Event:new("AnnotationsModified",
-            { item, nb_highlights_added = 1, index_modified = index, modify_datetime = not self.selected_text.is_tmp }))
+            { item, nb_highlights_added = 1, index_modified = index, modify_datetime = self.selected_text.is_extended }))
         return index
     end
 end
@@ -2510,7 +2518,7 @@ function ReaderHighlight:extendSelection()
     end
     self:deleteHighlight(self.highlight_idx) -- starting fragment
     self.selected_text = {
-        is_tmp = item1.is_tmp,
+        is_extended = not item1.is_tmp,
         datetime = item1.datetime,
         drawer = item1.drawer,
         color = item1.color,

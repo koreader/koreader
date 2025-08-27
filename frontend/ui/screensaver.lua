@@ -4,12 +4,10 @@ local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
-local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local ImageWidget = require("ui/widget/imagewidget")
-local Math = require("optmath")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local RenderImage = require("ui/renderimage")
 local ScreenSaverWidget = require("ui/widget/screensaverwidget")
@@ -20,7 +18,6 @@ local TopContainer = require("ui/widget/container/topcontainer")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local datetime = require("datetime")
 local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
@@ -120,130 +117,6 @@ local function _getRandomImage(dir)
     end
 end
 
--- This is implemented by the Statistics plugin
-function Screensaver:getAvgTimePerPage()
-    return
-end
-
-function Screensaver:_calcAverageTimeForPages(pages)
-    local sec = _("N/A")
-    local average_time_per_page = self:getAvgTimePerPage()
-
-    -- Compare average_time_per_page against itself to make sure it's not nan
-    if average_time_per_page and average_time_per_page == average_time_per_page and pages then
-        local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
-        sec = datetime.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true)
-    end
-    return sec
-end
-
-function Screensaver:expandSpecial(message)
-    -- Expand special character sequences in given message.
-    -- %T document title
-    -- %A document authors
-    -- %S document series
-    -- %c current page (if there are hidden flows, current page in current flow)
-    -- %t total pages (if there are hidden flows, total pages in current flow)
-    -- %p percentage read (if there are hidden flows, percentage read of current flow)
-    -- %h time left in chapter
-    -- %H time left in document (if there are hidden flows, time left in current flow)
-    -- %b battery level
-    -- %B battery symbol
-
-    local lastfile = G_reader_settings:readSetting("lastfile")
-    if lastfile == nil then return end
-
-    local totalpages = 0
-    local percent = 0
-    local currentpage = 0
-    local title = _("N/A")
-    local authors = _("N/A")
-    local series = _("N/A")
-    local time_left_chapter = _("N/A")
-    local time_left_document = _("N/A")
-    local batt_lvl = _("N/A")
-    local batt_symbol = _("N/A")
-    local props
-
-    local ReaderUI = require("apps/reader/readerui")
-    local ui = ReaderUI.instance
-    if ui and ui.document then
-        -- If we have a ReaderUI instance, use it.
-        local doc = ui.document
-        if doc:hasHiddenFlows() then
-            local currentpageAll = ui.view.state.page or currentpage
-            currentpage = doc:getPageNumberInFlow(ui.view.state.page or currentpageAll)
-            totalpages = doc:getTotalPagesInFlow(doc:getPageFlow(currentpageAll))
-            time_left_chapter = self:_calcAverageTimeForPages(ui.toc:getChapterPagesLeft(currentpageAll) or (totalpages - currentpage))
-            time_left_document = self:_calcAverageTimeForPages(totalpages - currentpage)
-        else
-            currentpage = ui.view.state.page or currentpage
-            totalpages = doc:getPageCount() or totalpages
-            time_left_chapter = self:_calcAverageTimeForPages(ui.toc:getChapterPagesLeft(currentpage) or doc:getTotalPagesLeft(currentpage))
-            time_left_document = self:_calcAverageTimeForPages(doc:getTotalPagesLeft(currentpage))
-        end
-        if currentpage == 1 then
-            percent = 0
-        elseif currentpage == totalpages then
-            percent = 100
-        else
-            percent = Math.round(Math.clamp(((currentpage * 100) / totalpages), 1, 99))
-        end
-        props = ui.doc_props
-    elseif BookList.hasBookBeenOpened(lastfile) then
-        -- If there's no ReaderUI instance, but the file has sidecar data, use that
-        local doc_settings = BookList.getDocSettings(lastfile)
-        totalpages = doc_settings:readSetting("doc_pages") or totalpages
-        percent = doc_settings:readSetting("percent_finished") or percent
-        currentpage = Math.round(percent * totalpages)
-        if currentpage == 1 then
-            percent = 0
-        elseif currentpage == totalpages then
-            percent = 100
-        else
-            percent = Math.round(Math.clamp(percent * 100, 1, 99))
-        end
-        props = FileManagerBookInfo.extendProps(doc_settings:readSetting("doc_props"), lastfile)
-        -- Unable to set time_left_chapter and time_left_document without ReaderUI, so leave N/A
-    end
-    if props then
-        title = props.display_title
-        if props.authors then
-            authors = props.authors
-        end
-        if props.series then
-            series = props.series
-            if props.series_index then
-                series = series .. " #" .. props.series_index
-            end
-        end
-    end
-    if Device:hasBattery() then
-        local powerd = Device:getPowerDevice()
-        if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
-            batt_lvl = powerd:getCapacity() + powerd:getAuxCapacity()
-            batt_symbol = powerd:getBatterySymbol(powerd:isAuxCharged(), powerd:isAuxCharging(), batt_lvl / 2)
-        else
-            batt_lvl = powerd:getCapacity()
-            batt_symbol = powerd:getBatterySymbol(powerd:isCharged(), powerd:isCharging(), batt_lvl)
-        end
-    end
-
-    local replace = {
-        ["%T"] = title,
-        ["%A"] = authors,
-        ["%S"] = series,
-        ["%c"] = currentpage,
-        ["%t"] = totalpages,
-        ["%p"] = percent,
-        ["%h"] = time_left_chapter,
-        ["%H"] = time_left_document,
-        ["%b"] = batt_lvl,
-        ["%B"] = batt_symbol,
-    }
-    return message:gsub("(%%%a)", replace)
-end
-
 local function addOverlayMessage(widget, widget_height, text)
     local FrameContainer = require("ui/widget/container/framecontainer")
     local RightContainer = require("ui/widget/container/rightcontainer")
@@ -299,7 +172,7 @@ local function addOverlayMessage(widget, widget_height, text)
     return widget
 end
 
-function Screensaver:chooseFolder()
+function Screensaver.chooseFolder()
     local title_header = _("Current random image folder:")
     local current_path = G_reader_settings:readSetting("screensaver_dir")
     local caller_callback = function(path)
@@ -308,7 +181,7 @@ function Screensaver:chooseFolder()
     filemanagerutil.showChooseDialog(title_header, caller_callback, current_path)
 end
 
-function Screensaver:chooseFile()
+function Screensaver.chooseFile()
     local title_header, current_path, file_filter, caller_callback
     title_header = _("Current image or document cover:")
     current_path = G_reader_settings:readSetting("screensaver_document_cover")
@@ -321,46 +194,23 @@ function Screensaver:chooseFile()
     filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, nil, file_filter)
 end
 
-function Screensaver:isExcluded()
-    local ReaderUI = require("apps/reader/readerui")
-    local ui = ReaderUI.instance
-    if ui and ui.doc_settings then
-        local doc_settings = ui.doc_settings
-        return doc_settings:isTrue("exclude_screensaver")
+function Screensaver.isExcluded(ui)
+    if ui.document then
+        return ui.doc_settings:isTrue("exclude_screensaver")
     else
-        if G_reader_settings:hasNot("lastfile") then
-            return false
-        end
-
-        local lastfile = G_reader_settings:readSetting("lastfile")
-        if BookList.hasBookBeenOpened(lastfile) then
-            return BookList.getDocSettings(lastfile):isTrue("exclude_screensaver")
-        else
-            -- No DocSetting, not excluded
-            return false
-        end
+        local lastfile = G_reader_settings:readSetting("lastfile") or false
+        return lastfile and BookList.hasBookBeenOpened(lastfile)
+                        and BookList.getDocSettings(lastfile):isTrue("exclude_screensaver")
     end
 end
 
 function Screensaver:setMessage()
+    local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
     local InputDialog = require("ui/widget/inputdialog")
-    local screensaver_message = G_reader_settings:readSetting("screensaver_message")
-                             or self.default_screensaver_message
-    local info_text = _([[
-%T title
-%A author(s)
-%S series
-%c current page number
-%t total page number
-%p percentage read
-%h time left in chapter
-%H time left in document
-%b battery level
-%B battery symbol]])
     local input_dialog
     input_dialog = InputDialog:new{
         title = _("Sleep screen message"),
-        input = screensaver_message,
+        input = G_reader_settings:readSetting("screensaver_message") or self.default_screensaver_message,
         allow_newline = true,
         buttons = {
             {
@@ -373,12 +223,7 @@ function Screensaver:setMessage()
                 },
                 {
                     text = _("Info"),
-                    callback = function()
-                        UIManager:show(InfoMessage:new{
-                            text = info_text,
-                            monospace_font = true,
-                        })
-                    end,
+                    callback = FileManagerBookInfo.expandString,
                 },
                 {
                     text = _("Set message"),
@@ -465,8 +310,7 @@ function Screensaver:setup(event, event_message)
     end
 
     -- Check lastfile and setup the requested mode's resources, or a fallback mode if the required resources are unavailable.
-    local ReaderUI = require("apps/reader/readerui")
-    local ui = ReaderUI.instance
+    self.ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
     local lastfile = G_reader_settings:readSetting("lastfile")
     local is_document_cover = false
     if self.screensaver_type == "document_cover" then
@@ -480,16 +324,10 @@ function Screensaver:setup(event, event_message)
         if not is_document_cover and lastfile then
             local exclude_finished_book
             local exclude_on_hold_book
-            local exclude_book_in_fm = not ui and G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
+            local exclude_book_in_fm = not self.ui.document and G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
             if BookList.hasBookBeenOpened(lastfile) then
-                local doc_settings
-                if ui and ui.doc_settings then
-                    doc_settings = ui.doc_settings
-                else
-                    doc_settings = BookList.getDocSettings(lastfile)
-                end
+                local doc_settings = self.ui.doc_settings or BookList.getDocSettings(lastfile)
                 excluded = doc_settings:isTrue("exclude_screensaver")
-
                 local book_summary = doc_settings:readSetting("summary")
                 local book_finished = book_summary and book_summary.status == "complete"
                 local book_on_hold = book_summary and book_summary.status == "abandoned"
@@ -510,7 +348,7 @@ function Screensaver:setup(event, event_message)
                 if DocumentRegistry:isImageFile(lastfile) then
                     self.image_file = lastfile
                 else
-                    self.image = FileManagerBookInfo:getCoverImage(ui and ui.document, lastfile)
+                    self.image = self.ui.bookinfo:getCoverImage(self.ui.document, lastfile)
                     if self.image == nil then
                         self.screensaver_type = "random_image"
                     end
@@ -524,18 +362,15 @@ function Screensaver:setup(event, event_message)
         end
     end
     if self.screensaver_type == "bookstatus" then
-        if not (ui and ui.doc_settings and ui.doc_settings:nilOrFalse("exclude_screensaver")) then
+        if not (self.ui.document and self.ui.doc_settings:nilOrFalse("exclude_screensaver")) then
             self.screensaver_type = "random_image"
         end
     end
-    if self.screensaver_type == "readingprogress" then
-        -- This is implemented by the Statistics plugin
-        if Screensaver.getReaderProgress == nil then
-            self.screensaver_type = "random_image"
-        end
+    if self.screensaver_type == "readingprogress" and self.ui.statistics == nil then
+        self.screensaver_type = "random_image"
     end
     if self.screensaver_type == "disable" then
-        if ui and ui.doc_settings and ui.doc_settings:isTrue("exclude_screensaver") then
+        if self.ui.document and self.ui.doc_settings:isTrue("exclude_screensaver") then
             self.screensaver_type = "random_image"
         end
     end
@@ -554,6 +389,8 @@ function Screensaver:setup(event, event_message)
 end
 
 function Screensaver:show()
+    -- self.ui is set in Screensaver:setup()
+
     -- Notify Device methods that we're in screen saver mode, so they know whether to suspend or resume on Power events.
     Device.screen_saver_mode = true
 
@@ -565,6 +402,7 @@ function Screensaver:show()
         return
     end
 
+    local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
     local rotation_mode = Screen:getRotationMode()
 
     -- We mostly always suspend in Portrait/Inverted Portrait mode...
@@ -588,7 +426,7 @@ function Screensaver:show()
             if self:withBackground() then
                 Screen:clear()
             end
-            Screen:refreshFull(0, 0, Screen:getWidth(), Screen:getHeight())
+            Screen:refreshFull(0, 0, screen_w, screen_h)
 
             -- On Kobo, on sunxi SoCs with a recent kernel, wait a tiny bit more to avoid weird refresh glitches...
             if Device:isKobo() and Device:isSunxi() then
@@ -604,8 +442,8 @@ function Screensaver:show()
     local widget = nil
     if self.screensaver_type == "cover" or self.screensaver_type == "random_image" then
         local widget_settings = {
-            width = Screen:getWidth(),
-            height = Screen:getHeight(),
+            width = screen_w,
+            height = screen_h,
             scale_factor = G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil,
             stretch_limit_percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage"),
         }
@@ -621,7 +459,7 @@ function Screensaver:show()
                     widget_settings.image = RenderImage:renderImageFile(self.image_file, false, nil, nil)
                 end
                 if not widget_settings.image then
-                    widget_settings.image = RenderImage:renderCheckerboard(Screen:getWidth(), Screen:getHeight(), Screen.bb:getType())
+                    widget_settings.image = RenderImage:renderCheckerboard(screen_w, screen_h, Screen.bb:getType())
                 end
                 widget_settings.image_disposable = true
             else
@@ -639,13 +477,12 @@ function Screensaver:show()
         end
         widget = ImageWidget:new(widget_settings)
     elseif self.screensaver_type == "bookstatus" then
-        local ReaderUI = require("apps/reader/readerui")
         widget = BookStatusWidget:new{
-            ui = ReaderUI.instance,
+            ui = self.ui,
             readonly = true,
         }
     elseif self.screensaver_type == "readingprogress" then
-        widget = Screensaver.getReaderProgress()
+        widget = self.ui.statistics:onShowReaderProgress(true) -- get widget
     end
 
     -- Assume that we'll be covering the full-screen by default (either because of a widget, or a background fill).
@@ -678,10 +515,8 @@ function Screensaver:show()
             end
         end
 
-        -- NOTE: Only attempt to expand if there are special characters in the message.
-        if screensaver_message:find("%%") then
-            screensaver_message = self:expandSpecial(screensaver_message) or self.event_message or self.default_screensaver_message
-        end
+        screensaver_message = self.ui.bookinfo:expandString(screensaver_message)
+            or self.event_message or self.default_screensaver_message
 
         local message_pos
         if G_reader_settings:has(self.prefix .. "screensaver_message_position") then
@@ -712,7 +547,6 @@ function Screensaver:show()
                 container = TopContainer
             end
 
-            local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
             message_widget = container:new{
                 dimen = Geom:new{
                     w = screen_w,
@@ -738,8 +572,8 @@ function Screensaver:show()
                 -- Show message_widget on top of previously created widget
                 widget = OverlapGroup:new{
                     dimen = {
-                        w = Screen:getWidth(),
-                        h = Screen:getHeight(),
+                        w = screen_w,
+                        h = screen_h,
                     },
                     widget,
                     message_widget,

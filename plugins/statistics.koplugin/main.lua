@@ -1,31 +1,28 @@
 local BD = require("ui/bidi")
-local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
 local DocSettings = require("docsettings")
-local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local Math = require("optmath")
-local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderProgress = require("readerprogress")
 local ReadHistory = require("readhistory")
-local Screensaver = require("ui/screensaver")
 local SQ3 = require("lua-ljsqlite3/init")
 local SyncService = require("frontend/apps/cloudstorage/syncservice")
 local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
 local datetime = require("datetime")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local N_ = _.ngettext
-local T = FFIUtil.template
+local T = ffiUtil.template
 
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
@@ -146,37 +143,6 @@ function ReaderStatistics:init()
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
     self:checkInitDatabase()
-    BookStatusWidget.getStats = function()
-        return self:getStatsBookStatus(self.id_curr_book, self.settings.is_enabled)
-    end
-    ReaderFooter.getAvgTimePerPage = function()
-        if self.settings.is_enabled then
-            return self.avg_time
-        end
-    end
-    Screensaver.getAvgTimePerPage = function()
-        if self.settings.is_enabled then
-            return self.avg_time
-        end
-    end
-    Screensaver.getReaderProgress = function()
-        self:insertDB()
-        local current_duration, current_pages = self:getCurrentBookStats()
-        local today_duration, today_pages = self:getTodayBookStats()
-        local dates_stats = self:getReadingProgressStats(7)
-        local readingprogress
-        if dates_stats then
-            readingprogress = ReaderProgress:new{
-                dates = dates_stats,
-                current_duration = current_duration,
-                current_pages = current_pages,
-                today_duration = today_duration,
-                today_pages = today_pages,
-                readonly = true,
-            }
-        end
-        return readingprogress
-    end
 end
 
 function ReaderStatistics:initData()
@@ -293,11 +259,8 @@ function ReaderStatistics:resetVolatileStats(now_ts)
     end
 end
 
-function ReaderStatistics:getStatsBookStatus(id_curr_book, stat_enable)
-    if not stat_enable or id_curr_book == nil then
-        return {}
-    end
-
+function ReaderStatistics:getStatsBookStatus()
+    if not (self.settings.is_enabled and self.id_curr_book) then return end
     self:insertDB()
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
@@ -309,20 +272,13 @@ function ReaderStatistics:getStatsBookStatus(id_curr_book, stat_enable)
                     GROUP  BY dates
                );
     ]]
-    local total_days = conn:rowexec(string.format(sql_stmt, id_curr_book))
-    local total_read_pages, total_time_book = conn:rowexec(string.format(STATISTICS_SQL_BOOK_TOTALS_QUERY, id_curr_book))
+    local total_days = conn:rowexec(string.format(sql_stmt, self.id_curr_book))
+    local total_read_pages, total_time_book = conn:rowexec(string.format(STATISTICS_SQL_BOOK_TOTALS_QUERY, self.id_curr_book))
     conn:close()
-
-    if total_time_book == nil then
-        total_time_book = 0
-    end
-    if total_read_pages == nil then
-        total_read_pages = 0
-    end
-    return  {
+    return {
         days = tonumber(total_days),
-        time = tonumber(total_time_book),
-        pages = tonumber(total_read_pages),
+        time = tonumber(total_time_book) or 0,
+        pages = tonumber(total_read_pages) or 0,
     }
 end
 
@@ -365,7 +321,7 @@ Do you want to create an empty database?
             if lfs.attributes(bkp_db_location, "mode") == "file" then
                 logger.warn("ReaderStatistics: A DB backup from schema", db_version, "to schema", DB_SCHEMA_VERSION, "already exists!")
             else
-                FFIUtil.copyFile(db_location, bkp_db_location)
+                ffiUtil.copyFile(db_location, bkp_db_location)
                 logger.info("ReaderStatistics: Old DB backed up as", bkp_db_location)
             end
 
@@ -403,7 +359,7 @@ Do you want to create an empty database?
             if lfs.attributes(bkp_db_location, "mode") == "file" then
                 logger.warn("ReaderStatistics: A DB backup from schema", db_version, "to schema", DB_SCHEMA_VERSION, "already exists!")
             else
-                FFIUtil.copyFile(db_location, bkp_db_location)
+                ffiUtil.copyFile(db_location, bkp_db_location)
                 logger.info("ReaderStatistics: Old DB backed up as", bkp_db_location)
             end
 
@@ -1366,31 +1322,15 @@ Time is in hours and minutes.]]),
                 text = _("Reading progress"),
                 keep_menu_open = true,
                 callback = function()
-                    self:insertDB()
-                    local current_duration, current_pages = self:getCurrentBookStats()
-                    local today_duration, today_pages = self:getTodayBookStats()
-                    local dates_stats = self:getReadingProgressStats(7)
-                    if dates_stats then
-                        UIManager:show(ReaderProgress:new{
-                            dates = dates_stats,
-                            current_duration = current_duration,
-                            current_pages = current_pages,
-                            today_duration = today_duration,
-                            today_pages = today_pages,
-                        })
-                    else
-                        UIManager:show(InfoMessage:new{
-                            text = _("Reading progress is not available.\nThere is no data for the last week."),
-                        })
-                    end
-                end
+                    self:onShowReaderProgress()
+                end,
             },
             {
                 text = _("Time range"),
                 keep_menu_open = true,
                 callback = function()
                     self:onShowTimeRange()
-                end
+                end,
             },
             {
                 text = _("Calendar view"),
@@ -2767,7 +2707,7 @@ end
 function ReaderStatistics:importFromFile(base_path, item)
     item = util.trim(item)
     if item ~= ".stat" then
-        local statistic_file = FFIUtil.joinPath(base_path, item)
+        local statistic_file = ffiUtil.joinPath(base_path, item)
         if lfs.attributes(statistic_file, "mode") == "directory" then
             return
         end
@@ -3056,23 +2996,29 @@ function ReaderStatistics:getReadingDurationBySecond(ts)
     return per_book
 end
 
-function ReaderStatistics:onShowReaderProgress()
+function ReaderStatistics:onShowReaderProgress(get_widget)
     self:insertDB()
     local current_duration, current_pages = self:getCurrentBookStats()
     local today_duration, today_pages = self:getTodayBookStats()
     local dates_stats = self:getReadingProgressStats(7)
-    local readingprogress
-    if dates_stats then
-        readingprogress = ReaderProgress:new{
-            dates = dates_stats,
-            current_duration = current_duration,
-            current_pages = current_pages,
-            today_duration = today_duration,
-            today_pages = today_pages,
-            --readonly = true,
-        }
+    local readingprogress = dates_stats and ReaderProgress:new{
+        dates = dates_stats,
+        current_duration = current_duration,
+        current_pages = current_pages,
+        today_duration = today_duration,
+        today_pages = today_pages,
+        readonly = get_widget, -- true for Screensaver
+    }
+    if get_widget then
+        return readingprogress
     end
-    UIManager:show(readingprogress)
+    if readingprogress then
+        UIManager:show(readingprogress)
+    else
+        UIManager:show(InfoMessage:new{
+            text = _("Reading progress is not available.\nThere is no data for the last week."),
+        })
+    end
 end
 
 function ReaderStatistics:onShowBookStats()
@@ -3121,6 +3067,13 @@ function ReaderStatistics:getCurrentBookReadPages()
         read_pages[page][1] = info[1] / max_duration
     end
     return read_pages
+end
+
+function ReaderStatistics:getTimeForPages(pages)
+    if self.settings.is_enabled and self.avg_time and self.avg_time == self.avg_time then -- not nan
+        local duration_format = G_reader_settings:readSetting("duration_format", "classic")
+        return datetime.secondsToClockDuration(duration_format, pages * self.avg_time, true)
+    end
 end
 
 function ReaderStatistics:canSync()

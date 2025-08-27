@@ -10,7 +10,7 @@ require("ffi/linux_input_h")
 local function yes() return true end
 local function no() return false end
 
--- returns isRm2, device_model
+-- returns is_rm2, device_model
 local function getModel()
     local f = io.open("/sys/devices/soc0/machine")
     if not f then
@@ -27,11 +27,12 @@ local screen_height = 1872 -- unscaled_size_check: ignore
 local wacom_width = 15725 -- unscaled_size_check: ignore
 local wacom_height = 20967 -- unscaled_size_check: ignore
 local rm_model = getModel()
-local isRm2 = rm_model == "reMarkable 2.0"
-local isRmPaperPro = rm_model == "reMarkable Ferrari"
-local hasCsl = util.which("csl")
+local is_rm2 = rm_model == "reMarkable 2.0"
+local is_rmpp = rm_model == "reMarkable Ferrari"
+local has_csl = util.which("csl")
+local is_qtfb_shimmed = (os.getenv("LD_PRELOAD") or ""):find("qtfb%-shim") ~= nil
 
-if isRmPaperPro then
+if is_rmpp then
     screen_width = 1620 -- unscaled_size_check: ignore
     screen_height = 2160 -- unscaled_size_check: ignore
     wacom_width = 11180 -- unscaled_size_check: ignore
@@ -123,6 +124,7 @@ local RemarkablePaperPro = Remarkable:extend{
     mt_width = 2064, -- unscaled_size_check: ignore
     mt_height = 2832, -- unscaled_size_check: ignore
     display_dpi = 229,
+    ota_model = "remarkable-aarch64",
     input_wacom = "/dev/input/event2",
     input_ts = "/dev/input/event3",
     input_buttons = "/dev/input/event0",
@@ -163,7 +165,7 @@ local adjustAbsEvt = function(self, ev)
     end
 end
 
-if isRmPaperPro then
+if is_rmpp then
     adjustAbsEvt = function(self, ev)
         if ev.type == C.EV_ABS then
             if ev.code == C.ABS_X then
@@ -180,6 +182,8 @@ function Remarkable:init()
     local oxide_running = os.execute("systemctl is-active --quiet tarnish") == 0
     logger.info(string.format("Oxide running?: %s", oxide_running))
 
+    logger.info(string.format("QTFB shimmed?: %s", is_qtfb_shimmed))
+
     -- experiment
     -- logger.info("PPID:")
     -- local parent_process = os.execute("echo $PPID")
@@ -191,7 +195,7 @@ function Remarkable:init()
         device = self,
         capacity_file = self.battery_path,
         status_file = self.status_path,
-        hall_file = isRmPaperPro and "/sys/class/input/input1/inhibited" or nil,
+        hall_file = is_rmpp and "/sys/class/input/input1/inhibited" or nil,
     }
 
     local event_map = dofile("frontend/device/remarkable/event_map.lua")
@@ -226,7 +230,7 @@ function Remarkable:init()
         std_out:close()
         release = release:match("^(%d+%.%d+)%.%d+.*$")
         release = tonumber(release)
-        if release and release >= 6.2 and not isRmPaperPro then -- seems like it triggers on rMPP 3.19+ so just disable it on rMPP
+        if release and release >= 6.2 and not has_csl then -- seems like it triggers on rMPP 3.19+ so just disable it on rMPP
             is_mainline = true
         end
     end
@@ -291,15 +295,9 @@ function Remarkable:init()
     self.screen.native_rotation_mode = rotation_mode
     self.screen.cur_rotation_mode = rotation_mode
 
-    if oxide_running then
+    if oxide_running or is_qtfb_shimmed then
         -- Disable autosuspend on this device
         PluginShare.pause_auto_suspend = true
-    end
-
-    if isRmPaperPro then
-        -- disable autosuspend of xochitl
-        os.execute("cp -a ~/.config/remarkable/xochitl.conf ~/.config/remarkable/xochitl.conf.bak")
-        os.execute("sed -ri 's/IdleSuspendDelay=[0-9]+/IdleSuspendDelay=0/' ~/.config/remarkable/xochitl.conf")
     end
 
     if self.powerd:hasHallSensor() then
@@ -315,7 +313,7 @@ function Remarkable:supportsScreensaver() return true end
 
 function Remarkable:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback, interactive)
-        if hasCsl then
+        if has_csl then
             os.execute("/usr/bin/csl wifi -p on")
         else
             os.execute("./enable-wifi.sh")
@@ -324,7 +322,7 @@ function Remarkable:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
-        if hasCsl then
+        if has_csl then
             os.execute("/usr/bin/csl wifi -p off")
         else
             os.execute("./disable-wifi.sh")
@@ -339,7 +337,7 @@ function Remarkable:initNetworkManager(NetworkMgr)
     end
 
     NetworkMgr:setWirelessBackend("wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/wlan0"})
-    if hasCsl then
+    if has_csl then
         function NetworkMgr:isWifiOn()
             -- When disabling wifi by using the csl command, wpa_supplicant service will be disabled
             return os.execute("systemctl is-active --quiet wpa_supplicant") == 0
@@ -351,9 +349,6 @@ function Remarkable:initNetworkManager(NetworkMgr)
 end
 
 function Remarkable:exit()
-    if isRmPaperPro then
-        os.execute("mv -f ~/.config/remarkable/xochitl.conf.bak ~/.config/remarkable/xochitl.conf")
-    end
     if os.getenv("KO_RESTART_XOVI_ON_EXIT") == "1" then
         os.execute("~/xovi/start")
     end
@@ -376,7 +371,7 @@ function Remarkable:saveSettings()
 end
 
 function Remarkable:resume()
-    if hasCsl then
+    if has_csl then
         os.execute("csl wifi -p on")
     else
         os.execute("./enable-wifi.sh")
@@ -385,7 +380,7 @@ end
 
 function Remarkable:suspend()
     if Remarkable:hasWifiManager() then
-        if hasCsl then
+        if has_csl then
             os.execute("csl wifi -p off")
         else
             os.execute("./disable-wifi.sh")
@@ -395,16 +390,10 @@ function Remarkable:suspend()
 end
 
 function Remarkable:powerOff()
-    if isRmPaperPro then
-        os.execute("mv -f ~/.config/remarkable/xochitl.conf.bak ~/.config/remarkable/xochitl.conf")
-    end
     os.execute("systemctl poweroff")
 end
 
 function Remarkable:reboot()
-    if isRmPaperPro then
-        os.execute("mv -f ~/.config/remarkable/xochitl.conf.bak ~/.config/remarkable/xochitl.conf")
-    end
     os.execute("systemctl reboot")
 end
 
@@ -441,17 +430,14 @@ function Remarkable:setEventHandlers(UIManager)
     end
 end
 
-if isRm2 then
-    if not os.getenv("RM2FB_SHIM") or not os.getenv("LD_PRELOAD") then
+if is_rm2 then
+    if not os.getenv("RM2FB_SHIM") and not is_qtfb_shimmed then
         error("reMarkable 2 requires a RM2FB server and client to work (https://github.com/ddvk/remarkable2-framebuffer or https://github.com/asivery/rmpp-qtfb-shim)")
     end
     return Remarkable2
-elseif isRmPaperPro then
-    if not os.getenv("LD_PRELOAD") then
-        error("reMarkable Paper Pro requires a RM2FB server and client to work (https://github.com/asivery/rmpp-qtfb-shim)")
-    end
-    if os.getenv("QTFB_SHIM_INPUT") ~= "false" or os.getenv("QTFB_SHIM_MODEL") ~= "false" then
-        error("You must set both QTFB_SHIM_INPUT and QTFB_SHIM_MODEL to false")
+elseif is_rmpp then
+    if not is_qtfb_shimmed then
+        error("reMarkable Paper Pro requires a RM2FB server and client to work (https://github.com/asivery/rm-appload)")
     end
     if os.getenv("QTFB_SHIM_MODE") ~= "RGB565" then
         error("You must set QTFB_SHIM_MODE to RGB565")

@@ -289,7 +289,7 @@ function ReadCollection:updateItemsByPath(path, new_path) -- FM: rename folder, 
     end
 end
 
-function ReadCollection:updateCollectionFromFolder(collection_name, folders)
+function ReadCollection:updateCollectionFromFolder(collection_name, folders, is_showing)
     folders = folders or self.coll_settings[collection_name].folders
     local count = 0
     if folders then
@@ -318,7 +318,10 @@ function ReadCollection:updateCollectionFromFolder(collection_name, folders)
             end
         end
         for folder, folder_settings in pairs(folders) do
-            util.findFiles(folder, add_item_callback, folder_settings.subfolders)
+            if not is_showing or folder_settings.scan_on_show then
+                logger.dbg("ReadCollection: scanning folder", folder)
+                util.findFiles(folder, add_item_callback, folder_settings.subfolders)
+            end
         end
     end
     return count

@@ -87,6 +87,10 @@ ReaderPaging.onPhysicalKeyboardConnected = ReaderPaging.registerKeyEvents
 
 function ReaderPaging:onReaderReady()
     self:setupTouchZones()
+     -- Statistics plugin updates the footer later, if enabled
+    if not (self.ui.statistics and self.ui.statistics.settings.is_enabled) then
+        self.view.footer:onUpdateFooter()
+    end
 end
 
 function ReaderPaging:setupTouchZones()

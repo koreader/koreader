@@ -1,0 +1,13 @@
+{
+  "name": "KOReader",
+  "application": "koreader.sh",
+  "environment": {
+    "LD_PRELOAD": "/home/root/shims/qtfb-shim.so",
+    "QTFB_SHIM_MODEL": "false",
+    "QTFB_SHIM_INPUT_MODE": "RMPP",
+    "QTFB_SHIM_MODE": "RGB565",
+    "KO_DONT_GRAB_INPUT": "1",
+    "KO_DONT_SET_DEPTH": "1"
+  },
+  "qtfb": true
+}
