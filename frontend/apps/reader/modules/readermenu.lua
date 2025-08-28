@@ -255,7 +255,7 @@ function ReaderMenu:setUpdateItemTable()
                     text = invert_ui_layout and _("The default (★) for newly opened books is to Invert document-related dialogs.\n\nWould you like to change it?")
                     or _("The default (★) for newly opened books is not to Invert document-related dialogs.\n\nWould you like to change it?"),
                     choice1_text_func = function()
-                        return invert_ui_layout and _("Don't Invert") or _("Don't Invert (★)")
+                        return invert_ui_layout and _("Don't invert") or _("Don't invert (★)")
                     end,
                     choice1_callback = function()
                         G_reader_settings:makeFalse("invert_ui_layout")
