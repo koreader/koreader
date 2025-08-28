@@ -181,10 +181,10 @@ function SkimToWidget:init()
     }
 
     -- Top row buttons
-    local chapter_prev_text = "\u{2595}\u{25C1}\u{2002}"
-    local chapter_next_text = "\u{2002}\u{25B7}\u{258F}"
-    local bookmark_prev_text = "\u{F097}\u{25C1}"
-    local bookmark_next_text = "\u{25B7}\u{F097}"
+    local chapter_prev_text = "\u{2595}\u{25C1}\u{2002}" -- ▕◁ (right one eighth block, white left-pointing triangle, en space)
+    local chapter_next_text = "\u{2002}\u{25B7}\u{258F}" -- ▷▏ (en space, white right-pointing triangle, left one eighth block)
+    local bookmark_prev_text = "\u{F097}\u{25C1}" -- ◁ (private use area character, white left-pointing triangle)
+    local bookmark_next_text = "\u{25B7}\u{F097}" -- ▷ (white right-pointing triangle, private use area character)
     local bookmark_enabled_text = "\u{F02E}"
     local bookmark_disabled_text = "\u{F097}"
     if BD.mirroredUILayout() then

@@ -255,14 +255,14 @@ function ReaderMenu:setUpdateItemTable()
                     text = invert_ui_layout and _("The default (★) for newly opened books is to Invert document-related dialogs.\n\nWould you like to change it?")
                     or _("The default (★) for newly opened books is not to Invert document-related dialogs.\n\nWould you like to change it?"),
                     choice1_text_func = function()
-                        return invert_ui_layout and _("Don't invert") or _("Don't invert (★)")
+                        return invert_ui_layout and _("Don't invert") or _("Don't invert") .." (★)"
                     end,
                     choice1_callback = function()
                         G_reader_settings:makeFalse("invert_ui_layout")
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
                     choice2_text_func = function()
-                        return invert_ui_layout and _("Invert (★)") or _("Invert")
+                        return invert_ui_layout and _("Invert") .." (★)" or _("Invert")
                     end,
                     choice2_callback = function()
                         G_reader_settings:makeTrue("invert_ui_layout")
@@ -272,7 +272,7 @@ function ReaderMenu:setUpdateItemTable()
             end,
             help_text = _([[
 When enabled the UI direction for the Table of Contents, Book Map, and Page Browser dialogs will mirror the default UI direction.
-Useful when used alongside Invert page turns.]]),
+Useful when used alongside 'Invert page turns'.]]),
         })
     end
 
