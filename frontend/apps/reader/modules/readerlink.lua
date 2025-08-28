@@ -910,31 +910,33 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
 end
 
 function ReaderLink:openFileFromLink(link_url)
-    local anchor, after_open_callback
-    local linked_filename = link_url:gsub("^file:", "") -- remove local file protocol if any
-    if linked_filename:find("?") then -- remove any query string (including any following anchor)
-        linked_filename, anchor = linked_filename:match("^(.-)(%?.*)$")
-    elseif linked_filename:find("#") then -- remove any anchor
-        linked_filename, anchor = linked_filename:match("^(.-)(#.*)$")
-    end
-    if anchor then
-        -- If anchor contains position (page number or xpointer),
-        -- go to the position after opening the document
-        local pn_xp, count = anchor:gsub("^?pos=", "")
-        if count > 0 then
-            after_open_callback = function(ui)
-                ui.link:addCurrentLocationToStack()
-                if ui.rolling then
-                    ui.rolling:onGotoXPointer(pn_xp, pn_xp)
-                else
-                    pn_xp = tonumber(pn_xp)
-                    if pn_xp then
-                        ui.paging:onGotoPage(pn_xp)
+    local linked_filename, anchor, after_open_callback
+    if link_url:find("?") then -- remove any query string (including any following anchor)
+        linked_filename, anchor = link_url:match("^(.-)(%?.*)$")
+        if anchor then
+            -- If anchor contains position (page number or xpointer),
+            -- go to the position after opening the document
+            local pn_xp, count = anchor:gsub("^?pos=", "")
+            if count > 0 then
+                after_open_callback = function(ui)
+                    ui.link:addCurrentLocationToStack()
+                    if ui.rolling then
+                        ui.rolling:onGotoXPointer(pn_xp, pn_xp)
+                    else
+                        pn_xp = tonumber(pn_xp)
+                        if pn_xp then
+                            ui.paging:onGotoPage(pn_xp)
+                        end
                     end
                 end
             end
         end
+    elseif link_url:find("#") then -- remove any anchor
+        linked_filename, anchor = link_url:match("^(.-)(#.*)$")
+    else
+        linked_filename = link_url
     end
+    linked_filename = linked_filename:gsub("^file:", "") -- remove local file protocol if any
     local __, slash_nb = linked_filename:find("^/*") -- 0...3 leading slashes
     linked_filename = linked_filename:gsub("^//", "") -- keep 1 slash for absolute path
     if slash_nb == 0 or slash_nb == 2 then -- relative path
