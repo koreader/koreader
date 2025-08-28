@@ -1548,6 +1548,7 @@ function CreDocument:register(registry)
     registry:addProvider("htm", "text/html", self, 100)
     registry:addProvider("html", "text/html", self, 100)
     registry:addProvider("htm.zip", "application/zip", self, 100)
+    registry:addProvider("htmlz", "application/html+zip", self, 100) -- For calibre OPDS.
     registry:addProvider("html.zip", "application/zip", self, 100)
     registry:addProvider("html.zip", "application/html+zip", self, 100) -- Alternative mimetype for OPDS.
     registry:addProvider("log", "text/plain", self)
