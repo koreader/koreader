@@ -13,13 +13,13 @@ local LinkBox = require("ui/widget/linkbox")
 local Notification = require("ui/widget/notification")
 local QRMessage = require("ui/widget/qrmessage")
 local UIManager = require("ui/uimanager")
-local ffiutil = require("ffi/util")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
-local T = ffiutil.template
+local T = ffiUtil.template
 
 local function is_wiki_page(link_url)
     if not link_url then
@@ -910,37 +910,40 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
 end
 
 function ReaderLink:openFileFromLink(link_url)
-    local anchor, pn_xp, caller_callback
-    local linked_filename = link_url:gsub("^file:///", "") -- remove local file protocol if any
+    local anchor, after_open_callback
+    local linked_filename = link_url:gsub("^file:", "") -- remove local file protocol if any
     if linked_filename:find("?") then -- remove any query string (including any following anchor)
         linked_filename, anchor = linked_filename:match("^(.-)(%?.*)$")
     elseif linked_filename:find("#") then -- remove any anchor
         linked_filename, anchor = linked_filename:match("^(.-)(#.*)$")
     end
     if anchor then
-        local count
-        pn_xp, count = anchor:gsub("^?pn_xp=", "") -- page number or xpointer
-        pn_xp = count > 0 and pn_xp or nil
-    end
-    if pn_xp then
-        caller_callback = function(ui)
-            ui.link:addCurrentLocationToStack()
-            if ui.rolling then
-                ui.rolling:onGotoXPointer(pn_xp, pn_xp)
-            else
-                pn_xp = tonumber(pn_xp)
-                if pn_xp then
-                    ui.paging:onGotoPage(pn_xp)
+        -- If anchor contains position (page number or xpointer),
+        -- go to the position after opening the document
+        local pn_xp, count = anchor:gsub("^?pos=", "")
+        if count > 0 then
+            after_open_callback = function(ui)
+                ui.link:addCurrentLocationToStack()
+                if ui.rolling then
+                    ui.rolling:onGotoXPointer(pn_xp, pn_xp)
+                else
+                    pn_xp = tonumber(pn_xp)
+                    if pn_xp then
+                        ui.paging:onGotoPage(pn_xp)
+                    end
                 end
             end
         end
-    else
-        linked_filename = ffiutil.joinPath(self.document_dir, linked_filename) -- get full path
     end
-    linked_filename = ffiutil.realpath(linked_filename) -- clean full path from ./ or ../
+    local __, slash_nb = linked_filename:find("^/*") -- 0...3 leading slashes
+    linked_filename = linked_filename:gsub("^//", "") -- keep 1 slash for absolute path
+    if slash_nb == 0 or slash_nb == 2 then -- relative path
+        linked_filename = ffiUtil.joinPath(self.document_dir, linked_filename)
+    end
+    linked_filename = ffiUtil.realpath(linked_filename) -- clean full path from ./ or ../
     if linked_filename and lfs.attributes(linked_filename, "mode") == "file" then
         local display_filename = linked_filename
-        if anchor and pn_xp == nil then
+        if anchor and after_open_callback == nil then
             -- Display filename with anchor or query string, so the user gets
             -- this information and can manually go to the appropriate place
             display_filename = display_filename .. anchor
@@ -949,7 +952,7 @@ function ReaderLink:openFileFromLink(link_url)
             text = T(_("Would you like to read this local document?\n\n%1\n"), BD.filepath(display_filename)),
             ok_callback = function()
                 UIManager:scheduleIn(0.1, function()
-                    self.ui:switchDocument(linked_filename, nil, caller_callback)
+                    self.ui:switchDocument(linked_filename, nil, after_open_callback)
                 end)
             end,
         })
@@ -1607,7 +1610,7 @@ function ReaderLink:getButtonsForExternalLinkDialog(link_url)
     local default_title =  T(_("External link:\n\n%1"), BD.url(link_url))
     local title = default_title
 
-    for idx, fn_button in ffiutil.orderedPairs(self._external_link_buttons) do
+    for idx, fn_button in ffiUtil.orderedPairs(self._external_link_buttons) do
         local button = fn_button(self, link_url)
         local show, button_title
 
