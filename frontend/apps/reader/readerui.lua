@@ -496,9 +496,9 @@ function ReaderUI:init()
     end
     self.postReaderReadyCallback = nil
     self.reloading = nil
-    if self.caller_callback then
-        self:caller_callback()
-        self.caller_callback = nil
+    if self.after_open_callback then
+        self:after_open_callback()
+        self.after_open_callback = nil
     end
 
     Device:setIgnoreInput(false) -- Allow processing of events (on Android).
@@ -718,10 +718,10 @@ function ReaderUI:doShowReader(file, provider, seamless)
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         document = document,
         reloading = self.reloading,
-        caller_callback = self.caller_callback,
+        after_open_callback = self.after_open_callback,
     }
     self.reloading = nil
-    self.caller_callback = nil
+    self.after_open_callback = nil
 
     Screen:setWindowTitle(reader.doc_props.display_title)
     Device:notifyBookState(reader.doc_props.display_title, document)
@@ -904,7 +904,7 @@ function ReaderUI:reloadDocument(after_close_callback, seamless)
     self:showReader(file, provider, seamless)
 end
 
-function ReaderUI:switchDocument(new_file, seamless, caller_callback)
+function ReaderUI:switchDocument(new_file, seamless, after_open_callback)
     if not new_file then return end
 
     -- Mimic onShowingReader's refresh optimizations
@@ -916,7 +916,7 @@ function ReaderUI:switchDocument(new_file, seamless, caller_callback)
     self.highlight:onClose() -- close highlight dialog if any
     self:onClose(false)
 
-    self.caller_callback = caller_callback
+    self.after_open_callback = after_open_callback
     self:showReader(new_file, nil, seamless)
 end
 
