@@ -993,12 +993,12 @@ function ReaderView:onReadSettings(config)
     else
         self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
     end
-    if config:has("invert_ui_layout_mirroring") then
-        self.invert_ui_layout_mirroring = config:isTrue("invert_ui_layout_mirroring")
+    if config:has("invert_ui_layout") then
+        self.invert_ui_layout = config:isTrue("invert_ui_layout")
     else
-        self.invert_ui_layout_mirroring = G_reader_settings:isTrue("invert_ui_layout_mirroring")
+        self.invert_ui_layout = G_reader_settings:isTrue("invert_ui_layout")
     end
-    self.footer:invertProgressBar(self.invert_ui_layout_mirroring)
+    self.footer:invertProgressBar(self.invert_ui_layout)
     self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or G_defaults:readSetting("DSHOWOVERLAP")
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
     self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height")
@@ -1007,16 +1007,16 @@ function ReaderView:onReadSettings(config)
 end
 
 function ReaderView:shouldInvertBiDiLayoutMirroring()
-    return self.invert_ui_layout_mirroring
+    return self.invert_ui_layout
 end
 
 function ReaderView:onToggleUILayoutMiroring(toggle)
     if toggle == nil then
-        toggle = not self.invert_ui_layout_mirroring
+        toggle = not self.invert_ui_layout
     end
-    if self.invert_ui_layout_mirroring ~= toggle then
-        self.invert_ui_layout_mirroring = toggle
-        self.footer:invertProgressBar(self.invert_ui_layout_mirroring)
+    if self.invert_ui_layout ~= toggle then
+        self.invert_ui_layout = toggle
+        self.footer:invertProgressBar(self.invert_ui_layout)
     end
     return true
 end
@@ -1224,7 +1224,7 @@ function ReaderView:onSaveSettings()
         self.document.configurable.rotation_mode = Screen:getRotationMode() -- will be saved by ReaderConfig
     end
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
-    self.ui.doc_settings:saveSetting("invert_ui_layout_mirroring", self.invert_ui_layout_mirroring)
+    self.ui.doc_settings:saveSetting("invert_ui_layout", self.invert_ui_layout)
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.page_overlap_enable)
     self.ui.doc_settings:saveSetting("page_overlap_style", self.page_overlap_style)
 end
