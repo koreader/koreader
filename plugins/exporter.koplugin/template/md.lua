@@ -58,7 +58,7 @@ local function prepareBookContent(book, formatting_options, highlight_formatting
             table.insert(tbl, "\n---\n" .. entry.note)
         end
         if export_backlinks then
-            table.insert(tbl, "\n" .. T("[%1](<file:///%2?pn_xp=%3>)", _("View in book"), book.file, entry.pn_xp))
+            table.insert(tbl, "\n" .. T("[%1](<file://%2?pos=%3>)", _("View in book"), book.file, entry.pn_xp))
         end
     end
     return tbl
