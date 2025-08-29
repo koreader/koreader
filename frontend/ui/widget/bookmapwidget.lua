@@ -886,6 +886,7 @@ function BookMapWidget:registerKeyEvents()
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
             self.key_events.ScrollRowUp = { { modifier, "Up" } }
             self.key_events.ScrollRowDown = { { modifier, "Down" } }
+            self.key_events.GoToFocusedPage = { { modifier, "Press" } }
             self.key_events.CloseAll = { { modifier, "Back" }, event = "Close", args = true }
         end
         self.key_events.Close = { { Device.input.group.Back } }
@@ -1330,7 +1331,7 @@ function BookMapWidget:onShowBookMapMenu()
             end,
         }},
         {{
-            text = _("Page browser on tap"),
+            text = Device:isTouchDevice() and _("Page browser on tap") or _("Page browser on key press"),
             checked_func = function()
                 if self.overview_mode then
                     return G_reader_settings:nilOrTrue("book_map_overview_tap_to_page_browser")
@@ -1471,10 +1472,6 @@ function BookMapWidget:onShowBookMapMenu()
             }
         },
     }
-    -- remove "Page browser on tap" from non-touch devices
-    if not Device:isTouchDevice() then
-        table.remove(buttons, 3)
-    end
     -- Remove false buttons from the list if overview_mode
     for i = #buttons, 1, -1 do
         if not buttons[i] then
@@ -1935,6 +1932,50 @@ function BookMapWidget:onTap(arg, ges)
             ui = self.ui,
             focus_page = page,
         })
+    end
+    return true
+end
+
+function BookMapWidget:onGoToFocusedPage()
+    if not self.enable_focus_navigation or not self.cur_focused_widget then
+        return true
+    end
+
+    local target_page = nil
+    -- Find the row containing the focused widget.
+    local row = self:getVGroupRowAtY(self.cur_focused_widget.dimen.y - self.title_bar_h)
+    if row and row.start_page then
+        -- Find the focused widget in the row's layout.
+        local invisible_page_slots = row.focus_layout[#row.focus_layout] -- last row in focus_layout contains page slots
+        if invisible_page_slots then
+            for i, widget in ipairs(invisible_page_slots) do
+                if widget == self.cur_focused_widget then
+                    target_page = row.start_page + i - 1
+                    break
+                end
+            end
+        end
+    end
+    if target_page then
+        local should_go_to_page_browser
+        if self.overview_mode then
+            should_go_to_page_browser = G_reader_settings:isFalse("book_map_overview_tap_to_page_browser")
+        else
+            should_go_to_page_browser = G_reader_settings:isFalse("book_map_tap_to_page_browser")
+        end
+        if should_go_to_page_browser then
+            local PageBrowserWidget = require("ui/widget/pagebrowserwidget")
+            UIManager:show(PageBrowserWidget:new{
+                launcher = self,
+                ui = self.ui,
+                focus_page = target_page,
+            })
+        else
+            -- Navigate directly to the target page
+            self:onClose(true)
+            self.ui.link:addCurrentLocationToStack()
+            self.ui:handleEvent(Event:new("GotoPage", target_page))
+        end
     end
     return true
 end
