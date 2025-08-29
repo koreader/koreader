@@ -765,8 +765,9 @@ function OPDSBrowser:searchCatalog(item_url)
                     callback = function()
                         UIManager:close(dialog)
                         self.catalog_title = _("Search results")
-                        local search_str = dialog:getInputText():gsub(" ", "+")
-                        self:updateCatalog(item_url:gsub("%%s", search_str))
+                        local search_str = util.urlEncode(dialog:getInputText())
+                        -- Use function replacement to avoid % being treated as capture refs
+                        self:updateCatalog(item_url:gsub("%%s", function() return search_str end))
                     end,
                 },
             },
