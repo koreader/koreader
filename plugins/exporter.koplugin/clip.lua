@@ -241,6 +241,7 @@ function MyClipping:parseAnnotations(annotations, book)
                 chapter = item.chapter,
                 drawer  = item.drawer,
                 color   = item.color,
+                pn_xp   = item.page,
             }
             table.insert(book, { clipping })
         end
@@ -270,6 +271,7 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
                     text    = self:getText(item.text),
                     chapter = item.chapter,
                     drawer  = item.drawer,
+                    pn_xp   = item.page,
                 }
                 local bookmark_found = false
                 for _, bookmark in pairs(bookmarks) do
