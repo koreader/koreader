@@ -27,6 +27,24 @@ function reverse_entry() {
 }
 '
 
+# shellcheck disable=SC2016
+declare -r AWK_TAR_BLOCKLIST='
+BEGIN {
+    FS = "[: ]+"
+    ORS = ""
+    TAR_BS = 512
+    prev_offset = 0
+}
+{
+    if ($2)
+        print ($2 - prev_offset) * TAR_BS ","
+    prev_offset = $2
+}
+END {
+    print 0
+}
+'
+
 if [[ "${OSTYPE}" = darwin* ]]; then
     declare -r READLINK=greadlink
     declare -r TAR=gtar
@@ -295,8 +313,20 @@ case "${format}" in
         ;;
     tar.xz)
         echo "Creating archive: ${output}"
-        "${tar_compress_cmd[@]}" |
-            xz -9 ${jobs:+--threads=${jobs}} "${options[@]}" |
+        # Note: we create one XZ block per TAR entry.
+        tarfile="${tmpdir}/release.tar"
+        tarindex="${tarfile}.index"
+        blocklist="${tmpdir}/release.blocklist"
+        # Create the initial uncompressed TAR file.
+        "${tar_compress_cmd[@]}" --file="${tarfile}"
+        # Find out where each entry starts.
+        "${TAR}" --block-number --list --file="${tarfile}" >"${tarindex}"
+        # Generate block list for XZ.
+        awk "${AWK_TAR_BLOCKLIST}" <"${tarindex}" >"${blocklist}"
+        # Create the final TAR.XZ file.
+        xz -9 ${jobs:+--threads=${jobs}} \
+            --block-list="$(cat "${blocklist}")" \
+            "${options[@]}" --stdout "${tarfile}" |
             write_to_file "${output}"
         ;;
     tar.zst)
