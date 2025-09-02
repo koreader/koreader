@@ -306,6 +306,7 @@ function ReaderPaging:enterSkimMode()
             zoom_mode    = self.view.zoom_mode,
             current_page = self.current_page,
             location     = self:getBookLocation(),
+            visible_area = self.visible_area,
         }
         self.view.document.configurable.text_wrap = 0
         self.view.page_scroll = false
@@ -325,6 +326,7 @@ function ReaderPaging:exitSkimMode()
             self.current_page = 0 -- do not emit extra PageUpdate event
             self:onRestoreBookLocation(self.skim_backup.location)
         end
+        self.visible_area = self.skim_backup.visible_area
         self.skim_backup = nil
     end
 end
