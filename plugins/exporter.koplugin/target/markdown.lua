@@ -1,3 +1,4 @@
+local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local UIManager = require("ui/uimanager")
 local md = require("template/md")
 local _ = require("gettext")
@@ -58,33 +59,6 @@ function MarkdownExporter:editFormatStyle(drawer_style, label, touchmenu_instanc
     })
 end
 
-function MarkdownExporter:onInit()
-    local changed = false
-    if self.settings.formatting_options == nil then
-        self.settings.formatting_options = {
-            lighten = "italic",
-            underscore = "underline_markdownit",
-            strikeout = "strikethrough",
-            invert = "bold",
-        }
-        changed = true
-    end
-    if self.settings.highlight_formatting == nil then
-        self.settings.highlight_formatting = true
-        changed = true
-    end
-    if changed then
-        self:saveSettings()
-    end
-end
-
-local highlight_style = {
-    { _("Lighten"), "lighten" },
-    { _("Underline"), "underscore" },
-    { _("Strikeout"), "strikeout" },
-    { _("Invert"), "invert" },
-}
-
 function MarkdownExporter:getMenuTable()
     local menu = {
         text = _("Markdown"),
@@ -96,14 +70,23 @@ function MarkdownExporter:getMenuTable()
                 callback = function() self:toggleEnabled() end,
             },
             {
+                text = _("Export backlinks"),
+                checked_func = function() return self.settings.export_backlinks end,
+                callback = function() self.settings.export_backlinks = not self.settings.export_backlinks end,
+            },
+            {
                 text = _("Format highlights based on style"),
                 checked_func = function() return self.settings.highlight_formatting end,
                 callback = function() self.settings.highlight_formatting = not self.settings.highlight_formatting end,
             },
-        }
+        },
+        hold_callback = function(touchmenu_instance)
+            self:toggleEnabled()
+            touchmenu_instance:updateItems()
+        end,
     }
 
-    for _idx, entry in ipairs(highlight_style) do
+    for _, entry in ipairs(ReaderHighlight.getHighlightStyles()) do
         table.insert(menu.sub_item_table, {
             text_func = function()
                 return entry[1] .. ": " .. md.formatters[self.settings.formatting_options[entry[2]]].label
@@ -121,14 +104,15 @@ function MarkdownExporter:getMenuTable()
 end
 
 function MarkdownExporter:export(t)
-    local path = self:getFilePath(t)
+    local path = self:getFilePath()
     local file = io.open(path, "w")
     if not file then return false end
     for idx, book in ipairs(t) do
-        local tbl = md.prepareBookContent(book, self.settings.formatting_options, self.settings.highlight_formatting)
+        local tbl = md.prepareBookContent(book,
+            self.settings.formatting_options, self.settings.highlight_formatting, self.settings.export_backlinks)
         file:write(table.concat(tbl, "\n"))
     end
-    file:write("\n\n_Generated at: " .. self:getTimeStamp() .. "_")
+    file:write("\n## \n_" .. T("Generated at: %1", self:getTimeStamp()) .. "_")
     file:close()
     return true
 end
