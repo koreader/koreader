@@ -17,7 +17,7 @@ local C_ = _.pgettext
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
+local icon_size = Screen:scaleBySize(0.8 * G_defaults:readSetting("DGENERIC_ICON_SIZE")) -- square icons
 
 local ReaderSearch = InputContainer:extend{
     direction = 0, -- 0 for search forward, 1 for search backward
@@ -334,6 +334,10 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
     end
     local do_search = function(search_func, search_term, param)
         return function()
+            if self.ui.paging and not self.skim_mode then
+                self.skim_mode = true
+                self.ui.paging:enterSkimMode() -- "page" view
+            end
             local no_results = true -- for notification
             local res = search_func(self, search_term, param, regex, case_insensitive)
             if res then
@@ -429,14 +433,13 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                 end
             end
             if no_results then
-                local notification_text
-                if self._expect_back_results then
-                    notification_text = _("No results on preceding pages")
-                else
-                    notification_text = _("No results on following pages")
+                if self.skim_mode then
+                    self.skim_mode = nil
+                    self.ui.paging:exitSkimMode()
                 end
                 UIManager:show(Notification:new{
-                    text = notification_text,
+                    text = self._expect_back_results and _("No results on preceding pages")
+                                                      or _("No results on following pages"),
                 })
             end
         end
@@ -484,8 +487,8 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                 },
                 {
                     icon = "appbar.search",
-                    icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE * 0.8),
-                    icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE * 0.8),
+                    icon_width = icon_size,
+                    icon_height = icon_size,
                     callback = function()
                         self.search_dialog:onClose()
                         self:onShowFulltextSearchInput()
@@ -504,9 +507,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
             }
         },
         tap_close_callback = function()
-            logger.dbg("highlight clear")
-            self.ui.highlight:clear()
-            UIManager:setDirty(self.dialog, "ui")
+            self:restorePageView()
         end,
     }
     if regex and isSlowRegex(text) then
@@ -670,19 +671,7 @@ function ReaderSearch:onShowFindAllResults(not_cached)
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showAllResultsMenuDialog() end,
         onMenuChoice = function(_menu_self, item)
-            if self.ui.rolling then
-                self.ui.link:addCurrentLocationToStack()
-                self.ui.rolling:onGotoXPointer(item.start, item.start) -- show target line marker
-                self.ui.document:getTextFromXPointers(item.start, item["end"], true) -- highlight
-            else
-                local page = item.start
-                local boxes = {}
-                for i, box in ipairs(item.boxes) do
-                    boxes[i] = self.ui.document:nativeToPageRectTransform(page, box)
-                end
-                self.ui.link:onGotoLink({ page = page - 1 })
-                self.view.highlight.temp[page] = boxes
-            end
+            self:gotoResultsItem(item.idx)
         end,
         onMenuHold = function(_menu_self, item)
             local text = T(_("Page: %1"), item.mandatory) .. "\n"
@@ -796,6 +785,98 @@ function ReaderSearch:showAllResultsMenuDialog()
     UIManager:show(button_dialog)
 end
 
+function ReaderSearch:gotoResultsItem(index)
+    local item = self.result_menu.item_table[index]
+    if self.ui.rolling then
+        self.ui.link:addCurrentLocationToStack()
+        self.ui.rolling:onGotoXPointer(item.start, item.start) -- show target line marker
+        self.ui.document:getTextFromXPointers(item.start, item["end"], true) -- highlight
+    else
+        if not self.skim_mode then
+            self.skim_mode = true
+            self.ui.paging:enterSkimMode() -- "page" view
+        end
+        local page = item.start
+        local boxes = {}
+        for i, box in ipairs(item.boxes) do
+            boxes[i] = self.ui.document:nativeToPageRectTransform(page, box)
+        end
+        self.ui.link:onGotoLink({ page = page - 1 })
+        self.view.highlight.temp[page] = boxes
+    end
+
+    local chevron_left = "chevron.left"
+    local chevron_right = "chevron.right"
+    if BD.mirroredUILayout() then
+        chevron_left, chevron_right = chevron_right, chevron_left
+    end
+    local dialog
+    dialog = ButtonDialog:new{
+        buttons = {
+            {
+                {
+                    text = "\u{21BA}", -- Anticlockwise Open Circle Arrow
+                    callback = function()
+                        dialog:onClose()
+                        self:onGoToStartPage()
+                    end,
+                },
+                {
+                    icon = chevron_left,
+                    icon_width = icon_size,
+                    icon_height = icon_size,
+                    enabled = index > 1,
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:gotoResultsItem(index - 1)
+                    end,
+                    hold_callback = function()
+                        UIManager:close(dialog)
+                        self:gotoResultsItem(1)
+                    end,
+                },
+                {
+                    text = T("%1 / %2", index, #self.result_menu.item_table),
+                    font_bold = false,
+                    width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.25),
+                    callback = function()
+                        dialog:onClose()
+                        self.findall_results_item_index = index
+                        self:onShowFindAllResults()
+                    end,
+                },
+                {
+                    icon = chevron_right,
+                    icon_width = icon_size,
+                    icon_height = icon_size,
+                    enabled = index < #self.result_menu.item_table,
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:gotoResultsItem(index + 1)
+                    end,
+                    hold_callback = function()
+                        UIManager:close(dialog)
+                        self:gotoResultsItem(#self.result_menu.item_table)
+                    end,
+                },
+                {
+                    icon = "appbar.search",
+                    icon_width = icon_size,
+                    icon_height = icon_size,
+                    callback = function()
+                        dialog:onClose()
+                        self:onShowFulltextSearchInput()
+                    end,
+                },
+            }
+        },
+        tap_close_callback = function()
+            self:restorePageView()
+        end,
+    }
+    UIManager:show(dialog)
+end
+
 function ReaderSearch:onGoToStartPage()
     if self.start_page then
         if self.ui.rolling then
@@ -804,6 +885,16 @@ function ReaderSearch:onGoToStartPage()
             self.ui.paging:onGotoPage(self.start_page)
         end
     end
+end
+
+function ReaderSearch:restorePageView()
+    logger.dbg("highlight clear")
+    self.ui.highlight:clear()
+    if self.skim_mode then
+        self.skim_mode = nil
+        self.ui.paging:exitSkimMode()
+    end
+    UIManager:setDirty(self.dialog, "ui")
 end
 
 return ReaderSearch
