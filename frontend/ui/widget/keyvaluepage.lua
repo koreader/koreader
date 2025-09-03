@@ -316,7 +316,7 @@ function KeyValuePage:init()
     end
 
     if Device:hasKeys() then
-        self.key_events.Close = { { Input.group.Back } }
+        self.key_events.CloseWithKey = { { Input.group.Back } }
         self.key_events.NextPage = { { Input.group.PgFwd } }
         self.key_events.PrevPage = { { Input.group.PgBack } }
     end
@@ -815,6 +815,15 @@ function KeyValuePage:onClose()
     if self.close_callback then
         self.close_callback()
     end
+    return true
+end
+
+function KeyValuePage:onCloseWithKey()
+    if self.page_return_arrow and self.callback_return ~= nil then
+        self:onReturn()
+        return true
+    end
+    self:onClose()
     return true
 end
 
