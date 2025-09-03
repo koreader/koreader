@@ -741,7 +741,9 @@ end
 -- @treturn int 1 failed, 2 skipped, 3 downloaded
 function Wallabag:downloadArticle(article)
     local skip_article = false
+    logger.dbg("Wallabag:downloadArticle: article.title =", article.title)
     local title = util.getSafeFilename(article.title, self.directory, 230, 0)
+    logger.dbg("Wallabag:downloadArticle: local title =", title)
     local file_ext = ".epub"
     local item_url = "/api/entries/" .. article.id .. "/export.epub"
 
@@ -752,9 +754,12 @@ function Wallabag:downloadArticle(article)
     local mimetype = type(article.mimetype) == "string" and util.trim(article.mimetype:match("^[^;]*")) or nil
 
     if self.download_original_document then
+        logger.dbg("Wallabag:downloadArticle: local mimetype =", mimetype)
+        logger.dbg("Wallabag:downloadArticle: article.url =", article.url)
         if mimetype == "text/html" then
             logger.dbg("Wallabag:downloadArticle: not ignoring EPUB, because", article.url, "is HTML")
         elseif mimetype == nil then -- base ourselves on the file extension
+            logger.dbg("Wallabag:downloadArticle: mimetype = nil, using article.url instead")
             if util.getFileNameSuffix(article.url):lower():find("^html?$") then
                 logger.dbg("Wallabag:downloadArticle: not ignoring EPUB, because", article.url, "appears to be HTML")
             elseif DocumentRegistry:hasProvider(article.url) then
