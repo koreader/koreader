@@ -122,6 +122,17 @@ function SortItemWidget:onTap(_, ges)
     return true
 end
 
+function SortItemWidget:onHold()
+    if not Device:isTouchDevice() then return false end -- let SortWidget:onHold handle it
+    if self.item.hold_callback then
+        self.item:hold_callback(function() self.show_parent:_populateItems() end)
+    elseif self.item.callback then
+        self.item:callback()
+        self.show_parent:_populateItems()
+    end
+    return true
+end
+
 local SortWidget = FocusManager:extend{
     title = "",
     width = nil,
@@ -602,6 +613,7 @@ function SortWidget:onCancel()
 end
 
 function SortWidget:onHold()
+    if Device:isTouchDevice() then return false end -- let SortItemWidget:onHold handle it
     -- Handle keyboard-triggered hold events by acting on the focused item directly
     if not self.selected or not self.selected.y then
         return true
