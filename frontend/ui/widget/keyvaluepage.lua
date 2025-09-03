@@ -319,6 +319,11 @@ function KeyValuePage:init()
         self.key_events.CloseWithKey = { { Input.group.Back } }
         self.key_events.NextPage = { { Input.group.PgFwd } }
         self.key_events.PrevPage = { { Input.group.PgBack } }
+        if Device:hasScreenKB() or Device:hasKeyboard() then
+            local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            self.key_events.FirstPage = { { modifier, Input.group.PgFwd }, event = "GoToPage", args = 1 }
+            self.key_events.LastPage = { { modifier, Input.group.PgBack }, event = "GoToPage", args = self.pages}
+        end
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
@@ -566,6 +571,11 @@ end
 function KeyValuePage:goToPage(page)
     self.show_page = page
     self:_populateItems()
+end
+
+function KeyValuePage:onGoToPage(page)
+    self:goToPage(page)
+    return true
 end
 
 -- make sure self.item_margin and self.item_height are set before calling this
@@ -819,9 +829,8 @@ function KeyValuePage:onClose()
 end
 
 function KeyValuePage:onCloseWithKey()
-    if self.page_return_arrow and self.callback_return ~= nil then
-        self:onReturn()
-        return true
+    if self.page_return_arrow and self.callback_return then
+        self:callback_return()
     end
     self:onClose()
     return true
