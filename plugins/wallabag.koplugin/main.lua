@@ -775,7 +775,7 @@ function Wallabag:downloadArticle(article)
             end
         elseif DocumentRegistry:hasProvider(nil, mimetype) then
             logger.dbg("Wallabag:downloadArticle: ignoring EPUB in favor of mimetype", mimetype)
-            file_ext = "." .. DocumentRegistry:mimeToExt(article.mimetype)
+            file_ext = "." .. DocumentRegistry:mimeToExt(mimetype)
             item_url = article.url
         else
             logger.dbg("Wallabag:downloadArticle: not ignoring EPUB, because there is no provider for", mimetype)
