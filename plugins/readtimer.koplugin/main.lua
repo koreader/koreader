@@ -31,6 +31,13 @@ function ReadTimer:init()
     self.timer_symbol = "\u{23F2}"  -- ⏲ timer symbol
     self.timer_letter = "T"
 
+    local task, task_time = UIManager:getScheduledTaskByName(self.name)
+    if task then -- scheduled previous instance
+        self.alarm_callback = task
+        self.time = task_time
+        goto continue
+    end
+
     self.alarm_callback = function()
         -- Don't do anything if we were unscheduled
         if self.time == 0 then return end
@@ -63,6 +70,7 @@ function ReadTimer:init()
         end
     end
 
+    ::continue::
     self.additional_header_content_func = function()
         if self:scheduled() then
             local hours, minutes, dummy = self:remainingTime(1)
@@ -201,7 +209,7 @@ end
 function ReadTimer:rescheduleIn(seconds)
     -- Resolution: time.now() subsecond, os.time() two seconds
     self.time = time.now() + time.s(seconds)
-    UIManager:scheduleIn(seconds, self.alarm_callback)
+    UIManager:scheduleIn(seconds, self.alarm_callback, { scheduled_task_name = "readtimer" })
     if self.show_value_in_header or self.show_value_in_footer then
         self:update_status_bars(seconds)
     end
