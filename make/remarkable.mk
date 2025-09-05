@@ -1,6 +1,6 @@
 REMARKABLE_DIR = $(PLATFORM_DIR)/remarkable
-REMARKABLE_PACKAGE = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).zip
-REMARKABLE_PACKAGE_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).targz
+REMARKABLE_PACKAGE = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).tar.xz
+REMARKABLE_PACKAGE_OLD_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).targz
 
 define UPDATE_PATH_EXCLUDES +=
 plugins/SSH.koplugin
@@ -11,7 +11,6 @@ update: all
 	# ensure that the binaries were built for ARM
 	file --dereference $(INSTALL_DIR)/koreader/luajit | grep ARM
 	# Remarkable scripts
-	$(SYMLINK) $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader/
 	$(SYMLINK) $(REMARKABLE_DIR)/koreader.sh $(INSTALL_DIR)/koreader/
 	$(SYMLINK) resources/koreader.png $(INSTALL_DIR)/koreader/icon.png
 ifeq (remarkable,$(TARGET))
@@ -28,6 +27,6 @@ ifeq (remarkable-aarch64,$(TARGET))
 endif
 	# Create packages.
 	$(strip $(call mkupdate,$(REMARKABLE_PACKAGE)))
-	$(strip $(call mkupdate,$(REMARKABLE_PACKAGE_OTA)))
+	$(strip $(call mkupdate,$(REMARKABLE_PACKAGE_OLD_OTA)))
 
 PHONY += update
