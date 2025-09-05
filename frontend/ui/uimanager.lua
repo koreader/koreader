@@ -371,6 +371,16 @@ function UIManager:tickAfterNext(action)
 end
 --]]
 
+function UIManager:getScheduledTaskByName(task_name)
+    for _, task in ipairs(self._task_queue) do
+        for _, arg in ipairs(task.args) do
+            if type(arg) == "table" and arg.scheduled_task_name == task_name then
+                return task.action, task.time
+            end
+        end
+    end
+end
+
 function UIManager:debounce(seconds, immediate, action)
     -- Ported from underscore.js
     local args = nil
