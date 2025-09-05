@@ -272,7 +272,7 @@ function ReaderMenu:setUpdateItemTable()
             end,
             help_text = _([[
 When enabled the UI direction for the Table of Contents, Book Map, and Page Browser dialogs will mirror the default UI direction.
-Useful when used alongside 'Invert page turns'.]]),
+Useful when used alongside 'Invert page turn taps and swipes'.]]),
         })
     end
 
