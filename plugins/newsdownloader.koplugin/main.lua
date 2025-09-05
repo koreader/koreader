@@ -470,10 +470,14 @@ function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_f
         end)
     end
 
-    local feeds
+    local feeds, err
     -- Check to see if a response is available to deserialize.
     if ok then
-        feeds = self:deserializeXMLString(response)
+        feeds, err = self:deserializeXMLString(response)
+        if not feeds then
+            logger.err("NewsDownloader: Error during feed deserialization:", err)
+            logger.dbg("NewsDownloader: Response was:", response)
+        end
     end
     -- If the response is not available (for a reason that we don't know),
     -- add the URL to the unsupported feeds list.
@@ -587,10 +591,10 @@ function NewsDownloader:deserializeXMLString(xml_str)
     xml_str = xml_str:gsub("^\xef\xbb\xbf", "", 1)
 
     -- Instantiate the object that parses the XML to a Lua table.
-    local ok = pcall(function()
+    local ok, err = pcall(function()
         libxml.xmlParser(xmlhandler):parse(xml_str)
     end)
-    if not ok then return end
+    if not ok then return false, err end
     return xmlhandler.root
 end
 
