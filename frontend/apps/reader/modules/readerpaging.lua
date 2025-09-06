@@ -564,7 +564,7 @@ end
 
 function ReaderPaging:onGotoViewRel(diff, no_page_turn)
     -- ReaderSearch calls with no_page_turn = true.
-    -- In that case the returned 'ret' is nil when page turning should be done. Actual page turning is not done.
+    -- In that case, don't turn page if it would happen, and return ret=nil.
     local ret
     if self.view.page_scroll then
         ret = self:onScrollPageRel(diff, no_page_turn)
@@ -1052,7 +1052,7 @@ function ReaderPaging:onGotoPageRel(diff, no_page_turn)
     local prev_page = self.current_page
 
     -- Handle cases when the view area gets out of page boundaries
-    local page_turn_requested
+    local would_turn_page
     if not self.page_area:contains(new_va) then
         if not at_end(x) then
             goto_end(x)
@@ -1062,12 +1062,12 @@ function ReaderPaging:onGotoPageRel(diff, no_page_turn)
                 if not at_end(y) then
                     goto_end(y)
                 else
-                    page_turn_requested = goto_next_page()
+                    would_turn_page = goto_next_page()
                 end
             end
         end
     end
-    if no_page_turn and page_turn_requested then return end -- see ReaderPaging:onGotoViewRel
+    if no_page_turn and would_turn_page then return end -- see ReaderPaging:onGotoViewRel
 
     if self.current_page == prev_page then
         -- Page number haven't changed when panning inside a page,
