@@ -149,25 +149,12 @@ local RemarkablePaperPro = Remarkable:extend{
     }
 }
 
-local RemarkablePaperProMove = Remarkable:extend{
+local RemarkablePaperProMove = RemarkablePaperPro:extend{
     mt_width = 1248, -- unscaled_size_check: ignore
     mt_height = 2208, -- unscaled_size_check: ignore
     display_dpi = 264,
-    ota_model = "remarkable-aarch64",
-    input_wacom = "/dev/input/event2",
-    input_ts = "/dev/input/event3",
-    input_buttons = "/dev/input/event0",
-    input_hall = "/dev/input/event1",
     battery_path = "/sys/class/power_supply/max77818_battery/capacity",
-    status_path = "/sys/class/power_supply/max77818_battery/status",
-    canSuspend = no, -- Suspend and Standby should be handled by xochitl with KO_DONT_GRAB_INPUT=1 set, otherwise bad things will happen
-    canStandby = no,
-    hasFrontlight = yes,
-    canTurnFrontlightOff = yes,
-    hasColorScreen = yes,
-    frontlight_settings = {
-        frontlight_white = "/sys/class/backlight/rm_frontlight",
-    }
+    status_path = "/sys/class/power_supply/max77818_battery/status"
 }
 
 function RemarkablePaperPro:adjustTouchEvent(ev, by)
