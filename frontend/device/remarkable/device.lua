@@ -29,6 +29,7 @@ local wacom_height = 20967 -- unscaled_size_check: ignore
 local rm_model = getModel()
 local is_rm2 = rm_model == "reMarkable 2.0"
 local is_rmpp = rm_model == "reMarkable Ferrari"
+local is_rmppm = rm_model == "reMarkable Chiappa"
 local has_csl = util.which("csl")
 local is_qtfb_shimmed = (os.getenv("LD_PRELOAD") or ""):find("qtfb%-shim") ~= nil
 
@@ -37,6 +38,13 @@ if is_rmpp then
     screen_height = 2160 -- unscaled_size_check: ignore
     wacom_width = 11180 -- unscaled_size_check: ignore
     wacom_height = 15340 -- unscaled_size_check: ignore
+end
+
+if is_rmppm then
+    screen_width = 954
+    screen_height = 1696
+    wacom_width = 6760
+    wacom_height = 11960
 end
 
 local wacom_scale_x = screen_width / wacom_width
@@ -141,7 +149,40 @@ local RemarkablePaperPro = Remarkable:extend{
     }
 }
 
+local RemarkablePaperProMove = Remarkable:extend{
+    mt_width = 1248, -- unscaled_size_check: ignore
+    mt_height = 2208, -- unscaled_size_check: ignore
+    display_dpi = 264,
+    ota_model = "remarkable-aarch64",
+    input_wacom = "/dev/input/event2",
+    input_ts = "/dev/input/event3",
+    input_buttons = "/dev/input/event0",
+    input_hall = "/dev/input/event1",
+    battery_path = "/sys/class/power_supply/max77818_battery/capacity",
+    status_path = "/sys/class/power_supply/max77818_battery/status",
+    canSuspend = no, -- Suspend and Standby should be handled by xochitl with KO_DONT_GRAB_INPUT=1 set, otherwise bad things will happen
+    canStandby = no,
+    hasFrontlight = yes,
+    canTurnFrontlightOff = yes,
+    hasColorScreen = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/rm_frontlight",
+    }
+}
+
 function RemarkablePaperPro:adjustTouchEvent(ev, by)
+    if ev.type == C.EV_ABS then
+        -- Mirror X and Y and scale up both X & Y as touch input is different res from display
+        if ev.code == C.ABS_MT_POSITION_X then
+            ev.value = ev.value * by.mt_scale_x
+        end
+        if ev.code == C.ABS_MT_POSITION_Y then
+            ev.value = ev.value * by.mt_scale_y
+        end
+    end
+end
+
+function RemarkablePaperProMove:adjustTouchEvent(ev, by)
     if ev.type == C.EV_ABS then
         -- Mirror X and Y and scale up both X & Y as touch input is different res from display
         if ev.code == C.ABS_MT_POSITION_X then
@@ -165,7 +206,7 @@ local adjustAbsEvt = function(self, ev)
     end
 end
 
-if is_rmpp then
+if is_rmpp or is_rmppm then
     adjustAbsEvt = function(self, ev)
         if ev.type == C.EV_ABS then
             if ev.code == C.ABS_X then
@@ -195,14 +236,15 @@ function Remarkable:init()
         device = self,
         capacity_file = self.battery_path,
         status_file = self.status_path,
-        hall_file = is_rmpp and "/sys/class/input/input1/inhibited" or nil,
+        hall_file = (is_rmpp or is_rmppm) and "/sys/class/input/input1/inhibited" or nil,
     }
 
     local event_map = dofile("frontend/device/remarkable/event_map.lua")
-    -- If we are launched while Oxide is running, remove Power from the event map
-    if oxide_running then
+    -- If we are launched while Oxide or xochitl is running, remove Power from the event map
+    if oxide_running or is_qtfb_shimmed then
         event_map[116] = nil
         event_map[143] = nil
+        event_map[20001] = nil
     end
 
     self.input = require("device/input"):new{
@@ -443,6 +485,14 @@ elseif is_rmpp then
         error("You must set QTFB_SHIM_MODE to RGB565")
     end
     return RemarkablePaperPro
+elseif is_rmppm then
+    if not is_qtfb_shimmed then
+        error("reMarkable Paper Pro Move requires a RM2FB server and client to work (https://github.com/asivery/rm-appload)")
+    end
+    if os.getenv("QTFB_SHIM_MODE") ~= "RGB565" then
+        error("You must set QTFB_SHIM_MODE to RGB565")
+    end
+    return RemarkablePaperProMove
 else
     return Remarkable1
 end
