@@ -41,10 +41,10 @@ if is_rmpp then
 end
 
 if is_rmppm then
-    screen_width = 954
-    screen_height = 1696
-    wacom_width = 6760
-    wacom_height = 11960
+    screen_width = 954 -- unscaled_size_check: ignore
+    screen_height = 1696 -- unscaled_size_check: ignore
+    wacom_width = 6760 -- unscaled_size_check: ignore
+    wacom_height = 11960 -- unscaled_size_check: ignore
 end
 
 local wacom_scale_x = screen_width / wacom_width
