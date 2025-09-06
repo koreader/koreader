@@ -183,6 +183,17 @@ function ReaderSearch:addToMainMenu(menu_items)
                     }
                     UIManager:show(widget)
                 end,
+                separator = true,
+            },
+            {
+                text = _("Zoom fixed layout documents to full page"),
+                help_text = _("On searching, temporarily zoom the document to full page."),
+                checked_func = function()
+                    return G_reader_settings:isTrue("fulltext_search_zoom_to_page")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("fulltext_search_zoom_to_page")
+                end,
             },
         },
     }
@@ -323,6 +334,7 @@ function ReaderSearch:onShowFulltextSearchInput(search_string)
 end
 
 function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitive)
+    local zoom_to_page = G_reader_settings:isTrue("fulltext_search_zoom_to_page")
     local neglect_current_location = false
     local current_page
 
@@ -334,7 +346,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
     end
     local do_search = function(search_func, search_term, param)
         return function()
-            if self.ui.paging and not self.skim_mode then
+            if self.ui.paging and zoom_to_page and not self.skim_mode then
                 self.skim_mode = true
                 self.ui.paging:enterSkimMode() -- "page" view
             end
@@ -483,7 +495,11 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                 {
                     text = backward_text,
                     vsync = true,
-                    callback = search(self.searchNext, text, 1),
+                    callback = function()
+                        if self.ui.rolling or zoom_to_page or not self.ui.paging:onGotoViewRel(-1, true) then
+                            search(self.searchNext, text, 1)()
+                        end
+                    end,
                 },
                 {
                     icon = "appbar.search",
@@ -497,7 +513,11 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                 {
                     text = forward_text,
                     vsync = true,
-                    callback = search(self.searchNext, text, 0),
+                    callback = function()
+                        if self.ui.rolling or zoom_to_page or not self.ui.paging:onGotoViewRel(1, true) then
+                            search(self.searchNext, text, 0)()
+                        end
+                    end,
                 },
                 {
                     text = from_end_text,
