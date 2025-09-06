@@ -12,6 +12,8 @@ local time = require("ui/time")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
+local scheduled_time, last_interval_time -- to keep scheduled timer across views
+
 local ReadTimer = WidgetContainer:extend{
     name = "readtimer",
     time = 0,  -- The expected time of alarm if enabled, or 0.
@@ -30,13 +32,6 @@ end
 function ReadTimer:init()
     self.timer_symbol = "\u{23F2}"  -- ⏲ timer symbol
     self.timer_letter = "T"
-
-    local task, task_time = UIManager:getScheduledTaskByName(self.name)
-    if task then -- scheduled previous instance
-        self.alarm_callback = task
-        self.time = task_time
-        goto continue
-    end
 
     self.alarm_callback = function()
         -- Don't do anything if we were unscheduled
@@ -70,7 +65,16 @@ function ReadTimer:init()
         end
     end
 
-    ::continue::
+    if scheduled_time then
+        self.time = scheduled_time
+        self.last_interval_time = last_interval_time
+        local remainder = self:remaining()
+        logger.dbg("ReadTimer: Rescheduling in", remainder, "seconds")
+        self:rescheduleIn(remainder)
+        scheduled_time = nil
+        last_interval_time = nil
+    end
+
     self.additional_header_content_func = function()
         if self:scheduled() then
             local hours, minutes, dummy = self:remainingTime(1)
@@ -209,7 +213,7 @@ end
 function ReadTimer:rescheduleIn(seconds)
     -- Resolution: time.now() subsecond, os.time() two seconds
     self.time = time.now() + time.s(seconds)
-    UIManager:scheduleIn(seconds, self.alarm_callback, { scheduled_task_name = "readtimer" })
+    UIManager:scheduleIn(seconds, self.alarm_callback)
     if self.show_value_in_header or self.show_value_in_footer then
         self:update_status_bars(seconds)
     end
@@ -413,6 +417,14 @@ function ReadTimer:onStopTimer(touchmenu_instance)
         end
     end
     return true
+end
+
+function ReadTimer:onCloseWidget()
+    if self:scheduled() then
+        scheduled_time = self.time
+        last_interval_time = self.last_interval_time
+        self:unschedule()
+    end
 end
 
 return ReadTimer
