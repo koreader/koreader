@@ -182,17 +182,7 @@ function RemarkablePaperPro:adjustTouchEvent(ev, by)
     end
 end
 
-function RemarkablePaperProMove:adjustTouchEvent(ev, by)
-    if ev.type == C.EV_ABS then
-        -- Mirror X and Y and scale up both X & Y as touch input is different res from display
-        if ev.code == C.ABS_MT_POSITION_X then
-            ev.value = ev.value * by.mt_scale_x
-        end
-        if ev.code == C.ABS_MT_POSITION_Y then
-            ev.value = ev.value * by.mt_scale_y
-        end
-    end
-end
+RemarkablePaperProMove.adjustTouchEvent = RemarkablePaperPro.adjustTouchEvent
 
 local adjustAbsEvt = function(self, ev)
     if ev.type == C.EV_ABS then
