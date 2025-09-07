@@ -24,7 +24,7 @@ ifeq (remarkable,$(TARGET))
 endif
 ifeq (remarkable-aarch64,$(TARGET))
 	$(SYMLINK) $(REMARKABLE_DIR)/README_aarch64.md $(INSTALL_DIR)/koreader/README_remarkable.md
-	$(SYMLINK) $(REMARKABLE_DIR)/external.manifest_aarch64.json $(INSTALL_DIR)/koreader/external.manifest.json
+	$(SYMLINK) $(REMARKABLE_DIR)/external.manifest.json $(INSTALL_DIR)/koreader/
 endif
 	# Create packages.
 	$(strip $(call mkupdate,$(REMARKABLE_PACKAGE)))
