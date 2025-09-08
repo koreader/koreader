@@ -12,8 +12,6 @@ local time = require("ui/time")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local restore_scheduled_time, restore_last_interval_time -- to keep scheduled timer across views
-
 local ReadTimer = WidgetContainer:extend{
     name = "readtimer",
     time = 0,  -- The expected time of alarm if enabled, or 0.
@@ -65,14 +63,14 @@ function ReadTimer:init()
         end
     end
 
-    if restore_scheduled_time then
-        self.time = restore_scheduled_time
-        self.last_interval_time = restore_last_interval_time
+    if ReadTimer.restore_scheduled_time then -- previously scheduled instance
+        self.time = ReadTimer.restore_scheduled_time
+        self.last_interval_time = ReadTimer.restore_last_interval_time
         local remainder = self:remaining()
         logger.dbg("ReadTimer: Rescheduling in", remainder, "seconds")
         self:rescheduleIn(remainder)
-        restore_scheduled_time = nil
-        restore_last_interval_time = nil
+        ReadTimer.restore_scheduled_time = nil
+        ReadTimer.restore_last_interval_time = nil
     end
 
     self.additional_header_content_func = function()
@@ -421,8 +419,9 @@ end
 
 function ReadTimer:onCloseWidget()
     if self:scheduled() then
-        restore_scheduled_time = self.time
-        restore_last_interval_time = self.last_interval_time
+        -- keep scheduled timer across views
+        ReadTimer.restore_scheduled_time = self.time
+        ReadTimer.restore_last_interval_time = self.last_interval_time
         self:unschedule()
     end
 end
