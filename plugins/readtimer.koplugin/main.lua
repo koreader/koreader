@@ -16,6 +16,10 @@ local ReadTimer = WidgetContainer:extend{
     name = "readtimer",
     time = 0,  -- The expected time of alarm if enabled, or 0.
     last_interval_time = 0,
+
+    -- static for all plugin instances, to keep scheduled timer across views
+    restore_scheduled_time = nil,
+    restore_last_interval_time = nil,
 }
 
 function ReadTimer:onDispatcherRegisterActions()
@@ -419,7 +423,6 @@ end
 
 function ReadTimer:onCloseWidget()
     if self:scheduled() then
-        -- keep scheduled timer across views
         ReadTimer.restore_scheduled_time = self.time
         ReadTimer.restore_last_interval_time = self.last_interval_time
         self:unschedule()
