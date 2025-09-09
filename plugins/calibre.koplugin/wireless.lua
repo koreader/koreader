@@ -235,7 +235,7 @@ function CalibreWireless:connect()
 
     -- Setup inbox directory.
     local inbox_dir = G_reader_settings:readSetting("inbox_dir")
-    if not inbox_dir then
+    if not inbox_dir or lfs.attributes(inbox_dir, "mode") ~= "directory" then
         self:setInboxDir(re)
         inbox_dir = coroutine.yield()
     end
