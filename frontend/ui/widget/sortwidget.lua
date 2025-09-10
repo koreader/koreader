@@ -610,31 +610,11 @@ end
 
 function SortWidget:onHoldNonTouch()
     -- Handle keyboard-triggered hold events by acting on the focused item directly
-    if not self.selected or not self.selected.y then
+    local focused_item = self:getFocusItem()
+    if not focused_item then
         return true
     end
-
-    local focused_row = self.selected.y
-    local idx_offset = (self.show_page - 1) * self.items_per_page
-    local page_last = math.min(idx_offset + self.items_per_page, #self.item_table)
-    local items_on_page = page_last - idx_offset
-
-    -- Skip if focus is on footer or invalid
-    if focused_row < 1 or focused_row > items_on_page then
-        return true
-    end
-
-    local item_idx = idx_offset + focused_row
-    local item = self.item_table[item_idx]
-
-    if item and item.hold_callback then
-        item.hold_callback(function() self:_populateItems() end)
-    elseif item and item.callback then
-        item.callback()
-        self:_populateItems()
-    end
-
-    return true
+    return focused_item:onHoldTouch()
 end
 
 function SortWidget:onReturn()
