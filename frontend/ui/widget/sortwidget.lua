@@ -43,7 +43,7 @@ function SortItemWidget:init()
             range = self.dimen,
         }
     }
-    self.ges_events.Hold = {
+    self.ges_events.HoldTouch = {
         GestureRange:new{
             ges = "hold",
             range = self.dimen,
@@ -122,8 +122,7 @@ function SortItemWidget:onTap(_, ges)
     return true
 end
 
-function SortItemWidget:onHold()
-    if not Device:isTouchDevice() then return false end -- let SortWidget:onHold handle it
+function SortItemWidget:onHoldTouch()
     if self.item.hold_callback then
         self.item:hold_callback(function() self.show_parent:_populateItems() end)
     elseif self.item.callback then
@@ -355,16 +354,13 @@ function SortWidget:registerKeyEvents()
         self.key_events.NextPage = { { Device.input.group.PgFwd } }
         self.key_events.PrevPage = { { Device.input.group.PgBack } }
         self.key_events.ShowWidgetMenu = { { "Menu" } }
-        if Device:hasScreenKB() then
-            self.key_events.MoveUp = { { "ScreenKB", "Up" }, event = "MoveItemKB", args = -1 }
-            self.key_events.MoveDown = { { "ScreenKB", "Down" }, event = "MoveItemKB", args = 1 }
-            self.key_events.FirstPage = { { "ScreenKB", Device.input.group.PgBack }, event = "GoToPage", args = 1 }
-            self.key_events.LastPage = { { "ScreenKB", Device.input.group.PgFwd }, event = "GoToPage", args = self.pages }
-        elseif Device:hasKeyboard() then
-            self.key_events.MoveUp = { { "Shift", "Up" }, event = "MoveItemKB", args = -1 }
-            self.key_events.MoveDown = { { "Shift", "Down" }, event = "MoveItemKB", args = 1 }
-            self.key_events.FirstPage = { { "Shift", Device.input.group.PgBack }, event = "GoToPage", args = 1 }
-            self.key_events.LastPage = { { "Shift", Device.input.group.PgFwd }, event = "GoToPage", args = self.pages }
+        if Device:hasScreenKB() or Device:hasKeyboard() then
+            local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            self.key_events.HoldNonTouch = { { modifier, "Press" } }
+            self.key_events.MoveUp = { { modifier, "Up" }, event = "MoveItemKB", args = -1 }
+            self.key_events.MoveDown = { { modifier, "Down" }, event = "MoveItemKB", args = 1 }
+            self.key_events.FirstPage = { { modifier, Device.input.group.PgBack }, event = "GoToPage", args = 1 }
+            self.key_events.LastPage = { { modifier, Device.input.group.PgFwd }, event = "GoToPage", args = self.pages }
         end
     end
 end
@@ -612,8 +608,7 @@ function SortWidget:onCancel()
     return true
 end
 
-function SortWidget:onHold()
-    if Device:isTouchDevice() then return false end -- let SortItemWidget:onHold handle it
+function SortWidget:onHoldNonTouch()
     -- Handle keyboard-triggered hold events by acting on the focused item directly
     if not self.selected or not self.selected.y then
         return true
