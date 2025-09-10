@@ -2875,6 +2875,126 @@ local dictionaries = {
         license = "Creative Commons Attribution 3.0 Unported License",
         url = "https://github.com/jmthackett/en-eo-stardict/releases/download/latest/dictionary.tar.gz"
     },
+    {
+        name = "reader.dict Catalan",
+        lang_in = "cat",
+        lang_out = "cat",
+        entries = 413187,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/ca/dict-ca-ca.zip"
+    },
+    {
+        name = "reader.dict Danish",
+        lang_in = "dan",
+        lang_out = "dan",
+        entries = 12047,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/da/dict-da-da.zip"
+    },
+    {
+        name = "reader.dict German",
+        lang_in = "deu",
+        lang_out = "deu",
+        entries = 926615,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/de/dict-de-de.zip"
+    },
+    {
+        name = "reader.dict Greek",
+        lang_in = "ell",
+        lang_out = "ell",
+        entries = 369173,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/el/dict-el-el.zip"
+    },
+    {
+        name = "reader.dict English",
+        lang_in = "eng",
+        lang_out = "eng",
+        entries = 1366611,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/en/dict-en-en.zip"
+    },
+    {
+        name = "reader.dict Esperanto",
+        lang_in = "epo",
+        lang_out = "epo",
+        entries = 12761,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/eo/dict-eo-eo.zip"
+    },
+    {
+        name = "reader.dict Spanish",
+        lang_in = "spa",
+        lang_out = "spa",
+        entries = 565838,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/es/dict-es-es.zip"
+    },
+    {
+        name = "reader.dict French",
+        lang_in = "fra",
+        lang_out = "fra",
+        entries = 2137109,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/fr/dict-fr-fr.zip"
+    },
+    {
+        name = "reader.dict Italian",
+        lang_in = "ita",
+        lang_out = "ita",
+        entries = 294449,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/it/dict-it-it.zip"
+    },
+    {
+        name = "reader.dict Norwegian",
+        lang_in = "nor",
+        lang_out = "nor",
+        entries = 19410,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/no/dict-no-no.zip"
+    },
+    {
+        name = "reader.dict Portuguese",
+        lang_in = "por",
+        lang_out = "por",
+        entries = 379474,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/pt/dict-pt-pt.zip"
+    },
+    {
+        name = "reader.dict Romanian",
+        lang_in = "rom",
+        lang_out = "rom",
+        entries = 98645,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/ro/dict-ro-ro.zip"
+    },
+    {
+        name = "reader.dict Russian",
+        lang_in = "rus",
+        lang_out = "rus",
+        entries = 445563,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/ru/dict-ru-ru.zip"
+    },
+    {
+        name = "reader.dict Swedish",
+        lang_in = "swe",
+        lang_out = "swe",
+        entries =  443028,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/sv/dict-sv-sv.zip"
+    },
+    {
+        name = "reader.dict Chinese",
+        lang_in = "zho",
+        lang_out = "zho",
+        entries = 48472,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/zh/dict-zh-zh.zip"
+    },
 }
 
 return dictionaries
