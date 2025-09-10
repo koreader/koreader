@@ -16,6 +16,10 @@ local ReadTimer = WidgetContainer:extend{
     name = "readtimer",
     time = 0,  -- The expected time of alarm if enabled, or 0.
     last_interval_time = 0,
+
+    -- static for all plugin instances, to keep scheduled timer across views
+    restore_scheduled_time = nil,
+    restore_last_interval_time = nil,
 }
 
 function ReadTimer:onDispatcherRegisterActions()
@@ -61,6 +65,16 @@ function ReadTimer:init()
                     text = tip_text,
             })
         end
+    end
+
+    if ReadTimer.restore_scheduled_time then -- previously scheduled instance
+        self.time = ReadTimer.restore_scheduled_time
+        self.last_interval_time = ReadTimer.restore_last_interval_time
+        local remainder = self:remaining()
+        logger.dbg("ReadTimer: Rescheduling in", remainder, "seconds")
+        self:rescheduleIn(remainder)
+        ReadTimer.restore_scheduled_time = nil
+        ReadTimer.restore_last_interval_time = nil
     end
 
     self.additional_header_content_func = function()
@@ -405,6 +419,14 @@ function ReadTimer:onStopTimer(touchmenu_instance)
         end
     end
     return true
+end
+
+function ReadTimer:onCloseWidget()
+    if self:scheduled() then
+        ReadTimer.restore_scheduled_time = self.time
+        ReadTimer.restore_last_interval_time = self.last_interval_time
+        self:unschedule()
+    end
 end
 
 return ReadTimer
