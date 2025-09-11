@@ -15,6 +15,7 @@ local Persist = require("persist")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local dateparser = require("lib.dateparser")
 local http = require("socket.http")
+local mime = require("mime")
 local lfs = require("libs/libkoreader-lfs")
 local ltn12 = require("ltn12")
 local logger = require("logger")
@@ -59,7 +60,8 @@ local function getEmptyFeed()
         download_full_article = false,
         include_images = true,
         enable_filter = false,
-        filter_element = ""
+        filter_element = "",
+        http_auth = { username = nil, password = nil },
     }
 end
 
@@ -300,6 +302,7 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
         local enable_filter = feed.enable_filter or feed.enable_filter == nil
         local filter_element = feed.filter_element or feed.filter_element == nil
         local credentials = feed.credentials
+        local http_auth = feed.http_auth
         -- Check if the two required attributes are set.
         if url and limit then
             feed_message = T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, BD.url(url))
@@ -308,6 +311,7 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
             self:processFeedSource(
                 url,
                 credentials,
+                http_auth,
                 tonumber(limit),
                 unsupported_feeds_urls,
                 download_full_article,
@@ -386,16 +390,21 @@ function NewsDownloader:loadConfigAndProcessFeedsWithUI(touchmenu_instance)
     end)
 end
 
-function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_feeds_urls, download_full_article, include_images, message, enable_filter, filter_element)
+function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, unsupported_feeds_urls, download_full_article, include_images, message, enable_filter, filter_element)
     -- Check if we have a cached response first
     local cache = DownloadBackend:getCache()
     local cached_response = cache:check(url)
     local ok, error, response
 
     local cookies = nil
+    local extra_headers = nil
     if credentials ~= nil then
         logger.dbg("Auth Cookies from ", credentials.url)
         cookies = DownloadBackend:getConnectionCookies(credentials.url, credentials.auth)
+    end
+
+    if http_auth and http_auth.username and http_auth.password then
+        extra_headers = { ["Authorization"] = "Basic " .. mime.b64((http_auth.username or "") .. ":" .. (http_auth.password or "")) }
     end
 
     if cached_response then
@@ -440,6 +449,9 @@ function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_f
                 if cookies then
                     headers["Cookie"] = cookies
                 end
+                if extra_headers and extra_headers["Authorization"] then
+                    headers["Authorization"] = extra_headers["Authorization"]
+                end
                 local code, response_headers = socket.skip(1, http.request{
                     url = url,
                     headers = headers,
@@ -466,7 +478,7 @@ function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_f
 
     if not response then
         ok, response = pcall(function()
-            return DownloadBackend:getResponseAsString(url, cookies, true)
+            return DownloadBackend:getResponseAsString(url, cookies, true, extra_headers)
         end)
     end
 
@@ -530,6 +542,7 @@ function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_f
                     FEED_TYPE_ATOM,
                     feeds,
                     cookies,
+                    http_auth,
                     limit,
                     download_full_article,
                     include_images,
@@ -544,6 +557,7 @@ function NewsDownloader:processFeedSource(url, credentials, limit, unsupported_f
                     FEED_TYPE_RSS,
                     feeds,
                     cookies,
+                    http_auth,
                     limit,
                     download_full_article,
                     include_images,
@@ -594,7 +608,7 @@ function NewsDownloader:deserializeXMLString(xml_str)
     return xmlhandler.root
 end
 
-function NewsDownloader:processFeed(feed_type, feeds, cookies, limit, download_full_article, include_images, message, enable_filter, filter_element)
+function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit, download_full_article, include_images, message, enable_filter, filter_element)
     local feed_title
     local feed_item
     local total_items
@@ -662,6 +676,7 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, limit, download_f
             self:downloadFeed(
                 feed,
                 cookies,
+                http_auth,
                 feed_output_dir,
                 include_images,
                 article_message,
@@ -705,7 +720,7 @@ local function getTitleWithDate(feed)
     return title
 end
 
-function NewsDownloader:downloadFeed(feed, cookies, feed_output_dir, include_images, message, enable_filter, filter_element)
+function NewsDownloader:downloadFeed(feed, cookies, http_auth, feed_output_dir, include_images, message, enable_filter, filter_element)
     local title_with_date = getTitleWithDate(feed)
     local news_file_path = ("%s%s%s"):format(feed_output_dir,
                                              title_with_date,
@@ -718,7 +733,11 @@ function NewsDownloader:downloadFeed(feed, cookies, feed_output_dir, include_ima
         logger.dbg("NewsDownloader: News file will be stored to :", news_file_path)
         local article_message = T(_("%1\n%2"), message, title_with_date)
         local link = self.getFeedLink(feed.link)
-        local html = DownloadBackend:loadPage(link, cookies)
+        local extra_headers = nil
+        if http_auth and http_auth.username and http_auth.password then
+            extra_headers = { ["Authorization"] = "Basic " .. mime.b64((http_auth.username or "") .. ":" .. (http_auth.password or "")) }
+        end
+        local html = DownloadBackend:loadPage(link, cookies, extra_headers)
         DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message, enable_filter, filter_element)
     end
 end
@@ -905,7 +924,9 @@ function NewsDownloader:editFeedAttribute(id, key, value)
     -- attribute will need and displays the corresponding dialog.
     if key == FeedView.URL
         or key == FeedView.LIMIT
-        or key == FeedView.FILTER_ELEMENT then
+        or key == FeedView.FILTER_ELEMENT
+        or key == FeedView.HTTP_AUTH_USERNAME
+        or key == FeedView.HTTP_AUTH_PASSWORD then
 
         local title
         local input_type
@@ -921,6 +942,12 @@ function NewsDownloader:editFeedAttribute(id, key, value)
         elseif key == FeedView.FILTER_ELEMENT then
             title = _("Edit filter element.")
             description = _("Filter based on the given CSS selector. E.g.: name_of_css.element.class")
+            input_type = "string"
+        elseif key == FeedView.HTTP_AUTH_USERNAME then
+            title = _("HTTP auth username")
+            input_type = "string"
+        elseif key == FeedView.HTTP_AUTH_PASSWORD then
+            title = _("HTTP auth password")
             input_type = "string"
         else
             return false
@@ -1108,6 +1135,12 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                         }
                     )
                 end
+            elseif key == FeedView.HTTP_AUTH_USERNAME then
+                feed.http_auth = feed.http_auth or { username = "", password = "" }
+                feed.http_auth.username = value or ""
+            elseif key == FeedView.HTTP_AUTH_PASSWORD then
+                feed.http_auth = feed.http_auth or { username = "", password = "" }
+                feed.http_auth.password = value or ""
             end
         end
         -- Now we insert the updated (or newly created) feed into the
