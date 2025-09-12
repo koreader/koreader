@@ -515,6 +515,10 @@ function CalendarDayView:init()
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.NextPage = { { Device.input.group.PgFwd } }
         self.key_events.PrevPage = { { Device.input.group.PgBack } }
+        if Device:hasScreenKB() or Device:hasKeyboard() then
+            local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            self.key_events.Hold = { { modifier, "Press" }, event="HoldNonTouch" }
+        end
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
@@ -1532,6 +1536,15 @@ function CalendarView:onMultiSwipe(arg, ges_ev)
     -- multiswipe to close this widget too.
     self:onClose()
     return true
+end
+
+function CalendarDayView:onHoldNonTouch()
+    -- Handle keyboard-triggered hold events by acting on the focused item directly
+    local focused_item = self:getFocusItem()
+    if not focused_item then
+        return true
+    end
+    return focused_item:onHold()
 end
 
 function CalendarView:onClose()
