@@ -399,11 +399,14 @@ function ReadTimer:onShowAlarm(touchmenu_instance)
     local time_widget = DateTimeWidget:new{
         hour = curr_hour,
         min = curr_min,
-        ok_text = _("Set alarm"),
-        title_text =  _("Alarm"),
+        ok_text = _("Start timer"),
+        title_text = _("Alarm"),
         info_text = _("Enter a time in hours and minutes."),
         callback = function(alarm_time)
-            self:setAlarm(alarm_time, now_t, touchmenu_instance)
+            if touchmenu_instance then
+                touchmenu_instance:closeMenu()
+            end
+            self:setAlarm(alarm_time, now_t)
         end
     }
     self:addCheckboxes(time_widget)
@@ -411,7 +414,7 @@ function ReadTimer:onShowAlarm(touchmenu_instance)
     return true
 end
 
-function ReadTimer:setAlarm(alarm_time, then_t, touchmenu_instance)
+function ReadTimer:setAlarm(alarm_time, then_t)
     then_t.hour = alarm_time.hour
     then_t.min = alarm_time.min
     then_t.sec = 0
@@ -432,7 +435,6 @@ function ReadTimer:setAlarm(alarm_time, then_t, touchmenu_instance)
             datetime.secondsToClockDuration(user_duration_format, seconds, false)),
         timeout = 5,
     })
-    if touchmenu_instance then touchmenu_instance:updateItems() end
 end
 
 function ReadTimer:onShowTimer(touchmenu_instance)
@@ -445,11 +447,14 @@ function ReadTimer:onShowTimer(touchmenu_instance)
         hour = remain_hours or 0,
         min = remain_minutes or 0,
         hour_max = 17,
-        ok_text = _("Set interval"),
-        title_text =  _("Interval"),
+        ok_text = _("Start timer"),
+        title_text = _("Interval"),
         info_text = _("Enter a time in hours and minutes."),
         callback = function(timer_time)
-            self:setInterval(timer_time, touchmenu_instance)
+            if touchmenu_instance then
+                touchmenu_instance:closeMenu()
+            end
+            self:setInterval(timer_time)
         end
     }
 
@@ -458,7 +463,7 @@ function ReadTimer:onShowTimer(touchmenu_instance)
     return true
 end
 
-function ReadTimer:setInterval(timer_time, touchmenu_instance)
+function ReadTimer:setInterval(timer_time)
     local seconds = timer_time.hour * 3600 + timer_time.min * 60
     if seconds > 0 then
         self:unschedule()
@@ -472,7 +477,6 @@ function ReadTimer:setInterval(timer_time, touchmenu_instance)
                         datetime.secondsToClockDuration(user_duration_format, seconds, true)),
             timeout = 5,
         })
-        if touchmenu_instance then touchmenu_instance:updateItems() end
 
         -- Save settings
         self.settings.remain_time_hours = timer_time.hour
