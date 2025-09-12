@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20250601
+local CURRENT_MIGRATION_DATE = 20250912
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -888,6 +888,28 @@ if last_migration_date < 20250601 then
     SettingsMigration:migrateSettings(G_reader_settings)
 end
 
+-- 20250912, Move all ReadTimer plugin settings into a single table.
+-- https://github.com/koreader/koreader/pull/xxxxx
+if last_migration_date < 20250912 then
+    logger.info("Performing one-time migration for 20250912")
+
+    local remain_time_hours, remain_time_minutes
+    local remain_time = G_reader_settings:readSetting("reader_timer_remain_time")
+    if remain_time then
+        remain_time_hours = remain_time[1]
+        remain_time_minutes = remain_time[2]
+        G_reader_settings:delSetting("reader_timer_remain_time")
+    end
+    local settings = {
+        remain_time_hours = remain_time_hours,
+        remain_time_minutes = remain_time_minutes,
+        show_value_in_header = G_reader_settings:readSetting("readtimer_show_value_in_header"),
+        show_value_in_footer = G_reader_settings:readSetting("readtimer_show_value_in_footer"),
+    }
+    G_reader_settings:saveSetting("readtimer", settings)
+    G_reader_settings:delSetting("readtimer_show_value_in_header")
+    G_reader_settings:delSetting("readtimer_show_value_in_footer")
+end
 
 -- We're done, store the current migration date
 G_reader_settings:saveSetting("last_migration_date", CURRENT_MIGRATION_DATE)
