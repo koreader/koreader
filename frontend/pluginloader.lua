@@ -116,8 +116,8 @@ function PluginLoader:_discover()
         for entry in lfs.dir(lookup_path) do
             local plugin_root = lookup_path.."/"..entry
             local mode = lfs.attributes(plugin_root, "mode")
-            -- valid koreader plugin directory
-            if mode == "directory" and entry:find(".+%.koplugin$") then
+            -- A valid KOReader plugin directory ends with .koplugin
+            if mode == "directory" and entry:sub(-9) == ".koplugin" then
                 local mainfile = plugin_root.."/main.lua"
                 local metafile = plugin_root.."/_meta.lua"
                 local disabled = false
