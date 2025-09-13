@@ -187,7 +187,7 @@ describe("NewsDownloader module", function()
                 processed = true
             end
 
-            NewsDownloader:processFeed("rss", feeds, nil, 1, false, false, "Testing", true, nil)
+            NewsDownloader:processFeed("rss", feeds, nil, nil, 1, false, false, "Testing", true, nil)
 
             assert.is_true(processed)
 
@@ -230,7 +230,7 @@ describe("NewsDownloader module", function()
                 processed = true
             end
 
-            NewsDownloader:processFeed("atom", feeds, nil, 1, false, false, "Testing", true, nil)
+            NewsDownloader:processFeed("atom", feeds, nil, nil, 1, false, false, "Testing", true, nil)
 
             assert.is_true(processed)
 
