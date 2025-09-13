@@ -276,13 +276,24 @@ function PluginLoader:genPluginManagerSubItem()
             end,
             callback = function()
                 local UIManager = require("ui/uimanager")
-                local _ = require("gettext")
                 local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
                 plugin.enable = not plugin.enable
                 if plugin.enable then
                     plugins_disabled[plugin.name] = nil
                 else
                     plugins_disabled[plugin.name] = true
+                    local instance = self:getPluginInstance(plugin.name)
+                    local stopPluginFn = instance and instance.stopPlugin
+                    if type(stopPluginFn) == "function" then
+                        local ok, err = self:stopPluginInstance(instance)
+                        if not ok then
+                            logger.err("PluginLoader: Failed to stop plugin instance", plugin.name, err)
+                            ok, err = self:stopPluginInstance(instance, true)
+                            if not ok then
+                                logger.err("PluginLoader: Failed to force-stop plugin instance", plugin.name, err)
+                            end
+                        end
+                    end
                 end
                 G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
                 if self.show_info then
@@ -305,6 +316,21 @@ function PluginLoader:createPluginInstance(plugin, attr)
         logger.err("Failed to initialize", plugin.name, "plugin:", re)
         return nil, re
     end
+end
+
+--- Calls the stopPlugin() method on a plugin instance if it's currently loaded.
+--- This is only intended for plugins that manage external resources or processes.
+--- @param instance table The plugin instance to stop.
+--- @param force boolean If true, forces the plugin to stop even if it encounters errors.
+--- @return boolean Success, string|nil
+function PluginLoader:stopPluginInstance(instance, force)
+    local ok, err = false, "no stopPlugin method"
+    local fn = instance.stopPlugin
+    if type(fn) == "function" then
+        ok, err = pcall(fn, instance, force)
+    end
+    if ok then return true, nil end
+    return false, err
 end
 
 --- Checks if a specific plugin is instantiated
