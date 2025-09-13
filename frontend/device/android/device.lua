@@ -252,7 +252,6 @@ function Device:init()
         moaanmix7 = true,
         xiaomi_reader = true,
     }
-    
     if models[android.prop.model] then
         self.input:disableRotationMap()
     end
