@@ -74,9 +74,9 @@ end
 
 local PluginLoader = {
     show_info = true,
-    enabled_plugins = nil,
-    disabled_plugins = nil,
-    loaded_plugins = nil,
+    enabled_plugins = {},
+    disabled_plugins = {},
+    loaded_plugins = {},
     all_plugins = nil,
 }
 
@@ -237,6 +237,10 @@ function PluginLoader:genPluginManagerSubItem()
                     plugins_disabled[plugin.name] = nil
                 else
                     plugins_disabled[plugin.name] = true
+                    local ok, err = self:stopPluginInstance(plugin.name)
+                    if not ok and err then
+                        logger.warn("PluginLoader: Failed to stop plugin instance", plugin.name, err)
+                    end
                 end
                 G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
                 if self.show_info then
@@ -259,6 +263,23 @@ function PluginLoader:createPluginInstance(plugin, attr)
         logger.err("Failed to initialize", plugin.name, "plugin:", re)
         return nil, re
     end
+end
+
+--- Tries to stop and unload a specific plugin instance if it's currently running.
+function PluginLoader:stopPluginInstance(name)
+    if not name then return false, "no plugin name provided" end
+    local instance = self.loaded_plugins and self.loaded_plugins[name]
+    if not instance then return false, "not loaded" end
+
+    local ok, err = false, "no stop method"
+    local fn = instance.stop
+    if type(fn) == "function" then
+        ok, err = pcall(fn, instance)
+    end
+
+    self.loaded_plugins[name] = nil
+    if ok then return true end
+    return false, err
 end
 
 --- Checks if a specific plugin is instantiated
