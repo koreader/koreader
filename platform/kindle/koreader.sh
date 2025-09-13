@@ -117,35 +117,28 @@ cd "${KOREADER_DIR}" || exit
 
 # Handle pending OTA update
 ko_update_check() {
-    NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
-    INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
+    NEWUPDATE="${KOREADER_DIR}/ota/update.tar.xz"
     if [ -f "${NEWUPDATE}" ]; then
         logmsg "Updating KOReader . . ."
+        /var/tmp/fbink -c
         # Let our checkpoint script handle the detailed visual feedback...
         eips_print_bottom_centered "Updating KOReader" 3
         # Setup the FBInk daemon
         export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
         rm -f "${FBINK_NAMED_PIPE}"
         FBINK_PID="$(/var/tmp/fbink --daemon 1 %KOREADER% -q -y -6 -P 0)"
-        # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
-        # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
-        FILESIZE="$(stat -c %b "${NEWUPDATE}")"
-        BLOCKS="$((FILESIZE / 20))"
-        export CPOINTS="$((BLOCKS / 100))"
-        # NOTE: To avoid blowing up when tar truncates itself during an update, copy our GNU tar binary to the system's tmpfs,
-        #       and run that one (c.f., #4602)...
-        #       This is most likely a side-effect of the weird fuse overlay being used for /mnt/us (vs. the real vfat on /mnt/base-us),
-        #       which we cannot use because it's been mounted noexec for a few years now...
-        cp -pf "${KOREADER_DIR}/tar" /var/tmp/gnutar
-        # shellcheck disable=SC2016
-        /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='printf "%s" $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}' -C "/mnt/us" -xf "${NEWUPDATE}"
+        # NOTE: To avoid blowing up when an executable get truncated during use, we copy our binaries to the system's
+        # tmpfs, and run them from there (c.f., #4602)...  This is most likely a side-effect of the weird fuse overlay
+        # being used for /mnt/us (vs. the real vfat on /mnt/base-us), which we cannot use because it's been mounted
+        # noexec for a few years now...
+        cp -pf "${KOREADER_DIR}/unpack" /var/tmp/
+        (cd /mnt/us && /var/tmp/unpack -X "${NEWUPDATE}" >"${FBINK_NAMED_PIPE}")
         fail=$?
         kill -TERM "${FBINK_PID}"
-        # And remove our temporary tar binary...
-        rm -f /var/tmp/gnutar
+        # And remove our temporary binaries...
+        rm -f /var/tmp/unpack
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
-            mv "${NEWUPDATE}" "${INSTALLED}"
             logmsg "Update successful :)"
             eips_print_bottom_centered "Update successful :)" 2
             eips_print_bottom_centered "KOReader will start momentarily . . ." 1
@@ -161,8 +154,7 @@ ko_update_check() {
             eips_print_bottom_centered "KOReader may fail to function properly" 1
         fi
         rm -f "${NEWUPDATE}" # always purge newupdate to prevent update loops
-        unset CPOINTS FBINK_NAMED_PIPE
-        unset BLOCKS FILESIZE FBINK_PID
+        unset FBINK_NAMED_PIPE FBINK_PID
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         sync
     fi
