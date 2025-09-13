@@ -66,7 +66,8 @@ function ScreenSaverWidget:onTap(_, ges)
     return true
 end
 
-function ScreenSaverWidget:onClose()
+function ScreenSaverWidget:onClose(arg)
+    if arg and arg.keep_screensaver then return true end -- poweroff, reboot
     -- If we happened to shortcut a delayed close via user input, unschedule it to avoid a spurious refresh.
     local Screensaver = require("ui/screensaver")
     if Screensaver.delayed_close then
