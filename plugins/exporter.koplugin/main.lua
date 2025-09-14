@@ -225,7 +225,7 @@ function Exporter:exportClippings(clippings)
         end
         -- full file path without extension
         clipping_filename = self.ui.bookinfo:expandString(clipping_filename, file, timestamp)
-        clipping_filename = clipping_filename:gsub("\r?\n", ", "):gsub("\t", " ")
+        clipping_filename = clipping_filename:gsub("\r?\n", "; ")
         clipping_filepath = clipping_dir .. "/" .. util.getSafeFilename(clipping_filename, nil, nil, -1)
     end
     local export_callback = function()
