@@ -156,8 +156,7 @@ local function build_cookies(cookies)
     return s
 end
 
--- Get URL content
-local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache)
+local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra_headers)
     logger.dbg("getUrlContent(", url, ",", cookies, ", ", timeout, ",", maxtime, ",", add_to_cache, ")")
 
     if not timeout then timeout = 10 end
@@ -169,9 +168,15 @@ local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache)
         url     = url,
         method  = "GET",
         sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
-        headers = {
-            ["cookie"] = build_cookies(cookies)
-        }
+        headers = (function()
+            local h = { ["cookie"] = build_cookies(cookies) }
+            if extra_headers then
+                for k, v in pairs(extra_headers) do
+                    h[k] = v
+                end
+            end
+            return h
+        end)()
     }
     logger.dbg("request:", request)
     local code, headers, status = socket.skip(1, http.request(request))
@@ -258,9 +263,9 @@ function EpubDownloadBackend:getConnectionCookies(url, credentials)
     return cookies
 end
 
-function EpubDownloadBackend:getResponseAsString(url, cookies, add_to_cache)
+function EpubDownloadBackend:getResponseAsString(url, cookies, add_to_cache, extra_headers)
     logger.dbg("EpubDownloadBackend:getResponseAsString(", url, ")")
-    local success, content = getUrlContent(url, cookies, nil, nil, add_to_cache)
+    local success, content = getUrlContent(url, cookies, nil, nil, add_to_cache, extra_headers)
     if (success) then
         return content
     else
@@ -276,21 +281,21 @@ function EpubDownloadBackend:resetTrapWidget()
     self.trap_widget = nil
 end
 
-function EpubDownloadBackend:loadPage(url, cookies)
+function EpubDownloadBackend:loadPage(url, cookies, extra_headers)
     local completed, success, content
     if self.trap_widget then -- if previously set with EpubDownloadBackend:setTrapWidget()
         local Trapper = require("ui/trapper")
         local timeout, maxtime = 30, 60
         -- We use dismissableRunInSubprocess with complex return values:
         completed, success, content = Trapper:dismissableRunInSubprocess(function()
-            return getUrlContent(url, cookies, timeout, maxtime)
+            return getUrlContent(url, cookies, timeout, maxtime, nil, extra_headers)
         end, self.trap_widget)
         if not completed then
             error(self.dismissed_error_code) -- "Interrupted by user"
         end
     else
         local timeout, maxtime = 10, 60
-        success, content = getUrlContent(url, cookies, timeout, maxtime)
+        success, content = getUrlContent(url, cookies, timeout, maxtime, nil, extra_headers)
     end
     logger.dbg("success:", success, "type(content):", type(content), "content:", type(content) == "string" and content:sub(1, 500), "...")
     if not success then
