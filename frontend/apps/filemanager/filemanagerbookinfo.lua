@@ -951,6 +951,7 @@ function BookInfo:expandString(str, file, timestamp)
 %S series
 %t total pages
 %c current page
+%l pages left in chapter
 %p book percentage read
 %H time left in book
 %C chapter title
@@ -974,7 +975,7 @@ function BookInfo:expandString(str, file, timestamp)
     end
 
     local na = _("N/A")
-    local doc_patterns, is_doc_required = "%T%A%S%t%c%p%H%C%P%h"
+    local doc_patterns, is_doc_required = "%T%A%S%t%c%p%H%C%l%P%h"
     local patterns = {}
     for p in str:gmatch("%%%a") do
         patterns[p] = na -- calculate only needed items
@@ -1005,6 +1006,15 @@ function BookInfo:expandString(str, file, timestamp)
                     local title = self.ui.toc:getTocTitleByPage(pageno)
                     if title and title ~= "" then
                         patterns["%C"] = title
+                    end
+                end
+                if patterns["%l"] then
+                    local pages_left_in_chapter = self.ui.toc:getChapterPagesLeft(pageno) or doc:getTotalPagesLeft(pageno)
+                    if pages_left_in_chapter then
+                        if self.ui.view.footer.settings.pages_left_includes_current_page then
+                             pages_left_in_chapter = pages_left_in_chapter + 1
+                        end
+                        patterns["%l"] = pages_left_in_chapter
                     end
                 end
                 patterns["%P"] = patterns["%P"] and Math.round(self.ui.view.footer:getChapterProgress(true) * 100)
