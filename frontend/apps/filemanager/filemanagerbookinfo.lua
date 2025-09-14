@@ -961,6 +961,7 @@ function BookInfo:expandString(str, file, timestamp)
 %f file name
 %b battery level
 %B battery symbol
+%r separator
 %D current date (yyyy-mm-dd)
 %d current date (mm-dd)
 %m current time (hh:mm)
@@ -1064,7 +1065,12 @@ function BookInfo:expandString(str, file, timestamp)
         patterns["%F"] = patterns["%F"] and file
         patterns["%f"] = patterns["%f"] and file:gsub(".*/", "")
     end
-
+    if patterns["%r"] then
+        local separator_icon = self.ui.view.footer:genSeparator()
+        if separator_icon then
+            patterns["%r"] = separator_icon
+        end
+    end
     if (patterns["%b"] or patterns["%B"]) and Device:hasBattery() then
         local powerd = Device:getPowerDevice()
         local batt_lvl = powerd:getCapacity()
