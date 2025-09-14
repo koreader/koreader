@@ -231,21 +231,28 @@ function PluginLoader:genPluginManagerSubItem()
             callback = function()
                 local UIManager = require("ui/uimanager")
                 local _ = require("gettext")
+                local T = require("ffi/util").template
                 local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+                local stop_ok = true
                 plugin.enable = not plugin.enable
                 if plugin.enable then
                     plugins_disabled[plugin.name] = nil
                 else
                     plugins_disabled[plugin.name] = true
                     local ok, err = self:stopPluginInstance(plugin.name)
-                    if not ok and err then
+                    if not ok then
+                        stop_ok = false
                         logger.warn("PluginLoader: Failed to stop plugin instance", plugin.name, err)
                     end
                 end
                 G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
                 if self.show_info then
                     self.show_info = false
-                    UIManager:askForRestart()
+                    if stop_ok then
+                        UIManager:askForRestart()
+                    else
+                        UIManager:askForReboot(T(_("Plugin '%1' failed to stop. The device needs to be rebooted to disable it fully."), plugin.fullname or plugin.name))
+                    end
                 end
             end,
             help_text = plugin.description,
@@ -265,19 +272,21 @@ function PluginLoader:createPluginInstance(plugin, attr)
     end
 end
 
---- Tries to stop and unload a specific plugin instance if it's currently running.
+--- Calls the stopPlugin() method on a plugin instance if it's currently loaded.
 function PluginLoader:stopPluginInstance(name)
     if not name then return false, "no plugin name provided" end
     local instance = self.loaded_plugins and self.loaded_plugins[name]
     if not instance then return false, "not loaded" end
 
-    local ok, err = false, "no stop method"
+    local ok, err = false, "no stopPlugin method"
     local fn = instance.stopPlugin
+    if type(fn) == "nil" then
+        return true
+    end
     if type(fn) == "function" then
         ok, err = pcall(fn, instance)
     end
 
-    self.loaded_plugins[name] = nil
     if ok then return true end
     return false, err
 end
