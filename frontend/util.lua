@@ -984,6 +984,7 @@ If an optional path is provided, @{util.getFilesystemType}() will be used to det
 ---- @treturn string safe filename
 function util.getSafeFilename(str, path, limit, limit_ext)
     local filename, suffix = util.splitFileNameSuffix(str)
+    filename = filename:gsub("\r?\n", " "):gsub("\t", " ")
     local replaceFunc = util.replaceAllInvalidChars
     local safe_filename
     -- VFAT supports a maximum of 255 UCS-2 characters, although it's probably treated as UTF-16 by Windows
