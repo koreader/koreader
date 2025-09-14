@@ -399,7 +399,7 @@ function ReadTimer:onShowAlarm(touchmenu_instance)
     local time_widget = DateTimeWidget:new{
         hour = curr_hour,
         min = curr_min,
-        ok_text = _("Start timer"),
+        ok_text = _("Set alarm"),
         title_text = _("Alarm"),
         info_text = _("Enter a time in hours and minutes."),
         callback = function(alarm_time)
