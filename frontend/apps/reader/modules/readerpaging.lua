@@ -563,6 +563,8 @@ function ReaderPaging:onGotoPercent(percent)
 end
 
 function ReaderPaging:onGotoViewRel(diff, no_page_turn)
+    -- When called via a key event, the second arg is a key object (table), not used here.
+    no_page_turn = no_page_turn == true and true or nil
     -- ReaderSearch calls with no_page_turn = true.
     -- In that case, don't turn page if it would happen, and return ret=nil.
     local ret
