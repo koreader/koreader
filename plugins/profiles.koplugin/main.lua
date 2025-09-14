@@ -226,11 +226,13 @@ For example, with a trigger "on document closing" the profile will be executed b
                         self:genAutoExecMenuItem(_("on KOReader start"), "Start", k),
                         self:genAutoExecMenuItem(_("on wake-up"), "Resume", k),
                         self:genAutoExecMenuItem(_("on exiting sleep screen"), "OutOfScreenSaver", k),
+                        self:genAutoExecMenuItem(_("on read timer expiry"), "ReadTimerExpired", k),
                         self:genAutoExecMenuItem(_("on rotation"), "SetRotationMode", k),
                         self:genAutoExecMenuItem(_("on showing folder"), "PathChanged", k, true),
                         -- separator
                         self:genAutoExecMenuItem(_("on book opening"), "ReaderReadyAll", k),
                         self:genAutoExecMenuItem(_("on book closing"), "CloseDocumentAll", k),
+                        max_per_page = 11,
                     }
                 end,
                 hold_callback = function(touchmenu_instance)
@@ -976,6 +978,10 @@ end
 
 function Profiles:onOutOfScreenSaver() -- global
     self:executeAutoExecEvent("OutOfScreenSaver")
+end
+
+function Profiles:onReadTimerExpired() -- global by ReadTimer plugin
+    self:executeAutoExecEvent("ReadTimerExpired")
 end
 
 function Profiles:onSetRotationMode(mode) -- global
