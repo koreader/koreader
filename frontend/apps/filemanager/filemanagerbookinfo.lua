@@ -1009,8 +1009,8 @@ function BookInfo:expandString(str, file, timestamp)
                     end
                 end
                 if patterns["%l"] then
-                    local pages_left_in_chapter = self.ui.toc:getChapterPagesLeft(pageno) or pages_left_in_chapter
-                    if pages_left_in_chapter then
+                    local pages_left_in_chapter = self.ui.toc:getChapterPagesLeft(pageno) or self.ui.document:getTotalPagesLeft(pageno) 
+                    if pages_left_in_chapter and pages_left_in_chapter ~= "" then
                         if self.ui.view.footer.settings.pages_left_includes_current_page then
                              pages_left_in_chapter = pages_left_in_chapter + 1
                         end
