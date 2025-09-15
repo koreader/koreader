@@ -1065,11 +1065,8 @@ function BookInfo:expandString(str, file, timestamp)
         patterns["%F"] = patterns["%F"] and file
         patterns["%f"] = patterns["%f"] and file:gsub(".*/", "")
     end
-    if patterns["%r"] then
-        local separator_icon = self.ui.view.footer:genSeparator()
-        if separator_icon then
-            patterns["%r"] = separator_icon
-        end
+    if patterns["%r"] and self.document then
+        patterns["%r"] = self.ui.view.footer:genSeparator()
     end
     if (patterns["%b"] or patterns["%B"]) and Device:hasBattery() then
         local powerd = Device:getPowerDevice()
