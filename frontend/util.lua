@@ -1006,6 +1006,7 @@ function util.getSafeFilename(str, path, limit, limit_ext)
         suffix = nil
     end
 
+    filename = filename:gsub("\r?\n", " "):gsub("\t", " ")
     filename = util.htmlToPlainTextIfHtml(filename)
     filename = filename:sub(1, limit)
     -- the limit might result in broken UTF-8, which we don't want in the result
