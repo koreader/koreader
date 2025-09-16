@@ -6,66 +6,66 @@ local cse = sr_popup.cse
 local sec = sr_popup.sec
 local quo = sr_popup.quo
 -- Serbian letters
-local _А_ = sr_popup._А_
-local _а_ = sr_popup._а_
-local _Б_ = sr_popup._Б_
-local _б_ = sr_popup._б_
-local _В_ = sr_popup._В_
-local _в_ = sr_popup._в_
-local _Г_ = sr_popup._Г_
-local _г_ = sr_popup._г_
-local _Д_ = sr_popup._Д_
-local _д_ = sr_popup._д_
-local _Ђ_ = sr_popup._Ђ_
-local _ђ_ = sr_popup._ђ_
-local _Е_ = sr_popup._Е_
-local _е_ = sr_popup._е_
-local _Ж_ = sr_popup._Ж_
-local _ж_ = sr_popup._ж_
-local _З_ = sr_popup._З_
-local _з_ = sr_popup._з_
-local _И_ = sr_popup._И_
-local _и_ = sr_popup._и_
-local _Ј_ = sr_popup._Ј_
-local _ј_ = sr_popup._ј_
-local _К_ = sr_popup._К_
-local _к_ = sr_popup._к_
-local _Л_ = sr_popup._Л_
-local _л_ = sr_popup._л_
-local _Љ_ = sr_popup._Љ_
-local _љ_ = sr_popup._љ_
-local _М_ = sr_popup._М_
-local _м_ = sr_popup._м_
-local _Н_ = sr_popup._Н_
-local _н_ = sr_popup._н_
-local _Њ_ = sr_popup._Њ_
-local _њ_ = sr_popup._њ_
-local _О_ = sr_popup._О_
-local _о_ = sr_popup._о_
-local _П_ = sr_popup._П_
-local _п_ = sr_popup._п_
-local _Р_ = sr_popup._Р_
-local _р_ = sr_popup._р_
-local _С_ = sr_popup._С_
-local _с_ = sr_popup._с_
-local _Т_ = sr_popup._Т_
-local _т_ = sr_popup._т_
-local _Ћ_ = sr_popup._Ћ_
-local _ћ_ = sr_popup._ћ_
-local _У_ = sr_popup._У_
-local _у_ = sr_popup._у_
-local _Ф_ = sr_popup._Ф_
-local _ф_ = sr_popup._ф_
-local _Х_ = sr_popup._Х_
-local _х_ = sr_popup._х_
-local _Ц_ = sr_popup._Ц_
-local _ц_ = sr_popup._ц_
-local _Ч_ = sr_popup._Ч_
-local _ч_ = sr_popup._ч_
-local _Џ_ = sr_popup._Џ_
-local _џ_ = sr_popup._џ_
-local _Ш_ = sr_popup._Ш_
-local _ш_ = sr_popup._ш_
+local _A_ = sr_popup._A_
+local _a_ = sr_popup._a_
+local _B_ = sr_popup._B_
+local _b_ = sr_popup._b_
+local _V_ = sr_popup._V_
+local _v_ = sr_popup._v_
+local _G_ = sr_popup._G_
+local _g_ = sr_popup._g_
+local _D_ = sr_popup._D_
+local _d_ = sr_popup._d_
+local _Dj_ = sr_popup._Dj_
+local _dj_ = sr_popup._dj_
+local _E_ = sr_popup._E_
+local _e_ = sr_popup._e_
+local _Zh_ = sr_popup._Zh_
+local _zh_ = sr_popup._zh_
+local _Z_ = sr_popup._Z_
+local _z_ = sr_popup._z_
+local _I_ = sr_popup._I_
+local _i_ = sr_popup._i_
+local _J_ = sr_popup._J_
+local _j_ = sr_popup._j_
+local _K_ = sr_popup._K_
+local _k_ = sr_popup._k_
+local _L_ = sr_popup._L_
+local _l_ = sr_popup._l_
+local _Lj_ = sr_popup._Lj_
+local _lj_ = sr_popup._lj_
+local _M_ = sr_popup._M_
+local _m_ = sr_popup._m_
+local _N_ = sr_popup._N_
+local _n_ = sr_popup._n_
+local _Nj_ = sr_popup._Nj_
+local _nj_ = sr_popup._nj_
+local _O_ = sr_popup._O_
+local _o_ = sr_popup._o_
+local _P_ = sr_popup._P_
+local _p_ = sr_popup._p_
+local _R_ = sr_popup._R_
+local _r_ = sr_popup._r_
+local _S_ = sr_popup._S_
+local _s_ = sr_popup._s_
+local _T_ = sr_popup._T_
+local _t_ = sr_popup._t_
+local _Tj_ = sr_popup._Tj_
+local _tj_ = sr_popup._tj_
+local _U_ = sr_popup._U_
+local _u_ = sr_popup._u_
+local _F_ = sr_popup._F_
+local _f_ = sr_popup._f_
+local _H_ = sr_popup._H_
+local _h_ = sr_popup._h_
+local _C_ = sr_popup._C_
+local _c_ = sr_popup._c_
+local _Ch_ = sr_popup._Ch_
+local _ch_ = sr_popup._ch_
+local _Dzh_ = sr_popup._Dzh_
+local _dzh_ = sr_popup._dzh_
+local _Sh_ = sr_popup._Sh_
+local _sh_ = sr_popup._sh_
 -- other
 local _1_ = sr_popup._1_ -- numeric key 1
 local _1p = sr_popup._1p -- numeric key 1, popup sibling (they have north swipe ups of each other, the rest is the same)
@@ -164,45 +164,45 @@ return {
         },
         -- Second row
         { --   R    r    S    s
-            { _Љ_, _љ_, dif, "?", },
-            { _Њ_, _њ_, int, "¿", },
-            { _Е_, _е_, mth, "~", },
-            { _Р_, _р_, mt2, "\\", },
-            { _Т_, _т_, df2, bar, },
-            { _З_, _з_, sl2, sla, },
-            { _У_, _у_, _4s, _4n, },
-            { _И_, _и_, _5s, _5n, },
-            { _О_, _о_, _6s, _6n, },
-            { _П_, _п_, pl2, pls, },
-            { _Ш_, _ш_, bul, bu2, },
+            { _Lj_, _lj_, dif, "?", },
+            { _Nj_, _nj_, int, "¿", },
+            { _E_, _e_, mth, "~", },
+            { _R_, _r_, mt2, "\\", },
+            { _T_, _t_, df2, bar, },
+            { _Z_, _z_, sl2, sla, },
+            { _U_, _u_, _4s, _4n, },
+            { _I_, _i_, _5s, _5n, },
+            { _O_, _o_, _6s, _6n, },
+            { _P_, _p_, pl2, pls, },
+            { _Sh_, _sh_, bul, bu2, },
         },
         -- Third row
         { --   R    r    S    s
-            { _А_, _а_, ls2, ls1, },
-            { _С_, _с_, mr2, mr1, },
-            { _Д_, _д_, dgr, "(", },
-            { _Ф_, _ф_, tpg, ")", },
-            { _Г_, _г_, hs2, hsh, },
-            { _Х_, _х_, pd2, pdc, },
-            { _Ј_, _ј_, _1s, _1n, },
-            { _К_, _к_, _2s, _2n, },
-            { _Л_, _л_, _3s, _3n, },
-            { _Ч_, _ч_, cl1, cl2, },
-            { _Ћ_, _ћ_, cl3, cl4, },
+            { _A_, _a_, ls2, ls1, },
+            { _S_, _s_, mr2, mr1, },
+            { _D_, _d_, dgr, "(", },
+            { _F_, _f_, tpg, ")", },
+            { _G_, _g_, hs2, hsh, },
+            { _H_, _h_, pd2, pdc, },
+            { _J_, _j_, _1s, _1n, },
+            { _K_, _k_, _2s, _2n, },
+            { _L_, _l_, _3s, _3n, },
+            { _Ch_, _ch_, cl1, cl2, },
+            { _Tj_, _tj_, cl3, cl4, },
         },
         -- Fourth row
         { --   R    r    S    s
             { label = "",        }, -- Shift
-            { _Џ_, _џ_, prm, "{", },
-            { _Ц_, _ц_, "°", "}", },
-            { _В_, _в_, "«", "[", },
-            { _Б_, _б_, "»", "]", },
-            { _Н_, _н_, _0s, _0n, },
-            { _М_, _м_, "↑", "↑", },
-            { _Ђ_, _ђ_, "↓", "↓", },
-            { _Ж_, _ж_, _0s, _0n, },
+            { _Dzh_, _dzh_, prm, "{", },
+            { _C_, _c_, "°", "}", },
+            { _V_, _v_, "«", "[", },
+            { _B_, _b_, "»", "]", },
+            { _N_, _n_, _0s, _0n, },
+            { _M_, _m_, "↑", "↑", },
+            { _Dj_, _dj_, "↓", "↓", },
+            { _Zh_, _zh_, _0s, _0n, },
             { sec, cse, sec, cse, }, -- comma/semicolon with CSS popup block
-	    { cop, pco, cop, pco, }, -- period/colon with RegEx popup block
+            { cop, pco, cop, pco, }, -- period/colon with RegEx popup block
         },
         -- Fifth row
         { --   R    r    S    s

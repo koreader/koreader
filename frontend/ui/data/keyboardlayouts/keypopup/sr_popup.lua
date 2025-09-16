@@ -108,7 +108,7 @@ return {
         "*",
         "]",
     },
-    _А_ = {
+    _A_ = {
         "А",
         north = "а",
         northeast = "Á",
@@ -122,7 +122,7 @@ return {
         "Ǎ",
         "Æ",
     },
-    _а_ = {
+    _a_ = {
         "а",
         north = "А",
         northeast = "á",
@@ -136,19 +136,19 @@ return {
         "ǎ",
         "æ",
     },
-    _Б_ = {
+    _B_ = {
         "Б",
         north = "б",
         east = "Β", -- Greek beta
         west = "♭",
     },
-    _б_ = {
+    _b_ = {
         "б",
         north = "Б",
         east = "β", -- Greek beta
         west = "♭",
     },
-    _В_ = {
+    _V_ = {
         "В",
         north = "в", -- open-mid back unrounded vowel IPA
         northeast = "ʌ",
@@ -156,7 +156,7 @@ return {
         east = "Ꜹ",
         west = "Ṽ",
     },
-    _в_ = {
+    _v_ = {
         "в",
         north = "В",
         northeast = "ʌ", -- open-mid back unrounded vowel IPA
@@ -164,19 +164,19 @@ return {
         east = "ꜹ",
         west = "ṽ",
     },
-    _Г_ = {
+    _G_ = {
         "Г",
         north = "г",
         northeast = "Γ", -- Greek gamma
         east = "ɣ", -- voiced velar fricative IPA
     },
-    _г_ = {
+    _g_ = {
         "г",
         north = "Г",
         northeast = "γ", -- Greek gamma
         east = "ɣ", -- voiced velar fricative IPA
     },
-    _Д_ = {
+    _D_ = {
         "Д",
         north = "д",
         northeast = "Ð",
@@ -186,7 +186,7 @@ return {
         south = "∂", -- partial derivative
         southeast = "Δ", -- Greek delta
     },
-    _д_ = {
+    _d_ = {
         "д",
         north = "Д",
         northeast = "ð",
@@ -196,19 +196,19 @@ return {
         south = "∂", -- partial derivative
         southeast = "δ", -- Greek delta
     },
-    _Ђ_ = {
+    _Dj_ = {
         "Ђ",
         north = "ђ",
         northeast = "Ð",
         east = "đ", -- Dollar currency
     },
-    _ђ_ = {
+    _dj_ = {
         "ђ",
         north = "Ђ",
         northeast = "Đ",
         east = "đ", -- Dollar currency
     },
-    _Е_ = {
+    _E_ = {
         "Е",
         north = "е",
         northeast = "É",
@@ -222,7 +222,7 @@ return {
         "Ě",
         "€", -- Euro currency
     },
-    _е_ = {
+    _e_ = {
         "е",
         north = "Е",
         northeast = "é",
@@ -236,19 +236,19 @@ return {
         "ě",
         "€", -- Euro currency
     },
-    _Ж_ = {
+    _Zh_ = {
         "Ж",
         north = "ж",
         northeast = "Ž",
         east = "ž", -- Dollar currency
     },
-    _ж_ = {
+    _zh_ = {
         "ж",
         north = "Ж",
         northeast = "Ž",
         east = "ž", -- Dollar currency
     },
-    _З_ = {
+    _Z_ = {
         "З",
         north = "з",
         northeast = "Ζ", -- Greek zeta
@@ -258,7 +258,7 @@ return {
         southeast = "ʒ", -- ezh, voiced palato-alveolar fricative IPA
         southwest = "Ż",
     },
-    _з_ = {
+    _z_ = {
         "з",
         north = "З",
         northeast = "ζ", -- Greek zeta
@@ -268,7 +268,7 @@ return {
         southeast = "ʒ", -- ezh, voiced palato-alveolar fricative IPA
         southwest = "ż",
     },
-    _И_ = {
+    _I_ = {
         "И",
         north = "и",
         northeast = "Í",
@@ -282,7 +282,7 @@ return {
         "Ι", -- Greek iota
         "I", -- dotless I (Turkish)
     },
-    _и_ = {
+    _i_ = {
         "и",
         north = "И",
         northeast = "í",
@@ -296,29 +296,29 @@ return {
         "ι", -- Greek iota
         "ı", -- dotless i (Turkish)
     },
-    _Ј_ = {
+    _J_ = {
         "Ј",
         north = "ј",
         east = "ʝ", -- voiced palatal fricative
     },
-    _ј_ = {
+    _j_ = {
         "ј",
         north = "Ј",
         east = "ʝ", -- voiced palatal fricative
     },
-    _К_ = {
+    _K_ = {
         "К",
         north = "к",
         northwest = "Κ", -- Greek kappa
         west = "Ķ",
     },
-    _к_ = {
+    _k_ = {
         "к",
         north = "К",
         northwest = "κ", -- Greek kappa
         west = "ķ",
     },
-    _Л_ = {
+    _L_ = {
         "Л",
         north = "л",
         northeast = "Ĺ",
@@ -329,7 +329,7 @@ return {
         southwest = "ꝉ", -- abbreviation for vel (Latin or)
         east = "ɫ", -- dark l, velarized alveolar lateral approximant IPA
     },
-    _л_ = {
+    _l_ = {
         "л",
         north = "Л",
         northeast = "ĺ",
@@ -340,33 +340,33 @@ return {
         southwest = "ꝉ", -- abbreviation for vel (Latin or)
         east = "ɫ", -- dark l, velarized alveolar lateral approximant IPA
     },
-    _Љ_ = {
+    _Lj_ = {
         "Љ",
         north = "љ",
         northeast = "LJ",
         northwest = "Lj",
         west = "lj",
     },
-    _љ_ = {
+    _lj_ = {
         "љ",
         north = "Љ",
         northeast = "LJ",
         northwest = "Lj",
         west = "lj",
     },
-    _М_ = {
+    _M_ = {
         "М",
         north = "м",
         northeast = "Μ", -- Greek mu
         east = "ɱ", -- labiodental nasal IPA
     },
-    _м_ = {
+    _m_ = {
         "м",
         north = "М",
         northeast = "μ", -- Greek mu
         east = "ɱ", -- labiodental nasal IPA
     },
-    _Н_ = {
+    _N_ = {
         "Н",
         north = "н",
         northeast = "Ń",
@@ -378,7 +378,7 @@ return {
         southwest = "Ν", -- Greek nu
         "Ň", -- Czech
     },
-    _н_ = {
+    _n_ = {
         "н",
         north = "Н",
         northeast = "ń",
@@ -390,21 +390,21 @@ return {
         southwest = "ν", -- Greek nu
         "ň", -- Czech
     },
-    _Њ_ = {
+    _Nj_ = {
         "Њ",
         north = "њ",
         northeast = "NJ",
         northwest = "Nj",
         west = "nj",
     },
-    _њ_ = {
+    _nj_ = {
         "њ",
         north = "Њ",
         northeast = "NJ",
         northwest = "Nj",
         west = "nj",
     },
-    _О_ = {
+    _O_ = {
         "О",
         north = "о",
         northeast = "Ó",
@@ -418,7 +418,7 @@ return {
         "ɔ", -- open o, open-mid back rounded vowel IPA
         "Œ",
     },
-    _о_ = {
+    _o_ = {
         "о",
         north = "О",
         northeast = "ó",
@@ -432,7 +432,7 @@ return {
         "ɔ", -- open o, open-mid back rounded vowel IPA
         "œ",
     },
-    _П_ = {
+    _P_ = {
         "П",
         north = "п",
         northwest = "Π", -- Greek pi
@@ -442,7 +442,7 @@ return {
         "Φ", -- Greek phi
         "Ψ", -- Greek psi
     },
-    _п_ = {
+    _p_ = {
         "п",
         north = "П",
         northwest = "π", -- Greek pi
@@ -452,7 +452,7 @@ return {
         "φ", -- Greek phi
         "ψ", -- Greek psi
     },
-    _Р_ = {
+    _R_ = {
         "Р",
         north = "р",
         northeast = "Ŕ",
@@ -466,7 +466,7 @@ return {
         "ʁ", -- voiced uvular fricative IPA
         "₽", -- Russian ruble
     },
-    _р_ = {
+    _r_ = {
         "р",
         north = "Р",
         northeast = "ŕ",
@@ -480,7 +480,7 @@ return {
         "ʁ",
         "₽", -- Russian ruble currency
     },
-    _С_ = {
+    _S_ = {
         "С",
         north = "с",
         northeast = "Ś",
@@ -494,7 +494,7 @@ return {
         "ſ", -- long s
         "Σ", -- Greek sigma
     },
-    _с_ = {
+    _s_ = {
         "с",
         north = "С",
         northeast = "ś",
@@ -508,7 +508,7 @@ return {
         "ſ", -- long s
         "σ", -- Greek sigma (beginning or the middle of the word)
     },
-    _Т_ = {
+    _T_ = {
         "Т",
         north = "т",
         northeast = "Þ",
@@ -522,7 +522,7 @@ return {
         "Θ", -- Greek theta
         "Τ", -- Greek tau
     },
-    _т_ = {
+    _t_ = {
         "т",
         north = "Т",
         northeast = "þ",
@@ -536,19 +536,19 @@ return {
         "θ", -- Greek theta
         "τ", -- Greek tau
     },
-    _Ћ_ = {
+    _Tj_ = {
         "Ћ",
         north = "ћ",
         northeast = "Ć",
         west = "ć",
     },
-    _ћ_ = {
+    _tj_ = {
         "ћ",
         north = "Ћ",
         northeast = "Ć",
         west = "ć",
     },
-    _У_ = {
+    _U_ = {
         "У",
         north = "у",
         northeast = "Ú",
@@ -562,7 +562,7 @@ return {
         "ɒ", -- turned alpha, open back rounded vowel IPA
         "Ŭ", -- U with breve from Belarusan Latin alphabet
     },
-    _у_ = {
+    _u_ = {
         "у",
         north = "У",
         northeast = "ú",
@@ -576,27 +576,27 @@ return {
         "ɒ", -- turned alpha, open back rounded vowel IPA
         "ŭ", -- u with breve from Belarusan Latin alphabet
     },
-    _Ф_ = {
+    _F_ = {
         "Ф",
         north = "ф",
         east = "ƒ", -- Guilder/Florin
     },
-    _ф_ = {
+    _f_ = {
         "ф",
         north = "Ф",
         east = "ƒ", -- Guilder/Florin
     },
-    _Х_ = {
+    _H_ = {
         "Х",
         north = "х",
         east = "ɥ", -- labialized palatal approximant (like a combination between /w/ and /y/)
     },
-    _х_ = {
+    _h_ = {
         "х",
         north = "Х",
         east = "ɥ", -- labialized palatal approximant (like a combination between /w/ and /y/)
     },
-    _Ц_ = {
+    _C_ = {
         "Ц",
         north = "ц",
         northeast = "Ć",
@@ -608,7 +608,7 @@ return {
         southwest = "Ċ", -- cent sign
         "¢",
     },
-    _ц_ = {
+    _c_ = {
         "ц",
         north = "Ц",
         northeast = "ć",
@@ -620,39 +620,39 @@ return {
         southwest = "ċ", -- cent sign
         "¢",
     },
-    _Ч_ = {
+    _Ch_ = {
         "Ч",
         north = "ч",
         northeast = "Č",
         west = "č",
     },
-    _ч_ = {
+    _ch_ = {
         "ч",
         north = "Ч",
         northeast = "Č",
         west = "č",
     },
-    _Џ_ = {
+    _Dzh_ = {
         "Џ",
         north = "џ",
         northeast = "DŽ",
         northwest = "Dž",
         west = "dž",
     },
-    _џ_ = {
+    _dzh_ = {
         "џ",
         north = "Џ",
         northeast = "DŽ",
         northwest = "Dž",
         west = "dž",
     },
-    _Ш_ = {
+    _Sh_ = {
         "Ш",
         north = "ш",
         northeast = "Š",
         west = "š",
     },
-    _ш_ = {
+    _sh_ = {
         "ш",
         north = "Ш",
         northeast = "Š",
