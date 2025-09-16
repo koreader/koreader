@@ -75,7 +75,6 @@ jobs:
             nasm
             ninja
             pkg-config
-            sdl2
             util-linux
           )
           # Don't auto-update.
