@@ -1237,7 +1237,7 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
         lookupCancelled()
         return
     end
-    -- Intercept "No results" to offer fuzzy search to non-fuzzy people.
+    -- Intercept "No results" to offer fuzzy search to non-fussy people.
     if not fuzzy_search and results and results[1].no_result then
         self:dismissLookupInfo() -- Close the "Searching..." message
         UIManager:show(ConfirmBox:new{
