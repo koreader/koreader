@@ -1221,19 +1221,33 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
 
     self._lookup_start_time = UIManager:getTime()
     local results = self:startSdcv(word, dict_names, fuzzy_search)
+    local function lookupCancelled()
+        if self.highlight then
+            self.highlight:clear()
+        end
+        if dict_close_callback then
+            dict_close_callback()
+        end
+    end
     if results and results.lookup_cancelled
         and (time.now() - self._lookup_start_time) <= self.quick_dismiss_before_delay then
         -- If interrupted quickly just after launch, don't display anything
         -- (this might help avoiding refreshes and the need to dismiss
         -- after accidental long-press when holding a device).
-        if self.highlight then
-            self.highlight:clear()
-        end
-
-        if dict_close_callback then
-            dict_close_callback()
-        end
-
+        lookupCancelled()
+        return
+    end
+    -- Intercept "No results" to offer fuzzy search to non-fuzzy people.
+    if not fuzzy_search and results and results[1].no_result then
+        self:dismissLookupInfo() -- Close the "Searching..." message
+        UIManager:show(ConfirmBox:new{
+            text = _("No results were found. Would you like to perform a fuzzy search?"),
+            ok_text = _("Search"),
+            ok_callback = function()
+                self:stardictLookup(word, dict_names, true, boxes, link, dict_close_callback)
+            end,
+            cancel_callback = lookupCancelled,
+        })
         return
     end
 
