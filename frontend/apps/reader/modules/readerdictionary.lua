@@ -1240,14 +1240,38 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
     -- Intercept "No results" to offer fuzzy search to non-fussy people.
     if not fuzzy_search and results and results[1].no_result then
         self:dismissLookupInfo() -- Close the "Searching..." message
-        UIManager:show(ConfirmBox:new{
-            text = _("No results were found. Would you like to perform a fuzzy search?"),
-            ok_text = _("Search"),
-            ok_callback = function()
-                self:stardictLookup(word, dict_names, true, boxes, link, dict_close_callback)
-            end,
-            cancel_callback = lookupCancelled,
-        })
+        local dialog -- Forward declaration needed for the button callbacks
+        dialog = InputDialog:new{
+            title = _("No results found"),
+            input = word, -- Pre-fills the dialog with the selected word
+            input_type = "text",
+            description = _("Would you like to use fuzzy search?"),
+            buttons = {
+                {
+                    {
+                        text = _("Cancel"),
+                        id = "close",
+                        callback = function()
+                            UIManager:close(dialog)
+                            lookupCancelled()
+                        end,
+                    },
+                    {
+                        text = _("Fuzzy search"),
+                        is_enter_default = true,
+                        callback = function()
+                            local new_word = dialog:getInputText()
+                            if new_word == "" then return end
+                            UIManager:close(dialog)
+                            -- Re-run the lookup with the (possibly edited) word and fuzzy enabled.
+                            self:stardictLookup(new_word, dict_names, true, boxes, link, dict_close_callback)
+                        end,
+                    },
+                },
+            },
+        }
+        UIManager:show(dialog)
+        dialog:onShowKeyboard()
         return
     end
 
