@@ -1025,7 +1025,7 @@ function FileManagerCollection:showCollFolderList(item)
     self.coll_folder_list.close_callback = function()
         UIManager:close(self.coll_folder_list)
         self.coll_folder_list = nil
-        if self.updated_collections[coll_name] then
+        if self.coll_list and self.updated_collections[coll_name] then
             -- folder has been connected, new books added to collection
             self.coll_list.item_table[item.idx].mandatory = self.getCollListItemMandatory(item.name)
             self:updateCollListItemTable()
@@ -1375,13 +1375,10 @@ function FileManagerCollection:onShowCollectionsSearchDialog(search_str, coll_na
     check_button_content = CheckButton:new{
         text = _("Also search in book content (slow)"),
         checked = self.include_content,
+        enabled = not self.ui.document, -- avoid 2 instances of crengine
         parent = search_dialog,
     }
-    if self.ui.document then
-        self.include_content = nil
-    else
-        search_dialog:addWidget(check_button_content)
-    end
+    search_dialog:addWidget(check_button_content)
     UIManager:show(search_dialog)
     search_dialog:onShowKeyboard()
     return true
