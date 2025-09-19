@@ -183,6 +183,7 @@ local CalendarWeek = InputContainer:extend{
     span_height = nil,
     font_size = 0,
     font_face = "xx_smallinfofont",
+    color = false,
 }
 
 function CalendarWeek:init()
@@ -258,6 +259,17 @@ local SPAN_COLORS = {
     { Blitbuffer.COLOR_WHITE, Blitbuffer.COLOR_GRAY_3 },
 }
 
+local SPAN_COLORS_RGB = {
+    { Blitbuffer.COLOR_BLACK, Blitbuffer.colorFromName("red") },
+    { Blitbuffer.COLOR_BLACK, Blitbuffer.colorFromName("orange") },
+    { Blitbuffer.COLOR_BLACK, Blitbuffer.colorFromName("yellow") },
+    { Blitbuffer.COLOR_BLACK, Blitbuffer.colorFromName("green") },
+    { Blitbuffer.COLOR_BLACK, Blitbuffer.colorFromName("olive") },
+    { Blitbuffer.COLOR_BLACK, Blitbuffer.colorFromName("cyan") },
+    { Blitbuffer.COLOR_BLACK, Blitbuffer.colorFromName("blue") },
+    { Blitbuffer.COLOR_BLACK, Blitbuffer.colorFromName("purple") },
+}
+
 function CalendarWeek:update()
     self.dimen = Geom:new{w = self.width, h = self.height}
     self.day_container = HorizontalGroup:new{
@@ -316,7 +328,13 @@ function CalendarWeek:update()
     for col, day_books in ipairs(self.days_books) do
         for row, book in ipairs(day_books) do
             if book and book.start_day == col then
-                local fgcolor, bgcolor = unpack(SPAN_COLORS[(book.id % #SPAN_COLORS)+1])
+                local fgcolor, bgcolor
+                if self.color then
+                    fgcolor, bgcolor = unpack(SPAN_COLORS_RGB[(book.id % #SPAN_COLORS_RGB)+1])
+                else
+                    fgcolor, bgcolor = unpack(SPAN_COLORS[(book.id % #SPAN_COLORS)+1])
+                end
+
                 local offset_x = (col-1) * (self.day_width + self.day_padding)
                 local offset_y = row * self.span_height -- 1st real row used by day num
                 offset_y = offset_y + offset_y_fixup
@@ -373,6 +391,7 @@ local BookDailyItem = InputContainer:extend{
     width = nil,
     height = nil,
     padding = Size.padding.default,
+    color = false,
 }
 
 function BookDailyItem:init()
@@ -397,7 +416,12 @@ function BookDailyItem:init()
     }
 
     local title_max_width = self.dimen.w - 2 * Size.padding.default - checked_widget:getSize().w  - self.value_width
-    local fgcolor, bgcolor = unpack(SPAN_COLORS[(self.item.book_id % #SPAN_COLORS)+1])
+    local fgcolor, bgcolor
+    if self.color then
+        fgcolor, bgcolor = unpack(SPAN_COLORS_RGB[(self.item.book_id % #SPAN_COLORS_RGB)+1])
+    else
+        fgcolor, bgcolor = unpack(SPAN_COLORS[(self.item.book_id % #SPAN_COLORS)+1])
+    end
     self.check_container = CenterContainer:new{
         dimen = Geom:new{ w = checked_widget:getSize().w },
         self.checkmark_widget,
@@ -501,7 +525,8 @@ local CalendarDayView = FocusManager:extend{
     day_ts = nil,
     show_page = 1,
     kv_pairs = {},
-    NB_VERTICAL_SEPARATORS_PER_HOUR = 6 -- one vertical line every 10 minutes
+    NB_VERTICAL_SEPARATORS_PER_HOUR = 6, -- one vertical line every 10 minutes
+    color = false
 }
 
 function CalendarDayView:init()
@@ -844,6 +869,7 @@ function CalendarDayView:_populateBooks()
             value_width = value_width,
             height = self.book_item_height,
             show_parent = self,
+            color = self.reader_statistics.color,
         }
         table.insert(self.layout, { item })
         table.insert(self.book_items, item)
@@ -961,7 +987,12 @@ function CalendarDayView:refreshTimeline()
     -- Finally, the read books spans
     for _, v in ipairs(self.kv_pairs) do
         if v.checked and v.periods then
-            local fgcolor, bgcolor = unpack(SPAN_COLORS[(v.book_id % #SPAN_COLORS)+1])
+            local fgcolor, bgcolor
+            if self.color then
+                fgcolor, bgcolor = unpack(SPAN_COLORS_RGB[(v.book_id % #SPAN_COLORS_RGB)+1])
+            else
+                fgcolor, bgcolor = unpack(SPAN_COLORS[(v.book_id % #SPAN_COLORS)+1])
+            end
             for _, period in ipairs(v.periods) do
                 local start_hour = math.floor(period.start / 3600)
                 local finish_hour = math.floor(period.finish / 3600)
@@ -1373,6 +1404,7 @@ function CalendarView:_populateItems()
                 font_face = self.font_face,
                 font_size = self.span_font_size,
                 show_parent = self,
+                color = self.reader_statistics.color,
             }
             layout_row = {}
             table.insert(self.layout, layout_row)
@@ -1433,7 +1465,8 @@ function CalendarView:_populateItems()
                             self:goToMonth(os.date("%Y-%m", this.day_ts + 10800))
                         end)
                     end,
-                    min_month = self.min_month
+                    min_month = self.min_month,
+                    color = self.reader_statistics.color,
                 })
             end
         }
@@ -1460,7 +1493,8 @@ function CalendarView:showCalendarDayView(reader_statistics)
     UIManager:show(CalendarDayView:new{
         day_ts = os.time({ year = date.year, month = date.month, day = date.day, hour = reader_statistics.settings.calendar_day_start_hour or 0, min = reader_statistics.settings.calendar_day_start_minute or 0 }),
         reader_statistics = reader_statistics,
-        min_month = self.min_month
+        min_month = self.min_month,
+        color = reader_statistics.color,
     })
 end
 
