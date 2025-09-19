@@ -74,13 +74,13 @@ function UIManager:init()
         end,
     }
     self.poweroff_action = function()
-        self._entered_poweroff_stage = true
-        logger.info("Powering off the device...")
-        self:broadcastEvent(Event:new("PowerOff"))
-        self:broadcastEvent(Event:new("Close"))
         local Screensaver = require("ui/screensaver")
         Screensaver:setup("poweroff", _("Powered off"))
         Screensaver:show()
+        self._entered_poweroff_stage = true
+        logger.info("Powering off the device...")
+        self:broadcastEvent(Event:new("PowerOff"))
+        self:broadcastEvent(Event:new("Close", { keep_screensaver = true }))
         self:nextTick(function()
             Device:saveSettings()
             Device:powerOff()
@@ -92,13 +92,13 @@ function UIManager:init()
         end)
     end
     self.reboot_action = function()
-        self._entered_poweroff_stage = true
-        logger.info("Rebooting the device...")
-        self:broadcastEvent(Event:new("Reboot"))
-        self:broadcastEvent(Event:new("Close"))
         local Screensaver = require("ui/screensaver")
         Screensaver:setup("reboot", _("Rebooting…"))
         Screensaver:show()
+        self._entered_poweroff_stage = true
+        logger.info("Rebooting the device...")
+        self:broadcastEvent(Event:new("Reboot"))
+        self:broadcastEvent(Event:new("Close", { keep_screensaver = true }))
         self:nextTick(function()
             Device:saveSettings()
             Device:reboot()
