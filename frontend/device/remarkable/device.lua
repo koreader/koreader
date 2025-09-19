@@ -458,16 +458,16 @@ elseif is_rmpp then
     if not is_qtfb_shimmed then
         error("reMarkable Paper Pro requires a RM2FB server and client to work (https://github.com/asivery/rm-appload)")
     end
-    if os.getenv("QTFB_SHIM_MODE") ~= "RGB565" then
-        error("You must set QTFB_SHIM_MODE to RGB565")
+    if os.getenv("QTFB_SHIM_MODE") ~= "N_RGB565" then
+        error("You must set QTFB_SHIM_MODE to N_RGB565")
     end
     return RemarkablePaperPro
 elseif is_rmppm then
     if not is_qtfb_shimmed then
         error("reMarkable Paper Pro Move requires a RM2FB server and client to work (https://github.com/asivery/rm-appload)")
     end
-    if os.getenv("QTFB_SHIM_MODE") ~= "RGB565" then
-        error("You must set QTFB_SHIM_MODE to RGB565")
+    if os.getenv("QTFB_SHIM_MODE") ~= "N_RGB565" then
+        error("You must set QTFB_SHIM_MODE to N_RGB565")
     end
     return RemarkablePaperProMove
 else
