@@ -1221,19 +1221,57 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
 
     self._lookup_start_time = UIManager:getTime()
     local results = self:startSdcv(word, dict_names, fuzzy_search)
+    local function lookupCancelled()
+        if self.highlight then
+            self.highlight:clear()
+        end
+        if dict_close_callback then
+            dict_close_callback()
+        end
+    end
     if results and results.lookup_cancelled
         and (time.now() - self._lookup_start_time) <= self.quick_dismiss_before_delay then
         -- If interrupted quickly just after launch, don't display anything
         -- (this might help avoiding refreshes and the need to dismiss
         -- after accidental long-press when holding a device).
-        if self.highlight then
-            self.highlight:clear()
-        end
-
-        if dict_close_callback then
-            dict_close_callback()
-        end
-
+        lookupCancelled()
+        return
+    end
+    -- Intercept "No results" to offer fuzzy search to non-fussy people.
+    if not fuzzy_search and results and results[1].no_result then
+        self:dismissLookupInfo() -- Close the "Searching..." message
+        local dialog -- Forward declaration needed for the button callbacks
+        dialog = InputDialog:new{
+            title = _("No results found"),
+            input = word, -- Pre-fills the dialog with the selected word
+            input_type = "text",
+            description = _("Would you like to use fuzzy search?"),
+            buttons = {
+                {
+                    {
+                        text = _("Cancel"),
+                        id = "close",
+                        callback = function()
+                            UIManager:close(dialog)
+                            lookupCancelled()
+                        end,
+                    },
+                    {
+                        text = _("Fuzzy search"),
+                        is_enter_default = true,
+                        callback = function()
+                            local new_word = dialog:getInputText()
+                            if new_word == "" then return end
+                            UIManager:close(dialog)
+                            -- Re-run the lookup with the (possibly edited) word and fuzzy enabled.
+                            self:stardictLookup(new_word, dict_names, true, boxes, link, dict_close_callback)
+                        end,
+                    },
+                },
+            },
+        }
+        UIManager:show(dialog)
+        dialog:onShowKeyboard()
         return
     end
 
