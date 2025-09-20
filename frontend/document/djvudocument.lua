@@ -82,7 +82,7 @@ local function sortWordsByX(words)
     local prev = words[1].x0
     for i = 2, n do
         local x = words[i].x0
-        if not (prev <= x) then
+        if prev > x then
             table.sort(words, compareByX)
             return
         end
