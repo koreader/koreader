@@ -2,7 +2,7 @@
 message = {
     text,           patterns supported
     name,           displayed in message list and action list
-    enabled,        
+    enabled,
     registered,     show in action list
     show_as,        message / notification / textviewer
     timeout,        message/notification close timeout
