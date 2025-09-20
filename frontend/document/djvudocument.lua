@@ -56,8 +56,157 @@ function DjvuDocument:comparePositions(pos1, pos2)
     return self.koptinterface:comparePositions(self, pos1, pos2)
 end
 
+-- Performance is better pre-allocated than as table.sort(tbl, function() … end).
+local function compareByX(a, b) return a.x0 < b.x0 end
+local function compareByYThenX(a, b)
+    if a.y0 - b.y0 == 0 then return a.x0 < b.x0 end
+    return a.y0 < b.y0
+end
+
+--- Recursively collect valid word leaves under node.
+local function collectWords(node, words)
+    if node.word then
+        words[#words + 1] = node
+        return words
+    end
+    for i = 1, #node do
+        collectWords(node[i], words)
+    end
+    return words
+end
+
+--- X-only sort that tries to avoid sorting when already ordered.
+local function sortWordsByX(words)
+    local n = #words
+    if n < 2 then return end
+    local prev = words[1].x0
+    for i = 2, n do
+        local x = words[i].x0
+        if prev > x then
+            table.sort(words, compareByX)
+            return
+        end
+        prev = x
+    end
+end
+
+--- Collect only direct word children (no recursion).
+local function collectDirectWords(node, words)
+    for i = 1, #node do
+        local child = node[i]
+        if child.word then
+            words[#words + 1] = child
+        end
+    end
+    return words
+end
+
+local function hasDirectWordChildren(node)
+    for i = 1, #node do
+        if node[i].word then return true end
+    end
+    return false
+end
+
+local function groupWordsIntoLines(words)
+    if #words == 0 then return {} end
+    -- Sort by y (top to bottom), then x (left to right)
+    table.sort(words, compareByYThenX)
+    -- Estimate a dynamic threshold based on word heights
+    local sum_h = 0
+    for i = 1, #words do sum_h = sum_h + math.floor((words[i].y1 - words[i].y0) + 0.5) end
+    local avg_h = sum_h / #words
+    local threshold = math.max(2, math.floor(avg_h * 0.5 + 0.5))
+    local lines = {}
+    local current = { words[1] }
+    local current_y = (words[1].y0 + words[1].y1) / 2
+    for i = 2, #words do
+        local w = words[i]
+        local wy = (w.y0 + w.y1) / 2
+        if math.abs(wy - current_y) <= threshold then
+            current[#current + 1] = w
+            -- refine line y by incremental average to be robust to slight drifts
+            current_y = current_y + (wy - current_y) / #current
+        else
+            lines[#lines + 1] = current
+            current = { w }
+            current_y = wy
+        end
+    end
+    lines[#lines + 1] = current
+    return lines
+end
+
+local function computeBboxFromWords(words)
+    local w0 = words[1]
+    local minx, miny, maxx, maxy = w0.x0, w0.y0, w0.x1, w0.y1
+    for i = 2, #words do
+        local w = words[i]
+        local x0, y0, x1, y1 = w.x0, w.y0, w.x1, w.y1
+        if x0 < minx then minx = x0 end
+        if y0 < miny then miny = y0 end
+        if x1 > maxx then maxx = x1 end
+        if y1 > maxy then maxy = y1 end
+    end
+    return minx, miny, maxx, maxy
+end
+
+local function setLineBbox(line_tbl)
+    local x0, y0, x1, y1 = computeBboxFromWords(line_tbl)
+    line_tbl.x0, line_tbl.y0, line_tbl.x1, line_tbl.y1 = x0, y0, x1, y1
+end
+
 function DjvuDocument:getPageTextBoxes(pageno)
-    return self._document:getPageText(pageno)
+    local page_text = self._document:getPageText(pageno)
+    -- DjVu text layers can be nested (page -> columns -> regions -> paragraphs -> lines -> words).
+    -- Flatten them into an array of lines, each an array of word boxes { x0, y0, x1, y1, word }.
+    local lines = {}
+
+    local function walk(node)
+        -- "For instance, the page level component might only specify a page level string, or might only provide a list of lines, or might provide a full hierarchy down to the individual characters."
+        if node.line then
+            local words = collectWords(node, {})
+            if #words > 0 then
+                sortWordsByX(words)
+                setLineBbox(words)
+                lines[#lines + 1] = words
+            end
+            return
+        -- If a container directly holds words but isn't a line, split them into multiple lines.
+        elseif hasDirectWordChildren(node) then
+            -- Only handle direct words here to avoid double-processing nested structures.
+            local words = collectDirectWords(node, {})
+            if #words > 0 then
+                local groups = groupWordsIntoLines(words)
+                for i = 1, #groups do
+                    setLineBbox(groups[i])
+                    lines[#lines + 1] = groups[i]
+                end
+            end
+            -- Continue walking non-word children to handle nested containers.
+            for i = 1, #node do
+                local child = node[i]
+                if type(child) == "table" and not child.word then
+                    walk(child)
+                end
+            end
+            return
+        end
+        for i = 1, #node do
+            local child = node[i]
+            if child then walk(child) end
+        end
+    end
+    walk(page_text)
+    -- Use explicit line zones if now present.
+    if #lines > 0 then
+        return lines
+    end
+    -- No explicit line nodes: group all words heuristically by y.
+    local all_words = collectWords(page_text, {})
+    local grouped = groupWordsIntoLines(all_words)
+    for i = 1, #grouped do setLineBbox(grouped[i]) end
+    return grouped
 end
 
 function DjvuDocument:getTextBoxes(pageno)
