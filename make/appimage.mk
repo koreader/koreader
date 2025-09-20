@@ -1,11 +1,12 @@
+APPIMAGE_ARCH = $(firstword $(subst -, ,$(TARGET_MACHINE)))
 APPIMAGE_DIR = $(PLATFORM_DIR)/appimage
 
-APPIMAGETOOL = appimagetool-x86_64.AppImage
+APPIMAGETOOL = appimagetool-$(APPIMAGE_ARCH).AppImage
 APPIMAGETOOL_URL = https://github.com/AppImage/appimagetool/releases/download/continuous/$(APPIMAGETOOL)
 
-KOREADER_APPIMAGE = koreader-$(DIST)-$(MACHINE)-$(VERSION).AppImage
+KOREADER_APPIMAGE = koreader-$(DIST)-$(APPIMAGE_ARCH)-$(VERSION).AppImage
 
-UBUNTU_LIBBSD = /lib/x86_64-linux-gnu/libbsd.so.0
+UBUNTU_LIBBSD = /lib/$(TARGET_MACHINE)/libbsd.so.0
 
 define UPDATE_PATH_EXCLUDES +=
 plugins/SSH.koplugin
@@ -31,6 +32,6 @@ ifeq (,$(wildcard $(APPIMAGETOOL)))
 	chmod a+x ./$(APPIMAGETOOL)
 endif
 	# Generate AppImage.
-	ARCH=x86_64 ./$(APPIMAGETOOL) --appimage-extract-and-run $(INSTALL_DIR)/appimage $(KOREADER_APPIMAGE)
+	ARCH='$(APPIMAGE_ARCH)' ./$(APPIMAGETOOL) --appimage-extract-and-run $(INSTALL_DIR)/appimage $(KOREADER_APPIMAGE)
 
 PHONY += update
