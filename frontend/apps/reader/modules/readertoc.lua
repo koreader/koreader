@@ -345,7 +345,41 @@ function ReaderToc:completeTocWithChapterLengths()
     for j=#prev_item_by_level, 0, -1 do
         local prev_item = prev_item_by_level[j]
         if prev_item then
-            prev_item.chapter_length = page - prev_item.page
+            prev_item.chapter_length = page - prev_item.page + 1
+        end
+    end
+end
+
+function ReaderToc:completeTocWithChapterLengthsFromPagemap()
+    local toc = self.toc
+    local first = 1
+    local last = #toc
+    if last == 0 then
+        return
+    end
+    local prev_item_by_level = {}
+    for i = first, last do
+        local item = toc[i]
+        local page, chapter_starts_new_ref_page = self:getPagePagemapIndex(item.page)
+        local extra_page = chapter_starts_new_ref_page and 0 or 1
+        local depth = item.depth
+        for j=#prev_item_by_level, depth, -1 do
+            local prev_item = prev_item_by_level[j]
+            if prev_item then
+                local prev_page = self:getPagePagemapIndex(prev_item.page)
+                prev_item.chapter_length = page and prev_page and (page - prev_page + extra_page) or "\u{2013}"
+            end
+            prev_item_by_level[j] = nil
+        end
+        prev_item_by_level[depth] = item
+    end
+    -- Set the length of the last ones
+    local page = self.ui.pagemap:getPageLabelProps() -- last label index
+    for j=#prev_item_by_level, 0, -1 do
+        local prev_item = prev_item_by_level[j]
+        if prev_item then
+            local prev_page = self:getPagePagemapIndex(prev_item.page)
+            prev_item.chapter_length = page and prev_page and (page - prev_page + 1) or "\u{2013}"
         end
     end
 end
@@ -625,7 +659,48 @@ function ReaderToc:isChapterEnd(cur_pageno)
     return _end
 end
 
+function ReaderToc:getPagePagemapIndex(pageno)
+    -- for chapters, pageno is a rendered page number where the chapter title is displayed
+    if pageno then
+        local xp = self.ui.document:getPageXPointer(pageno)
+        if xp then
+            -- reference page (label) of the top of the displayed page
+            -- (the label itself may be displayed in one of the previous pages)
+            local label = self.ui.pagemap:getXPointerPageLabel(xp, true)
+            -- label_pn - rendered page number where the label is displayed
+            local index, label_pn = self.ui.pagemap:getPageLabelProps(label)
+            if index then
+                return index, label_pn == pageno -- true if chapter starts at new ref page
+            end
+        end
+    end
+end
+
+function ReaderToc:getPreviousChapterPagemapIndex(pageno)
+    local chapter_pn = self:isChapterStart(pageno) and pageno or self:getPreviousChapter(pageno)
+    return self:getPagePagemapIndex(chapter_pn) or 1
+end
+
+function ReaderToc:getNextChapterPagemapIndex(pageno)
+    local chapter_pn = self:getNextChapter(pageno)
+    if chapter_pn then
+        return self:getPagePagemapIndex(chapter_pn) -- chapter_idx, chapter_starts_new_ref_page
+    else -- last chapter
+        return self.ui.pagemap:getPageLabelProps() -- last index
+    end
+end
+
 function ReaderToc:getChapterPageCount(pageno)
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        local prev_chapter_idx = self:getPreviousChapterPagemapIndex(pageno)
+        if prev_chapter_idx then
+            local next_chapter_idx, chapter_starts_new_ref_page = self:getNextChapterPagemapIndex(pageno)
+            if next_chapter_idx then
+                return next_chapter_idx - prev_chapter_idx + (chapter_starts_new_ref_page and 0 or 1)
+            end
+        end
+    end
+
     local next_chapter = self:getNextChapter(pageno) or self.ui.document:getPageCount() + 1
     local previous_chapter = self:isChapterStart(pageno) and pageno or self:getPreviousChapter(pageno) or 1
     local page_count = next_chapter - previous_chapter
@@ -642,6 +717,16 @@ function ReaderToc:getChapterPageCount(pageno)
 end
 
 function ReaderToc:getChapterPagesLeft(pageno)
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        local page_idx = self:getPagePagemapIndex(pageno)
+        if page_idx then
+            local next_chapter_idx, chapter_starts_new_ref_page = self:getNextChapterPagemapIndex(pageno)
+            if next_chapter_idx then
+                return next_chapter_idx - page_idx - (chapter_starts_new_ref_page and 1 or 0)
+            end
+        end
+    end
+
     local next_chapter = self:getNextChapter(pageno)
     if not next_chapter then
         -- (ReaderFooter deals itself with nil and pageno in last chapter)
@@ -660,6 +745,17 @@ end
 
 function ReaderToc:getChapterPagesDone(pageno)
     if self:isChapterStart(pageno) then return 0 end
+
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        local page_idx = self:getPagePagemapIndex(pageno)
+        if page_idx then
+            local prev_chapter_idx = self:getPreviousChapterPagemapIndex(pageno)
+            if prev_chapter_idx then
+                return page_idx - prev_chapter_idx
+            end
+        end
+    end
+
     local previous_chapter = self:getPreviousChapter(pageno)
     if not previous_chapter then
         -- (ReaderFooter deals itself with nil and pageno not yet in first chapter)
@@ -727,7 +823,11 @@ function ReaderToc:onShowToc()
     if #self.toc > 0 and not self.toc_menu_items_built then
         self.toc_menu_items_built = true
         if items_show_chapter_length then
-            self:completeTocWithChapterLengths()
+            if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+                self:completeTocWithChapterLengthsFromPagemap()
+            else
+                self:completeTocWithChapterLengths()
+            end
         end
         -- Have the width of 4 spaces be the unit of indentation
         local tmp = TextWidget:new{
