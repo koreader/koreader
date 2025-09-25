@@ -24,6 +24,7 @@ local ReaderPageMap = WidgetContainer:extend{
     label_color = Blitbuffer.COLOR_BLACK,
     show_page_labels = nil,
     use_page_labels = nil,
+    page_labels_cache = nil, -- hash table
 }
 
 function ReaderPageMap:init()
@@ -302,17 +303,28 @@ function ReaderPageMap:getXPointerPageLabel(xp, clean_label)
     return clean_label and self:cleanPageLabel(label) or label
 end
 
-function ReaderPageMap:getRenderedPageNumber(page_label, cleaned)
-    -- Only used from ReaderGoTo. As page_label is a string, no
-    -- way to use a binary search: do a full scan of the PageMap
-    -- here in Lua, even if it's not cheap.
-    local page_list = self.ui.document:getPageMap()
-    for k, v in ipairs(page_list) do
-        local label = cleaned and self:cleanPageLabel(v.label) or v.label
-        if label == page_label then
-            return v.page
+function ReaderPageMap:getPageLabelProps(page_label)
+    if self.page_labels_cache == nil then -- fill the cache
+        local page_list = self.ui.document:getPageMap()
+        self.page_labels_cache = { #page_list }
+        for i, v in ipairs(page_list) do
+            local label = self:cleanPageLabel(v.label)
+            self.page_labels_cache[label] = { i, v.page }
         end
     end
+    -- expects cleaned page_label
+    if page_label then
+        local props = self.page_labels_cache[page_label]
+        if props then
+            return props[1], props[2] -- index, rendered page
+        end
+    else
+        return self.page_labels_cache[1] -- total number of labels
+    end
+end
+
+function ReaderPageMap:onDocumentRerendered()
+    self.page_labels_cache = nil
 end
 
 function ReaderPageMap:addToMainMenu(menu_items)
@@ -345,6 +357,9 @@ function ReaderPageMap:addToMainMenu(menu_items)
                 text = _("Use reference page numbers"),
                 checked_func = function() return self.use_page_labels end,
                 callback = function()
+                    if self.use_page_labels then
+                        self.page_labels_cache = nil
+                    end
                     self.use_page_labels = not self.use_page_labels
                     self.ui.doc_settings:saveSetting("pagemap_use_page_labels", self.use_page_labels)
                     -- Reset a few stuff that may use page labels
