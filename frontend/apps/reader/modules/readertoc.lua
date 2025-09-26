@@ -341,11 +341,11 @@ function ReaderToc:completeTocWithChapterLengths()
         prev_item_by_level[depth] = item
     end
     -- Set the length of the last ones
-    local page = self.ui.document:getPageCount()
+    local page = self.ui.document:getPageCount() + 1
     for j=#prev_item_by_level, 0, -1 do
         local prev_item = prev_item_by_level[j]
         if prev_item then
-            prev_item.chapter_length = page - prev_item.page + 1
+            prev_item.chapter_length = page - prev_item.page
         end
     end
 end
