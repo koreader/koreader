@@ -92,19 +92,14 @@ update: all
 	rm -rf $(ANDROID_LIBS)
 	# Remove old in-tree build artifacts that could conflict.
 	rm -rf $(ANDROID_LAUNCHER_DIR)/assets/{libs,module}
-	# APK version
+	# APK version.
 	mkdir -p $(ANDROID_ASSETS)/module $(ANDROID_LIBS)
 	echo $(VERSION) >$(ANDROID_ASSETS)/module/version.txt
-	# We need to strip version numbers, as gradle will ignore
-	# versioned libraries and not include them in the APK.
-	for src in $(INSTALL_DIR)/koreader/libs/*; do \
-	  dst="$${src##*/}"; \
-	  dst="$${dst%%.[0-9]*}"; \
-	  llvm-strip --strip-unneeded "$$src" -o $(ANDROID_LIBS)/"$$dst"; \
-	done
-	# binaries are stored as shared libraries to prevent W^X exception on Android 10+
+	# Libraries.
+	cp -v $(INSTALL_DIR)/koreader/libs/*$(LIB_EXT) $(ANDROID_LIBS)/
+	# Binaries are stored as shared libraries to prevent W^X exception on Android 10+
 	# https://developer.android.com/about/versions/10/behavior-changes-10#execute-permission
-	llvm-strip --strip-unneeded $(INSTALL_DIR)/koreader/sdcv -o $(ANDROID_LIBS)/libsdcv.so
+	cp -v $(INSTALL_DIR)/koreader/sdcv $(ANDROID_LIBS)/libsdcv$(LIB_EXT)
 	# Assets are compressed manually and stored inside the APK.
 	cd $(INSTALL_DIR)/koreader && \
 	  ./tools/mkrelease.sh \
