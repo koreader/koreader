@@ -52,7 +52,7 @@ ANDROID_LIBS = $(ANDROID_LAUNCHER_BUILD)/libs/$(ANDROID_ABI)
 ANDROID_FLAVOR ?= Rocks
 
 ifneq (,$(CI))
-  GRADLE_FLAGS ?= --console=plain --no-daemon -x lintVitalArmRocksRelease
+  GRADLE_FLAGS ?= --console=plain --no-daemon -x lintVital$(ANDROID_ARCH)RocksRelease
 endif
 GRADLE_FLAGS += $(PARALLEL_JOBS:%=--max-workers=%)
 
