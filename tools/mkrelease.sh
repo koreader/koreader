@@ -237,7 +237,12 @@ if [[ -r "${output}" ]]; then
                 "${sevenzip[@]}" -ba -slt l "${output}" |
                     awk "${AWK_HELPERS}"'
                         /^[^=]+ = / { e[$1] = $3; }
-                        /^$/ && e["Size"] != "" { print_entry(e["Path"], e["Size"], e["CRC"]) }
+                        /^$/ && e["Size"] != "" {
+                            # Handle empty files (no CRC).
+                            if (e["CRC"] == "" && e["Attributes"] !~ /^D/ && e["Size"] == 0)
+                                e["CRC"] = "00000000";
+                            print_entry(e["Path"], e["Size"], e["CRC"])
+                        }
                         ' | sort
             )"
             ;;
