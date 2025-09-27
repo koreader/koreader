@@ -172,7 +172,7 @@ function SSH:stop()
         end
     end
     if ok then
-        UIManager:Show(InfoMessage:new{
+        UIManager:show(InfoMessage:new{
             text = _("SSH server stopped."),
             timeout = 2,
         })
