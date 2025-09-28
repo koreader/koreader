@@ -928,17 +928,17 @@ if last_migration_date < 20250929 then
             local new_position_key = prefix .. "screensaver_message_vertical_position"
 
             if old_position == "top" then
-                -- Top -> Banner at 0% from top
+                -- Top -> Banner at 110% from bottom
                 G_reader_settings:saveSetting(new_container_key, "banner")
-                G_reader_settings:saveSetting(new_position_key, 0)
+                G_reader_settings:saveSetting(new_position_key, 100)
             elseif old_position == "middle" then
                 -- Middle -> Box at 50% (center)
                 G_reader_settings:saveSetting(new_container_key, "box")
                 G_reader_settings:saveSetting(new_position_key, 50)
             elseif old_position == "bottom" then
-                -- Bottom -> Banner at 100% from top
+                -- Bottom -> Banner at 0% from bottom
                 G_reader_settings:saveSetting(new_container_key, "banner")
-                G_reader_settings:saveSetting(new_position_key, 100)
+                G_reader_settings:saveSetting(new_position_key, 0)
             end
             G_reader_settings:delSetting(old_position_key)
         end
