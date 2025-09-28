@@ -213,11 +213,11 @@ return {
                         text_func = function()
                             local percent = G_reader_settings:readSetting("screensaver_message_vertical_position") .. "%"
                             local value
-                            if percent == "0%" then
+                            if percent == "100%" then
                                 value = _("top")
                             elseif percent == "50%" then
                                 value = _("middle")
-                            elseif percent == "100%" then
+                            elseif percent == "0%" then
                                 value = _("bottom")
                             else
                                 value = percent
