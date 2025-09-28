@@ -205,14 +205,31 @@ return {
                 end,
             },
             {
-                text = _("Message position"),
-                enabled_func = function()
-                    return G_reader_settings:isTrue("screensaver_show_message")
-                end,
+                text = _("Message's container and position"),
                 sub_item_table = {
-                    genMenuItem(_("Top"), "screensaver_message_position", "top"),
-                    genMenuItem(_("Middle"), "screensaver_message_position", "middle"),
-                    genMenuItem(_("Bottom"), "screensaver_message_position", "bottom"),
+                    genMenuItem(_("Banner"), "screensaver_message_container", "banner"),
+                    genMenuItem(_("Box"), "screensaver_message_container", "box", nil, true),
+                    {
+                        text_func = function()
+                            local percent = G_reader_settings:readSetting("screensaver_message_vertical_position") .. "%"
+                            local value
+                            if percent == "0%" then
+                                value = _("top")
+                            elseif percent == "50%" then
+                                value = _("middle")
+                            elseif percent == "100%" then
+                                value = _("bottom")
+                            else
+                                value = percent
+                            end
+                            return T(_("Custom vertical position: %1"), value)
+                        end,
+                        help_text = _("Set a custom vertical position for the sleep screen message"),
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            Screensaver:setCustomPosition(touchmenu_instance)
+                        end,
+                    },
                 },
             },
             {

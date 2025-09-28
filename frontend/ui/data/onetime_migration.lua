@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20250914
+local CURRENT_MIGRATION_DATE = 20250929
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -909,6 +909,40 @@ if last_migration_date < 20250914 then
     G_reader_settings:saveSetting("readtimer", settings)
     G_reader_settings:delSetting("readtimer_show_value_in_header")
     G_reader_settings:delSetting("readtimer_show_value_in_footer")
+end
+
+-- 20250929, Screensaver message position refactor: top/middle/bottom -> banner/box with custom positioning
+-- https://github.com/koreader/koreader/pull/143XX
+if last_migration_date < 20250929 then
+    logger.info("Performing one-time migration for 20250929")
+
+    -- List of prefixes to check (empty string for normal settings, plus event prefixes)
+    local prefixes = {"", "poweroff_", "reboot_"}
+
+    for _, prefix in ipairs(prefixes) do
+        local old_position_key = prefix .. "screensaver_message_position"
+        local old_position = G_reader_settings:readSetting(old_position_key)
+
+        if old_position then
+            local new_container_key = prefix .. "screensaver_message_container"
+            local new_position_key = prefix .. "screensaver_message_vertical_position"
+
+            if old_position == "top" then
+                -- Top -> Banner at 0% from top
+                G_reader_settings:saveSetting(new_container_key, "banner")
+                G_reader_settings:saveSetting(new_position_key, 0)
+            elseif old_position == "middle" then
+                -- Middle -> Box at 50% (center)
+                G_reader_settings:saveSetting(new_container_key, "box")
+                G_reader_settings:saveSetting(new_position_key, 50)
+            elseif old_position == "bottom" then
+                -- Bottom -> Banner at 100% from top
+                G_reader_settings:saveSetting(new_container_key, "banner")
+                G_reader_settings:saveSetting(new_position_key, 100)
+            end
+            G_reader_settings:delSetting(old_position_key)
+        end
+    end
 end
 
 -- We're done, store the current migration date
