@@ -928,7 +928,7 @@ if last_migration_date < 20250929 then
             local new_position_key = prefix .. "screensaver_message_vertical_position"
 
             if old_position == "top" then
-                -- Top -> Banner at 110% from bottom
+                -- Top -> Banner at 100% from bottom
                 G_reader_settings:saveSetting(new_container_key, "banner")
                 G_reader_settings:saveSetting(new_position_key, 100)
             elseif old_position == "middle" then
