@@ -206,6 +206,9 @@ return {
             },
             {
                 text = _("Container and position"),
+                enabled_func = function()
+                    return G_reader_settings:isTrue("screensaver_show_message")
+                end,
                 sub_item_table = {
                     genMenuItem(_("Banner"), "screensaver_message_container", "banner"),
                     genMenuItem(_("Box"), "screensaver_message_container", "box", nil, true),
