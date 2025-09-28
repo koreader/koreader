@@ -273,9 +273,9 @@ end
 function Screensaver:setCustomPosition(touchmenu_instance)
     UIManager:show(SpinWidget:new{
         title_text = _("Message vertical position"),
-        info_text = _("Set the vertical position of the message as a percentage from the top of the screen.").. "\n\n0% = "..
+        info_text = _("Set the vertical position of the message as a percentage from the bottom of the screen.").. "\n\n100% = "..
                     _("top").. "\n50% = " ..
-                    _("middle") .. "\n100% = " ..
+                    _("middle") .. "\n0% = " ..
                     _("bottom"),
         value = G_reader_settings:readSetting("screensaver_message_vertical_position", 50),
         value_min = 0,
@@ -582,11 +582,12 @@ function Screensaver:show()
                 alignment = "center",
             }
         end
-        -- Create a custom container that places the Message at the requested vertical coordinate
+        -- Create a custom container that places the Message at the requested vertical coordinate.
         message_widget = CustomPositionContainer:new{
             dimen = Geom:new{w = screen_w, h = screen_h},
             widget = content_widget,
-            vertical_position = vertical_percentage / 100,
+            -- although the computer expects 0 to be the top, users expect 0 to be the bottom
+            vertical_position = 1 - (vertical_percentage / 100),
         }
         -- Forward the height of the top message to the overlay widget
         if vertical_percentage < 20 then

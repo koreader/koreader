@@ -205,7 +205,7 @@ return {
                 end,
             },
             {
-                text = _("Message's container and position"),
+                text = _("Container and position"),
                 sub_item_table = {
                     genMenuItem(_("Banner"), "screensaver_message_container", "banner"),
                     genMenuItem(_("Box"), "screensaver_message_container", "box", nil, true),
