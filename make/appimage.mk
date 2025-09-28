@@ -1,4 +1,3 @@
-APPIMAGE_ARCH = $(firstword $(subst -, ,$(TARGET_MACHINE)))
 APPIMAGE_DIR = $(PLATFORM_DIR)/appimage
 
 APPIMAGETOOL = appimagetool-$(APPIMAGE_ARCH).AppImage
