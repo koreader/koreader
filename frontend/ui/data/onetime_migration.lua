@@ -912,7 +912,7 @@ if last_migration_date < 20250914 then
 end
 
 -- 20250929, Screensaver message position refactor: top/middle/bottom -> banner/box with custom positioning
--- https://github.com/koreader/koreader/pull/143XX
+-- https://github.com/koreader/koreader/pull/14371
 if last_migration_date < 20250929 then
     logger.info("Performing one-time migration for 20250929")
 

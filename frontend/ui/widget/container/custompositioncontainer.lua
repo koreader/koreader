@@ -3,7 +3,6 @@ CustomPositionContainer contains its content (1 widget) at a custom position wit
 dimensions
 --]]
 
-local Geom = require("ui/geometry")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
 local CustomPositionContainer = WidgetContainer:extend{
