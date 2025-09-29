@@ -13,6 +13,19 @@ local time = require("ui/time")
 local _ = require("gettext")
 local T = ffiutil.template
 
+local function remove_substr(str, o)
+    local iter = 1
+    local i, j
+    repeat
+        i, j = string.find(str, o, iter, true)
+        if i then
+            str = string.sub(str, 1, i-1) .. string.sub(str, j+1, -1)
+            iter = i
+        end
+    until not i
+    return str
+end
+
 local EpubDownloadBackend = {
    -- Can be set so HTTP requests will be done under Trapper and
    -- be interruptible
@@ -81,6 +94,33 @@ local function filter(text, element)
         return text
     end
     return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
+end
+
+-- remove HTML using CSS selector
+local function block(text, element)
+    local htmlparser = require("htmlparser")
+    local root = htmlparser.parse(text, 5000)
+    local selectors = {
+        "div.article__social",
+        }
+    if type(element) == "string" and element ~= "" then
+        table.insert(selectors, 1, element)  -- Insert string at the beginning
+    elseif type(element) == "table" then
+        for _, el in ipairs(element) do
+            if type(el) == "string" and el ~= "" then
+                table.insert(selectors, 1, el)  -- Insert each non-empty element at the beginning
+            end
+        end
+    end
+    for _, sel in ipairs(selectors) do
+       local elements = root:select(sel)
+       if elements then
+           for _, e in ipairs(elements) do
+               text = remove_substr(text, e:gettext())
+           end
+       end
+    end
+    return text
 end
 
 -- From https://github.com/lunarmodules/luasocket/blob/1fad1626900a128be724cba9e9c19a6b2fe2bf6b/samples/cookie.lua
@@ -321,7 +361,7 @@ local ext_to_mimetype = {
     woff = "application/font-woff",
 }
 -- Create an epub file (with possibly images)
-function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element)
+function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element, block_element)
     logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ")")
     -- Use Trapper to display progress and ask questions through the UI.
     -- We need to have been Trapper.wrap()'ed for UI to be used, otherwise
@@ -343,7 +383,10 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
     -- should it changes if content is updated (as now, including the wikipedia revisionId),
     -- or should it stays the same even if revid changes (content of the same book updated).
-    if filter_enable then html = filter(html, filter_element) end
+    if filter_enable then
+        html = filter(html, filter_element)
+        html = block(html, block_element)
+    end
     local images = {}
     local seen_images = {}
     local imagenum = 1
