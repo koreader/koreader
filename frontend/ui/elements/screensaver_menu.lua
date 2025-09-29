@@ -227,7 +227,7 @@ return {
                             end
                             return T(_("Vertical position: %1"), value)
                         end,
-                        help_text = _("Set exactly where the sleep screen message appears by setting a vertical position value."),
+                        help_text = _("Set a custom vertical position for the sleep screen message."),
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
                             Screensaver:setCustomPosition(touchmenu_instance)
