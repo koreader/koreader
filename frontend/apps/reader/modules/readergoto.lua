@@ -103,6 +103,15 @@ end
 
 function ReaderGoto:gotoPage()
     local page_number = self.goto_dialog:getInputText()
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        local label = self.ui.pagemap:cleanPageLabel(page_number)
+        local _, pn = self.ui.pagemap:getPageLabelProps(label)
+        if pn then
+            self:close()
+            self.ui:handleEvent(Event:new("GotoPage", pn))
+        end
+        return
+    end
     local relative_sign = page_number:sub(1, 1)
     local number = tonumber(page_number)
     if number then
@@ -110,16 +119,7 @@ function ReaderGoto:gotoPage()
         if relative_sign == "+" or relative_sign == "-" then
             self.ui:handleEvent(Event:new("GotoRelativePage", number))
         else
-            if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
-                number = self.ui.pagemap:getRenderedPageNumber(page_number, true)
-                if number then -- found
-                    self.ui:handleEvent(Event:new("GotoPage", number))
-                else
-                    return -- avoid self:close()
-                end
-            else
-                self.ui:handleEvent(Event:new("GotoPage", number))
-            end
+            self.ui:handleEvent(Event:new("GotoPage", number))
         end
         self:close()
     elseif self.ui.document:hasHiddenFlows() then
