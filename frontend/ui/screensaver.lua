@@ -272,9 +272,9 @@ end
 
 function Screensaver:setCustomPosition(touchmenu_instance)
     UIManager:show(SpinWidget:new{
-        title_text = _("Message vertical position"),
-        info_text = _("Set the vertical position of the message as a percentage from the bottom of the screen.").. "\n\n100% = "..
-                    _("top").. "\n50% = " ..
+        title_text = _("Adjust message position"),
+        info_text = _("Set the message's position as a percentage from the bottom of the screen.").. "\n\n100% = "..
+                    _("top") .. "\n50% = " ..
                     _("middle") .. "\n0% = " ..
                     _("bottom"),
         value = G_reader_settings:readSetting("screensaver_message_vertical_position", 50),
@@ -282,16 +282,12 @@ function Screensaver:setCustomPosition(touchmenu_instance)
         value_max = 100,
         value_step = 5,
         value_hold_step = 1,
+        default_value = 50,
         precision = "%.1f",
         unit = "%",
         ok_text = _("Set position"),
         callback = function(spin)
             G_reader_settings:saveSetting("screensaver_message_vertical_position", spin.value)
-            if touchmenu_instance then touchmenu_instance:updateItems() end
-        end,
-        extra_text = _("Reset to default (50%)"),
-        extra_callback = function()
-            G_reader_settings:saveSetting("screensaver_message_vertical_position", 50)
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
     })

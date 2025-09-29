@@ -214,20 +214,20 @@ return {
                     genMenuItem(_("Box"), "screensaver_message_container", "box", nil, true),
                     {
                         text_func = function()
-                            local percent = G_reader_settings:readSetting("screensaver_message_vertical_position") .. "%"
+                            local percent = G_reader_settings:readSetting("screensaver_message_vertical_position")
                             local value
-                            if percent == "100%" then
+                            if percent == 100 then
                                 value = _("top")
-                            elseif percent == "50%" then
+                            elseif percent == 50 then
                                 value = _("middle")
-                            elseif percent == "0%" then
+                            elseif percent == 0 then
                                 value = _("bottom")
                             else
-                                value = percent
+                                value = percent .. "\xE2\x80\xAF%" -- narrow no-break space
                             end
-                            return T(_("Custom vertical position: %1"), value)
+                            return T(_("Vertical position: %1"), value)
                         end,
-                        help_text = _("Set a custom vertical position for the sleep screen message"),
+                        help_text = _("Set exactly where the sleep screen message appears by setting a vertical position value."),
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
                             Screensaver:setCustomPosition(touchmenu_instance)
