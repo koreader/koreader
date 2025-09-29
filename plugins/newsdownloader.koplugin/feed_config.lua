@@ -27,7 +27,7 @@ return {--do NOT change this line
 
  -- 'filter_element="name_of_css.element.class" - means to filter the chosen CSS selector, it can be easily picked using a modern web browser
  -- The default value is empty. The default list of common selectors is used as fallback if this value is set.
- 
+
  -- 'block_element="name_of_css.element.class" - means to remove the chosen CSS element, it can be easily picked using a modern web browser
  -- The default value is empty. The default list of common annoyances is used as fallback if this value is set.
 
