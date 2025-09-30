@@ -58,7 +58,7 @@ local function selectSorted(root, elements)
 end
 
 -- filter HTML using CSS selector
-local function parseHTML(text, filter_element, block_element)
+local function selectAndCleanHTML(text, filter_element, block_element)
     local htmlparser = require("htmlparser")
     local root = htmlparser.parse(text, 5000)
     local filtered = nil
@@ -398,7 +398,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
     -- should it changes if content is updated (as now, including the wikipedia revisionId),
     -- or should it stays the same even if revid changes (content of the same book updated).
-    if filter_enable then html = parseHTML(html, filter_element, block_element) end
+    if filter_enable then html = selectAndCleanHTML(html, filter_element, block_element) end
     local images = {}
     local seen_images = {}
     local imagenum = 1
