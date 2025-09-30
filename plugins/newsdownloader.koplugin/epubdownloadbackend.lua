@@ -42,11 +42,27 @@ local FeedCache = CacheSQLite:new{
     size = 1024 * 1024 * 10, -- 10MB
 }
 
+-- get HTML elements sorted by level
+local function selectSorted(root, elements)
+    local elements_sorted = {}
+    for _, sel in ipairs(elements) do
+        local elements = root:select(sel)
+        if elements then
+           for _, e in ipairs(elements) do
+               table.insert(elements_sorted, e)
+           end
+        end
+    end
+    table.sort(elements_sorted, function(a, b) return a.level < b.level end)
+    return elements_sorted
+end
+
 -- filter HTML using CSS selector
-local function filter(text, element)
+local function parseHTML(text, filter_element, block_element)
     local htmlparser = require("htmlparser")
     local root = htmlparser.parse(text, 5000)
     local filtered = nil
+    local filtered_e = nil
     local selectors = {
         "main",
         "article",
@@ -67,60 +83,59 @@ local function filter(text, element)
         "div#newsstorytext",
         "div.general",
         }
-    if type(element) == "string" and element ~= "" then
-        table.insert(selectors, 1, element)  -- Insert string at the beginning
-    elseif type(element) == "table" then
-        for _, el in ipairs(element) do
-            if type(el) == "string" and el ~= "" then
-                table.insert(selectors, 1, el)  -- Insert each non-empty element at the beginning
-            end
-        end
-    end
-    for _, sel in ipairs(selectors) do
-       local elements = root:select(sel)
-       if elements then
-           for _, e in ipairs(elements) do
-               filtered = e:getcontent()
-               if filtered then
-                   break
-               end
-           end
-           if filtered then
-               break
-           end
-       end
-    end
-    if not filtered then
-        return text
-    end
-    return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
-end
-
--- remove HTML using CSS selector
-local function block(text, element)
-    local htmlparser = require("htmlparser")
-    local root = htmlparser.parse(text, 5000)
-    local selectors = {
+    local annoyances = {
         "div.article__social",
-        }
-    if type(element) == "string" and element ~= "" then
-        table.insert(selectors, 1, element)  -- Insert string at the beginning
-    elseif type(element) == "table" then
-        for _, el in ipairs(element) do
+        "figure.is-type-video",
+    }
+    if type(filter_element) == "string" and filter_element ~= "" then
+        table.insert(selectors, 1, filter_element)  -- Insert string at the beginning
+    elseif type(filter_element) == "table" then
+        for _, el in ipairs(filter_element) do
             if type(el) == "string" and el ~= "" then
                 table.insert(selectors, 1, el)  -- Insert each non-empty element at the beginning
             end
         end
     end
     for _, sel in ipairs(selectors) do
-       local elements = root:select(sel)
-       if elements then
-           for _, e in ipairs(elements) do
-               text = removeSubstring(text, e:gettext())
-           end
-       end
+        local elements = root:select(sel)
+        if elements then
+            for _, e in ipairs(elements) do
+                if e:getcontent() then
+                   filtered_e = e
+                   break
+                end
+            end
+            if filtered then
+                break
+            end
+        end
     end
-    return text
+    if not filtered_e then
+        filtered_e = root
+        filtered = text
+    else
+        filtered = "<!DOCTYPE html><html><head></head><body>" .. filtered_e:getcontent() .. "</body></html>"
+    end
+    -- blocking
+    if type(block_element) == "string" and block_element ~= "" then
+        annoyances = { block_element }
+    elseif type(block_element) == "table" then
+        local custom_annoyances = {}
+        for _, el in ipairs(block_element) do
+            if type(el) == "string" and el ~= "" then
+                table.insert(custom_annoyances, 1, el)
+            end
+        end
+        if next(custom_annoyances) then  -- there is at least one valid component
+            annoyances = custom_annoyances
+        end
+    end
+    -- removing deeper elements may modify text inside others, making paterns to not match
+    annoyances = selectSorted(filtered_e, annoyances) 
+    for _, e in ipairs(annoyances) do
+        filtered = removeSubstring(filtered, e:gettext())
+    end
+    return filtered
 end
 
 -- From https://github.com/lunarmodules/luasocket/blob/1fad1626900a128be724cba9e9c19a6b2fe2bf6b/samples/cookie.lua
@@ -383,10 +398,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
     -- should it changes if content is updated (as now, including the wikipedia revisionId),
     -- or should it stays the same even if revid changes (content of the same book updated).
-    if filter_enable then
-        html = filter(html, filter_element)
-        html = block(html, block_element)
-    end
+    if filter_enable then html = parseHTML(html, filter_element, block_element) end
     local images = {}
     local seen_images = {}
     local imagenum = 1
