@@ -46,6 +46,9 @@ end
 if G_reader_settings:hasNot("screensaver_message_vertical_position") then
     G_reader_settings:saveSetting("screensaver_message_vertical_position", 50)
 end
+if G_reader_settings:hasNot("screensaver_message_alpha") then
+    G_reader_settings:saveSetting("screensaver_message_alpha", 100)
+end
 if G_reader_settings:hasNot("screensaver_stretch_images") then
     G_reader_settings:makeFalse("screensaver_stretch_images")
 end
@@ -288,6 +291,25 @@ function Screensaver:setCustomPosition(touchmenu_instance)
         ok_text = _("Set position"),
         callback = function(spin)
             G_reader_settings:saveSetting("screensaver_message_vertical_position", spin.value)
+            if touchmenu_instance then touchmenu_instance:updateItems() end
+        end,
+    })
+end
+
+function Screensaver:setMessageOpacity(touchmenu_instance)
+    UIManager:show(SpinWidget:new{
+        title_text = _("Container opacity"),
+        info_text = _("Set the opacity level of the sleep screen message."),
+        value = G_reader_settings:readSetting("screensaver_message_alpha", 100),
+        value_min = 0,
+        value_max = 100,
+        value_step = 5,
+        value_hold_step = 1,
+        default_value = 100,
+        unit = "%",
+        ok_text = _("Set opacity"),
+        callback = function(spin)
+            G_reader_settings:saveSetting("screensaver_message_alpha", spin.value)
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
     })
@@ -543,17 +565,12 @@ function Screensaver:show()
         screensaver_message = self.ui.bookinfo:expandString(screensaver_message)
             or self.event_message or self.default_screensaver_message
 
-        local message_container, vertical_percentage
-        if G_reader_settings:has(self.prefix .. "screensaver_message_container") then
-            message_container = G_reader_settings:readSetting(self.prefix .. "screensaver_message_container")
-        else
-            message_container = G_reader_settings:readSetting("screensaver_message_container")
-        end
-        if G_reader_settings:has(self.prefix .. "screensaver_message_vertical_position") then
-            vertical_percentage = G_reader_settings:readSetting(self.prefix .. "screensaver_message_vertical_position")
-        else
-            vertical_percentage = G_reader_settings:readSetting("screensaver_message_vertical_position", 50)
-        end
+        local message_container = G_reader_settings:readSetting(self.prefix .. "screensaver_message_container")
+            or G_reader_settings:readSetting("screensaver_message_container")
+        local vertical_percentage = G_reader_settings:readSetting(self.prefix .. "screensaver_message_vertical_position")
+            or G_reader_settings:readSetting("screensaver_message_vertical_position", 50)
+        local alpha_value = G_reader_settings:readSetting(self.prefix .. "screensaver_message_alpha")
+            or G_reader_settings:readSetting("screensaver_message_alpha", 100)
 
         -- The only case where we *won't* cover the full-screen is when we only display a message and no background.
         if widget == nil and self.screensaver_background == "none" then
@@ -580,10 +597,10 @@ function Screensaver:show()
         end
         -- Create a custom container that places the Message at the requested vertical coordinate.
         message_widget = CustomPositionContainer:new{
-            dimen = Geom:new{w = screen_w, h = screen_h},
             widget = content_widget,
             -- although the computer expects 0 to be the top, users expect 0 to be the bottom
             vertical_position = 1 - (vertical_percentage / 100),
+            alpha = alpha_value / 100,
         }
         -- Forward the height of the top message to the overlay widget
         if vertical_percentage < 20 then

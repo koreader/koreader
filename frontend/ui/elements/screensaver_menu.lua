@@ -233,6 +233,17 @@ return {
                             Screensaver:setCustomPosition(touchmenu_instance)
                         end,
                     },
+                    {
+                        text_func = function()
+                            local alpha = G_reader_settings:readSetting("screensaver_message_alpha", 100)
+                            return T(_("Message opacity: %1"), alpha) .. "\xE2\x80\xAF%"
+                        end,
+                        help_text = _("Set the opacity level of the sleep screen message."),
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            Screensaver:setMessageOpacity(touchmenu_instance)
+                        end,
+                    },
                 },
             },
             {
