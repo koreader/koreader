@@ -13,11 +13,11 @@ local time = require("ui/time")
 local _ = require("gettext")
 local T = ffiutil.template
 
-local function remove_substr(str, o)
+local function removeSubstring(str, substr)
     local iter = 1
     local i, j
     repeat
-        i, j = string.find(str, o, iter, true)
+        i, j = string.find(str, substr, iter, true)
         if i then
             str = string.sub(str, 1, i-1) .. string.sub(str, j+1, -1)
             iter = i
@@ -116,7 +116,7 @@ local function block(text, element)
        local elements = root:select(sel)
        if elements then
            for _, e in ipairs(elements) do
-               text = remove_substr(text, e:gettext())
+               text = removeSubstring(text, e:gettext())
            end
        end
     end
