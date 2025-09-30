@@ -11,6 +11,8 @@ local CustomPositionContainer = WidgetContainer:extend{
     vertical_position = 0.5,  -- 0.0 = topmost, 1.0 = bottommost
     horizontal_position = 0.5,  -- 0.0 = leftmost, 1.0 = rightmost
     widget = nil,
+    alpha = nil,  -- 1 = fully opaque, 0 = fully transparent
+    compose_bb = nil,  -- cache for alpha composition
 }
 
 function CustomPositionContainer:paintTo(bb, x, y)
