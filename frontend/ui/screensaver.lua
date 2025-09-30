@@ -5,7 +5,6 @@ local CustomPositionContainer = require("ui/widget/container/custompositionconta
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local Font = require("ui/font")
-local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local ImageWidget = require("ui/widget/imagewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
