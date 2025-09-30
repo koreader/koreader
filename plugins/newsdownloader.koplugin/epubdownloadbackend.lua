@@ -46,9 +46,9 @@ local FeedCache = CacheSQLite:new{
 local function selectSorted(root, elements)
     local elements_sorted = {}
     for _, sel in ipairs(elements) do
-        local elements = root:select(sel)
-        if elements then
-           for _, e in ipairs(elements) do
+        local selected = root:select(sel)
+        if selected then
+           for _, e in ipairs(selected) do
                table.insert(elements_sorted, e)
            end
         end
@@ -131,7 +131,7 @@ local function parseHTML(text, filter_element, block_element)
         end
     end
     -- removing deeper elements may modify text inside others, making paterns to not match
-    annoyances = selectSorted(filtered_e, annoyances) 
+    annoyances = selectSorted(filtered_e, annoyances)
     for _, e in ipairs(annoyances) do
         filtered = removeSubstring(filtered, e:gettext())
     end
