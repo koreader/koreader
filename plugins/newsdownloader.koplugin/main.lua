@@ -61,6 +61,7 @@ local function getEmptyFeed()
         include_images = true,
         enable_filter = false,
         filter_element = "",
+        block_element = "",
         http_auth = { username = nil, password = nil },
     }
 end
@@ -301,6 +302,7 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
         local include_images = not never_download_images and feed.include_images
         local enable_filter = feed.enable_filter or feed.enable_filter == nil
         local filter_element = feed.filter_element or feed.filter_element == nil
+        local block_element = feed.block_element or feed.block_element == nil
         local credentials = feed.credentials
         local http_auth = feed.http_auth
         -- Check if the two required attributes are set.
@@ -318,7 +320,8 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
                 include_images,
                 feed_message,
                 enable_filter,
-                filter_element)
+                filter_element,
+                block_element)
         else
             logger.warn("NewsDownloader: invalid feed config entry.", feed)
         end
@@ -390,7 +393,7 @@ function NewsDownloader:loadConfigAndProcessFeedsWithUI(touchmenu_instance)
     end)
 end
 
-function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, unsupported_feeds_urls, download_full_article, include_images, message, enable_filter, filter_element)
+function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, unsupported_feeds_urls, download_full_article, include_images, message, enable_filter, filter_element, block_element)
     -- Check if we have a cached response first
     local cache = DownloadBackend:getCache()
     local cached_response = cache:check(url)
@@ -552,7 +555,8 @@ function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, un
                     include_images,
                     message,
                     enable_filter,
-                    filter_element
+                    filter_element,
+                    block_element
                 )
         end)
     elseif is_rss then
@@ -567,7 +571,8 @@ function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, un
                     include_images,
                     message,
                     enable_filter,
-                    filter_element
+                    filter_element,
+                    block_element
                 )
         end)
     end
@@ -612,7 +617,7 @@ function NewsDownloader:deserializeXMLString(xml_str)
     return xmlhandler.root
 end
 
-function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit, download_full_article, include_images, message, enable_filter, filter_element)
+function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit, download_full_article, include_images, message, enable_filter, filter_element, block_element)
     local feed_title
     local feed_item
     local total_items
@@ -685,7 +690,8 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit,
                 include_images,
                 article_message,
                 enable_filter,
-                filter_element
+                filter_element,
+                block_element
             )
         else
             self:createFromDescription(
@@ -724,7 +730,7 @@ local function getTitleWithDate(feed)
     return title
 end
 
-function NewsDownloader:downloadFeed(feed, cookies, http_auth, feed_output_dir, include_images, message, enable_filter, filter_element)
+function NewsDownloader:downloadFeed(feed, cookies, http_auth, feed_output_dir, include_images, message, enable_filter, filter_element, block_element)
     local title_with_date = getTitleWithDate(feed)
     local news_file_path = ("%s%s%s"):format(feed_output_dir,
                                              title_with_date,
@@ -742,7 +748,7 @@ function NewsDownloader:downloadFeed(feed, cookies, http_auth, feed_output_dir, 
             extra_headers = { ["Authorization"] = "Basic " .. mime.b64((http_auth.username or "") .. ":" .. (http_auth.password or "")) }
         end
         local html = DownloadBackend:loadPage(link, cookies, extra_headers)
-        DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message, enable_filter, filter_element)
+        DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message, enable_filter, filter_element, block_element)
     end
 end
 
@@ -929,6 +935,7 @@ function NewsDownloader:editFeedAttribute(id, key, value)
     if key == FeedView.URL
         or key == FeedView.LIMIT
         or key == FeedView.FILTER_ELEMENT
+        or key == FeedView.BLOCK_ELEMENT
         or key == FeedView.HTTP_AUTH_USERNAME
         or key == FeedView.HTTP_AUTH_PASSWORD then
 
@@ -946,6 +953,10 @@ function NewsDownloader:editFeedAttribute(id, key, value)
         elseif key == FeedView.FILTER_ELEMENT then
             title = _("Edit filter element.")
             description = _("Filter based on the given CSS selector. E.g.: name_of_css.element.class")
+            input_type = "string"
+        elseif key == FeedView.BLOCK_ELEMENT then
+            title = _("Edit block element.")
+            description = _("Block element based on the given CSS selector. E.g.: name_of_css.element.class")
             input_type = "string"
         elseif key == FeedView.HTTP_AUTH_USERNAME then
             title = _("HTTP auth username")
@@ -1135,6 +1146,18 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                         feed,
                         {
                             "filter_element",
+                            value
+                        }
+                    )
+                end
+            elseif key == FeedView.BLOCK_ELEMENT then
+                if feed.block_element then
+                    feed.block_element = value
+                else
+                    table.insert(
+                        feed,
+                        {
+                            "block_element",
                             value
                         }
                     )

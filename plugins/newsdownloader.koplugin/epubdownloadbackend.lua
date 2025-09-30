@@ -13,6 +13,19 @@ local time = require("ui/time")
 local _ = require("gettext")
 local T = ffiutil.template
 
+local function removeSubstring(str, substr)
+    local iter = 1
+    local i, j
+    repeat
+        i, j = string.find(str, substr, iter, true)
+        if i then
+            str = string.sub(str, 1, i-1) .. string.sub(str, j+1, -1)
+            iter = i
+        end
+    until not i
+    return str
+end
+
 local EpubDownloadBackend = {
    -- Can be set so HTTP requests will be done under Trapper and
    -- be interruptible
@@ -29,11 +42,27 @@ local FeedCache = CacheSQLite:new{
     size = 1024 * 1024 * 10, -- 10MB
 }
 
+-- Get HTML elements sorted by level.
+local function selectSorted(root, elements)
+    local elements_sorted = {}
+    for _, sel in ipairs(elements) do
+        local selected = root:select(sel)
+        if selected then
+           for _, e in ipairs(selected) do
+               table.insert(elements_sorted, e)
+           end
+        end
+    end
+    table.sort(elements_sorted, function(a, b) return a.level < b.level end)
+    return elements_sorted
+end
+
 -- filter HTML using CSS selector
-local function filter(text, element)
+local function selectAndCleanHTML(text, filter_element, block_element)
     local htmlparser = require("htmlparser")
     local root = htmlparser.parse(text, 5000)
     local filtered = nil
+    local filtered_e = nil
     local selectors = {
         "main",
         "article",
@@ -54,33 +83,59 @@ local function filter(text, element)
         "div#newsstorytext",
         "div.general",
         }
-    if type(element) == "string" and element ~= "" then
-        table.insert(selectors, 1, element)  -- Insert string at the beginning
-    elseif type(element) == "table" then
-        for _, el in ipairs(element) do
+    local annoyances = {
+        "div.article__social",
+        "figure.is-type-video",
+    }
+    if type(filter_element) == "string" and filter_element ~= "" then
+        table.insert(selectors, 1, filter_element)  -- Insert string at the beginning
+    elseif type(filter_element) == "table" then
+        for _, el in ipairs(filter_element) do
             if type(el) == "string" and el ~= "" then
                 table.insert(selectors, 1, el)  -- Insert each non-empty element at the beginning
             end
         end
     end
     for _, sel in ipairs(selectors) do
-       local elements = root:select(sel)
-       if elements then
-           for _, e in ipairs(elements) do
-               filtered = e:getcontent()
-               if filtered then
+        local elements = root:select(sel)
+        if elements then
+            for _, e in ipairs(elements) do
+                if e:getcontent() then
+                   filtered_e = e
                    break
-               end
-           end
-           if filtered then
-               break
-           end
-       end
+                end
+            end
+            if filtered then
+                break
+            end
+        end
     end
-    if not filtered then
-        return text
+    if not filtered_e then
+        filtered_e = root
+        filtered = text
+    else
+        filtered = "<!DOCTYPE html><html><head></head><body>" .. filtered_e:getcontent() .. "</body></html>"
     end
-    return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
+    -- blocking
+    if type(block_element) == "string" and block_element ~= "" then
+        annoyances = { block_element }
+    elseif type(block_element) == "table" then
+        local custom_annoyances = {}
+        for _, el in ipairs(block_element) do
+            if type(el) == "string" and el ~= "" then
+                table.insert(custom_annoyances, 1, el)
+            end
+        end
+        if next(custom_annoyances) then  -- there is at least one valid component
+            annoyances = custom_annoyances
+        end
+    end
+    -- Removing deeper elements may modify text inside others, making patterns not match.
+    annoyances = selectSorted(filtered_e, annoyances)
+    for _, e in ipairs(annoyances) do
+        filtered = removeSubstring(filtered, e:gettext())
+    end
+    return filtered
 end
 
 -- From https://github.com/lunarmodules/luasocket/blob/1fad1626900a128be724cba9e9c19a6b2fe2bf6b/samples/cookie.lua
@@ -321,7 +376,7 @@ local ext_to_mimetype = {
     woff = "application/font-woff",
 }
 -- Create an epub file (with possibly images)
-function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element)
+function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element, block_element)
     logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ")")
     -- Use Trapper to display progress and ask questions through the UI.
     -- We need to have been Trapper.wrap()'ed for UI to be used, otherwise
@@ -343,7 +398,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
     -- should it changes if content is updated (as now, including the wikipedia revisionId),
     -- or should it stays the same even if revid changes (content of the same book updated).
-    if filter_enable then html = filter(html, filter_element) end
+    if filter_enable then html = selectAndCleanHTML(html, filter_element, block_element) end
     local images = {}
     local seen_images = {}
     local imagenum = 1

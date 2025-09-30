@@ -8,6 +8,7 @@ local FeedView = {
     INCLUDE_IMAGES = "include_images",
     ENABLE_FILTER = "enable_filter",
     FILTER_ELEMENT = "filter_element",
+    BLOCK_ELEMENT = "block_element",
     -- HTTP Basic Auth (optional)
     HTTP_AUTH_USERNAME = "http_auth_username",
     HTTP_AUTH_PASSWORD = "http_auth_password",
@@ -70,6 +71,7 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
     local include_images = feed.include_images ~= false
     local enable_filter = feed.enable_filter ~= false
     local filter_element = feed.filter_element
+    local block_element = feed.block_element
     local http_auth = feed.http_auth or { username = nil, password = nil }
     local http_auth_username = http_auth.username
     local http_auth_password_set = type(http_auth.password) == "string" and #http_auth.password > 0
@@ -139,6 +141,17 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
                     id,
                     FeedView.FILTER_ELEMENT,
                     filter_element
+                )
+            end
+        },
+        {
+            _("Block element"),
+            block_element,
+            callback = function()
+                edit_feed_callback(
+                    id,
+                    FeedView.BLOCK_ELEMENT,
+                    block_element
                 )
             end
         },
