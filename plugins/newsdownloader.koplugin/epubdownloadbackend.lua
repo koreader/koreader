@@ -130,7 +130,7 @@ local function selectAndCleanHTML(text, filter_element, block_element)
             annoyances = custom_annoyances
         end
     end
-    -- removing deeper elements may modify text inside others, making paterns to not match
+    -- Removing deeper elements may modify text inside others, making patterns to not match.
     annoyances = selectSorted(filtered_e, annoyances)
     for _, e in ipairs(annoyances) do
         filtered = removeSubstring(filtered, e:gettext())
