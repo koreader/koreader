@@ -149,6 +149,7 @@ function ReaderStatistics:initData()
     self.is_doc = true
     self.is_doc_not_finished = self.ui.doc_settings:readSetting("summary").status ~= "complete"
     self.is_doc_not_frozen = self.is_doc_not_finished or not self.settings.freeze_finished_books
+    self.use_pagemap_for_stats = self.ui.pagemap and self.ui.pagemap:wantsPageLabels()
 
     -- first execution
     local book_properties = self.ui.doc_props
@@ -164,7 +165,11 @@ function ReaderStatistics:initData()
     end
     self.data.series = series or "N/A"
 
-    self.data.pages = self.document:getPageCount()
+    if self.use_pagemap_for_stats then
+        self.data.pages = select(3, self.ui.pagemap:getCurrentPageLabel())
+    else
+        self.data.pages = self.document:getPageCount()
+    end
     -- Update these numbers to what's actually stored in the settings
     self.data.highlights, self.data.notes = self.ui.annotation:getNumberOfHighlightsAndNotes()
     self.id_curr_book = self:getIdBookDB()
@@ -188,7 +193,7 @@ function ReaderStatistics:isEnabledAndNotFrozen()
 end
 
 -- Reset the (volatile) stats on page count changes (e.g., after a font size update)
-function ReaderStatistics:onDocumentRerendered()
+function ReaderStatistics:onDocumentRerendered(use_pagemap_for_stats_updated)
     -- Note: this is called *after* onPageUpdate(new current page in new page count), which
     -- has updated the duration for (previous current page in old page count) and created
     -- a tuple for (new current page) with a 0-duration.
@@ -214,7 +219,15 @@ function ReaderStatistics:onDocumentRerendered()
     --   - we only then update self.data.pages=254 as the new page count
     -- - 5 minutes later, on the next insertDB(), (153, now-5mn, 42, 254) will be inserted in DB
 
-    local new_pagecount = self.document:getPageCount()
+    local new_pagecount
+    if self.use_pagemap_for_stats then
+        -- Total number of reference pages doesn't change on document rerendering.
+        -- Update pagecount when switching ref pages on (called by ReaderStatistics:onUsePageLabelsUpdated()).
+        if not use_pagemap_for_stats_updated then return end
+        new_pagecount = select(3, self.ui.pagemap:getCurrentPageLabel())
+    else
+        new_pagecount = self.document:getPageCount()
+    end
 
     if new_pagecount ~= self.data.pages then
         logger.dbg("ReaderStatistics: Pagecount change, flushing volatile book statistics")
@@ -236,6 +249,18 @@ function ReaderStatistics:onDocumentPartiallyRerendered(first_partial_rerender)
         end
         return
     end
+end
+
+function ReaderStatistics:onUsePageLabelsUpdated()
+    self.use_pagemap_for_stats = not self.use_pagemap_for_stats
+    local new_current_page
+    if self.use_pagemap_for_stats then
+        new_current_page = select(2, self.ui.pagemap.getCurrentPageLabel())
+    else
+        new_current_page = self.ui:getCurrentPage()
+    end
+    self:onPageUpdate(new_current_page)
+    self:onDocumentRerendered(true) -- force update pagecount
 end
 
 function ReaderStatistics:onPreserveCurrentSession()
@@ -1031,7 +1056,11 @@ function ReaderStatistics:onToggleStatistics(arg)
         if self.settings.is_enabled then
             self:initData()
             self.start_current_period = os.time()
-            self.curr_page = self.ui:getCurrentPage()
+            if self.use_pagemap_for_stats then
+                self.curr_page = select(2, self.ui.pagemap:getCurrentPageLabel())
+            else
+                self.curr_page = self.ui:getCurrentPage()
+            end
             self:resetVolatileStats(self.start_current_period)
         end
         self.view.footer:maybeUpdateFooter()
@@ -1590,26 +1619,29 @@ function ReaderStatistics:getCurrentStat()
     local __, book_read_time = self:getPageTimeTotalStats(id_book)
     local now_ts = os.time()
 
-    if total_time_book == nil then
-        total_time_book = 0
+    total_time_book = tonumber(total_time_book) or 0
+    total_read_pages = tonumber(total_read_pages) or 0
+    first_open = first_open or now_ts
+    if self.use_pagemap_for_stats then
+        self.data.pages = select(3, self.ui.pagemap:getCurrentPageLabel())
+    else
+        self.data.pages = self.document:getPageCount()
     end
-    if total_read_pages == nil then
-        total_read_pages = 0
-    end
-    if first_open == nil then
-        first_open = now_ts
-    end
-    self.data.pages = self.document:getPageCount()
-    total_time_book = tonumber(total_time_book)
-    total_read_pages = tonumber(total_read_pages)
 
     local current_page
     local total_pages
     local page_progress_string
     local percent_read
-    if self.document:hasHiddenFlows() and self.view.state.page then
-        local flow = self.document:getPageFlow(self.view.state.page)
-        current_page = self.document:getPageNumberInFlow(self.view.state.page)
+    if self.use_pagemap_for_stats then
+        local current_page_label
+        current_page_label, current_page, total_pages = self.ui.pagemap:getCurrentPageLabel()
+        local last_page_label = self.ui.pagemap:getLastPageLabel()
+        percent_read = Math.round(100*current_page/total_pages)
+        page_progress_string = ("%s / %s (%d%%)"):format(current_page_label, last_page_label, percent_read)
+    elseif self.document:hasHiddenFlows() then
+        current_page = self.ui:getCurrentPage()
+        local flow = self.document:getPageFlow(current_page)
+        current_page = self.document:getPageNumberInFlow(current_page)
         total_pages = self.document:getTotalPagesInFlow(flow)
         percent_read = Math.round(100*current_page/total_pages)
         if flow == 0 then
@@ -2601,14 +2633,22 @@ end
 
 
 function ReaderStatistics:onPosUpdate(pos, pageno)
+    local pn = pageno
+    if self.use_pagemap_for_stats then
+        pageno = select(2, self.ui.pagemap:getCurrentPageLabel())
+    end
     if self.curr_page ~= pageno then
-        self:onPageUpdate(pageno)
+        self:onPageUpdate(pn)
     end
 end
 
 function ReaderStatistics:onPageUpdate(pageno)
     if not self:isEnabledAndNotFrozen() then
         return
+    end
+
+    if self.use_pagemap_for_stats and pageno ~= false then
+        pageno = select(2, self.ui.pagemap:getCurrentPageLabel())
     end
 
     if self._reading_paused_ts then
