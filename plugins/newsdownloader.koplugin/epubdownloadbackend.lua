@@ -42,7 +42,7 @@ local FeedCache = CacheSQLite:new{
     size = 1024 * 1024 * 10, -- 10MB
 }
 
--- get HTML elements sorted by level
+-- Get HTML elements sorted by level.
 local function selectSorted(root, elements)
     local elements_sorted = {}
     for _, sel in ipairs(elements) do
