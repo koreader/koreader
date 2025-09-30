@@ -30,7 +30,7 @@ function CustomPositionContainer:paintTo(bb, x, y)
     local x_pos = x + math.max(0, math.min(desired_x, container_w - content_size.w))
     local y_pos = y + math.max(0, math.min(desired_y, container_h - content_size.h))
 
-    -- Handle transparency (similar to MovableContainer but simpler)
+    -- Handle transparency similar to MovableContainer
     if self.alpha and self.alpha < 1.0 then
         -- Create/recreate compose canvas if needed
         if not self.compose_bb
