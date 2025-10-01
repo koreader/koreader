@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/EmmyLuaLs/emmylua-analyzer-rust/refs/heads/main/crates/emmylua_code_analysis/resources/schema.json",
+  "workspace": {
+    "ignoreGlobs": [
+      "base/build/**/**",
+      "base/third_party/**/**"
+    ]
+  },
+  "diagnostics": {
+    "globals": [
+      "G_reader_settings"
+    ]
+  },
+  "runtime": {
+    "version": "LuaJIT"
+  }
+}

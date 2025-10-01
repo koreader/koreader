@@ -706,7 +706,7 @@ function InputText:onKeyPress(key)
             handled = false
         end
     end
-    if not handled and Device:hasDPad() then
+    if not handled then
         -- FocusManager may turn on alternative key maps.
         -- These key map maybe single text keys.
         -- It will cause unexpected focus move instead of enter text to InputText

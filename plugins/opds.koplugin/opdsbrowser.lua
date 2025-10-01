@@ -647,16 +647,29 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                         and link.rel ~= "subsection" then
                         -- Check for the presence of the pdf suffix and add it
                         -- if it's missing.
-                        local href = link.href
+                        local original_href = link.href
+                        local parsed = url.parse(original_href)
+                        if not parsed then parsed = { path = original_href } end
+                        local path = parsed.path or ""
                         -- Calibre web OPDS download links end with "/<filetype>/"
-                        if not util.stringEndsWith(href, "/pdf/") then
-                            if util.getFileNameSuffix(href) ~= "pdf" then
-                                href = href .. ".pdf"
+                        if not util.stringEndsWith(path, "/pdf/") then
+                            local appended = false
+                            if util.getFileNameSuffix(path) ~= "pdf" then
+                                if path == "" then
+                                    path = ".pdf"
+                                else
+                                    path = path .. ".pdf"
+                                end
+                                appended = true
                             end
-                            table.insert(item.acquisitions, {
-                                type = link.title,
-                                href = build_href(href),
-                            })
+                            if appended then
+                                parsed.path = path
+                                local new_href = url.build(parsed)
+                                table.insert(item.acquisitions, {
+                                    type = link.title,
+                                    href = build_href(new_href),
+                                })
+                            end
                         end
                     end
                 end
@@ -765,8 +778,9 @@ function OPDSBrowser:searchCatalog(item_url)
                     callback = function()
                         UIManager:close(dialog)
                         self.catalog_title = _("Search results")
-                        local search_str = dialog:getInputText():gsub(" ", "+")
-                        self:updateCatalog(item_url:gsub("%%s", search_str))
+                        local search_str = util.urlEncode(dialog:getInputText())
+                        -- Use function replacement to avoid % being treated as capture refs
+                        self:updateCatalog(item_url:gsub("%%s", function() return search_str end))
                     end,
                 },
             },
