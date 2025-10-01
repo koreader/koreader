@@ -70,8 +70,8 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
     local download_full_article = feed.download_full_article or false
     local include_images = feed.include_images ~= false
     local enable_filter = feed.enable_filter ~= false
-    local filter_element = feed.filter_element
-    local block_element = feed.block_element
+    local filter_element = feed.filter_element or ""
+    local block_element = feed.block_element or ""
     local http_auth = feed.http_auth or { username = nil, password = nil }
     local http_auth_username = http_auth.username
     local http_auth_password_set = type(http_auth.password) == "string" and #http_auth.password > 0

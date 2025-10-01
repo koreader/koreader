@@ -294,15 +294,16 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
     local unsupported_feeds_urls = {}
     local total_feed_entries = #feed_config
     local feed_message
+    local default_feed = getEmptyFeed()
 
     for idx, feed in ipairs(feed_config) do
         local url = feed[1]
         local limit = feed.limit
         local download_full_article = feed.download_full_article or false
         local include_images = not never_download_images and feed.include_images
-        local enable_filter = feed.enable_filter or feed.enable_filter == nil
-        local filter_element = feed.filter_element or feed.filter_element == nil
-        local block_element = feed.block_element or feed.block_element == nil
+        local enable_filter = feed.enable_filter or default_feed.enable_filter
+        local filter_element = feed.filter_element or default_feed.filter_element
+        local block_element = feed.block_element or default_feed.block_element
         local credentials = feed.credentials
         local http_auth = feed.http_auth
         -- Check if the two required attributes are set.
@@ -1091,77 +1092,17 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                     )
                 end
             elseif key == FeedView.LIMIT then
-                if feed.limit then
-                    feed.limit = value
-                else
-                    table.insert(
-                        feed,
-                        {
-                            "limit",
-                            value
-                        }
-                    )
-                end
+                feed.limit = value
             elseif key == FeedView.DOWNLOAD_FULL_ARTICLE then
-                if feed.download_full_article ~= nil then
-                    feed.download_full_article = value
-                else
-                    table.insert(
-                        feed,
-                        {
-                            "download_full_article",
-                            value
-                        }
-                    )
-                end
+                feed.download_full_article = value
             elseif key == FeedView.INCLUDE_IMAGES then
-                if feed.include_images ~= nil then
-                    feed.include_images = value
-                else
-                    table.insert(
-                        feed,
-                        {
-                            "include_images",
-                            value
-                        }
-                    )
-                end
+                feed.include_images = value
             elseif key == FeedView.ENABLE_FILTER then
-                if feed.enable_filter ~= nil then
-                    feed.enable_filter = value
-                else
-                    table.insert(
-                        feed,
-                        {
-                            "enable_filter",
-                            value
-                        }
-                    )
-                end
+                feed.enable_filter = value
             elseif key == FeedView.FILTER_ELEMENT then
-                if feed.filter_element then
-                    feed.filter_element = value
-                else
-                    table.insert(
-                        feed,
-                        {
-                            "filter_element",
-                            value
-                        }
-                    )
-                end
+                feed.filter_element = value
             elseif key == FeedView.BLOCK_ELEMENT then
-                if feed.block_element then
-                    feed.block_element = value
-                else
-                    table.insert(
-                        feed,
-                        {
-                            "block_element",
-                            value
-                        }
-                    )
-                end
+                feed.block_element = value
             elseif key == FeedView.HTTP_AUTH_USERNAME then
                 feed.http_auth = feed.http_auth or { username = "", password = "" }
                 feed.http_auth.username = value or ""
