@@ -86,6 +86,8 @@ local function selectAndCleanHTML(text, filter_element, block_element)
     local annoyances = {
         "div.article__social",
         "figure.is-type-video",
+        "div.fluid-width-video-wrapper",
+        "div.youtube-wrap",
     }
     if type(filter_element) == "string" and filter_element ~= "" then
         table.insert(selectors, 1, filter_element)  -- Insert string at the beginning
@@ -101,11 +103,11 @@ local function selectAndCleanHTML(text, filter_element, block_element)
         if elements then
             for _, e in ipairs(elements) do
                 if e:getcontent() then
-                   filtered_e = e
-                   break
+                    filtered_e = e
+                    break
                 end
             end
-            if filtered then
+            if filtered_e then
                 break
             end
         end
@@ -130,7 +132,7 @@ local function selectAndCleanHTML(text, filter_element, block_element)
             annoyances = custom_annoyances
         end
     end
-    -- Removing deeper elements may modify text inside others, making patterns not match.
+    -- removing deeper elements may modify text inside others, making paterns to not match
     annoyances = selectSorted(filtered_e, annoyances)
     for _, e in ipairs(annoyances) do
         filtered = removeSubstring(filtered, e:gettext())
