@@ -1,11 +1,10 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local BookList = require("ui/widget/booklist")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
-local BottomContainer = require("ui/widget/container/bottomcontainer")
+local CustomPositionContainer = require("ui/widget/container/custompositioncontainer")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local Font = require("ui/font")
-local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local ImageWidget = require("ui/widget/imagewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
@@ -14,7 +13,6 @@ local ScreenSaverWidget = require("ui/widget/screensaverwidget")
 local ScreenSaverLockWidget = require("ui/widget/screensaverlockwidget")
 local SpinWidget = require("ui/widget/spinwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
-local TopContainer = require("ui/widget/container/topcontainer")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -41,8 +39,14 @@ end
 if G_reader_settings:hasNot("screensaver_msg_background") then
     G_reader_settings:saveSetting("screensaver_msg_background", "none")
 end
-if G_reader_settings:hasNot("screensaver_message_position") then
-    G_reader_settings:saveSetting("screensaver_message_position", "middle")
+if G_reader_settings:hasNot("screensaver_message_container") then
+    G_reader_settings:saveSetting("screensaver_message_container", "box")
+end
+if G_reader_settings:hasNot("screensaver_message_vertical_position") then
+    G_reader_settings:saveSetting("screensaver_message_vertical_position", 50)
+end
+if G_reader_settings:hasNot("screensaver_message_alpha") then
+    G_reader_settings:saveSetting("screensaver_message_alpha", 100)
 end
 if G_reader_settings:hasNot("screensaver_stretch_images") then
     G_reader_settings:makeFalse("screensaver_stretch_images")
@@ -263,6 +267,45 @@ function Screensaver:setStretchLimit(touchmenu_instance)
         option_callback = function()
             G_reader_settings:makeTrue("screensaver_stretch_images")
             G_reader_settings:delSetting("screensaver_stretch_limit_percentage")
+            if touchmenu_instance then touchmenu_instance:updateItems() end
+        end,
+    })
+end
+
+function Screensaver:setCustomPosition(touchmenu_instance)
+    UIManager:show(SpinWidget:new{
+        title_text = _("Adjust message position"),
+        info_text = _("Set the message's position as a percentage from the bottom of the screen.\n\n100% = top\n50% = middle\n0% = bottom"),
+        value = G_reader_settings:readSetting("screensaver_message_vertical_position", 50),
+        value_min = 0,
+        value_max = 100,
+        value_step = 5,
+        value_hold_step = 1,
+        default_value = 50,
+        precision = "%.1f",
+        unit = "%",
+        ok_text = _("Set position"),
+        callback = function(spin)
+            G_reader_settings:saveSetting("screensaver_message_vertical_position", spin.value)
+            if touchmenu_instance then touchmenu_instance:updateItems() end
+        end,
+    })
+end
+
+function Screensaver:setMessageOpacity(touchmenu_instance)
+    UIManager:show(SpinWidget:new{
+        title_text = _("Container opacity"),
+        info_text = _("Set the opacity level of the sleep screen message."),
+        value = G_reader_settings:readSetting("screensaver_message_alpha", 100),
+        value_min = 0,
+        value_max = 100,
+        value_step = 5,
+        value_hold_step = 1,
+        default_value = 100,
+        unit = "%",
+        ok_text = _("Set opacity"),
+        callback = function(spin)
+            G_reader_settings:saveSetting("screensaver_message_alpha", spin.value)
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
     })
@@ -518,52 +561,46 @@ function Screensaver:show()
         screensaver_message = self.ui.bookinfo:expandString(screensaver_message)
             or self.event_message or self.default_screensaver_message
 
-        local message_pos
-        if G_reader_settings:has(self.prefix .. "screensaver_message_position") then
-            message_pos = G_reader_settings:readSetting(self.prefix .. "screensaver_message_position")
-        else
-            message_pos = G_reader_settings:readSetting("screensaver_message_position")
-        end
+        local message_container = G_reader_settings:readSetting(self.prefix .. "screensaver_message_container")
+            or G_reader_settings:readSetting("screensaver_message_container")
+        local vertical_percentage = G_reader_settings:readSetting(self.prefix .. "screensaver_message_vertical_position")
+            or G_reader_settings:readSetting("screensaver_message_vertical_position", 50)
+        local alpha_value = G_reader_settings:readSetting(self.prefix .. "screensaver_message_alpha")
+            or G_reader_settings:readSetting("screensaver_message_alpha", 100)
 
         -- The only case where we *won't* cover the full-screen is when we only display a message and no background.
         if widget == nil and self.screensaver_background == "none" then
             covers_fullscreen = false
         end
 
-        local message_widget
-        if message_pos == "middle" then
-            message_widget = InfoMessage:new{
+        local message_widget, content_widget
+        if message_container == "box" then
+            content_widget = InfoMessage:new{
                 text = screensaver_message,
                 readonly = true,
                 dismissable = false,
                 force_one_line = true,
             }
-        else
+            content_widget = content_widget.movable
+        elseif message_container == "banner" then
             local face = Font:getFace("infofont")
-            local container
-            if message_pos == "bottom" then
-                container = BottomContainer
-            else
-                container = TopContainer
-            end
-
-            message_widget = container:new{
-                dimen = Geom:new{
-                    w = screen_w,
-                    h = screen_h,
-                },
-                TextBoxWidget:new{
-                    text = screensaver_message,
-                    face = face,
-                    width = screen_w,
-                    alignment = "center",
-                }
+            content_widget = TextBoxWidget:new{
+                text = screensaver_message,
+                face = face,
+                width = screen_w,
+                alignment = "center",
             }
-
-            -- Forward the height of the top message to the overlay widget
-            if message_pos == "top" then
-                message_height = message_widget[1]:getSize().h
-            end
+        end
+        -- Create a custom container that places the Message at the requested vertical coordinate.
+        message_widget = CustomPositionContainer:new{
+            widget = content_widget,
+            -- although the computer expects 0 to be the top, users expect 0 to be the bottom
+            vertical_position = 1 - (vertical_percentage / 100),
+            alpha = alpha_value / 100,
+        }
+        -- Forward the height of the top message to the overlay widget
+        if vertical_percentage < 20 then
+            message_height = message_widget.widget:getSize().h
         end
 
         -- Check if message_widget should be overlaid on another widget
