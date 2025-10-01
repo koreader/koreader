@@ -61,7 +61,7 @@ end
 local function selectAndCleanHTML(text, filter_element, block_element)
     local htmlparser = require("htmlparser")
     local root = htmlparser.parse(text, 5000)
-    local filtered = nil
+    local filtered
     local filtered_e = nil
     local selectors = {
         "main",
