@@ -193,7 +193,7 @@ function ReaderStatistics:isEnabledAndNotFrozen()
 end
 
 -- Reset the (volatile) stats on page count changes (e.g., after a font size update)
-function ReaderStatistics:onDocumentRerendered(use_pagemap_for_stats_updated)
+function ReaderStatistics:onDocumentRerendered()
     -- Note: this is called *after* onPageUpdate(new current page in new page count), which
     -- has updated the duration for (previous current page in old page count) and created
     -- a tuple for (new current page) with a 0-duration.
@@ -221,9 +221,6 @@ function ReaderStatistics:onDocumentRerendered(use_pagemap_for_stats_updated)
 
     local new_pagecount
     if self.use_pagemap_for_stats then
-        -- Total number of reference pages doesn't change on document rerendering.
-        -- Update pagecount when switching ref pages on (called by ReaderStatistics:onUsePageLabelsUpdated()).
-        if not use_pagemap_for_stats_updated then return end
         new_pagecount = select(3, self.ui.pagemap:getCurrentPageLabel())
     else
         new_pagecount = self.document:getPageCount()
@@ -260,7 +257,7 @@ function ReaderStatistics:onUsePageLabelsUpdated()
         new_current_page = self.ui:getCurrentPage()
     end
     self:onPageUpdate(new_current_page)
-    self:onDocumentRerendered(true) -- force update pagecount
+    self:onDocumentRerendered()
 end
 
 function ReaderStatistics:onPreserveCurrentSession()
