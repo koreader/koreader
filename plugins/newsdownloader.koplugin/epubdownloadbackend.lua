@@ -61,7 +61,7 @@ end
 local function selectAndCleanHTML(text, filter_element, block_element)
     local htmlparser = require("htmlparser")
     local root = htmlparser.parse(text, 5000)
-    local filtered = nil
+    local filtered
     local filtered_e = nil
     local selectors = {
         "main",
@@ -86,6 +86,8 @@ local function selectAndCleanHTML(text, filter_element, block_element)
     local annoyances = {
         "div.article__social",
         "figure.is-type-video",
+        "div.fluid-width-video-wrapper",
+        "div.youtube-wrap",
     }
     if type(filter_element) == "string" and filter_element ~= "" then
         table.insert(selectors, 1, filter_element)  -- Insert string at the beginning
@@ -101,11 +103,11 @@ local function selectAndCleanHTML(text, filter_element, block_element)
         if elements then
             for _, e in ipairs(elements) do
                 if e:getcontent() then
-                   filtered_e = e
-                   break
+                    filtered_e = e
+                    break
                 end
             end
-            if filtered then
+            if filtered_e then
                 break
             end
         end
