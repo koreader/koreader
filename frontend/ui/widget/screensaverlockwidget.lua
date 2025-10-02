@@ -107,7 +107,8 @@ function ScreenSaverLockWidget:showWaitForGestureMessage()
     self.is_infomessage_visible = true
 end
 
-function ScreenSaverLockWidget:onClose()
+function ScreenSaverLockWidget:onClose(arg)
+    if arg and arg.keep_screensaver then return true end -- poweroff, reboot
     UIManager:close(self)
     -- Close the actual Screensaver, if any
     local Screensaver = require("ui/screensaver")
