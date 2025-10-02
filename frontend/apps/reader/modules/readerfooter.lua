@@ -2515,8 +2515,9 @@ function ReaderFooter:maybeUpdateFooter()
 end
 
 ReaderFooter.onFrontlightStateChanged = ReaderFooter.maybeUpdateFooter
-ReaderFooter.onCharging    = ReaderFooter.maybeUpdateFooter
-ReaderFooter.onNotCharging = ReaderFooter.maybeUpdateFooter
+ReaderFooter.onCharging               = ReaderFooter.maybeUpdateFooter
+ReaderFooter.onNotCharging            = ReaderFooter.maybeUpdateFooter
+ReaderFooter.onUsePageLabelsUpdated   = ReaderFooter.maybeUpdateFooter
 
 function ReaderFooter:onNetworkConnected()
     if self.settings.wifi_status then
