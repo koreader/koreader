@@ -2108,15 +2108,18 @@ function VocabBuilder:onWordLookedUp(word, title, is_manual)
     local prev_context
     local next_context
     local highlight
-    if settings.with_context and self.ui.highlight then
+    local word_from_dict = util.cleanupSelectedText(self.ui.highlight.selected_text.text) ~= word
+    -- Only get context around the highlighted word if the looked up word matches the highlighted word
+    if settings.with_context and self.ui.highlight
+      and self.ui.highlight.selected_text
+      and self.ui.highlight.selected_text.text
+      and not word_from_dict then
         prev_context, next_context = self.ui.highlight:getSelectedWordContext(15)
-        if self.ui.highlight.selected_text and self.ui.highlight.selected_text.text then
-            highlight = util.cleanupSelectedText(self.ui.highlight.selected_text.text)
-        end
+        highlight = util.cleanupSelectedText(self.ui.highlight.selected_text.text)
     end
 
     local update = function() DB:insertOrUpdate({
-        book_title = title,
+        book_title = not word_from_dict and title or "Dictionary",
         time = os.time(),
         word = word,
         prev_context = prev_context,
