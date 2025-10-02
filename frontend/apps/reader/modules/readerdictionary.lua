@@ -945,9 +945,9 @@ function ReaderDictionary:showSearchWithPresetDialog(preset_names, input_dialog,
         preset_names = Presets.getPresets(self.preset_obj)
     end
     local current_dict_state = self:buildPreset()
-    local button_dialog, dialog_buttons = nil, {} -- CI won't like it if we call it buttons :( so dialog_buttons
+    local button_dialog, buttons = nil, {}
     for _, preset_name in ipairs(preset_names) do
-        table.insert(dialog_buttons, {
+        table.insert(buttons, {
             {
                 align = "left",
                 text = preset_name,
@@ -966,7 +966,7 @@ function ReaderDictionary:showSearchWithPresetDialog(preset_names, input_dialog,
         })
     end
     button_dialog = ButtonDialog:new{
-        buttons = dialog_buttons,
+        buttons = buttons,
         shrink_unneeded_width = true,
     }
     if input_dialog then input_dialog:onCloseKeyboard() end
