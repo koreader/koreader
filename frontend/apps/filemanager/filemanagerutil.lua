@@ -202,13 +202,20 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
                         custom_cover_file    = check_button_cover.checked and custom_cover_file,
                         custom_metadata_file = check_button_metadata.checked and custom_metadata_file,
                     }
-                    (doc_settings or DocSettings:open(file)):purge(nil, data_to_purge)
-                    if data_to_purge.custom_cover_file or data_to_purge.custom_metadata_file then
-                        UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
-                    end
+                    doc_settings = doc_settings or DocSettings:open(file)
                     if data_to_purge.doc_settings then
+                        if doc_settings:has("pagemap_synthetic_chars_per_page") then
+                            local cache_file_path = doc_settings:readSetting("cache_file_path")
+                            if cache_file_path then
+                                os.remove(cache_file_path)
+                            end
+                        end
                         BookList.setBookInfoCacheProperty(file, "been_opened", false)
                         require("readhistory"):fileSettingsPurged(file)
+                    end
+                    doc_settings:purge(nil, data_to_purge)
+                    if data_to_purge.custom_cover_file or data_to_purge.custom_metadata_file then
+                        UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
                     end
                     caller_callback()
                 end,
