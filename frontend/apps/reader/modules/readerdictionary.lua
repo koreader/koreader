@@ -1315,6 +1315,15 @@ function ReaderDictionary:showNoResultsDialog(word, dict_names, fuzzy_search, bo
     local has_presets = preset_names and #preset_names > 0
     if fuzzy_search and not has_presets then return false end -- fall through to showing empty results
 
+    local preset_button = has_presets and {
+        text = _("Search with preset"),
+        callback = function(dialog)
+            local new_word = dialog:getInputText()
+            if new_word == "" or new_word:match("^%s*$") then return end
+            self:showSearchWithPresetDialog(preset_names, dialog, new_word, boxes, link, dict_close_callback)
+        end,
+    } or nil
+
     -- Determine the primary action based on what's available
     local description, primary_action
     if not fuzzy_search then
@@ -1332,30 +1341,14 @@ function ReaderDictionary:showNoResultsDialog(word, dict_names, fuzzy_search, bo
         }
     elseif has_presets then
         description = _("Would you like to search with a preset?")
-        primary_action = {
-            text = _("Search with preset"),
-            is_enter_default = true,
-            callback = function(dialog)
-                local new_word = dialog:getInputText()
-                if new_word == "" or new_word:match("^%s*$") then return end
-                self:showSearchWithPresetDialog(preset_names, dialog, new_word, boxes, link, dict_close_callback)
-            end,
-        }
+        primary_action = preset_button
+        primary_action.is_enter_default = true
     end
 
     local buttons = {}
     -- Add preset button as an additional option (when fuzzy is the primary action)
     if not fuzzy_search and has_presets then
-        table.insert(buttons, {
-            {
-                text = _("Search with preset"),
-                callback = function(dialog)
-                    local new_word = dialog:getInputText()
-                    if new_word == "" or new_word:match("^%s*$") then return end
-                    self:showSearchWithPresetDialog(preset_names, dialog, new_word, boxes, link, dict_close_callback)
-                end,
-            }
-        })
+        table.insert(buttons, { preset_button })
     end
     table.insert(buttons, {
         {
