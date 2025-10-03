@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -9,6 +10,7 @@ local GestureRange = require("ui/gesturerange")
 local Menu = require("ui/widget/menu")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local OverlapGroup = require("ui/widget/overlapgroup")
+local SpinWidget = require("ui/widget/spinwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -25,6 +27,8 @@ local ReaderPageMap = WidgetContainer:extend{
     show_page_labels = nil,
     use_page_labels = nil,
     page_labels_cache = nil, -- hash table
+    synthetic_chars_per_page_default = 1818,
+    synthetic_chars_per_page = nil, -- not nil means the synthetic pagemap has been created
 }
 
 function ReaderPageMap:init()
@@ -39,20 +43,27 @@ function ReaderPageMap:init()
     self.ui:registerPostInitCallback(function()
         self:_postInit()
     end)
+    self.ui.menu:registerToMainMenu(self)
 end
 
 function ReaderPageMap:_postInit()
     self.initialized = true
-    if self.ui.document.info.has_pages then
-        return
+    if self.ui.document.is_new then
+        if not self.ui.document:hasPageMap() then
+            self.synthetic_chars_per_page = G_reader_settings:readSetting("pagemap_synthetic_chars_per_page")
+            self.ui.doc_settings:saveSetting("pagemap_synthetic_chars_per_page", self.synthetic_chars_per_page)
+        end
+    else
+        self.synthetic_chars_per_page = self.ui.doc_settings:readSetting("pagemap_synthetic_chars_per_page")
     end
-    if not self.ui.document:hasPageMap() then
-        return
+    if self.synthetic_chars_per_page then
+        self.ui.document:buildSyntheticPageMapIfNoneDocumentProvided(self.synthetic_chars_per_page)
     end
-    self.has_pagemap = true
-    self:resetLayout()
-    self.ui.menu:registerToMainMenu(self)
-    self.view:registerViewModule("pagemap", self)
+    if self.ui.document:hasPageMap() then
+        self.has_pagemap = true
+        self:resetLayout()
+        self.view:registerViewModule("pagemap", self)
+    end
 end
 
 function ReaderPageMap:resetLayout()
@@ -327,39 +338,164 @@ function ReaderPageMap:onDocumentRerendered()
     self.page_labels_cache = nil
 end
 
+function ReaderPageMap:applySyntheticCharsPerPage(spin_widget, value)
+    UIManager:show(ConfirmBox:new{
+        text = _("Apply changes?\nThe document will be reloaded."),
+        ok_callback = function()
+            spin_widget:onClose()
+            self.ui.doc_settings:saveSetting("pagemap_synthetic_chars_per_page", value)
+            if value == nil then
+                self.ui.document:invalidateCacheFile()
+            end
+            local after_open_callback = function(ui)
+                ui.annotation:setNeedsUpdateFlag()
+            end
+            self.ui:switchDocument(self.ui.document.file, nil, after_open_callback)
+        end,
+    })
+end
+
 function ReaderPageMap:addToMainMenu(menu_items)
     menu_items.page_map = {
         -- @translators This and the other related ones refer to alternate page numbers provided in some EPUB books, that usually reference page numbers in a specific hardcopy edition of the book.
         text = _("Reference pages"),
-        sub_item_table ={
+        sub_item_table = {
             {
-                -- @translators This shows the <dc:source> in the EPUB that usually tells which hardcopy edition the reference page numbers refers to.
-                text = _("Reference source info"),
-                enabled_func = function() return self.ui.document:getPageMapSource() ~= nil end,
-                callback = function()
-                    local text = T(_("Source (book hardcopy edition) of reference page numbers:\n\n%1"),
-                                    self.ui.document:getPageMapSource())
-                    local InfoMessage = require("ui/widget/infomessage")
-                    local infomsg = InfoMessage:new{
-                        text = text,
-                    }
-                    UIManager:show(infomsg)
+                text = _("Newly opened books"),
+                sub_item_table = {
+                    {
+                        text_func = function()
+                            local chars_per_page = G_reader_settings:readSetting("pagemap_synthetic_chars_per_page")
+                            return T(_("Characters per page: %1"), chars_per_page or _("disabled"))
+                        end,
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            UIManager:show(SpinWidget:new{
+                                title_text = _("Characters per page"),
+                                value = G_reader_settings:readSetting("pagemap_synthetic_chars_per_page")
+                                    or self.synthetic_chars_per_page_default,
+                                value_min = 512,
+                                value_max = 4096,
+                                default_value = self.synthetic_chars_per_page_default,
+                                ok_always_enabled = true,
+                                callback = function(spin)
+                                    G_reader_settings:saveSetting("pagemap_synthetic_chars_per_page", spin.value)
+                                    touchmenu_instance:updateItems()
+                                end,
+                                extra_text = _("Disable"),
+                                extra_callback = function()
+                                    G_reader_settings:delSetting("pagemap_synthetic_chars_per_page")
+                                    touchmenu_instance:updateItems()
+                                end,
+                            })
+                        end,
+                    },
+                    {
+                        text = _("Use reference page numbers"),
+                        checked_func = function()
+                            return G_reader_settings:isTrue("pagemap_use_page_labels")
+                        end,
+                        callback = function()
+                            G_reader_settings:toggle("pagemap_use_page_labels")
+                        end,
+                    },
+                    {
+                        text = _("Show reference page labels in margin"),
+                        checked_func = function()
+                            return G_reader_settings:isTrue("pagemap_show_page_labels")
+                        end,
+                        callback = function()
+                            G_reader_settings:toggle("pagemap_show_page_labels")
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            return T(_("Page labels font size: %1"), self.label_font_size)
+                        end,
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            UIManager:show(SpinWidget:new{
+                                title_text = _("Page labels font size"),
+                                value = self.label_font_size,
+                                value_min = 8,
+                                value_max = 20,
+                                default_value = self.label_default_font_size,
+                                keep_shown_on_apply = true,
+                                callback = function(spin)
+                                    self.label_font_size = spin.value
+                                    G_reader_settings:saveSetting("pagemap_label_font_size", self.label_font_size)
+                                    touchmenu_instance:updateItems()
+                                    self:resetLayout()
+                                    self:updateVisibleLabels()
+                                    UIManager:setDirty(self.view.dialog, "partial")
+                                end,
+                            })
+                        end,
+                    },
+                },
+                separator = true,
+            },
+            -- current book
+            {
+                text_func = function()
+                    return T(_("Characters per page: %1"), self.synthetic_chars_per_page or _("disabled"))
+                end,
+                enabled_func = function()
+                    return (self.synthetic_chars_per_page or not self.has_pagemap) and true or false
                 end,
                 keep_menu_open = true,
+                callback = function()
+                    UIManager:show(SpinWidget:new{
+                        title_text =  _("Characters per page"),
+                        value = self.synthetic_chars_per_page or self.synthetic_chars_per_page_default,
+                        value_min = 512,
+                        value_max = 4096,
+                        default_value = self.synthetic_chars_per_page_default,
+                        ok_always_enabled = true,
+                        keep_shown_on_apply = true,
+                        callback = function(spin)
+                            self:applySyntheticCharsPerPage(spin, spin.value)
+                        end,
+                        extra_text = _("Disable"),
+                        extra_callback = function(spin)
+                            self:applySyntheticCharsPerPage(spin)
+                        end,
+                    })
+                end,
             },
             {
-                text = _("Reference page numbers list"),
+                -- @translators This shows the <dc:source> in the EPUB that usually tells which hardcopy edition the reference page numbers refers to.
+                text_func = function()
+                    if self.has_pagemap then
+                        if self.synthetic_chars_per_page then
+                            return _("Reference source info: synthetic")
+                        end
+                        return _("Reference source info: built-in")
+                    end
+                    return _("Reference source info")
+                end,
+                enabled_func = function()
+                    return self.has_pagemap and self.ui.document:getPageMapSource() and true or false
+                end,
+                keep_menu_open = true,
                 callback = function()
-                    self:onShowPageList()
+                    local InfoMessage = require("ui/widget/infomessage")
+                    UIManager:show(InfoMessage:new{
+                        text = T(_("Source (book hardcopy edition) of reference page numbers:\n\n%1"),
+                            self.ui.document:getPageMapSource()),
+                    })
                 end,
             },
             {
                 text = _("Use reference page numbers"),
-                checked_func = function() return self.use_page_labels end,
+                enabled_func = function()
+                    return self.has_pagemap
+                end,
+                checked_func = function()
+                    return self.has_pagemap and self.use_page_labels
+                end,
                 callback = function()
-                    if self.use_page_labels then
-                        self.page_labels_cache = nil
-                    end
+                    self.page_labels_cache = nil
                     self.use_page_labels = not self.use_page_labels
                     self.ui.doc_settings:saveSetting("pagemap_use_page_labels", self.use_page_labels)
                     -- Reset a few stuff that may use page labels
@@ -367,32 +503,15 @@ function ReaderPageMap:addToMainMenu(menu_items)
                     UIManager:broadcastEvent(Event:new("UsePageLabelsUpdated"))
                     UIManager:setDirty(self.view.dialog, "partial")
                 end,
-                hold_callback = function(touchmenu_instance)
-                    local use_page_labels = G_reader_settings:isTrue("pagemap_use_page_labels")
-                    UIManager:show(MultiConfirmBox:new{
-                        text = use_page_labels and _("The default (★) for newly opened books that have a reference page numbers map is to use these reference page numbers instead of the renderer page numbers.\n\nWould you like to change it?")
-                        or _("The default (★) for newly opened books that have a reference page numbers map is to not use these reference page numbers and keep using the renderer page numbers.\n\nWould you like to change it?"),
-                        choice1_text_func = function()
-                            return use_page_labels and _("Renderer") or _("Renderer (★)")
-                        end,
-                        choice1_callback = function()
-                             G_reader_settings:makeFalse("pagemap_use_page_labels")
-                             if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end,
-                        choice2_text_func = function()
-                            return use_page_labels and _("Reference (★)") or _("Reference")
-                        end,
-                        choice2_callback = function()
-                            G_reader_settings:makeTrue("pagemap_use_page_labels")
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end,
-                    })
-                end,
-                separator = true,
             },
             {
                 text = _("Show reference page labels in margin"),
-                checked_func = function() return self.show_page_labels end,
+                enabled_func = function()
+                    return self.has_pagemap
+                end,
+                checked_func = function()
+                    return self.has_pagemap and self.show_page_labels
+                end,
                 callback = function()
                     self.show_page_labels = not self.show_page_labels
                     self.ui.doc_settings:saveSetting("pagemap_show_page_labels", self.show_page_labels)
@@ -400,54 +519,15 @@ function ReaderPageMap:addToMainMenu(menu_items)
                     self:updateVisibleLabels()
                     UIManager:setDirty(self.view.dialog, "partial")
                 end,
-                hold_callback = function(touchmenu_instance)
-                    local show_page_labels = G_reader_settings:nilOrTrue("pagemap_show_page_labels")
-                    UIManager:show(MultiConfirmBox:new{
-                        text = show_page_labels and _("The default (★) for newly opened books that have a reference page numbers map is to show reference page number labels in the margin.\n\nWould you like to change it?")
-                        or _("The default (★) for newly opened books that have a reference page numbers map is to not show reference page number labels in the margin.\n\nWould you like to change it?"),
-                        choice1_text_func = function()
-                            return show_page_labels and _("Hide") or _("Hide (★)")
-                        end,
-                        choice1_callback = function()
-                             G_reader_settings:makeFalse("pagemap_show_page_labels")
-                             if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end,
-                        choice2_text_func = function()
-                            return show_page_labels and _("Show (★)") or _("Show")
-                        end,
-                        choice2_callback = function()
-                            G_reader_settings:makeTrue("pagemap_show_page_labels")
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end,
-                    })
-                end,
             },
             {
-                text_func = function()
-                    return T(_("Page labels font size: %1"), self.label_font_size)
+                text = _("Reference page numbers list"),
+                enabled_func = function()
+                    return self.has_pagemap
                 end,
-                enabled_func = function() return self.show_page_labels end,
-                callback = function(touchmenu_instance)
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local spin_w = SpinWidget:new{
-                        value = self.label_font_size,
-                        value_min = 8,
-                        value_max = 20,
-                        default_value = self.label_default_font_size,
-                        title_text =  _("Page labels font size"),
-                        keep_shown_on_apply = true,
-                        callback = function(spin)
-                            self.label_font_size = spin.value
-                            G_reader_settings:saveSetting("pagemap_label_font_size", self.label_font_size)
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                            self:resetLayout()
-                            self:updateVisibleLabels()
-                            UIManager:setDirty(self.view.dialog, "partial")
-                        end,
-                    }
-                    UIManager:show(spin_w)
+                callback = function()
+                    self:onShowPageList()
                 end,
-                keep_menu_open = true,
             },
         },
     }
