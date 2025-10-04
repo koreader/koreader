@@ -1,6 +1,6 @@
 local Device = require("device")
 
-if not Device:isTouchDevice() then
+if Device:hasFewKeys() and not Device:isTouchDevice() then
     return { disabled = true }
 end
 
