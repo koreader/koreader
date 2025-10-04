@@ -26,8 +26,8 @@ local ReaderPageMap = WidgetContainer:extend{
     show_page_labels = nil,
     use_page_labels = nil,
     page_labels_cache = nil, -- hash table
-    synthetic_chars_per_page_default = 1818,
-    synthetic_chars_per_page = nil, -- not nil means the synthetic pagemap has been created
+    chars_per_synthetic_page_default = 1818,
+    chars_per_synthetic_page = nil, -- not nil means the synthetic pagemap has been created
 }
 
 function ReaderPageMap:init()
@@ -49,14 +49,14 @@ function ReaderPageMap:_postInit()
     self.initialized = true
     if self.ui.document.is_new then
         if not self.ui.document:hasPageMap() then
-            self.synthetic_chars_per_page = G_reader_settings:readSetting("pagemap_synthetic_chars_per_page")
-            self.ui.doc_settings:saveSetting("pagemap_synthetic_chars_per_page", self.synthetic_chars_per_page)
+            self.chars_per_synthetic_page = G_reader_settings:readSetting("pagemap_chars_per_synthetic_page")
+            self.ui.doc_settings:saveSetting("pagemap_chars_per_synthetic_page", self.chars_per_synthetic_page)
         end
     else
-        self.synthetic_chars_per_page = self.ui.doc_settings:readSetting("pagemap_synthetic_chars_per_page")
+        self.chars_per_synthetic_page = self.ui.doc_settings:readSetting("pagemap_chars_per_synthetic_page")
     end
-    if self.synthetic_chars_per_page then
-        self.ui.document:buildSyntheticPageMapIfNoneDocumentProvided(self.synthetic_chars_per_page)
+    if self.chars_per_synthetic_page then
+        self.ui.document:buildSyntheticPageMapIfNoneDocumentProvided(self.chars_per_synthetic_page)
     end
     if self.ui.document:hasPageMap() then
         self.has_pagemap = true
@@ -337,12 +337,12 @@ function ReaderPageMap:onDocumentRerendered()
     self.page_labels_cache = nil
 end
 
-function ReaderPageMap:applySyntheticCharsPerPage(spin_widget, value)
+function ReaderPageMap:applyCharsPerSyntheticPage(spin_widget, value)
     UIManager:show(ConfirmBox:new{
         text = _("Apply changes?\nThe document will be reloaded."),
         ok_callback = function()
             spin_widget:onClose()
-            self.ui.doc_settings:saveSetting("pagemap_synthetic_chars_per_page", value)
+            self.ui.doc_settings:saveSetting("pagemap_chars_per_synthetic_page", value)
             if value == nil then
                 self.ui.document:invalidateCacheFile()
             end
@@ -364,26 +364,26 @@ function ReaderPageMap:addToMainMenu(menu_items)
                 sub_item_table = {
                     {
                         text_func = function()
-                            local chars_per_page = G_reader_settings:readSetting("pagemap_synthetic_chars_per_page")
+                            local chars_per_page = G_reader_settings:readSetting("pagemap_chars_per_synthetic_page")
                             return T(_("Characters per page: %1"), chars_per_page or _("disabled"))
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
                             UIManager:show(SpinWidget:new{
                                 title_text = _("Characters per page"),
-                                value = G_reader_settings:readSetting("pagemap_synthetic_chars_per_page")
-                                    or self.synthetic_chars_per_page_default,
+                                value = G_reader_settings:readSetting("pagemap_chars_per_synthetic_page")
+                                    or self.chars_per_synthetic_page_default,
                                 value_min = 512,
                                 value_max = 4096,
-                                default_value = self.synthetic_chars_per_page_default,
+                                default_value = self.chars_per_synthetic_page_default,
                                 ok_always_enabled = true,
                                 callback = function(spin)
-                                    G_reader_settings:saveSetting("pagemap_synthetic_chars_per_page", spin.value)
+                                    G_reader_settings:saveSetting("pagemap_chars_per_synthetic_page", spin.value)
                                     touchmenu_instance:updateItems()
                                 end,
                                 extra_text = _("Disable"),
                                 extra_callback = function()
-                                    G_reader_settings:delSetting("pagemap_synthetic_chars_per_page")
+                                    G_reader_settings:delSetting("pagemap_chars_per_synthetic_page")
                                     touchmenu_instance:updateItems()
                                 end,
                             })
@@ -437,27 +437,27 @@ function ReaderPageMap:addToMainMenu(menu_items)
             -- current book
             {
                 text_func = function()
-                    return T(_("Characters per page: %1"), self.synthetic_chars_per_page or _("disabled"))
+                    return T(_("Characters per page: %1"), self.chars_per_synthetic_page or _("disabled"))
                 end,
                 enabled_func = function()
-                    return (self.synthetic_chars_per_page or not self.has_pagemap) and true or false
+                    return (self.chars_per_synthetic_page or not self.has_pagemap) and true or false
                 end,
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(SpinWidget:new{
                         title_text =  _("Characters per page"),
-                        value = self.synthetic_chars_per_page or self.synthetic_chars_per_page_default,
+                        value = self.chars_per_synthetic_page or self.chars_per_synthetic_page_default,
                         value_min = 512,
                         value_max = 4096,
-                        default_value = self.synthetic_chars_per_page_default,
+                        default_value = self.chars_per_synthetic_page_default,
                         ok_always_enabled = true,
                         keep_shown_on_apply = true,
                         callback = function(spin)
-                            self:applySyntheticCharsPerPage(spin, spin.value)
+                            self:applyCharsPerSyntheticPage(spin, spin.value)
                         end,
                         extra_text = _("Disable"),
                         extra_callback = function(spin)
-                            self:applySyntheticCharsPerPage(spin)
+                            self:applyCharsPerSyntheticPage(spin)
                         end,
                     })
                 end,
@@ -466,7 +466,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                 -- @translators This shows the <dc:source> in the EPUB that usually tells which hardcopy edition the reference page numbers refers to.
                 text_func = function()
                     if self.has_pagemap then
-                        if self.synthetic_chars_per_page then
+                        if self.chars_per_synthetic_page then
                             return _("Reference source info: synthetic")
                         end
                         return _("Reference source info: built-in")
