@@ -143,7 +143,7 @@ if Device:hasFrontlight() then
         -- do the computations in the native scale, to ensure we always actually *change* something,
         -- in case both the old and new value would round to the same native step,
         -- despite being different in the API scale, which is stupidly fixed at [0, 100]...
-        local warmth = powerd:fromNativeWarmth(powerd:toNativeWarmth(powerd:frontlightWarmth()) + delta)
+        local warmth = powerd:toNativeWarmth(powerd:frontlightWarmth()) + delta
 
         self:onSetFlWarmth(warmth)
         self:onShowWarmth()
@@ -157,7 +157,7 @@ if Device:hasFrontlight() then
         elseif warmth < 0 then
             warmth = 0
         end
-        powerd:setWarmth(warmth)
+        powerd:setWarmth(powerd:fromNativeWarmth(warmth))
         return true
     end
 
