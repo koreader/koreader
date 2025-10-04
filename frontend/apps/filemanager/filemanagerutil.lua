@@ -204,7 +204,7 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
                     }
                     doc_settings = doc_settings or DocSettings:open(file)
                     if data_to_purge.doc_settings then
-                        if doc_settings:has("pagemap_synthetic_chars_per_page") then
+                        if doc_settings:has("pagemap_chars_per_synthetic_page") then
                             local cache_file_path = doc_settings:readSetting("cache_file_path")
                             if cache_file_path then
                                 os.remove(cache_file_path)
