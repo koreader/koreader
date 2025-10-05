@@ -1494,8 +1494,25 @@ function CreDocument:buildSyntheticPageMapIfNoneDocumentProvided(chars_per_synth
     self._document:buildSyntheticPageMapIfNoneDocumentProvided(chars_per_synthetic_page or 1024)
 end
 
+function CreDocument:buildSyntheticPageMap(chars_per_synthetic_page)
+    self._document:buildSyntheticPageMap(chars_per_synthetic_page or 1024)
+end
+
+function CreDocument:getSyntheticPageMapCharsPerPage()
+    -- returns 0 if no synthetic pagemap
+    return self._document:getSyntheticPageMapCharsPerPage()
+end
+
 function CreDocument:isPageMapSynthetic()
     return self._document:isPageMapSynthetic()
+end
+
+function CreDocument:hasPageMapDocumentProvided()
+    return self._document:hasPageMapDocumentProvided()
+end
+
+function CreDocument:isPageMapDocumentProvided()
+    return self._document:isPageMapDocumentProvided()
 end
 
 function CreDocument:hasPageMap()
