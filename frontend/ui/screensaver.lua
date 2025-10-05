@@ -445,6 +445,7 @@ function Screensaver:show()
         return
     end
 
+    local orig_dimen
     local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
     local rotation_mode = Screen:getRotationMode()
 
@@ -459,6 +460,7 @@ function Screensaver:show()
         if bit.band(Device.orig_rotation_mode, 1) == 1 then
             -- i.e., only switch to Portrait if we're currently in *any* Landscape orientation (odd number)
             Screen:setRotationMode(Screen.DEVICE_ROTATED_UPRIGHT)
+            orig_dimen = with_gesture_lock and { w = screen_w, h = screen_h }
             screen_w, screen_h = screen_h, screen_w
         else
             Device.orig_rotation_mode = nil
@@ -644,7 +646,10 @@ function Screensaver:show()
 
     -- Setup the gesture lock through an additional invisible widget, so that it works regardless of the configuration.
     if with_gesture_lock then
-        self.screensaver_lock_widget = ScreenSaverLockWidget:new{}
+        self.screensaver_lock_widget = ScreenSaverLockWidget:new{
+            ui = self.ui,
+            orig_dimen = orig_dimen,
+        }
 
         -- It's flagged as modal, so it'll stay on top
         UIManager:show(self.screensaver_lock_widget)
