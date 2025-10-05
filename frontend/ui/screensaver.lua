@@ -600,7 +600,7 @@ function Screensaver:show()
             alpha = alpha_value / 100,
         }
         -- Forward the height of the top message to the overlay widget
-        if vertical_percentage < 20 then
+        if vertical_percentage > 80 then -- top of the screen
             message_height = message_widget.widget:getSize().h
         end
 

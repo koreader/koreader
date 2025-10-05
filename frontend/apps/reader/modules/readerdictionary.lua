@@ -903,32 +903,7 @@ function ReaderDictionary:onShowDictionaryLookup()
                 callback = function()
                     local text = self.dictionary_lookup_dialog:getInputText()
                     if text == "" or text:match("^%s*$") then return end
-                    local current_dict_state = self:buildPreset()
-                    local button_dialog, dialog_buttons = nil, {} -- CI won't like it if we call it buttons :( so dialog_buttons
-                    for _, preset_name in ipairs(preset_names) do
-                        table.insert(dialog_buttons, {
-                            {
-                                align = "left",
-                                text = preset_name,
-                                callback = function()
-                                    self:loadPreset(self.preset_obj.presets[preset_name], true)
-                                    UIManager:close(button_dialog)
-                                    UIManager:close(self.dictionary_lookup_dialog)
-                                    self:onLookupWord(text, true, nil, nil, nil,
-                                        function()
-                                            self:loadPreset(current_dict_state, true)
-                                        end
-                                    )
-                                end,
-                            }
-                        })
-                    end
-                    button_dialog = ButtonDialog:new{
-                        buttons = dialog_buttons,
-                        shrink_unneeded_width = true,
-                    }
-                    self.dictionary_lookup_dialog:onCloseKeyboard()
-                    UIManager:show(button_dialog)
+                    self:showSearchWithPresetDialog(preset_names, self.dictionary_lookup_dialog, text)
                 end,
             }
         })
@@ -963,6 +938,39 @@ function ReaderDictionary:onShowDictionaryLookup()
     UIManager:show(self.dictionary_lookup_dialog)
     self.dictionary_lookup_dialog:onShowKeyboard()
     return true
+end
+
+function ReaderDictionary:showSearchWithPresetDialog(preset_names, input_dialog, word, boxes, link, dict_close_callback)
+    if not preset_names then
+        preset_names = Presets.getPresets(self.preset_obj)
+    end
+    local current_dict_state = self:buildPreset()
+    local button_dialog, buttons = nil, {}
+    for _, preset_name in ipairs(preset_names) do
+        table.insert(buttons, {
+            {
+                align = "left",
+                text = preset_name,
+                callback = function()
+                    self:loadPreset(self.preset_obj.presets[preset_name], true)
+                    UIManager:close(button_dialog)
+                    UIManager:close(input_dialog)
+                    self:onLookupWord(word, true, boxes, self.highlight, link,
+                        function()
+                            self:loadPreset(current_dict_state, true)
+                            if dict_close_callback then dict_close_callback() end
+                        end
+                    )
+                end,
+            }
+        })
+    end
+    button_dialog = ButtonDialog:new{
+        buttons = buttons,
+        shrink_unneeded_width = true,
+    }
+    if input_dialog then input_dialog:onCloseKeyboard() end
+    UIManager:show(button_dialog)
 end
 
 function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progress_msg)
@@ -1237,42 +1245,10 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
         lookupCancelled()
         return
     end
-    -- Intercept "No results" to offer fuzzy search to non-fussy people.
-    if not fuzzy_search and results and results[1].no_result then
-        self:dismissLookupInfo() -- Close the "Searching..." message
-        local dialog -- Forward declaration needed for the button callbacks
-        dialog = InputDialog:new{
-            title = _("No results found"),
-            input = word, -- Pre-fills the dialog with the selected word
-            input_type = "text",
-            description = _("Would you like to use fuzzy search?"),
-            buttons = {
-                {
-                    {
-                        text = _("Cancel"),
-                        id = "close",
-                        callback = function()
-                            UIManager:close(dialog)
-                            lookupCancelled()
-                        end,
-                    },
-                    {
-                        text = _("Fuzzy search"),
-                        is_enter_default = true,
-                        callback = function()
-                            local new_word = dialog:getInputText()
-                            if new_word == "" then return end
-                            UIManager:close(dialog)
-                            -- Re-run the lookup with the (possibly edited) word and fuzzy enabled.
-                            self:stardictLookup(new_word, dict_names, true, boxes, link, dict_close_callback)
-                        end,
-                    },
-                },
-            },
-        }
-        UIManager:show(dialog)
-        dialog:onShowKeyboard()
-        return
+    -- Intercept "No results" to offer alternative search methods (e.g., fuzzy search to non-fussy people)
+    if results and results[1].no_result then
+        local handled = self:showNoResultsDialog(word, dict_names, fuzzy_search, boxes, link, dict_close_callback, lookupCancelled)
+        if handled then return end
     end
 
     self:showDict(word, tidyMarkup(results), boxes, link, dict_close_callback)
@@ -1331,6 +1307,83 @@ function ReaderDictionary:showDict(word, results, boxes, link, dict_close_callba
             Input:inhibitInputUntil(true)
         end
     end
+end
+
+function ReaderDictionary:showNoResultsDialog(word, dict_names, fuzzy_search, boxes, link, dict_close_callback, lookupCancelled)
+    self:dismissLookupInfo() -- Close the "Searching..." message
+    local preset_names = Presets.getPresets(self.preset_obj)
+    local has_presets = preset_names and #preset_names > 0
+    if fuzzy_search and not has_presets then return false end -- fall through to showing empty results
+
+    local preset_button = has_presets and {
+        text = _("Search with preset"),
+        callback = function(dialog)
+            local new_word = dialog:getInputText()
+            if new_word == "" or new_word:match("^%s*$") then return end
+            self:showSearchWithPresetDialog(preset_names, dialog, new_word, boxes, link, dict_close_callback)
+        end,
+    } or nil
+
+    -- Determine the primary action based on what's available
+    local description, primary_action
+    if not fuzzy_search then
+        description = _("Would you like to use fuzzy search?")
+        primary_action = {
+            text = _("Fuzzy search"),
+            is_enter_default = true,
+            callback = function(dialog)
+                local new_word = dialog:getInputText()
+                if new_word == "" then return end
+                UIManager:close(dialog)
+                -- Re-run the lookup with the (possibly edited) word and fuzzy enabled.
+                self:stardictLookup(new_word, dict_names, true, boxes, link, dict_close_callback)
+            end,
+        }
+    elseif has_presets then
+        description = _("Would you like to search with a preset?")
+        primary_action = preset_button
+        primary_action.is_enter_default = true
+    end
+
+    local buttons = {}
+    -- Add preset button as an additional option (when fuzzy is the primary action)
+    if not fuzzy_search and has_presets then
+        table.insert(buttons, { preset_button })
+    end
+    table.insert(buttons, {
+        {
+            text = _("Cancel"),
+            id = "close",
+            callback = function(dialog)
+                UIManager:close(dialog)
+                UIManager:scheduleIn(0.5, function() lookupCancelled() end)
+            end,
+        },
+        primary_action,
+    })
+    local dialog
+    dialog = InputDialog:new{
+        title = _("No results found"),
+        input = word, -- Pre-fills the dialog with the selected word
+        input_type = "text",
+        description = description,
+        buttons = buttons,
+    }
+
+    -- Wire up callbacks with the dialog instance
+    for _, row in ipairs(buttons) do
+        for _, button in ipairs(row) do
+            if button.callback then
+                local original_callback = button.callback
+                button.callback = function()
+                    original_callback(dialog)
+                end
+            end
+        end
+    end
+    UIManager:show(dialog)
+    dialog:onShowKeyboard()
+    return true
 end
 
 function ReaderDictionary:showDownload(downloadable_dicts)
