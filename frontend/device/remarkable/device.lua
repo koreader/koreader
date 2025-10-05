@@ -226,7 +226,7 @@ function Remarkable:init()
 
     self.input = require("device/input"):new{
         device = self,
-        event_map = dofile("frontend/device/remarkable/event_map.lua"),
+        event_map = event_map,
         event_map_adapter = {
             SleepCover = function(ev)
                 if ev.value == 1 then
