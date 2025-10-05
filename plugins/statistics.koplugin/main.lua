@@ -252,7 +252,7 @@ function ReaderStatistics:onUsePageLabelsUpdated()
     self.use_pagemap_for_stats = not self.use_pagemap_for_stats
     local new_current_page
     if self.use_pagemap_for_stats then
-        new_current_page = select(2, self.ui.pagemap.getCurrentPageLabel())
+        new_current_page = select(2, self.ui.pagemap:getCurrentPageLabel())
     else
         new_current_page = self.ui:getCurrentPage()
     end
