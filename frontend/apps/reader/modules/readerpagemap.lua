@@ -47,16 +47,36 @@ end
 
 function ReaderPageMap:_postInit()
     self.initialized = true
+    -- chars_per_synthetic_page is saved to cr3 cache by crengine on first building of synthetic pagemap
+    -- after that synthetic pagemap is built on doc rendering without asking doc settings
+    -- different combinations of doc settings and cached chars_per_synthetic_page must be handled
+    local cached_chars_per_synthetic_page = self.ui.document:getSyntheticPageMapCharsPerPage()
     if self.ui.document.is_new then
-        if not self.ui.document:hasPageMap() then
-            self.chars_per_synthetic_page = G_reader_settings:readSetting("pagemap_chars_per_synthetic_page")
-            self.ui.doc_settings:saveSetting("pagemap_chars_per_synthetic_page", self.chars_per_synthetic_page)
+        if cached_chars_per_synthetic_page > 0 then -- honor cr3 cache
+            self.chars_per_synthetic_page = cached_chars_per_synthetic_page
+            self.ui.doc_settings:saveSetting("pagemap_chars_per_synthetic_page", cached_chars_per_synthetic_page)
+        else -- honor default settings
+            local chars_per_synthetic_page = G_reader_settings:readSetting("pagemap_chars_per_synthetic_page")
+            if chars_per_synthetic_page and
+                    (not self.ui.document:hasPageMap() or G_reader_settings:isTrue("pagemap_synthetic_overrides")) then
+                self.chars_per_synthetic_page = chars_per_synthetic_page
+                self.ui.doc_settings:saveSetting("pagemap_chars_per_synthetic_page", chars_per_synthetic_page)
+                self.ui.document:buildSyntheticPageMap(chars_per_synthetic_page)
+            end
         end
-    else
-        self.chars_per_synthetic_page = self.ui.doc_settings:readSetting("pagemap_chars_per_synthetic_page")
-    end
-    if self.chars_per_synthetic_page then
-        self.ui.document:buildSyntheticPageMapIfNoneDocumentProvided(self.chars_per_synthetic_page)
+    else -- previously opened document
+        local chars_per_synthetic_page = self.ui.doc_settings:readSetting("pagemap_chars_per_synthetic_page")
+        if chars_per_synthetic_page then -- honor doc settings
+            self.chars_per_synthetic_page = chars_per_synthetic_page
+            if cached_chars_per_synthetic_page == 0 or cached_chars_per_synthetic_page ~= chars_per_synthetic_page then
+                -- synthetic pagemap not yet built or cr3 cache is desync'ed
+                self.ui.document:buildSyntheticPageMap(chars_per_synthetic_page)
+            end
+        elseif cached_chars_per_synthetic_page > 0 then
+            -- synthetic pagemap was created earlier by userpatch, keep it
+            self.chars_per_synthetic_page = cached_chars_per_synthetic_page
+            self.ui.doc_settings:saveSetting("pagemap_chars_per_synthetic_page", cached_chars_per_synthetic_page)
+        end
     end
     if self.ui.document:hasPageMap() then
         self.has_pagemap = true
@@ -365,7 +385,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                     {
                         text_func = function()
                             local chars_per_page = G_reader_settings:readSetting("pagemap_chars_per_synthetic_page")
-                            return T(_("Characters per page: %1"), chars_per_page or _("disabled"))
+                            return T(_("Characters per synthetic page: %1"), chars_per_page or _("disabled"))
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
@@ -388,6 +408,20 @@ function ReaderPageMap:addToMainMenu(menu_items)
                                 end,
                             })
                         end,
+                    },
+                    {
+                        text = _("Override built-in reference page numbers"),
+                        enabled_func = function()
+                            return G_reader_settings:readSetting("pagemap_chars_per_synthetic_page") and true or false
+                        end,
+                        checked_func = function()
+                            return G_reader_settings:readSetting("pagemap_chars_per_synthetic_page")
+                                and G_reader_settings:isTrue("pagemap_synthetic_overrides")
+                        end,
+                        callback = function()
+                            G_reader_settings:toggle("pagemap_synthetic_overrides")
+                        end,
+                        separator = true,
                     },
                     {
                         text = _("Use reference page numbers"),
@@ -437,10 +471,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
             -- current book
             {
                 text_func = function()
-                    return T(_("Characters per page: %1"), self.chars_per_synthetic_page or _("disabled"))
-                end,
-                enabled_func = function()
-                    return (self.chars_per_synthetic_page or not self.has_pagemap) and true or false
+                    return T(_("Characters per synthetic page: %1"), self.chars_per_synthetic_page or _("disabled"))
                 end,
                 keep_menu_open = true,
                 callback = function()
