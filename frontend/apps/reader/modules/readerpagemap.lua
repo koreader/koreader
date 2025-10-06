@@ -3,6 +3,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local Event = require("ui/event")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -26,7 +27,7 @@ local ReaderPageMap = WidgetContainer:extend{
     show_page_labels = nil,
     use_page_labels = nil,
     page_labels_cache = nil, -- hash table
-    chars_per_synthetic_page_default = 1818,
+    chars_per_synthetic_page_default = 1500, -- see https://github.com/koreader/koreader/issues/9020#issuecomment-2046025613
     chars_per_synthetic_page = nil, -- not nil means the synthetic pagemap has been created
 }
 
@@ -47,35 +48,30 @@ end
 
 function ReaderPageMap:_postInit()
     self.initialized = true
-    -- chars_per_synthetic_page is saved to cr3 cache by crengine on first building of synthetic pagemap
-    -- after that synthetic pagemap is built on doc rendering without asking doc settings
-    -- different combinations of doc settings and cached chars_per_synthetic_page must be handled
-    local cached_chars_per_synthetic_page = self.ui.document:getSyntheticPageMapCharsPerPage()
-    if self.ui.document.is_new then
-        if cached_chars_per_synthetic_page > 0 then -- honor cr3 cache
-            self.chars_per_synthetic_page = cached_chars_per_synthetic_page
-            self.ui.doc_settings:saveSetting("pagemap_chars_per_synthetic_page", cached_chars_per_synthetic_page)
-        else -- honor default settings
-            local chars_per_synthetic_page = G_reader_settings:readSetting("pagemap_chars_per_synthetic_page")
+    -- chars_per_synthetic_page is saved to cr3 cache by crengine on first building of synthetic pagemap.
+    -- It's possible that the crengine doc cache is inconsistent with our setting
+    -- (cache from a past opening, settings sync'ed from another device).
+    -- Make sure we're consistent, honoring the cre cache values to avoid a document reload.
+    local chars_per_synthetic_page = self.ui.document:getSyntheticPageMapCharsPerPage()
+    if chars_per_synthetic_page > 0 then
+        self.chars_per_synthetic_page = chars_per_synthetic_page
+        self.ui.doc_settings:saveSetting("pagemap_chars_per_synthetic_page", chars_per_synthetic_page)
+    else
+        if self.ui.document.is_new then
+            chars_per_synthetic_page = G_reader_settings:readSetting("pagemap_chars_per_synthetic_page")
             if chars_per_synthetic_page and
-                    (not self.ui.document:hasPageMap() or G_reader_settings:isTrue("pagemap_synthetic_overrides")) then
+                    (not self.ui.document:hasPageMapDocumentProvided()
+                      or G_reader_settings:isTrue("pagemap_synthetic_overrides")) then
                 self.chars_per_synthetic_page = chars_per_synthetic_page
                 self.ui.doc_settings:saveSetting("pagemap_chars_per_synthetic_page", chars_per_synthetic_page)
                 self.ui.document:buildSyntheticPageMap(chars_per_synthetic_page)
             end
-        end
-    else -- previously opened document
-        local chars_per_synthetic_page = self.ui.doc_settings:readSetting("pagemap_chars_per_synthetic_page")
-        if chars_per_synthetic_page then -- honor doc settings
-            self.chars_per_synthetic_page = chars_per_synthetic_page
-            if cached_chars_per_synthetic_page == 0 or cached_chars_per_synthetic_page ~= chars_per_synthetic_page then
-                -- synthetic pagemap not yet built or cr3 cache is desync'ed
+        else
+            chars_per_synthetic_page = self.ui.doc_settings:readSetting("pagemap_chars_per_synthetic_page")
+            if chars_per_synthetic_page then
+                self.chars_per_synthetic_page = chars_per_synthetic_page
                 self.ui.document:buildSyntheticPageMap(chars_per_synthetic_page)
             end
-        elseif cached_chars_per_synthetic_page > 0 then
-            -- synthetic pagemap was created earlier by userpatch, keep it
-            self.chars_per_synthetic_page = cached_chars_per_synthetic_page
-            self.ui.doc_settings:saveSetting("pagemap_chars_per_synthetic_page", cached_chars_per_synthetic_page)
         end
     end
     if self.ui.document:hasPageMap() then
@@ -357,30 +353,13 @@ function ReaderPageMap:onDocumentRerendered()
     self.page_labels_cache = nil
 end
 
-function ReaderPageMap:applyCharsPerSyntheticPage(spin_widget, value)
-    UIManager:show(ConfirmBox:new{
-        text = _("Apply changes?\nThe document will be reloaded."),
-        ok_callback = function()
-            spin_widget:onClose()
-            self.ui.doc_settings:saveSetting("pagemap_chars_per_synthetic_page", value)
-            if value == nil then
-                self.ui.document:invalidateCacheFile()
-            end
-            local after_open_callback = function(ui)
-                ui.annotation:setNeedsUpdateFlag()
-            end
-            self.ui:switchDocument(self.ui.document.file, nil, after_open_callback)
-        end,
-    })
-end
-
 function ReaderPageMap:addToMainMenu(menu_items)
     menu_items.page_map = {
         -- @translators This and the other related ones refer to alternate page numbers provided in some EPUB books, that usually reference page numbers in a specific hardcopy edition of the book.
         text = _("Reference pages"),
         sub_item_table = {
             {
-                text = _("Newly opened books"),
+                text = _("Default settings for new books"),
                 sub_item_table = {
                     {
                         text_func = function()
@@ -393,8 +372,8 @@ function ReaderPageMap:addToMainMenu(menu_items)
                                 title_text = _("Characters per page"),
                                 value = G_reader_settings:readSetting("pagemap_chars_per_synthetic_page")
                                     or self.chars_per_synthetic_page_default,
-                                value_min = 512,
-                                value_max = 4096,
+                                value_min = 500,
+                                value_max = 3000,
                                 default_value = self.chars_per_synthetic_page_default,
                                 ok_always_enabled = true,
                                 callback = function(spin)
@@ -474,21 +453,41 @@ function ReaderPageMap:addToMainMenu(menu_items)
                     return T(_("Characters per synthetic page: %1"), self.chars_per_synthetic_page or _("disabled"))
                 end,
                 keep_menu_open = true,
-                callback = function()
+                callback = function(touchmenu_instance)
                     UIManager:show(SpinWidget:new{
                         title_text =  _("Characters per page"),
                         value = self.chars_per_synthetic_page or self.chars_per_synthetic_page_default,
-                        value_min = 512,
-                        value_max = 4096,
+                        value_min = 500,
+                        value_max = 3000,
                         default_value = self.chars_per_synthetic_page_default,
                         ok_always_enabled = true,
                         keep_shown_on_apply = true,
                         callback = function(spin)
-                            self:applyCharsPerSyntheticPage(spin, spin.value)
+                            spin:onClose()
+                            self.chars_per_synthetic_page = spin.value
+                            self.ui.doc_settings:saveSetting("pagemap_chars_per_synthetic_page", spin.value)
+                            self.page_labels_cache = nil
+                            self.ui.document:buildSyntheticPageMap(spin.value)
+                            self:updateVisibleLabels()
+                            UIManager:setDirty(self.view.dialog, "partial")
+                            UIManager:broadcastEvent(Event:new("UsePageLabelsUpdated"))
+                            touchmenu_instance:updateItems()
                         end,
-                        extra_text = _("Disable"),
+                        extra_text = self.chars_per_synthetic_page
+                            and self.ui.document:hasPageMapDocumentProvided() and _("Restore publisher"),
                         extra_callback = function(spin)
-                            self:applyCharsPerSyntheticPage(spin)
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Restore publisher reference pages?\nThe document will be reloaded."),
+                                ok_callback = function()
+                                    spin:onClose()
+                                    self.ui.doc_settings:delSetting("pagemap_chars_per_synthetic_page")
+                                    self.ui.document:invalidateCacheFile()
+                                    local after_open_callback = function(ui)
+                                        ui.annotation:setNeedsUpdateFlag()
+                                    end
+                                    self.ui:switchDocument(self.ui.document.file, nil, after_open_callback)
+                                end,
+                            })
                         end,
                     })
                 end,
@@ -500,7 +499,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                         if self.chars_per_synthetic_page then
                             return _("Reference source info: synthetic")
                         end
-                        return _("Reference source info: built-in")
+                        return _("Reference source info: publisher")
                     end
                     return _("Reference source info")
                 end,
@@ -529,7 +528,6 @@ function ReaderPageMap:addToMainMenu(menu_items)
                     self.use_page_labels = not self.use_page_labels
                     self.ui.doc_settings:saveSetting("pagemap_use_page_labels", self.use_page_labels)
                     -- Reset a few stuff that may use page labels
-                    local Event = require("ui/event")
                     UIManager:broadcastEvent(Event:new("UsePageLabelsUpdated"))
                     UIManager:setDirty(self.view.dialog, "partial")
                 end,
