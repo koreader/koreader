@@ -1491,7 +1491,11 @@ function CreDocument:buildAlternativeToc()
 end
 
 function CreDocument:buildSyntheticPageMapIfNoneDocumentProvided(chars_per_synthetic_page)
-    self._document:buildSyntheticPageMapIfNoneDocumentProvided(chars_per_synthetic_page or 1024)
+    -- for backward compatibility with legacy user patches
+    -- https://github.com/koreader/koreader/issues/9020#issuecomment-2033259217
+    if not self._document:hasPageMapDocumentProvided() then
+        self._document:buildSyntheticPageMap(chars_per_synthetic_page or 1024)
+    end
 end
 
 function CreDocument:buildSyntheticPageMap(chars_per_synthetic_page)
