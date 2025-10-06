@@ -595,8 +595,8 @@ end
 function ReaderUI:showReader(file, provider, seamless, is_provider_forced)
     logger.dbg("show reader ui")
 
-    file = FFIUtil.realpath(file)
-    
+    file = ffiUtil.realpath(file)
+
     if lfs.attributes(file, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
              text = T(_("File '%1' does not exist."), BD.filepath(filemanagerutil.abbreviate(file)))
