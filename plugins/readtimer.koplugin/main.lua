@@ -1,7 +1,6 @@
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DateTimeWidget = require("ui/widget/datetimewidget")
-local Device = require("device")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
@@ -37,7 +36,6 @@ function ReadTimer:init()
     self.timer_symbol = "\u{23F2}"  -- ⏲ timer symbol
     self.timer_letter = "T"
     self.settings = G_reader_settings:readSetting("readtimer", {})
-    self.non_touch_with_action_dpad = Device:hasDPad() and Device:useDPadAsActionKeys() and not Device:isTouchDevice()
 
     self.alarm_callback = function()
         -- Don't do anything if we were unscheduled
@@ -394,15 +392,6 @@ function ReadTimer:onResume()
     end
 end
 
-local function fixNonTouchFocus(time_widget)
-    -- DateTimeWidget moves focus to OK button by default, but when we add checkboxes we confuse
-    -- focus manager and the cursor keys become unresponsive, therefore we need to move focus
-    -- to the OK button again.
-    local last_row = #time_widget.layout
-    local last_col = #time_widget.layout[last_row]
-    time_widget:moveFocusTo(last_col, last_row)
-end
-
 function ReadTimer:onShowAlarm(touchmenu_instance)
     local now_t = os.date("*t")
     local curr_hour = now_t.hour
@@ -421,7 +410,6 @@ function ReadTimer:onShowAlarm(touchmenu_instance)
         end
     }
     self:addCheckboxes(time_widget)
-    if self.non_touch_with_action_dpad then fixNonTouchFocus(time_widget) end
     UIManager:show(time_widget)
     return true
 end
@@ -471,7 +459,6 @@ function ReadTimer:onShowTimer(touchmenu_instance)
     }
 
     self:addCheckboxes(time_widget, true)
-    if self.non_touch_with_action_dpad then fixNonTouchFocus(time_widget) end
     UIManager:show(time_widget)
     return true
 end
