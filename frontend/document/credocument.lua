@@ -1832,6 +1832,7 @@ function CreDocument:setupCallCache()
             elseif name == "zoomFont" then add_reset = true -- not used by koreader
             elseif name == "resetCallCache" then add_reset = true
             elseif name == "cacheFlows" then add_reset = true
+            elseif name == "buildSyntheticPageMap" then add_reset = true
 
             -- These may have crengine do native highlight or unhighlight
             -- (we could keep the original buffer and use a scratch buffer while
