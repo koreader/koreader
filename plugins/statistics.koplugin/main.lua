@@ -3072,21 +3072,68 @@ end
 function ReaderStatistics:getCurrentBookReadPages()
     if not self:isEnabled() then return end
     self:insertDB()
-    local sql_stmt = [[
-        SELECT
-          page,
-          min(sum(duration), ?) AS durations,
-          strftime("%s", "now") - max(start_time) AS delay
-        FROM page_stat
-        WHERE id_book = ?
-        GROUP BY page
-        ORDER BY page;
-    ]]
-    local conn = SQ3.open(db_location)
-    local stmt = conn:prepare(sql_stmt)
-    local res, nb = stmt:reset():bind(self.settings.max_sec, self.id_curr_book):resultset("i")
-    stmt:close()
-    conn:close()
+
+    local res, nb
+    if self.use_pagemap_for_stats then
+        -- This function is used by BookMap and PageBrowser to display
+        -- rendered/screen pages. When use_pagemap_for_stats, the book
+        -- total nb of pages known and used by statistics is different
+        -- from the total nb of screen pages.
+        -- In the 'else' branch below, any scaling of previous statistics
+        -- (possibly made for a different nb of screen pages) to the book
+        -- current nb of pages is made automatically by the page_stat VIEW.
+        -- In our case here, this scaling won't do: we need to do it
+        -- with the real nb of screen pages, mixing the below simple SQL
+        -- query with the more complex SQL done in the SQL view.
+        local total_screen_pages = self.document:getPageCount()
+        local sql_stmt = [[
+            SELECT
+              page,
+              min(sum(duration), ?) AS durations,
+              strftime("%s", "now") - max(start_time) AS delay
+            FROM (
+                -- (Not sure why we have to floor() it here, while it is not needed in the VIEW page_stat...)
+                SELECT floor(first_page + idx - 1) AS page, start_time, duration / (last_page - first_page + 1) AS duration
+                FROM (
+                    SELECT start_time, duration,
+                        -- First page_number for this page after rescaling single row
+                        ((page - 1) * ?) / total_pages + 1 AS first_page,
+                        -- Last page_number for this page after rescaling single row
+                        max(((page - 1) * ?) / total_pages + 1, (page * ?) / total_pages) AS last_page,
+                        idx
+                    FROM page_stat_data
+                    -- Duplicate rows for multiple pages as needed (as a result of rescaling)
+                    JOIN (SELECT number as idx FROM numbers) AS N ON idx <= (last_page - first_page + 1)
+                    WHERE id_book = ?
+                )
+            )
+            GROUP BY page
+            ORDER BY page;
+        ]]
+        local conn = SQ3.open(db_location)
+        local stmt = conn:prepare(sql_stmt)
+        res, nb = stmt:reset():bind(self.settings.max_sec, total_screen_pages, total_screen_pages, total_screen_pages, self.id_curr_book):resultset("i")
+        -- logger.warn(res)
+        stmt:close()
+        conn:close()
+    else
+        local sql_stmt = [[
+            SELECT
+              page,
+              min(sum(duration), ?) AS durations,
+              strftime("%s", "now") - max(start_time) AS delay
+            FROM page_stat
+            WHERE id_book = ?
+            GROUP BY page
+            ORDER BY page;
+        ]]
+        local conn = SQ3.open(db_location)
+        local stmt = conn:prepare(sql_stmt)
+        res, nb = stmt:reset():bind(self.settings.max_sec, self.id_curr_book):resultset("i")
+        stmt:close()
+        conn:close()
+    end
+
     local read_pages = {}
     local max_duration = 0
     for i=1, nb do
