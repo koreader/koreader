@@ -455,7 +455,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     UIManager:show(SpinWidget:new{
-                        title_text =  _("Characters per page"),
+                        title_text = _("Characters per page"),
                         value = self.chars_per_synthetic_page or self.chars_per_synthetic_page_default,
                         value_min = 500,
                         value_max = 3000,
@@ -473,11 +473,11 @@ function ReaderPageMap:addToMainMenu(menu_items)
                             UIManager:broadcastEvent(Event:new("UsePageLabelsUpdated"))
                             touchmenu_instance:updateItems()
                         end,
-                        extra_text = self.chars_per_synthetic_page
-                            and self.ui.document:hasPageMapDocumentProvided() and _("Restore publisher"),
+                        extra_text = self.chars_per_synthetic_page and self.ui.document:hasPageMapDocumentProvided()
+                            and _("Use publisher reference pages"),
                         extra_callback = function(spin)
                             UIManager:show(ConfirmBox:new{
-                                text = _("Restore publisher reference pages?\nThe document will be reloaded."),
+                                text = _("Use publisher reference pages?\nThe document will be reloaded."),
                                 ok_callback = function()
                                     spin:onClose()
                                     self.ui.doc_settings:delSetting("pagemap_chars_per_synthetic_page")
@@ -485,7 +485,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                                     local after_open_callback = function(ui)
                                         ui.annotation:setNeedsUpdateFlag()
                                     end
-                                    self.ui:switchDocument(self.ui.document.file, nil, after_open_callback)
+                                    self.ui:reloadDocument(nil, nil, after_open_callback)
                                 end,
                             })
                         end,
