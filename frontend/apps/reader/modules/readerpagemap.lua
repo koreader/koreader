@@ -248,8 +248,6 @@ function ReaderPageMap:onShowPageList()
         item_table = page_list,
         is_borderless = true,
         is_popout = false,
-        width = Screen:getWidth(),
-        height = Screen:getHeight(),
         items_per_page = items_per_page,
         items_font_size = items_font_size,
         line_color = require("ffi/blitbuffer").COLOR_WHITE,
@@ -389,7 +387,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Override built-in reference page numbers"),
+                        text = _("Override publisher reference page numbers"),
                         enabled_func = function()
                             return G_reader_settings:readSetting("pagemap_chars_per_synthetic_page") and true or false
                         end,
