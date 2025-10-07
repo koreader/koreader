@@ -969,6 +969,7 @@ function NetworkMgr:getBeforeWifiActionMenuTable()
             wifi_enable_action_setting = wifi_enable_action
             G_reader_settings:saveSetting("wifi_enable_action", wifi_enable_action)
         end,
+        radio = true,
     }
     end
 
@@ -1007,6 +1008,7 @@ function NetworkMgr:getAfterWifiActionMenuTable()
             wifi_disable_action_setting = wifi_disable_action
             G_reader_settings:saveSetting("wifi_disable_action", wifi_disable_action)
         end,
+        radio = true,
     }
     end
     return {

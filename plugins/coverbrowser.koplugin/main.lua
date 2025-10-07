@@ -115,6 +115,7 @@ function CoverBrowser:addToMainMenu(menu_items)
             callback = function()
                 self:setDisplayMode(mode)
             end,
+            radio = true,
         }
         history_sub_item_table[i] = {
             text = text,
@@ -124,6 +125,7 @@ function CoverBrowser:addToMainMenu(menu_items)
             callback = function()
                 CoverBrowser.setupWidgetDisplayMode("history", mode)
             end,
+            radio = true,
         }
         collection_sub_item_table[i] = {
             text = text,
@@ -133,6 +135,7 @@ function CoverBrowser:addToMainMenu(menu_items)
             callback = function()
                 CoverBrowser.setupWidgetDisplayMode("collections", mode)
             end,
+            radio = true,
         }
     end
     sub_item_table[#self.modes].separator = true

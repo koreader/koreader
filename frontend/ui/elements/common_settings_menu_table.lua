@@ -565,6 +565,7 @@ local function genAutoSaveMenuItem(value)
         callback = function()
             G_reader_settings:saveSetting(setting_name, value)
         end,
+        radio = true,
     }
 end
 
