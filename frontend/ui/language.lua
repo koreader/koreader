@@ -107,7 +107,8 @@ function Language:genLanguageSubItem(lang_locale)
         end,
         callback = function()
             self:changeLanguage(lang_locale)
-        end
+        end,
+        radio = true,
     }
 end
 

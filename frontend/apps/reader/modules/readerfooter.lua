@@ -1218,6 +1218,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                             self:setTocMarkers()
                             self:refreshFooter(true, true)
                         end,
+                        radio = true,
                     },
                     {
                         text = _("Thin"),
@@ -1230,6 +1231,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                             self.progress_bar:updateStyle(false, bar_height)
                             self:refreshFooter(true, true)
                         end,
+                        radio = true,
                         separator = true,
                     },
                     {
@@ -1770,6 +1772,7 @@ function ReaderFooter:genProgressBarPositionMenuItems(value)
             self.settings.progress_bar_position = value
             self:refreshFooter(true, true)
         end,
+        radio = true,
     }
 end
 
@@ -1792,6 +1795,7 @@ function ReaderFooter:genProgressBarChapterMarkerWidthMenuItems(value)
             self:setTocMarkers()
             self:refreshFooter(true)
         end,
+        radio = true,
     }
 end
 
@@ -1824,6 +1828,7 @@ function ReaderFooter:genProgressPercentageFormatMenuItems(value)
             self.settings.progress_pct_format = value
             self:refreshFooter(true)
         end,
+        radio = true,
     }
 end
 
@@ -1854,6 +1859,7 @@ function ReaderFooter:genItemSymbolsMenuItems(value)
             end
             self:refreshFooter(true)
         end,
+        radio = true,
     }
 end
 
@@ -1877,6 +1883,7 @@ function ReaderFooter:genItemSeparatorMenuItems(value)
             self.separator_width = nil
             self:refreshFooter(true)
         end,
+        radio = true,
     }
 end
 
@@ -1927,6 +1934,7 @@ function ReaderFooter:genAlignmentMenuItems(value)
             self.settings.align = value
             self:refreshFooter(true)
         end,
+        radio = true,
     }
 end
 
