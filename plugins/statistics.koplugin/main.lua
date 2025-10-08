@@ -88,6 +88,7 @@ ReaderStatistics.default_settings = {
     calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
     calendar_show_histogram = true,
     calendar_browse_future_months = false,
+    color = false,
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
@@ -110,11 +111,16 @@ function ReaderStatistics:onDispatcherRegisterActions()
         {category="none", event="ShowBookStats", title=_("Reading statistics: current book"), reader=true})
 end
 
+function ReaderStatistics:useColorRendering()
+    return Device:hasColorScreen() and (not G_reader_settings:has("color_rendering") or G_reader_settings:isTrue("color_rendering"))
+end
+
 function ReaderStatistics:init()
     if self.document and self.document.is_pic then
         return -- disable in PIC documents
     end
 
+    self.color = self:useColorRendering()
     self.is_doc = false
     self.is_doc_not_frozen = false -- freeze finished books statistics
 
@@ -143,6 +149,10 @@ function ReaderStatistics:init()
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
     self:checkInitDatabase()
+end
+
+function ReaderStatistics:onColorRenderingUpdate()
+    self.color = self:useColorRendering()
 end
 
 function ReaderStatistics:initData()
