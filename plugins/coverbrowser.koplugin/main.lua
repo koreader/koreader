@@ -112,30 +112,30 @@ function CoverBrowser:addToMainMenu(menu_items)
             checked_func = function()
                 return mode == curr_display_modes["filemanager"]
             end,
+            radio = true,
             callback = function()
                 self:setDisplayMode(mode)
             end,
-            radio = true,
         }
         history_sub_item_table[i] = {
             text = text,
             checked_func = function()
                 return mode == curr_display_modes["history"]
             end,
+            radio = true,
             callback = function()
                 CoverBrowser.setupWidgetDisplayMode("history", mode)
             end,
-            radio = true,
         }
         collection_sub_item_table[i] = {
             text = text,
             checked_func = function()
                 return mode == curr_display_modes["collections"]
             end,
+            radio = true,
             callback = function()
                 CoverBrowser.setupWidgetDisplayMode("collections", mode)
             end,
-            radio = true,
         }
     end
     sub_item_table[#self.modes].separator = true

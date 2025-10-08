@@ -443,10 +443,10 @@ common_settings.back_in_filemanager = {
             checked_func = function()
                 return G_reader_settings:readSetting("back_in_filemanager", "default") == "default"
             end,
+            radio = true,
             callback = function()
                 G_reader_settings:saveSetting("back_in_filemanager", "default")
             end,
-            radio = true,
         },
         genGenericMenuEntry(_("Go to parent folder"), "back_in_filemanager", "parent_folder"),
     },
@@ -476,10 +476,10 @@ common_settings.back_in_reader = {
             checked_func = function()
                 return G_reader_settings:readSetting("back_in_reader") == "default"
             end,
+            radio = true,
             callback = function()
                 G_reader_settings:saveSetting("back_in_reader", "default")
             end,
-            radio = true,
         },
         genGenericMenuEntry(_("Go to file browser"), "back_in_reader", "filebrowser"),
         genGenericMenuEntry(_("Go to previous location"), "back_in_reader", "previous_location"),
@@ -562,10 +562,10 @@ local function genAutoSaveMenuItem(value)
         checked_func = function()
             return G_reader_settings:readSetting(setting_name) == value
         end,
+        radio = true,
         callback = function()
             G_reader_settings:saveSetting(setting_name, value)
         end,
-        radio = true,
     }
 end
 
