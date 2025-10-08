@@ -270,7 +270,7 @@ function PocketBook:init()
             self.key_repeat[C.REP_PERIOD] = 120
         end
     end
-    
+
     Generic.init(self)
 end
 
