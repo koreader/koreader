@@ -258,7 +258,43 @@ function PocketBook:init()
     end
     self.powerd = require("device/pocketbook/powerd"):new{device = self}
     self:setAutoStandby(true)
+
+    if self:hasKeys() then
+        self.canKeyRepeat = yes
+        self.key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
+        if G_reader_settings:isTrue("input_no_key_repeat") then
+            self.key_repeat[C.REP_DELAY] = 0
+            self.key_repeat[C.REP_PERIOD] = 0
+        else
+            self.key_repeat[C.REP_DELAY] = 400
+            self.key_repeat[C.REP_PERIOD] = 120
+        end
+    end
+    
     Generic.init(self)
+end
+
+function PocketBook:toggleKeyRepeat(toggle)
+    if toggle == true then
+        self.key_repeat[C.REP_DELAY] = 400
+        self.key_repeat[C.REP_PERIOD] = 120
+
+        -- We can't easily clear existing hooks, but we can overwrite the eventAdjustHook
+        -- with the default empty implementation to effectively remove previous hooks
+        local Input = require("device/input")
+        self.input.eventAdjustHook = Input.eventAdjustHook
+    else
+        self.key_repeat[C.REP_DELAY] = 0
+        self.key_repeat[C.REP_PERIOD] = 0
+
+        -- Register an event hook that filters out KEY_REPEAT events
+        self.input:registerEventAdjustHook(function(this, ev)
+            if ev.type == C.EV_KEY and ev.value == 2 then -- KEY_REPEAT = 2
+                ev.value = -1 -- Set to an invalid value that will be ignored
+            end
+        end)
+    end
+    return true
 end
 
 function PocketBook:exit()
