@@ -194,7 +194,7 @@ function AutoSuspend:init()
         self:_schedule(shutdown_only)
     end
     if Device:isKindle() then
-        self.last_t1_reset_time = UIManager:getElapsedTimeSinceBoot()
+        self.last_t1_reset_time = 0
         self.kindle_task = function()
             self:_schedule_kindle()
         end
