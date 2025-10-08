@@ -21,7 +21,7 @@ local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days
 local default_auto_suspend_timeout_seconds = 15*60 -- 15 minutes
 local default_auto_standby_timeout_seconds = 4 -- 4 seconds; should be safe on Kobo/Sage
 local default_standby_timeout_after_resume_seconds = 4 -- 4 seconds; should be safe on Kobo/Sage, not customizable
-local default_kindle_t1_timeout_reset_seconds = 5*60 -- 5 minutes (i.e., half of the standard t1 timeout).
+local default_kindle_t1_timeout_reset_seconds = 4*60 -- 4 minutes (i.e., lower than the minimum t1 timeout).
 
 local AutoSuspend = WidgetContainer:extend{
     name = "autosuspend",
