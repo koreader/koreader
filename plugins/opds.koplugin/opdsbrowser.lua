@@ -780,7 +780,8 @@ function OPDSBrowser:searchCatalog(item_url)
                         self.catalog_title = _("Search results")
                         local search_str = util.urlEncode(dialog:getInputText())
                         -- Use function replacement to avoid % being treated as capture refs
-                        self:updateCatalog(item_url:gsub("%%s", function() return search_str end))
+                        item_url = item_url:gsub("%%s", function() return search_str end)
+                        self:updateCatalog(item_url)
                     end,
                 },
             },
