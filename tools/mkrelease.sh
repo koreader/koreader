@@ -15,14 +15,12 @@ OPTIONS:
     -o OPTS, --options OPTS      forward options to compressor
 "
 
+# Note: we ignore directories (entries with no CRC).
 # shellcheck disable=SC2016
 declare -r AWK_HELPERS='
 function print_entry(path, size, crc) {
-    sub("/$", "", path)
     if (crc != "")
         print path, size, crc
-    else
-        print path"/"
 }
 function reverse_entry() {
     $0 = $3" "$2" "$1;
@@ -200,13 +198,9 @@ fi
 
 # Don't forget the archive's internal manifest, if requested.
 if [[ -n "${manifest}" ]]; then
-    manifest_path=("${manifest}")
-    while [[ "${manifest_path[0]}" = */*[^/] ]]; do
-        manifest_path=("${manifest_path[0]%/*}/" "${manifest_path[@]}")
-    done
     {
         cat "${tmpdir}/paths"
-        printf '%s\n' "${manifest_path[@]}"
+        printf '%s\n' "${manifest}"
     } | sort -u -o "${tmpdir}/paths_with_manifest"
     install --mode=0644 -D "${tmpdir}/paths_with_manifest" "${tmpdir}/contents/${manifest}"
     if [[ -n "${manifest_transform}" ]]; then
@@ -261,7 +255,6 @@ fi
 
 # Make a copy of everything so we can later patch timestamps and
 # fix permissions to ensure reproducibility.
-# Note: We want to keep "empty" (with ignored files) directories.
 "${TAR}" --create --dereference --hard-dereference --no-recursion \
     --verbatim-files-from --files-from="${tmpdir}/paths" |
     "${TAR}" --extract --directory="${tmpdir}/contents"
