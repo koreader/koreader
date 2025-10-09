@@ -368,7 +368,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                     {
                         text_func = function()
                             local chars_per_page = G_reader_settings:readSetting("pagemap_chars_per_synthetic_page")
-                            return T(_("Characters per synthetic page: %1"), chars_per_page or _("disabled"))
+                            return T(_("Characters per fixed-length page: %1"), chars_per_page or _("disabled"))
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
@@ -454,7 +454,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
             -- current book
             {
                 text_func = function()
-                    return T(_("Characters per synthetic page: %1"), self.chars_per_synthetic_page or _("disabled"))
+                    return T(_("Characters per fixed-length page: %1"), self.chars_per_synthetic_page or _("disabled"))
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
@@ -501,7 +501,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                 text_func = function()
                     if self.has_pagemap then
                         if self.chars_per_synthetic_page then
-                            return _("Reference source info: synthetic")
+                            return _("Reference source info: fixed-length")
                         end
                         return _("Reference source info: publisher")
                     end
