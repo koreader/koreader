@@ -8,6 +8,7 @@ local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
+local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local SpinWidget = require("ui/widget/spinwidget")
@@ -78,6 +79,11 @@ function ReaderPageMap:_postInit()
         self.has_pagemap = true
         self:resetLayout()
         self.view:registerViewModule("pagemap", self)
+        if self.ui.document.is_new and self.ui.document:hasPageMapDocumentProvided() then
+            UIManager:show(InfoMessage:new{
+                text = _("This book has reference page numbers from the publisher"),
+            })
+        end
     end
 end
 
@@ -506,7 +512,6 @@ function ReaderPageMap:addToMainMenu(menu_items)
                 end,
                 keep_menu_open = true,
                 callback = function()
-                    local InfoMessage = require("ui/widget/infomessage")
                     UIManager:show(InfoMessage:new{
                         text = T(_("Source (book hardcopy edition) of reference page numbers:\n\n%1"),
                             self.ui.document:getPageMapSource()),
