@@ -1211,6 +1211,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         checked_func = function()
                             return not self.settings.progress_style_thin
                         end,
+                        radio = true,
                         callback = function()
                             self.settings.progress_style_thin = nil
                             local bar_height = self.settings.progress_style_thick_height
@@ -1224,6 +1225,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         checked_func = function()
                             return self.settings.progress_style_thin
                         end,
+                        radio = true,
                         callback = function()
                             self.settings.progress_style_thin = true
                             local bar_height = self.settings.progress_style_thin_height
@@ -1762,6 +1764,7 @@ function ReaderFooter:genProgressBarPositionMenuItems(value)
         checked_func = function()
             return self.settings.progress_bar_position == value
         end,
+        radio = true,
         callback = function()
             if value == "alongside" then
                 -- Text alignment is disabled in this mode
@@ -1787,6 +1790,7 @@ function ReaderFooter:genProgressBarChapterMarkerWidthMenuItems(value)
         checked_func = function()
             return self.settings.toc_markers_width == value
         end,
+        radio = true,
         callback = function()
             self.settings.toc_markers_width = value -- unscaled_size_check: ignore
             self:setTocMarkers()
@@ -1820,6 +1824,7 @@ function ReaderFooter:genProgressPercentageFormatMenuItems(value)
         checked_func = function()
             return self.settings.progress_pct_format == value
         end,
+        radio = true,
         callback = function()
             self.settings.progress_pct_format = value
             self:refreshFooter(true)
@@ -1847,6 +1852,7 @@ function ReaderFooter:genItemSymbolsMenuItems(value)
         checked_func = function()
             return self.settings.item_prefix == value
         end,
+        radio = true,
         callback = function()
             self.settings.item_prefix = value
             if self.settings.items_separator == "none" then
@@ -1872,6 +1878,7 @@ function ReaderFooter:genItemSeparatorMenuItems(value)
         checked_func = function()
             return self.settings.items_separator == value
         end,
+        radio = true,
         callback = function()
             self.settings.items_separator = value
             self.separator_width = nil
@@ -1923,6 +1930,7 @@ function ReaderFooter:genAlignmentMenuItems(value)
         checked_func = function()
             return self.settings.align == value
         end,
+        radio = true,
         callback = function()
             self.settings.align = value
             self:refreshFooter(true)

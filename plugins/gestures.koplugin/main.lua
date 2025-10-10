@@ -299,6 +299,7 @@ function Gestures:genMenu(ges)
                 return util.tableEquals(self.gestures[ges], self.defaults[ges])
             end,
             check_callback_updates_menu = true,
+            radio = true,
             callback = function(touchmenu_instance)
                 local function do_remove()
                     self.gestures[ges] = util.tableDeepCopy(self.defaults[ges])
@@ -316,6 +317,7 @@ function Gestures:genMenu(ges)
             return self.gestures[ges] == nil
         end,
         check_callback_updates_menu = true,
+        radio = true,
         callback = function(touchmenu_instance)
             local function do_remove()
                 self.gestures[ges] = nil

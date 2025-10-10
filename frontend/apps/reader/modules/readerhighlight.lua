@@ -729,6 +729,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
             checked_func = function()
                 return G_reader_settings:readSetting("highlight_dialog_position", "center") == v[2]
             end,
+            radio = true,
             callback = function()
                 G_reader_settings:saveSetting("highlight_dialog_position", v[2])
             end,

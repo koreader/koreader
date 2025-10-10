@@ -354,6 +354,7 @@ function Translator:genSettingsMenu()
                 checked_func = function()
                     return lang_key == (G_reader_settings:readSetting(setting_name) or default_checked_item)
                 end,
+                radio = true,
                 callback = function()
                     G_reader_settings:saveSetting(setting_name, lang_key)
                 end,

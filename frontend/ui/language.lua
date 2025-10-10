@@ -105,6 +105,7 @@ function Language:genLanguageSubItem(lang_locale)
         checked_func = function()
             return G_reader_settings:readSetting("language") == lang_locale
         end,
+        radio = true,
         callback = function()
             self:changeLanguage(lang_locale)
         end

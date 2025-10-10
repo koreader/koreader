@@ -18,6 +18,7 @@ local function genTapZonesMenu(tap_zones_type)
         checked_func = function()
             return G_reader_settings:readSetting("page_turns_tap_zones", "default") == tap_zones_type
         end,
+        radio = true,
         callback = function()
             G_reader_settings:saveSetting("page_turns_tap_zones", tap_zones_type)
             ReaderUI.instance.view:setupTouchZones()
