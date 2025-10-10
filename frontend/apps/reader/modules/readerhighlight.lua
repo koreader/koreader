@@ -101,7 +101,7 @@ function ReaderHighlight:init()
                     UIManager:show(Notification:new{
                         text = _("Selection copied to clipboard."),
                     })
-                    UIManager:scheduleIn(self.ui.BACKLINK_HIGHLIGHT_DURATION, function()
+                    UIManager:scheduleIn(self.ui.DELAY_CLEAR_HIGHLIGHT_S, function()
                         this:clear()
                     end)
                 end,

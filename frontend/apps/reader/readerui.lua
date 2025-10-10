@@ -111,7 +111,7 @@ end
 
 function ReaderUI:init()
     -- delay to show user their reading position after returning from overlays
-    self.BACKLINK_HIGHLIGHT_DURATION = 0.5 -- in seconds
+    self.DELAY_CLEAR_HIGHLIGHT_S = 0.5 -- in seconds
     self.active_widgets = {}
 
     -- cap screen refresh on pan to 2 refreshes per second
