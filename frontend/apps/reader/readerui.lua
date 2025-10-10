@@ -110,6 +110,7 @@ function ReaderUI:registerPostReaderReadyCallback(callback)
 end
 
 function ReaderUI:init()
+    self.DELAY_CLEAR_HIGHLIGHT_S = 0.5
     self.active_widgets = {}
 
     -- cap screen refresh on pan to 2 refreshes per second
