@@ -7,6 +7,7 @@ local C = ffi.C
 local inkview = ffi.load("inkview")
 local band = require("bit").band
 local util = require("util")
+local time = require("ui/time")
 local _ = require("gettext")
 
 require("ffi/posix_h")
@@ -261,14 +262,8 @@ function PocketBook:init()
 
     if self:hasKeys() then
         self.canKeyRepeat = yes
-        self.key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
-        if G_reader_settings:isTrue("input_no_key_repeat") then
-            self.key_repeat[C.REP_DELAY] = 0
-            self.key_repeat[C.REP_PERIOD] = 0
-        else
-            self.key_repeat[C.REP_DELAY] = 400
-            self.key_repeat[C.REP_PERIOD] = 120
-        end
+        self.last_key_code = 0
+        self.last_key_time = 0
     end
 
     Generic.init(self)
@@ -276,21 +271,22 @@ end
 
 function PocketBook:toggleKeyRepeat(toggle)
     if toggle == true then
-        self.key_repeat[C.REP_DELAY] = 400
-        self.key_repeat[C.REP_PERIOD] = 120
-
         -- We can't easily clear existing hooks, but we can overwrite the eventAdjustHook
         -- with the default empty implementation to effectively remove previous hooks
         local Input = require("device/input")
         self.input.eventAdjustHook = Input.eventAdjustHook
     else
-        self.key_repeat[C.REP_DELAY] = 0
-        self.key_repeat[C.REP_PERIOD] = 0
-
         -- Register an event hook that filters out KEY_REPEAT events
         self.input:registerEventAdjustHook(function(this, ev)
-            if ev.type == C.EV_KEY and ev.value == 2 then -- KEY_REPEAT = 2
-                ev.value = -1 -- Set to an invalid value that will be ignored
+            if ev.type == C.EV_KEY and ev.value == 0 then -- KEY_RELEASE = 0
+                local now = time.now()
+                local time_diff = time.to_ms(now - self.last_key_time)
+                if time_diff <= 10 and ev.code == self.last_key_code then
+                    logger.info("Skipping sticky key", ev.code, time_diff)
+                    ev.value = -1 -- Set to an invalid value that will be ignored
+                end
+                self.last_key_code = ev.code
+                self.last_key_time = now
             end
         end)
     end
