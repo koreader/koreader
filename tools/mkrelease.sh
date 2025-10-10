@@ -15,17 +15,33 @@ OPTIONS:
     -o OPTS, --options OPTS      forward options to compressor
 "
 
+# Note: we ignore directories (entries with no CRC).
 # shellcheck disable=SC2016
 declare -r AWK_HELPERS='
 function print_entry(path, size, crc) {
-    sub("/$", "", path)
     if (crc != "")
         print path, size, crc
-    else
-        print path"/"
 }
 function reverse_entry() {
     $0 = $3" "$2" "$1;
+}
+'
+
+# shellcheck disable=SC2016
+declare -r AWK_TAR_BLOCKLIST='
+BEGIN {
+    FS = "[: ]+"
+    ORS = ""
+    TAR_BS = 512
+    prev_offset = 0
+}
+{
+    if ($2)
+        print ($2 - prev_offset) * TAR_BS ","
+    prev_offset = $2
+}
+END {
+    print 0
 }
 '
 
@@ -200,13 +216,9 @@ fi
 
 # Don't forget the archive's internal manifest, if requested.
 if [[ -n "${manifest}" ]]; then
-    manifest_path=("${manifest}")
-    while [[ "${manifest_path[0]}" = */*[^/] ]]; do
-        manifest_path=("${manifest_path[0]%/*}/" "${manifest_path[@]}")
-    done
     {
         cat "${tmpdir}/paths"
-        printf '%s\n' "${manifest_path[@]}"
+        printf '%s\n' "${manifest}"
     } | sort -u -o "${tmpdir}/paths_with_manifest"
     install --mode=0644 -D "${tmpdir}/paths_with_manifest" "${tmpdir}/contents/${manifest}"
     if [[ -n "${manifest_transform}" ]]; then
@@ -261,7 +273,6 @@ fi
 
 # Make a copy of everything so we can later patch timestamps and
 # fix permissions to ensure reproducibility.
-# Note: We want to keep "empty" (with ignored files) directories.
 "${TAR}" --create --dereference --hard-dereference --no-recursion \
     --verbatim-files-from --files-from="${tmpdir}/paths" |
     "${TAR}" --extract --directory="${tmpdir}/contents"
@@ -286,6 +297,8 @@ sevenzip_compress_cmd+=("${options[@]}" a "${output}" "-i@${filelist}")
 tar_compress_cmd=(
     "${TAR}" --create --no-recursion
     --numeric-owner --owner=0 --group=0
+    # Minimize size of terminating empty blocks (7KB → 1KB).
+    --record-size=512
     --verbatim-files-from --files-from="${filelist}"
 )
 case "${format}" in
@@ -300,19 +313,34 @@ case "${format}" in
         echo "Creating archive: ${output}"
         # Note: create a rsyncable gzipped tar.
         "${tar_compress_cmd[@]}" |
-            "${gzip}" --no-name --rsyncable "${options[@]}" --stdout |
+            "${gzip}" -9 --no-name --rsyncable "${options[@]}" --stdout |
             write_to_file "${output}"
         ;;
     tar.xz)
         echo "Creating archive: ${output}"
-        "${tar_compress_cmd[@]}" |
-            xz ${jobs:+--threads=${jobs}} "${options[@]}" |
+        # Note: we create one XZ block per TAR entry.
+        tarfile="${tmpdir}/release.tar"
+        tarindex="${tarfile}.index"
+        blocklist="${tmpdir}/release.blocklist"
+        # Create the initial uncompressed TAR file.
+        "${tar_compress_cmd[@]}" --file="${tarfile}"
+        # Find out where each entry starts.
+        "${TAR}" --block-number --list --file="${tarfile}" >"${tarindex}"
+        # Generate block list for XZ.
+        awk "${AWK_TAR_BLOCKLIST}" <"${tarindex}" >"${blocklist}"
+        # Create the final TAR.XZ file.
+        # NOTE: we set the block size to a big enough number to
+        # prevent xz from splitting an entry into multiple blocks.
+        xz -9 ${jobs:+--threads=${jobs}} \
+            --block-size=$((32 * 1024 * 1024)) \
+            --block-list="$(cat "${blocklist}")" \
+            "${options[@]}" --stdout "${tarfile}" |
             write_to_file "${output}"
         ;;
     tar.zst)
         echo "Creating archive: ${output}"
         "${tar_compress_cmd[@]}" |
-            zstd ${jobs:+--threads=${jobs}} "${options[@]}" --stdout |
+            zstd -19 ${jobs:+--threads=${jobs}} "${options[@]}" --stdout |
             write_to_file "${output}"
         ;;
     zip)
