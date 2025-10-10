@@ -264,7 +264,7 @@ function PocketBook:init()
         self.canKeyRepeat = yes
         self.last_key_code = 0
         self.last_key_time = 0
-        self.toggleKeyRepeat(G_reader_settings:nilOrFalse("input_no_key_repeat"))
+        self:toggleKeyRepeat(G_reader_settings:nilOrFalse("input_no_key_repeat"))
     end
 
     Generic.init(self)
