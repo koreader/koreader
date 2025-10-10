@@ -277,7 +277,7 @@ function PocketBook:toggleKeyRepeat(toggle)
         local Input = require("device/input")
         self.input.eventAdjustHook = Input.eventAdjustHook
     else
-        -- Register an event hook that filters out KEY_REPEAT events
+        -- Register an event hook that filters out repeated events
         self.input:registerEventAdjustHook(function(this, ev)
             if ev.type == C.EV_KEY and ev.value == 0 then -- KEY_RELEASE = 0
                 local now = time.now()
