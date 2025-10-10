@@ -35,9 +35,14 @@ function QRClipboard:addToHighlightDialog()
                 UIManager:show(QRMessage:new{
                     text = Device.input.getClipboardText(),
                     width = Device.screen:getWidth(),
-                    height = Device.screen:getHeight()
+                    height = Device.screen:getHeight(),
+                    dismiss_callback = function()
+                        this:onClose(true)
+                        -- delay clearing highlighted text a bit, so the user can see
+                        -- what was used to generate the QR code
+                        UIManager:scheduleIn(0.5, function() this:clear() end)
+                    end,
                 })
-                this:onClose()
             end,
         }
     end)
