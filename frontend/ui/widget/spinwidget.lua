@@ -93,8 +93,9 @@ function SpinWidget:init()
     -- Actually the widget layout
     self:update()
 
+    self.non_touch_with_action_dpad = Device:hasDPad() and Device:useDPadAsActionKeys() and not Device:isTouchDevice()
     -- Move focus to OK button on NT devices with key_events, saves time for users
-    if Device:hasDPad() and Device:useDPadAsActionKeys() and not Device:isTouchDevice() then
+    if self.non_touch_with_action_dpad then
         -- Since button table is the last row in our layout, and OK is the last button
         -- We need to set focus to both last row, and last column
         local last_row = #self.layout
@@ -316,6 +317,13 @@ function SpinWidget:addWidget(widget, re_init)
     -- Insert widget before the bottom buttons and their previous vspan.
     -- This is different to InputDialog.
     table.insert(self.vgroup, #self.vgroup, widget)
+    if self.non_touch_with_action_dpad then
+        -- We need to reset focus again, otherwise FocusManager will not know about the new additions
+        -- and the cursor keys will become unresponsive.
+        local last_row = #self.layout
+        local last_col = #self.layout[last_row]
+        self:moveFocusTo(last_col, last_row)
+    end
 end
 
 function SpinWidget:getAddedWidgetAvailableWidth()
