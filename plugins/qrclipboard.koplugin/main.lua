@@ -39,7 +39,9 @@ function QRClipboard:addToHighlightDialog()
                     dismiss_callback = function()
                         -- delay clearing highlighted text a bit, so the user can see
                         -- what was used to generate the QR code
-                        UIManager:scheduleIn(0.5, function() this:clear() end)
+                        UIManager:scheduleIn(self.ui.BACKLINK_HIGHLIGHT_DURATION, function()
+                            this:clear()
+                        end)
                     end,
                 })
                 this:onClose(true)

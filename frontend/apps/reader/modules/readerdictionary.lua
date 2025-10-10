@@ -1356,7 +1356,7 @@ function ReaderDictionary:showNoResultsDialog(word, dict_names, fuzzy_search, bo
             id = "close",
             callback = function(dialog)
                 UIManager:close(dialog)
-                UIManager:scheduleIn(0.5, function() lookupCancelled() end)
+                UIManager:scheduleIn(self.ui.BACKLINK_HIGHLIGHT_DURATION, function() lookupCancelled() end)
             end,
         },
         primary_action,
