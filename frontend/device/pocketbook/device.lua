@@ -282,7 +282,7 @@ function PocketBook:toggleKeyRepeat(toggle)
             if ev.type == C.EV_KEY and ev.value == 1 then -- KEY_PRESS = 1
                 local now = time.now()
                 local time_diff = time.to_ms(now - self.last_key_time)
-                if time_diff <= 10 and ev.code == self.last_key_code then
+                if time_diff <= 100 and ev.code == self.last_key_code then
                     logger.info("Skipping sticky key", ev.code, time_diff)
                     ev.value = -1 -- Set to an invalid value that will be ignored
                 end
