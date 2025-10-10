@@ -7,7 +7,6 @@ local C = ffi.C
 local inkview = ffi.load("inkview")
 local band = require("bit").band
 local util = require("util")
-local time = require("ui/time")
 local _ = require("gettext")
 
 require("ffi/posix_h")
@@ -279,6 +278,7 @@ function PocketBook:toggleKeyRepeat(toggle)
         -- Register an event hook that filters out KEY_REPEAT events
         self.input:registerEventAdjustHook(function(this, ev)
             if ev.type == C.EV_KEY and ev.value == 0 then -- KEY_RELEASE = 0
+                local time = require("ui/time")
                 local now = time.now()
                 local time_diff = time.to_ms(now - self.last_key_time)
                 if time_diff <= 10 and ev.code == self.last_key_code then
