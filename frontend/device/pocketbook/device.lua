@@ -7,6 +7,7 @@ local C = ffi.C
 local inkview = ffi.load("inkview")
 local band = require("bit").band
 local util = require("util")
+local time = require("ui/time")
 local _ = require("gettext")
 
 require("ffi/posix_h")
@@ -258,7 +259,39 @@ function PocketBook:init()
     end
     self.powerd = require("device/pocketbook/powerd"):new{device = self}
     self:setAutoStandby(true)
+
+    if self:hasKeys() then
+        self.canKeyRepeat = yes
+        self.last_key_code = 0
+        self.last_key_time = 0
+        self:toggleKeyRepeat(G_reader_settings:nilOrFalse("input_no_key_repeat"))
+    end
+
     Generic.init(self)
+end
+
+function PocketBook:toggleKeyRepeat(toggle)
+    if toggle == true then
+        -- We can't easily clear existing hooks, but we can overwrite the eventAdjustHook
+        -- with the default empty implementation to effectively remove previous hooks
+        local Input = require("device/input")
+        self.input.eventAdjustHook = Input.eventAdjustHook
+    else
+        -- Register an event hook that filters out repeated events
+        self.input:registerEventAdjustHook(function(this, ev)
+            if ev.type == C.EV_KEY and ev.value == 1 then -- KEY_PRESS = 1
+                local now = time.now()
+                local time_diff = time.to_ms(now - self.last_key_time)
+                if time_diff <= 500 and ev.code == self.last_key_code then
+                    logger.info("Skipping sticky key", ev.code, time_diff)
+                    ev.value = -1 -- Set to an invalid value that will be ignored
+                end
+                self.last_key_code = ev.code
+                self.last_key_time = now
+            end
+        end)
+    end
+    return true
 end
 
 function PocketBook:exit()
