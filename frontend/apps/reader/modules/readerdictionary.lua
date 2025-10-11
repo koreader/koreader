@@ -1356,8 +1356,7 @@ function ReaderDictionary:showNoResultsDialog(word, dict_names, fuzzy_search, bo
             id = "close",
             callback = function(dialog)
                 UIManager:close(dialog)
-                local ReaderUI = require("apps/reader/readerui")
-                UIManager:scheduleIn(ReaderUI.DELAY_CLEAR_HIGHLIGHT_S, function() lookupCancelled() end)
+                UIManager:scheduleIn(self.ui.DELAY_CLEAR_HIGHLIGHT_S, function() lookupCancelled() end)
             end,
         },
         primary_action,

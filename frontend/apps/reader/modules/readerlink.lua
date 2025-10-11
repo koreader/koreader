@@ -1548,8 +1548,7 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
                 -- it and know where to start reading again
                 local footnote_top_y = Screen:getHeight() - footnote_height
                 if link.link_y > footnote_top_y then
-                    local ReaderUI = require("apps/reader/readerui")
-                    UIManager:scheduleIn(ReaderUI.DELAY_CLEAR_HIGHLIGHT_S, clear_highlight)
+                    UIManager:scheduleIn(self.ui.DELAY_CLEAR_HIGHLIGHT_S, clear_highlight)
                 else
                     clear_highlight()
                 end

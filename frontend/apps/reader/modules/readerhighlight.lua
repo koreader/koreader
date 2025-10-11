@@ -101,8 +101,7 @@ function ReaderHighlight:init()
                     UIManager:show(Notification:new{
                         text = _("Selection copied to clipboard."),
                     })
-                    local ReaderUI = require("apps/reader/readerui")
-                    UIManager:scheduleIn(ReaderUI.DELAY_CLEAR_HIGHLIGHT_S, function()
+                    UIManager:scheduleIn(self.ui.DELAY_CLEAR_HIGHLIGHT_S, function()
                         this:clear()
                     end)
                 end,
