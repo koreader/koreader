@@ -3,10 +3,13 @@ local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
+local DocSettings = require("docsettings")
 local SQ3 = require("lua-ljsqlite3/init")
 local logger = require("logger")
-local util = require("ffi/util")
-local T = util.template
+local util = require("util")
+local ffiUtil = require("ffi/util")
+local datetime = require("datetime")
+local T = ffiUtil.template
 local _ = require("gettext")
 
 local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
@@ -74,72 +77,91 @@ function XMNoteExporter:getMenuTable()
     }
 end
 
-function XMNoteExporter:getBookReadingDurations(id_book)
-    local conn = SQ3.open(db_location)
-    local sql_smt = [[
-        SELECT date(start_time, 'unixepoch', 'localtime') AS dates,
-               max(page)                                  AS last_page,
-               sum(duration)                              AS durations,
-               min(start_time)                            AS min_start_time
-        FROM   page_stat
-        WHERE  id_book = %d
-        GROUP  BY Date(start_time, 'unixepoch', 'localtime')
-        ORDER  BY dates DESC;
-    ]]
-    local result = conn:exec(string.format(sql_smt, id_book))
-    conn:close()
+function XMNoteExporter:getBookReadingDurationsByDay(id_book)
+    if util.fileExists(db_location) then
+        local conn = SQ3.open(db_location)
+        local sql_smt = [[
+            SELECT date(start_time, 'unixepoch', 'localtime') AS date,
+                   max(page)                                  AS last_page,
+                   sum(duration)                              AS total_duration,
+                   min(start_time)                            AS first_start_time
+            FROM   page_stat
+            WHERE  id_book = %d
+            GROUP  BY Date(start_time, 'unixepoch', 'localtime')
+            ORDER  BY date DESC;
+        ]]
+        local result = conn:exec(string.format(sql_smt, id_book))
+        conn:close()
 
-    if result == nil then
+        if result == nil then
+            return {}
+        end
+
+        local reading_durations = {}
+        for i = 1, #result.date do
+            local entry = {
+                date = tonumber(result[4][i]) * 1000,
+                durationSeconds = tonumber(result[3][i]),
+                position = tonumber(result[2][i]),
+            }
+            table.insert(reading_durations, entry)
+        end
+        return reading_durations
+    else
         return {}
     end
-
-    local reading_durations = {}
-    for i = 1, #result.dates do
-        local entry = {
-            date = tonumber(result[4][i]) * 1000,
-            durationSeconds = tonumber(result[3][i]),
-            position = tonumber(result[2][i]),
-        }
-        table.insert(reading_durations, entry)
-    end
-    return reading_durations
 end
 
-function XMNoteExporter:getBookIdByTitle(title)
-    local conn = SQ3.open(db_location)
-    local sql_smt = [[
-        SELECT
-            id
-        FROM
-            book
-        WHERE
-            title = "%s"
-        LIMIT 1
-    ]]
-    local result = conn:exec(string.format(sql_smt, title))
-    conn:close()
+function XMNoteExporter:findBookIdByTitleAndMD5(title, md5)
+    if util.fileExists(db_location) then
+        local conn = SQ3.open(db_location)
+        local sql_smt = [[SELECT id FROM book WHERE title = "%s" and md5 = "%s" LIMIT 1]]
+        local result = conn:exec(string.format(sql_smt, title, md5))
+        conn:close()
 
-    if not (result and result[1] and result[1][1]) then
+        if not (result and result[1] and result[1][1]) then
+            return nil
+        end
+        return tonumber(result[1][1])
+    else
         return nil
     end
-    return tonumber(result[1][1])
 end
 
 function XMNoteExporter:createRequestBody(booknotes)
+    local doc_settings = DocSettings:open(booknotes.file)
+    local summary = doc_settings:readSetting("summary") or {}
+    local md5 = doc_settings:readSetting("partial_md5_checksum")
+
+    local reading_status_map = {
+        reading = 2,
+        complete = 3,
+        abandoned = 5,
+    }
+
+    local reading_status_changed_date
+    if summary.modified and summary.modified ~= "" then
+        reading_status_changed_date = datetime.stringToSeconds(summary.modified)
+    else
+        reading_status_changed_date = 0
+    end
+
     local book = {
         title = booknotes.title or "",
         author = booknotes.author or "",
         type = 1,
         locationUnit = 1,
+        readingStatus = reading_status_map[summary.status] or reading_status_map.reading,
+        readingStatusChangedDate = reading_status_changed_date,
         source = "KOReader"
     }
 
     local entries = {}
 
-    local book_id = self:getBookIdByTitle(book.title)
+    local book_id = self:findBookIdByTitleAndMD5(book.title, md5)
     local reading_durations = {}
     if book_id ~= nil then
-        reading_durations = self:getBookReadingDurations(book_id)
+        reading_durations = self:getBookReadingDurationsByDay(book_id)
     end
 
     for _, chapter in ipairs(booknotes) do
@@ -192,4 +214,3 @@ function XMNoteExporter:export(t)
 end
 
 return XMNoteExporter
-
