@@ -27,6 +27,7 @@ local T = ffiUtil.template
 local Screen = Device.screen
 
 local ReaderHighlight = InputContainer:extend{
+    DELAY_CLEAR_HIGHLIGHT_S = 0.5,
     -- Matches what is available in BlitBuffer.HIGHLIGHT_COLORS
     highlight_colors = {
         {_("Red"), "red"},
@@ -101,7 +102,7 @@ function ReaderHighlight:init()
                     UIManager:show(Notification:new{
                         text = _("Selection copied to clipboard."),
                     })
-                    UIManager:scheduleIn(self.ui.DELAY_CLEAR_HIGHLIGHT_S, function()
+                    UIManager:scheduleIn(self.DELAY_CLEAR_HIGHLIGHT_S, function()
                         this:clear()
                     end)
                 end,

@@ -87,8 +87,6 @@ local ReaderUI = InputContainer:extend{
 
     postInitCallback = nil,
     postReaderReadyCallback = nil,
-
-    DELAY_CLEAR_HIGHLIGHT_S = 0.5,
 }
 
 function ReaderUI:registerModule(name, ui_module, always_active)

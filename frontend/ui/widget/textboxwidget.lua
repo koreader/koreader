@@ -2381,7 +2381,7 @@ function TextBoxWidget:scheduleClearHighlightAndRedraw()
             self:redrawHighlight()
         end
     end
-    local delay = self.ui and self.ui.DELAY_CLEAR_HIGHLIGHT_S or 0.5
+    local delay = self.ui and self.ui.highlight.DELAY_CLEAR_HIGHLIGHT_S or 0.5
     UIManager:scheduleIn(delay, self.highlight_clear_and_redraw_action)
 end
 
