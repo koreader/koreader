@@ -39,7 +39,8 @@ function QRClipboard:addToHighlightDialog()
                     dismiss_callback = function()
                         -- delay clearing highlighted text a bit, so the user can see
                         -- what was used to generate the QR code
-                        UIManager:scheduleIn(self.ui.DELAY_CLEAR_HIGHLIGHT_S, function()
+                        local ReaderUI = require("apps/reader/readerui")
+                        UIManager:scheduleIn(ReaderUI.DELAY_CLEAR_HIGHLIGHT_S, function()
                             this:clear()
                         end)
                     end,

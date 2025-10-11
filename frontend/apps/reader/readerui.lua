@@ -89,6 +89,8 @@ local ReaderUI = InputContainer:extend{
     postReaderReadyCallback = nil,
 }
 
+ReaderUI.DELAY_CLEAR_HIGHLIGHT_S = 0.5
+
 function ReaderUI:registerModule(name, ui_module, always_active)
     if name then
         self[name] = ui_module
@@ -110,7 +112,6 @@ function ReaderUI:registerPostReaderReadyCallback(callback)
 end
 
 function ReaderUI:init()
-    self.DELAY_CLEAR_HIGHLIGHT_S = 0.5
     self.active_widgets = {}
 
     -- cap screen refresh on pan to 2 refreshes per second

@@ -532,7 +532,8 @@ function HtmlBoxWidget:scheduleClearHighlightAndRedraw()
             self:redrawHighlight()
         end
     end
-    UIManager:scheduleIn(self.ui.DELAY_CLEAR_HIGHLIGHT_S, self.highlight_clear_and_redraw_action)
+    local ReaderUI = require("apps/reader/readerui")
+    UIManager:scheduleIn(ReaderUI.DELAY_CLEAR_HIGHLIGHT_S, self.highlight_clear_and_redraw_action)
 end
 
 function HtmlBoxWidget:unscheduleClearHighlightAndRedraw()

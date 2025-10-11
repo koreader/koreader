@@ -101,7 +101,8 @@ function ReaderHighlight:init()
                     UIManager:show(Notification:new{
                         text = _("Selection copied to clipboard."),
                     })
-                    UIManager:scheduleIn(self.ui.DELAY_CLEAR_HIGHLIGHT_S, function()
+                    local ReaderUI = require("apps/reader/readerui")
+                    UIManager:scheduleIn(ReaderUI.DELAY_CLEAR_HIGHLIGHT_S, function()
                         this:clear()
                     end)
                 end,
@@ -136,7 +137,7 @@ function ReaderHighlight:init()
             return {
                 text = _("Dictionary"),
                 callback = function()
-                    this:lookupDict(index, this)
+                    this:lookupDict(index)
                     this:onClose(true) -- keep highlight for dictionary lookup
                 end,
             }
@@ -2103,7 +2104,7 @@ function ReaderHighlight:onHoldRelease()
                 self:onClose()
             elseif default_highlight_action == "dictionary" then
                 self:lookupDict()
-                self:onClose()
+                self:onClose(true) -- keep selected text
             elseif default_highlight_action == "search" then
                 self:onHighlightSearch()
                 -- No self:onClose() to not remove the selected text
@@ -2287,7 +2288,7 @@ function ReaderHighlight:onHighlightSearch()
     end
 end
 
-function ReaderHighlight:lookupDict(index, highlight)
+function ReaderHighlight:lookupDict(index)
     logger.dbg("dictionary lookup highlight")
     self:highlightFromHoldPos()
     if self.selected_text then
@@ -2299,7 +2300,7 @@ function ReaderHighlight:lookupDict(index, highlight)
                 word_boxes[i] = self.view:pageToScreenTransform(self.selected_text.pos0.page, box)
             end
         end
-        self.ui.dictionary:onLookupWord(util.cleanupSelectedText(self.selected_text.text), false, word_boxes, highlight)
+        self.ui.dictionary:onLookupWord(util.cleanupSelectedText(self.selected_text.text), false, word_boxes, self)
     end
 end
 

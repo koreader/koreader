@@ -1301,7 +1301,8 @@ function DictQuickLookup:onClose(no_clear)
             -- delay unhighlight of selection, so we can see where we stopped when
             -- back from our journey into dictionary or wikipedia
             local clear_id = self.highlight:getClearId()
-            UIManager:scheduleIn(self.ui.DELAY_CLEAR_HIGHLIGHT_S, function()
+            local ReaderUI = require("apps/reader/readerui")
+            UIManager:scheduleIn(ReaderUI.DELAY_CLEAR_HIGHLIGHT_S, function()
                 self.highlight:clear(clear_id)
             end)
         end
