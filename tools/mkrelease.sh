@@ -295,19 +295,19 @@ case "${format}" in
         echo "Creating archive: ${output}"
         # Note: create a rsyncable gzipped tar.
         "${tar_compress_cmd[@]}" |
-            "${gzip}" --no-name --rsyncable "${options[@]}" --stdout |
+            "${gzip}" -9 --no-name --rsyncable "${options[@]}" --stdout |
             write_to_file "${output}"
         ;;
     tar.xz)
         echo "Creating archive: ${output}"
         "${tar_compress_cmd[@]}" |
-            xz ${jobs:+--threads=${jobs}} "${options[@]}" |
+            xz -9 ${jobs:+--threads=${jobs}} "${options[@]}" |
             write_to_file "${output}"
         ;;
     tar.zst)
         echo "Creating archive: ${output}"
         "${tar_compress_cmd[@]}" |
-            zstd ${jobs:+--threads=${jobs}} "${options[@]}" --stdout |
+            zstd -19 ${jobs:+--threads=${jobs}} "${options[@]}" --stdout |
             write_to_file "${output}"
         ;;
     zip)
