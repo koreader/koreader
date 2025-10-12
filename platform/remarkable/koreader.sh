@@ -14,8 +14,7 @@ fi
 
 # update to new version from OTA directory
 ko_update_check() {
-    NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
-    INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
+    NEWUPDATE="${KOREADER_DIR}/ota/update.zip"
     if [ -f "${NEWUPDATE}" ]; then
         # If button-listen service is running then stop it during update so that
         # the update can overwrite the binary
@@ -30,18 +29,11 @@ ko_update_check() {
         export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
         rm -f "${FBINK_NAMED_PIPE}"
         FBINK_PID="$(./fbink --daemon 1 %KOREADER% -q -y -6 -P 0)"
-        # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
-        # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
-        FILESIZE="$(stat -c %b "${NEWUPDATE}")"
-        BLOCKS="$((FILESIZE / 20))"
-        export CPOINTS="$((BLOCKS / 100))"
-        # shellcheck disable=SC2016
-        ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='printf "%s" $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}'
+        (cd .. && "${KOREADER_DIR}/unpack" -X "${NEWUPDATE}" >"${FBINK_NAMED_PIPE}")
         fail=$?
         kill -TERM "${FBINK_PID}"
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
-            mv "${NEWUPDATE}" "${INSTALLED}"
             ./fbink -q -y -6 -pm "Update successful :)"
             ./fbink -q -y -5 -pm "KOReader will start momentarily . . ."
         else
@@ -50,8 +42,7 @@ ko_update_check() {
             ./fbink -q -y -5 -pm "KOReader may fail to function properly!"
         fi
         rm -f "${NEWUPDATE}" # always purge newupdate to prevent update loops
-        unset CPOINTS FBINK_NAMED_PIPE
-        unset BLOCKS FILESIZE FBINK_PID
+        unset FBINK_NAMED_PIPE FBINK_PID
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         busybox sync
 
