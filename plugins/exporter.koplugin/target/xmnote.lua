@@ -1,16 +1,16 @@
-local InputDialog = require("ui/widget/inputdialog")
-local UIManager = require("ui/uimanager")
-local InfoMessage = require("ui/widget/infomessage")
 local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
+local InputDialog = require("ui/widget/inputdialog")
+local InfoMessage = require("ui/widget/infomessage")
 local SQ3 = require("lua-ljsqlite3/init")
+local UIManager = require("ui/uimanager")
+local datetime = require("datetime")
+local ffiUtil = require("ffi/util")
 local logger = require("logger")
 local util = require("util")
-local ffiUtil = require("ffi/util")
-local datetime = require("datetime")
-local T = ffiUtil.template
 local _ = require("gettext")
+local T = ffiUtil.template
 
 local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
 
