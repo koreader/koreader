@@ -214,7 +214,7 @@ end
 
 function ProgressbarDialog:redrawProgressbar()
     --UI is not updating during file download so force an update
-    UIManager:setDirty(self, function() return "fast", self.progress_bar.dimen end)
+    UIManager:setDirty(self, function() return "fast", self.dimen end)
     UIManager:forceRePaint()
 end
 
