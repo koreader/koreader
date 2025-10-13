@@ -81,9 +81,21 @@ function ReaderPageMap:_postInit()
         self.has_pagemap = true
         self:resetLayout()
         self.view:registerViewModule("pagemap", self)
-        if self.ui.document.is_new and self.has_pagemap_document_provided then
-            UIManager:show(InfoMessage:new{
-                text = _("This book has stable page numbers by the publisher"),
+        if self.ui.document.is_new and self.has_pagemap_document_provided
+                and not (self.use_page_labels or self.show_page_labels) then
+            UIManager:show(ConfirmBox:new{
+                text = _("This book has stable page numbers by the publisher (℗).\nDo you want to use them?"),
+                ok_callback = function()
+                    self.page_labels_cache = nil
+                    self.use_page_labels = true
+                    self.ui.doc_settings:saveSetting("pagemap_use_page_labels", true)
+                    UIManager:broadcastEvent(Event:new("UsePageLabelsUpdated"))
+                    self.show_page_labels = true
+                    self.ui.doc_settings:saveSetting("pagemap_show_page_labels", true)
+                    self:resetLayout()
+                    self:updateVisibleLabels()
+                    UIManager:setDirty(self.view.dialog, "partial")
+                end,
             })
         end
     end
@@ -252,7 +264,7 @@ function ReaderPageMap:onShowPageList()
     local items_with_dots = G_reader_settings:nilOrTrue("toc_items_with_dots")
 
     local pl_menu = Menu:new{
-        title = _("Reference page numbers list"),
+        title = _("Stable page number list"),
         item_table = page_list,
         is_borderless = true,
         is_popout = false,
@@ -395,9 +407,9 @@ Select stable page numbers if you prefer page numbers that are independent of la
 1. Publisher page numbers (℗): normally equivalent to a specific physical edition. Only available if supplied by the publisher.
 2. Characters per page: a page will be counted for this amount of characters (sometimes called logical or synthetic page numbers). Use this if no publisher page numbers are available or if you prefer to have consistent page lengths for all books.
 
-As stable page numbers can start anywhere on the screen, you can select to have them shown in the margin as well. Page numbers can be shown even if they are not enabled for use in the remaining UI.
+Since stable page numbers can start anywhere on the screen, you can choose to display them in margin, regardless of other settings.
 
-'Stable page numbers list' shows a table of all stable page numbers and their corresponding screen page numbers.]]),
+'Stable page number list' shows a table of all stable page numbers and their corresponding screen page numbers.]]),
                         width = Screen:getWidth() * 0.8,
                     })
                 end,
@@ -464,7 +476,6 @@ As stable page numbers can start anywhere on the screen, you can select to have 
                     self.page_labels_cache = nil
                     self.use_page_labels = not self.use_page_labels
                     self.ui.doc_settings:saveSetting("pagemap_use_page_labels", self.use_page_labels)
-                    -- Reset a few stuff that may use page labels
                     UIManager:broadcastEvent(Event:new("UsePageLabelsUpdated"))
                     UIManager:setDirty(self.view.dialog, "partial")
                 end,
@@ -487,7 +498,7 @@ As stable page numbers can start anywhere on the screen, you can select to have 
                 separator = true,
             },
             {
-                text = _("Stable page numbers list"),
+                text = _("Stable page number list"),
                 enabled_func = function()
                     return self.has_pagemap
                 end,
