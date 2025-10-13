@@ -27,7 +27,7 @@ local T = ffiUtil.template
 local Screen = Device.screen
 
 local ReaderHighlight = InputContainer:extend{
-    DELAY_CLEAR_HIGHLIGHT_S = 0.5,
+    DELAY_CLEAR_HIGHLIGHT_S = 0.5, -- since this is out of bounds in FM, we declare a local var delay_clear_highlight_s in those cases.
     -- Matches what is available in BlitBuffer.HIGHLIGHT_COLORS
     highlight_colors = {
         {_("Red"), "red"},
