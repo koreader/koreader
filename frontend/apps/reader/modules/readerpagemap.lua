@@ -83,8 +83,18 @@ function ReaderPageMap:_postInit()
         self.view:registerViewModule("pagemap", self)
         if self.ui.document.is_new and self.has_pagemap_document_provided
                 and not (self.use_page_labels or self.show_page_labels) then
+            local source = self.ui.document:getPageMapSource()
+            if source == nil or source == "" then
+                source = _("N/A")
+            end
+            local text = _([[
+This book has stable page numbers by the publisher (℗).
+Page numbers source:
+%1
+
+Do you want to use them?]])
             UIManager:show(ConfirmBox:new{
-                text = _("This book has stable page numbers by the publisher (℗).\nDo you want to use them?"),
+                text = T(text, source),
                 ok_callback = function()
                     self.page_labels_cache = nil
                     self.use_page_labels = true
