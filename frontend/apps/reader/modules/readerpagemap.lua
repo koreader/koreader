@@ -417,7 +417,7 @@ Select stable page numbers if you prefer page numbers that are independent of la
 1. Publisher page numbers (℗): normally equivalent to a specific physical edition. Only available if supplied by the publisher.
 2. Characters per page: a page will be counted for this amount of characters (sometimes called logical or synthetic page numbers). Use this if no publisher page numbers are available or if you prefer to have consistent page lengths for all books.
 
-Since stable page numbers can start anywhere on the screen, you can choose to display them in margin, regardless of other settings.
+Since stable page numbers can start anywhere on the screen, you can choose to display them in the margin, regardless of other settings.
 
 'Stable page number list' shows a table of all stable page numbers and their corresponding screen page numbers.]]),
                         width = Screen:getWidth() * 0.8,
@@ -525,7 +525,7 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_("Source (book hardcopy edition) of publisher page numbers:\n\n%1"),
+                        text = T(_("Source (print edition) of publisher page numbers:\n\n%1"),
                             self.ui.document:getPageMapSource()),
                     })
                 end,
