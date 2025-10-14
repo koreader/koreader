@@ -1548,7 +1548,7 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
                 -- it and know where to start reading again
                 local footnote_top_y = Screen:getHeight() - footnote_height
                 if link.link_y > footnote_top_y then
-                    UIManager:scheduleIn(self.ui.highlight.DELAY_CLEAR_HIGHLIGHT_S, clear_highlight)
+                    UIManager:scheduleIn(G_defaults:readSetting("DELAY_CLEAR_HIGHLIGHT_S"), clear_highlight)
                 else
                     clear_highlight()
                 end
