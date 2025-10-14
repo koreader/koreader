@@ -112,6 +112,7 @@ function CoverBrowser:addToMainMenu(menu_items)
             checked_func = function()
                 return mode == curr_display_modes["filemanager"]
             end,
+            radio = true,
             callback = function()
                 self:setDisplayMode(mode)
             end,
@@ -121,6 +122,7 @@ function CoverBrowser:addToMainMenu(menu_items)
             checked_func = function()
                 return mode == curr_display_modes["history"]
             end,
+            radio = true,
             callback = function()
                 CoverBrowser.setupWidgetDisplayMode("history", mode)
             end,
@@ -130,6 +132,7 @@ function CoverBrowser:addToMainMenu(menu_items)
             checked_func = function()
                 return mode == curr_display_modes["collections"]
             end,
+            radio = true,
             callback = function()
                 CoverBrowser.setupWidgetDisplayMode("collections", mode)
             end,
