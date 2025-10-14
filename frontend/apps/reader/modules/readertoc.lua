@@ -1201,6 +1201,7 @@ function ReaderToc:addToMainMenu(menu_items)
     -- ToC (and other navigation) settings
     menu_items.navi_settings = {
         text = _("Settings"),
+        max_per_page = 11,
     }
     -- Alternative ToC (only available with CRE documents)
     if self.ui.document:canHaveAlternativeToc() then

@@ -882,7 +882,7 @@ function ReaderUI:onReload()
     self:reloadDocument()
 end
 
-function ReaderUI:reloadDocument(after_close_callback, seamless)
+function ReaderUI:reloadDocument(after_close_callback, seamless, after_open_callback)
     local file = self.document.file
     local provider = getmetatable(self.document).__index
 
@@ -901,6 +901,7 @@ function ReaderUI:reloadDocument(after_close_callback, seamless)
     end
 
     self.reloading = true
+    self.after_open_callback = after_open_callback
     self:showReader(file, provider, seamless)
 end
 
