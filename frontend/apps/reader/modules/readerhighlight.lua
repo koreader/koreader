@@ -97,10 +97,13 @@ function ReaderHighlight:init()
                 enabled = Device:hasClipboard(),
                 callback = function()
                     Device.input.setClipboardText(util.cleanupSelectedText(this.selected_text.text))
-                    this:onClose()
+                    this:onClose(true)
                     UIManager:show(Notification:new{
                         text = _("Selection copied to clipboard."),
                     })
+                    UIManager:scheduleIn(G_defaults:readSetting("DELAY_CLEAR_HIGHLIGHT_S"), function()
+                        this:clear()
+                    end)
                 end,
             }
         end,
@@ -134,7 +137,7 @@ function ReaderHighlight:init()
                 text = _("Dictionary"),
                 callback = function()
                     this:lookupDict(index)
-                    -- We don't call this:onClose(), same reason as above
+                    this:onClose(true) -- keep highlight for dictionary lookup
                 end,
             }
         end,
@@ -2100,7 +2103,7 @@ function ReaderHighlight:onHoldRelease()
                 self:onClose()
             elseif default_highlight_action == "dictionary" then
                 self:lookupDict()
-                self:onClose()
+                self:onClose(true) -- keep selected text
             elseif default_highlight_action == "search" then
                 self:onHighlightSearch()
                 -- No self:onClose() to not remove the selected text
@@ -2296,7 +2299,7 @@ function ReaderHighlight:lookupDict(index)
                 word_boxes[i] = self.view:pageToScreenTransform(self.selected_text.pos0.page, box)
             end
         end
-        self.ui.dictionary:onLookupWord(util.cleanupSelectedText(self.selected_text.text), false, word_boxes)
+        self.ui.dictionary:onLookupWord(util.cleanupSelectedText(self.selected_text.text), false, word_boxes, self)
     end
 end
 
@@ -2669,13 +2672,15 @@ function ReaderHighlight:onSaveSettings()
     self.ui.doc_settings:saveSetting("panel_zoom_enabled", self.panel_zoom_enabled)
 end
 
-function ReaderHighlight:onClose()
+function ReaderHighlight:onClose(keep_highlight)
     if self.highlight_dialog then
         UIManager:close(self.highlight_dialog)
         self.highlight_dialog = nil
     end
     -- clear highlighted text
-    self:clear()
+    if not keep_highlight then
+        self:clear()
+    end
 end
 
 -- dpad/keys support
