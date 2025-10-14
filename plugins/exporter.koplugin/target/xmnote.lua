@@ -78,38 +78,34 @@ function XMNoteExporter:getMenuTable()
 end
 
 function XMNoteExporter:getBookReadingDurationsByDay(id_book)
-    if util.fileExists(db_location) then
-        local conn = SQ3.open(db_location)
-        local sql_smt = [[
-            SELECT date(start_time, 'unixepoch', 'localtime') AS date,
-                   max(page)                                  AS last_page,
-                   sum(duration)                              AS total_duration,
-                   min(start_time)                            AS first_start_time
-            FROM   page_stat
-            WHERE  id_book = %d
-            GROUP  BY Date(start_time, 'unixepoch', 'localtime')
-            ORDER  BY date DESC;
-        ]]
-        local result = conn:exec(string.format(sql_smt, id_book))
-        conn:close()
+    local conn = SQ3.open(db_location)
+    local sql_smt = [[
+        SELECT date(start_time, 'unixepoch', 'localtime') AS date,
+               max(page)                                  AS last_page,
+               sum(duration)                              AS total_duration,
+               min(start_time)                            AS first_start_time
+        FROM   page_stat
+        WHERE  id_book = %d
+        GROUP  BY Date(start_time, 'unixepoch', 'localtime')
+        ORDER  BY date DESC;
+    ]]
+    local result = conn:exec(string.format(sql_smt, id_book))
+    conn:close()
 
-        if result == nil then
-            return {}
-        end
-
-        local reading_durations = {}
-        for i = 1, #result.date do
-            local entry = {
-                date = tonumber(result[4][i]) * 1000,
-                durationSeconds = tonumber(result[3][i]),
-                position = tonumber(result[2][i]),
-            }
-            table.insert(reading_durations, entry)
-        end
-        return reading_durations
-    else
+    if result == nil then
         return {}
     end
+
+    local reading_durations = {}
+    for i = 1, #result.date do
+        local entry = {
+            date = tonumber(result[4][i]) * 1000,
+            durationSeconds = tonumber(result[3][i]),
+            position = tonumber(result[2][i]),
+        }
+        table.insert(reading_durations, entry)
+    end
+    return reading_durations
 end
 
 function XMNoteExporter:findBookIdByTitleAndMD5(title, md5)
