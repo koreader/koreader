@@ -77,50 +77,46 @@ function XMNoteExporter:getMenuTable()
     }
 end
 
-function XMNoteExporter:getBookReadingDurationsByDay(id_book)
-    local conn = SQ3.open(db_location)
-    local sql_smt = [[
-        SELECT date(start_time, 'unixepoch', 'localtime') AS date,
-               max(page)                                  AS last_page,
-               sum(duration)                              AS total_duration,
-               min(start_time)                            AS first_start_time
-        FROM   page_stat
-        WHERE  id_book = %d
-        GROUP  BY Date(start_time, 'unixepoch', 'localtime')
-        ORDER  BY date DESC;
-    ]]
-    local result = conn:exec(string.format(sql_smt, id_book))
-    conn:close()
-
-    if result == nil then
-        return {}
-    end
-
-    local reading_durations = {}
-    for i = 1, #result.date do
-        local entry = {
-            date = tonumber(result[4][i]) * 1000,
-            durationSeconds = tonumber(result[3][i]),
-            position = tonumber(result[2][i]),
-        }
-        table.insert(reading_durations, entry)
-    end
-    return reading_durations
-end
-
-function XMNoteExporter:findBookIdByTitleAndMD5(title, md5)
+function XMNoteExporter:getBookReadingDurationsByDay(title, md5)
     if util.fileExists(db_location) then
         local conn = SQ3.open(db_location)
-        local sql_smt = [[SELECT id FROM book WHERE title = "%s" and md5 = "%s" LIMIT 1]]
-        local result = conn:exec(string.format(sql_smt, title, md5))
+        local sql_query_book_id = [[SELECT id FROM book WHERE title = "%s" and md5 = "%s" LIMIT 1]]
+        local sql_query_durations = [[
+            SELECT date(start_time, 'unixepoch', 'localtime') AS date,
+                   max(page)                                  AS last_page,
+                   sum(duration)                              AS total_duration,
+                   min(start_time)                            AS first_start_time
+            FROM   page_stat
+            WHERE  id_book = %d
+            GROUP  BY Date(start_time, 'unixepoch', 'localtime')
+            ORDER  BY date DESC;
+        ]]
+
+        local result_book_id = conn:exec(string.format(sql_query_book_id, title, md5))
+        if not (result_book_id and result_book_id[1] and result_book_id[1][1]) then
+            return {}
+        end
+        local book_id = tonumber(result_book_id[1][1])
+
+        local result_durations = conn:exec(string.format(sql_query_durations, book_id))
         conn:close()
 
-        if not (result and result[1] and result[1][1]) then
-            return nil
+        if not result_durations then
+            return {}
         end
-        return tonumber(result[1][1])
+
+        local durations = {}
+        for i = 1, #result_durations.date do
+            local entry = {
+                date = tonumber(result_durations[4][i]) * 1000,
+                durationSeconds = tonumber(result_durations[3][i]),
+                position = tonumber(result_durations[2][i]),
+            }
+            table.insert(durations, entry)
+        end
+        return durations
     else
-        return nil
+        return {}
     end
 end
 
@@ -151,14 +147,7 @@ function XMNoteExporter:createRequestBody(booknotes)
         readingStatusChangedDate = reading_status_changed_date,
         source = "KOReader"
     }
-
     local entries = {}
-
-    local book_id = self:findBookIdByTitleAndMD5(book.title, md5)
-    local reading_durations = {}
-    if book_id ~= nil then
-        reading_durations = self:getBookReadingDurationsByDay(book_id)
-    end
 
     for _, chapter in ipairs(booknotes) do
         for _, clipping in ipairs(chapter) do
@@ -176,7 +165,7 @@ function XMNoteExporter:createRequestBody(booknotes)
         end
     end
     book.entries = entries
-    book.fuzzyReadingDurations = reading_durations
+    book.fuzzyReadingDurations = self:getBookReadingDurationsByDay(book.title, md5)
     return book
 end
 
