@@ -135,6 +135,8 @@ local font_exts = {
     ["ttc"] = true,
     ["cff"] = true,
     ["otf"] = true,
+    ["woff"] = true,
+    ["woff2"] = true,
 }
 
 function FontList:_readList(dir, mark)
