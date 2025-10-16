@@ -7,7 +7,7 @@ source "${CI_DIR}/common.sh"
 exit_code=0
 
 echo -e "\n${ANSI_GREEN}shellcheck results${ANSI_RESET}"
-"${CI_DIR}/helper_shellchecks.sh" || exit_code=1
+time "${CI_DIR}/helper_shellchecks.sh" || exit_code=1
 
 echo -e "\\n${ANSI_GREEN}Checking for unscaled sizes${ANSI_RESET}"
 # stick `|| true` at the end to prevent Travis exit on failed command
@@ -38,7 +38,9 @@ if [ "${untagged_todo}" ]; then
     exit_code=1
 fi
 
+echo "nproc: $(nproc)"
+
 echo -e "\n${ANSI_GREEN}Luacheck results${ANSI_RESET}"
-luacheck -q {reader,setupkoenv,datastorage}.lua frontend plugins spec || exit_code=1
+time luacheck -q {reader,setupkoenv,datastorage}.lua frontend plugins spec || exit_code=1
 
 exit ${exit_code}
