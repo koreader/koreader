@@ -37,6 +37,7 @@ local Notification = require("ui/widget/notification")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
+local ReaderTypography = require("apps/reader/modules/readertypography")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
 local Screen = Device.screen
 local UIManager = require("ui/uimanager")
@@ -218,6 +219,7 @@ local settingsList = {
     export_annotations = {category="none", event="ExportAnnotations", title=_("Export annotations"), reader=true},
 
     -- Reflowable documents
+    set_typography_lang = {category="string", event="SetTypographyLanguage", title=_("Set typography language"), args_func=ReaderTypography.getLangTags, rolling=true, separator=true},
     set_font = {category="string", event="SetFont", title=_("Font face"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
     increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size"), rolling=true},
     decrease_font = {category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size"), rolling=true},
@@ -462,6 +464,8 @@ local dispatcher_menu_order = {
     "export_annotations",
 
     -- Reflowable documents
+    "set_typography_lang",
+    ----
     "set_font",
     "increase_font",
     "decrease_font",
@@ -941,6 +945,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                                     end
                                 end
                             end,
+                            radio = true,
                             callback = function()
                                 setValue(k, settingsList[k].args[i])
                             end,
