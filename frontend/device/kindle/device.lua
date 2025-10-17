@@ -530,6 +530,19 @@ function Kindle:openInputDevices()
         end
     end
 
+    -- In the same vein, the fancy "gesture_tap" stuff *also* uses completely useless keycodes, so, yaaaaay...
+    -- We'll check the name of anything that *only* report INPUT_KEY support and hope for the best...
+    devices = FBInkInput.fbink_input_scan(C.INPUT_KEY, bit.bnot(C.INPUT_KEY), bit.bor(C.MATCH_ALL, C.NO_RECAP, C.SCAN_ONLY), dev_count)
+    if devices ~= nil then
+        for i = 0, tonumber(dev_count[0]) - 1 do
+            local dev = devices[i]
+            if dev.matched and ffi.string(dev.name) == "gesture_tap" then
+                self.input:open(ffi.string(dev.path))
+            end
+        end
+        C.free(devices)
+    end
+
     self.input:open("fake_events")
 end
 
@@ -1682,6 +1695,15 @@ function KindlePaperWhite6:init()
 
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
+
+    self.input = require("device/input"):new{
+        device = self,
+
+        -- F7, for the double-tap haptics
+        event_map = {
+            [65] = "RPgFwd",
+        }
+    }
 
     Kindle.init(self)
 end
