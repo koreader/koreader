@@ -82,32 +82,29 @@ function ReaderPageMap:_postInit()
         self:resetLayout()
         self.view:registerViewModule("pagemap", self)
         if self.ui.document.is_new and self.has_pagemap_document_provided
-                and G_reader_settings:isTrue("pagemap_notify_document_provided")
-                and not (self.use_page_labels or self.show_page_labels) then
-            local source = self.ui.document:getPageMapSource()
-            if source == nil or source == "" then
-                source = _("N/A")
+                and G_reader_settings:isTrue("pagemap_notify_document_provided") then
+            if self.use_page_labels or self.show_page_labels then
+                self:showDocumentProvidedInfo()
+            else
+                UIManager:show(ConfirmBox:new{
+                    text = self:showDocumentProvidedInfo(true) .. "\n\n" .. _("Do you want to use them?"),
+                    ok_callback = function()
+                        if not self.use_page_labels then
+                            self.page_labels_cache = nil
+                            self.use_page_labels = true
+                            self.ui.doc_settings:saveSetting("pagemap_use_page_labels", true)
+                            UIManager:broadcastEvent(Event:new("UsePageLabelsUpdated"))
+                        end
+                        if not self.show_page_labels then
+                            self.show_page_labels = true
+                            self.ui.doc_settings:saveSetting("pagemap_show_page_labels", true)
+                            self:resetLayout()
+                            self:updateVisibleLabels()
+                        end
+                        UIManager:setDirty(self.view.dialog, "partial")
+                    end,
+                })
             end
-            local text = _([[
-This book has stable page numbers by the publisher (℗).
-Page numbers source:
-%1
-
-Do you want to use them?]])
-            UIManager:show(ConfirmBox:new{
-                text = T(text, source),
-                ok_callback = function()
-                    self.page_labels_cache = nil
-                    self.use_page_labels = true
-                    self.ui.doc_settings:saveSetting("pagemap_use_page_labels", true)
-                    UIManager:broadcastEvent(Event:new("UsePageLabelsUpdated"))
-                    self.show_page_labels = true
-                    self.ui.doc_settings:saveSetting("pagemap_show_page_labels", true)
-                    self:resetLayout()
-                    self:updateVisibleLabels()
-                    UIManager:setDirty(self.view.dialog, "partial")
-                end,
-            })
         end
     end
 end
@@ -382,6 +379,23 @@ function ReaderPageMap:onDocumentRerendered()
     self.page_labels_cache = nil
 end
 
+function ReaderPageMap:showDocumentProvidedInfo(get_text)
+    local t = _([[
+This book has stable page numbers by the publisher (℗).
+Page numbers: %1 - %2
+Source (print edition):
+%3]])
+    local source = self.ui.document:getPageMapSource()
+    if source == nil or source == "" then
+        source = _("N/A")
+    end
+    local text = T(t, self:getFirstPageLabel(true), self:getLastPageLabel(true), source)
+    if get_text then
+        return text
+    end
+    UIManager:show(InfoMessage:new{ text = text })
+end
+
 function ReaderPageMap:addToMainMenu(menu_items)
     menu_items.page_map = {
         -- @translators This and the other related ones refer to alternate page numbers provided in some EPUB books, that usually reference page numbers in a specific hardcopy edition of the book.
@@ -525,10 +539,7 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                 end,
                 keep_menu_open = true,
                 callback = function()
-                    UIManager:show(InfoMessage:new{
-                        text = T(_("Source (print edition) of publisher page numbers:\n\n%1"),
-                            self.ui.document:getPageMapSource()),
-                    })
+                    self:showDocumentProvidedInfo()
                 end,
                 separator = true,
             },
