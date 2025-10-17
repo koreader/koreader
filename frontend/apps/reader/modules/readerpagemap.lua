@@ -82,6 +82,7 @@ function ReaderPageMap:_postInit()
         self:resetLayout()
         self.view:registerViewModule("pagemap", self)
         if self.ui.document.is_new and self.has_pagemap_document_provided
+                and G_reader_settings:isTrue("pagemap_notify_document_provided")
                 and not (self.use_page_labels or self.show_page_labels) then
             local source = self.ui.document:getPageMapSource()
             if source == nil or source == "" then
@@ -151,7 +152,7 @@ function ReaderPageMap:onReadSettings(config)
     if config:has("pagemap_show_page_labels") then
         self.show_page_labels = config:isTrue("pagemap_show_page_labels")
     else
-        self.show_page_labels = G_reader_settings:nilOrTrue("pagemap_show_page_labels")
+        self.show_page_labels = G_reader_settings:isTrue("pagemap_show_page_labels")
     end
     if config:has("pagemap_use_page_labels") then
         self.use_page_labels = config:isTrue("pagemap_use_page_labels")
@@ -572,6 +573,15 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                         end,
                         callback = function()
                             G_reader_settings:toggle("pagemap_synthetic_overrides")
+                        end,
+                    },
+                    {
+                        text = _("Notify if book has publisher page numbers"),
+                        checked_func = function()
+                            return G_reader_settings:isTrue("pagemap_notify_document_provided")
+                        end,
+                        callback = function()
+                            G_reader_settings:toggle("pagemap_notify_document_provided")
                         end,
                         separator = true,
                     },
