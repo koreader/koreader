@@ -166,9 +166,21 @@ function BookInfo:show(doc_settings_or_file, book_props)
         })
     end
     -- pages
-    local pages = self.is_current_doc
-        and self.ui.pagemap and self.ui.pagemap:wantsPageLabels() and self.ui.pagemap:getLastPageLabel(true)
-    table.insert(kv_pairs, { self.prop_text["pages"], pages or book_props.pages or n_a, separator = true })
+    local pages = book_props.pages
+    if self.is_current_doc and self.ui.pagemap and self.ui.pagemap.has_pagemap then
+        local last_page = self.ui.pagemap:getLastPageLabel(true)
+        if self.ui.pagemap.use_page_labels then
+            pages = last_page
+        end
+        if self.ui.pagemap.has_pagemap_document_provided then
+            if self.ui.pagemap.chars_per_synthetic_page then
+                pages = pages .. " (℗)"
+            else
+                pages = pages .. " (℗ " .. last_page .. ")"
+            end
+        end
+    end
+    table.insert(kv_pairs, { self.prop_text["pages"], pages or n_a, separator = true })
 
     -- Current page
     if self.document then
