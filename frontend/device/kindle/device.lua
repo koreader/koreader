@@ -364,6 +364,8 @@ local Kindle = Generic:extend{
     canHWDither = no,
     -- Device has an Ambient Light Sensor
     hasLightSensor = no,
+    -- Device has fancy gesture detection when tapping the *frame*
+    hasFancyTaps = no,
     -- The time the device went into suspend
     suspend_time = 0,
     framework_lipc_handle = frameworkStopped(),
@@ -532,15 +534,17 @@ function Kindle:openInputDevices()
 
     -- In the same vein, the fancy "gesture_tap" stuff *also* uses completely useless keycodes, so, yaaaaay...
     -- We'll check the name of anything that *only* report INPUT_KEY support and hope for the best...
-    devices = FBInkInput.fbink_input_scan(C.INPUT_KEY, bit.bnot(C.INPUT_KEY), bit.bor(C.MATCH_ALL, C.NO_RECAP, C.SCAN_ONLY), dev_count)
-    if devices ~= nil then
-        for i = 0, tonumber(dev_count[0]) - 1 do
-            local dev = devices[i]
-            if dev.matched and ffi.string(dev.name) == "gesture_tap" then
-                self.input:open(ffi.string(dev.path))
+    if self:hasFancyTaps() then
+        devices = FBInkInput.fbink_input_scan(C.INPUT_KEY, bit.bnot(C.INPUT_KEY), bit.bor(C.MATCH_ALL, C.NO_RECAP, C.SCAN_ONLY), dev_count)
+        if devices ~= nil then
+            for i = 0, tonumber(dev_count[0]) - 1 do
+                local dev = devices[i]
+                if dev.matched and ffi.string(dev.name) == "gesture_tap" then
+                    self.input:open(ffi.string(dev.path))
+                end
             end
+            C.free(devices)
         end
-        C.free(devices)
     end
 
     self.input:open("fake_events")
@@ -613,9 +617,22 @@ function Kindle:init()
         self.canDeepSleep = false
     end
 
+    if self:hasFancyTaps() then
+        -- Make sure we setup key handlers, in case the device is otherwise touch-only
+        self.hasKeys = yes
+    end
+
     -- If the device-specific init hasn't done so already (devices without keys don't), instantiate Input.
     if not self.input then
-        self.input = require("device/input"):new{ device = self }
+        local event_map
+        if self:hasFancyTaps() then
+            -- F7, for the double-tap haptics
+            event_map = {
+                [65] = "RPgFwd",
+            }
+        end
+
+        self.input = require("device/input"):new{ device = self, event_map = event_map }
     end
 
     -- Auto-detect & open input devices
@@ -1077,6 +1094,7 @@ local KindlePaperWhite6 = Kindle:extend{
     model = "KindlePaperWhite6",
     isMTK = yes,
     isTouchDevice = yes,
+    hasFancyTaps = yes,
     hasFrontlight = yes,
     hasNaturalLight = yes,
     -- NOTE: We *can* technically control both LEDs independently,
@@ -1134,6 +1152,7 @@ local KindleColorSoft = Kindle:extend{
     model = "KindleColorSoft",
     isMTK = yes,
     isTouchDevice = yes,
+    hasFancyTaps = yes,
     hasFrontlight = yes,
     hasNaturalLight = yes,
     hasNaturalLightMixer = yes,
@@ -1695,15 +1714,6 @@ function KindlePaperWhite6:init()
 
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
-
-    self.input = require("device/input"):new{
-        device = self,
-
-        -- F7, for the double-tap haptics
-        event_map = {
-            [65] = "RPgFwd",
-        }
-    }
 
     Kindle.init(self)
 end
