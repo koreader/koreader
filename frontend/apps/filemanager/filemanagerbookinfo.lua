@@ -170,16 +170,14 @@ function BookInfo:show(doc_settings_or_file, book_props)
     local pages_callback
     if self.is_current_doc and self.ui.pagemap and self.ui.pagemap.has_pagemap then
         local t = {}
-        local pagemap_count
-        if self.ui.pagemap.use_page_labels then
-            pagemap_count = select(3, self.ui.pagemap:getCurrentPageLabel())
-        else
+        if not self.ui.pagemap.use_page_labels then
             table.insert(t, pages)
         end
         if self.ui.pagemap.chars_per_synthetic_page then
             local cpp = "(" .. T(N_("1 char per page", "%1 chars per page",
                 self.ui.pagemap.chars_per_synthetic_page), self.ui.pagemap.chars_per_synthetic_page) .. ")"
             if self.ui.pagemap.use_page_labels then
+                local pagemap_count = select(3, self.ui.pagemap:getCurrentPageLabel())
                 table.insert(t, pagemap_count .. " " .. cpp)
             else
                 table.insert(t, cpp)
@@ -189,12 +187,8 @@ function BookInfo:show(doc_settings_or_file, book_props)
             if self.ui.pagemap.chars_per_synthetic_page then
                 table.insert(t, "(℗)")
             else
-                local pagemap_last = "(℗ " .. self.ui.pagemap:getLastPageLabel(true) .. ")"
-                if self.ui.pagemap.use_page_labels then
-                    table.insert(t, pagemap_count .. " " .. pagemap_last)
-                else
-                    table.insert(t, pagemap_last)
-                end
+                local pagemap_count = select(3, self.ui.pagemap:getCurrentPageLabel())
+                table.insert(t, pagemap_count .. " (℗ " .. self.ui.pagemap:getLastPageLabel(true) .. ")")
             end
             pages_callback = function()
                 self.ui.pagemap:showDocumentProvidedInfo()
