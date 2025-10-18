@@ -451,6 +451,7 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                         value = self.chars_per_synthetic_page or self.chars_per_synthetic_page_default,
                         value_min = 500,
                         value_max = 3000,
+                        value_hold_step = 20,
                         default_value = self.chars_per_synthetic_page_default,
                         ok_always_enabled = true,
                         keep_shown_on_apply = true,
@@ -559,6 +560,7 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                                     or self.chars_per_synthetic_page_default,
                                 value_min = 500,
                                 value_max = 3000,
+                                value_hold_step = 20,
                                 default_value = self.chars_per_synthetic_page_default,
                                 ok_always_enabled = true,
                                 callback = function(spin)
