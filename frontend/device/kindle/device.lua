@@ -491,14 +491,19 @@ function Kindle:openInputDevices()
         FBInkInput = { fbink_input_scan = function() end }
     end
     local dev_count = ffi.new("size_t[1]")
-    -- We care about: the touchscreen, a properly scaled stylus, pagination buttons, a home button and a fiveway.
-    local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_SCALED_TABLET, C.INPUT_PAGINATION_BUTTONS, C.INPUT_HOME_BUTTON, C.INPUT_DPAD)
+    -- We care about: the touchscreen, a properly scaled stylus, pagination buttons, a home button, a fiveway; and the fancy "tap on frame" stuff.
+    local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_SCALED_TABLET, C.INPUT_PAGINATION_BUTTONS, C.INPUT_HOME_BUTTON, C.INPUT_DPAD, C.INPUT_KINDLE_FRAME_TAP)
     local devices = FBInkInput.fbink_input_scan(match_mask, 0, 0, dev_count)
     if devices ~= nil then
         for i = 0, tonumber(dev_count[0]) - 1 do
             local dev = devices[i]
             if dev.matched then
                 self.input:fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
+
+                -- Automagically flip the hasFancyTaps cap
+                if bit.band(dev.type, C.INPUT_KINDLE_FRAME_TAP) ~= 0 then
+                    self.hasFancyTaps = yes
+                end
             end
         end
         C.free(devices)
@@ -526,21 +531,6 @@ function Kindle:openInputDevices()
                 local dev = devices[i]
                 if dev.matched then
                     self.input:fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
-                end
-            end
-            C.free(devices)
-        end
-    end
-
-    -- In the same vein, the fancy "gesture_tap" stuff *also* uses completely useless keycodes, so, yaaaaay...
-    -- We'll check the name of anything that *only* report INPUT_KEY support and hope for the best...
-    if self:hasFancyTaps() then
-        devices = FBInkInput.fbink_input_scan(C.INPUT_KEY, bit.bnot(C.INPUT_KEY), bit.bor(C.MATCH_ALL, C.NO_RECAP, C.SCAN_ONLY), dev_count)
-        if devices ~= nil then
-            for i = 0, tonumber(dev_count[0]) - 1 do
-                local dev = devices[i]
-                if dev.matched and ffi.string(dev.name) == "gesture_tap" then
-                    self.input:open(ffi.string(dev.path))
                 end
             end
             C.free(devices)
@@ -617,26 +607,21 @@ function Kindle:init()
         self.canDeepSleep = false
     end
 
-    if self:hasFancyTaps() then
-        -- Make sure we setup key handlers, in case the device is otherwise touch-only
-        self.hasKeys = yes
-    end
-
     -- If the device-specific init hasn't done so already (devices without keys don't), instantiate Input.
     if not self.input then
-        local event_map
-        if self:hasFancyTaps() then
-            -- F7, for the double-tap haptics
-            event_map = {
-                [65] = "RPgFwd",
-            }
-        end
-
-        self.input = require("device/input"):new{ device = self, event_map = event_map }
+        self.input = require("device/input"):new{ device = self }
     end
 
     -- Auto-detect & open input devices
     self:openInputDevices()
+
+    if self:hasFancyTaps() then
+        -- Make sure we setup key handlers, in case the device is otherwise touch-only
+        self.hasKeys = yes
+
+        -- And that we map the double-tap keycode properly, because, sure, F7, why not, lab126...
+        self.input.event_map[65] = "RPgFwd"
+    end
 
     -- Follow user preference for the hall effect sensor's state
     if self.powerd:hasHallSensor() then
@@ -1094,7 +1079,6 @@ local KindlePaperWhite6 = Kindle:extend{
     model = "KindlePaperWhite6",
     isMTK = yes,
     isTouchDevice = yes,
-    hasFancyTaps = yes,
     hasFrontlight = yes,
     hasNaturalLight = yes,
     -- NOTE: We *can* technically control both LEDs independently,
@@ -1152,7 +1136,6 @@ local KindleColorSoft = Kindle:extend{
     model = "KindleColorSoft",
     isMTK = yes,
     isTouchDevice = yes,
-    hasFancyTaps = yes,
     hasFrontlight = yes,
     hasNaturalLight = yes,
     hasNaturalLightMixer = yes,
