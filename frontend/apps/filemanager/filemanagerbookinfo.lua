@@ -166,20 +166,43 @@ function BookInfo:show(doc_settings_or_file, book_props)
         })
     end
     -- pages
-    local pages = book_props.pages
+    local pages = book_props.pages or n_a
     local pages_callback
     if self.is_current_doc and self.ui.pagemap and self.ui.pagemap.has_pagemap then
+        local t = {}
+        local pagemap_count
         if self.ui.pagemap.use_page_labels then
-            pages = self.ui.pagemap:getLastPageLabel(true)
+            pagemap_count = select(3, self.ui.pagemap:getCurrentPageLabel())
+        else
+            table.insert(t, pages)
+        end
+        if self.ui.pagemap.chars_per_synthetic_page then
+            local cpp = "(" .. T(N_("1 char per page", "%1 chars per page",
+                self.ui.pagemap.chars_per_synthetic_page), self.ui.pagemap.chars_per_synthetic_page) .. ")"
+            if self.ui.pagemap.use_page_labels then
+                table.insert(t, pagemap_count .. " " .. cpp)
+            else
+                table.insert(t, cpp)
+            end
         end
         if self.ui.pagemap.has_pagemap_document_provided then
-            pages = pages .. " (℗)"
+            if self.ui.pagemap.chars_per_synthetic_page then
+                table.insert(t, "(℗)")
+            else
+                local pagemap_last = "(℗ " .. self.ui.pagemap:getLastPageLabel(true) .. ")"
+                if self.ui.pagemap.use_page_labels then
+                    table.insert(t, pagemap_count .. " " .. pagemap_last)
+                else
+                    table.insert(t, pagemap_last)
+                end
+            end
             pages_callback = function()
                 self.ui.pagemap:showDocumentProvidedInfo()
             end
         end
+        pages = table.concat(t, " | ")
     end
-    table.insert(kv_pairs, { self.prop_text["pages"], pages or n_a, callback = pages_callback, separator = true })
+    table.insert(kv_pairs, { self.prop_text["pages"], pages, callback = pages_callback, separator = true })
 
     -- Current page
     if self.document then
