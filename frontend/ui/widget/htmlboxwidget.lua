@@ -271,7 +271,7 @@ end
 --- Use the raw content as given, without any string manipulation to try to improve MuPDF compatibility or rendering.
 --- @string body Content to be rendered in a supported format like (X)HTML or SVG.
 --- @string magic Used to detect document type, like a file name or mime-type.
---- @float default_font_size Default font size to use for layout, only for some formats like HTML.
+--- @number default_font_size Default font size to use for layout, only for some formats like HTML.
 --- @string resource_directory Directory to use for resolving relative resource paths.
 function HtmlBoxWidget:setRawContent(body, magic, default_font_size, resource_directory)
     local ok
