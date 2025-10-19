@@ -177,6 +177,9 @@ function BookInfo:show(doc_settings_or_file, book_props)
             local cpp = "(" .. T(N_("1 char per page", "%1 chars per page",
                 self.ui.pagemap.chars_per_synthetic_page), self.ui.pagemap.chars_per_synthetic_page) .. ")"
             table.insert(t, self.ui.pagemap:getLastPageLabel() .. " " .. cpp)
+            if self.ui.pagemap.use_page_labels then
+                table.insert(t, pages)
+            end
         end
         if self.ui.pagemap.has_pagemap_document_provided then
             if self.ui.pagemap.chars_per_synthetic_page then
@@ -184,6 +187,9 @@ function BookInfo:show(doc_settings_or_file, book_props)
             else
                 local pagemap_count = select(3, self.ui.pagemap:getCurrentPageLabel())
                 table.insert(t, pagemap_count .. " (℗ " .. self.ui.pagemap:getLastPageLabel(true) .. ")")
+                if self.ui.pagemap.use_page_labels then
+                    table.insert(t, pages)
+                end
             end
             pages_callback = function()
                 self.ui.pagemap:showDocumentProvidedInfo()
