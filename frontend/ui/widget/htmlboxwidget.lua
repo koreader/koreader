@@ -268,11 +268,12 @@ function HtmlBoxWidget:setContent(body, css, default_font_size, is_xhtml, no_css
     self:clearHighlight()
 end
 
-function HtmlBoxWidget:setSVGContent(svg_text, default_font_size, html_resource_directory)
+function HtmlBoxWidget:setRawContent(svg_text, magic, default_font_size, html_resource_directory)
     local ok
-    ok, self.document = pcall(Mupdf.openDocumentFromText, svg_text, "svg", html_resource_directory)
+    ok, self.document = pcall(Mupdf.openDocumentFromText, svg_text, magic, html_resource_directory)
     if not ok then
         logger.warn("SVG loading error:", self.document)
+        return nil, self.document
     end
 
     self.document:layoutDocument(self.dimen.w, self.dimen.h, default_font_size)
