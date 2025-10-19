@@ -277,7 +277,7 @@ function HtmlBoxWidget:setRawContent(body, magic, default_font_size, resource_di
     local ok
     ok, self.document = pcall(Mupdf.openDocumentFromText, body, magic, resource_directory)
     if not ok then
-        logger.warn("SVG loading error:", self.document)
+        logger.warn("Raw content loading error:", self.document)
         return nil, self.document
     end
 
