@@ -268,9 +268,14 @@ function HtmlBoxWidget:setContent(body, css, default_font_size, is_xhtml, no_css
     self:clearHighlight()
 end
 
-function HtmlBoxWidget:setRawContent(svg_text, magic, default_font_size, html_resource_directory)
+--- Use the raw content as given, without any string manipulation to try to improve MuPDF compatibility or rendering.
+--- @string body Content to be rendered in a supported format like (X)HTML or SVG.
+--- @string magic Used to detect document type, like a file name or mime-type.
+--- @float default_font_size Default font size to use for layout, only for some formats like HTML.
+--- @string resource_directory Directory to use for resolving relative resource paths.
+function HtmlBoxWidget:setRawContent(body, magic, default_font_size, resource_directory)
     local ok
-    ok, self.document = pcall(Mupdf.openDocumentFromText, svg_text, magic, html_resource_directory)
+    ok, self.document = pcall(Mupdf.openDocumentFromText, body, magic, resource_directory)
     if not ok then
         logger.warn("SVG loading error:", self.document)
         return nil, self.document
