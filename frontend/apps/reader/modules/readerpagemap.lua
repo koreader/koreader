@@ -381,7 +381,7 @@ end
 
 function ReaderPageMap:showDocumentProvidedInfo(get_text)
     local t = _([[
-This book includes stable page numbers from the publisher (℗).
+Publisher page numbers available.
 Page numbers: %1 - %2
 Source (print edition):
 %3]])
@@ -589,7 +589,7 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                         end,
                     },
                     {
-                        text = _("Notify if book has publisher page numbers"),
+                        text = _("Prompt when publisher page numbers available"),
                         checked_func = function()
                             return G_reader_settings:isTrue("pagemap_notify_document_provided")
                         end,
@@ -608,7 +608,7 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                         end,
                     },
                     {
-                        text = _("Show stable page labels in margin"),
+                        text = _("Show stable page numbers in margin"),
                         checked_func = function()
                             return G_reader_settings:isTrue("pagemap_show_page_labels")
                         end,
