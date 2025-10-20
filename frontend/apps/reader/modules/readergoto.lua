@@ -141,7 +141,7 @@ function ReaderGoto:gotoPage()
             self.ui:handleEvent(Event:new("GotoPage", number))
         end
         self:close()
-    elseif self.ui.document:hasHiddenFlows() then
+    elseif self.document:hasHiddenFlows() then
         -- if there are hidden flows, we accept the syntax [x]y
         -- for page number x in flow number y (y defaults to 0 if not present)
         local flow
@@ -149,8 +149,8 @@ function ReaderGoto:gotoPage()
         flow = tonumber(flow) or 0
         number = tonumber(number)
         if number then
-            if self.ui.document.flows[flow] ~= nil then
-                if number < 1 or number > self.ui.document:getTotalPagesInFlow(flow) then
+            if self.document.flows[flow] ~= nil then
+                if number < 1 or number > self.document:getTotalPagesInFlow(flow) then
                     return
                 end
                 local page = 0
@@ -158,10 +158,10 @@ function ReaderGoto:gotoPage()
                 -- in a non-linear flow the target page is immediate
                 if flow == 0 then
                     for i=1, number do
-                        page = self.ui.document:getNextPage(page)
+                        page = self.document:getNextPage(page)
                     end
                 else
-                    page = self.ui.document:getFirstPageInFlow(flow) + number - 1
+                    page = self.document:getFirstPageInFlow(flow) + number - 1
                 end
                 if page > 0 then
                     self.ui:handleEvent(Event:new("GotoPage", page))
@@ -182,7 +182,7 @@ function ReaderGoto:gotoPercent()
 end
 
 function ReaderGoto:onGoToBeginning()
-    local new_page = self.ui.document:getNextPage(0)
+    local new_page = self.document:getNextPage(0)
     if new_page then
         self.ui.link:addCurrentLocationToStack()
         self.ui:handleEvent(Event:new("GotoPage", new_page))
@@ -191,7 +191,7 @@ function ReaderGoto:onGoToBeginning()
 end
 
 function ReaderGoto:onGoToEnd()
-    local new_page = self.ui.document:getPrevPage(0)
+    local new_page = self.document:getPrevPage(0)
     if new_page then
         self.ui.link:addCurrentLocationToStack()
         self.ui:handleEvent(Event:new("GotoPage", new_page))
@@ -239,9 +239,9 @@ end
 function ReaderGoto:onPinPage(pageno)
     local pn_or_xp
     if pageno then
-        pn_or_xp = self.ui.paging and pageno or self.ui.document:getPageXPointer(pageno)
+        pn_or_xp = self.ui.paging and pageno or self.document:getPageXPointer(pageno)
     else -- current page
-        pn_or_xp = self.ui.paging and self.view.state.page or self.ui.document:getXPointer()
+        pn_or_xp = self.ui.paging and self.view.state.page or self.document:getXPointer()
     end
     self.ui.doc_settings:saveSetting("pinned_page", pn_or_xp)
     local Notification = require("ui/widget/notification")
