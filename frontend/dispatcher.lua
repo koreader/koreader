@@ -169,6 +169,9 @@ local settingsList = {
     page_jmp = {category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Turn pages"), reader=true},
     go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), reader=true},
     skim = {category="none", event="ShowSkimtoDialog", title=_("Skim document"), reader=true},
+    pin_current_page = {category="none", event="PinPage", title=_("Pin current page"), reader=true},
+    go_to_pinned_page = {category="none", event="GoToPinnedPage", title=_("Go to pinned page"), reader=true, separator=true},
+    ----
     prev_bookmark = {category="none", event="GotoPreviousBookmarkFromPage", title=_("Previous bookmark"), reader=true},
     next_bookmark = {category="none", event="GotoNextBookmarkFromPage", title=_("Next bookmark"), reader=true},
     first_bookmark = {category="none", event="GotoFirstBookmark", title=_("First bookmark"), reader=true},
@@ -414,6 +417,9 @@ local dispatcher_menu_order = {
     "page_jmp",
     "go_to",
     "skim",
+    "pin_current_page",
+    "go_to_pinned_page",
+    ----
     "prev_bookmark",
     "next_bookmark",
     "first_bookmark",
