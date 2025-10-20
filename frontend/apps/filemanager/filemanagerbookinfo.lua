@@ -174,6 +174,7 @@ function BookInfo:show(doc_settings_or_file, book_props)
             table.insert(t, pages)
         end
         if self.ui.pagemap.chars_per_synthetic_page then
+            -- @translators characters per page
             local cpp = "(" .. T(N_("1 char per page", "%1 chars per page",
                 self.ui.pagemap.chars_per_synthetic_page), self.ui.pagemap.chars_per_synthetic_page) .. ")"
             table.insert(t, self.ui.pagemap:getLastPageLabel() .. " " .. cpp)
