@@ -381,7 +381,7 @@ end
 
 function ReaderPageMap:showDocumentProvidedInfo(get_text)
     local t = _([[
-This book has stable page numbers by the publisher (℗).
+This book includes stable page numbers from the publisher (℗).
 Page numbers: %1 - %2
 Source (print edition):
 %3]])
