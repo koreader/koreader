@@ -51,6 +51,25 @@ x for an absolute page number
         buttons = {
             {
                 {
+                    text = _("Pin current page"),
+                    callback = function()
+                        self:close()
+                        self:onPinPage()
+                    end,
+                },
+                {
+                    text = _("Go to pinned page"),
+                    enabled_func = function()
+                        return self.ui.doc_settings:has("pinned_page")
+                    end,
+                    callback = function()
+                        self:close()
+                        self:onGoToPinnedPage()
+                    end,
+                },
+            },
+            {
+                {
                     text = _("Skim"),
                     callback = function()
                         self:close()
@@ -62,7 +81,7 @@ x for an absolute page number
                     callback = function()
                         self:gotoPercent()
                     end,
-                }
+                },
             },
             {
                 {
@@ -78,7 +97,7 @@ x for an absolute page number
                     callback = function()
                         self:gotoPage()
                     end,
-                }
+                },
             },
         },
     }
@@ -202,6 +221,32 @@ function ReaderGoto:onGoToRandomPage()
             return true
         end
     end
+end
+
+function ReaderGoto:onGoToPinnedPage()
+    local pn_or_xp = self.ui.doc_settings:readSetting("pinned_page")
+    if pn_or_xp then
+        self.ui.link:addCurrentLocationToStack()
+        if self.ui.paging then
+            self.ui.paging:onGotoPage(pn_or_xp)
+        else
+            self.ui.rolling:onGotoXPointer(pn_or_xp)
+        end
+    end
+    return true
+end
+
+function ReaderGoto:onPinPage(pageno)
+    local pn_or_xp
+    if pageno then
+        pn_or_xp = self.ui.paging and pageno or self.ui.document:getPageXPointer(pageno)
+    else -- current page
+        pn_or_xp = self.ui.paging and self.view.state.page or self.ui.document:getXPointer()
+    end
+    self.ui.doc_settings:saveSetting("pinned_page", pn_or_xp)
+    local Notification = require("ui/widget/notification")
+    Notification:notify(_("Page pinned"))
+    return true
 end
 
 return ReaderGoto
