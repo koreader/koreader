@@ -853,12 +853,14 @@ function TouchMenu:onMenuSelect(item, tap_on_checkmark)
 
     local sub_item_table = item.sub_item_table_func and item.sub_item_table_func() or item.sub_item_table
     if sub_item_table then
-        table.insert(self.item_table_stack, self.item_table)
-        item.menu_item_id = item.menu_item_id or tostring(item) -- unique id
-        self.parent_id = item.menu_item_id
-        self.item_table = sub_item_table
-        self:updateItems(1, self.item_table.open_on_menu_item_id_func
-            and self.item_table.open_on_menu_item_id_func())
+        if #sub_item_table > 0 then
+            table.insert(self.item_table_stack, self.item_table)
+            item.menu_item_id = item.menu_item_id or tostring(item) -- unique id
+            self.parent_id = item.menu_item_id
+            self.item_table = sub_item_table
+            self:updateItems(1, self.item_table.open_on_menu_item_id_func
+                and self.item_table.open_on_menu_item_id_func())
+        end
         return true
     end
 
