@@ -13,6 +13,7 @@ local ffiUtil = require("ffi/util")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
+local C_ = _.pgettext
 local Screen = Device.screen
 local T = ffiUtil.template
 
@@ -44,10 +45,10 @@ function Profiles:loadProfiles()
     -- ensure profile name
     for k, v in pairs(self.data) do
         if not v.settings then
-            self.data[k].settings = {}
+            v.settings = {}
         end
-        if not self.data[k].settings.name then
-            self.data[k].settings.name = k
+        if not v.settings.name then
+            v.settings.name = k
             self.updated = true
         end
     end
@@ -96,7 +97,7 @@ function Profiles:getSubMenuItems()
             keep_menu_open = true,
             callback = function(touchmenu_instance)
                 local function editCallback(new_name)
-                    self.data[new_name] = { ["settings"] = { ["name"] = new_name } }
+                    self.data[new_name] = { settings = { name = new_name } }
                     self.updated = true
                     touchmenu_instance.item_table = self:getSubMenuItems()
                     touchmenu_instance.page = 1
@@ -156,20 +157,95 @@ function Profiles:getSubMenuItems()
                                 return v.settings.auto_exec_ask
                             end,
                             callback = function()
-                                self.data[k].settings.auto_exec_ask = not v.settings.auto_exec_ask or nil
+                                v.settings.auto_exec_ask = not v.settings.auto_exec_ask or nil
                                 self.updated = true
                             end,
                         },
                         {
-                            text = _("Execute promptly"),
-                            help_text = _([[Enable this option to execute the profile before some other operations triggered by the event.
-For example, with a trigger "on document closing" the profile will be executed before the document is closed.]]),
-                            checked_func = function()
-                                return v.settings.auto_exec_promptly
+                            text_func = function()
+                                local txt
+                                if v.settings.auto_exec_promptly then
+                                    txt = _("promptly")
+                                elseif v.settings.auto_exec_delay then
+                                    txt = string.format("%0.1f", v.settings.auto_exec_delay) .. " " .. C_("Time", "s")
+                                else
+                                    txt = _("default")
+                                end
+                                return T(_("Excecuting delay: %1"), txt)
                             end,
-                            callback = function()
-                                self.data[k].settings.auto_exec_promptly = not v.settings.auto_exec_promptly or nil
+                            checked_func = function()
+                                return v.settings.auto_exec_promptly or v.settings.auto_exec_delay ~= nil
+                            end,
+                            sub_item_table_func = function()
+                                return {
+                                    {
+                                        text = _("promptly"),
+                                        help_text =
+_([[Enable this option to execute the profile before some other operations triggered by the event.
+For example, with a trigger "on document closing" the profile will be executed before the document is closed.]]),
+                                        checked_func = function()
+                                            return v.settings.auto_exec_promptly
+                                        end,
+                                        radio = true,
+                                        callback = function()
+                                            if not v.settings.auto_exec_promptly then
+                                                v.settings.auto_exec_promptly = true
+                                                v.settings.auto_exec_delay = nil
+                                                self.updated = true
+                                            end
+                                        end,
+                                    },
+                                    {
+                                        text = _("default"),
+                                        checked_func = function()
+                                            return not (v.settings.auto_exec_promptly or v.settings.auto_exec_delay)
+                                        end,
+                                        radio = true,
+                                        callback = function()
+                                            if v.settings.auto_exec_promptly or v.settings.auto_exec_delay then
+                                                v.settings.auto_exec_promptly = nil
+                                                v.settings.auto_exec_delay = nil
+                                                self.updated = true
+                                            end
+                                        end,
+                                    },
+                                    {
+                                        text_func = function()
+                                            return v.settings.auto_exec_delay
+                                                and string.format("%0.1f", v.settings.auto_exec_delay) .. " " .. C_("Time", "s")
+                                                 or _("custom")
+                                        end,
+                                        checked_func = function()
+                                            return v.settings.auto_exec_delay ~= nil
+                                        end,
+                                        radio = true,
+                                        callback = function(touchmenu_instance)
+                                            local SpinWidget = require("ui/widget/spinwidget")
+                                            UIManager:show(SpinWidget:new{
+                                                title_text = _("Executing delay"),
+                                                value = v.settings.auto_exec_delay or 3,
+                                                value_min = 1,
+                                                value_max = 10,
+                                                value_hold_step = 0.1,
+                                                precision = "%0.1f",
+                                                unit = C_("Time", "s"),
+                                                ok_always_enabled = true,
+                                                callback = function(spin)
+                                                    v.settings.auto_exec_promptly = nil
+                                                    v.settings.auto_exec_delay = spin.value
+                                                    self.updated = true
+                                                    touchmenu_instance:updateItems()
+                                                end,
+                                            })
+                                        end,
+                                    },
+                                }
+                            end,
+                            hold_callback = function(touchmenu_instance)
+                                v.settings.auto_exec_promptly = nil
+                                v.settings.auto_exec_delay = nil
                                 self.updated = true
+                                touchmenu_instance:updateItems()
                             end,
                         },
                         {
@@ -209,6 +285,7 @@ For example, with a trigger "on document closing" the profile will be executed b
                                                     else
                                                         v.settings.auto_exec_time_interval = { str, str }
                                                     end
+                                                    self.updated = true
                                                     touchmenu_instance:updateItems()
                                                 end,
                                             })
@@ -219,6 +296,7 @@ For example, with a trigger "on document closing" the profile will be executed b
                             end,
                             hold_callback = function(touchmenu_instance)
                                 v.settings.auto_exec_time_interval = nil
+                                self.updated = true
                                 touchmenu_instance:updateItems()
                             end,
                             separator = true,
@@ -250,7 +328,7 @@ For example, with a trigger "on document closing" the profile will be executed b
                     return v.settings.notify
                 end,
                 callback = function()
-                    self.data[k].settings.notify = not v.settings.notify or nil
+                    v.settings.notify = not v.settings.notify or nil
                     self.updated = true
                 end,
                 separator = true,
@@ -265,17 +343,17 @@ For example, with a trigger "on document closing" the profile will be executed b
                         dispatcherUnregisterProfile(k)
                         UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged",
                             { old_name = self.prefix..k, new_name = nil }))
-                        self.data[k].settings.registered = nil
+                        v.settings.registered = nil
                     else
                         dispatcherRegisterProfile(k)
-                        self.data[k].settings.registered = true
+                        v.settings.registered = true
                     end
                     self.updated = true
                 end,
             },
             {
                 text_func = function()
-                    return T(_("Edit actions: (%1)"), Dispatcher:menuTextFunc(self.data[k]))
+                    return T(_("Edit actions: (%1)"), Dispatcher:menuTextFunc(v))
                 end,
                 sub_item_table_func = function()
                     local edit_actions_sub_items = {}
@@ -1064,21 +1142,15 @@ function Profiles:executeAutoExec(profile_name, event)
         end
         if not do_execute then return end
     end
-    if profile.settings.auto_exec_ask then
-        UIManager:show(ConfirmBox:new{
-            text = _("Do you want to execute profile?") .. "\n\n" .. profile_name .. "\n",
-            ok_text = _("Execute"),
-            ok_callback = function()
-                logger.dbg("Profiles - auto executing:", profile_name)
-                UIManager:nextTick(function()
-                    Dispatcher:execute(profile)
-                end)
-            end,
-        })
-    else
+    local function execute_profile()
         if profile.settings.auto_exec_promptly then
             logger.dbg("Profiles - auto executing promptly:", profile_name)
             Dispatcher:execute(profile)
+        elseif profile.settings.auto_exec_delay then
+            logger.dbg("Profiles - auto executing delayed:", profile_name, profile.settings.auto_exec_delay)
+            UIManager:scheduleIn(profile.settings.auto_exec_delay, function()
+                Dispatcher:execute(profile)
+            end)
         else
             logger.dbg("Profiles - auto executing:", profile_name)
             if event == "CloseDocument" or event == "CloseDocumentAll" then
@@ -1091,6 +1163,17 @@ function Profiles:executeAutoExec(profile_name, event)
                 end)
             end
         end
+    end
+    if profile.settings.auto_exec_ask then
+        UIManager:show(ConfirmBox:new{
+            text = _("Do you want to execute profile?") .. "\n\n" .. profile_name .. "\n",
+            ok_text = _("Execute"),
+            ok_callback = function()
+                execute_profile()
+            end,
+        })
+    else
+        execute_profile()
     end
 end
 
