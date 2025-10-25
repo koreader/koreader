@@ -18,20 +18,20 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - image: '13'
+          - image: '15'
             platform: 'x86-64'
-            xcode_version: '15.2'
+            xcode_version: '16.4'
             deployment_target: '10.15'
             jobs: 5
-          - image: '14'
+          - image: '15'
             platform: 'ARM64'
-            xcode_version: '15.4'
+            xcode_version: '16.4'
             deployment_target: '11.0'
             jobs: 4
 
     name: "macOS ${{ matrix.image }} ${{ matrix.platform }} 🔨${{ matrix.xcode_version }} 🎯${{ matrix.deployment_target }}"
 
-    runs-on: "macos-${{ matrix.image }}"
+    runs-on: "macos-${{ matrix.image }}${{ matrix.platform == 'x86-64' && '-intel' || '' }}"
 
     env:
       # Bump first number to reset all caches.
