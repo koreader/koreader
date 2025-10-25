@@ -109,14 +109,14 @@ function ReaderHandMade:onToggleHandmadeToc()
     self.toc_enabled = not self.toc_enabled
     self:setupToc()
     -- Have footer updated, so we may see this took effect
-    self.view.footer:onUpdateFooter(self.view.footer_visible)
+    self.view.footer:maybeUpdateFooter()
 end
 
 function ReaderHandMade:onToggleHandmadeFlows()
     self.flows_enabled = not self.flows_enabled
     self:setupFlows()
     -- Have footer updated, so we may see this took effect
-    self.view.footer:onUpdateFooter(self.view.footer_visible)
+    self.view.footer:maybeUpdateFooter()
     self.ui.annotation:setNeedsUpdateFlag()
 end
 
@@ -200,7 +200,7 @@ This custom table of contents is currently limited to a single level and can't h
                                 self.toc = {}
                                 self.ui:handleEvent(Event:new("UpdateToc"))
                                 -- The footer may be visible, so have it update its chapter related items
-                                self.view.footer:onUpdateFooter(self.view.footer_visible)
+                                self.view.footer:maybeUpdateFooter()
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
                                 end
@@ -261,7 +261,7 @@ Hidden flows are shown with gray or hatched background in Book map and Page brow
                                 self.ui:handleEvent(Event:new("UpdateToc"))
                                 self.ui:handleEvent(Event:new("InitScrollPageStates"))
                                 -- The footer may be visible, so have it update its dependent items
-                                self.view.footer:onUpdateFooter(self.view.footer_visible)
+                                self.view.footer:maybeUpdateFooter()
                                 self.ui.annotation:setNeedsUpdateFlag()
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
@@ -285,7 +285,7 @@ Hidden flows are shown with gray or hatched background in Book map and Page brow
                                 self.ui:handleEvent(Event:new("UpdateToc"))
                                 self.ui:handleEvent(Event:new("InitScrollPageStates"))
                                 -- The footer may be visible, so have it update its dependent items
-                                self.view.footer:onUpdateFooter(self.view.footer_visible)
+                                self.view.footer:maybeUpdateFooter()
                                 self.ui.annotation:setNeedsUpdateFlag()
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
@@ -643,23 +643,17 @@ function ReaderHandMade:updateDocFlows()
             table.insert(flows, cur_hidden_flow)
         end
     end
-    local first_linear_page
-    local last_linear_page
-    local prev_flow
-    for i, flow in ipairs(flows) do
-        if not prev_flow or prev_flow[1] + prev_flow[2] < flow[1] then
-            if not first_linear_page and flow[1] > 1 then
-                first_linear_page = prev_flow and prev_flow[1] + prev_flow[2] or 1
-            end
+    local first_linear_page = 1
+    local last_linear_page = nb_pages
+    if #flows > 0 then
+        local flow = flows[1]
+        if flow[1] == 1 then -- book first page is in a hidden flow
+            first_linear_page = flow[1] + flow[2]
+        end
+        flow = flows[#flows]
+        if flow[1] + flow[2] == nb_pages then -- book last page is in a hidden flow
             last_linear_page = flow[1] - 1
         end
-        prev_flow = flow
-    end
-    if not prev_flow or prev_flow[1] + prev_flow[2] < nb_pages then
-        last_linear_page = nb_pages
-    end
-    if not first_linear_page then -- no flow met
-        first_linear_page = 1
     end
     -- CreDocument adds and item with key [0] with info about the main flow
     flows[0] = {first_linear_page, nb_pages - nb_hidden_pages}
