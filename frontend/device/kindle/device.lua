@@ -615,7 +615,7 @@ function Kindle:init()
     -- Auto-detect & open input devices
     self:openInputDevices()
 
-    -- Deal with the fancy "double-tap on the device frame" thingy
+    -- Deal with the fancy "double-tap on the device frame" thingy, c.f., #14461
     if self:hasFancyTaps() then
         -- Make sure we setup key handlers, in case the device is otherwise touch-only
         self.hasKeys = yes
