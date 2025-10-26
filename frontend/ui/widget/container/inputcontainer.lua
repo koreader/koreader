@@ -80,12 +80,14 @@ function InputContainer:paintTo(bb, x, y)
         self.dimen.x = x
         self.dimen.y = y
     end
+    local content_size = self[1]:getSize()
     if self.vertical_align == "center" then
-        local content_size = self[1]:getSize()
-        self[1]:paintTo(bb, x, y + math.floor((self.dimen.h - content_size.h)/2))
-    else
-        self[1]:paintTo(bb, x, y)
+        y = y + math.floor((self.dimen.h - content_size.h)/2)
     end
+    if self.align == "center" then
+        x = x + math.floor((self.dimen.w - content_size.w)/2)
+    end
+    self[1]:paintTo(bb, x, y)
 end
 
 --[[--
