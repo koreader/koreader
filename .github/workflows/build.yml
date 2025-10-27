@@ -216,7 +216,7 @@ jobs:
         run: make skeleton update --assume-old=base
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: koreader-macos-${{ matrix.platform }}
           path: '*.7z'
