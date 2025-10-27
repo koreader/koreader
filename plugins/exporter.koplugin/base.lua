@@ -201,7 +201,7 @@ function BaseExporter:makeJsonRequest(endpoint, method, body, headers)
             "no response from server")
     end
 
-    response, err = rapidjson.decode(sink[1])
+    response, err = rapidjson.decode(table.concat(sink))
     if not response then
         return nil, string.format(msg_failed,
             "unable to decode server response" .. err)
