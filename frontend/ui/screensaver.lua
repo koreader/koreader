@@ -93,7 +93,6 @@ local function _getRandomImage(dir)
     if G_reader_settings:isTrue("screensaver_cycle_images_alphabetically") then
         local start_time = time.now()
         local files = {}
-        local num_files = 0
         -- Slippery slope ahead! Ensure the number of files does not become unmanageable, otherwise we'll have performance issues.
         -- NOTE: empirically, a kindle 4 found and sorted 128 files in 0.274828 seconds.
         util.findFiles(dir, function(file)
