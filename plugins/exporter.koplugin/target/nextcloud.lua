@@ -1,9 +1,9 @@
 local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local UIManager = require("ui/uimanager")
-local mime = require("mime")
 local md = require("template/md")
 local logger = require("logger")
+local url = require("socket.url")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -131,11 +131,10 @@ function NextcloudExporter:export(t)
 
     -- determine if markdown export is set
     local plugin_settings = G_reader_settings:readSetting("exporter") or {}
-    local markdown_settings = plugin_settings.markdown
+    local markdown_settings = plugin_settings.markdown or {}
 
     -- setup Nextcloud variables
     local url_base = string.format("%s/index.php/apps/notes/api/v1/", self.settings.host)
-    local auth = mime.b64(self.settings.username .. ":" .. self.settings.password)
     local category = self.settings.category or self.default_category
     local note_id
     local verb
@@ -143,15 +142,15 @@ function NextcloudExporter:export(t)
     local response
     local err
 
-
     local json_headers = {
-        ["Authorization"] = "Basic " .. auth,
         ["OCS-APIRequest"] = "true",
+        ["Accept"] = "application/json",
     }
 
     -- fetch existing notes from Nextcloud
-    local url = url_base .. "notes?category=" .. category
-    notes_cache, err = self:makeJsonRequest(url, "GET", nil, json_headers)
+    local request_url = url_base .. "notes?category=" .. url.escape(category)
+    notes_cache, err = self:makeJsonRequest(request_url, "GET", nil, json_headers,
+                                             self.settings.username, self.settings.password)
     if not notes_cache then
         logger.warn("Error fetching existing notes from Nextcloud", err)
         return false
@@ -159,7 +158,30 @@ function NextcloudExporter:export(t)
 
     -- export each note
     for _, booknotes in pairs(t) do
-        local note = md.prepareBookContent(booknotes, markdown_settings.formatting_options, markdown_settings.highlight_formatting)
+        -- Provide default formatting options if not configured
+        -- This must match the drawer types used in ReaderHighlight
+        local default_formatting = {
+            lighten = "italic",
+            underscore = "underline_markdownit",
+            strikeout = "strikethrough",
+            invert = "bold",
+        }
+
+        local formatting_opts = markdown_settings.formatting_options or default_formatting
+
+        -- Ensure all drawer types have a formatter (add any missing ones)
+        for drawer, formatter in pairs(default_formatting) do
+            if not formatting_opts[drawer] then
+                formatting_opts[drawer] = formatter
+            end
+        end
+
+        local highlight_fmt = markdown_settings.highlight_formatting
+        if highlight_fmt == nil then
+            highlight_fmt = false
+        end
+
+        local note = md.prepareBookContent(booknotes, formatting_opts, highlight_fmt)
         local note_title = string.format("%s - %s", string.gsub(booknotes.author, "\n", ", "), booknotes.title)
 
         -- search for existing note, and in that case use its ID for update
@@ -183,14 +205,15 @@ function NextcloudExporter:export(t)
         -- set up create or update specific parameters
         if note_id then
             verb = "PUT"
-            url = string.format("%snotes/%s", url_base, note_id)
+            request_url = string.format("%snotes/%s", url_base, note_id)
         else
             verb = "POST"
-            url = url_base.."notes"
+            request_url = url_base.."notes"
         end
 
         -- save note in Nextcloud
-        response, err = self:makeJsonRequest(url, verb, request_body, json_headers)
+        response, err = self:makeJsonRequest(request_url, verb, request_body, json_headers,
+                                              self.settings.username, self.settings.password)
         if not response then
             logger.warn("Error saving note in Nextcloud", err)
             return false

@@ -8,9 +8,11 @@ Each target should inherit from this class and implement *at least* an `export` 
 
 local Device = require("device")
 local http = require("socket.http")
+local https = require("ssl.https")
 local ltn12 = require("ltn12")
 local rapidjson = require("rapidjson")
 local socket = require("socket")
+local logger = require("logger")
 local socketutil = require("socketutil")
 local _ = require("gettext")
 
@@ -154,54 +156,81 @@ Makes a json request against a remote endpoint
 @param method string method
 @param body string json string to encode
 @param headers table of additional headers
+@param user string optional username for basic auth
+@param pass string optional password for basic auth
 
 @treturn response or nil, err
 ]]
 
-function BaseExporter:makeJsonRequest(endpoint, method, body, headers)
+function BaseExporter:makeJsonRequest(endpoint, method, body, headers, user, pass)
     local msg_failed = "json request failed: %s"
     local sink = {}
     local extra_headers = headers or {}
     local body_json, response, err
 
-    body_json, err = rapidjson.encode(body)
-    if not body_json then
-        return nil, string.format(msg_failed,
-            "cannot encode body" .. err)
-    end
-    local source = ltn12.source.string(body_json)
-    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
-
     local request = {
         url = endpoint,
         method = method,
-        sink = ltn12.sink.table(sink),
-        source = source,
-        headers = {
-            ["Content-Length"] = #body_json,
-            ["Content-Type"] = "application/json",
-        },
+        sink = socketutil.table_sink(sink),
+        headers = {},
     }
+
+    -- Add SSL/TLS settings for HTTPS requests
+    if endpoint:match("^https://") then
+        request.protocol = "any"
+        request.options = {"all", "no_sslv2", "no_sslv3"}
+        request.verify = "none"
+        request.mode = "client"
+    end
+
+    -- Add user/password if provided (for Basic Auth)
+    -- Manually construct Authorization header since LuaSocket's automatic handling may not work with custom headers
+    if user and pass then
+        local mime = require("mime")
+        local auth = mime.b64(user .. ":" .. pass)
+        -- Remove any newlines that mime.b64 might add (for MIME compliance)
+        auth = auth:gsub("\r?\n", "")
+        extra_headers["Authorization"] = "Basic " .. auth
+    end
+
+    -- Only add body and content headers when body is present
+    if body ~= nil then
+        body_json, err = rapidjson.encode(body)
+        if not body_json then
+            return nil, string.format(msg_failed,
+                "cannot encode body" .. err)
+        end
+        local source = ltn12.source.string(body_json)
+        request.source = source
+        request.headers["Content-Length"] = #body_json
+        request.headers["Content-Type"] = "application/json"
+    end
+
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
 
     -- fill in extra headers
     for k, v in pairs(extra_headers) do
         request.headers[k] = v
     end
 
-    local code, __, status = socket.skip(1, http.request(request))
+    -- Use appropriate request function based on URL scheme
+    local request_func = endpoint:match("^https://") and https.request or http.request
+    local code, headers_or_err, status = request_func(request)
     socketutil:reset_timeout()
 
-    if code ~= 200 then
+    -- Check if request was successful (code == 1 means success in LuaSocket)
+    if code ~= 1 then
         return nil, string.format(msg_failed,
-            status or code or "network unreachable")
+            status or headers_or_err or "network unreachable")
     end
 
-    if not sink[1] then
+    local response_body = table.concat(sink)
+    if response_body == "" then
         return nil, string.format(msg_failed,
             "no response from server")
     end
 
-    response, err = rapidjson.decode(sink[1])
+    response, err = rapidjson.decode(response_body)
     if not response then
         return nil, string.format(msg_failed,
             "unable to decode server response" .. err)
