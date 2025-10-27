@@ -87,14 +87,14 @@ local function _getRandomImage(dir)
     local match_func = function(file) -- images, ignore macOS resource forks
         return not util.stringStartsWith(ffiUtil.basename(file), "._") and DocumentRegistry:isImageFile(file)
     end
-    -- Limit the number of files we scan to avoid performance issues. Power users can always increase this cap if needed.
-    local file_cap = G_reader_settings:readSetting("screensaver_file_cap") or 128
+    -- Slippery slope ahead! Ensure the number of files does not become unmanageable, otherwise we'll have performance issues.
+    -- Power users can increase this cap if needed. Beware though, this grows at O(n * c) where c increases with the number of files.
+    -- NOTE: empirically, a kindle 4 found and sorted 128 files in 0.274828 seconds.
+    local file_cap = G_reader_settings:readSetting("screensaver_file_cap") or 256
     -- If the user has set the option to cycle images alphabetically, we sort the files instead of picking a random one.
     if G_reader_settings:isTrue("screensaver_cycle_images_alphabetically") then
         local start_time = time.now()
         local files = {}
-        -- Slippery slope ahead! Ensure the number of files does not become unmanageable, otherwise we'll have performance issues.
-        -- NOTE: empirically, a kindle 4 found and sorted 128 files in 0.274828 seconds.
         util.findFiles(dir, function(file)
             if match_func(file) then
                 table.insert(files, file)
