@@ -87,20 +87,20 @@ local function _getRandomImage(dir)
     local match_func = function(file) -- images, ignore macOS resource forks
         return not util.stringStartsWith(ffiUtil.basename(file), "._") and DocumentRegistry:isImageFile(file)
     end
+    -- Limit the number of files we scan to avoid performance issues. Power users can always increase this cap if needed.
+    local file_cap = G_reader_settings:readSetting("screensaver_file_cap") or 128
     -- If the user has set the option to cycle images alphabetically, we sort the files instead of picking a random one.
     if G_reader_settings:isTrue("screensaver_cycle_images_alphabetically") then
         local start_time = time.now()
         local files = {}
         local num_files = 0
+        -- Slippery slope ahead! Ensure the number of files does not become unmanageable, otherwise we'll have performance issues.
+        -- NOTE: empirically, a kindle 4 found and sorted 128 files in 0.274828 seconds.
         util.findFiles(dir, function(file)
-            -- Slippery slope ahead! Ensure the number of files does not become unmanageable, otherwise we'll have performance issues.
-            -- NOTE: empirically, a kindle 4 found and sorted 128 files in 0.274828 seconds.
-            if num_files >= 128 then return end -- this seems like a reasonable [yet arbitrary] limit
             if match_func(file) then
                 table.insert(files, file)
-                num_files = num_files + 1
             end
-        end, false)
+        end, false, file_cap)
         if #files == 0 then return end
         -- we have files, sort them in natural order, i.e z2 < z11 < z20
         local sort = require("sort")
@@ -117,7 +117,7 @@ local function _getRandomImage(dir)
         G_reader_settings:saveSetting("screensaver_cycle_index", index)
         return files[index]
     else -- Pick a random file (default behavior)
-        return filemanagerutil.getRandomFile(dir, match_func)
+        return filemanagerutil.getRandomFile(dir, match_func, file_cap)
     end
 end
 
