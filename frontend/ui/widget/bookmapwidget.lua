@@ -78,12 +78,12 @@ function BookMapRow:getPageX(page, right_edge)
     return x
 end
 
-function BookMapRow:getIndicatorXY(page, shift_y)
+function BookMapRow:getIndicatorXY(page, shift_down)
     local x = self:getPageX(page)
     local w = self:getPageX(page, true) - x
     x = x + math.ceil(w/2)
     local y = self.pages_frame_height + 1
-    if shift_y then
+    if shift_down then
         -- Shift it a bit down to keep bookmark glyph(s) readable
         y = y + math.floor(self.span_height * (1/3))
     end
@@ -546,6 +546,7 @@ function BookMapRow:init()
             table.insert(self.indicators, {
                 c = 0xF435, -- pin
                 rotation = -90,
+                shift_x_pct = 0.2,
                 x = x, y = y,
             })
         end
@@ -862,10 +863,7 @@ function BookMapWidget:init()
     end
     -- Location stack
     self.previous_locations = self.ui.link:getPreviousLocationPages()
-    local pinned_page = self.ui.doc_settings:readSetting("pinned_page")
-    if pinned_page then
-        self.pinned_page = self.ui.paging and pinned_page or self.ui.document:getPageFromXPointer(pinned_page)
-    end
+    self.pinned_page = self.ui.gotopage:getPinnedPageNumber()
 
     -- Update stuff that may be updated by the user while in PageBrowser
     self:updateEditableStuff()
@@ -1502,6 +1500,7 @@ Map legend:
 ▒ highlighted text
  highlighted text with notes
  bookmarked page
+ pinned page
 ▢ focused page when coming from Pages browser]])
 
     if self.overview_mode then
