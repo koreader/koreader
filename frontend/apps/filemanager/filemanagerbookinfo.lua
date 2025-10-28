@@ -172,7 +172,7 @@ function BookInfo:show(doc_settings_or_file, book_props)
         local t_page, t_info = {}, {}
         if not self.ui.pagemap.use_page_labels then
             table.insert(t_page, pages)
-            table.insert(t_info, _("Screen pages") .. ":\n" .. pages)
+            table.insert(t_info, _("Screen pages total") .. ":\n" .. pages)
         end
         if self.ui.pagemap.chars_per_synthetic_page then
             -- @translators characters per page
@@ -182,21 +182,31 @@ function BookInfo:show(doc_settings_or_file, book_props)
             table.insert(t_info, _("Synthetic pages") .. ":\n" .. txt)
             if self.ui.pagemap.use_page_labels then
                 table.insert(t_page, pages)
-                table.insert(t_info, _("Screen pages") .. ":\n" .. pages)
+                table.insert(t_info, _("Screen pages total") .. ":\n" .. pages)
             end
         end
         if self.ui.pagemap.has_pagemap_document_provided then
             if self.ui.pagemap.chars_per_synthetic_page then
                 table.insert(t_page, "(℗)")
-                table.insert(t_info, _("Publisher pages:\navailable"))
+                table.insert(t_info, _("Publisher pages (℗):\navailable"))
             else
                 local count = select(3, self.ui.pagemap:getCurrentPageLabel())
+                local first = self.ui.pagemap:getFirstPageLabel(true)
                 local last = self.ui.pagemap:getLastPageLabel(true)
+                local source = self.ui.document:getPageMapSource()
+                if source == nil or source == "" then
+                    source = n_a
+                end
                 table.insert(t_page, count .. " (℗ " .. last .. ")")
-                table.insert(t_info, _("Publisher pages") .. ":\n" .. count .. " (" .. last .. ")")
+                local t = _([[
+Publisher pages (℗):
+%1 (%2 - %3)
+Source (print edition):
+%4]])
+                table.insert(t_info, T(t, count, first, last, source))
                 if self.ui.pagemap.use_page_labels then
                     table.insert(t_page, pages)
-                    table.insert(t_info, _("Screen pages") .. ":\n" .. pages)
+                    table.insert(t_info, _("Screen pages total") .. ":\n" .. pages)
                 end
             end
         end
