@@ -784,15 +784,15 @@ end
 -- @string path
 -- @func callback(fullpath, name, attr)
 -- @bool recursive
--- @int file_cap (maximum number of files to find)
-function util.findFiles(dir, cb, recursive, file_cap)
+-- @int max_files (maximum number of files to find)
+function util.findFiles(dir, cb, recursive, max_files)
     recursive = recursive ~= false
     local count = 0
     local function scan(current)
         local ok, iter, dir_obj = pcall(lfs.dir, current)
         if not ok then return end
         for f in iter, dir_obj do
-            if file_cap and count >= file_cap then return end
+            if max_files and count >= max_files then return end
             local path = current.."/"..f
             -- lfs can return nil here, as it will follow symlinks!
             local attr = lfs.attributes(path) or {}
