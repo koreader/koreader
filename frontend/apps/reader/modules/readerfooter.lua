@@ -2116,14 +2116,10 @@ end
 
 function ReaderFooter:onUpdateFooter(force_repaint, full_repaint)
     if type(self.pageno) ~= "number" then return end
+    if self.progress_bar.initial_pos_marker then
+        self:updateProgressBarInitialPercentage()
+    end
     if self.settings.chapter_progress_bar then
-        if self.progress_bar.initial_pos_marker then
-            if self.ui.toc:getNextChapter(self.pageno) == self.ui.toc:getNextChapter(self.initial_pageno) then
-                self.progress_bar.initial_percentage = self:getChapterProgress(true, self.initial_pageno)
-            else -- initial position is not in the current chapter
-                self.progress_bar.initial_percentage = -1 -- do not draw initial position marker
-            end
-        end
         self.progress_bar:setPercentage(self:getChapterProgress(true))
     else
         self.progress_bar:setPercentage(self:getBookProgress())
@@ -2408,6 +2404,7 @@ function ReaderFooter:onToggleChapterProgressBar()
     self:setTocMarkers()
     if self.progress_bar.initial_pos_marker and not self.settings.chapter_progress_bar then
         self.progress_bar.initial_percentage = self.initial_pageno / self.pages
+        -- initial marker position in the chapter progress bar is handled in onUpdateFooter
     end
     self:refreshFooter(true)
 end
@@ -2416,6 +2413,45 @@ function ReaderFooter:invertProgressBar(invert_direction)
     if self.progress_bar then
         self.progress_bar.invert_direction = invert_direction
         self:maybeUpdateFooter()
+    end
+end
+
+function ReaderFooter:updateProgressBarInitialPercentage()
+    -- If the progress bar shows the flow progress or the chapter progress,
+    -- the initial position marker may be out of the progress bar pages interval.
+    -- In that case set initial percentage to -1 to not draw the marker.
+    if self.ui.document:hasHiddenFlows() then
+        local initial_flow = self.ui.document:getPageFlow(self.initial_pageno)
+        local current_flow = self.ui.document:getPageFlow(self.pageno)
+        if initial_flow == current_flow then
+            if self.settings.chapter_progress_bar then
+                if initial_flow == 0 then -- in chapter progress bar, show initial marker for the main flow only
+                    local initial_next_chapter = self.ui.toc:getNextChapter(self.initial_pageno)
+                    local current_next_chapter = self.ui.toc:getNextChapter(self.pageno)
+                    if initial_next_chapter == current_next_chapter then
+                        self.progress_bar.initial_percentage = self:getChapterProgress(true, self.initial_pageno)
+                    else
+                        self.progress_bar.initial_percentage = -1
+                    end
+                else
+                    self.progress_bar.initial_percentage = -1
+                end
+            else
+                local page = self.ui.document:getPageNumberInFlow(self.initial_pageno)
+                local pages = self.ui.document:getTotalPagesInFlow(initial_flow)
+                self.progress_bar.initial_percentage = page / pages
+            end
+        else
+            self.progress_bar.initial_percentage = -1
+        end
+    elseif self.settings.chapter_progress_bar then
+        local initial_next_chapter = self.ui.toc:getNextChapter(self.initial_pageno)
+        local current_next_chapter = self.ui.toc:getNextChapter(self.pageno)
+        if initial_next_chapter == current_next_chapter then
+            self.progress_bar.initial_percentage = self:getChapterProgress(true, self.initial_pageno)
+        else
+            self.progress_bar.initial_percentage = -1
+        end
     end
 end
 
