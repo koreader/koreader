@@ -53,13 +53,13 @@ function filemanagerutil.splitFileNameType(filepath)
     return filename_without_suffix, filetype
 end
 
-function filemanagerutil.getRandomFile(dir, match_func, file_count_cap)
+function filemanagerutil.getRandomFile(dir, match_func, max_files)
     local files = {}
     util.findFiles(dir, function(file)
         if match_func(file) then
             table.insert(files, file)
         end
-    end, false, file_count_cap)
+    end, false, max_files)
     if #files > 0 then
         math.randomseed(os.time())
         return files[math.random(#files)]
