@@ -90,7 +90,7 @@ local function _getRandomImage(dir)
     -- Slippery slope ahead! Ensure the number of files does not become unmanageable, otherwise we'll have performance issues.
     -- Power users can increase this cap if needed. Beware though, this grows at O(n * c) where c increases with the number of files.
     -- NOTE: empirically, a kindle 4 found and sorted 128 files in 0.274828 seconds.
-    local file_cap = G_reader_settings:readSetting("screensaver_file_cap") or 256
+    local file_count_cap = G_reader_settings:readSetting("screensaver_file_count_cap") or 256
     -- If the user has set the option to cycle images alphabetically, we sort the files instead of picking a random one.
     if G_reader_settings:isTrue("screensaver_cycle_images_alphabetically") then
         local start_time = time.now()
@@ -99,7 +99,7 @@ local function _getRandomImage(dir)
             if match_func(file) then
                 table.insert(files, file)
             end
-        end, false, file_cap)
+        end, false, file_count_cap)
         if #files == 0 then return end
         -- we have files, sort them in natural order, i.e z2 < z11 < z20
         local sort = require("sort")
@@ -116,7 +116,7 @@ local function _getRandomImage(dir)
         G_reader_settings:saveSetting("screensaver_cycle_index", index)
         return files[index]
     else -- Pick a random file (default behavior)
-        return filemanagerutil.getRandomFile(dir, match_func, file_cap)
+        return filemanagerutil.getRandomFile(dir, match_func, file_count_cap)
     end
 end
 
