@@ -181,6 +181,7 @@ function PageBrowserWidget:init()
     end
     -- Location stack
     self.previous_locations = self.ui.link:getPreviousLocationPages()
+    self.pinned_page = self.ui.gotopage:getPinnedPageNumber()
 
     -- Update stuff that may be updated by the user while in PageBrowser
     self:updateEditableStuff()
@@ -663,6 +664,7 @@ function PageBrowserWidget:update()
         with_page_sep = true,
         toc_items = row_toc_items,
         bookmarked_pages = self.bookmarked_pages,
+        pinned_page = self.pinned_page,
         previous_locations = self.previous_locations,
         hidden_flows = self.hidden_flows,
         read_pages = self.read_pages,
@@ -1151,7 +1153,8 @@ Below the pages, the following indicators may appear:
 ❶ ❷ … previous locations
 ▒ highlighted text
  highlighted text with notes
- bookmarked page]]),
+ bookmarked page
+ pinned page]]),
     })
 end
 

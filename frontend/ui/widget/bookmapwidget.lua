@@ -78,6 +78,18 @@ function BookMapRow:getPageX(page, right_edge)
     return x
 end
 
+function BookMapRow:getIndicatorXY(page, shift_down)
+    local x = self:getPageX(page)
+    local w = self:getPageX(page, true) - x
+    x = x + math.ceil(w/2)
+    local y = self.pages_frame_height + 1
+    if shift_down then
+        -- Shift it a bit down to keep bookmark glyph(s) readable
+        y = y + math.floor(self.span_height * (1/3))
+    end
+    return x, y
+end
+
 function BookMapRow:getPageAtX(x, at_bounds_if_outside)
     x = x - self.pages_frame_offset_x
     if x < 0 then
@@ -499,13 +511,10 @@ function BookMapRow:init()
                 color = Blitbuffer.COLOR_BLACK,
             })
         end
-        -- Indicator for bookmark/highlight type, and current page
+        -- Indicator for bookmark/highlight type
         if self.bookmarked_pages[page] then
             local page_bookmark_types = self.bookmarked_pages[page]
-            local x = self:getPageX(page)
-            local w = self:getPageX(page, true) - x
-            x = x + math.ceil(w/2)
-            local y = self.pages_frame_height + 1
+            local x, y = self:getIndicatorXY(page)
             -- These 3 icons overlap quite ok, so no need for any shift
             if page_bookmark_types["highlight"] then
                 table.insert(self.indicators, {
@@ -531,16 +540,19 @@ function BookMapRow:init()
                 })
             end
         end
+        -- Indicator for pinned page
+        if page == self.pinned_page then
+            local x, y = self:getIndicatorXY(page, self.bookmarked_pages[page])
+            table.insert(self.indicators, {
+                c = 0xF435, -- pin
+                rotation = -90,
+                shift_x_pct = 0.2,
+                x = x, y = y,
+            })
+        end
         -- Indicator for previous locations
         if self.previous_locations[page] and page ~= self.cur_page then
-            local x = self:getPageX(page)
-            local w = self:getPageX(page, true) - x
-            x = x + math.ceil(w/2)
-            local y = self.pages_frame_height + 1
-            if self.bookmarked_pages[page] then
-                -- Shift it a bit down to keep bookmark glyph(s) readable
-                y = y + math.floor(self.span_height * (1/3))
-            end
+            local x, y = self:getIndicatorXY(page, self.bookmarked_pages[page] or page == self.pinned_page)
             local num = self.previous_locations[page]
             table.insert(self.indicators, {
                 c = 0x2775 + (num < 10 and num or 10), -- number in solid black circle
@@ -550,14 +562,7 @@ function BookMapRow:init()
         end
         -- Extra indicator
         if self.extra_symbols_pages and self.extra_symbols_pages[page] then
-            local x = self:getPageX(page)
-            local w = self:getPageX(page, true) - x
-            x = x + math.ceil(w/2)
-            local y = self.pages_frame_height + 1
-            if self.bookmarked_pages[page] then
-                -- Shift it a bit down to keep bookmark glyph(s) readable
-                y = y + math.floor(self.span_height * (1/3))
-            end
+            local x, y = self:getIndicatorXY(page, self.bookmarked_pages[page] or page == self.pinned_page)
             table.insert(self.indicators, {
                 c = self.extra_symbols_pages[page],
                 x = x, y = y,
@@ -565,14 +570,7 @@ function BookMapRow:init()
         end
         -- Current page indicator
         if page == self.cur_page then
-            local x = self:getPageX(page)
-            local w = self:getPageX(page, true) - x
-            x = x + math.ceil(w/2)
-            local y = self.pages_frame_height + 1
-            if self.bookmarked_pages[page] then
-                -- Shift it a bit down to keep bookmark glyph(s) readable
-                y = y + math.floor(self.span_height * (1/3))
-            end
+            local x, y = self:getIndicatorXY(page, self.bookmarked_pages[page] or page == self.pinned_page)
             table.insert(self.indicators, {
                 c = 0x25B2, -- black up-pointing triangle
                 x = x, y = y,
@@ -865,6 +863,7 @@ function BookMapWidget:init()
     end
     -- Location stack
     self.previous_locations = self.ui.link:getPreviousLocationPages()
+    self.pinned_page = self.ui.gotopage:getPinnedPageNumber()
 
     -- Update stuff that may be updated by the user while in PageBrowser
     self:updateEditableStuff()
@@ -1250,6 +1249,7 @@ function BookMapWidget:update()
             with_page_sep = self.pages_per_row < self.max_pages_per_row_with_sep,
             toc_items = row_toc_items,
             bookmarked_pages = self.bookmarked_pages,
+            pinned_page = self.pinned_page,
             previous_locations = self.previous_locations,
             extra_symbols_pages = self.extra_symbols_pages,
             hidden_flows = self.hidden_flows,
@@ -1500,6 +1500,7 @@ Map legend:
 ▒ highlighted text
  highlighted text with notes
  bookmarked page
+ pinned page
 ▢ focused page when coming from Pages browser]])
 
     if self.overview_mode then

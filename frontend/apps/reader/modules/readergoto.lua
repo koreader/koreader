@@ -249,4 +249,11 @@ function ReaderGoto:onPinPage(pageno)
     return true
 end
 
+function ReaderGoto:getPinnedPageNumber()
+    local pn_or_xp = self.ui.doc_settings:readSetting("pinned_page")
+    if pn_or_xp then
+        return self.ui.paging and pn_or_xp or self.document:getPageFromXPointer(pn_or_xp)
+    end
+end
+
 return ReaderGoto
