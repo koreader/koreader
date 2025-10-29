@@ -169,10 +169,14 @@ function BookInfo:show(doc_settings_or_file, book_props)
     local pages = book_props.pages or n_a
     local pages_callback
     if self.is_current_doc and self.ui.pagemap and self.ui.pagemap.has_pagemap then
+        local screen_pages = _("Screen pages") .. ":\n" .. pages
+        if self.document:hasHiddenFlows() then
+            screen_pages = screen_pages .. " " .. _("(including hidden flows)")
+        end
         local t_page, t_info = {}, {}
         if not self.ui.pagemap.use_page_labels then
             table.insert(t_page, pages)
-            table.insert(t_info, _("Screen pages total") .. ":\n" .. pages)
+            table.insert(t_info, screen_pages)
         end
         if self.ui.pagemap.chars_per_synthetic_page then
             -- @translators characters per page
@@ -182,7 +186,7 @@ function BookInfo:show(doc_settings_or_file, book_props)
             table.insert(t_info, _("Synthetic pages") .. ":\n" .. txt)
             if self.ui.pagemap.use_page_labels then
                 table.insert(t_page, pages)
-                table.insert(t_info, _("Screen pages total") .. ":\n" .. pages)
+                table.insert(t_info, screen_pages)
             end
         end
         if self.ui.pagemap.has_pagemap_document_provided then
@@ -206,7 +210,7 @@ Source (print edition):
                 table.insert(t_info, T(t, count, first, last, source))
                 if self.ui.pagemap.use_page_labels then
                     table.insert(t_page, pages)
-                    table.insert(t_info, _("Screen pages total") .. ":\n" .. pages)
+                    table.insert(t_info, screen_pages)
                 end
             end
         end
