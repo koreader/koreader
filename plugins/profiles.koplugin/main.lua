@@ -432,11 +432,7 @@ For example, with a trigger "on document closing" the profile will be executed b
             text_func = function()
                 return (v.settings.show_as_quickmenu and "\u{F0CA} " or "\u{F144} ") .. k
             end,
-            hold_keep_menu_open = false,
             sub_item_table = sub_items,
-            hold_callback = function()
-                self:onProfileExecute(k)
-            end,
         })
     end
     return sub_item_table
