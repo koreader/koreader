@@ -220,8 +220,6 @@ function Japanese:onWordSelection(args)
     -- Calling sdcv is fairly expensive, so reduce the cost by trying every
     -- candidate in one shot and then picking the longest one which gave us a
     -- result.
-    --- @todo Given there is a limit to how many command-line arguments you can
-    --       pass, we should split up the candidate list if it's too long.
     local all_words = {}
     for i = 1, #all_candidates do all_words[i] = all_candidates[i].text end
     local cancelled, all_results = self.dictionary:rawSdcv(all_words)
