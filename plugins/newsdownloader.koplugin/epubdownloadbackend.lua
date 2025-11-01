@@ -42,28 +42,34 @@ local FeedCache = CacheSQLite:new{
     size = 1024 * 1024 * 10, -- 10MB
 }
 
--- Get HTML elements sorted by level.
-local function selectSorted(root, elements)
-    local elements_sorted = {}
-    for _, sel in ipairs(elements) do
-        local selected = root:select(sel)
-        if selected then
-           for _, e in ipairs(selected) do
-               table.insert(elements_sorted, e)
-           end
+---Returns user specified or default options.
+---@param user string|table|boolean
+---@param default table
+---@return table
+local function userOrDefault(user, default)
+    if user == nil or type(user) == "boolean" then
+        return default
+    else
+        if type(user) == "string" then
+            if user == "" then
+                return default
+            else
+                return { user }
+            end
+        elseif type(user) == "table" and next(user) == nil then
+            return default
+        else
+            return user
         end
     end
-    table.sort(elements_sorted, function(a, b) return a.level < b.level end)
-    return elements_sorted
 end
 
--- filter HTML using CSS selector
-local function selectAndCleanHTML(text, filter_element, block_element)
-    local htmlparser = require("htmlparser")
-    local root = htmlparser.parse(text, 5000)
-    local filtered
-    local filtered_e = nil
-    local selectors = {
+---Selects the first matching node from the root node.
+---@param root_node ElementNode
+---@param user_wanted_selectors string|table|boolean
+---@return ElementNode
+local function selectMatchingNode(root_node, user_wanted_selectors)
+    local default_wanted_selectors = {
         "main",
         "article",
         "div#main",
@@ -82,62 +88,67 @@ local function selectAndCleanHTML(text, filter_element, block_element)
         "div#article-inner",
         "div#newsstorytext",
         "div.general",
-        }
-    local annoyances = {
+    }
+    local wanted_selectors = userOrDefault(user_wanted_selectors, default_wanted_selectors)
+    logger.dbg("Selecting first matching", wanted_selectors)
+    for _, selector in ipairs(wanted_selectors) do
+        local nodes = root_node:select(selector)
+        if nodes then
+            for _, node in ipairs(nodes) do
+                if node:getcontent() then
+                    logger.dbg("found by selector", selector)
+                    return node
+                end
+            end
+        end
+    end
+
+    return root_node
+end
+
+
+---Removes unwanted nodes from previously selected node.
+---@param wanted_node ElementNode
+---@param user_unwanted_selectors string|boolean|table
+---@return string
+local function removeUnwantedNodes(wanted_node, user_unwanted_selectors)
+    local default_unwanted_selectors = {
         "div.article__social",
         "figure.is-type-video",
         "div.fluid-width-video-wrapper",
         "div.youtube-wrap",
     }
-    if type(filter_element) == "string" and filter_element ~= "" then
-        table.insert(selectors, 1, filter_element)  -- Insert string at the beginning
-    elseif type(filter_element) == "table" then
-        for _, el in ipairs(filter_element) do
-            if type(el) == "string" and el ~= "" then
-                table.insert(selectors, 1, el)  -- Insert each non-empty element at the beginning
+    local unwanted_selectors = userOrDefault(user_unwanted_selectors, default_unwanted_selectors)
+    logger.dbg("removing by selectors:", unwanted_selectors)
+    local node_content = wanted_node:getcontent()
+    for _, unwanted_selector in ipairs(unwanted_selectors) do
+        local unwanted_nodes = wanted_node:select(unwanted_selector)
+        if unwanted_nodes then
+            for _,unwanted_node in ipairs(unwanted_nodes) do
+                logger.dbg("removing", unwanted_selector)
+                local unwanted_text = unwanted_node:gettext()
+                node_content = removeSubstring(node_content, unwanted_text)
             end
         end
     end
-    for _, sel in ipairs(selectors) do
-        local elements = root:select(sel)
-        if elements then
-            for _, e in ipairs(elements) do
-                if e:getcontent() then
-                    filtered_e = e
-                    break
-                end
-            end
-            if filtered_e then
-                break
-            end
-        end
-    end
-    if not filtered_e then
-        filtered_e = root
-        filtered = text
-    else
-        filtered = "<!DOCTYPE html><html><head></head><body>" .. filtered_e:getcontent() .. "</body></html>"
-    end
-    -- blocking
-    if type(block_element) == "string" and block_element ~= "" then
-        annoyances = { block_element }
-    elseif type(block_element) == "table" then
-        local custom_annoyances = {}
-        for _, el in ipairs(block_element) do
-            if type(el) == "string" and el ~= "" then
-                table.insert(custom_annoyances, 1, el)
-            end
-        end
-        if next(custom_annoyances) then  -- there is at least one valid component
-            annoyances = custom_annoyances
-        end
-    end
-    -- Removing deeper elements may modify text inside others, making patterns not match.
-    annoyances = selectSorted(filtered_e, annoyances)
-    for _, e in ipairs(annoyances) do
-        filtered = removeSubstring(filtered, e:gettext())
-    end
-    return filtered
+    return node_content
+end
+
+---Reduces the HTML to declutter the output. It uses wanted_elements and
+---unwanted_elements to "select" and "cut" parts of the HTML.
+---@param input_html string
+---@param user_wanted_elements string|table|boolean
+---@param user_unwanted_elements string|table|boolean
+---@return string
+local function reduceHTML(input_html, user_wanted_elements, user_unwanted_elements)
+    local htmlparser = require("htmlparser")
+    local root = htmlparser.parse(input_html, 5000)
+
+    local wanted_node = selectMatchingNode(root, user_wanted_elements)
+    local cleaned_inner_html = removeUnwantedNodes(wanted_node, user_unwanted_elements)
+    local output_html = "<!DOCTYPE html><html><head></head><body>" .. cleaned_inner_html .. "</body></html>"
+
+    return output_html
 end
 
 -- From https://github.com/lunarmodules/luasocket/blob/1fad1626900a128be724cba9e9c19a6b2fe2bf6b/samples/cookie.lua
@@ -400,7 +411,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
     -- should it changes if content is updated (as now, including the wikipedia revisionId),
     -- or should it stays the same even if revid changes (content of the same book updated).
-    if filter_enable then html = selectAndCleanHTML(html, filter_element, block_element) end
+    if filter_enable then html = reduceHTML(html, filter_element, block_element) end
     local images = {}
     local seen_images = {}
     local imagenum = 1
