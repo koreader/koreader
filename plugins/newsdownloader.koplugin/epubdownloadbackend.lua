@@ -127,8 +127,8 @@ end
 ---Reduces the HTML to declutter the output. It uses wanted_elements and
 ---unwanted_elements to "select" and "cut" parts of the HTML.
 ---@param input_html string
----@param user_wanted_elements string|table|boolean
----@param user_unwanted_elements string|table|boolean
+---@param user_wanted_elements table
+---@param user_unwanted_elements table
 ---@return string
 local function reduceHTML(input_html, user_wanted_elements, user_unwanted_elements)
     local htmlparser = require("htmlparser")
