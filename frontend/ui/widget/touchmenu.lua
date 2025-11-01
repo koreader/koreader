@@ -472,6 +472,7 @@ local TouchMenu = FocusManager:extend{
     cur_tab = -1,
     close_callback = nil,
     is_fresh = true,
+    submenu_level_indicator = "•\u{202F}", -- Narrow No-Break Space
 }
 
 function TouchMenu:init()
@@ -586,16 +587,23 @@ function TouchMenu:init()
         icon = "chevron.up",
         show_parent = self.show_parent,
         padding_left = math.floor(footer_width*0.33*0.1),
-        padding_right = math.floor(footer_width*0.33*0.1),
+        padding_right = math.floor(footer_width*0.33*0.01),
         callback = function()
             self:backToUpperMenu()
         end,
+    }
+    self.submenu_level_info = TextWidget:new{
+        text = "",
+        face = self.fface,
     }
     local footer_height = up_button:getSize().h + Size.line.thick
     self.footer = HorizontalGroup:new{
         LeftContainer:new{
             dimen = Geom:new{ w = math.floor(footer_width*0.33), h = footer_height},
-            up_button,
+            HorizontalGroup:new{
+                up_button,
+                self.submenu_level_info,
+            },
         },
         CenterContainer:new{
             dimen = Geom:new{ w = math.floor(footer_width*0.33), h = footer_height},
@@ -699,6 +707,7 @@ function TouchMenu:updateItems(target_page, target_item_id)
 
     table.insert(self.item_group, self.footer_top_margin)
     table.insert(self.item_group, self.footer)
+    self.submenu_level_info:setText(self.submenu_level_indicator:rep(#self.item_table_stack))
     if self.page_num > 1 then
         -- @translators %1 is the current page. %2 is the total number of pages. In some languages a good translation might need to reverse this order, for instance: "Total %2, page %1".
         self.page_info_text:setText(T(_("Page %1 of %2"), self.page, self.page_num))
