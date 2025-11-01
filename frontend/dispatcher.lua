@@ -1076,6 +1076,23 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             Dispatcher._sortActions(caller, location[settings])
         end,
         keep_menu_open = true,
+    })
+    table.insert(menu, {
+        text = _("Do not show action messages and dialogs"),
+        checked_func = function()
+            return util.tableGetValue(location[settings], "settings", "disable_show")
+        end,
+        callback = function()
+            local actions = location[settings]
+            if actions then
+                if util.tableGetValue(actions, "settings", "disable_show") then
+                    util.tableRemoveValue(actions, "settings", "disable_show")
+                else
+                    util.tableSetValue(actions, true, "settings", "disable_show")
+                end
+                caller.updated = true
+            end
+        end,
         separator = true,
     })
     table.insert(menu, {
@@ -1209,8 +1226,11 @@ function Dispatcher:execute(settings, exec_props)
         UIManager:broadcastEvent(Event:new("BatchedUpdate"))
     end
     Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
-    if settings.settings and settings.settings.notify then
-        Notification:notify(T(_("Executing profile: %1"), settings.settings.name))
+    if settings.settings then
+        if settings.settings.notify then
+            Notification:notify(T(_("Executing profile: %1"), settings.settings.name))
+        end
+        UIManager.disable_show = settings.settings.disable_show
     end
     local gesture = exec_props and exec_props.gesture
     for k, v in Dispatcher.iter_func(settings) do
@@ -1251,6 +1271,7 @@ function Dispatcher:execute(settings, exec_props)
             end
         end
     end
+    UIManager.disable_show = nil
     Notification:resetNotifySource()
     if has_many then
         UIManager:broadcastEvent(Event:new("BatchedUpdateDone"))
