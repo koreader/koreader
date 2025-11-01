@@ -40,6 +40,8 @@ local Input = Device.input
 local Screen = Device.screen
 
 local ConfirmBox = InputContainer:extend{
+    name = "ConfirmBox",
+    allow_disable_show = true,
     modal = true,
     keep_dialog_open = false,
     text = _("no text"),
