@@ -256,27 +256,16 @@ function NewsDownloader:lazyInitialization()
     end
 end
 
----Splits string by comma.
----@param input string
----@return table
-local function splitByComma(input)
-    local result = {}
-    for part in string.gmatch(input, "([^,]+)") do
-        table.insert(result, part)
-    end
-    logger.dbg(result)
-    return result
-end
-
 ---Parses comma separated option string into table.
 ---@param opt any
----@return boolean|table
+---@return table
 local function parseCommaSeparatedOption(opt)
-    if opt == nil then
-        return true
-    end
     if type(opt) == "string" then
-        return splitByComma(opt)
+        local result = {}
+        for part in string.gmatch(opt, "([^,]+)") do
+            table.insert(result, part)
+        end
+        return result
     end
     return {}
 end

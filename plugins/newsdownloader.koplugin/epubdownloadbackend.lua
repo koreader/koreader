@@ -43,30 +43,20 @@ local FeedCache = CacheSQLite:new{
 }
 
 ---Returns user specified or default options.
----@param user string|table|boolean
+---@param user table
 ---@param default table
 ---@return table
 local function userOrDefault(user, default)
-    if user == nil or type(user) == "boolean" then
+    if type(user) == "table" and next(user) == nil then
         return default
     else
-        if type(user) == "string" then
-            if user == "" then
-                return default
-            else
-                return { user }
-            end
-        elseif type(user) == "table" and next(user) == nil then
-            return default
-        else
-            return user
-        end
+        return user
     end
 end
 
 ---Selects the first matching node from the root node.
 ---@param root_node ElementNode
----@param user_wanted_selectors string|table|boolean
+---@param user_wanted_selectors table
 ---@return ElementNode
 local function selectMatchingNode(root_node, user_wanted_selectors)
     local default_wanted_selectors = {
@@ -109,7 +99,7 @@ end
 
 ---Removes unwanted nodes from previously selected node.
 ---@param wanted_node ElementNode
----@param user_unwanted_selectors string|boolean|table
+---@param user_unwanted_selectors table
 ---@return string
 local function removeUnwantedNodes(wanted_node, user_unwanted_selectors)
     local default_unwanted_selectors = {
