@@ -150,6 +150,10 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
         logger.dbg("attempted to show a nil widget")
         return
     end
+    if UIManager.disable_show and widget.allow_disable_show then
+        logger.dbg("widget show disabled:", widget.name)
+        return
+    end
     logger.dbg("show widget:", widget.id or widget.name or tostring(widget))
 
     local window = {x = x or 0, y = y or 0, widget = widget}
