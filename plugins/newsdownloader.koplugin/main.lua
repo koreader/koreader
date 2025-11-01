@@ -256,6 +256,31 @@ function NewsDownloader:lazyInitialization()
     end
 end
 
+---Splits string by comma.
+---@param input string
+---@return table
+local function splitByComma(input)
+    local result = {}
+    for part in string.gmatch(input, "([^,]+)") do
+        table.insert(result, part)
+    end
+    logger.dbg(result)
+    return result
+end
+
+---Parses comma separated option string into table.
+---@param opt any
+---@return boolean|table
+local function parseCommaSeparatedOption(opt)
+    if opt == nil then
+        return true
+    end
+    if type(opt) == "string" then
+        return splitByComma(opt)
+    end
+    return {}
+end
+
 function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
     local UI = require("ui/trapper")
     logger.dbg("force repaint due to upcoming blocking calls")
@@ -301,8 +326,8 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
         local download_full_article = feed.download_full_article or false
         local include_images = not never_download_images and feed.include_images
         local enable_filter = feed.enable_filter or feed.enable_filter == nil
-        local filter_element = feed.filter_element or feed.filter_element == nil
-        local block_element = feed.block_element or feed.block_element == nil
+        local filter_element = parseCommaSeparatedOption(feed.filter_element)
+        local block_element = parseCommaSeparatedOption(feed.block_element)
         local credentials = feed.credentials
         local http_auth = feed.http_auth
         -- Check if the two required attributes are set.
