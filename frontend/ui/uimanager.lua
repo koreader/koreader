@@ -124,6 +124,18 @@ function UIManager:setIgnoreTouchInput(state)
     InputContainer:setIgnoreTouchInput(state)
 end
 
+function UIManager:setSilentMode()
+    self.silent_mode = true
+end
+
+function UIManager:resetSilentMode()
+    self.silent_mode = nil
+end
+
+function UIManager:isSilentMode()
+    return self.silent_mode or false
+end
+
 --[[--
 Registers and shows a widget.
 
@@ -150,8 +162,8 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
         logger.dbg("attempted to show a nil widget")
         return
     end
-    if UIManager.disable_show and widget.allow_disable_show then
-        logger.dbg("widget show disabled:", widget.name)
+    if self.silent_mode and widget.honor_silent_mode then
+        logger.dbg("widget show disabled:", widget.id or widget.name or tostring(widget))
         return
     end
     logger.dbg("show widget:", widget.id or widget.name or tostring(widget))
