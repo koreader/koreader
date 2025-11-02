@@ -1965,9 +1965,7 @@ function ReaderFooter:loadPreset(preset)
 
     if not self.settings.disable_progress_bar then
         local thick = not self.settings.progress_style_thin
-        local height = thick and
-            self.settings.progress_style_thick_height or
-            self.settings.progress_style_thin_height
+        local height = thick and self.settings.progress_style_thick_height or self.settings.progress_style_thin_height
         self.progress_bar:updateStyle(thick, height)
     end
     self:applyFooterMode(preset.reader_footer_mode)
