@@ -1958,7 +1958,16 @@ function ReaderFooter:loadPreset(preset)
     self.mode_index = self.settings.order or self.mode_index
     self.custom_text = preset.reader_footer_custom_text
     self.custom_text_repetitions = tonumber(preset.reader_footer_custom_text_repetitions)
-    self:applyFooterMode(preset.reader_footer_mode)
+
+    -- If the progress bar is enabled,
+    -- fake an innocuous mode so that we switch to showing the progress bar alone, instead of nothing,
+    -- This is exactly what the "Show progress bar" toggle does.
+    local reader_footer_mode = preset.reader_footer_mode
+    if reader_footer_mode == 0 and not self.settings.disable_progress_bar then
+        reader_footer_mode = 1
+    end
+
+    self:applyFooterMode(reader_footer_mode)
     self:updateFooterTextGenerator()
     if old_text_font_size ~= self.settings.text_font_size or old_text_font_bold ~= self.settings.text_font_bold then
         self:updateFooterFont()
