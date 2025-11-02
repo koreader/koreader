@@ -1962,7 +1962,6 @@ function ReaderFooter:loadPreset(preset)
     self.mode_index = self.settings.order or self.mode_index
     self.custom_text = preset.reader_footer_custom_text
     self.custom_text_repetitions = tonumber(preset.reader_footer_custom_text_repetitions)
-
     if not self.settings.disable_progress_bar then
         local thick = not self.settings.progress_style_thin
         local height = thick and self.settings.progress_style_thick_height or self.settings.progress_style_thin_height
