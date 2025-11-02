@@ -1939,9 +1939,13 @@ function ReaderFooter:genAlignmentMenuItems(value)
 end
 
 function ReaderFooter:buildPreset()
+    local mode = self.mode
+    if mode == self.mode_list.off and not self.settings.disable_progress_bar then
+        mode = self.mode_list.page_progress
+    end
     return {
         footer = util.tableDeepCopy(self.settings),
-        reader_footer_mode = self.mode,
+        reader_footer_mode = mode,
         reader_footer_custom_text = self.custom_text,
         reader_footer_custom_text_repetitions = self.custom_text_repetitions,
     }
@@ -1966,16 +1970,7 @@ function ReaderFooter:loadPreset(preset)
             (self.settings.progress_style_thin_height or self.default_settings.progress_style_thin_height)
         self.progress_bar:updateStyle(thick, height)
     end
-
-    -- If the progress bar is enabled,
-    -- fake an innocuous mode so that we switch to showing the progress bar alone, instead of nothing,
-    -- This is exactly what the "Show progress bar" toggle does.
-    local reader_footer_mode = preset.reader_footer_mode
-    if reader_footer_mode == 0 and not self.settings.disable_progress_bar then
-        reader_footer_mode = 1
-    end
-
-    self:applyFooterMode(reader_footer_mode)
+    self:applyFooterMode(preset.reader_footer_mode)
     self:updateFooterTextGenerator()
     if old_text_font_size ~= self.settings.text_font_size or old_text_font_bold ~= self.settings.text_font_bold then
         self:updateFooterFont()
