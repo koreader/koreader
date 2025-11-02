@@ -107,16 +107,21 @@ function MoveToArchive:onMoveToArchive(do_copy)
         require("readcollection"):updateItem(document_full_path, dest_file)
     end
     DocSettings.updateLocation(document_full_path, dest_file, do_copy)
-    UIManager:show(ConfirmBox:new{
-        text = text,
-        ok_callback = function()
-            local ReaderUI = require("apps/reader/readerui")
-            ReaderUI:showReader(dest_file)
-        end,
-        cancel_callback = function()
-            self:openFileBrowser(self.last_copied_from_dir)
-        end,
-    })
+    if UIManager:isSilentMode() then
+        -- no dialog to allow multi-actions executing
+        self:openFileBrowser(self.last_copied_from_dir)
+    else
+        UIManager:show(ConfirmBox:new{
+            text = text,
+            ok_callback = function()
+                local ReaderUI = require("apps/reader/readerui")
+                ReaderUI:showReader(dest_file)
+            end,
+            cancel_callback = function()
+                self:openFileBrowser(self.last_copied_from_dir)
+            end,
+        })
+    end
 end
 
 function MoveToArchive:setArchiveDirectory()
