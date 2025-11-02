@@ -378,13 +378,20 @@ function MyClipping:parseFiles(files)
 end
 
 function MyClipping:parseCurrentDoc()
-    local clippings = {}
     local title, author = self:getTitleAuthor(self.ui.document.file, self.ui.doc_props)
-    clippings[title] = {
-        file = self.ui.document.file,
-        title = title,
-        author = author,
-        number_of_pages = self.ui.view.footer.pages,
+    local number_of_pages
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        number_of_pages = select(3, self.ui.pagemap:getCurrentPageLabel())
+    else
+        number_of_pages = self.ui.view.footer.pages
+    end
+    local clippings = {
+        [title] = {
+            file = self.ui.document.file,
+            title = title,
+            author = author,
+            number_of_pages = number_of_pages,
+        },
     }
     self:parseAnnotations(self.ui.annotation.annotations, clippings[title])
     return clippings
