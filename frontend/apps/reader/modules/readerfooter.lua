@@ -1959,6 +1959,14 @@ function ReaderFooter:loadPreset(preset)
     self.custom_text = preset.reader_footer_custom_text
     self.custom_text_repetitions = tonumber(preset.reader_footer_custom_text_repetitions)
 
+    if not self.settings.disable_progress_bar then
+        local thick = not self.settings.progress_style_thin
+        local height = thick and
+            (self.settings.progress_style_thick_height or self.default_settings.progress_style_thick_height) or
+            (self.settings.progress_style_thin_height or self.default_settings.progress_style_thin_height)
+        self.progress_bar:updateStyle(thick, height)
+    end
+
     -- If the progress bar is enabled,
     -- fake an innocuous mode so that we switch to showing the progress bar alone, instead of nothing,
     -- This is exactly what the "Show progress bar" toggle does.
