@@ -107,8 +107,8 @@ function MoveToArchive:onMoveToArchive(do_copy)
         require("readcollection"):updateItem(document_full_path, dest_file)
     end
     DocSettings.updateLocation(document_full_path, dest_file, do_copy)
-    if UIManager:isSilentMode() then
-        -- no dialog to allow multi-actions executing
+    if UIManager:isInSilentMode() then
+        -- no dialog to allow multi-action executing
         self:openFileBrowser(self.last_copied_from_dir)
     else
         UIManager:show(ConfirmBox:new{
