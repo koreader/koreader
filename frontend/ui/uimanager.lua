@@ -124,8 +124,8 @@ function UIManager:setIgnoreTouchInput(state)
     InputContainer:setIgnoreTouchInput(state)
 end
 
-function UIManager:toggleSilentMode()
-    self.silent_mode = not self.silent_mode or nil
+function UIManager:setSilentMode(toggle)
+    self.silent_mode = toggle or nil
 end
 
 function UIManager:isInSilentMode()
