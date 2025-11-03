@@ -1207,7 +1207,7 @@ function Dispatcher:execute(settings, exec_props)
     local has_many = Dispatcher:_itemsCount(settings) > 1
     if has_many then
         UIManager:broadcastEvent(Event:new("BatchedUpdate"))
-        UIManager:setSilentMode()
+        UIManager:toggleSilentMode()
     end
     Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
     if settings.settings and settings.settings.notify then
@@ -1254,7 +1254,7 @@ function Dispatcher:execute(settings, exec_props)
     end
     Notification:resetNotifySource()
     if has_many then
-        UIManager:resetSilentMode()
+        UIManager:toggleSilentMode()
         UIManager:broadcastEvent(Event:new("BatchedUpdateDone"))
     end
 end
