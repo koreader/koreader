@@ -334,7 +334,7 @@ end
 function Screensaver:setup(event, event_message)
     self.ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
     if not self.ui then
-        logger.dbg("Screensaver called without UI instance, skipped")
+        logger.warn("Screensaver called without UI instance, skipped")
         return
     end
 
