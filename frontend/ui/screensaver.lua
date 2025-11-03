@@ -332,6 +332,12 @@ function Screensaver:withBackground()
 end
 
 function Screensaver:setup(event, event_message)
+    self.ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
+    if not self.ui then
+        logger.dbg("Screensaver called without UI instance, skipped")
+        return
+    end
+
     self.show_message = G_reader_settings:isTrue("screensaver_show_message")
     self.screensaver_type = G_reader_settings:readSetting("screensaver_type")
     local screensaver_img_background = G_reader_settings:readSetting("screensaver_img_background")
@@ -352,7 +358,6 @@ function Screensaver:setup(event, event_message)
     end
 
     -- Check lastfile and setup the requested mode's resources, or a fallback mode if the required resources are unavailable.
-    self.ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
     local lastfile = G_reader_settings:readSetting("lastfile")
     local is_document_cover = false
     if self.screensaver_type == "document_cover" then
@@ -432,6 +437,7 @@ end
 
 function Screensaver:show()
     -- self.ui is set in Screensaver:setup()
+    if not self.ui then return end
 
     -- Notify Device methods that we're in screen saver mode, so they know whether to suspend or resume on Power events.
     Device.screen_saver_mode = true
