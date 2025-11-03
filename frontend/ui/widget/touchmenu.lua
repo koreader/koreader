@@ -20,6 +20,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local OverlapGroup = require("ui/widget/overlapgroup")
 local RadioMark = require("ui/widget/radiomark")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
@@ -587,7 +588,7 @@ function TouchMenu:init()
         icon = "chevron.up",
         show_parent = self.show_parent,
         padding_left = math.floor(footer_width*0.33*0.1),
-        padding_right = math.floor(footer_width*0.33*0.01),
+        padding_right = math.floor(footer_width*0.33*0.1),
         callback = function()
             self:backToUpperMenu()
         end,
@@ -600,9 +601,12 @@ function TouchMenu:init()
     self.footer = HorizontalGroup:new{
         LeftContainer:new{
             dimen = Geom:new{ w = math.floor(footer_width*0.33), h = footer_height},
-            HorizontalGroup:new{
+            OverlapGroup:new{
                 up_button,
-                self.submenu_level_info,
+                HorizontalGroup:new{
+                    HorizontalSpan:new{ width = math.floor(up_button:getSize().w * 0.8) },
+                    self.submenu_level_info,
+                },
             },
         },
         CenterContainer:new{
