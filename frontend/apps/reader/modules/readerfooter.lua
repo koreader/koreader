@@ -1939,9 +1939,13 @@ function ReaderFooter:genAlignmentMenuItems(value)
 end
 
 function ReaderFooter:buildPreset()
+    local mode = self.mode
+    if mode == self.mode_list.off and not self.settings.disable_progress_bar then
+        mode = self.mode_list.page_progress
+    end
     return {
         footer = util.tableDeepCopy(self.settings),
-        reader_footer_mode = self.mode,
+        reader_footer_mode = mode,
         reader_footer_custom_text = self.custom_text,
         reader_footer_custom_text_repetitions = self.custom_text_repetitions,
     }
@@ -1958,6 +1962,11 @@ function ReaderFooter:loadPreset(preset)
     self.mode_index = self.settings.order or self.mode_index
     self.custom_text = preset.reader_footer_custom_text
     self.custom_text_repetitions = tonumber(preset.reader_footer_custom_text_repetitions)
+    if not self.settings.disable_progress_bar then
+        local thick = not self.settings.progress_style_thin
+        local height = thick and self.settings.progress_style_thick_height or self.settings.progress_style_thin_height
+        self.progress_bar:updateStyle(thick, height)
+    end
     self:applyFooterMode(preset.reader_footer_mode)
     self:updateFooterTextGenerator()
     if old_text_font_size ~= self.settings.text_font_size or old_text_font_bold ~= self.settings.text_font_bold then
