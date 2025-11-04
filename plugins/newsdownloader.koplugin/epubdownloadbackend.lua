@@ -96,7 +96,6 @@ local function selectMatchingNode(root_node, user_wanted_selectors)
     return root_node
 end
 
-
 ---Removes unwanted nodes from previously selected node.
 ---@param wanted_node ElementNode
 ---@param user_unwanted_selectors table
