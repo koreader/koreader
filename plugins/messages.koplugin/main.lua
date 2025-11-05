@@ -85,10 +85,17 @@ function Messages:onShowMessage(name, force_show)
     end
     text = text or ""
     if message.show_as == "message" then
+        local override_silent = UIManager:isInSilentMode() and message.show_in_silent_mode
+        if override_silent then
+            UIManager:setSilentMode(false)
+        end
         UIManager:show(InfoMessage:new{
             text = text,
             timeout = message.timeout,
         })
+        if override_silent then
+            UIManager:setSilentMode(true)
+        end
     elseif message.show_as == "notification" then
         UIManager:show(Notification:new{
             text = text,
@@ -153,6 +160,9 @@ function Messages:getMessageListItemMandatory(message)
     end
     if message.file then
         table.insert(t, "\u{F016}")
+    end
+    if message.show_in_silent_mode then
+        table.insert(t, "\u{F441}")
     end
     if message.registered then
         table.insert(t, "\u{F144}")
@@ -386,6 +396,20 @@ function Messages:showMessageDialog(item)
                         Messages.dispatcherRegisterMessage(name)
                         message.registered = true
                     end
+                    item.mandatory = self:getMessageListItemMandatory(message)
+                    self.message_list:updateItems(1, true)
+                    self.updated = true
+                end,
+            },
+        },
+        {
+            {
+                text = _("Show in multi-action executing"),
+                checked_func = function()
+                    return message.show_in_silent_mode
+                end,
+                callback = function()
+                    message.show_in_silent_mode = not message.show_in_silent_mode or nil
                     item.mandatory = self:getMessageListItemMandatory(message)
                     self.message_list:updateItems(1, true)
                     self.updated = true
