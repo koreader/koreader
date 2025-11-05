@@ -501,6 +501,8 @@ function ReaderUI:init()
         self.after_open_callback = nil
     end
 
+    BookList.setBookInfoCache(self.document.file, self.doc_settings)
+
     Device:setIgnoreInput(false) -- Allow processing of events (on Android).
     Input:inhibitInputUntil(0.2)
 
@@ -832,7 +834,8 @@ function ReaderUI:onClose(full_refresh)
     end
     UIManager:close(self.dialog, full_refresh ~= false and "full")
     if file then
-        BookList.setBookInfoCache(file, self.doc_settings)
+        BookList.setBookInfoCacheProperty(file, "percent_finished", self.doc_settings:readSetting("percent_finished"))
+        -- other cached properties of the currently opened document are updated in real time
     end
 end
 
@@ -923,6 +926,23 @@ end
 
 function ReaderUI:onOpenLastDoc()
     self:switchDocument(self.menu:getPreviousFile())
+end
+
+function ReaderUI:onAnnotationsModified()
+    BookList.setBookInfoCacheProperty(self.document.file, "has_annotations", self.annotation:hasAnnotations())
+end
+
+function ReaderUI:onDocumentRerendered()
+    if self.doc_settings:nilOrFalse("pagemap_use_page_labels") then
+        BookList.setBookInfoCacheProperty(self.document.file, "pages", self.document:getPageCount())
+    end
+end
+
+function ReaderUI:onUsePageLabelsUpdated()
+    local pages = self.doc_settings:isTrue("pagemap_use_page_labels")
+        and self.doc_settings:readSetting("pagemap_doc_pages")
+         or self.doc_settings:readSetting("doc_pages")
+    BookList.setBookInfoCacheProperty(self.document.file, "pages", pages)
 end
 
 function ReaderUI:getCurrentPage()
