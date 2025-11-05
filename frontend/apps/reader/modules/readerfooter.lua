@@ -594,15 +594,8 @@ function ReaderFooter:init()
         self:disableFooter()
         return
     end
-
-    self.has_no_mode = true
+    self:set_has_no_mode()
     self.reclaim_height = self.settings.reclaim_height
-    for _, m in ipairs(self.mode_index) do
-        if self.settings[m] then
-            self.has_no_mode = false
-            break
-        end
-    end
 
     self.footer_text_face = Font:getFace(self.text_font_face, self.settings.text_font_size)
     self.footer_text = TextWidget:new{
@@ -661,6 +654,16 @@ function ReaderFooter:init()
         buildPreset = function() return self:buildPreset() end,
         loadPreset = function(preset) self:loadPreset(preset) end,
     }
+end
+
+function ReaderFooter:set_has_no_mode()
+    for mode_num, m in ipairs(self.mode_index) do
+        if self.settings[m] then
+            self.has_no_mode = false
+            return mode_num
+        end
+    end
+    self.has_no_mode = true
 end
 
 function ReaderFooter:set_custom_text(touchmenu_instance)
@@ -1082,17 +1085,9 @@ function ReaderFooter:addToMainMenu(menu_items)
                 -- only case that we don't need a UI update is enable/disable
                 -- non-current mode when all_at_once is disabled.
                 local should_update = false
-                local first_enabled_mode_num
                 local prev_has_no_mode = self.has_no_mode
+                local first_enabled_mode_num = self:set_has_no_mode()
                 local prev_reclaim_height = self.reclaim_height
-                self.has_no_mode = true
-                for mode_num, m in pairs(self.mode_index) do
-                    if self.settings[m] then
-                        first_enabled_mode_num = mode_num
-                        self.has_no_mode = false
-                        break
-                    end
-                end
                 self.reclaim_height = self.settings.reclaim_height
                 -- refresh margins position
                 if self.has_no_mode then
@@ -1960,6 +1955,7 @@ function ReaderFooter:loadPreset(preset)
     G_reader_settings:saveSetting("reader_footer_custom_text_repetitions", preset.reader_footer_custom_text_repetitions)
     self.settings = G_reader_settings:readSetting("footer")
     self.mode_index = self.settings.order or self.mode_index
+    self:set_has_no_mode()
     self.custom_text = preset.reader_footer_custom_text
     self.custom_text_repetitions = tonumber(preset.reader_footer_custom_text_repetitions)
     if not self.settings.disable_progress_bar then
