@@ -208,7 +208,11 @@ function Remarkable:init()
     -- os.execute("ps | grep $PPID")
     -- logger.info(string.format("parent process is oxide?: %s", parent_process_is_oxide))
 
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{
+        device = self,
+        wf_level = G_reader_settings:readSetting("wf_level") or 2,
+        debug = logger.dbg,
+    }
     self.powerd = require("device/remarkable/powerd"):new{
         device = self,
         capacity_file = self.battery_path,
