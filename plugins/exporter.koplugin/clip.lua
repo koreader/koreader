@@ -103,17 +103,29 @@ end
 -- extract author name in "Title - Author" format
 function MyClipping:parseTitleFromPath(line)
     line = line:match("^%s*(.-)%s*$") or ""
+
     if extensions[line:sub(-4):lower()] then
         line = line:sub(1, -5)
     elseif extensions[line:sub(-5):lower()] then
         line = line:sub(1, -6)
     end
-    local dummy, title, author
-    dummy, dummy, title, author = line:find("(.-)%s*%((.*)%)")
-    if not author then
-        dummy, dummy, title, author = line:find("(.-)%s*-%s*(.*)")
+
+    local author = line:match("%s*%-?%s*%(([^()]*)%)%s*$")
+    local title
+    if author then
+        -- remove the last parenthesized group to keep earlier parentheses in title
+        title = line:gsub("%s*%-?%s*%([^()]*%)%s*$", "")
+    else
+        -- fallback: "Title - Author"
+        local t, a = line:match("^(.-)%s*%-%s*(.+)%s*$")
+        if t and a then
+            title = t
+            author = a
+        else
+            title = line:match("^%s*(.-)[%s%-]*$")
+        end
     end
-    title = title or line:match("^%s*(.-)%s*$")
+
     return isEmpty(title) and _("Unknown Book") or title,
            isEmpty(author) and _("Unknown Author") or author
 end
