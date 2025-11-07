@@ -2948,6 +2948,14 @@ local dictionaries = {
         url = "https://www.reader-dict.com/file/it/dict-it-it.zip"
     },
     {
+        name = "reader.dict Japanese",
+        lang_in = "jpn",
+        lang_out = "jpn",
+        entries = 278586,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/ja/dict-ja-ja.zip"
+    },
+    {
         name = "reader.dict Norwegian",
         lang_in = "nor",
         lang_out = "nor",
