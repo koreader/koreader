@@ -208,6 +208,10 @@ function MyClipping:getInfo(line)
         table.insert(parts, part:match("^%s*(.-)%s*$"))
     end
 
+    if #parts < 2 then
+        return {}
+    end
+
     for sort, words in pairs(keywords) do
         for _, word in ipairs(words) do
             if parts[1] and parts[1]:find(word) then
@@ -219,7 +223,7 @@ function MyClipping:getInfo(line)
         end
     end
 
-    info.time = self:getTime(parts[#parts] or "")
+    info.time = self:getTime(parts[#parts])
 
     return info
 end
