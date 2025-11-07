@@ -138,6 +138,7 @@ return {
                 text = _("Postpone screen update after wake-up"),
                 sub_item_table = {
                     genMenuItem(_("Never"), "screensaver_delay", "disable"),
+                    genMenuItem(_("Promptly"), "screensaver_delay", "0.001"),
                     genMenuItem(_("1 second"), "screensaver_delay", "1"),
                     genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
