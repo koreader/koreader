@@ -200,7 +200,6 @@ function MyClipping:getTime(line)
 end
 
 function MyClipping:getInfo(line)
-    local info = {}
     line = line or ""
 
     local parts = {}
@@ -211,6 +210,8 @@ function MyClipping:getInfo(line)
     if #parts < 2 then
         return {}
     end
+
+    local info = {}
 
     for sort, words in pairs(keywords) do
         for _, word in ipairs(words) do
