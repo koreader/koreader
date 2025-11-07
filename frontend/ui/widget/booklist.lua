@@ -272,7 +272,9 @@ function BookList.setBookInfoCache(file, doc_settings)
     if BookList.getBookStatusString(book_info.status) == nil then
         book_info.status = "reading"
     end
-    local pages = doc_settings:readSetting("doc_pages")
+    local pages = doc_settings:isTrue("pagemap_use_page_labels")
+        and doc_settings:readSetting("pagemap_doc_pages")
+         or doc_settings:readSetting("doc_pages")
     if pages == nil then
         local stats = doc_settings:readSetting("stats")
         if stats and stats.pages and stats.pages ~= 0 then -- crengine with statistics disabled stores 0
