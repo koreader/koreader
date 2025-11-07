@@ -1,8 +1,10 @@
 local Event = require("ui/event")
+local Geom = require("ui/geometry")
 local InputDialog = require("ui/widget/inputdialog")
 local SkimToWidget = require("ui/widget/skimtowidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -55,6 +57,10 @@ x for an absolute page number
                     callback = function()
                         self:close()
                         self:onPinPage()
+                    end,
+                    hold_callback = function()
+                        self:close()
+                        self:onPinPage(nil, true) -- remove pinned page
                     end,
                 },
                 {
@@ -224,11 +230,41 @@ function ReaderGoto:onGoToRandomPage()
 end
 
 function ReaderGoto:onGoToPinnedPage()
+    local function make_geom(area)
+        return area and Geom:new{ x = area.x, y = area.y, w = area.w, h = area.h }
+    end
     local pn_or_xp = self.ui.doc_settings:readSetting("pinned_page")
     if pn_or_xp then
         self.ui.link:addCurrentLocationToStack()
         if self.ui.paging then
-            self.ui.paging:onGotoPage(pn_or_xp)
+            if type(pn_or_xp) == "number" then
+                self.ui.paging:onGotoPage(pn_or_xp)
+            else -- location, a table
+                local new_page = pn_or_xp[1].page
+                if self.ui.view.page_scroll ~= pn_or_xp.page_scroll
+                    or self.document.configurable.text_wrap ~= pn_or_xp.text_wrap then
+                    -- page/continuous or reflow mode changed, cannot restore exact location
+                    self.ui.paging:onGotoPage(new_page)
+                else
+                    local loc = util.tableDeepCopy(pn_or_xp)
+                    if self.ui.view.page_scroll then
+                        for _, page_state in ipairs(loc) do
+                            page_state.offset = make_geom(page_state.offset)
+                            page_state.visible_area = make_geom(page_state.visible_area)
+                            page_state.page_area = make_geom(page_state.page_area)
+                        end
+                    else
+                        loc[1].offset = make_geom(loc[1].offset)
+                        loc[2] = make_geom(loc[2]) -- visible area
+                        loc[3] = make_geom(loc[3]) -- page area
+                    end
+                    if self.ui.paging.current_page == new_page then
+                        self.ui.paging.current_page = 0
+                    end
+                    self.ui.paging:onRestoreBookLocation(loc)
+                    self.ui.paging.visible_area = self.ui.view.visible_area
+                end
+            end
         else
             self.ui.rolling:onGotoXPointer(pn_or_xp)
         end
@@ -236,23 +272,40 @@ function ReaderGoto:onGoToPinnedPage()
     return true
 end
 
-function ReaderGoto:onPinPage(pageno)
-    local pn_or_xp
-    if pageno then
-        pn_or_xp = self.ui.paging and pageno or self.document:getPageXPointer(pageno)
-    else -- current page
-        pn_or_xp = self.ui.paging and self.view.state.page or self.document:getXPointer()
+function ReaderGoto:onPinPage(pageno, do_remove)
+    local text, pn_or_xp
+    if do_remove then
+        text = _("Pinned page removed")
+    else
+        text = _("Page pinned")
+        if self.ui.paging then
+            if pageno then
+                pn_or_xp = pageno
+            else
+                pn_or_xp = self.ui.paging:getBookLocation()
+                pn_or_xp.text_wrap = self.document.configurable.text_wrap
+                pn_or_xp.page_scroll = self.ui.view.page_scroll
+            end
+        else
+            pn_or_xp = pageno and self.document:getPageXPointer(pageno) or self.document:getXPointer()
+        end
     end
     self.ui.doc_settings:saveSetting("pinned_page", pn_or_xp)
     local Notification = require("ui/widget/notification")
-    Notification:notify(_("Page pinned"))
+    Notification:notify(text)
     return true
 end
 
 function ReaderGoto:getPinnedPageNumber()
     local pn_or_xp = self.ui.doc_settings:readSetting("pinned_page")
     if pn_or_xp then
-        return self.ui.paging and pn_or_xp or self.document:getPageFromXPointer(pn_or_xp)
+        if self.ui.paging then
+            if type(pn_or_xp) == "number" then
+                return pn_or_xp
+            end
+            return pn_or_xp[1].page
+        end
+        return self.document:getPageFromXPointer(pn_or_xp)
     end
 end
 
