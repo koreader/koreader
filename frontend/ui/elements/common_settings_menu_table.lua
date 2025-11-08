@@ -619,6 +619,16 @@ local function genMetadataFolderMenuItem(value)
     }
 end
 
+common_settings.separate_annotation_file = {
+    text = _("Save annotation to separate file"),
+    checked_func = function()
+        return G_reader_settings:isTrue("separate_annotation_file")
+    end,
+    callback = function()
+        G_reader_settings:flipNilOrFalse("separate_annotation_file")
+    end,
+}
+
 common_settings.document_metadata_location = {
     text_func = function()
         local value = G_reader_settings:readSetting("document_metadata_folder", "doc")
