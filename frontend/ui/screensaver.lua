@@ -4,6 +4,7 @@ local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
+local Event = require("ui/event")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
@@ -782,6 +783,7 @@ end
 function Screensaver:close_widget()
     if self.screensaver_widget then
         UIManager:close(self.screensaver_widget)
+        UIManager:broadcastEvent(Event:new("FullRefresh"))
     end
 end
 
