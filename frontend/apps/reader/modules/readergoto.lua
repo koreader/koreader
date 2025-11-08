@@ -59,8 +59,17 @@ x for an absolute page number
                         self:onPinPage()
                     end,
                     hold_callback = function()
-                        self:close()
-                        self:onPinPage(nil, true) -- remove pinned page
+                        if self.ui.doc_settings:has("pinned_page") then
+                            local ConfirmBox = require("ui/widget/confirmbox")
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Remove pinned page?"),
+                                ok_text = _("Remove"),
+                                ok_callback = function()
+                                    self:close()
+                                    self:onPinPage(nil, true)
+                                end,
+                            })
+                        end
                     end,
                 },
                 {
@@ -241,9 +250,10 @@ function ReaderGoto:onGoToPinnedPage()
                 self.ui.paging:onGotoPage(pn_or_xp)
             else -- location, a table
                 local new_page = pn_or_xp[1].page
-                if self.ui.view.page_scroll ~= pn_or_xp.page_scroll
+                if bit.band(self.document.configurable.rotation_mode, 1) ~= bit.band(pn_or_xp.rotation_mode, 1)
+                    or self.ui.view.page_scroll ~= pn_or_xp.page_scroll
                     or self.document.configurable.text_wrap ~= pn_or_xp.text_wrap then
-                    -- page/continuous or reflow mode changed, cannot restore exact location
+                    -- orientation, page/continuous or reflow mode changed, cannot restore exact location
                     self.ui.paging:onGotoPage(new_page)
                 else
                     local loc = util.tableDeepCopy(pn_or_xp)
@@ -283,6 +293,7 @@ function ReaderGoto:onPinPage(pageno, do_remove)
                 pn_or_xp = pageno
             else
                 pn_or_xp = self.ui.paging:getBookLocation()
+                pn_or_xp.rotation_mode = self.document.configurable.rotation_mode
                 pn_or_xp.text_wrap = self.document.configurable.text_wrap
                 pn_or_xp.page_scroll = self.ui.view.page_scroll
             end
