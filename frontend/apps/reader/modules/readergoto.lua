@@ -245,9 +245,12 @@ function ReaderGoto:onGoToPinnedPage()
     end
     local pn_or_xp = self.ui.doc_settings:readSetting("pinned_page")
     if pn_or_xp then
+        local p_type = type(pn_or_xp)
+        if (self.ui.rolling and p_type ~= "string") or
+           (self.ui.paging and p_type == "string") then return true end -- page pinned in different engine
         self.ui.link:addCurrentLocationToStack()
         if self.ui.paging then
-            if type(pn_or_xp) == "number" then
+            if p_type == "number" then
                 self.ui.paging:onGotoPage(pn_or_xp)
             else -- location, a table
                 local new_page = pn_or_xp[1].page
@@ -311,13 +314,16 @@ end
 function ReaderGoto:getPinnedPageNumber()
     local pn_or_xp = self.ui.doc_settings:readSetting("pinned_page")
     if pn_or_xp then
+        local p_type = type(pn_or_xp)
         if self.ui.paging then
-            if type(pn_or_xp) == "number" then
+            if p_type == "number" then
                 return pn_or_xp
+            elseif p_type == "table" then
+                return pn_or_xp[1].page
             end
-            return pn_or_xp[1].page
+        elseif p_type == "string" then
+            return self.document:getPageFromXPointer(pn_or_xp)
         end
-        return self.document:getPageFromXPointer(pn_or_xp)
     end
 end
 
