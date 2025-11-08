@@ -21,7 +21,7 @@ local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days
 local default_auto_suspend_timeout_seconds = 15*60 -- 15 minutes
 local default_auto_standby_timeout_seconds = 4 -- 4 seconds; should be safe on Kobo/Sage
 local default_standby_timeout_after_resume_seconds = 4 -- 4 seconds; should be safe on Kobo/Sage, not customizable
-local default_kindle_t1_timeout_reset_seconds = 5*60 -- 5 minutes (i.e., half of the standard t1 timeout).
+local default_kindle_t1_timeout_reset_seconds = 4*60 -- 4 minutes (i.e., lower than the minimum t1 timeout).
 
 local AutoSuspend = WidgetContainer:extend{
     name = "autosuspend",
@@ -130,13 +130,15 @@ if Device:isKindle() then
             return
         end
 
-        -- NOTE: Unlike us, powerd doesn't care about charging, so we always use the delta since the last user input.
         local now = UIManager:getElapsedTimeSinceBoot()
-        local kindle_t1_reset_seconds = default_kindle_t1_timeout_reset_seconds - time.to_number(now - self.last_action_time)
+        local kindle_t1_reset_seconds = default_kindle_t1_timeout_reset_seconds - time.to_number(now - self.last_t1_reset_time)
+        -- NOTE: Unlike us, powerd doesn't care about charging, so we always use the delta since the last user input.
+        local suspend_delay_seconds = self.auto_suspend_timeout_seconds - time.to_number(now - self.last_action_time)
 
-        if self:_enabled() and kindle_t1_reset_seconds <= 0 then
+        if self:_enabled() and suspend_delay_seconds > 0 and kindle_t1_reset_seconds <= 0 then
             logger.dbg("AutoSuspend: will reset the system's t1 timeout, re-scheduling check")
             PowerD:resetT1Timeout()
+            self.last_t1_reset_time = UIManager:getElapsedTimeSinceBoot()
             -- Re-schedule ourselves, as, unlike suspend/shutdown/standby, we don't have a specific Event to handle that for us.
             UIManager:scheduleIn(default_kindle_t1_timeout_reset_seconds, self.kindle_task)
         else
@@ -192,6 +194,7 @@ function AutoSuspend:init()
         self:_schedule(shutdown_only)
     end
     if Device:isKindle() then
+        self.last_t1_reset_time = 0
         self.kindle_task = function()
             self:_schedule_kindle()
         end

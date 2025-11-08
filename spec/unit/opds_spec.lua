@@ -290,6 +290,22 @@ local facet_sample = [[
 </feed>
 ]]
 
+local pdf_query_sample = [[
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/terms/" xmlns:os="http://a9.com/-/spec/opensearch/1.1/" xmlns:opds="http://opds-spec.org/2010/catalog">
+    <id>tag:root:pdfquery</id>
+    <title>PDF Query Test</title>
+    <updated>2025-09-11T00:00:00Z</updated>
+    <entry>
+        <title>Sample PDF With Query</title>
+        <id>urn:pdf:with:query</id>
+        <updated>2025-09-11T00:00:00Z</updated>
+        <content type="text">A PDF that already has .pdf before a query parameter.</content>
+        <link href="http://example.org/books/file.pdf?opds" type="application/pdf" title="pdf" rel="related" />
+    </entry>
+</feed>
+]]
+
 describe("OPDS module", function()
     local socketutil
     local OPDSParser, OPDSBrowser
@@ -426,6 +442,24 @@ describe("OPDS module", function()
 
             assert.truthy(item_table)
             assert.are_not.same(item_table[1].image, "http://flibusta.is/opds/author/75357")
+        end)
+
+        it("should not append .pdf after query parameters or duplicate acquisition entries #14300 #internet", function()
+            local catalog = OPDSParser:parse(pdf_query_sample)
+            local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://example.org/opds")
+
+            assert.truthy(item_table)
+            assert.are.same(1, #item_table)
+            local acquisitions = item_table[1].acquisitions
+            assert.truthy(acquisitions)
+            -- Only one acquisition entry should be present (generic provider entry).
+            assert.are.same(1, #acquisitions)
+            local href = acquisitions[1].href
+            assert.truthy(href)
+            -- It must contain the original query parameter unchanged.
+            assert(href:match("file%.pdf%?opds$"))
+            -- And must NOT have an extra .pdf appended after the query string.
+            assert(not href:match("opds%.pdf$"))
         end)
     end)
 end)

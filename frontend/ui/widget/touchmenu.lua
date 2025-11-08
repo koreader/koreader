@@ -229,14 +229,9 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     end
     if enabled == false then
         -- Allow help_text to be displayed even if menu item disabled
-        if self.item.help_text or type(self.item.help_text_func) == "function" then
-            local help_text = self.item.help_text
-            if self.item.help_text_func then
-                help_text = self.item.help_text_func(self)
-            end
-            if help_text then
-                UIManager:show(InfoMessage:new{ text = help_text, })
-            end
+        local help_text = self.item.help_text_func and self.item.help_text_func(self) or self.item.help_text
+        if help_text then
+            UIManager:show(InfoMessage:new{ text = help_text, })
         end
         return true -- don't propagate
     end
@@ -841,51 +836,48 @@ function TouchMenu:onMenuSelect(item, tap_on_checkmark)
     if self.touch_menu_callback then
         self.touch_menu_callback()
     end
+
     if tap_on_checkmark and item.checkmark_callback then
         item.checkmark_callback()
         self:updateItems()
         return true
     end
-    if item.tap_input or type(item.tap_input_func) == "function" then
+
+    if item.tap_input or item.tap_input_func then
         if not item.keep_menu_open then
             self:closeMenu()
         end
-        if item.tap_input then
-            self:onInput(item.tap_input)
-        else
-            self:onInput(item.tap_input_func())
-        end
-    else
-        local sub_item_table = item.sub_item_table
-        if item.sub_item_table_func then
-            sub_item_table = item.sub_item_table_func()
-        end
-        if sub_item_table == nil then
-            -- keep menu opened if this item is a check option
-            local callback, refresh = item.callback, item.checked or item.checked_func
-            if item.callback_func then
-                callback = item.callback_func()
-            end
-            if callback then
-                -- Provide callback with us, so it can call our
-                -- closemenu() or updateItems() when it sees fit
-                -- (if not providing checked or checked_func, caller
-                -- must set keep_menu_open=true if that is wished)
-                callback(self)
-                if refresh then
-                    if not (item.check_callback_updates_menu or item.check_callback_closes_menu) then
-                        self:updateItems()
-                    end
-                elseif not item.keep_menu_open then
-                    self:closeMenu()
-                end
-            end
-        else
+        self:onInput(item.tap_input or item.tap_input_func())
+        return true
+    end
+
+    local sub_item_table = item.sub_item_table_func and item.sub_item_table_func() or item.sub_item_table
+    if sub_item_table then
+        if #sub_item_table > 0 then
             table.insert(self.item_table_stack, self.item_table)
             item.menu_item_id = item.menu_item_id or tostring(item) -- unique id
             self.parent_id = item.menu_item_id
             self.item_table = sub_item_table
-            self:updateItems(1, self.item_table.open_on_menu_item_id_func and self.item_table.open_on_menu_item_id_func())
+            self:updateItems(1, self.item_table.open_on_menu_item_id_func
+                and self.item_table.open_on_menu_item_id_func())
+        end
+        return true
+    end
+
+    -- keep menu opened if this item is a check option
+    local callback = item.callback_func and item.callback_func() or item.callback
+    if callback then
+        -- Provide callback with us, so it can call our
+        -- closemenu() or updateItems() when it sees fit
+        -- (if not providing checked or checked_func, caller
+        -- must set keep_menu_open=true if that is wished)
+        callback(self)
+        if item.checked or item.checked_func then -- refresh
+            if not (item.check_callback_updates_menu or item.check_callback_closes_menu) then
+                self:updateItems()
+            end
+        elseif not item.keep_menu_open then
+            self:closeMenu()
         end
     end
     return true
@@ -895,40 +887,36 @@ function TouchMenu:onMenuHold(item, text_truncated)
     if self.touch_menu_callback then
         self.touch_menu_callback()
     end
-    if item.hold_input or type(item.hold_input_func) == "function" then
+
+    if item.hold_input or item.hold_input_func then
         if item.hold_keep_menu_open == false then
             self:closeMenu()
         end
-        if item.hold_input then
-            self:onInput(item.hold_input)
-        else
-            self:onInput(item.hold_input_func())
+        self:onInput(item.hold_input or item.hold_input_func())
+        return true
+    end
+
+    local hold_callback = item.hold_callback_func and item.hold_callback_func() or item.hold_callback
+    if hold_callback then
+        -- With hold, the default is to keep menu open, as we're
+        -- most often showing a ConfirmBox that can be cancelled
+        -- (provide hold_keep_menu_open=false to override)
+        if item.hold_keep_menu_open == false then
+            self:closeMenu()
         end
-    elseif item.hold_callback or type(item.hold_callback_func) == "function" then
-        local callback = item.hold_callback
-        if item.hold_callback_func then
-            callback = item.hold_callback_func()
-        end
-        if callback then
-            -- With hold, the default is to keep menu open, as we're
-            -- most often showing a ConfirmBox that can be cancelled
-            -- (provide hold_keep_menu_open=false to override)
-            if item.hold_keep_menu_open == false then
-                self:closeMenu()
-            end
-            -- Provide callback with us, so it can call our
-            -- closemenu() or updateItems() when it sees fit
-            callback(self, item)
-        end
-    elseif item.help_text or type(item.help_text_func) == "function" then
-        local help_text = item.help_text
-        if item.help_text_func then
-            help_text = item.help_text_func(self)
-        end
-        if help_text then
-            UIManager:show(InfoMessage:new{ text = help_text, })
-        end
-    elseif text_truncated then
+        -- Provide callback with us, so it can call our
+        -- closemenu() or updateItems() when it sees fit
+        hold_callback(self, item)
+        return true
+    end
+
+    local help_text = item.help_text_func and item.help_text_func(self) or item.help_text
+    if help_text then
+        UIManager:show(InfoMessage:new{ text = help_text, })
+        return true
+    end
+
+    if text_truncated then
         UIManager:show(InfoMessage:new{
             text = getMenuText(item),
             show_icon = false,

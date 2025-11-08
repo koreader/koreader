@@ -101,7 +101,6 @@ function FrameContainer:onUnfocus()
     return true
 end
 
-
 function FrameContainer:paintTo(bb, x, y)
     local my_size = self:getSize()
     if not self.dimen then
@@ -122,14 +121,27 @@ function FrameContainer:paintTo(bb, x, y)
     end
 
     if self.background then
-        if not self.radius or not self.bordersize then
-            bb:paintRoundedRect(x, y,
-                                container_width, container_height,
-                                self.background, self.radius)
+        local color_bg = not Blitbuffer.isColor8(self.background)
+        if color_bg then
+            if not self.radius or not self.bordersize then
+                bb:paintRoundedRectRGB32(x, y,
+                                    container_width, container_height,
+                                    self.background, self.radius)
+            else
+                bb:paintRoundedRectRGB32(x, y,
+                                    container_width, container_height,
+                                    self.background, self.radius + self.bordersize)
+            end
         else
-            bb:paintRoundedRect(x, y,
-                                container_width, container_height,
-                                self.background, self.radius + self.bordersize)
+            if not self.radius or not self.bordersize then
+                bb:paintRoundedRect(x, y,
+                                    container_width, container_height,
+                                    self.background, self.radius)
+            else
+                bb:paintRoundedRect(x, y,
+                                    container_width, container_height,
+                                    self.background, self.radius + self.bordersize)
+            end
         end
     end
     if self.stripe_width and self.stripe_color and not self.stripe_over then

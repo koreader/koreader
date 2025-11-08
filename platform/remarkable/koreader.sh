@@ -9,10 +9,6 @@ cd "${KOREADER_DIR}" || exit
 # reMarkable 2 check
 IFS= read -r MACHINE_TYPE <"/sys/devices/soc0/machine"
 if [ "reMarkable 2.0" = "${MACHINE_TYPE}" ]; then
-    if [ -z "${RM2FB_SHIM}" ]; then
-        echo "reMarkable 2 requires RM2FB to work, visit https://github.com/ddvk/remarkable2-framebuffer for instructions how to setup"
-        exit 1
-    fi
     export KO_DONT_GRAB_INPUT=1
 fi
 

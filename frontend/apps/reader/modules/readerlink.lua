@@ -6,7 +6,6 @@ local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -14,13 +13,13 @@ local LinkBox = require("ui/widget/linkbox")
 local Notification = require("ui/widget/notification")
 local QRMessage = require("ui/widget/qrmessage")
 local UIManager = require("ui/uimanager")
-local ffiutil = require("ffi/util")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
-local T = ffiutil.template
+local T = ffiUtil.template
 
 local function is_wiki_page(link_url)
     if not link_url then
@@ -897,36 +896,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
     end
 
     -- Check if it is a link to a local file
-    local linked_filename = link_url:gsub("^file:(//)?", "") -- remove local file protocol if any
-    local anchor
-    if linked_filename:find("?") then -- remove any query string (including any following anchor)
-        linked_filename, anchor = linked_filename:match("^(.-)(%?.*)$")
-    elseif linked_filename:find("#") then -- remove any anchor
-        linked_filename, anchor = linked_filename:match("^(.-)(#.*)$")
-    end
-    linked_filename  = ffiutil.joinPath(self.document_dir, linked_filename) -- get full path
-    linked_filename = ffiutil.realpath(linked_filename) -- clean full path from ./ or ../
-    if linked_filename and lfs.attributes(linked_filename, "mode") == "file" then
-        if DocumentRegistry:hasProvider(linked_filename) then
-            -- Display filename with anchor or query string, so the user gets
-            -- this information and can manually go to the appropriate place
-            local display_filename = linked_filename
-            if anchor then
-                display_filename = display_filename .. anchor
-            end
-            UIManager:show(ConfirmBox:new{
-                text = T(_("Would you like to read this local document?\n\n%1\n"), BD.filepath(display_filename)),
-                ok_callback = function()
-                    UIManager:scheduleIn(0.1, function()
-                        self.ui:switchDocument(linked_filename)
-                    end)
-                end
-            })
-        else
-            UIManager:show(InfoMessage:new{
-                text = T(_("Link to unsupported local file:\n%1"), BD.url(link_url)),
-            })
-        end
+    if self:openFileFromLink(link_url) then
         return true
     end
 
@@ -937,6 +907,59 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
     })
     -- don't propagate, user will notice and tap elsewhere if he wants to change page
     return true
+end
+
+function ReaderLink:openFileFromLink(link_url)
+    local linked_filename, anchor, after_open_callback
+    if link_url:find("?") then -- remove any query string (including any following anchor)
+        linked_filename, anchor = link_url:match("^(.-)(%?.*)$")
+        if anchor then
+            -- If anchor contains position (page number or xpointer),
+            -- go to the position after opening the document
+            local pn_xp, count = anchor:gsub("^?pos=", "")
+            if count > 0 then
+                after_open_callback = function(ui)
+                    ui.link:addCurrentLocationToStack()
+                    if ui.rolling then
+                        ui.rolling:onGotoXPointer(pn_xp, pn_xp)
+                    else
+                        pn_xp = tonumber(pn_xp)
+                        if pn_xp then
+                            ui.paging:onGotoPage(pn_xp)
+                        end
+                    end
+                end
+            end
+        end
+    elseif link_url:find("#") then -- remove any anchor
+        linked_filename, anchor = link_url:match("^(.-)(#.*)$")
+    else
+        linked_filename = link_url
+    end
+    linked_filename = linked_filename:gsub("^file:", "") -- remove local file protocol if any
+    local __, slash_nb = linked_filename:find("^/*") -- 0...3 leading slashes
+    linked_filename = linked_filename:gsub("^//", "") -- keep 1 slash for absolute path
+    if slash_nb == 0 or slash_nb == 2 then -- relative path
+        linked_filename = ffiUtil.joinPath(self.document_dir, linked_filename)
+    end
+    linked_filename = ffiUtil.realpath(linked_filename) -- clean full path from ./ or ../
+    if linked_filename and lfs.attributes(linked_filename, "mode") == "file" then
+        local display_filename = linked_filename
+        if anchor and after_open_callback == nil then
+            -- Display filename with anchor or query string, so the user gets
+            -- this information and can manually go to the appropriate place
+            display_filename = display_filename .. anchor
+        end
+        UIManager:show(ConfirmBox:new{
+            text = T(_("Would you like to read this local document?\n\n%1\n"), BD.filepath(display_filename)),
+            ok_callback = function()
+                UIManager:scheduleIn(0.1, function()
+                    self.ui:switchDocument(linked_filename, nil, after_open_callback)
+                end)
+            end,
+        })
+        return true
+    end
 end
 
 function ReaderLink:onGoToExternalLink(link_url)
@@ -1525,7 +1548,7 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
                 -- it and know where to start reading again
                 local footnote_top_y = Screen:getHeight() - footnote_height
                 if link.link_y > footnote_top_y then
-                    UIManager:scheduleIn(0.5, clear_highlight)
+                    UIManager:scheduleIn(G_defaults:readSetting("DELAY_CLEAR_HIGHLIGHT_S"), clear_highlight)
                 else
                     clear_highlight()
                 end
@@ -1589,11 +1612,11 @@ function ReaderLink:getButtonsForExternalLinkDialog(link_url)
     local default_title =  T(_("External link:\n\n%1"), BD.url(link_url))
     local title = default_title
 
-    for idx, fn_button in ffiutil.orderedPairs(self._external_link_buttons) do
+    for idx, fn_button in ffiUtil.orderedPairs(self._external_link_buttons) do
         local button = fn_button(self, link_url)
         local show, button_title
 
-        if type(button.show_in_dialog_func) == "function" then
+        if button.show_in_dialog_func then
             show, button_title = button.show_in_dialog_func(link_url)
         else
             -- If the button doesn't have the show_in_dialog_func, then assume that the button

@@ -811,13 +811,7 @@ To:
     self.menu_items.cloud_storage = {
         text = _("Cloud storage"),
         callback = function()
-            local cloud_storage = require("apps/cloudstorage/cloudstorage"):new{}
-            UIManager:show(cloud_storage)
-            local filemanagerRefresh = function() self.ui:onRefresh() end
-            function cloud_storage:onClose()
-                filemanagerRefresh()
-                UIManager:close(cloud_storage)
-            end
+            self:onShowCloudStorage()
         end,
     }
 
@@ -864,7 +858,7 @@ To:
             remember = false,
             callback = function()
                 self:onCloseFileManagerMenu()
-                self.ui:tapPlus()
+                self.ui:onShowPlusMenu()
             end,
         }
     end
@@ -957,6 +951,7 @@ function FileManagerMenu:getSortingMenuTable()
             callback = function()
                 self.ui:onSetSortBy(k)
             end,
+            radio = true,
         })
     end
     table.sort(sub_item_table, function(a, b) return a.menu_order < b.menu_order end)
@@ -987,6 +982,7 @@ function FileManagerMenu:getStartWithMenuTable()
             callback = function()
                 G_reader_settings:saveSetting("start_with", v[2])
             end,
+            radio = true,
         })
     end
     return {
@@ -1129,6 +1125,12 @@ end
 
 function FileManagerMenu:registerToMainMenu(widget)
     table.insert(self.registered_widgets, widget)
+end
+
+function FileManagerMenu:onShowCloudStorage()
+    local CloudStorage = require("apps/cloudstorage/cloudstorage")
+    UIManager:show(CloudStorage:new{ ui = self.ui })
+    return true
 end
 
 return FileManagerMenu

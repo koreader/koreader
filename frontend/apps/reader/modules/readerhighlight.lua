@@ -97,10 +97,13 @@ function ReaderHighlight:init()
                 enabled = Device:hasClipboard(),
                 callback = function()
                     Device.input.setClipboardText(util.cleanupSelectedText(this.selected_text.text))
-                    this:onClose()
+                    this:onClose(true)
                     UIManager:show(Notification:new{
                         text = _("Selection copied to clipboard."),
                     })
+                    UIManager:scheduleIn(G_defaults:readSetting("DELAY_CLEAR_HIGHLIGHT_S"), function()
+                        this:clear()
+                    end)
                 end,
             }
         end,
@@ -134,7 +137,7 @@ function ReaderHighlight:init()
                 text = _("Dictionary"),
                 callback = function()
                     this:lookupDict(index)
-                    -- We don't call this:onClose(), same reason as above
+                    this:onClose(true) -- keep highlight for dictionary lookup
                 end,
             }
         end,
@@ -729,6 +732,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
             checked_func = function()
                 return G_reader_settings:readSetting("highlight_dialog_position", "center") == v[2]
             end,
+            radio = true,
             callback = function()
                 G_reader_settings:saveSetting("highlight_dialog_position", v[2])
             end,
@@ -1385,6 +1389,7 @@ function ReaderHighlight:showHighlightDialog(index)
         start_prev, start_next = start_next, start_prev
         end_prev, end_next = end_next, end_prev
     end
+    local move_by_char = false
     local edit_highlight_dialog
     local buttons = {
         {
@@ -1438,9 +1443,10 @@ function ReaderHighlight:showHighlightDialog(index)
                 text = start_prev,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 0, -1, false)
+                    self:updateHighlight(index, 0, -1, move_by_char)
                 end,
                 hold_callback = function()
+                    move_by_char = not move_by_char
                     self:updateHighlight(index, 0, -1, true)
                 end,
             },
@@ -1448,9 +1454,10 @@ function ReaderHighlight:showHighlightDialog(index)
                 text = start_next,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 0, 1, false)
+                    self:updateHighlight(index, 0, 1, move_by_char)
                 end,
                 hold_callback = function()
+                    move_by_char = not move_by_char
                     self:updateHighlight(index, 0, 1, true)
                 end,
             },
@@ -1458,9 +1465,10 @@ function ReaderHighlight:showHighlightDialog(index)
                 text = end_prev,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 1, -1, false)
+                    self:updateHighlight(index, 1, -1, move_by_char)
                 end,
                 hold_callback = function()
+                    move_by_char = not move_by_char
                     self:updateHighlight(index, 1, -1, true)
                 end,
             },
@@ -1468,9 +1476,10 @@ function ReaderHighlight:showHighlightDialog(index)
                 text = end_next,
                 enabled = change_boundaries_enabled,
                 callback = function()
-                    self:updateHighlight(index, 1, 1, false)
+                    self:updateHighlight(index, 1, 1, move_by_char)
                 end,
                 hold_callback = function()
+                    move_by_char = not move_by_char
                     self:updateHighlight(index, 1, 1, true)
                 end,
             },
@@ -1690,7 +1699,10 @@ function ReaderHighlight:onHold(arg, ges)
     end
 
     -- otherwise, we must be holding on text
-    if self.view.highlight.disabled then return false end -- Long-press action "Do nothing" checked
+    if self.view.highlight.disabled then -- Long-press action "Do nothing" checked
+        self.hold_pos = nil
+        return false
+    end
     local ok, word = pcall(self.ui.document.getWordFromPosition, self.ui.document, self.hold_pos)
     if ok and word then
         logger.dbg("selected word:", word)
@@ -2053,7 +2065,7 @@ function ReaderHighlight:onHoldRelease()
         if self.selected_text then
             self.select_mode = false
             self:extendSelection()
-            if default_highlight_action == "select" or not self.selected_text.is_tmp then
+            if default_highlight_action == "select" or self.selected_text.is_extended then
                 self:saveHighlight(true)
                 self:clear()
             else
@@ -2092,7 +2104,7 @@ function ReaderHighlight:onHoldRelease()
                 self:onClose()
             elseif default_highlight_action == "dictionary" then
                 self:lookupDict()
-                self:onClose()
+                self:onClose(true) -- keep selected text
             elseif default_highlight_action == "search" then
                 self:onHighlightSearch()
                 -- No self:onClose() to not remove the selected text
@@ -2224,7 +2236,7 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
         local index = self.ui.annotation:addItem(item)
         self.view.footer:maybeUpdateFooter()
         self.ui:handleEvent(Event:new("AnnotationsModified",
-            { item, nb_highlights_added = 1, index_modified = index, modify_datetime = not self.selected_text.is_tmp }))
+            { item, nb_highlights_added = 1, index_modified = index, modify_datetime = self.selected_text.is_extended }))
         return index
     end
 end
@@ -2288,7 +2300,7 @@ function ReaderHighlight:lookupDict(index)
                 word_boxes[i] = self.view:pageToScreenTransform(self.selected_text.pos0.page, box)
             end
         end
-        self.ui.dictionary:onLookupWord(util.cleanupSelectedText(self.selected_text.text), false, word_boxes)
+        self.ui.dictionary:onLookupWord(util.cleanupSelectedText(self.selected_text.text), false, word_boxes, self)
     end
 end
 
@@ -2510,7 +2522,7 @@ function ReaderHighlight:extendSelection()
     end
     self:deleteHighlight(self.highlight_idx) -- starting fragment
     self.selected_text = {
-        is_tmp = item1.is_tmp,
+        is_extended = not item1.is_tmp,
         datetime = item1.datetime,
         drawer = item1.drawer,
         color = item1.color,
@@ -2661,13 +2673,15 @@ function ReaderHighlight:onSaveSettings()
     self.ui.doc_settings:saveSetting("panel_zoom_enabled", self.panel_zoom_enabled)
 end
 
-function ReaderHighlight:onClose()
+function ReaderHighlight:onClose(keep_highlight)
     if self.highlight_dialog then
         UIManager:close(self.highlight_dialog)
         self.highlight_dialog = nil
     end
     -- clear highlighted text
-    self:clear()
+    if not keep_highlight then
+        self:clear()
+    end
 end
 
 -- dpad/keys support

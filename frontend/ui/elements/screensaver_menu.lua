@@ -4,20 +4,22 @@ local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
+local ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
+
 local function hasLastFile()
     local last_file = G_reader_settings:readSetting("lastfile")
     return last_file and lfs.attributes(last_file, "mode") == "file"
 end
 
 local function isReaderProgressEnabled()
-    return Screensaver.getReaderProgress ~= nil and hasLastFile()
+    return ui.statistics ~= nil
 end
 
 local function allowRandomImageFolder()
     local may_ignore_book_cover = G_reader_settings:isTrue("screensaver_exclude_on_hold_books")
         or G_reader_settings:isTrue("screensaver_exclude_finished_books")
         or G_reader_settings:isTrue("screensaver_hide_cover_in_filemanager")
-        or Screensaver:isExcluded()
+        or Screensaver.isExcluded(ui)
     return G_reader_settings:readSetting("screensaver_type") == "random_image"
             or (G_reader_settings:readSetting("screensaver_type") == "cover" and may_ignore_book_cover)
 end
@@ -47,6 +49,7 @@ return {
             genMenuItem(_("Show reading progress on sleep screen"), "screensaver_type", "readingprogress", isReaderProgressEnabled),
             genMenuItem(_("Show book status on sleep screen"), "screensaver_type", "bookstatus", hasLastFile),
             genMenuItem(_("Leave screen as-is"), "screensaver_type", "disable", nil, true),
+            -- separator
             {
                 text = _("Ignore book cover"),
                 help_text = _("Choose when to ignore showing book covers on the sleep screen."),
@@ -155,22 +158,18 @@ return {
                             return G_reader_settings:readSetting("screensaver_type") == "document_cover"
                         end,
                         keep_menu_open = true,
-                        callback = function()
-                            Screensaver:chooseFile()
-                        end,
+                        callback = Screensaver.chooseFile,
                     },
                     {
                         text = _("Choose random image folder"),
                         enabled_func = allowRandomImageFolder,
                         keep_menu_open = true,
-                        callback = function()
-                            Screensaver:chooseFolder()
-                        end,
+                        callback = Screensaver.chooseFolder,
                         separator = true,
                     },
                     {
                         text = _("Cycle through images in order"),
-                        help_text = _("When enabled, all images (up to 128) will be displayed at least once on the sleep screen in sequence before repeating the cycle."),
+                        help_text = _("When enabled, all images (up to 256) will be displayed at least once on the sleep screen in sequence before repeating the cycle."),
                         enabled_func = allowRandomImageFolder,
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_cycle_images_alphabetically")
@@ -207,6 +206,48 @@ return {
                 end,
             },
             {
+                text = _("Container and position"),
+                enabled_func = function()
+                    return G_reader_settings:isTrue("screensaver_show_message")
+                end,
+                sub_item_table = {
+                    genMenuItem(_("Banner"), "screensaver_message_container", "banner"),
+                    genMenuItem(_("Box"), "screensaver_message_container", "box", nil, true),
+                    {
+                        text_func = function()
+                            local percent = G_reader_settings:readSetting("screensaver_message_vertical_position")
+                            local value
+                            if percent == 100 then
+                                value = _("top")
+                            elseif percent == 50 then
+                                value = _("middle")
+                            elseif percent == 0 then
+                                value = _("bottom")
+                            else
+                                value = percent .. "\xE2\x80\xAF%" -- narrow no-break space
+                            end
+                            return T(_("Vertical position: %1"), value)
+                        end,
+                        help_text = _("Set a custom vertical position for the sleep screen message."),
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            Screensaver:setCustomPosition(touchmenu_instance)
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            local alpha = G_reader_settings:readSetting("screensaver_message_alpha", 100)
+                            return T(_("Message opacity: %1"), alpha) .. "\xE2\x80\xAF%"
+                        end,
+                        help_text = _("Set the opacity level of the sleep screen message."),
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            Screensaver:setMessageOpacity(touchmenu_instance)
+                        end,
+                    },
+                },
+            },
+            {
                 text = _("Background fill"),
                 help_text = _("This option will only become available, if you have selected 'Leave screen as-is' as wallpaper and have 'Sleep screen message' on."),
                 enabled_func = function()
@@ -215,18 +256,7 @@ return {
                 sub_item_table = {
                     genMenuItem(_("Black fill"), "screensaver_msg_background", "black"),
                     genMenuItem(_("White fill"), "screensaver_msg_background", "white"),
-                    genMenuItem(_("No fill"), "screensaver_msg_background", "none", nil, true),
-                },
-            },
-            {
-                text = _("Message position"),
-                enabled_func = function()
-                    return G_reader_settings:isTrue("screensaver_show_message")
-                end,
-                sub_item_table = {
-                    genMenuItem(_("Top"), "screensaver_message_position", "top"),
-                    genMenuItem(_("Middle"), "screensaver_message_position", "middle"),
-                    genMenuItem(_("Bottom"), "screensaver_message_position", "bottom", nil, true),
+                    genMenuItem(_("No fill"), "screensaver_msg_background", "none"),
                 },
             },
             (Device:canReboot() and Device:canPowerOff()) and {

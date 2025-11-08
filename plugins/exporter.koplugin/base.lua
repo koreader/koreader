@@ -6,22 +6,15 @@ Each target should inherit from this class and implement *at least* an `export` 
 @module baseexporter
 ]]
 
-local DataStorage = require("datastorage")
 local Device = require("device")
 local http = require("socket.http")
 local ltn12 = require("ltn12")
 local rapidjson = require("rapidjson")
 local socket = require("socket")
 local socketutil = require("socketutil")
-
-local util = require("util")
 local _ = require("gettext")
 
-local msg_failed = "json request failed: %s"
-
-local BaseExporter = {
-    clipping_dir = DataStorage:getFullDataDir() .. "/clipboard"
-}
+local BaseExporter = {}
 
 function BaseExporter:new(o)
     o = o or {}
@@ -37,7 +30,7 @@ function BaseExporter:_init()
     self.version = self.version or "1.0.0"
     self.shareable = self.is_remote and nil or Device:canShareText()
     self:loadSettings()
-    if type(self.init_callback) == "function" then
+    if self.init_callback then
         local changed, settings = self:init_callback(self.settings)
         if changed then
             self.settings = settings
@@ -95,24 +88,10 @@ function BaseExporter:export(t) end
 --[[--
 File path where the exporter writes its output
 
-@param t table of booknotes
 @treturn string absolute path or nil
 ]]
-function BaseExporter:getFilePath(t)
-    if self.is_remote then return end
-    local plugin_settings = G_reader_settings:readSetting("exporter") or {}
-    local clipping_dir = plugin_settings.clipping_dir or self.clipping_dir
-    local title
-    if #t == 1 then
-        title = t[1].output_filename
-        if plugin_settings.clipping_dir_book then
-            clipping_dir = util.splitFilePathName(t[1].file):sub(1, -2)
-        end
-    else
-        title = self.all_books_title or "all-books"
-    end
-    local filename = string.format("%s-%s.%s", self:getTimeStamp(), title, self.extension)
-    return clipping_dir .. "/" .. util.getSafeFilename(filename)
+function BaseExporter:getFilePath()
+    return self.filepath and self.filepath .. "." .. self.extension
 end
 
 --[[--
@@ -180,6 +159,7 @@ Makes a json request against a remote endpoint
 ]]
 
 function BaseExporter:makeJsonRequest(endpoint, method, body, headers)
+    local msg_failed = "json request failed: %s"
     local sink = {}
     local extra_headers = headers or {}
     local body_json, response, err
@@ -221,7 +201,7 @@ function BaseExporter:makeJsonRequest(endpoint, method, body, headers)
             "no response from server")
     end
 
-    response, err = rapidjson.decode(sink[1])
+    response, err = rapidjson.decode(table.concat(sink))
     if not response then
         return nil, string.format(msg_failed,
             "unable to decode server response" .. err)

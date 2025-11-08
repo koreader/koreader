@@ -17,7 +17,6 @@ local order = {
         "bookmark_browsing_mode",
         "navi_settings",
         "----------------------------",
-        "page_map",
         "hide_nonlinear_flows",
         "----------------------------",
         "book_map", -- if Device:isTouchDevice() or useDPadAsActionKeys()
@@ -44,6 +43,7 @@ local order = {
         "handmade_hidden_flows",
         "handmade_settings",
         "----------------------------",
+        "page_map",
         "bookmarks_settings",
     },
     typeset = {
@@ -104,6 +104,7 @@ local order = {
         "autostandby",
         "autosuspend",
         "autoshutdown",
+        "pageturn_power", -- if Device:isKobo() and Device:hasKeys()
         "ignore_sleepcover",
         "ignore_open_sleepcover",
         "cover_events",

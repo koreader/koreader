@@ -459,7 +459,13 @@ function Kindle:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:getCurrentNetwork()
-        return { ssid = kindleGetCurrentProfile().essid }
+        local nw = kindleGetCurrentProfile()
+        if nw == nil then
+            logger.dbg("NetworkMgr:getCurrentNetwork: No current network profile found")
+            return nil
+        end
+        logger.dbg("NetworkMgr:getCurrentNetwork: Current network:", nw.essid)
+        return { ssid = nw.essid }
     end
 
     NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
@@ -1897,7 +1903,7 @@ local pw5_set = Set { "1Q0", "1PX", "1VD", "21A", "2BJ", "2DK" }
 local pw5se_set = Set { "1LG", "219", "2BH" }
 local kt5_set = Set { "22D", "25T", "23A", "2AQ", "2AP", "1XH", "22C" }
 local ks_set = Set { "27J", "2BL", "263", "227", "2BM", "23L", "23M", "270" }
-local kcs_set = Set { "3H2", "3H4", "3H6", "3H7", "3H9", "3JT", "3J6", "456", "34X", "3HB" }
+local kcs_set = Set { "3H2", "3H4", "3H6", "3H7", "3H9", "3JT", "3J6", "455", "456", "4EP", "34X", "3HB" }
 local kt6_set = Set { "A89", "3L2", "3L3", "3L4", "3L5", "3L6", "3KM" }
 local pw6_set = Set { "33W", "33X", "346", "349", "3H3", "3H5", "3H8", "3HA", "3J5", "3JS" } --- some of these are probably SE :/
 local ks2_set = Set { "3V0", "3V1", "3X5", "3UV", "3X4", "3X3", "41E", "410" }
