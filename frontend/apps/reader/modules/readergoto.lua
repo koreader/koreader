@@ -6,6 +6,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local util = require("util")
 local _ = require("gettext")
+local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local ReaderGoto = WidgetContainer:extend{}
@@ -250,7 +251,7 @@ function ReaderGoto:onGoToPinnedPage()
                 self.ui.paging:onGotoPage(pn_or_xp)
             else -- location, a table
                 local new_page = pn_or_xp[1].page
-                if bit.band(self.document.configurable.rotation_mode, 1) ~= bit.band(pn_or_xp.rotation_mode, 1)
+                if bit.band(Screen:getRotationMode(), 1) ~= bit.band(pn_or_xp.rotation_mode, 1)
                     or self.ui.view.page_scroll ~= pn_or_xp.page_scroll
                     or self.document.configurable.text_wrap ~= pn_or_xp.text_wrap then
                     -- orientation, page/continuous or reflow mode changed, cannot restore exact location
@@ -293,7 +294,7 @@ function ReaderGoto:onPinPage(pageno, do_remove)
                 pn_or_xp = pageno
             else
                 pn_or_xp = self.ui.paging:getBookLocation()
-                pn_or_xp.rotation_mode = self.document.configurable.rotation_mode
+                pn_or_xp.rotation_mode = Screen:getRotationMode()
                 pn_or_xp.text_wrap = self.document.configurable.text_wrap
                 pn_or_xp.page_scroll = self.ui.view.page_scroll
             end
