@@ -130,6 +130,13 @@ if Device:isKindle() then
             return
         end
 
+        -- KeepAlive on Kindles work by disabling screensaver in powerd. As this makes the t1 timeout behave wackily,
+        -- we must not reset it, as it causes a crash.
+        if PluginShare.keepalive then
+            logger.dbg("AutoSuspend: KeepAlive is active, skipping t1 timeout reset")
+            return
+        end
+        
         -- NOTE: Unlike us, powerd doesn't care about charging, so we always use the delta since the last user input.
         local now = UIManager:getElapsedTimeSinceBoot()
         local kindle_t1_reset_seconds = default_kindle_t1_timeout_reset_seconds - time.to_number(now - self.last_action_time)
