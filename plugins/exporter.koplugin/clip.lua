@@ -103,17 +103,29 @@ end
 -- extract author name in "Title - Author" format
 function MyClipping:parseTitleFromPath(line)
     line = line:match("^%s*(.-)%s*$") or ""
+
     if extensions[line:sub(-4):lower()] then
         line = line:sub(1, -5)
     elseif extensions[line:sub(-5):lower()] then
         line = line:sub(1, -6)
     end
-    local dummy, title, author
-    dummy, dummy, title, author = line:find("(.-)%s*%((.*)%)")
-    if not author then
-        dummy, dummy, title, author = line:find("(.-)%s*-%s*(.*)")
+
+    local author = line:match("%s*%-?%s*%(([^()]*)%)%s*$")
+    local title
+    if author then
+        -- remove the last parenthesized group to keep earlier parentheses in title
+        title = line:gsub("%s*%-?%s*%([^()]*%)%s*$", "")
+    else
+        -- fallback: "Title - Author"
+        local t, a = line:match("^(.-)%s*%-%s*(.+)%s*$")
+        if t and a then
+            title = t
+            author = a
+        else
+            title = line:match("^%s*(.-)[%s%-]*$")
+        end
     end
-    title = title or line:match("^%s*(.-)%s*$")
+
     return isEmpty(title) and _("Unknown Book") or title,
            isEmpty(author) and _("Unknown Author") or author
 end
@@ -378,13 +390,20 @@ function MyClipping:parseFiles(files)
 end
 
 function MyClipping:parseCurrentDoc()
-    local clippings = {}
     local title, author = self:getTitleAuthor(self.ui.document.file, self.ui.doc_props)
-    clippings[title] = {
-        file = self.ui.document.file,
-        title = title,
-        author = author,
-        number_of_pages = self.ui.view.footer.pages,
+    local number_of_pages
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        number_of_pages = select(3, self.ui.pagemap:getCurrentPageLabel())
+    else
+        number_of_pages = self.ui.view.footer.pages
+    end
+    local clippings = {
+        [title] = {
+            file = self.ui.document.file,
+            title = title,
+            author = author,
+            number_of_pages = number_of_pages,
+        },
     }
     self:parseAnnotations(self.ui.annotation.annotations, clippings[title])
     return clippings

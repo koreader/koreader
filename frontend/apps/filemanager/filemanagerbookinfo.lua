@@ -166,9 +166,67 @@ function BookInfo:show(doc_settings_or_file, book_props)
         })
     end
     -- pages
-    local pages = self.is_current_doc
-        and self.ui.pagemap and self.ui.pagemap:wantsPageLabels() and self.ui.pagemap:getLastPageLabel(true)
-    table.insert(kv_pairs, { self.prop_text["pages"], pages or book_props.pages or n_a, separator = true })
+    local pages = book_props.pages or n_a
+    local pages_callback
+    if self.is_current_doc then
+        local screen_pages = _("Screen pages") .. ":\n" .. pages
+        if self.document:hasHiddenFlows() then
+            screen_pages = screen_pages .. " " .. _("(including hidden flows)")
+        end
+        local t_page, t_info = {}, {}
+        if self.ui.pagemap and self.ui.pagemap.has_pagemap then
+            if not self.ui.pagemap.use_page_labels then
+                table.insert(t_page, pages)
+                table.insert(t_info, screen_pages)
+            end
+            if self.ui.pagemap.chars_per_synthetic_page then
+                -- @translators characters per page
+                local txt = self.ui.pagemap:getLastPageLabel() .. " (" .. T(N_("1 char per page", "%1 chars per page",
+                    self.ui.pagemap.chars_per_synthetic_page), self.ui.pagemap.chars_per_synthetic_page) .. ")"
+                table.insert(t_page, txt)
+                table.insert(t_info, _("Synthetic pages") .. ":\n" .. txt)
+                if self.ui.pagemap.use_page_labels then
+                    table.insert(t_page, pages)
+                    table.insert(t_info, screen_pages)
+                end
+            end
+            if self.ui.pagemap.has_pagemap_document_provided then
+                if self.ui.pagemap.chars_per_synthetic_page then
+                    table.insert(t_page, "(℗)")
+                    table.insert(t_info, _("Publisher pages (℗):\navailable"))
+                else
+                    local count = select(3, self.ui.pagemap:getCurrentPageLabel())
+                    local first = self.ui.pagemap:getFirstPageLabel(true)
+                    local last = self.ui.pagemap:getLastPageLabel(true)
+                    local source = self.ui.document:getPageMapSource()
+                    if source == nil or source == "" then
+                        source = n_a
+                    end
+                    table.insert(t_page, count .. " (℗ " .. last .. ")")
+                    local t = _([[
+Publisher pages (℗):
+%1 (%2 - %3)
+Source (print edition):
+%4]])
+                    table.insert(t_info, T(t, count, first, last, source))
+                    if self.ui.pagemap.use_page_labels then
+                        table.insert(t_page, pages)
+                        table.insert(t_info, screen_pages)
+                    end
+                end
+            end
+        else
+            table.insert(t_page, pages)
+            table.insert(t_info, screen_pages)
+        end
+        pages = table.concat(t_page, " | ")
+        pages_callback = function()
+            UIManager:show(InfoMessage:new{
+                text = table.concat(t_info, "\n\n"),
+            })
+        end
+    end
+    table.insert(kv_pairs, { self.prop_text["pages"], pages, callback = pages_callback, separator = true })
 
     -- Current page
     if self.document then

@@ -111,6 +111,9 @@ function MarkdownExporter:export(t)
         local tbl = md.prepareBookContent(book,
             self.settings.formatting_options, self.settings.highlight_formatting, self.settings.export_backlinks)
         file:write(table.concat(tbl, "\n"))
+        if idx < #t then
+            file:write("\n\n")
+        end
     end
     file:write("\n## \n_" .. T("Generated at: %1", self:getTimeStamp()) .. "_")
     file:close()

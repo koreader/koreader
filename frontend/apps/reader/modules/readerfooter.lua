@@ -594,15 +594,8 @@ function ReaderFooter:init()
         self:disableFooter()
         return
     end
-
-    self.has_no_mode = true
+    self:set_has_no_mode()
     self.reclaim_height = self.settings.reclaim_height
-    for _, m in ipairs(self.mode_index) do
-        if self.settings[m] then
-            self.has_no_mode = false
-            break
-        end
-    end
 
     self.footer_text_face = Font:getFace(self.text_font_face, self.settings.text_font_size)
     self.footer_text = TextWidget:new{
@@ -661,6 +654,16 @@ function ReaderFooter:init()
         buildPreset = function() return self:buildPreset() end,
         loadPreset = function(preset) self:loadPreset(preset) end,
     }
+end
+
+function ReaderFooter:set_has_no_mode()
+    for mode_num, m in ipairs(self.mode_index) do
+        if self.settings[m] then
+            self.has_no_mode = false
+            return mode_num
+        end
+    end
+    self.has_no_mode = true
 end
 
 function ReaderFooter:set_custom_text(touchmenu_instance)
@@ -1082,17 +1085,9 @@ function ReaderFooter:addToMainMenu(menu_items)
                 -- only case that we don't need a UI update is enable/disable
                 -- non-current mode when all_at_once is disabled.
                 local should_update = false
-                local first_enabled_mode_num
                 local prev_has_no_mode = self.has_no_mode
+                local first_enabled_mode_num = self:set_has_no_mode()
                 local prev_reclaim_height = self.reclaim_height
-                self.has_no_mode = true
-                for mode_num, m in pairs(self.mode_index) do
-                    if self.settings[m] then
-                        first_enabled_mode_num = mode_num
-                        self.has_no_mode = false
-                        break
-                    end
-                end
                 self.reclaim_height = self.settings.reclaim_height
                 -- refresh margins position
                 if self.has_no_mode then
@@ -1211,6 +1206,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         checked_func = function()
                             return not self.settings.progress_style_thin
                         end,
+                        radio = true,
                         callback = function()
                             self.settings.progress_style_thin = nil
                             local bar_height = self.settings.progress_style_thick_height
@@ -1224,6 +1220,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         checked_func = function()
                             return self.settings.progress_style_thin
                         end,
+                        radio = true,
                         callback = function()
                             self.settings.progress_style_thin = true
                             local bar_height = self.settings.progress_style_thin_height
@@ -1762,6 +1759,7 @@ function ReaderFooter:genProgressBarPositionMenuItems(value)
         checked_func = function()
             return self.settings.progress_bar_position == value
         end,
+        radio = true,
         callback = function()
             if value == "alongside" then
                 -- Text alignment is disabled in this mode
@@ -1787,6 +1785,7 @@ function ReaderFooter:genProgressBarChapterMarkerWidthMenuItems(value)
         checked_func = function()
             return self.settings.toc_markers_width == value
         end,
+        radio = true,
         callback = function()
             self.settings.toc_markers_width = value -- unscaled_size_check: ignore
             self:setTocMarkers()
@@ -1820,6 +1819,7 @@ function ReaderFooter:genProgressPercentageFormatMenuItems(value)
         checked_func = function()
             return self.settings.progress_pct_format == value
         end,
+        radio = true,
         callback = function()
             self.settings.progress_pct_format = value
             self:refreshFooter(true)
@@ -1847,6 +1847,7 @@ function ReaderFooter:genItemSymbolsMenuItems(value)
         checked_func = function()
             return self.settings.item_prefix == value
         end,
+        radio = true,
         callback = function()
             self.settings.item_prefix = value
             if self.settings.items_separator == "none" then
@@ -1872,6 +1873,7 @@ function ReaderFooter:genItemSeparatorMenuItems(value)
         checked_func = function()
             return self.settings.items_separator == value
         end,
+        radio = true,
         callback = function()
             self.settings.items_separator = value
             self.separator_width = nil
@@ -1923,6 +1925,7 @@ function ReaderFooter:genAlignmentMenuItems(value)
         checked_func = function()
             return self.settings.align == value
         end,
+        radio = true,
         callback = function()
             self.settings.align = value
             self:refreshFooter(true)
@@ -1931,9 +1934,13 @@ function ReaderFooter:genAlignmentMenuItems(value)
 end
 
 function ReaderFooter:buildPreset()
+    local mode = self.mode
+    if mode == self.mode_list.off and not self.settings.disable_progress_bar then
+        mode = self.mode_list.page_progress
+    end
     return {
         footer = util.tableDeepCopy(self.settings),
-        reader_footer_mode = self.mode,
+        reader_footer_mode = mode,
         reader_footer_custom_text = self.custom_text,
         reader_footer_custom_text_repetitions = self.custom_text_repetitions,
     }
@@ -1948,8 +1955,14 @@ function ReaderFooter:loadPreset(preset)
     G_reader_settings:saveSetting("reader_footer_custom_text_repetitions", preset.reader_footer_custom_text_repetitions)
     self.settings = G_reader_settings:readSetting("footer")
     self.mode_index = self.settings.order or self.mode_index
+    self:set_has_no_mode()
     self.custom_text = preset.reader_footer_custom_text
     self.custom_text_repetitions = tonumber(preset.reader_footer_custom_text_repetitions)
+    if not self.settings.disable_progress_bar then
+        local thick = not self.settings.progress_style_thin
+        local height = thick and self.settings.progress_style_thick_height or self.settings.progress_style_thin_height
+        self.progress_bar:updateStyle(thick, height)
+    end
     self:applyFooterMode(preset.reader_footer_mode)
     self:updateFooterTextGenerator()
     if old_text_font_size ~= self.settings.text_font_size or old_text_font_bold ~= self.settings.text_font_bold then
@@ -2108,14 +2121,10 @@ end
 
 function ReaderFooter:onUpdateFooter(force_repaint, full_repaint)
     if type(self.pageno) ~= "number" then return end
+    if self.progress_bar.initial_pos_marker then
+        self:updateProgressBarInitialPercentage()
+    end
     if self.settings.chapter_progress_bar then
-        if self.progress_bar.initial_pos_marker then
-            if self.ui.toc:getNextChapter(self.pageno) == self.ui.toc:getNextChapter(self.initial_pageno) then
-                self.progress_bar.initial_percentage = self:getChapterProgress(true, self.initial_pageno)
-            else -- initial position is not in the current chapter
-                self.progress_bar.initial_percentage = -1 -- do not draw initial position marker
-            end
-        end
         self.progress_bar:setPercentage(self:getChapterProgress(true))
     else
         self.progress_bar:setPercentage(self:getBookProgress())
@@ -2400,6 +2409,7 @@ function ReaderFooter:onToggleChapterProgressBar()
     self:setTocMarkers()
     if self.progress_bar.initial_pos_marker and not self.settings.chapter_progress_bar then
         self.progress_bar.initial_percentage = self.initial_pageno / self.pages
+        -- initial marker position in the chapter progress bar is handled in onUpdateFooter
     end
     self:refreshFooter(true)
 end
@@ -2408,6 +2418,45 @@ function ReaderFooter:invertProgressBar(invert_direction)
     if self.progress_bar then
         self.progress_bar.invert_direction = invert_direction
         self:maybeUpdateFooter()
+    end
+end
+
+function ReaderFooter:updateProgressBarInitialPercentage()
+    -- If the progress bar shows the flow progress or the chapter progress,
+    -- the initial position marker may be out of the progress bar pages interval.
+    -- In that case set initial percentage to -1 to not draw the marker.
+    if self.ui.document:hasHiddenFlows() then
+        local initial_flow = self.ui.document:getPageFlow(self.initial_pageno)
+        local current_flow = self.ui.document:getPageFlow(self.pageno)
+        if initial_flow == current_flow then
+            if self.settings.chapter_progress_bar then
+                if initial_flow == 0 then -- in chapter progress bar, show initial marker for the main flow only
+                    local initial_next_chapter = self.ui.toc:getNextChapter(self.initial_pageno)
+                    local current_next_chapter = self.ui.toc:getNextChapter(self.pageno)
+                    if initial_next_chapter == current_next_chapter then
+                        self.progress_bar.initial_percentage = self:getChapterProgress(true, self.initial_pageno)
+                    else
+                        self.progress_bar.initial_percentage = -1
+                    end
+                else
+                    self.progress_bar.initial_percentage = -1
+                end
+            else
+                local page = self.ui.document:getPageNumberInFlow(self.initial_pageno)
+                local pages = self.ui.document:getTotalPagesInFlow(initial_flow)
+                self.progress_bar.initial_percentage = page / pages
+            end
+        else
+            self.progress_bar.initial_percentage = -1
+        end
+    elseif self.settings.chapter_progress_bar then
+        local initial_next_chapter = self.ui.toc:getNextChapter(self.initial_pageno)
+        local current_next_chapter = self.ui.toc:getNextChapter(self.pageno)
+        if initial_next_chapter == current_next_chapter then
+            self.progress_bar.initial_percentage = self:getChapterProgress(true, self.initial_pageno)
+        else
+            self.progress_bar.initial_percentage = -1
+        end
     end
 end
 

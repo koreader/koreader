@@ -87,20 +87,19 @@ local function _getRandomImage(dir)
     local match_func = function(file) -- images, ignore macOS resource forks
         return not util.stringStartsWith(ffiUtil.basename(file), "._") and DocumentRegistry:isImageFile(file)
     end
+    -- Slippery slope ahead! Ensure the number of files does not become unmanageable, otherwise we'll have performance issues.
+    -- Power users can increase this cap if needed. Beware though, this grows at O(n * c) where c increases with the number of files.
+    -- NOTE: empirically, a kindle 4 found and sorted 128 files in 0.274828 seconds.
+    local max_files = G_reader_settings:readSetting("screensaver_max_files") or 256
     -- If the user has set the option to cycle images alphabetically, we sort the files instead of picking a random one.
     if G_reader_settings:isTrue("screensaver_cycle_images_alphabetically") then
         local start_time = time.now()
         local files = {}
-        local num_files = 0
         util.findFiles(dir, function(file)
-            -- Slippery slope ahead! Ensure the number of files does not become unmanageable, otherwise we'll have performance issues.
-            -- NOTE: empirically, a kindle 4 found and sorted 128 files in 0.274828 seconds.
-            if num_files >= 128 then return end -- this seems like a reasonable [yet arbitrary] limit
             if match_func(file) then
                 table.insert(files, file)
-                num_files = num_files + 1
             end
-        end, false)
+        end, false, max_files)
         if #files == 0 then return end
         -- we have files, sort them in natural order, i.e z2 < z11 < z20
         local sort = require("sort")
@@ -117,7 +116,7 @@ local function _getRandomImage(dir)
         G_reader_settings:saveSetting("screensaver_cycle_index", index)
         return files[index]
     else -- Pick a random file (default behavior)
-        return filemanagerutil.getRandomFile(dir, match_func)
+        return filemanagerutil.getRandomFile(dir, match_func, max_files)
     end
 end
 
@@ -333,6 +332,12 @@ function Screensaver:withBackground()
 end
 
 function Screensaver:setup(event, event_message)
+    self.ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
+    if not self.ui then
+        logger.warn("Screensaver called without UI instance, skipped")
+        return
+    end
+
     self.show_message = G_reader_settings:isTrue("screensaver_show_message")
     self.screensaver_type = G_reader_settings:readSetting("screensaver_type")
     local screensaver_img_background = G_reader_settings:readSetting("screensaver_img_background")
@@ -353,7 +358,6 @@ function Screensaver:setup(event, event_message)
     end
 
     -- Check lastfile and setup the requested mode's resources, or a fallback mode if the required resources are unavailable.
-    self.ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
     local lastfile = G_reader_settings:readSetting("lastfile")
     local is_document_cover = false
     if self.screensaver_type == "document_cover" then
@@ -433,6 +437,7 @@ end
 
 function Screensaver:show()
     -- self.ui is set in Screensaver:setup()
+    if not self.ui then return end
 
     -- Notify Device methods that we're in screen saver mode, so they know whether to suspend or resume on Power events.
     Device.screen_saver_mode = true
@@ -445,6 +450,7 @@ function Screensaver:show()
         return
     end
 
+    local orig_dimen
     local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
     local rotation_mode = Screen:getRotationMode()
 
@@ -459,6 +465,7 @@ function Screensaver:show()
         if bit.band(Device.orig_rotation_mode, 1) == 1 then
             -- i.e., only switch to Portrait if we're currently in *any* Landscape orientation (odd number)
             Screen:setRotationMode(Screen.DEVICE_ROTATED_UPRIGHT)
+            orig_dimen = with_gesture_lock and { w = screen_w, h = screen_h }
             screen_w, screen_h = screen_h, screen_w
         else
             Device.orig_rotation_mode = nil
@@ -644,7 +651,10 @@ function Screensaver:show()
 
     -- Setup the gesture lock through an additional invisible widget, so that it works regardless of the configuration.
     if with_gesture_lock then
-        self.screensaver_lock_widget = ScreenSaverLockWidget:new{}
+        self.screensaver_lock_widget = ScreenSaverLockWidget:new{
+            ui = self.ui,
+            orig_dimen = orig_dimen,
+        }
 
         -- It's flagged as modal, so it'll stay on top
         UIManager:show(self.screensaver_lock_widget)

@@ -1301,7 +1301,7 @@ function DictQuickLookup:onClose(no_clear)
             -- delay unhighlight of selection, so we can see where we stopped when
             -- back from our journey into dictionary or wikipedia
             local clear_id = self.highlight:getClearId()
-            UIManager:scheduleIn(0.5, function()
+            UIManager:scheduleIn(G_defaults:readSetting("DELAY_CLEAR_HIGHLIGHT_S"), function()
                 self.highlight:clear(clear_id)
             end)
         end

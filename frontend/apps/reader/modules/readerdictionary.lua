@@ -1186,7 +1186,7 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
         Device:doExternalDictLookup(word, G_reader_settings:readSetting("external_dict_lookup_method"), function()
             if self.highlight then
                 local clear_id = self.highlight:getClearId()
-                UIManager:scheduleIn(0.5, function()
+                UIManager:scheduleIn(G_defaults:readSetting("DELAY_CLEAR_HIGHLIGHT_S"), function()
                     self.highlight:clear(clear_id)
                 end)
             end
@@ -1356,7 +1356,7 @@ function ReaderDictionary:showNoResultsDialog(word, dict_names, fuzzy_search, bo
             id = "close",
             callback = function(dialog)
                 UIManager:close(dialog)
-                UIManager:scheduleIn(0.5, function() lookupCancelled() end)
+                UIManager:scheduleIn(G_defaults:readSetting("DELAY_CLEAR_HIGHLIGHT_S"), function() lookupCancelled() end)
             end,
         },
         primary_action,
