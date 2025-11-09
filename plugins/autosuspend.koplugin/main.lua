@@ -137,7 +137,6 @@ if Device:isKindle() then
             return
         end
         
-        -- NOTE: Unlike us, powerd doesn't care about charging, so we always use the delta since the last user input.
         local now = UIManager:getElapsedTimeSinceBoot()
         local kindle_t1_reset_seconds = default_kindle_t1_timeout_reset_seconds - time.to_number(now - self.last_t1_reset_time)
         -- NOTE: Unlike us, powerd doesn't care about charging, so we always use the delta since the last user input.
