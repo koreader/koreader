@@ -107,6 +107,9 @@ function ReaderPageMap:_postInit()
                 })
             end
         end
+    else -- no pagemap
+        self.ui.doc_settings:delSetting("pagemap_use_page_labels")
+        self.ui.doc_settings:delSetting("pagemap_show_page_labels")
     end
 end
 
@@ -151,11 +154,13 @@ function ReaderPageMap:onReadSettings(config)
         self.show_page_labels = config:isTrue("pagemap_show_page_labels")
     else
         self.show_page_labels = G_reader_settings:isTrue("pagemap_show_page_labels")
+        config:saveSetting("pagemap_show_page_labels", self.show_page_labels)
     end
     if config:has("pagemap_use_page_labels") then
         self.use_page_labels = config:isTrue("pagemap_use_page_labels")
     else
         self.use_page_labels = G_reader_settings:isTrue("pagemap_use_page_labels")
+        config:saveSetting("pagemap_use_page_labels", self.use_page_labels)
     end
 end
 
