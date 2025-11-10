@@ -169,6 +169,7 @@ function BookInfo:show(doc_settings_or_file, book_props)
     local pages = book_props.pages or n_a
     local pages_callback
     if self.is_current_doc then
+        pages = doc_settings_or_file:readSetting("doc_pages")
         local screen_pages = _("Screen pages") .. ":\n" .. pages
         if self.document:hasHiddenFlows() then
             screen_pages = screen_pages .. " " .. _("(including hidden flows)")
