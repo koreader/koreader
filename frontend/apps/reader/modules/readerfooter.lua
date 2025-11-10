@@ -52,6 +52,7 @@ local MODE = {
     book_author = 18,
     page_turning_inverted = 19, -- includes both page-turn-button and swipe-and-tap inversion
     dynamic_filler = 20,
+    additional_content = 21,
 }
 
 local symbol_prefix = {
@@ -451,6 +452,27 @@ footerTextGeneratorMap = {
         local filler_nb = math.floor((max_width - text_width + separator_width) / footer.filler_space_width)
         if filler_nb > 0 then
             return filler_space:rep(filler_nb), true
+        end
+    end,
+    additional_content = function(footer)
+        if #footer.additional_footer_content == 0 then
+            return
+        elseif #footer.additional_footer_content == 1 then
+            local value = footer.additional_footer_content[1]()
+            if value and value ~= "" then
+                return value
+            end
+        else
+            local t = {}
+            for _, v in ipairs(footer.additional_footer_content) do
+                local value = v()
+                if value and value ~= "" then
+                    table.insert(t, value)
+                end
+            end
+            if #t > 0 then
+                return table.concat(t, footer:genSeparator())
+            end
         end
     end,
 }
@@ -1036,6 +1058,7 @@ function ReaderFooter:textOptionTitles(option)
             self.custom_text_repetitions > 1 and
             string.format(" × %d", self.custom_text_repetitions) or ""),
         dynamic_filler = _("Dynamic filler"),
+        additional_content = _("External content"),
     }
     return option_titles[option]
 end
@@ -1423,6 +1446,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(footer_items, getMinibarOption("book_chapter"))
     table.insert(footer_items, getMinibarOption("custom_text"))
     table.insert(footer_items, getMinibarOption("dynamic_filler"))
+    table.insert(footer_items, getMinibarOption("additional_content"))
 
     -- configure footer_items
     table.insert(sub_items, {
@@ -2158,12 +2182,6 @@ function ReaderFooter:_updateFooterText(force_repaint, full_repaint)
     end
 
     local text = self:genFooterText() or ""
-    for _, v in ipairs(self.additional_footer_content) do
-        local value = v()
-        if value and value ~= "" then
-            text = text == "" and value or value .. self:genSeparator() .. text
-        end
-    end
     self.footer_text:setText(text)
 
     if self.settings.disable_progress_bar then
