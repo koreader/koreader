@@ -35,7 +35,6 @@ local AutoSuspend = WidgetContainer:extend{
     kindle_task = nil,
     standby_task = nil,
     going_to_suspend = nil,
-    is_charging = nil,
 }
 
 function AutoSuspend:_enabledStandby()
@@ -60,12 +59,12 @@ function AutoSuspend:_schedule(shutdown_only)
     local suspend_delay_seconds, shutdown_delay_seconds
     -- On devices with an auxiliary battery, we only care about the auxiliary battery being charged...
     if Device:hasAuxBattery() and PowerD:isAuxBatteryConnected() then
-        self.is_charging = PowerD:isAuxCharging() and not PowerD:isAuxCharged()
+        is_charging = PowerD:isAuxCharging() and not PowerD:isAuxCharged()
     else
-        self.is_charging = PowerD:isCharging() and not PowerD:isCharged()
+        is_charging = PowerD:isCharging() and not PowerD:isCharged()
     end
     -- We *do* want to make sure we attempt to go into suspend/shutdown again while *fully* charged, though.
-    if PluginShare.pause_auto_suspend or self.is_charging then
+    if PluginShare.pause_auto_suspend or is_charging then
         suspend_delay_seconds = self.auto_suspend_timeout_seconds
         shutdown_delay_seconds = self.autoshutdown_timeout_seconds
     else
@@ -138,7 +137,7 @@ if Device:isKindle() then
         end
 
         -- Also causes problems when charging.
-        if self.is_charging then
+        if PowerD:isCharging() and not PowerD:isCharged() then
             logger.dbg("AutoSuspend: Device is charging, skipping t1 timeout reset")
             return
         end
