@@ -57,6 +57,7 @@ function AutoSuspend:_schedule(shutdown_only)
     end
 
     local suspend_delay_seconds, shutdown_delay_seconds
+    local is_charging
     -- On devices with an auxiliary battery, we only care about the auxiliary battery being charged...
     if Device:hasAuxBattery() and PowerD:isAuxBatteryConnected() then
         is_charging = PowerD:isAuxCharging() and not PowerD:isAuxCharged()
