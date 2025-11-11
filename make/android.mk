@@ -28,7 +28,7 @@ endif
 	# install
 	adb install $(ADB_INSTALL_FLAGS) '$(ANDROID_APK)'
 	# speed up testing, auto-grant permission
-	adb shell appops set --uid $(ANDROID_APP_ID) MANAGE_EXTERNAL_STORAGE allow
+	-adb shell appops set --uid $(ANDROID_APP_ID) MANAGE_EXTERNAL_STORAGE allow
 	# there's no adb run so we do this…
 	adb shell monkey -p $(ANDROID_APP_ID) -c android.intent.category.LAUNCHER 1
 	# monitor logs
