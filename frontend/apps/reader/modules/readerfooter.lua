@@ -569,38 +569,7 @@ function ReaderFooter:init()
     -- self.mode_index will be an array of MODE names, with an additional element
     -- with key 0 for "off", which feels a bit strange but seems to work...
     -- (The same is true for self.settings.order which is saved in settings.)
-    self.mode_index = {}
-    self.mode_nb = 0
-
-    local handled_modes = {}
-    if self.settings.order then
-        -- Start filling self.mode_index from what's been ordered by the user and saved
-        for i=0, #self.settings.order do
-            local name = self.settings.order[i]
-            -- (if name has been removed from our supported MODEs: ignore it)
-            if MODE[name] then -- this mode still exists
-                self.mode_index[self.mode_nb] = name
-                self.mode_nb = self.mode_nb + 1
-                handled_modes[name] = true
-            end
-        end
-        -- go on completing it with remaining new modes in MODE
-    end
-    -- If no previous self.settings.order, fill mode_index with what's in MODE
-    -- in the original indices order
-    local orig_indexes = {}
-    local orig_indexes_to_name = {}
-    for name, orig_index in pairs(MODE) do
-        if not handled_modes[name] then
-            table.insert(orig_indexes, orig_index)
-            orig_indexes_to_name[orig_index] = name
-        end
-    end
-    table.sort(orig_indexes)
-    for i = 1, #orig_indexes do
-        self.mode_index[self.mode_nb] = orig_indexes_to_name[orig_indexes[i]]
-        self.mode_nb = self.mode_nb + 1
-    end
+    self:set_mode_index()
     -- require("logger").dbg(self.mode_nb, self.mode_index)
 
     -- Container settings
@@ -676,6 +645,41 @@ function ReaderFooter:init()
         buildPreset = function() return self:buildPreset() end,
         loadPreset = function(preset) self:loadPreset(preset) end,
     }
+end
+
+function ReaderFooter:set_mode_index()
+    self.mode_index = {}
+    self.mode_nb = 0
+
+    local handled_modes = {}
+    if self.settings.order then
+        -- Start filling self.mode_index from what's been ordered by the user and saved
+        for i=0, #self.settings.order do
+            local name = self.settings.order[i]
+            -- (if name has been removed from our supported MODEs: ignore it)
+            if MODE[name] then -- this mode still exists
+                self.mode_index[self.mode_nb] = name
+                self.mode_nb = self.mode_nb + 1
+                handled_modes[name] = true
+            end
+        end
+        -- go on completing it with remaining new modes in MODE
+    end
+    -- If no previous self.settings.order, fill mode_index with what's in MODE
+    -- in the original indices order
+    local orig_indexes = {}
+    local orig_indexes_to_name = {}
+    for name, orig_index in pairs(MODE) do
+        if not handled_modes[name] then
+            table.insert(orig_indexes, orig_index)
+            orig_indexes_to_name[orig_index] = name
+        end
+    end
+    table.sort(orig_indexes)
+    for i = 1, #orig_indexes do
+        self.mode_index[self.mode_nb] = orig_indexes_to_name[orig_indexes[i]]
+        self.mode_nb = self.mode_nb + 1
+    end
 end
 
 function ReaderFooter:set_has_no_mode()
@@ -1978,7 +1982,7 @@ function ReaderFooter:loadPreset(preset)
     G_reader_settings:saveSetting("reader_footer_custom_text", preset.reader_footer_custom_text)
     G_reader_settings:saveSetting("reader_footer_custom_text_repetitions", preset.reader_footer_custom_text_repetitions)
     self.settings = G_reader_settings:readSetting("footer")
-    self.mode_index = self.settings.order or self.mode_index
+    self:set_mode_index()
     self:set_has_no_mode()
     self.custom_text = preset.reader_footer_custom_text
     self.custom_text_repetitions = tonumber(preset.reader_footer_custom_text_repetitions)
