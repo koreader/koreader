@@ -65,7 +65,7 @@ function AutoSuspend:_schedule(shutdown_only)
         self.is_charging = PowerD:isCharging() and not PowerD:isCharged()
     end
     -- We *do* want to make sure we attempt to go into suspend/shutdown again while *fully* charged, though.
-    if PluginShare.pause_auto_suspend or is_charging then
+    if PluginShare.pause_auto_suspend or self.is_charging then
         suspend_delay_seconds = self.auto_suspend_timeout_seconds
         shutdown_delay_seconds = self.autoshutdown_timeout_seconds
     else
