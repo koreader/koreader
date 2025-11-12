@@ -1549,7 +1549,6 @@ function OPDSBrowser:fillPendingSyncs(server)
         for i, entry in ipairs(sync_list) do
             -- for project gutenberg
             local sub_table = {}
-            local item
             if entry.url then
                 sub_table = self:getSyncDownloadList(entry.url)
             end
