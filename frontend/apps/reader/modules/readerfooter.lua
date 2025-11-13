@@ -645,6 +645,10 @@ function ReaderFooter:init()
         buildPreset = function() return self:buildPreset() end,
         loadPreset = function(preset) self:loadPreset(preset) end,
     }
+
+    if self.ui.document.info.has_pages then -- self.ui.paging is not inited yet
+        self.pages = self.ui.document:getPageCount()
+    end
 end
 
 function ReaderFooter:set_mode_index()
@@ -2325,7 +2329,9 @@ function ReaderFooter:onReaderReady()
         self:updateFooterContainer()
     end
     self:resetLayout(self.settings.progress_margin) -- set widget dimen
-    self.pages = self.ui.document:getPageCount()
+    if self.ui.rolling then
+        self.pages = self.ui.document:getPageCount()
+    end
     if not self.ui.document:hasHiddenFlows() then -- otherwise will be done in the first onPageUpdate()
         self:setTocMarkers()
     end
