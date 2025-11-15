@@ -645,6 +645,10 @@ function ReaderFooter:init()
         buildPreset = function() return self:buildPreset() end,
         loadPreset = function(preset) self:loadPreset(preset) end,
     }
+
+    if self.ui.document.info.has_pages then -- self.ui.paging is not inited yet
+        self.pages = self.ui.document:getPageCount()
+    end
 end
 
 function ReaderFooter:set_mode_index()
@@ -2102,7 +2106,6 @@ function ReaderFooter:setTocMarkers(reset)
     if self.settings.disable_progress_bar or self.settings.progress_style_thin then return end
     if reset then
         self.progress_bar.ticks = nil
-        self.pages = self.ui.document:getPageCount()
     end
     if self.settings.toc_markers and not self.settings.chapter_progress_bar then
         self.progress_bar.tick_width = Screen:scaleBySize(self.settings.toc_markers_width)
@@ -2126,7 +2129,7 @@ function ReaderFooter:setTocMarkers(reset)
                 self.progress_bar.ticks = self.ui.toc:getTocTicksFlattened()
             end
             if self.view.view_mode == "page" then
-                self.progress_bar.last = self.pages or self.ui.document:getPageCount()
+                self.progress_bar.last = self.pages
             else
                 -- in scroll mode, convert pages to positions
                 if self.ui.toc then
@@ -2284,6 +2287,7 @@ end
 -- Note: no need for :onDocumentRerendered(), ReaderToc will catch "DocumentRerendered"
 -- and will then emit a "TocReset" after the new ToC is made.
 function ReaderFooter:onTocReset()
+    self.pages = self.ui.document:getPageCount()
     self:setTocMarkers(true)
     self:onUpdateFooter()
 end
@@ -2292,8 +2296,6 @@ function ReaderFooter:onPageUpdate(pageno)
     local old_pageno = self.pageno
     self.pageno = pageno
     self.initial_pageno = self.initial_pageno or pageno
-    self.pages = self.ui.document:getPageCount()
-    self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
     if self.ui.document:hasHiddenFlows() then
         if old_pageno == nil then
             self:setTocMarkers(true)
@@ -2311,8 +2313,6 @@ end
 function ReaderFooter:onPosUpdate(pos, pageno)
     self.pageno = pageno
     self.initial_pageno = self.initial_pageno or pageno
-    self.pages = self.ui.document:getPageCount()
-    self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
     self:onUpdateFooter()
 end
 
@@ -2329,6 +2329,9 @@ function ReaderFooter:onReaderReady()
         self:updateFooterContainer()
     end
     self:resetLayout(self.settings.progress_margin) -- set widget dimen
+    if self.ui.rolling then
+        self.pages = self.ui.document:getPageCount()
+    end
     if not self.ui.document:hasHiddenFlows() then -- otherwise will be done in the first onPageUpdate()
         self:setTocMarkers()
     end

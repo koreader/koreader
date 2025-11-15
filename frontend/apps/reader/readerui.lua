@@ -490,6 +490,7 @@ function ReaderUI:init()
     -- CREngine only reports correct page count after rendering is done
     -- Need the same event for PDF document
     self:handleEvent(Event:new("ReaderReady", self.doc_settings))
+    self.doc_settings:saveSetting("doc_pages", self.document:getPageCount())
 
     for _,v in ipairs(self.postReaderReadyCallback) do
         v()
@@ -933,8 +934,10 @@ function ReaderUI:onAnnotationsModified()
 end
 
 function ReaderUI:onDocumentRerendered()
+    local pages = self.document:getPageCount()
+    self.doc_settings:saveSetting("doc_pages", pages)
     if self.doc_settings:nilOrFalse("pagemap_use_page_labels") then
-        BookList.setBookInfoCacheProperty(self.document.file, "pages", self.document:getPageCount())
+        BookList.setBookInfoCacheProperty(self.document.file, "pages", pages)
     end
 end
 
