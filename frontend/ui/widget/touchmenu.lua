@@ -637,6 +637,7 @@ function TouchMenu:init()
         },
         HorizontalSpan:new{width = Size.span.horizontal_default},
     }
+    self.split_span = VerticalSpan:new{ width = Size.line.medium }
     self.footer_top_margin = VerticalSpan:new{width = Size.span.vertical_default}
 
     local menu_height = self.height and math.min(self.height, self.screen_size.h) or self.screen_size.h
@@ -647,9 +648,10 @@ function TouchMenu:init()
 end
 
 function TouchMenu:updateItems(target_page, target_item_id)
-    if #self.item_table == 0 then return end
+    local item_table_nb = #self.item_table
+    if item_table_nb == 0 then return end
     self.perpage = math.min(self.max_per_page, self.item_table.max_per_page or self.max_per_page_default)
-    self.page_num = math.ceil(#self.item_table / self.perpage)
+    self.page_num = math.ceil(item_table_nb / self.perpage)
     if target_item_id ~= nil then -- show menu page with target item
         for i, v in ipairs(self.item_table) do
             if v.menu_item_id == target_item_id then
@@ -672,7 +674,7 @@ function TouchMenu:updateItems(target_page, target_item_id)
     for c = 1, self.perpage do
         -- calculate index in item_table
         local i = idx_offset + c
-        if i <= #self.item_table then
+        if i <= item_table_nb then
             local item = self.item_table[i]
             item.idx = i
             local item_tmp = TouchMenuItem:new{
@@ -688,8 +690,8 @@ function TouchMenu:updateItems(target_page, target_item_id)
             if item_tmp:isEnabled() then
                 table.insert(self.layout, {[self.cur_tab] = item_tmp}) -- for the focusmanager
             end
-            if item.separator and c ~= self.perpage and i ~= #self.item_table then
-                table.insert(self.item_group, self.split_line)
+            if c ~= self.perpage and i ~= item_table_nb then
+                table.insert(self.item_group, item.separator and self.split_line or self.split_span)
             end
         else
             -- item not enough to fill the whole page, break out of loop
