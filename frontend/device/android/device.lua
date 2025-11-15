@@ -80,7 +80,6 @@ local Device = Generic:extend{
     hasSeamlessWifiToggle = no, -- Requires losing focus to the sytem's network settings and user interaction
     hasExitOptions = no,
     hasEinkScreen = function() return android.isEink() end,
-    hasColorScreen = android.isColorScreen,
     hasFrontlight = android.hasLights,
     hasNaturalLight = android.isWarmthDevice,
     canRestart = no,
@@ -256,6 +255,8 @@ function Device:init()
     if models[android.prop.model] then
         self.input:disableRotationMap()
     end
+
+    self.hasColorScreen = android.isColorScreen() and yes or no
 
     -- check if we have a keyboard
     if android.lib.AConfiguration_getKeyboard(android.app.config)
