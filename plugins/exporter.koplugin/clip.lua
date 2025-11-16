@@ -200,23 +200,31 @@ function MyClipping:getTime(line)
 end
 
 function MyClipping:getInfo(line)
-    local info = {}
     line = line or ""
-    local _, _, part1, part2 = line:find("(.+)%s*|%s*(.+)")
 
-    -- find entry type and location
+    local parts = {}
+    for part in line:gmatch("[^|]+") do
+        table.insert(parts, part:match("^%s*(.-)%s*$"))
+    end
+
+    if #parts < 2 then
+        return {}
+    end
+
+    local info = {}
+
     for sort, words in pairs(keywords) do
         for _, word in ipairs(words) do
-            if part1 and part1:find(word) then
+            if parts[1] and parts[1]:find(word) then
                 info.sort = sort
-                info.location = part1:match("(%d+-?%d+)")
+                info.page = tonumber(parts[1]:match("page%s*(%d+)"))
+                info.location = parts[#parts-1]:match("(%d+-?%d+)")
                 break
             end
         end
     end
 
-    -- find entry created time
-    info.time = self:getTime(part2 or "")
+    info.time = self:getTime(parts[#parts])
 
     return info
 end
