@@ -246,7 +246,7 @@ function SSH:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return T(_("SSH port (%1)"), self.SSH_port)
+                    return T(_("SSH port: %1"), self.SSH_port)
                 end,
                 keep_menu_open = true,
                 enabled_func = function() return not self:isRunning() end,
