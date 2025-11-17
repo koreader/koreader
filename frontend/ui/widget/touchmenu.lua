@@ -464,6 +464,8 @@ local TouchMenu = FocusManager:extend{
     bordersize = Size.border.window,
     padding = Size.padding.default, -- (not used at top)
     fface = Font:getFace("ffont"),
+    split_height = Size.line.medium, -- line/span between items
+    split_color = Blitbuffer.COLOR_GRAY,
     width = nil,
     height = nil,
     max_per_page_default = 10,
@@ -629,20 +631,20 @@ function TouchMenu:init()
         -- pad with 10 pixel to align with the up arrow in footer
         HorizontalSpan:new{width = Size.span.horizontal_default},
         LineWidget:new{
-            background = Blitbuffer.COLOR_GRAY,
+            background = self.split_color,
             dimen = Geom:new{
                 w = self.item_width - 2*Size.span.horizontal_default,
-                h = Size.line.medium,
-            }
+                h = self.split_height,
+            },
         },
         HorizontalSpan:new{width = Size.span.horizontal_default},
     }
-    self.split_span = VerticalSpan:new{ width = Size.line.medium }
+    self.split_span = VerticalSpan:new{ width = self.split_height }
     self.footer_top_margin = VerticalSpan:new{width = Size.span.vertical_default}
 
     local menu_height = self.height and math.min(self.height, self.screen_size.h) or self.screen_size.h
     local items_height = menu_height - self.bar:getSize().h - self.footer_top_margin:getSize().h - self.footer:getSize().h
-    self.max_per_page = math.floor(items_height / (self.item_height + self.split_line:getSize().h))
+    self.max_per_page = math.floor(items_height / (self.item_height + self.split_height))
 
     self.bar:switchToTab(self.last_index or 1)
 end
@@ -731,7 +733,6 @@ function TouchMenu:updateItems(target_page, target_item_id)
     self.dimen.w = self.width
     self.dimen.h = self.item_group:getSize().h + self.bordersize*2 + self.padding -- (no padding at top)
     self:moveFocusTo(self.cur_tab, 1, FocusManager.NOT_FOCUS) -- reset the position of the focusmanager
-
     -- NOTE: We use a slightly ugly hack to detect a brand new menu vs. a tab switch,
     --       in order to optionally flash on initial menu popup...
     -- NOTE: Also avoid repainting what's underneath us on initial popup.
