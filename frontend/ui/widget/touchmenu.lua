@@ -733,6 +733,7 @@ function TouchMenu:updateItems(target_page, target_item_id)
     self.dimen.w = self.width
     self.dimen.h = self.item_group:getSize().h + self.bordersize*2 + self.padding -- (no padding at top)
     self:moveFocusTo(self.cur_tab, 1, FocusManager.NOT_FOCUS) -- reset the position of the focusmanager
+
     -- NOTE: We use a slightly ugly hack to detect a brand new menu vs. a tab switch,
     --       in order to optionally flash on initial menu popup...
     -- NOTE: Also avoid repainting what's underneath us on initial popup.
