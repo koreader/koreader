@@ -192,8 +192,10 @@ function XMNoteExporter:export(t)
     if not self:isReadyToExport() then return false end
 
     for _, booknotes in ipairs(t) do
-        local ok = self:createHighlights(booknotes)
-        if not ok then return false end
+        if booknotes.file then
+            local ok = self:createHighlights(booknotes)
+            if not ok then return false end
+        end
     end
     return true
 end
