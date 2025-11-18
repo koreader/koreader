@@ -171,7 +171,7 @@ function Profiles:getSubMenuItems()
                                 else
                                     txt = _("default")
                                 end
-                                return T(_("Excecuting delay: %1"), txt)
+                                return T(_("Executing delay: %1"), txt)
                             end,
                             checked_func = function()
                                 return v.settings.auto_exec_promptly or v.settings.auto_exec_delay ~= nil
@@ -251,7 +251,7 @@ For example, with a trigger "on document closing" the profile will be executed b
                         {
                             text_func = function()
                                 local interval = v.settings.auto_exec_time_interval
-                                return _("Execute within time interval") ..
+                                return _("Only within time interval") ..
                                     (interval and ": " .. interval[1] .. " - " .. interval[2] or "")
                             end,
                             checked_func = function()
@@ -306,8 +306,7 @@ For example, with a trigger "on document closing" the profile will be executed b
                         self:genAutoExecMenuItem(_("on exiting sleep screen"), "OutOfScreenSaver", k),
                         self:genAutoExecMenuItem(_("on read timer expiry"), "ReadTimerExpired", k),
                         self:genAutoExecMenuItem(_("on rotation"), "SetRotationMode", k),
-                        self:genAutoExecMenuItem(_("on showing folder"), "PathChanged", k, true),
-                        -- separator
+                        self:genAutoExecMenuItem(_("on showing folder"), "PathChanged", k),
                         self:genAutoExecMenuItem(_("on book opening"), "ReaderReadyAll", k),
                         self:genAutoExecMenuItem(_("on book closing"), "CloseDocumentAll", k),
                         max_per_page = 11,
