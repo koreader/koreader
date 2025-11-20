@@ -17,8 +17,9 @@ PROC_FIVEWAY="/proc/fiveway"
 [ -e "${PROC_KEYPAD}" ] && echo unlock >"${PROC_KEYPAD}"
 [ -e "${PROC_FIVEWAY}" ] && echo unlock >"${PROC_FIVEWAY}"
 
+UNPACK_DIR='/mnt/us'
 # KOReader's working directory
-export KOREADER_DIR="/mnt/us/koreader"
+export KOREADER_DIR="${UNPACK_DIR}/koreader"
 
 # NOTE: Same vfat+fuse shenanigans needed for FBInk, before we source libko...
 cp -pf "${KOREADER_DIR}/fbink" /var/tmp/fbink
@@ -123,6 +124,8 @@ ko_update_check() {
         logmsg "Updating KOReader . . ."
         # Let our checkpoint script handle the detailed visual feedback...
         eips_print_bottom_centered "Updating KOReader" 3
+        # Keep a copy of the old manifest for cleaning leftovers later.
+        cp "${KOREADER_DIR}/ota/package.index" /tmp/
         # Setup the FBInk daemon
         export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
         rm -f "${FBINK_NAMED_PIPE}"
@@ -146,6 +149,8 @@ ko_update_check() {
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
             mv "${NEWUPDATE}" "${INSTALLED}"
+            # Cleanup leftovers from previous install.
+            (cd "${UNPACK_DIR}" && comm -23 /tmp/package.index "${KOREADER_DIR}/ota/package.index" | xargs -r rm -vf)
             logmsg "Update successful :)"
             eips_print_bottom_centered "Update successful :)" 2
             eips_print_bottom_centered "KOReader will start momentarily . . ." 1
@@ -160,7 +165,7 @@ ko_update_check() {
             eips_print_bottom_centered "Update failed :(" 2
             eips_print_bottom_centered "KOReader may fail to function properly" 1
         fi
-        rm -f "${NEWUPDATE}" # always purge newupdate to prevent update loops
+        rm -f /tmp/package.index "${NEWUPDATE}" # always purge newupdate to prevent update loops
         unset CPOINTS FBINK_NAMED_PIPE
         unset BLOCKS FILESIZE FBINK_PID
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
