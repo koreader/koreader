@@ -553,7 +553,7 @@ function BookMapRow:init()
         -- Indicator for previous locations
         if self.previous_locations[page] and page ~= self.cur_page then
             local x, y = self:getIndicatorXY(page, self.bookmarked_pages[page] or page == self.pinned_page)
-            local num = self.previous_locations[page]
+            local num = math.min(self.previous_locations[page], 20)
             table.insert(self.indicators, {
                 c = (num <= 10 and 0x2775 or 0x24E0) + num, -- number in solid black circle, 1 to 20
                 x = x, y = y,
@@ -562,7 +562,7 @@ function BookMapRow:init()
         -- Indicator for next locations
         if self.next_locations[page] and page ~= self.cur_page then
             local x, y = self:getIndicatorXY(page, self.bookmarked_pages[page] or page == self.pinned_page)
-            local num = self.next_locations[page]
+            local num = math.min(self.next_locations[page], 20)
             table.insert(self.indicators, {
                 c = 0x245F + num, -- number in white circle, 1 to 20
                 x = x, y = y,
