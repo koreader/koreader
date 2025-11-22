@@ -553,10 +553,18 @@ function BookMapRow:init()
         -- Indicator for previous locations
         if self.previous_locations[page] and page ~= self.cur_page then
             local x, y = self:getIndicatorXY(page, self.bookmarked_pages[page] or page == self.pinned_page)
-            local num = self.previous_locations[page]
+            local num = math.min(self.previous_locations[page], 20)
             table.insert(self.indicators, {
-                c = 0x2775 + (num < 10 and num or 10), -- number in solid black circle
-                -- c = 0x245F + (num < 20 and num or 20), -- number in white circle
+                c = (num <= 10 and 0x2775 or 0x24E0) + num, -- number in solid black circle, 1 to 20
+                x = x, y = y,
+            })
+        end
+        -- Indicator for next locations
+        if self.next_locations[page] and page ~= self.cur_page then
+            local x, y = self:getIndicatorXY(page, self.bookmarked_pages[page] or page == self.pinned_page)
+            local num = math.min(self.next_locations[page], 20)
+            table.insert(self.indicators, {
+                c = 0x245F + num, -- number in white circle, 1 to 20
                 x = x, y = y,
             })
         end
@@ -862,7 +870,8 @@ function BookMapWidget:init()
         self.page_labels = self.ui.document:getPageMap()
     end
     -- Location stack
-    self.previous_locations = self.ui.link:getPreviousLocationPages()
+    self.previous_locations = self.ui.link:getLocationPages()
+    self.next_locations = self.ui.link:getLocationPages(true)
     self.pinned_page = self.ui.gotopage:getPinnedPageNumber()
 
     -- Update stuff that may be updated by the user while in PageBrowser
@@ -1251,6 +1260,7 @@ function BookMapWidget:update()
             bookmarked_pages = self.bookmarked_pages,
             pinned_page = self.pinned_page,
             previous_locations = self.previous_locations,
+            next_locations = self.next_locations,
             extra_symbols_pages = self.extra_symbols_pages,
             hidden_flows = self.hidden_flows,
             read_pages = self.read_pages,
@@ -1497,6 +1507,7 @@ Book map provides a summary of a book's content, showing chapters and pages visu
 Map legend:
 ▲ current page
 ❶ ❷ … previous locations
+① ② … next locations
 ▒ highlighted text
  highlighted text with notes
  bookmarked page

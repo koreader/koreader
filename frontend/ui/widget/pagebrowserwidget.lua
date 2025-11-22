@@ -180,7 +180,8 @@ function PageBrowserWidget:init()
         self.page_labels = self.ui.document:getPageMap()
     end
     -- Location stack
-    self.previous_locations = self.ui.link:getPreviousLocationPages()
+    self.previous_locations = self.ui.link:getLocationPages()
+    self.next_locations = self.ui.link:getLocationPages(true)
     self.pinned_page = self.ui.gotopage:getPinnedPageNumber()
 
     -- Update stuff that may be updated by the user while in PageBrowser
@@ -502,7 +503,8 @@ function PageBrowserWidget:update()
         local show_at_bottom
         if p >= next_p then
             -- Only show a page text if there is no indicator on that slot
-            if p ~= self.cur_page and not self.bookmarked_pages[p] and not self.previous_locations[p] then
+            if p ~= self.cur_page and not self.bookmarked_pages[p]
+                    and not self.previous_locations[p] and not self.next_locations[p] then
                 show_at_bottom = true
             end
         end
@@ -666,6 +668,7 @@ function PageBrowserWidget:update()
         bookmarked_pages = self.bookmarked_pages,
         pinned_page = self.pinned_page,
         previous_locations = self.previous_locations,
+        next_locations = self.next_locations,
         hidden_flows = self.hidden_flows,
         read_pages = self.read_pages,
         current_session_duration = self.current_session_duration,
@@ -1151,6 +1154,7 @@ Chapters are indicated above the pages they cover.
 Below the pages, the following indicators may appear:
 ▲ current page
 ❶ ❷ … previous locations
+① ② … next locations
 ▒ highlighted text
  highlighted text with notes
  bookmarked page
