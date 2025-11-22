@@ -26,6 +26,7 @@ To get and compile the source you must have:
 - `pkg-config` or `pkgconf`
 - `unzip`
 - `wget`
+- `python`
 
 For running the emulator / tests:
 - `SDL2`
