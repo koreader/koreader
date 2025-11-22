@@ -28,6 +28,13 @@ local ReaderFont = InputContainer:extend{
 
 -- Keep a list of the new fonts seen at launch
 local newly_added_fonts = nil -- not yet filled
+local system_and_UI_fonts = { -- const
+        ["Noto Naskh Arabic"] = true,
+        ["Noto Sans Arabic UI"] = true,
+        ["Noto Sans Bengali UI"] = true,
+        ["Noto Sans Devanagari UI"] = true,
+        ["Noto Sans CJK SC"] = true,
+}
 
 function ReaderFont:init()
     self:registerKeyEvents()
@@ -816,6 +823,10 @@ function ReaderFont:addToRecentlySelectedList(face)
 end
 
 function ReaderFont:sortFaceList(face_list)
+    -- Remove UI fonts fonts from our list unless showing all system fonts
+    util.arrayRemove(face_list, function(t, i, j)
+        return not system_and_UI_fonts[face_list[i]] or G_reader_settings:isTrue("system_fonts")
+    end)
     self.fonts_recently_selected = G_reader_settings:readSetting("cre_fonts_recently_selected")
     if not self.fonts_recently_selected then
         -- Init this list with the alphabetical list we got
