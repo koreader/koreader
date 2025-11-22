@@ -809,8 +809,8 @@ function ReaderLink:onClearForwardLocationStack()
     return true
 end
 
-function ReaderLink:getLocationPages(is_forward)
-    local location_stack = is_forward and self.forward_location_stack or self.location_stack
+function ReaderLink:getLocationPages(forward_location)
+    local location_stack = forward_location and self.forward_location_stack or self.location_stack
     local location_pages = {}
     if #location_stack > 0 then
         if self.ui.rolling then
