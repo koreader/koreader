@@ -327,7 +327,7 @@ footerTextGeneratorMap = {
     chapter_time_to_read = function(footer)
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].chapter_time_to_read
-        local left = footer.ui.toc:getChapterPagesLeft(footer.pageno) or footer.ui.document:getTotalPagesLeft(footer.pageno)
+        local left = footer.ui.toc:getChapterPagesLeft(footer.pageno, true) or footer.ui.document:getTotalPagesLeft(footer.pageno)
         return prefix .. " " ..
             (footer.ui.statistics and footer.ui.statistics:getTimeForPages(left) or _("N/A"))
     end,
