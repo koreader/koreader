@@ -809,19 +809,25 @@ function ReaderLink:onClearForwardLocationStack()
     return true
 end
 
-function ReaderLink:getPreviousLocationPages()
-    local previous_locations = {}
-    if #self.location_stack > 0 then
-        for num, location in ipairs(self.location_stack) do
-            if self.ui.rolling and location.xpointer then
-                previous_locations[self.document:getPageFromXPointer(location.xpointer)] = num
+function ReaderLink:getLocationPages(forward_location)
+    local location_stack = forward_location and self.forward_location_stack or self.location_stack
+    local location_pages = {}
+    if #location_stack > 0 then
+        if self.ui.rolling then
+            for i, location in ipairs(location_stack) do
+                if location.xpointer then
+                    location_pages[self.document:getPageFromXPointer(location.xpointer)] = i
+                end
             end
-            if self.ui.paging and location[1] and location[1].page then
-                previous_locations[location[1].page] = num
+        else
+            for i, location in ipairs(location_stack) do
+                if location[1] and location[1].page then
+                    location_pages[location[1].page] = i
+                end
             end
         end
     end
-    return previous_locations
+    return location_pages
 end
 
 --- Goes to link.
