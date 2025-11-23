@@ -718,8 +718,8 @@ function ReaderToc:getChapterPageCount(pageno)
     return page_count
 end
 
-function ReaderToc:getChapterPagesLeft(pageno)
-    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+function ReaderToc:getChapterPagesLeft(pageno, screen_pages)
+    if not screen_pages and self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
         local page_idx = self:getPagePagemapIndex(pageno)
         if page_idx then
             local next_chapter_idx, chapter_starts_new_ref_page = self:getNextChapterPagemapIndex(pageno)
