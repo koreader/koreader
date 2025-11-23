@@ -11,11 +11,13 @@ Plugins are controlled by the following settings.
 - plugins_disabled
 - extra_plugin_paths
 ]]
+local PluginCompatibility = require("plugincompatibility")
+local UIManager = require("ui/uimanager")
+local _ = require("gettext")
 local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
-local _ = require("gettext")
 
 local DEFAULT_PLUGIN_PATH = "plugins"
 
@@ -90,9 +92,14 @@ function HandlerSandbox:call(module, ...)
     local ok, re
     if self.log_stacktrace then
         local traceback = function(err)
-             -- do not print 2 topmost entries in traceback. The first is this local function
-             -- and the second is the `call` method of HandlerSandbox.
-             logger.err("An error occurred while executing a handler:\n"..err.."\n"..debug.traceback(self.context.name..":"..self.fname, 2))
+            -- do not print 2 topmost entries in traceback. The first is this local function
+            -- and the second is the `call` method of HandlerSandbox.
+            logger.err(
+                "An error occurred while executing a handler:\n"
+                    .. err
+                    .. "\n"
+                    .. debug.traceback(self.context.name .. ":" .. self.fname, 2)
+            )
         end
         ok, re = xpcall(self.f, traceback, module, ...)
     else
@@ -192,39 +199,98 @@ function PluginLoader:_load(t)
     local package_cpath = package.cpath
 
     local mainfile, metafile, plugin_root, disabled
-    for _, v in ipairs(t) do
+    local incompatible_plugins_with_prompt = {}
+
+    for id, v in ipairs(t) do
         mainfile = v.main
         metafile = v.meta
         plugin_root = v.path
         disabled = v.disabled
         package.path = string.format("%s/?.lua;%s", plugin_root, package_path)
         package.cpath = string.format("%s/lib/?.so;%s", plugin_root, package_cpath)
-        local ok, plugin_module = pcall(dofile, mainfile)
-        if not ok or not plugin_module then
-            logger.warn("Error when loading", mainfile, plugin_module)
-        elseif type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
-            plugin_module.path = plugin_root
-            plugin_module.name = plugin_module.name or plugin_root:match("/(.-)%.koplugin")
-            if disabled then
-                table.insert(self.disabled_plugins, plugin_module)
-            else
-                local ok_meta, plugin_metamodule = pcall(dofile, metafile)
-                if ok_meta and plugin_metamodule then
-                    for k, module in pairs(plugin_metamodule) do
-                        plugin_module[k] = module
+        -- First load the metadata to check compatibility
+        local ok_meta, plugin_metamodule = pcall(dofile, metafile)
+        local plugin_meta = ok_meta and plugin_metamodule or nil
+
+        -- Extract plugin name early for compatibility checks
+        local plugin_name = plugin_root:match("/(.-)%.koplugin")
+
+        -- Check compatibility before loading the main plugin file
+        local should_load, incompat_reason, incompat_message, should_prompt =
+            PluginCompatibility.shouldLoadPlugin(G_reader_settings, plugin_meta, plugin_name)
+
+        if not should_load and not disabled then
+            -- Plugin is incompatible and should not be loaded
+            logger.dbg("Plugin", plugin_name, "is incompatible:", incompat_reason)
+
+            -- Create a minimal plugin entry for the disabled list
+            local plugin_stub = {
+                name = plugin_name,
+                path = plugin_root,
+                incompatible = true,
+                incompatibility_reason = incompat_reason,
+                incompatibility_message = incompat_message,
+                should_prompt_user = should_prompt,
+                version = plugin_meta and plugin_meta.version or "unknown",
+                fullname = plugin_meta and plugin_meta.fullname or plugin_name,
+            }
+
+            -- Copy metadata if available
+            if plugin_meta then
+                for k, meta_val in pairs(plugin_meta) do
+                    if not plugin_stub[k] then
+                        plugin_stub[k] = meta_val
                     end
                 end
-                sandboxPluginEventHandlers(plugin_module)
-                table.insert(self.enabled_plugins, plugin_module)
-                logger.dbg("Plugin loaded", plugin_module.name)
+            end
+
+            -- Track plugins that should prompt the user
+            if should_prompt then
+                logger.dbg("Plugin", plugin_name, "will prompt user about incompatibility.")
+                table.insert(incompatible_plugins_with_prompt, plugin_stub)
+            end
+
+            table.insert(self.disabled_plugins, plugin_stub)
+        else
+            -- Load the plugin normally
+            local ok, plugin_module = pcall(dofile, mainfile)
+            if not ok or not plugin_module then
+                logger.warn("Error when loading", mainfile, plugin_module)
+            elseif type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
+                plugin_module.path = plugin_root
+                plugin_module.name = plugin_module.name or plugin_name
+                if disabled then
+                    table.insert(self.disabled_plugins, plugin_module)
+                else
+                    -- Merge metadata into plugin module
+                    if plugin_meta then
+                        for k, module in pairs(plugin_meta) do
+                            plugin_module[k] = module
+                        end
+                    end
+                    sandboxPluginEventHandlers(plugin_module)
+                    table.insert(self.enabled_plugins, plugin_module)
+                    logger.dbg("Plugin loaded", plugin_module.name)
+                end
             end
         end
     end
     package.path = package_path
     package.cpath = package_cpath
 
+    -- If there are incompatible plugins that need prompting, show the menu
+    if #incompatible_plugins_with_prompt > 0 then
+        UIManager:nextTick(function()
+            self:_showIncompatiblePluginsMenu(incompatible_plugins_with_prompt)
+        end)
+    end
 end
 
+function PluginLoader:_showIncompatiblePluginsMenu(incompatible_plugins)
+    PluginCompatibility.showIncompatiblePluginsMenu(incompatible_plugins, G_reader_settings, function()
+        UIManager:askForRestart()
+    end)
+end
 
 function PluginLoader:loadPlugins()
     if self.enabled_plugins then return self.enabled_plugins, self.disabled_plugins end
@@ -255,12 +321,20 @@ function PluginLoader:genPluginManagerSubItem()
         for _, plugin in ipairs(enabled_plugins) do
             local element = getMenuTable(plugin)
             element.enable = true
+            element.plugin_ref = plugin
             table.insert(self.all_plugins, element)
         end
 
         for _, plugin in ipairs(disabled_plugins) do
             local element = getMenuTable(plugin)
             element.enable = false
+            element.plugin_ref = plugin
+
+            -- Add incompatibility information to the description
+            if plugin.incompatible and plugin.incompatibility_message then
+                element.fullname = element.fullname .. " ⚠"
+                element.description = element.description .. "\n\n" .. plugin.incompatibility_message
+            end
             table.insert(self.all_plugins, element)
         end
 
@@ -269,12 +343,23 @@ function PluginLoader:genPluginManagerSubItem()
 
     local plugin_table = {}
     for __, plugin in ipairs(self.all_plugins) do
-        table.insert(plugin_table, {
+        local menu_item = {
             text = plugin.fullname,
             checked_func = function()
                 return plugin.enable
             end,
-            callback = function()
+            help_text = plugin.description,
+        }
+
+        -- Check if this is an incompatible plugin
+        if plugin.plugin_ref and plugin.plugin_ref.incompatible then
+            -- Add sub-menu for load override options (generated by PluginCompatibility)
+            menu_item.sub_item_table =
+                PluginCompatibility.genPluginOverrideSubMenu(plugin.plugin_ref, G_reader_settings)
+            menu_item.callback = nil -- Remove the toggle callback
+        else
+            -- Standard plugin toggle callback
+            menu_item.callback = function()
                 local UIManager = require("ui/uimanager")
                 local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
                 plugin.enable = not plugin.enable
@@ -300,9 +385,9 @@ function PluginLoader:genPluginManagerSubItem()
                     self.show_info = false
                     UIManager:askForRestart()
                 end
-            end,
-            help_text = plugin.description,
-        })
+            end
+        end
+        table.insert(plugin_table, menu_item)
     end
     return plugin_table
 end
