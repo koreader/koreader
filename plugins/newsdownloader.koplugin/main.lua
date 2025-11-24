@@ -308,7 +308,6 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
     local unsupported_feeds_urls = {}
     local total_feed_entries = #feed_config
     local feed_message
-    local default_feed = getEmptyFeed()
 
     for idx, feed in ipairs(feed_config) do
         local url = feed[1]
@@ -1106,17 +1105,77 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                     )
                 end
             elseif key == FeedView.LIMIT then
-                feed.limit = value
+                if feed.limit then
+                    feed.limit = value
+                else
+                    table.insert(
+                        feed,
+                        {
+                            "limit",
+                            value
+                        }
+                    )
+                end
             elseif key == FeedView.DOWNLOAD_FULL_ARTICLE then
-                feed.download_full_article = value
+                if feed.download_full_article ~= nil then
+                    feed.download_full_article = value
+                else
+                    table.insert(
+                        feed,
+                        {
+                            "download_full_article",
+                            value
+                        }
+                    )
+                end
             elseif key == FeedView.INCLUDE_IMAGES then
-                feed.include_images = value
+                if feed.include_images ~= nil then
+                    feed.include_images = value
+                else
+                    table.insert(
+                        feed,
+                        {
+                            "include_images",
+                            value
+                        }
+                    )
+                end
             elseif key == FeedView.ENABLE_FILTER then
-                feed.enable_filter = value
+                if feed.enable_filter ~= nil then
+                    feed.enable_filter = value
+                else
+                    table.insert(
+                        feed,
+                        {
+                            "enable_filter",
+                            value
+                        }
+                    )
+                end
             elseif key == FeedView.FILTER_ELEMENT then
-                feed.filter_element = value
+                if feed.filter_element then
+                    feed.filter_element = value
+                else
+                    table.insert(
+                        feed,
+                        {
+                            "filter_element",
+                            value
+                        }
+                    )
+                end
             elseif key == FeedView.BLOCK_ELEMENT then
-                feed.block_element = value
+                if feed.block_element then
+                    feed.block_element = value
+                else
+                    table.insert(
+                        feed,
+                        {
+                            "block_element",
+                            value
+                        }
+                    )
+                end
             elseif key == FeedView.HTTP_AUTH_USERNAME then
                 feed.http_auth = feed.http_auth or { username = "", password = "" }
                 feed.http_auth.username = value or ""
