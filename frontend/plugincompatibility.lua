@@ -255,136 +255,171 @@ function PluginCompatibility.getOverrideDescription(action)
     end
 end
 
+--- Create menu item for a single override option.
+-- Returns a menu item that, when selected, applies the override action,
+-- marks the plugin as prompted, and pops back to the parent menu.
+-- @tparam table plugin Plugin reference table
+-- @tparam table option Override option with action and text
+-- @tparam table G_reader_settings Settings object
+-- @treturn table Menu item for this override option
+local function createOverrideOptionMenuItem(plugin, option, G_reader_settings)
+    return {
+        text = option.text,
+        callback = function(menu)
+            logger.dbg("PluginCompatibility: submenu action called", plugin.name, option.action)
+            PluginCompatibility.setLoadOverride(G_reader_settings, plugin.name, plugin.version, option.action)
+            if option.action then
+                PluginCompatibility.markAsPrompted(G_reader_settings, plugin.name, plugin.version)
+            end
+            if menu and menu.onClose then
+                menu:onClose()
+            end
+        end,
+    }
+end
+
+--- Generate menu items for plugin override options.
+-- Creates a submenu listing all available override actions for a plugin.
+-- @tparam table plugin Plugin table with name and version
+-- @tparam table G_reader_settings Settings object for storing overrides
+-- @treturn table Array of menu items for override options
+local function genOverrideMenuItems(plugin, G_reader_settings)
+    local override_options = {
+        { action = nil, text = _("Ask on incompatibility (default)") },
+        { action = "load-once", text = _("Load once (for testing)") },
+        { action = "always", text = _("Always load (ignore incompatibility)") },
+        { action = "never", text = _("Never load") },
+    }
+
+    local menu_items = {}
+    for _, option in ipairs(override_options) do
+        table.insert(menu_items, createOverrideOptionMenuItem(plugin, option, G_reader_settings))
+    end
+    return menu_items
+end
+
+--- Create menu item for a single incompatible plugin.
+-- Generates a menu item with the plugin name, current override status (mandatory),
+-- and a submenu of override options.
+-- @tparam table plugin Plugin table with name, version, and incompatibility_message
+-- @tparam table G_reader_settings Settings object for reading current overrides
+-- @treturn table Menu item for this incompatible plugin
+local function createPluginMenuItem(plugin, G_reader_settings)
+    local current_override = PluginCompatibility.getLoadOverride(G_reader_settings, plugin.name, plugin.version)
+    local status_text = PluginCompatibility.getOverrideDescription(current_override)
+
+    return {
+        text = plugin.fullname or plugin.name,
+        mandatory = status_text,
+        help_text = plugin.incompatibility_message,
+        sub_item_table = genOverrideMenuItems(plugin, G_reader_settings),
+    }
+end
+
+--- Generate all menu items for the main incompatible plugins menu.
+-- Creates a list of menu items, one per incompatible plugin, each with its
+-- current override status and submenu of options.
+-- @tparam table incompatible_plugins List of incompatible plugins
+-- @tparam table G_reader_settings Settings object for reading current overrides
+-- @treturn table Array of menu items for all incompatible plugins
+local function genMainMenuItems(incompatible_plugins, G_reader_settings)
+    local menu_items = {}
+    for _, plugin in ipairs(incompatible_plugins) do
+        table.insert(menu_items, createPluginMenuItem(plugin, G_reader_settings))
+    end
+    return menu_items
+end
+
+--- Handle leaf menu item selection (override option chosen).
+-- Executes the item callback, pops back to parent menu if in a submenu,
+-- and refreshes the main menu display if returning to root level.
+-- @tparam table menu Menu instance
+-- @tparam table item Selected menu item
+-- @treturn boolean True to indicate event was handled
+local function handleLeafMenuSelect(menu, item, genMainMenuItems_func)
+    if item.select_enabled == false then
+        return true
+    end
+    if item.select_enabled_func and not item.select_enabled_func() then
+        return true
+    end
+
+    if item.callback then
+        item.callback(menu)
+    end
+
+    if #menu.item_table_stack == 0 then
+        menu:switchItemTable(nil, genMainMenuItems_func())
+    end
+    return true
+end
+
+--- Handle stacked submenu navigation.
+-- Pushes current item table onto stack and displays the submenu.
+-- @tparam table menu Menu instance
+-- @tparam table item Selected menu item with sub_item_table
+local function handleSubmenuSelect(menu, item)
+    menu.item_table.title = menu.title
+    table.insert(menu.item_table_stack, menu.item_table)
+    menu:switchItemTable(item.text, item.sub_item_table)
+end
+
+--- Create custom onMenuSelect handler for incompatible plugins menu.
+-- Returns a function that handles both leaf selection (override choice)
+-- and submenu selection (plugin choice) with proper stacking behavior.
+-- @tparam function genMainMenuItems_func Function to regenerate main menu items
+-- @treturn function onMenuSelect handler
+local function createMenuSelectHandler(genMainMenuItems_func)
+    return function(self, item)
+        if item.sub_item_table == nil then
+            handleLeafMenuSelect(self, item, genMainMenuItems_func)
+        else
+            handleSubmenuSelect(self, item)
+        end
+        return true
+    end
+end
+
+--- Create callback for main menu close event.
+-- Handles cleanup when the main menu is fully closed (no stacked submenus).
+-- @tparam table main_menu Menu instance
+-- @tparam function on_close_callback User-provided callback (e.g., restart prompt)
+-- @treturn function close_callback handler
+local function createCloseCallback(main_menu, on_close_callback)
+    return function()
+        logger.dbg("PluginCompatibility: main menu close_callback called")
+        UIManager:close(main_menu)
+        if on_close_callback then
+            on_close_callback()
+        end
+    end
+end
+
 --- Show the main incompatible plugins menu.
--- This creates a full-screen menu listing all incompatible plugins.
--- When a plugin is selected, it opens a stacked submenu with override options.
+-- Creates a full-screen stacked menu listing all incompatible plugins.
+-- When a plugin is selected, a submenu with override options is displayed.
+-- When an override option is selected, it is applied and the menu returns to the plugin list.
+-- When the main menu is closed, the on_close_callback is invoked.
 -- @tparam table incompatible_plugins List of incompatible plugin tables with name, version, incompatibility_message
 -- @tparam table G_reader_settings Settings object for storing overrides
--- @tparam function on_close_callback Callback to execute when the main menu is closed (e.g., restart prompt)
+-- @tparam function on_close_callback Callback to execute when the main menu is fully closed (e.g., restart prompt)
 function PluginCompatibility.showIncompatiblePluginsMenu(incompatible_plugins, G_reader_settings, on_close_callback)
-    local function genMenuItems()
-        local menu_items = {}
-        for _, plugin in ipairs(incompatible_plugins) do
-            local plugin_name = plugin.name
-            local plugin_version = plugin.version or "unknown"
-            local current_override = PluginCompatibility.getLoadOverride(G_reader_settings, plugin_name, plugin_version)
-            local status_text = PluginCompatibility.getOverrideDescription(current_override)
-
-            table.insert(menu_items, {
-                text = plugin.fullname or plugin.name,
-                mandatory = status_text,
-                help_text = plugin.incompatibility_message,
-                plugin_ref = plugin,
-            })
-        end
-        return menu_items
+    local function genMainMenuItemsWrapper()
+        return genMainMenuItems(incompatible_plugins, G_reader_settings)
     end
 
     local main_menu
     main_menu = Menu:new({
         title = _("Incompatible Plugins"),
-        item_table = genMenuItems(),
+        item_table = genMainMenuItemsWrapper(),
         is_popout = false,
         is_borderless = true,
         covers_fullscreen = true,
-
-        onMenuChoice = function(menu_self, item)
-            if item.plugin_ref then
-                PluginCompatibility.showPluginOverrideMenu(item.plugin_ref, G_reader_settings, function()
-                    -- Refresh the main menu to show updated status
-                    menu_self:switchItemTable(nil, genMenuItems())
-                end)
-            end
-            return true
-        end,
-
-        onMenuHold = function(menu_self, item)
-            return true
-        end,
-
-        close_callback = function()
-            -- FIXME: this gets called when a new menu is stacked on top :(
-            -- need to figure out how to have submenus and navigate back and forth
-            -- only on closing of the main menu, should a restart be triggered
-
-            -- UIManager:close(main_menu)
-            -- if on_close_callback then
-            --     on_close_callback()
-            -- end
-        end,
+        onMenuSelect = createMenuSelectHandler(genMainMenuItemsWrapper),
+        close_callback = createCloseCallback(main_menu, on_close_callback),
     })
 
     UIManager:show(main_menu)
-end
-
---- Show the plugin override options menu (stacked on top of main menu).
--- This creates a new menu that stacks on top of the main menu.
--- When an option is selected, this menu closes and the main menu refreshes.
--- @tparam table plugin Plugin table with name, version, etc.
--- @tparam table G_reader_settings Settings object for storing overrides
--- @tparam function on_action_complete Callback to execute when an option is selected (to refresh main menu)
-function PluginCompatibility.showPluginOverrideMenu(plugin, G_reader_settings, on_action_complete)
-    local plugin_name = plugin.name
-    local plugin_version = plugin.version or "unknown"
-
-    local function genMenuItems()
-        local current_override = PluginCompatibility.getLoadOverride(G_reader_settings, plugin_name, plugin_version)
-
-        -- TODO: extract this so it can be reused
-        local override_options = {
-            { action = nil, text = _("Ask on incompatibility (default)") },
-            { action = "load-once", text = _("Load once (for testing)") },
-            { action = "always", text = _("Always load (ignore incompatibility)") },
-            { action = "never", text = _("Never load") },
-        }
-
-        local menu_items = {}
-        for _, option in ipairs(override_options) do
-            table.insert(menu_items, {
-                text = option.text,
-                checked_func = function()
-                    return current_override == option.action
-                end,
-                action = option.action,
-            })
-        end
-        return menu_items
-    end
-
-    local submenu
-    submenu = Menu:new({
-        title = plugin.fullname or plugin.name,
-        subtitle = _("Select load behavior"),
-        item_table = genMenuItems(),
-        is_popout = false,
-        is_borderless = true,
-        covers_fullscreen = true,
-
-        onMenuChoice = function(menu_self, item)
-            -- Set the override
-            PluginCompatibility.setLoadOverride(G_reader_settings, plugin_name, plugin_version, item.action)
-            PluginCompatibility.markAsPrompted(G_reader_settings, plugin_name, plugin_version)
-
-            -- Close this submenu
-            UIManager:close(submenu)
-
-            -- Refresh the main menu
-            if on_action_complete then
-                on_action_complete()
-            end
-            return true
-        end,
-
-        onMenuHold = function(menu_self, item)
-            return true
-        end,
-
-        close_callback = function()
-            UIManager:close(submenu)
-        end,
-    })
-
-    UIManager:show(submenu)
 end
 
 --- Generate a simple sub_menu table for a single plugin (for plugin manager use)
