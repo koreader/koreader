@@ -88,6 +88,7 @@ ReaderStatistics.default_settings = {
     calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
     calendar_show_histogram = true,
     calendar_browse_future_months = false,
+    color = false,
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
@@ -110,11 +111,17 @@ function ReaderStatistics:onDispatcherRegisterActions()
         {category="none", event="ShowBookStats", title=_("Reading statistics: current book"), reader=true})
 end
 
+function ReaderStatistics:useColorRendering()
+    return Device:hasColorScreen() and (not G_reader_settings:has("color_rendering") or G_reader_settings:isTrue("color_rendering"))
+end
+
 function ReaderStatistics:init()
     if self.document and self.document.is_pic then
+        self.settings = { is_enabled = false }
         return -- disable in PIC documents
     end
 
+    self.color = self:useColorRendering()
     self.is_doc = false
     self.is_doc_not_frozen = false -- freeze finished books statistics
 
@@ -145,11 +152,14 @@ function ReaderStatistics:init()
     self:checkInitDatabase()
 end
 
+function ReaderStatistics:onColorRenderingUpdate()
+    self.color = self:useColorRendering()
+end
+
 function ReaderStatistics:initData()
     self.is_doc = true
     self.is_doc_not_finished = self.ui.doc_settings:readSetting("summary").status ~= "complete"
     self.is_doc_not_frozen = self.is_doc_not_finished or not self.settings.freeze_finished_books
-    self.use_pagemap_for_stats = self.ui.pagemap and self.ui.pagemap:wantsPageLabels()
 
     -- first execution
     local book_properties = self.ui.doc_props
@@ -164,12 +174,7 @@ function ReaderStatistics:initData()
         end
     end
     self.data.series = series or "N/A"
-
-    if self.use_pagemap_for_stats then
-        self.data.pages = select(3, self.ui.pagemap:getCurrentPageLabel())
-    else
-        self.data.pages = self.document:getPageCount()
-    end
+    self.data.pages = self.document:getPageCount()
     -- Update these numbers to what's actually stored in the settings
     self.data.highlights, self.data.notes = self.ui.annotation:getNumberOfHighlightsAndNotes()
     self.id_curr_book = self:getIdBookDB()
@@ -219,13 +224,7 @@ function ReaderStatistics:onDocumentRerendered()
     --   - we only then update self.data.pages=254 as the new page count
     -- - 5 minutes later, on the next insertDB(), (153, now-5mn, 42, 254) will be inserted in DB
 
-    local new_pagecount
-    if self.use_pagemap_for_stats then
-        new_pagecount = select(3, self.ui.pagemap:getCurrentPageLabel())
-    else
-        new_pagecount = self.document:getPageCount()
-    end
-
+    local new_pagecount = self.document:getPageCount()
     if new_pagecount ~= self.data.pages then
         logger.dbg("ReaderStatistics: Pagecount change, flushing volatile book statistics")
         -- Flush volatile stats to DB for current book, and update pagecount and average time per page stats
@@ -246,18 +245,6 @@ function ReaderStatistics:onDocumentPartiallyRerendered(first_partial_rerender)
         end
         return
     end
-end
-
-function ReaderStatistics:onUsePageLabelsUpdated()
-    self.use_pagemap_for_stats = not self.use_pagemap_for_stats
-    local new_current_page
-    if self.use_pagemap_for_stats then
-        new_current_page = select(2, self.ui.pagemap.getCurrentPageLabel())
-    else
-        new_current_page = self.ui:getCurrentPage()
-    end
-    self:onPageUpdate(new_current_page)
-    self:onDocumentRerendered()
 end
 
 function ReaderStatistics:onPreserveCurrentSession()
@@ -1053,11 +1040,7 @@ function ReaderStatistics:onToggleStatistics(arg)
         if self.settings.is_enabled then
             self:initData()
             self.start_current_period = os.time()
-            if self.use_pagemap_for_stats then
-                self.curr_page = select(2, self.ui.pagemap:getCurrentPageLabel())
-            else
-                self.curr_page = self.ui:getCurrentPage()
-            end
+            self.curr_page = self.ui:getCurrentPage()
             self:resetVolatileStats(self.start_current_period)
         end
         self.view.footer:maybeUpdateFooter()
@@ -1144,21 +1127,25 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                             { -- Friday (Bangladesh and Maldives)
                                 text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[6]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 6 end,
+                                radio = true,
                                 callback = function() self.settings.calendar_start_day_of_week = 6 end
                             },
                             { -- Saturday (some Middle East countries)
                                 text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[7]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 7 end,
+                                radio = true,
                                 callback = function() self.settings.calendar_start_day_of_week = 7 end
                             },
                             { -- Sunday
                                 text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[1]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 1 end,
+                                radio = true,
                                 callback = function() self.settings.calendar_start_day_of_week = 1 end
                             },
                             { -- Monday
                                 text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[2]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 2 end,
+                                radio = true,
                                 callback = function() self.settings.calendar_start_day_of_week = 2 end
                             },
                         },
@@ -1619,21 +1606,18 @@ function ReaderStatistics:getCurrentStat()
     total_time_book = tonumber(total_time_book) or 0
     total_read_pages = tonumber(total_read_pages) or 0
     first_open = first_open or now_ts
-    if self.use_pagemap_for_stats then
-        self.data.pages = select(3, self.ui.pagemap:getCurrentPageLabel())
-    else
-        self.data.pages = self.document:getPageCount()
-    end
+    self.data.pages = self.document:getPageCount()
 
     local current_page
     local total_pages
     local page_progress_string
     local percent_read
-    if self.use_pagemap_for_stats then
-        local current_page_label
-        current_page_label, current_page, total_pages = self.ui.pagemap:getCurrentPageLabel()
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        current_page = self.ui:getCurrentPage()
+        total_pages = self.data.pages
+        local current_page_label, current_page_idx, total_pages_idx = self.ui.pagemap:getCurrentPageLabel()
         local last_page_label = self.ui.pagemap:getLastPageLabel()
-        percent_read = Math.round(100*current_page/total_pages)
+        percent_read = Math.round(100*current_page_idx/total_pages_idx)
         page_progress_string = ("%s / %s (%d%%)"):format(current_page_label, last_page_label, percent_read)
     elseif self.document:hasHiddenFlows() then
         current_page = self.ui:getCurrentPage()
@@ -2630,22 +2614,14 @@ end
 
 
 function ReaderStatistics:onPosUpdate(pos, pageno)
-    local pn = pageno
-    if self.use_pagemap_for_stats then
-        pageno = select(2, self.ui.pagemap:getCurrentPageLabel())
-    end
     if self.curr_page ~= pageno then
-        self:onPageUpdate(pn)
+        self:onPageUpdate(pageno)
     end
 end
 
 function ReaderStatistics:onPageUpdate(pageno)
     if not self:isEnabledAndNotFrozen() then
         return
-    end
-
-    if self.use_pagemap_for_stats and pageno ~= false then
-        pageno = select(2, self.ui.pagemap:getCurrentPageLabel())
     end
 
     if self._reading_paused_ts then

@@ -256,6 +256,20 @@ function NewsDownloader:lazyInitialization()
     end
 end
 
+---Parses comma separated option string into table.
+---@param opt any
+---@return table
+local function parseCommaSeparatedOption(opt)
+    if type(opt) == "string" then
+        local result = {}
+        for part in string.gmatch(opt, "([^,]+)") do
+            table.insert(result, part)
+        end
+        return result
+    end
+    return {}
+end
+
 function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
     local UI = require("ui/trapper")
     logger.dbg("force repaint due to upcoming blocking calls")
@@ -301,9 +315,9 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
         local limit = feed.limit
         local download_full_article = feed.download_full_article or false
         local include_images = not never_download_images and feed.include_images
-        local enable_filter = feed.enable_filter or default_feed.enable_filter
-        local filter_element = feed.filter_element or default_feed.filter_element
-        local block_element = feed.block_element or default_feed.block_element
+        local enable_filter = feed.enable_filter or feed.enable_filter == nil
+        local filter_element = parseCommaSeparatedOption(feed.filter_element)
+        local block_element = parseCommaSeparatedOption(feed.block_element)
         local credentials = feed.credentials
         local http_auth = feed.http_auth
         -- Check if the two required attributes are set.
@@ -672,7 +686,7 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit,
             feed_description = feed.description and feed.description[1] or feed.description --- @todo This should select the one with type="html" if there is a choice.
             if feed["content:encoded"] ~= nil then
                 -- Spec: https://web.resource.org/rss/1.0/modules/content/
-                feed_description = feed["content:encoded"]
+                feed_description = feed["content:encoded"] and feed["content:encoded"][1] or feed["content:encoded"]
             end
         elseif feed_type == FEED_TYPE_ATOM then
             feed_title = feed.title and feed.title[1] or feed.title

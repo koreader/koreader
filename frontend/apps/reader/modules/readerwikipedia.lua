@@ -130,6 +130,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
             checked_func = function()
                 return G_reader_settings:readSetting(setting, default) == value
             end,
+            radio = true,
             callback = function()
                 G_reader_settings:saveSetting(setting, value)
             end,

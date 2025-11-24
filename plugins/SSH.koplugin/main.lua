@@ -225,6 +225,12 @@ end
 function SSH:addToMainMenu(menu_items)
     menu_items.ssh = {
         text = _("SSH server"),
+        checked_func = function() return self:isRunning() end,
+        hold_callback = function(touchmenu_instance)
+            self:onToggleSSHServer()
+            ffiutil.sleep(1)
+            touchmenu_instance:updateItems()
+        end,
         sub_item_table = {
             {
                 text = _("SSH server"),
@@ -240,7 +246,7 @@ function SSH:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return T(_("SSH port (%1)"), self.SSH_port)
+                    return T(_("SSH port: %1"), self.SSH_port)
                 end,
                 keep_menu_open = true,
                 enabled_func = function() return not self:isRunning() end,

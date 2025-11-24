@@ -208,7 +208,11 @@ function Remarkable:init()
     -- os.execute("ps | grep $PPID")
     -- logger.info(string.format("parent process is oxide?: %s", parent_process_is_oxide))
 
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{
+        device = self,
+        debug = logger.dbg,
+        wf_level = G_reader_settings:readSetting("wf_level") or 2,
+    }
     self.powerd = require("device/remarkable/powerd"):new{
         device = self,
         capacity_file = self.battery_path,
@@ -226,7 +230,7 @@ function Remarkable:init()
 
     self.input = require("device/input"):new{
         device = self,
-        event_map = dofile("frontend/device/remarkable/event_map.lua"),
+        event_map = event_map,
         event_map_adapter = {
             SleepCover = function(ev)
                 if ev.value == 1 then

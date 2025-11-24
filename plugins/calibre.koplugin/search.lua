@@ -452,7 +452,7 @@ function CalibreSearch:browse(option)
         end
     end
 
-    self.search_menu = self.search_menu or BookList:new{
+    self.search_menu = BookList:new{
         parent = nil,
         onMenuHold = self.onMenuHold,
     }

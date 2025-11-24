@@ -37,6 +37,7 @@ local Notification = require("ui/widget/notification")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
+local ReaderTypography = require("apps/reader/modules/readertypography")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
 local Screen = Device.screen
 local UIManager = require("ui/uimanager")
@@ -168,6 +169,9 @@ local settingsList = {
     page_jmp = {category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Turn pages"), reader=true},
     go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), reader=true},
     skim = {category="none", event="ShowSkimtoDialog", title=_("Skim document"), reader=true},
+    pin_current_page = {category="none", event="PinPage", title=_("Pin current page"), reader=true},
+    go_to_pinned_page = {category="none", event="GoToPinnedPage", title=_("Go to pinned page"), reader=true, separator=true},
+    ----
     prev_bookmark = {category="none", event="GotoPreviousBookmarkFromPage", title=_("Previous bookmark"), reader=true},
     next_bookmark = {category="none", event="GotoNextBookmarkFromPage", title=_("Next bookmark"), reader=true},
     first_bookmark = {category="none", event="GotoFirstBookmark", title=_("First bookmark"), reader=true},
@@ -218,6 +222,7 @@ local settingsList = {
     export_annotations = {category="none", event="ExportAnnotations", title=_("Export annotations"), reader=true},
 
     -- Reflowable documents
+    set_typography_lang = {category="string", event="SetTypographyLanguage", title=_("Set typography language"), args_func=ReaderTypography.getLangTags, rolling=true, separator=true},
     set_font = {category="string", event="SetFont", title=_("Font face"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
     increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size"), rolling=true},
     decrease_font = {category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size"), rolling=true},
@@ -280,8 +285,8 @@ local settingsList = {
     kopt_text_wrap = {category="string", paging=true},
     kopt_contrast = {category="string", paging=true},
     kopt_page_opt = {category="configurable", paging=true},
-    kopt_hw_dithering = {category="configurable", paging=true},
-    kopt_sw_dithering = {category="configurable", paging=true},
+    kopt_hw_dithering = {category="string", paging=true},
+    kopt_sw_dithering = {category="string", paging=true},
     kopt_quality = {category="configurable", paging=true},
     kopt_doc_language = {category="string", paging=true},
     kopt_forced_ocr = {category="configurable", paging=true},
@@ -412,6 +417,9 @@ local dispatcher_menu_order = {
     "page_jmp",
     "go_to",
     "skim",
+    "pin_current_page",
+    "go_to_pinned_page",
+    ----
     "prev_bookmark",
     "next_bookmark",
     "first_bookmark",
@@ -462,6 +470,8 @@ local dispatcher_menu_order = {
     "export_annotations",
 
     -- Reflowable documents
+    "set_typography_lang",
+    ----
     "set_font",
     "increase_font",
     "decrease_font",
@@ -941,6 +951,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                                     end
                                 end
                             end,
+                            radio = true,
                             callback = function()
                                 setValue(k, settingsList[k].args[i])
                             end,
@@ -1001,6 +1012,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             return location[settings] ~= nil and Dispatcher:_itemsCount(location[settings]) == 0
         end,
         check_callback_updates_menu = true,
+        radio = true,
         callback = function(touchmenu_instance)
             local function do_remove()
                 local actions = location[settings]
@@ -1195,6 +1207,7 @@ function Dispatcher:execute(settings, exec_props)
     local has_many = Dispatcher:_itemsCount(settings) > 1
     if has_many then
         UIManager:broadcastEvent(Event:new("BatchedUpdate"))
+        UIManager:setSilentMode(true)
     end
     Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
     if settings.settings and settings.settings.notify then
@@ -1241,6 +1254,7 @@ function Dispatcher:execute(settings, exec_props)
     end
     Notification:resetNotifySource()
     if has_many then
+        UIManager:setSilentMode(false)
         UIManager:broadcastEvent(Event:new("BatchedUpdateDone"))
     end
 end

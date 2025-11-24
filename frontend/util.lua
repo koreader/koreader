@@ -783,12 +783,16 @@ end
 --- Recursively scan directory for files inside
 -- @string path
 -- @func callback(fullpath, name, attr)
-function util.findFiles(dir, cb, recursive)
+-- @bool recursive
+-- @int max_files (maximum number of files to find)
+function util.findFiles(dir, cb, recursive, max_files)
     recursive = recursive ~= false
+    local count = 0
     local function scan(current)
         local ok, iter, dir_obj = pcall(lfs.dir, current)
         if not ok then return end
         for f in iter, dir_obj do
+            if max_files and count >= max_files then return end
             local path = current.."/"..f
             -- lfs can return nil here, as it will follow symlinks!
             local attr = lfs.attributes(path) or {}
@@ -798,6 +802,7 @@ function util.findFiles(dir, cb, recursive)
                 end
             elseif attr.mode == "file" or attr.mode == "link" then
                 cb(path, f, attr)
+                count = count + 1
             end
         end
     end

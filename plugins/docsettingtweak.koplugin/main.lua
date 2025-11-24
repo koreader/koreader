@@ -1,6 +1,6 @@
 local Device = require("device")
 
-if not Device:isTouchDevice() then
+if Device:hasFewKeys() and not Device:isTouchDevice() then
     return { disabled = true }
 end
 
@@ -93,7 +93,8 @@ function DocSettingTweak:onDocSettingsLoad(doc_settings, document)
     -- check that the document has not been opened yet & and that we have defaults to customize
     if document.is_new and directory_defaults.data ~= nil then
         local base = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
-        local directory = FFIUtil.dirname(document.file)
+        local absolute_path = FFIUtil.realpath(document.file)
+        local directory = FFIUtil.dirname(absolute_path)
         -- check if folder matches our defaults to override
         while directory:sub(1, #base) == base do
             if directory_defaults:has(directory) then

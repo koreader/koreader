@@ -39,6 +39,6 @@ if [ "${untagged_todo}" ]; then
 fi
 
 echo -e "\n${ANSI_GREEN}Luacheck results${ANSI_RESET}"
-luacheck -q {reader,setupkoenv,datastorage}.lua frontend plugins spec || exit_code=1
+luacheck ${PARALLEL_JOBS:+-j "${PARALLEL_JOBS}"} -q {reader,setupkoenv,datastorage}.lua frontend plugins spec || exit_code=1
 
 exit ${exit_code}
