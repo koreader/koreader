@@ -197,4 +197,14 @@ DUSE_TURBO_LIB = false,
 -- Absolute path to stardict files (override)
 -- By default they're stored in data/dict under dataDir.
 STARDICT_DATA_DIR = nil,
+
+-- When enabled, KOReader will validate each plugin's `compatibility` field
+-- (from the plugin's _meta.lua) against the running KOReader version.
+-- If a plugin is deemed incompatible, KOReader's plugin compatibility
+-- subsystem will prevent automatic loading and surface options to the user
+-- to override the decision (ask on incompatibility, load once, always load,
+-- or never load). Disabling this flag bypasses those checks and allows all
+-- plugins to be loaded regardless of their declared compatibility.
+-- Note: the runtime implementation lives in `frontend/plugincompatibility.lua`.
+ENABLE_PLUGIN_COMPATIBILITY_CHECKS = true,
 }

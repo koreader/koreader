@@ -31,13 +31,22 @@ local logger = require("logger")
 
 local PluginCompatibility = {}
 
+--- Check whether plugin compatibility checks are enabled.
+-- Reads the global default `ENABLE_PLUGIN_COMPATIBILITY_CHECKS` from `G_defaults`.
+-- This is intentionally read at call-time so tests can mock `G_defaults.readSetting`
+-- and toggle the behavior dynamically.
+-- @treturn boolean|nil true if checks are enabled, false if disabled, or nil if unset
+function PluginCompatibility.isCompatibilityCheckEnabled()
+    return G_defaults:readSetting("ENABLE_PLUGIN_COMPATIBILITY_CHECKS")
+end
+
 --- Check if a plugin is compatible with the current KOReader version.
 -- @tparam table plugin_meta The plugin's metadata table (_meta.lua contents)
 -- @treturn boolean true if compatible, false otherwise
 -- @treturn string|nil reason for incompatibility ("below_minimum", "above_maximum") or nil if compatible
 -- @treturn string|nil human-readable message or nil if compatible
 function PluginCompatibility.checkCompatibility(plugin_meta)
-    if not plugin_meta then
+    if not plugin_meta or not PluginCompatibility.isCompatibilityCheckEnabled() then
         return true, nil, nil
     end
 

@@ -441,4 +441,70 @@ describe("PluginCompatibility module", function()
             assert.truthy(PluginCompatibility.getOverrideDescription(nil):find("Ask"))
         end)
     end)
+
+    describe("COMPATIBILITY_CHECK_ENABLED flag", function()
+        after_each(function()
+            PluginCompatibility.isCompatibilityCheckEnabled = function()
+                return true
+            end
+        end)
+
+        it("should load incompatible plugins when flag is disabled", function()
+            PluginCompatibility.isCompatibilityCheckEnabled = function()
+                return false
+            end
+
+            local plugin_meta = {
+                name = "testplugin",
+                version = "1.0",
+                compatibility = {
+                    max_version = "2000.01-1",
+                },
+            }
+
+            local is_compatible, reason, message = require("plugincompatibility").checkCompatibility(plugin_meta)
+            assert.is_nil(reason)
+            assert.is_nil(message)
+            assert.is_true(is_compatible)
+        end)
+
+        it("shouldLoadPlugin should allow incompatible plugins when flag is disabled", function()
+            local settings = createMockSettings()
+
+            PluginCompatibility.isCompatibilityCheckEnabled = function()
+                return false
+            end
+
+            local plugin_meta = {
+                name = "testplugin",
+                version = "1.0",
+                compatibility = {
+                    max_version = "2000.01-1",
+                },
+            }
+
+            local should_load, reason, message, should_prompt =
+                PluginCompatibility.shouldLoadPlugin(settings, plugin_meta, "testplugin")
+
+            assert.is_true(should_load)
+            assert.is_nil(reason)
+            assert.is_nil(message)
+            assert.is_false(should_prompt)
+        end)
+
+        it("should respect compatibility checks when flag is re-enabled", function()
+            local plugin_meta = {
+                name = "testplugin",
+                version = "1.0",
+                compatibility = {
+                    max_version = "2000.01-1",
+                },
+            }
+
+            local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
+            assert.is_false(is_compatible)
+            assert.equals("above_maximum", reason)
+            assert.is_not_nil(message)
+        end)
+    end)
 end)
