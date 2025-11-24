@@ -135,7 +135,7 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
         },
         {
             _("Filter element"),
-            filter_element,
+            filter_element or "",
             callback = function()
                 edit_feed_callback(
                     id,
@@ -146,7 +146,7 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
         },
         {
             _("Block element"),
-            block_element,
+            block_element or "",
             callback = function()
                 edit_feed_callback(
                     id,
