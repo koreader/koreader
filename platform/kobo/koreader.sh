@@ -5,6 +5,7 @@ export LC_ALL="en_US.UTF-8"
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
 # NOTE: We need to remember the *actual* KOREADER_DIR, not the relocalized version in /tmp...
 export KOREADER_DIR="${KOREADER_DIR:-${SCRIPT_DIR}}"
+UNPACK_DIR="${KOREADER_DIR%/*}"
 
 # We rely on starting from our working directory, and it needs to be set, sane and absolute.
 cd "${KOREADER_DIR:-/dev/null}" || exit
@@ -95,6 +96,8 @@ ko_update_check() {
         # Clear screen to delete UI leftovers
         ./fbink --cls
         ./fbink -q -y -7 -pmh "Updating KOReader"
+        # Keep a copy of the old manifest for cleaning leftovers later.
+        cp "${KOREADER_DIR}/ota/package.index" /tmp/
         # Setup the FBInk daemon
         export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
         rm -f "${FBINK_NAMED_PIPE}"
@@ -119,6 +122,8 @@ ko_update_check() {
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
             mv "${NEWUPDATE}" "${INSTALLED}"
+            # Cleanup leftovers from previous install.
+            (cd "${UNPACK_DIR}" && grep -xvf "${KOREADER_DIR}/ota/package.index" /tmp/package.index | xargs -r rm -vf)
             ./fbink -q -y -6 -pm "Update successful :)"
             ./fbink -q -y -5 -pm "KOReader will start momentarily . . ."
 
@@ -131,7 +136,7 @@ ko_update_check() {
             ./fbink -q -y -6 -pmh "Update failed :("
             ./fbink -q -y -5 -pm "KOReader may fail to function properly!"
         fi
-        rm -f "${NEWUPDATE}" # always purge newupdate to prevent update loops
+        rm -f /tmp/package.index "${NEWUPDATE}" # always purge newupdate to prevent update loops
         unset CPOINTS FBINK_NAMED_PIPE
         unset BLOCKS FILESIZE FBINK_PID
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
