@@ -1,8 +1,9 @@
 #!/bin/sh
 export LC_ALL="en_US.UTF-8"
 
+UNPACK_DIR='/mnt/ext1'
 # working directory of koreader
-KOREADER_DIR="/mnt/ext1/applications/koreader"
+KOREADER_DIR="${UNPACK_DIR}/applications/koreader"
 
 # load our own shared libraries if possible, solely because we don't control InkView, and we'd rather not it have load duplicate system libs...
 # (We handle this via DT_RPATH for our own stuff).
@@ -30,6 +31,8 @@ ko_update_check() {
     INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
     if [ -f "${NEWUPDATE}" ]; then
         "${KOREADER_DIR}/fbink" -q -y -7 -pmh "Updating KOReader"
+        # Keep a copy of the old manifest for cleaning leftovers later.
+        sed 's,^../,,' "${KOREADER_DIR}/ota/package.index" >/tmp/package.index.old
         # Setup the FBInk daemon
         export FBINK_NAMED_PIPE="/tmp/.koreader.fbink"
         rm -f "${FBINK_NAMED_PIPE}"
@@ -60,6 +63,9 @@ ko_update_check() {
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
             mv "${NEWUPDATE}" "${INSTALLED}"
+            # Cleanup leftovers from previous install.
+            sed 's,^../,,' "${KOREADER_DIR}/ota/package.index" >/tmp/package.index.new
+            (cd "${UNPACK_DIR}" && grep -xvFf /tmp/package.index.new /tmp/package.index.old | xargs -r rm -vf)
             "${KOREADER_DIR}/fbink" -q -y -6 -pm "Update successful :)"
             "${KOREADER_DIR}/fbink" -q -y -5 -pm "KOReader will start momentarily . . ."
         else
@@ -67,7 +73,7 @@ ko_update_check() {
             "${KOREADER_DIR}/fbink" -q -y -6 -pmh "Update failed :("
             "${KOREADER_DIR}/fbink" -q -y -5 -pm "KOReader may fail to function properly!"
         fi
-        rm -f "${NEWUPDATE}" # always purge newupdate to prevent update loops
+        rm -f /tmp/package.index.old /tmp/package.index.new "${NEWUPDATE}" # always purge newupdate to prevent update loops
         unset CPOINTS FBINK_NAMED_PIPE
         unset BLOCKS FILESIZE FBINK_PID
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
