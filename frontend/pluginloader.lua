@@ -211,13 +211,26 @@ function PluginLoader:_load(t)
         -- First load the metadata to check compatibility
         local ok_meta, plugin_metamodule = pcall(dofile, metafile)
         local plugin_meta = ok_meta and plugin_metamodule or nil
-
-        -- Extract plugin name early for compatibility checks
         local plugin_name = plugin_root:match("/(.-)%.koplugin")
+
+        if not ok_meta then
+            plugin_meta = {
+                name = plugin_name,
+                version = "unknown",
+            }
+        end
+
+        if not plugin_meta.name or plugin_meta.name == "" then
+            plugin_meta.name = plugin_name
+        end
+
+        if not plugin_meta.version or plugin_meta.version == "" then
+            plugin_meta.version = "unknown"
+        end
 
         -- Check compatibility before loading the main plugin file
         local should_load, incompat_reason, incompat_message, should_prompt =
-            PluginCompatibility.shouldLoadPlugin(G_reader_settings, plugin_meta, plugin_name)
+            PluginCompatibility.shouldLoadPlugin(plugin_meta)
 
         if not should_load and not disabled then
             -- Plugin is incompatible and should not be loaded
@@ -225,13 +238,13 @@ function PluginLoader:_load(t)
 
             -- Create a minimal plugin entry for the disabled list
             local plugin_stub = {
-                name = plugin_name,
+                name = plugin_meta.name,
                 path = plugin_root,
                 incompatible = true,
                 incompatibility_reason = incompat_reason,
                 incompatibility_message = incompat_message,
                 should_prompt_user = should_prompt,
-                version = plugin_meta and plugin_meta.version or "unknown",
+                version = plugin_meta.version,
                 fullname = plugin_meta and plugin_meta.fullname or plugin_name,
             }
 
@@ -278,6 +291,10 @@ function PluginLoader:_load(t)
     package.path = package_path
     package.cpath = package_cpath
 
+    -- flush the settings to ensure that if there is a crash down the line,
+    -- that the plugin compatibility preferences are saved.
+    G_reader_settings:flush()
+
     -- If there are incompatible plugins that need prompting, show the menu
     if #incompatible_plugins_with_prompt > 0 then
         UIManager:nextTick(function()
@@ -287,7 +304,7 @@ function PluginLoader:_load(t)
 end
 
 function PluginLoader:_showIncompatiblePluginsMenu(incompatible_plugins)
-    PluginCompatibility.showIncompatiblePluginsMenu(incompatible_plugins, G_reader_settings, function()
+    PluginCompatibility.showIncompatiblePluginsMenu(incompatible_plugins, function()
         UIManager:askForRestart()
     end)
 end

@@ -14,7 +14,7 @@ Settings structure in G_reader_settings:
     }
   }
 - plugin_compatibility_prompts_shown: {
-    ["plugin-name-version-koreader_version"] = true,
+    ["plugin_name-plugin_version-koreader_version"] = true,
   }
 ]]
 
@@ -22,7 +22,7 @@ Settings structure in G_reader_settings:
 -- e.g. when a plugin is uninstalled, or when a new KOReader version is released
 -- that makes old overrides irrelevant.
 
-local ConfirmBox = require("ui/widget/confirmbox")
+local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local Version = require("frontend/version")
@@ -97,25 +97,23 @@ end
 -- @treturn string unique key
 function PluginCompatibility.getOverrideKey(plugin_name, plugin_version)
     local koreader_version = Version:getShortVersion()
-    return string.format("%s-%s-%s", plugin_name, plugin_version or "unknown", koreader_version)
+    return string.format("%s-%s-%s", plugin_name, plugin_version, koreader_version)
 end
 
 --- Check if the user has been prompted about this specific plugin version.
--- @tparam table G_reader_settings
 -- @tparam string plugin_name
 -- @tparam string plugin_version
 -- @treturn boolean true if user has been prompted before
-function PluginCompatibility.hasBeenPrompted(G_reader_settings, plugin_name, plugin_version)
+function PluginCompatibility.hasBeenPrompted(plugin_name, plugin_version)
     local prompts_shown = G_reader_settings:readSetting("plugin_compatibility_prompts_shown") or {}
     local key = PluginCompatibility.getOverrideKey(plugin_name, plugin_version)
     return prompts_shown[key] == true
 end
 
 --- Mark that the user has been prompted about this specific plugin version.
--- @tparam table G_reader_settings
 -- @tparam string plugin_name
 -- @tparam string plugin_version
-function PluginCompatibility.markAsPrompted(G_reader_settings, plugin_name, plugin_version)
+function PluginCompatibility.markAsPrompted(plugin_name, plugin_version)
     local prompts_shown = G_reader_settings:readSetting("plugin_compatibility_prompts_shown") or {}
     local key = PluginCompatibility.getOverrideKey(plugin_name, plugin_version)
     prompts_shown[key] = true
@@ -123,10 +121,9 @@ function PluginCompatibility.markAsPrompted(G_reader_settings, plugin_name, plug
 end
 
 --- Remove the prompted mark for this specific plugin version.
--- @tparam table G_reader_settings
 -- @tparam string plugin_name
 -- @tparam string plugin_version
-function PluginCompatibility.removePromptedMark(G_reader_settings, plugin_name, plugin_version)
+function PluginCompatibility.removePromptedMark(plugin_name, plugin_version)
     local prompts_shown = G_reader_settings:readSetting("plugin_compatibility_prompts_shown") or {}
     local key = PluginCompatibility.getOverrideKey(plugin_name, plugin_version)
     prompts_shown[key] = nil
@@ -134,12 +131,11 @@ function PluginCompatibility.removePromptedMark(G_reader_settings, plugin_name, 
 end
 
 --- Get the load override action for a plugin.
--- @tparam table G_reader_settings
 -- @tparam string plugin_name
 -- @tparam string plugin_version
 -- @tparam string koreader_version Optional, defaults to current version
 -- @treturn string|nil "always", "never", "load-once", or nil if no override
-function PluginCompatibility.getLoadOverride(G_reader_settings, plugin_name, plugin_version, koreader_version)
+function PluginCompatibility.getLoadOverride(plugin_name, plugin_version, koreader_version)
     local overrides = G_reader_settings:readSetting("plugin_load_overrides") or {}
     local override = overrides[plugin_name]
 
@@ -158,11 +154,10 @@ function PluginCompatibility.getLoadOverride(G_reader_settings, plugin_name, plu
 end
 
 --- Set the load override for a plugin.
--- @tparam table G_reader_settings
 -- @tparam string plugin_name
 -- @tparam string plugin_version
 -- @tparam string action "always", "never", or "load-once"
-function PluginCompatibility.setLoadOverride(G_reader_settings, plugin_name, plugin_version, action)
+function PluginCompatibility.setLoadOverride(plugin_name, plugin_version, action)
     local overrides = G_reader_settings:readSetting("plugin_load_overrides") or {}
     local koreader_version = Version:getShortVersion()
 
@@ -181,9 +176,8 @@ function PluginCompatibility.setLoadOverride(G_reader_settings, plugin_name, plu
 end
 
 --- Clear the load-once override after it has been used.
--- @tparam table G_reader_settings
 -- @tparam string plugin_name
-function PluginCompatibility.clearLoadOnceOverride(G_reader_settings, plugin_name)
+function PluginCompatibility.clearLoadOnceOverride(plugin_name)
     local overrides = G_reader_settings:readSetting("plugin_load_overrides") or {}
     local override = overrides[plugin_name]
 
@@ -194,14 +188,12 @@ function PluginCompatibility.clearLoadOnceOverride(G_reader_settings, plugin_nam
 end
 
 --- Determine if a plugin should be loaded based on compatibility and overrides.
--- @tparam table G_reader_settings
 -- @tparam table plugin_meta The plugin's metadata
--- @tparam string plugin_name
 -- @treturn boolean true if should load, false otherwise
 -- @treturn string|nil reason for not loading or nil
 -- @treturn string|nil incompatibility message or nil
 -- @treturn boolean true if user should be prompted
-function PluginCompatibility.shouldLoadPlugin(G_reader_settings, plugin_meta, plugin_name)
+function PluginCompatibility.shouldLoadPlugin(plugin_meta)
     local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
 
     if is_compatible then
@@ -210,8 +202,7 @@ function PluginCompatibility.shouldLoadPlugin(G_reader_settings, plugin_meta, pl
     end
 
     -- Plugin is incompatible, check for overrides
-    local plugin_version = plugin_meta and plugin_meta.version or "unknown"
-    local override = PluginCompatibility.getLoadOverride(G_reader_settings, plugin_name, plugin_version)
+    local override = PluginCompatibility.getLoadOverride(plugin_meta.name, plugin_meta.version)
 
     if override == "always" then
         -- User wants to always load this plugin despite incompatibility
@@ -222,14 +213,14 @@ function PluginCompatibility.shouldLoadPlugin(G_reader_settings, plugin_meta, pl
     elseif override == "load-once" then
         -- User wants to load it once for testing
         -- Clear the override so next time it won't auto-load
-        PluginCompatibility.clearLoadOnceOverride(G_reader_settings, plugin_name)
-        PluginCompatibility.removePromptedMark(G_reader_settings, plugin_name, plugin_version)
+        PluginCompatibility.clearLoadOnceOverride(plugin_meta.name)
+        PluginCompatibility.removePromptedMark(plugin_meta.name, plugin_meta.version)
         return true, nil, nil, false
     end
 
     -- No override exists, check if we've already prompted the user
-    local has_been_prompted = PluginCompatibility.hasBeenPrompted(G_reader_settings, plugin_name, plugin_version)
-    logger.dbg("PluginCompatibility: has_been_prompted for", plugin_name, "is", has_been_prompted)
+    local has_been_prompted = PluginCompatibility.hasBeenPrompted(plugin_meta.name, plugin_meta.version)
+    logger.dbg("PluginCompatibility: has_been_prompted for", plugin_meta.name, "is", has_been_prompted)
 
     if has_been_prompted then
         -- We've asked before and user didn't set an override, so don't load
@@ -260,16 +251,15 @@ end
 -- marks the plugin as prompted, and pops back to the parent menu.
 -- @tparam table plugin Plugin reference table
 -- @tparam table option Override option with action and text
--- @tparam table G_reader_settings Settings object
 -- @treturn table Menu item for this override option
-local function createOverrideOptionMenuItem(plugin, option, G_reader_settings)
+local function createOverrideOptionMenuItem(plugin, option)
     return {
         text = option.text,
         callback = function(menu)
             logger.dbg("PluginCompatibility: submenu action called", plugin.name, option.action)
-            PluginCompatibility.setLoadOverride(G_reader_settings, plugin.name, plugin.version, option.action)
+            PluginCompatibility.setLoadOverride(plugin.name, plugin.version, option.action)
             if option.action then
-                PluginCompatibility.markAsPrompted(G_reader_settings, plugin.name, plugin.version)
+                PluginCompatibility.markAsPrompted(plugin.name, plugin.version)
             end
             if menu and menu.onClose then
                 menu:onClose()
@@ -281,9 +271,8 @@ end
 --- Generate menu items for plugin override options.
 -- Creates a submenu listing all available override actions for a plugin.
 -- @tparam table plugin Plugin table with name and version
--- @tparam table G_reader_settings Settings object for storing overrides
 -- @treturn table Array of menu items for override options
-local function genOverrideMenuItems(plugin, G_reader_settings)
+local function genOverrideMenuItems(plugin)
     local override_options = {
         { action = nil, text = _("Ask on incompatibility (default)") },
         { action = "load-once", text = _("Load once (for testing)") },
@@ -293,7 +282,7 @@ local function genOverrideMenuItems(plugin, G_reader_settings)
 
     local menu_items = {}
     for _, option in ipairs(override_options) do
-        table.insert(menu_items, createOverrideOptionMenuItem(plugin, option, G_reader_settings))
+        table.insert(menu_items, createOverrideOptionMenuItem(plugin, option))
     end
     return menu_items
 end
@@ -302,17 +291,16 @@ end
 -- Generates a menu item with the plugin name, current override status (mandatory),
 -- and a submenu of override options.
 -- @tparam table plugin Plugin table with name, version, and incompatibility_message
--- @tparam table G_reader_settings Settings object for reading current overrides
 -- @treturn table Menu item for this incompatible plugin
-local function createPluginMenuItem(plugin, G_reader_settings)
-    local current_override = PluginCompatibility.getLoadOverride(G_reader_settings, plugin.name, plugin.version)
+local function createPluginMenuItem(plugin)
+    local current_override = PluginCompatibility.getLoadOverride(plugin.name, plugin.version)
     local status_text = PluginCompatibility.getOverrideDescription(current_override)
 
     return {
         text = plugin.fullname or plugin.name,
         mandatory = status_text,
         help_text = plugin.incompatibility_message,
-        sub_item_table = genOverrideMenuItems(plugin, G_reader_settings),
+        sub_item_table = genOverrideMenuItems(plugin),
     }
 end
 
@@ -320,12 +308,11 @@ end
 -- Creates a list of menu items, one per incompatible plugin, each with its
 -- current override status and submenu of options.
 -- @tparam table incompatible_plugins List of incompatible plugins
--- @tparam table G_reader_settings Settings object for reading current overrides
 -- @treturn table Array of menu items for all incompatible plugins
-local function genMainMenuItems(incompatible_plugins, G_reader_settings)
+local function genMainMenuItems(incompatible_plugins)
     local menu_items = {}
     for _, plugin in ipairs(incompatible_plugins) do
-        table.insert(menu_items, createPluginMenuItem(plugin, G_reader_settings))
+        table.insert(menu_items, createPluginMenuItem(plugin))
     end
     return menu_items
 end
@@ -401,11 +388,10 @@ end
 -- When an override option is selected, it is applied and the menu returns to the plugin list.
 -- When the main menu is closed, the on_close_callback is invoked.
 -- @tparam table incompatible_plugins List of incompatible plugin tables with name, version, incompatibility_message
--- @tparam table G_reader_settings Settings object for storing overrides
 -- @tparam function on_close_callback Callback to execute when the main menu is fully closed (e.g., restart prompt)
-function PluginCompatibility.showIncompatiblePluginsMenu(incompatible_plugins, G_reader_settings, on_close_callback)
+function PluginCompatibility.showIncompatiblePluginsMenu(incompatible_plugins, on_close_callback)
     local function genMainMenuItemsWrapper()
-        return genMainMenuItems(incompatible_plugins, G_reader_settings)
+        return genMainMenuItems(incompatible_plugins)
     end
 
     local main_menu
@@ -420,14 +406,22 @@ function PluginCompatibility.showIncompatiblePluginsMenu(incompatible_plugins, G
     })
 
     UIManager:show(main_menu)
+    UIManager:show(InfoMessage:new({
+        text = _([[These plugins are incompatible with the current version of KOReader.
+
+Go through the list and decide what you would like to do for each plugin.
+]]),
+    }))
 end
 
 --- Generate a simple sub_menu table for a single plugin (for plugin manager use)
 -- This mirrors the submenu content used by the stacked UI, but returns a plain
 -- table suitable for `Menu.item_table` or `Menu.itemTableFromTouchMenu()` usage.
-function PluginCompatibility.genPluginOverrideSubMenu(plugin, G_reader_settings)
+-- @tparam table plugin
+-- @treturn table sub_menu suitable for Menu.item_table
+function PluginCompatibility.genPluginOverrideSubMenu(plugin)
     local plugin_name = plugin.name
-    local plugin_version = plugin.version or "unknown"
+    local plugin_version = plugin.version
 
     local sub_menu = {
         {
@@ -448,12 +442,11 @@ function PluginCompatibility.genPluginOverrideSubMenu(plugin, G_reader_settings)
         table.insert(sub_menu, {
             text = option.text,
             checked_func = function()
-                return PluginCompatibility.getLoadOverride(G_reader_settings, plugin_name, plugin_version)
-                    == option.action
+                return PluginCompatibility.getLoadOverride(plugin_name, plugin_version) == option.action
             end,
             callback = function()
-                PluginCompatibility.setLoadOverride(G_reader_settings, plugin_name, plugin_version, option.action)
-                PluginCompatibility.markAsPrompted(G_reader_settings, plugin_name, plugin_version)
+                PluginCompatibility.setLoadOverride(plugin_name, plugin_version, option.action)
+                PluginCompatibility.markAsPrompted(plugin_name, plugin_version)
 
                 UIManager:askForRestart()
             end,
