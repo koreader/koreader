@@ -42,7 +42,7 @@ function PluginCompatibility.isCompatibilityCheckEnabled()
 end
 
 --- Check if a plugin is compatible with the current KOReader version.
--- @tparam table plugin_meta The plugin's metadata table (_meta.lua contents)
+-- @table plugin_meta The plugin's metadata table (_meta.lua contents)
 -- @treturn boolean true if compatible, false otherwise
 -- @treturn string|nil reason for incompatibility ("below_minimum", "above_maximum") or nil if compatible
 -- @treturn string|nil human-readable message or nil if compatible
@@ -92,8 +92,8 @@ function PluginCompatibility.checkCompatibility(plugin_meta)
 end
 
 --- Get a unique key for this plugin + version + koreader version combination.
--- @tparam string plugin_name
--- @tparam string plugin_version
+-- @string plugin_name
+-- @string plugin_version
 -- @treturn string unique key
 function PluginCompatibility.getOverrideKey(plugin_name, plugin_version)
     local koreader_version = Version:getShortVersion()
@@ -101,8 +101,8 @@ function PluginCompatibility.getOverrideKey(plugin_name, plugin_version)
 end
 
 --- Check if the user has been prompted about this specific plugin version.
--- @tparam string plugin_name
--- @tparam string plugin_version
+-- @string plugin_name
+-- @string plugin_version
 -- @treturn boolean true if user has been prompted before
 function PluginCompatibility.hasBeenPrompted(plugin_name, plugin_version)
     local prompts_shown = G_reader_settings:readSetting("plugin_compatibility_prompts_shown") or {}
@@ -111,8 +111,8 @@ function PluginCompatibility.hasBeenPrompted(plugin_name, plugin_version)
 end
 
 --- Mark that the user has been prompted about this specific plugin version.
--- @tparam string plugin_name
--- @tparam string plugin_version
+-- @string plugin_name
+-- @string plugin_version
 function PluginCompatibility.markAsPrompted(plugin_name, plugin_version)
     local prompts_shown = G_reader_settings:readSetting("plugin_compatibility_prompts_shown") or {}
     local key = PluginCompatibility.getOverrideKey(plugin_name, plugin_version)
@@ -121,8 +121,8 @@ function PluginCompatibility.markAsPrompted(plugin_name, plugin_version)
 end
 
 --- Remove the prompted mark for this specific plugin version.
--- @tparam string plugin_name
--- @tparam string plugin_version
+-- @string plugin_name
+-- @string plugin_version
 function PluginCompatibility.removePromptedMark(plugin_name, plugin_version)
     local prompts_shown = G_reader_settings:readSetting("plugin_compatibility_prompts_shown") or {}
     local key = PluginCompatibility.getOverrideKey(plugin_name, plugin_version)
@@ -131,9 +131,9 @@ function PluginCompatibility.removePromptedMark(plugin_name, plugin_version)
 end
 
 --- Get the load override action for a plugin.
--- @tparam string plugin_name
--- @tparam string plugin_version
--- @tparam string koreader_version Optional, defaults to current version
+-- @string plugin_name
+-- @string plugin_version
+-- @string koreader_version Optional, defaults to current version
 -- @treturn string|nil "always", "never", "load-once", or nil if no override
 function PluginCompatibility.getLoadOverride(plugin_name, plugin_version, koreader_version)
     local overrides = G_reader_settings:readSetting("plugin_load_overrides") or {}
@@ -154,8 +154,8 @@ function PluginCompatibility.getLoadOverride(plugin_name, plugin_version, koread
 end
 
 --- Set the load override for a plugin.
--- @tparam string plugin_name
--- @tparam string plugin_version
+-- @string plugin_name
+-- @string plugin_version
 -- @tparam string action "always", "never", or "load-once"
 function PluginCompatibility.setLoadOverride(plugin_name, plugin_version, action)
     local overrides = G_reader_settings:readSetting("plugin_load_overrides") or {}
@@ -176,7 +176,7 @@ function PluginCompatibility.setLoadOverride(plugin_name, plugin_version, action
 end
 
 --- Clear the load-once override after it has been used.
--- @tparam string plugin_name
+-- @string plugin_name
 function PluginCompatibility.clearLoadOnceOverride(plugin_name)
     local overrides = G_reader_settings:readSetting("plugin_load_overrides") or {}
     local override = overrides[plugin_name]
@@ -188,7 +188,7 @@ function PluginCompatibility.clearLoadOnceOverride(plugin_name)
 end
 
 --- Determine if a plugin should be loaded based on compatibility and overrides.
--- @tparam table plugin_meta The plugin's metadata
+-- @table plugin_meta The plugin's metadata
 -- @treturn boolean true if should load, false otherwise
 -- @treturn string|nil reason for not loading or nil
 -- @treturn string|nil incompatibility message or nil
@@ -232,7 +232,7 @@ function PluginCompatibility.shouldLoadPlugin(plugin_meta)
 end
 
 --- Get a human-readable description of the load override action.
--- @tparam string action "always", "never", "load-once", or nil
+-- @string action "always", "never", "load-once", or nil
 -- @treturn string human-readable description
 function PluginCompatibility.getOverrideDescription(action)
     if action == "always" then
@@ -249,8 +249,8 @@ end
 --- Create menu item for a single override option.
 -- Returns a menu item that, when selected, applies the override action,
 -- marks the plugin as prompted, and pops back to the parent menu.
--- @tparam table plugin Plugin reference table
--- @tparam table option Override option with action and text
+-- @table plugin Plugin reference table
+-- @table option Override option with action and text
 -- @treturn table Menu item for this override option
 local function createOverrideOptionMenuItem(plugin, option)
     return {
@@ -270,7 +270,7 @@ end
 
 --- Generate menu items for plugin override options.
 -- Creates a submenu listing all available override actions for a plugin.
--- @tparam table plugin Plugin table with name and version
+-- @table plugin Plugin table with name and version
 -- @treturn table Array of menu items for override options
 local function genOverrideMenuItems(plugin)
     local override_options = {
@@ -290,7 +290,7 @@ end
 --- Create menu item for a single incompatible plugin.
 -- Generates a menu item with the plugin name, current override status (mandatory),
 -- and a submenu of override options.
--- @tparam table plugin Plugin table with name, version, and incompatibility_message
+-- @table plugin Plugin table with name, version, and incompatibility_message
 -- @treturn table Menu item for this incompatible plugin
 local function createPluginMenuItem(plugin)
     local current_override = PluginCompatibility.getLoadOverride(plugin.name, plugin.version)
@@ -307,7 +307,7 @@ end
 --- Generate all menu items for the main incompatible plugins menu.
 -- Creates a list of menu items, one per incompatible plugin, each with its
 -- current override status and submenu of options.
--- @tparam table incompatible_plugins List of incompatible plugins
+-- @table incompatible_plugins List of incompatible plugins
 -- @treturn table Array of menu items for all incompatible plugins
 local function genMainMenuItems(incompatible_plugins)
     local menu_items = {}
@@ -320,8 +320,9 @@ end
 --- Handle leaf menu item selection (override option chosen).
 -- Executes the item callback, pops back to parent menu if in a submenu,
 -- and refreshes the main menu display if returning to root level.
--- @tparam table menu Menu instance
--- @tparam table item Selected menu item
+-- @table menu Menu instance
+-- @table item Selected menu item
+-- @func genMainMenuItems_func Function that regenerates main menu items
 -- @treturn boolean True to indicate event was handled
 local function handleLeafMenuSelect(menu, item, genMainMenuItems_func)
     if item.select_enabled == false then
@@ -343,8 +344,8 @@ end
 
 --- Handle stacked submenu navigation.
 -- Pushes current item table onto stack and displays the submenu.
--- @tparam table menu Menu instance
--- @tparam table item Selected menu item with sub_item_table
+-- @table menu Menu instance
+-- @table item Selected menu item with sub_item_table
 local function handleSubmenuSelect(menu, item)
     menu.item_table.title = menu.title
     table.insert(menu.item_table_stack, menu.item_table)
@@ -354,7 +355,7 @@ end
 --- Create custom onMenuSelect handler for incompatible plugins menu.
 -- Returns a function that handles both leaf selection (override choice)
 -- and submenu selection (plugin choice) with proper stacking behavior.
--- @tparam function genMainMenuItems_func Function to regenerate main menu items
+-- @func genMainMenuItems_func Function to regenerate main menu items
 -- @treturn function onMenuSelect handler
 local function createMenuSelectHandler(genMainMenuItems_func)
     return function(self, item)
@@ -369,7 +370,7 @@ end
 
 --- Create callback for main menu close event.
 -- Handles cleanup when the main menu is fully closed (no stacked submenus).
--- @tparam function on_close_callback User-provided callback (e.g., restart prompt)
+-- @func on_close_callback User-provided callback (e.g., restart prompt)
 -- @treturn function close_callback handler
 local function createCloseCallback(on_close_callback)
     return function()
@@ -385,8 +386,8 @@ end
 -- When a plugin is selected, a submenu with override options is displayed.
 -- When an override option is selected, it is applied and the menu returns to the plugin list.
 -- When the main menu is closed, the on_close_callback is invoked.
--- @tparam table incompatible_plugins List of incompatible plugin tables with name, version, incompatibility_message
--- @tparam function on_close_callback Callback to execute when the main menu is fully closed (e.g., restart prompt)
+-- @table incompatible_plugins List of incompatible plugin tables with name, version, incompatibility_message
+-- @func on_close_callback Callback to execute when the main menu is fully closed (e.g., restart prompt)
 function PluginCompatibility.showIncompatiblePluginsMenu(incompatible_plugins, on_close_callback)
     local function genMainMenuItemsWrapper()
         return genMainMenuItems(incompatible_plugins)
@@ -415,7 +416,7 @@ end
 --- Generate a simple sub_menu table for a single plugin (for plugin manager use)
 -- This mirrors the submenu content used by the stacked UI, but returns a plain
 -- table suitable for `Menu.item_table` or `Menu.itemTableFromTouchMenu()` usage.
--- @tparam table plugin
+-- @table plugin
 -- @treturn table sub_menu suitable for Menu.item_table
 function PluginCompatibility.genPluginOverrideSubMenu(plugin)
     local plugin_name = plugin.name
