@@ -24,6 +24,7 @@ Settings structure in G_reader_settings:
 
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
+local T = require("ffi/util").template
 local UIManager = require("ui/uimanager")
 local Version = require("frontend/version")
 local _ = require("gettext")
@@ -56,7 +57,7 @@ function PluginCompatibility.checkCompatibility(plugin_meta)
         return true, nil, nil
     end
 
-    local current_version, _ = Version:getNormalizedCurrentVersion()
+    local current_version, __ = Version:getNormalizedCurrentVersion()
     if not current_version then
         logger.warn("PluginCompatibility: Could not get current KOReader version")
         return true, nil, nil
@@ -67,20 +68,19 @@ function PluginCompatibility.checkCompatibility(plugin_meta)
 
     -- Check minimum version requirement
     if min_version then
-        local min_ver, _ = Version:getNormalizedVersion(min_version)
+        local min_ver, __ = Version:getNormalizedVersion(min_version) -- luacheck: ignore
         if min_ver and current_version < min_ver then
-            local message =
-                string.format("Requires KOReader %s or later (current: %s)", min_version, Version:getShortVersion())
+            local message = T(_("Requires KOReader %1 or later (current: %2)"), min_version, Version:getShortVersion())
             return false, "below_minimum", message
         end
     end
 
     -- Check maximum version requirement
     if max_version then
-        local max_ver, _ = Version:getNormalizedVersion(max_version)
+        local max_ver = Version:getNormalizedVersion(max_version)
         if max_ver and current_version > max_ver then
-            local message = string.format(
-                "Not compatible with KOReader %s and newer. Requires KOReader %s or older",
+            local message = T(
+                _("Not compatible with KOReader %1 and newer. Requires KOReader %2 or older"),
                 Version:getShortVersion(),
                 max_version
             )
@@ -236,13 +236,13 @@ end
 -- @treturn string human-readable description
 function PluginCompatibility.getOverrideDescription(action)
     if action == "always" then
-        return "Always load (even if incompatible)"
+        return _("Always load (even if incompatible)")
     elseif action == "never" then
-        return "Never load"
+        return _("Never load")
     elseif action == "load-once" then
-        return "Load once (for testing)"
+        return _("Load once (for testing)")
     else
-        return "Ask on incompatibility"
+        return _("Ask on incompatibility")
     end
 end
 
@@ -369,13 +369,11 @@ end
 
 --- Create callback for main menu close event.
 -- Handles cleanup when the main menu is fully closed (no stacked submenus).
--- @tparam table main_menu Menu instance
 -- @tparam function on_close_callback User-provided callback (e.g., restart prompt)
 -- @treturn function close_callback handler
-local function createCloseCallback(main_menu, on_close_callback)
+local function createCloseCallback(on_close_callback)
     return function()
         logger.dbg("PluginCompatibility: main menu close_callback called")
-        UIManager:close(main_menu)
         if on_close_callback then
             on_close_callback()
         end
@@ -402,7 +400,7 @@ function PluginCompatibility.showIncompatiblePluginsMenu(incompatible_plugins, o
         is_borderless = true,
         covers_fullscreen = true,
         onMenuSelect = createMenuSelectHandler(genMainMenuItemsWrapper),
-        close_callback = createCloseCallback(main_menu, on_close_callback),
+        close_callback = createCloseCallback(on_close_callback),
     })
 
     UIManager:show(main_menu)
@@ -425,7 +423,7 @@ function PluginCompatibility.genPluginOverrideSubMenu(plugin)
 
     local sub_menu = {
         {
-            text = _("Incompatibility Details"),
+            text = _("Incompatibility details"),
             enabled = false,
             separator = true,
         },
