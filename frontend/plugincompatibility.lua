@@ -21,11 +21,10 @@ Access settings directly through the `settings` field.
 
     -- Flush settings when done
     compatibility.settings:flush()
-]]
 
--- TODO: there must be a way to clean up lingering settings.
--- e.g. when a plugin is uninstalled, or when a new KOReader version is released
--- that makes old overrides irrelevant.
+    -- Clean up old settings (keep current and 2 previous versions)
+    compatibility.settings:purgeOldVersionSettings(3)
+]]
 
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")

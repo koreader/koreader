@@ -92,14 +92,9 @@ function HandlerSandbox:call(module, ...)
     local ok, re
     if self.log_stacktrace then
         local traceback = function(err)
-            -- do not print 2 topmost entries in traceback. The first is this local function
-            -- and the second is the `call` method of HandlerSandbox.
-            logger.err(
-                "An error occurred while executing a handler:\n"
-                    .. err
-                    .. "\n"
-                    .. debug.traceback(self.context.name .. ":" .. self.fname, 2)
-            )
+             -- do not print 2 topmost entries in traceback. The first is this local function
+             -- and the second is the `call` method of HandlerSandbox.
+             logger.err("An error occurred while executing a handler:\n"..err.."\n"..debug.traceback(self.context.name..":"..self.fname, 2))
         end
         ok, re = xpcall(self.f, traceback, module, ...)
     else
@@ -306,6 +301,7 @@ function PluginLoader:_load(t)
     -- flushing here ensures that those settings are saved, and flushed only once.
     -- If there is a crash down the line, flushing here ensures that load-once plugins aren't
     -- reloaded neither.
+    compatibility.settings:purgeOldVersionSettings(3)
     compatibility.settings:flush()
 
     -- If there are incompatible plugins that need prompting, show the menu
