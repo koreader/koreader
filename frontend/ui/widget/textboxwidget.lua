@@ -1172,6 +1172,32 @@ function TextBoxWidget:getVisibleHeightRatios()
     return low, high
 end
 
+function TextBoxWidget:getCharLineNumber(charpos)
+    if charpos == 1 then
+        return 1
+    end
+    local vertical_string_list_nb = #self.vertical_string_list
+    if vertical_string_list_nb == 0 then
+        return 1
+    elseif charpos >= self.vertical_string_list[vertical_string_list_nb].offset then
+        return vertical_string_list_nb
+    end
+
+    local lo, hi = 1, vertical_string_list_nb
+    while lo <= hi do
+        local mid = bit.rshift(lo + hi, 1)
+        local offset = self.vertical_string_list[mid].offset
+        if charpos == offset then
+            return mid
+        elseif charpos < offset then
+            hi = mid - 1
+        else
+            lo = mid + 1
+        end
+    end
+    return lo - 1
+end
+
 -- Helper function to be used before intanstiating a TextBoxWidget instance
 function TextBoxWidget:getFontSizeToFitHeight(height_px, nb_lines, line_height_em, font_face, font_bold)
     -- Get a font size that would fit nb_lines in height_px.
