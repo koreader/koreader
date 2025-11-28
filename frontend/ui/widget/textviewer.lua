@@ -39,6 +39,7 @@ local Screen = Device.screen
 local TextViewer = InputContainer:extend{
     title = nil,
     text = nil,
+    file = nil, -- filepath if file content is displayed, triggers showing Pin buttons
     charlist = nil, -- internal
     width = nil,
     height = nil,
@@ -102,6 +103,10 @@ function TextViewer:init(reinit)
         self.monospace_font = text_settings.monospace_font
         self.text_font_size = text_settings.font_size
         self.justified      = text_settings.justified
+        if self.file then
+            local pinned_pages = G_reader_settings:readSetting("textviewer_pinned_pages")
+            self.pinned_page = pinned_pages and pinned_pages[self.file]
+        end
     end
     local text_font_face = self.monospace_font and "smallinfont" or "x_smallinfofont"
 
@@ -172,7 +177,7 @@ function TextViewer:init(reinit)
         width = self.width,
         align = "left",
         with_bottom_line = true,
-        title = self.title,
+        title = self.title or self.file,
         title_face = self.title_face,
         title_multilines = self.title_multilines,
         title_shrink_font_to_fit = self.title_shrink_font_to_fit,
@@ -214,6 +219,69 @@ function TextViewer:init(reinit)
     end
 
     -- buttons
+    local pin_buttons = self.file and
+        {
+            {
+                text = _("Pin current page"),
+                callback = function()
+                    if self.pinned_page == nil then
+                        local pin_button = self.button_table:getButtonById("go_to_pin")
+                        pin_button:enable()
+                        pin_button:refresh()
+                    end
+                    self.pinned_page = self.scroll_text_w.text_widget:getCharPosAtXY(0, 0)
+                    local pinned_pages = G_reader_settings:readSetting("textviewer_pinned_pages", {})
+                    pinned_pages[self.file] = self.pinned_page
+                    UIManager:show(Notification:new{ text = _("Page pinned") })
+                end,
+                hold_callback = function()
+                    local pinned_pages = G_reader_settings:readSetting("textviewer_pinned_pages")
+                    if pinned_pages == nil then return end
+                    local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+                    UIManager:show(MultiConfirmBox:new{
+                        text = _("Remove pinned page?"),
+                        choice1_text = _("For all files"),
+                        choice1_callback = function()
+                            if self.pinned_page then
+                                self.pinned_page = nil
+                                local pin_button = self.button_table:getButtonById("go_to_pin")
+                                pin_button:disable()
+                                pin_button:refresh()
+                            end
+                            G_reader_settings:delSetting("textviewer_pinned_pages")
+                            UIManager:show(Notification:new{ text = _("All pinned pages removed") })
+                        end,
+                        choice2_text = _("For this file"),
+                        choice2_enabled = self.pinned_page ~= nil,
+                        choice2_callback = function()
+                            self.pinned_page = nil
+                            local pin_button = self.button_table:getButtonById("go_to_pin")
+                            pin_button:disable()
+                            pin_button:refresh()
+                            pinned_pages[self.file] = nil
+                            if next(pinned_pages) == nil then
+                                G_reader_settings:delSetting("textviewer_pinned_pages")
+                            end
+                            UIManager:show(Notification:new{ text = _("Pinned page removed") })
+                        end,
+                    })
+                end,
+            },
+            {
+                text = _("Go to pinned page"),
+                id = "go_to_pin",
+                enabled_func = function()
+                    return self.pinned_page ~= nil
+                end,
+                callback = function()
+                    self.scroll_text_w.text_widget.virtual_line_num =
+                        self.scroll_text_w.text_widget:getCharLineNumber(self.pinned_page)
+                    self.scroll_text_w.text_widget:free(false)
+                    self.scroll_text_w.text_widget:_updateLayout()
+                    self.scroll_text_w:updateScrollBar(true)
+                end,
+            },
+        }
     local default_buttons =
         {
             {
@@ -264,6 +332,9 @@ function TextViewer:init(reinit)
         }
     local buttons = self.buttons_table or {}
     if (self.add_default_buttons and not reinit) or not self.buttons_table then
+        if self.file then
+            table.insert(buttons, pin_buttons)
+        end
         table.insert(buttons, default_buttons)
     end
     self.button_table = ButtonTable:new{
@@ -281,7 +352,6 @@ function TextViewer:init(reinit)
     end
 
     local textw_height = self.height - self.titlebar:getHeight() - self.button_table:getSize().h
-
     self.scroll_text_w = ScrollTextWidget:new{
         text = self.text,
         face = Font:getFace(text_font_face, self.text_font_size),
@@ -683,7 +753,7 @@ function TextViewer.openFile(file)
         local file_content = file_handle:read("*all")
         file_handle:close()
         UIManager:show(TextViewer:new{
-            title = file_path,
+            file = file_path,
             title_multilines = true,
             text = file_content,
             text_type = "file_content",
