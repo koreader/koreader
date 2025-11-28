@@ -790,7 +790,7 @@ function NewsDownloader:createFromDescription(feed, title, content, feed_output_
         local byline = getByline(feed)
         local footer
         if download_full_failed then
-            footer = _("Downloading the full article failed, this might only be a summary. To retry, delete this file and sync again.")
+            footer = _("Downloading the full article failed. To retry, delete this file and sync again.")
         else
             footer = _("If this is only a summary, the full article can be downloaded by going to the News Downloader settings and changing 'Download full article' to 'true'.")
         end
