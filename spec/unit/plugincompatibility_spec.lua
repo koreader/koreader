@@ -1,5 +1,6 @@
 describe("PluginCompatibility module", function()
     local PluginCompatibility, Version
+    local compatibility
 
     setup(function()
         require("commonrequire")
@@ -8,9 +9,13 @@ describe("PluginCompatibility module", function()
     end)
 
     before_each(function()
-        -- LuaSettings:reset replaces the internal data table.
-        -- Provide an empty table to ensure a clean state for each test.
-        G_reader_settings:reset({})
+        -- Create a fresh instance for each test
+        compatibility = PluginCompatibility:new()
+        -- Reset the settings data to ensure clean state
+        compatibility.settings:reset({
+            plugin_load_overrides = {},
+            plugin_compatibility_prompts_shown = {},
+        })
     end)
 
     describe("checkCompatibility", function()
@@ -150,111 +155,6 @@ describe("PluginCompatibility module", function()
         end)
     end)
 
-    describe("getOverrideKey", function()
-        it("should generate a unique key for plugin name and version", function()
-            local key1 = PluginCompatibility.getOverrideKey("plugin1", "1.0")
-            local key2 = PluginCompatibility.getOverrideKey("plugin1", "2.0")
-            local key3 = PluginCompatibility.getOverrideKey("plugin2", "1.0")
-
-            assert.is_not_equal(key1, key2)
-            assert.is_not_equal(key1, key3)
-            assert.is_not_equal(key2, key3)
-        end)
-
-        it("should include KOReader version in the key", function()
-            local key = PluginCompatibility.getOverrideKey("plugin1", "1.0")
-            local koreader_version = Version:getShortVersion()
-
-            assert.truthy(key:find(koreader_version, 1, true))
-        end)
-    end)
-
-    describe("hasBeenPrompted and markAsPrompted", function()
-        it("should track if user has been prompted", function()
-            local has_been_prompted = PluginCompatibility.hasBeenPrompted("testplugin", "1.0")
-            assert.is_false(has_been_prompted)
-
-            PluginCompatibility.markAsPrompted("testplugin", "1.0")
-
-            has_been_prompted = PluginCompatibility.hasBeenPrompted("testplugin", "1.0")
-            assert.is_true(has_been_prompted)
-        end)
-
-        it("should differentiate between plugin versions", function()
-            PluginCompatibility.markAsPrompted("testplugin", "1.0")
-
-            assert.is_true(PluginCompatibility.hasBeenPrompted("testplugin", "1.0"))
-            assert.is_false(PluginCompatibility.hasBeenPrompted("testplugin", "2.0"))
-        end)
-    end)
-
-    describe("getLoadOverride and setLoadOverride", function()
-        it("should return nil when no override is set", function()
-            local override = PluginCompatibility.getLoadOverride("testplugin", "1.0")
-            assert.is_nil(override)
-        end)
-
-        it("should store and retrieve 'always' override", function()
-            PluginCompatibility.setLoadOverride("testplugin", "1.0", "always")
-
-            local override = PluginCompatibility.getLoadOverride("testplugin", "1.0")
-            assert.equals("always", override)
-        end)
-
-        it("should store and retrieve 'never' override", function()
-            PluginCompatibility.setLoadOverride("testplugin", "1.0", "never")
-
-            local override = PluginCompatibility.getLoadOverride("testplugin", "1.0")
-            assert.equals("never", override)
-        end)
-
-        it("should store and retrieve 'load-once' override", function()
-            PluginCompatibility.setLoadOverride("testplugin", "1.0", "load-once")
-
-            local override = PluginCompatibility.getLoadOverride("testplugin", "1.0")
-            assert.equals("load-once", override)
-        end)
-
-        it("should remove override when action is nil", function()
-            PluginCompatibility.setLoadOverride("testplugin", "1.0", "always")
-            assert.equals("always", PluginCompatibility.getLoadOverride("testplugin", "1.0"))
-
-            PluginCompatibility.setLoadOverride("testplugin", "1.0", nil)
-            assert.is_nil(PluginCompatibility.getLoadOverride("testplugin", "1.0"))
-        end)
-
-        it("should return nil for overrides with different versions", function()
-            PluginCompatibility.setLoadOverride("testplugin", "1.0", "always")
-
-            assert.equals("always", PluginCompatibility.getLoadOverride("testplugin", "1.0"))
-            assert.is_nil(PluginCompatibility.getLoadOverride("testplugin", "2.0"))
-        end)
-    end)
-
-    describe("clearLoadOnceOverride", function()
-        it("should clear load-once override", function()
-            PluginCompatibility.setLoadOverride("testplugin", "1.0", "load-once")
-            assert.equals("load-once", PluginCompatibility.getLoadOverride("testplugin", "1.0"))
-
-            PluginCompatibility.clearLoadOnceOverride("testplugin")
-            assert.is_nil(PluginCompatibility.getLoadOverride("testplugin", "1.0"))
-        end)
-
-        it("should not clear 'always' override", function()
-            PluginCompatibility.setLoadOverride("testplugin", "1.0", "always")
-            PluginCompatibility.clearLoadOnceOverride("testplugin")
-
-            assert.equals("always", PluginCompatibility.getLoadOverride("testplugin", "1.0"))
-        end)
-
-        it("should not clear 'never' override", function()
-            PluginCompatibility.setLoadOverride("testplugin", "1.0", "never")
-            PluginCompatibility.clearLoadOnceOverride("testplugin")
-
-            assert.equals("never", PluginCompatibility.getLoadOverride("testplugin", "1.0"))
-        end)
-    end)
-
     describe("shouldLoadPlugin", function()
         it("should load compatible plugins without prompting", function()
             -- Get current version and create a range that includes it
@@ -277,7 +177,7 @@ describe("PluginCompatibility module", function()
                 },
             }
 
-            local should_load, reason, message, should_prompt = PluginCompatibility.shouldLoadPlugin(plugin_meta)
+            local should_load, reason, message, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
 
             assert.is_true(should_load)
             assert.is_nil(reason)
@@ -294,7 +194,7 @@ describe("PluginCompatibility module", function()
                 },
             }
 
-            local should_load, reason, message, should_prompt = PluginCompatibility.shouldLoadPlugin(plugin_meta)
+            local should_load, reason, message, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
 
             assert.is_false(should_load)
             assert.equals("above_maximum", reason)
@@ -312,14 +212,15 @@ describe("PluginCompatibility module", function()
             }
 
             -- First time - should prompt
-            local should_load, reason, message, should_prompt = PluginCompatibility.shouldLoadPlugin(plugin_meta)
+            local _, _, _, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
             assert.is_true(should_prompt)
 
             -- Mark as prompted
-            PluginCompatibility.markAsPrompted("testplugin", "1.0")
+            compatibility.settings:markAsPrompted("testplugin", "1.0")
 
             -- Second time - should not prompt
-            should_load, reason, message, should_prompt = PluginCompatibility.shouldLoadPlugin(plugin_meta)
+            local should_load
+            should_load, _, _, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
             assert.is_false(should_load)
             assert.is_false(should_prompt)
         end)
@@ -333,9 +234,9 @@ describe("PluginCompatibility module", function()
                 },
             }
 
-            PluginCompatibility.setLoadOverride("testplugin", "1.0", "always")
+            compatibility.settings:setLoadOverride("testplugin", "1.0", "always")
 
-            local should_load, reason, message, should_prompt = PluginCompatibility.shouldLoadPlugin(plugin_meta)
+            local should_load, reason, message, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
 
             assert.is_true(should_load)
             assert.is_nil(reason)
@@ -352,9 +253,9 @@ describe("PluginCompatibility module", function()
                 },
             }
 
-            PluginCompatibility.setLoadOverride("testplugin", "1.0", "never")
+            compatibility.settings:setLoadOverride("testplugin", "1.0", "never")
 
-            local should_load, reason, message, should_prompt = PluginCompatibility.shouldLoadPlugin(plugin_meta)
+            local should_load, reason, message, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
 
             assert.is_false(should_load)
             assert.equals("above_maximum", reason)
@@ -371,9 +272,9 @@ describe("PluginCompatibility module", function()
                 },
             }
 
-            PluginCompatibility.setLoadOverride("testplugin", "1.0", "load-once")
+            compatibility.settings:setLoadOverride("testplugin", "1.0", "load-once")
 
-            local should_load, reason, message, should_prompt = PluginCompatibility.shouldLoadPlugin(plugin_meta)
+            local should_load, reason, message, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
 
             assert.is_true(should_load)
             assert.is_nil(reason)
@@ -381,7 +282,7 @@ describe("PluginCompatibility module", function()
             assert.is_false(should_prompt)
 
             -- Verify the override was cleared
-            local override = PluginCompatibility.getLoadOverride("testplugin", "1.0")
+            local override = compatibility.settings:getLoadOverride("testplugin", "1.0")
             assert.is_nil(override)
         end)
     end)
@@ -434,7 +335,7 @@ describe("PluginCompatibility module", function()
                 },
             }
 
-            local should_load, reason, message, should_prompt = PluginCompatibility.shouldLoadPlugin(plugin_meta)
+            local should_load, reason, message, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
 
             assert.is_true(should_load)
             assert.is_nil(reason)
