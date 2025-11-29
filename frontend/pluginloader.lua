@@ -385,7 +385,6 @@ function PluginLoader:genPluginManagerSubItem()
         else
             -- Standard plugin toggle callback
             menu_item.callback = function()
-                local UIManager = require("ui/uimanager")
                 local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
                 plugin.enable = not plugin.enable
                 if plugin.enable then
