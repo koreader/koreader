@@ -8,6 +8,10 @@ user overrides for loading incompatible plugins.
 Settings are stored in a dedicated file via PluginCompatibilitySettings.
 Access settings directly through the `settings` field.
 
+To develop this feature, set KODEV_ENABLE_INCOMPATIBLE_PLUGIN env variable
+to any value to make hello.koplugin appear as an incompatible plugin.
+Check ./plugins/hello.koplugin/_meta.lua to see how this works.
+
 @usage
     local PluginCompatibility = require("plugincompatibility")
     local compatibility = PluginCompatibility:new()
