@@ -356,6 +356,7 @@ function PluginCompatibility:genPluginOverrideSubMenu(plugin)
             callback = function()
                 settings:setLoadOverride(plugin_name, plugin_version, option.action)
                 settings:markAsPrompted(plugin_name, plugin_version)
+                settings:flush()
                 UIManager:askForRestart()
             end,
         })
