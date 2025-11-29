@@ -24,7 +24,6 @@ describe("PluginCompatibility module", function()
                 name = "testplugin",
                 version = "1.0",
             }
-
             local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
             assert.is_true(is_compatible)
             assert.is_nil(reason)
@@ -37,7 +36,6 @@ describe("PluginCompatibility module", function()
                 version = "1.0",
                 compatibility = {},
             }
-
             local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
             assert.is_true(is_compatible)
             assert.is_nil(reason)
@@ -51,11 +49,9 @@ describe("PluginCompatibility module", function()
                 pending("Cannot get current KOReader version")
                 return
             end
-
             local year_now = math.floor(current_version / 100000000)
             local min_year = math.max(2000, year_now - 100)
             local max_year = year_now + 100
-
             local plugin_meta = {
                 name = "testplugin",
                 version = "1.0",
@@ -64,13 +60,11 @@ describe("PluginCompatibility module", function()
                     max_version = string.format("v%d.12-999", max_year),
                 },
             }
-
             local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
             assert.is_nil(reason)
             assert.is_nil(message)
             assert.is_true(is_compatible)
         end)
-
         it("should return incompatible when current version is below minimum", function()
             -- Get current version and create a future minimum
             local current_version, _ = Version:getNormalizedCurrentVersion()
@@ -78,11 +72,9 @@ describe("PluginCompatibility module", function()
                 pending("Cannot get current KOReader version")
                 return
             end
-
             -- Use a year 100 years in the future as minimum
             local year_now = math.floor(current_version / 100000000)
             local future_year = year_now + 100
-
             local plugin_meta = {
                 name = "testplugin",
                 version = "1.0",
@@ -90,7 +82,6 @@ describe("PluginCompatibility module", function()
                     min_version = string.format("v%d.01-1", future_year),
                 },
             }
-
             local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
             assert.is_false(is_compatible)
             assert.equals("below_minimum", reason)
@@ -106,7 +97,6 @@ describe("PluginCompatibility module", function()
                     max_version = "2000.01-1",
                 },
             }
-
             local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
             assert.is_false(is_compatible)
             assert.equals("above_maximum", reason)
@@ -122,7 +112,6 @@ describe("PluginCompatibility module", function()
                     min_version = "2000.01-1",
                 },
             }
-
             local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
             assert.is_true(is_compatible)
             assert.is_nil(reason)
@@ -136,10 +125,8 @@ describe("PluginCompatibility module", function()
                 pending("Cannot get current KOReader version")
                 return
             end
-
             local year_now = math.floor(current_version / 100000000)
             local future_year = year_now + 100
-
             local plugin_meta = {
                 name = "testplugin",
                 version = "1.0",
@@ -147,7 +134,6 @@ describe("PluginCompatibility module", function()
                     max_version = string.format("v%d.12-999", future_year),
                 },
             }
-
             local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
             assert.is_true(is_compatible)
             assert.is_nil(reason)
@@ -163,11 +149,9 @@ describe("PluginCompatibility module", function()
                 pending("Cannot get current KOReader version")
                 return
             end
-
             local year_now = math.floor(current_version / 100000000)
             local min_year = math.max(2000, year_now - 100)
             local max_year = year_now + 100
-
             local plugin_meta = {
                 name = "testplugin",
                 version = "1.0",
@@ -176,9 +160,7 @@ describe("PluginCompatibility module", function()
                     max_version = string.format("v%d.12-999", max_year),
                 },
             }
-
             local should_load, reason, message, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
-
             assert.is_true(should_load)
             assert.is_nil(reason)
             assert.is_nil(message)
@@ -193,9 +175,7 @@ describe("PluginCompatibility module", function()
                     max_version = "2000.01-1",
                 },
             }
-
             local should_load, reason, message, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
-
             assert.is_false(should_load)
             assert.equals("above_maximum", reason)
             assert.is_not_nil(message)
@@ -210,14 +190,11 @@ describe("PluginCompatibility module", function()
                     max_version = "2000.01-1",
                 },
             }
-
             -- First time - should prompt
             local _, _, _, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
             assert.is_true(should_prompt)
-
             -- Mark as prompted
             compatibility.settings:markAsPrompted("testplugin", "1.0")
-
             -- Second time - should not prompt
             local should_load
             should_load, _, _, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
@@ -233,11 +210,8 @@ describe("PluginCompatibility module", function()
                     max_version = "2000.01-1",
                 },
             }
-
             compatibility.settings:setLoadOverride("testplugin", "1.0", "always")
-
             local should_load, reason, message, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
-
             assert.is_true(should_load)
             assert.is_nil(reason)
             assert.is_nil(message)
@@ -252,11 +226,8 @@ describe("PluginCompatibility module", function()
                     max_version = "2000.01-1",
                 },
             }
-
             compatibility.settings:setLoadOverride("testplugin", "1.0", "never")
-
             local should_load, reason, message, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
-
             assert.is_false(should_load)
             assert.equals("above_maximum", reason)
             assert.is_not_nil(message)
@@ -271,16 +242,12 @@ describe("PluginCompatibility module", function()
                     max_version = "2000.01-1",
                 },
             }
-
             compatibility.settings:setLoadOverride("testplugin", "1.0", "load-once")
-
             local should_load, reason, message, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
-
             assert.is_true(should_load)
             assert.is_nil(reason)
             assert.is_nil(message)
             assert.is_false(should_prompt)
-
             -- Verify the override was cleared
             local override = compatibility.settings:getLoadOverride("testplugin", "1.0")
             assert.is_nil(override)
@@ -307,7 +274,6 @@ describe("PluginCompatibility module", function()
             PluginCompatibility.isCompatibilityCheckEnabled = function()
                 return false
             end
-
             local plugin_meta = {
                 name = "testplugin",
                 version = "1.0",
@@ -315,7 +281,6 @@ describe("PluginCompatibility module", function()
                     max_version = "2000.01-1",
                 },
             }
-
             local is_compatible, reason, message = require("plugincompatibility").checkCompatibility(plugin_meta)
             assert.is_nil(reason)
             assert.is_nil(message)
@@ -326,7 +291,6 @@ describe("PluginCompatibility module", function()
             PluginCompatibility.isCompatibilityCheckEnabled = function()
                 return false
             end
-
             local plugin_meta = {
                 name = "testplugin",
                 version = "1.0",
@@ -334,9 +298,7 @@ describe("PluginCompatibility module", function()
                     max_version = "2000.01-1",
                 },
             }
-
             local should_load, reason, message, should_prompt = compatibility:shouldLoadPlugin(plugin_meta)
-
             assert.is_true(should_load)
             assert.is_nil(reason)
             assert.is_nil(message)
@@ -351,7 +313,6 @@ describe("PluginCompatibility module", function()
                     max_version = "2000.01-1",
                 },
             }
-
             local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
             assert.is_false(is_compatible)
             assert.equals("above_maximum", reason)

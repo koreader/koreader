@@ -43,12 +43,10 @@ function PluginCompatibilitySettings:open()
     local file_path = DataStorage:getSettingsDir() .. "/" .. SETTINGS_FILE
     local new = LuaSettings.open(self, file_path)
     setmetatable(new, { __index = PluginCompatibilitySettings })
-
     -- Initialize version_settings structure if it doesn't exist
     if not new.data.version_settings then
         new.data.version_settings = {}
     end
-
     return new
 end
 
@@ -58,7 +56,6 @@ end
 -- @treturn table|nil The settings table for this version, or nil if not found and not creating
 function PluginCompatibilitySettings:_getVersionSettings(koreader_version, create_if_missing)
     koreader_version = koreader_version or Version:getShortVersion()
-
     if not self.data.version_settings then
         if create_if_missing then
             self.data.version_settings = {}
@@ -66,7 +63,6 @@ function PluginCompatibilitySettings:_getVersionSettings(koreader_version, creat
             return nil
         end
     end
-
     if not self.data.version_settings[koreader_version] then
         if create_if_missing then
             self.data.version_settings[koreader_version] = {
@@ -77,7 +73,6 @@ function PluginCompatibilitySettings:_getVersionSettings(koreader_version, creat
             return nil
         end
     end
-
     return self.data.version_settings[koreader_version]
 end
 
@@ -98,7 +93,6 @@ function PluginCompatibilitySettings:hasBeenPrompted(plugin_name, plugin_version
     if not version_settings then
         return false
     end
-
     local prompts_shown = version_settings.plugin_compatibility_prompts_shown or {}
     local key = self:getOverrideKey(plugin_name, plugin_version)
     return prompts_shown[key] == true
@@ -121,7 +115,6 @@ function PluginCompatibilitySettings:removePromptedMark(plugin_name, plugin_vers
     if not version_settings then
         return
     end
-
     local key = self:getOverrideKey(plugin_name, plugin_version)
     version_settings.plugin_compatibility_prompts_shown[key] = nil
 end
@@ -136,20 +129,16 @@ function PluginCompatibilitySettings:getLoadOverride(plugin_name, plugin_version
     if not version_settings then
         return nil
     end
-
     local overrides = version_settings.plugin_load_overrides or {}
     local override = overrides[plugin_name]
-
     if not override then
         return nil
     end
-
     -- Check if the override is for the current plugin version
     if override.version ~= plugin_version then
         -- Override exists but for different plugin version, treat as no override
         return nil
     end
-
     return override.action
 end
 
@@ -159,7 +148,6 @@ end
 -- @tparam string|nil action "always", "never", "load-once", or nil/ask to remove override
 function PluginCompatibilitySettings:setLoadOverride(plugin_name, plugin_version, action)
     local version_settings = self:_getVersionSettings(nil, true)
-
     if action == nil or action == "ask" then
         -- Remove override
         version_settings.plugin_load_overrides[plugin_name] = nil
@@ -179,10 +167,8 @@ function PluginCompatibilitySettings:clearLoadOnceOverride(plugin_name)
     if not version_settings then
         return
     end
-
     local overrides = version_settings.plugin_load_overrides or {}
     local override = overrides[plugin_name]
-
     if override and override.action == "load-once" then
         version_settings.plugin_load_overrides[plugin_name] = nil
     end
@@ -196,13 +182,11 @@ function PluginCompatibilitySettings:_normalizeVersion(version_str)
     if not version_str then
         return nil
     end
-
     -- getNormalizedVersion expects "v" prefix
     local prefixed = version_str
     if not version_str:match("^v") then
         prefixed = "v" .. version_str
     end
-
     local normalized, _ = Version:getNormalizedVersion(prefixed)
     return normalized
 end
@@ -216,7 +200,6 @@ function PluginCompatibilitySettings:purgeOldVersionSettings(keep_versions)
     if not self.data.version_settings then
         return 0
     end
-
     -- Collect all versions with their normalized values
     local versions = {}
     for version_str, _ in pairs(self.data.version_settings) do
@@ -228,12 +211,10 @@ function PluginCompatibilitySettings:purgeOldVersionSettings(keep_versions)
             })
         end
     end
-
     -- Sort by normalized version (descending - newest first)
     table.sort(versions, function(a, b)
         return a.normalized > b.normalized
     end)
-
     -- Keep the newest `keep_versions` versions, delete the rest
     local purged_count = 0
     for i, version in ipairs(versions) do
@@ -242,7 +223,6 @@ function PluginCompatibilitySettings:purgeOldVersionSettings(keep_versions)
             purged_count = purged_count + 1
         end
     end
-
     return purged_count
 end
 
@@ -252,7 +232,6 @@ function PluginCompatibilitySettings:getStoredVersions()
     if not self.data.version_settings then
         return {}
     end
-
     local versions = {}
     for version_str, _ in pairs(self.data.version_settings) do
         local normalized = self:_normalizeVersion(version_str)
@@ -263,17 +242,14 @@ function PluginCompatibilitySettings:getStoredVersions()
             })
         end
     end
-
     -- Sort by normalized version (descending - newest first)
     table.sort(versions, function(a, b)
         return a.normalized > b.normalized
     end)
-
     local result = {}
     for _, v in ipairs(versions) do
         table.insert(result, v.str)
     end
-
     return result
 end
 
