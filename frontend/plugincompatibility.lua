@@ -69,22 +69,18 @@ function PluginCompatibility.checkCompatibility(plugin_meta)
     if not plugin_meta or not PluginCompatibility.isCompatibilityCheckEnabled() then
         return true, nil, nil
     end
-
     local compatibility = plugin_meta.compatibility
     if not compatibility then
         -- No compatibility field means it works with all versions (backward compatibility)
         return true, nil, nil
     end
-
     local current_version, __ = Version:getNormalizedCurrentVersion()
     if not current_version then
         logger.warn("PluginCompatibility: Could not get current KOReader version")
         return true, nil, nil
     end
-
     local min_version = compatibility.min_version
     local max_version = compatibility.max_version
-
     -- Check minimum version requirement
     if min_version then
         local min_ver, __ = Version:getNormalizedVersion(min_version) -- luacheck: ignore
@@ -93,7 +89,6 @@ function PluginCompatibility.checkCompatibility(plugin_meta)
             return false, "below_minimum", message
         end
     end
-
     -- Check maximum version requirement
     if max_version then
         local max_ver = Version:getNormalizedVersion(max_version)
@@ -106,7 +101,6 @@ function PluginCompatibility.checkCompatibility(plugin_meta)
             return false, "above_maximum", message
         end
     end
-
     return true, nil, nil
 end
 
@@ -118,15 +112,12 @@ end
 -- @treturn boolean true if user should be prompted
 function PluginCompatibility:shouldLoadPlugin(plugin_meta)
     local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
-
     if is_compatible then
         -- Plugin is compatible, load it
         return true, nil, nil, false
     end
-
     -- Plugin is incompatible, check for overrides
     local override = self.settings:getLoadOverride(plugin_meta.name, plugin_meta.version)
-
     if override == "always" then
         -- User wants to always load this plugin despite incompatibility
         return true, nil, nil, false
@@ -140,11 +131,9 @@ function PluginCompatibility:shouldLoadPlugin(plugin_meta)
         self.settings:removePromptedMark(plugin_meta.name, plugin_meta.version)
         return true, nil, nil, false
     end
-
     -- No override exists, check if we've already prompted the user
     local has_been_prompted = self.settings:hasBeenPrompted(plugin_meta.name, plugin_meta.version)
     logger.dbg("PluginCompatibility: has_been_prompted for", plugin_meta.name, "is", has_been_prompted)
-
     if has_been_prompted then
         -- We've asked before and user didn't set an override, so don't load
         return false, reason, message, false
@@ -226,7 +215,6 @@ end
 local function createPluginMenuItem(self, plugin)
     local current_override = self.settings:getLoadOverride(plugin.name, plugin.version)
     local status_text = PluginCompatibility.getOverrideDescription(current_override)
-
     return {
         text = plugin.fullname or plugin.name,
         mandatory = status_text,
@@ -263,11 +251,9 @@ local function handleLeafMenuSelect(menu, item, genMainMenuItems_func)
     if item.select_enabled_func and not item.select_enabled_func() then
         return true
     end
-
     if item.callback then
         item.callback(menu)
     end
-
     if #menu.item_table_stack == 0 then
         menu:switchItemTable(nil, genMainMenuItems_func())
     end
@@ -326,7 +312,6 @@ function PluginCompatibility:showIncompatiblePluginsMenu(incompatible_plugins, o
     local function genMainMenuItemsWrapper()
         return genMainMenuItems(self_ref, incompatible_plugins)
     end
-
     local main_menu
     main_menu = Menu:new({
         title = _("Incompatible Plugins"),
@@ -337,7 +322,6 @@ function PluginCompatibility:showIncompatiblePluginsMenu(incompatible_plugins, o
         onMenuSelect = createMenuSelectHandler(genMainMenuItemsWrapper),
         close_callback = createCloseCallback(self_ref, on_close_callback),
     })
-
     UIManager:show(main_menu)
     UIManager:show(InfoMessage:new({
         text = _([[These plugins are incompatible with the current version of KOReader.
@@ -356,7 +340,6 @@ function PluginCompatibility:genPluginOverrideSubMenu(plugin)
     local settings = self.settings
     local plugin_name = plugin.name
     local plugin_version = plugin.version
-
     local sub_menu = {
         {
             text = _("Incompatibility details"),
@@ -364,7 +347,6 @@ function PluginCompatibility:genPluginOverrideSubMenu(plugin)
             separator = true,
         },
     }
-
     for _, option in ipairs(overrideItems()) do
         table.insert(sub_menu, {
             text = option.text,
@@ -374,12 +356,10 @@ function PluginCompatibility:genPluginOverrideSubMenu(plugin)
             callback = function()
                 settings:setLoadOverride(plugin_name, plugin_version, option.action)
                 settings:markAsPrompted(plugin_name, plugin_version)
-
                 UIManager:askForRestart()
             end,
         })
     end
-
     return sub_menu
 end
 
