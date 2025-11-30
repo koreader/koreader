@@ -198,13 +198,10 @@ DUSE_TURBO_LIB = false,
 -- By default they're stored in data/dict under dataDir.
 STARDICT_DATA_DIR = nil,
 
--- When enabled, KOReader will validate each plugin's `compatibility` field
--- (from the plugin's _meta.lua) against the running KOReader version.
--- If a plugin is deemed incompatible, KOReader's plugin compatibility
--- subsystem will prevent automatic loading and surface options to the user
--- to override the decision (ask on incompatibility, load once, always load,
--- or never load). Disabling this flag bypasses those checks and allows all
--- plugins to be loaded regardless of their declared compatibility.
--- Note: the runtime implementation lives in `frontend/plugincompatibility.lua`.
+-- When enabled, each plugin's declared compatibility will be validated
+-- against the running KOReader version.
+-- If a plugin is incompatible, loading is blocked and the user will be prompted
+-- (ask on incompatibility, load once, always load, or never load).
+-- Disabling this flag bypasses those checks and loads all plugins regardless of compatibility.
 ENABLE_PLUGIN_COMPATIBILITY_CHECKS = true,
 }

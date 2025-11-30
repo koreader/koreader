@@ -33,11 +33,11 @@ Check ./plugins/hello.koplugin/_meta.lua to see how this works.
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local PluginCompatibilitySettings = require("plugincompatibilitysettings")
-local T = require("ffi/util").template
 local UIManager = require("ui/uimanager")
 local Version = require("frontend/version")
-local _ = require("gettext")
 local logger = require("logger")
+local _ = require("gettext")
+local T = require("ffi/util").template
 
 local PluginCompatibility = {}
 PluginCompatibility.__index = PluginCompatibility
@@ -83,7 +83,7 @@ function PluginCompatibility.checkCompatibility(plugin_meta)
     local max_version = compatibility.max_version
     -- Check minimum version requirement
     if min_version then
-        local min_ver, __ = Version:getNormalizedVersion(min_version) -- luacheck: ignore
+        local min_ver = Version:getNormalizedVersion(min_version)
         if min_ver and current_version < min_ver then
             local message = T(_("Requires KOReader %1 or later (current: %2)"), min_version, Version:getShortVersion())
             return false, "below_minimum", message
@@ -350,6 +350,7 @@ function PluginCompatibility:genPluginOverrideSubMenu(plugin)
     for _, option in ipairs(overrideItems()) do
         table.insert(sub_menu, {
             text = option.text,
+            radio = true,
             checked_func = function()
                 return settings:getLoadOverride(plugin_name, plugin_version) == option.action
             end,
