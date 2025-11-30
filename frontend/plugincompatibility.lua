@@ -186,6 +186,7 @@ local function showOverrideButtonDialog(self, plugin, on_close)
             text = option.text,
             callback = function()
                 logger.dbg("PluginCompatibility: button dialog action called", plugin.name, option.action)
+                self.settings:removePromptedMark(plugin.name, plugin.version)
                 self.settings:setLoadOverride(plugin.name, plugin.version, option.action)
                 if option.action then
                     self.settings:markAsPrompted(plugin.name, plugin.version)
