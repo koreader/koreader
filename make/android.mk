@@ -38,7 +38,7 @@ endif
 
 # Update. {{{
 
-PHONY += androiddev update
+PHONY += update
 
 ANDROID_DIR = $(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR = $(ANDROID_DIR)/luajit-launcher
@@ -84,9 +84,6 @@ LICENSE*
 *license.txt
 NOTICE
 endef
-
-androiddev: update
-	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) dev
 
 update: all
 	# Note: do not remove the module directory so there's no need
