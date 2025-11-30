@@ -30,6 +30,7 @@ Check ./plugins/hello.koplugin/_meta.lua to see how this works.
     compatibility.settings:purgeOldVersionSettings(3)
 ]]
 
+local ButtonDialog = require("ui/widget/buttondialog")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local PluginCompatibilitySettings = require("plugincompatibilitysettings")
@@ -158,30 +159,6 @@ function PluginCompatibility.getOverrideDescription(action)
     end
 end
 
---- Create menu item for a single override option.
--- Returns a menu item that, when selected, applies the override action,
--- marks the plugin as prompted, and pops back to the parent menu.
--- @table self PluginCompatibility instance
--- @table plugin Plugin reference table
--- @table option Override option with action and text
--- @treturn table Menu item for this override option
-local function createOverrideOptionMenuItem(self, plugin, option)
-    return {
-        text = option.text,
-        callback = function(menu)
-            logger.dbg("PluginCompatibility: submenu action called", plugin.name, option.action)
-            self.settings:setLoadOverride(plugin.name, plugin.version, option.action)
-            if option.action then
-                self.settings:markAsPrompted(plugin.name, plugin.version)
-            end
-            self.settings:flush()
-            if menu and menu.onClose then
-                menu:onClose()
-            end
-        end,
-    }
-end
-
 --- Returns a list of available override actions for incompatible plugins.
 -- @treturn table
 local function overrideItems()
@@ -193,101 +170,96 @@ local function overrideItems()
     }
 end
 
---- Generate menu items for plugin override options.
--- Creates a submenu listing all available override actions for a plugin.
+--- Show ButtonDialog for plugin override options.
+-- Displays a dialog with buttons for each override action. When an action is selected,
+-- it is applied and the dialog is closed. The tap_close_callback refreshes the menu.
 -- @table self PluginCompatibility instance
 -- @table plugin Plugin table with name and version
--- @treturn table Array of menu items for override options
-local function genOverrideMenuItems(self, plugin)
-    local menu_items = {}
-    for _, option in ipairs(overrideItems()) do
-        table.insert(menu_items, createOverrideOptionMenuItem(self, plugin, option))
+-- @func on_close Function to call when dialog closes (to refresh menu)
+local function showOverrideButtonDialog(self, plugin, on_close)
+    local buttons = {}
+    local button_row = {}
+    local dialog
+
+    for i, option in ipairs(overrideItems()) do
+        table.insert(button_row, {
+            text = option.text,
+            callback = function()
+                logger.dbg("PluginCompatibility: button dialog action called", plugin.name, option.action)
+                self.settings:setLoadOverride(plugin.name, plugin.version, option.action)
+                if option.action then
+                    self.settings:markAsPrompted(plugin.name, plugin.version)
+                end
+                self.settings:flush()
+                dialog:onClose()
+            end,
+        })
+        if i % 2 == 0 then
+            table.insert(buttons, button_row)
+            button_row = {}
+        end
     end
-    return menu_items
+    if #button_row > 0 then
+        table.insert(buttons, button_row)
+    end
+    dialog = ButtonDialog:new({
+        title = T(_("Choose action for %1"), plugin.fullname or plugin.name),
+        buttons = buttons,
+        tap_close_callback = on_close,
+    })
+    UIManager:show(dialog)
 end
 
 --- Create menu item for a single incompatible plugin.
 -- Generates a menu item with the plugin name, current override status (mandatory),
--- and a submenu of override options.
+-- that opens a ButtonDialog with override options when selected.
 -- @table self PluginCompatibility instance
 -- @table plugin Plugin table with name, version, and incompatibility_message
+-- @func on_close Function to call when dialog closes (to refresh menu)
 -- @treturn table Menu item for this incompatible plugin
-local function createPluginMenuItem(self, plugin)
+local function createPluginMenuItem(self, plugin, on_close)
     local current_override = self.settings:getLoadOverride(plugin.name, plugin.version)
     local status_text = PluginCompatibility.getOverrideDescription(current_override)
     return {
         text = plugin.fullname or plugin.name,
         mandatory = status_text,
         help_text = plugin.incompatibility_message,
-        sub_item_table = genOverrideMenuItems(self, plugin),
+        callback = function()
+            showOverrideButtonDialog(self, plugin, on_close)
+        end,
     }
 end
 
 --- Generate all menu items for the main incompatible plugins menu.
 -- Creates a list of menu items, one per incompatible plugin, each with its
--- current override status and submenu of options.
+-- current override status and a callback to show button dialog options.
 -- @table self PluginCompatibility instance
 -- @table incompatible_plugins List of incompatible plugins
+-- @func on_close Function to call when dialog closes (to refresh menu)
 -- @treturn table Array of menu items for all incompatible plugins
-local function genMainMenuItems(self, incompatible_plugins)
+local function genMainMenuItems(self, incompatible_plugins, on_close)
     local menu_items = {}
     for _, plugin in ipairs(incompatible_plugins) do
-        table.insert(menu_items, createPluginMenuItem(self, plugin))
+        table.insert(menu_items, createPluginMenuItem(self, plugin, on_close))
     end
     return menu_items
 end
 
---- Handle leaf menu item selection (override option chosen).
--- Executes the item callback, pops back to parent menu if in a submenu,
--- and refreshes the main menu display if returning to root level.
--- @table menu Menu instance
--- @table item Selected menu item
--- @func genMainMenuItems_func Function that regenerates main menu items
--- @treturn boolean True to indicate event was handled
-local function handleLeafMenuSelect(menu, item, genMainMenuItems_func)
-    if item.select_enabled == false then
-        return true
-    end
-    if item.select_enabled_func and not item.select_enabled_func() then
-        return true
-    end
-    if item.callback then
-        item.callback(menu)
-    end
-    if #menu.item_table_stack == 0 then
-        menu:switchItemTable(nil, genMainMenuItems_func())
-    end
-    return true
-end
-
---- Handle stacked submenu navigation.
--- Pushes current item table onto stack and displays the submenu.
--- @table menu Menu instance
--- @table item Selected menu item with sub_item_table
-local function handleSubmenuSelect(menu, item)
-    menu.item_table.title = menu.title
-    table.insert(menu.item_table_stack, menu.item_table)
-    menu:switchItemTable(item.text, item.sub_item_table)
-end
-
---- Create custom onMenuSelect handler for incompatible plugins menu.
--- Returns a function that handles both leaf selection (override choice)
--- and submenu selection (plugin choice) with proper stacking behavior.
--- @func genMainMenuItems_func Function to regenerate main menu items
+--- Create onMenuSelect handler to prevent close_callback on menu item selection.
+-- Returns a handler that invokes the item callback (which shows a ButtonDialog).
+-- The menu refresh is handled by the ButtonDialog callback, not here.
 -- @treturn function onMenuSelect handler
-local function createMenuSelectHandler(genMainMenuItems_func)
-    return function(self, item)
-        if item.sub_item_table == nil then
-            handleLeafMenuSelect(self, item, genMainMenuItems_func)
-        else
-            handleSubmenuSelect(self, item)
+local function createMenuSelectHandler()
+    return function(menu, item)
+        if item.callback then
+            item.callback()
         end
         return true
     end
 end
 
 --- Create callback for main menu close event.
--- Handles cleanup when the main menu is fully closed (no stacked submenus).
+-- Handles cleanup when the main menu is fully closed.
 -- @func on_close_callback User-provided callback (e.g., restart prompt)
 -- @treturn function close_callback handler
 local function createCloseCallback(self, on_close_callback)
@@ -301,25 +273,28 @@ local function createCloseCallback(self, on_close_callback)
 end
 
 --- Show the main incompatible plugins menu.
--- Creates a full-screen stacked menu listing all incompatible plugins.
--- When a plugin is selected, a submenu with override options is displayed.
--- When an override option is selected, it is applied and the menu returns to the plugin list.
+-- Creates a full-screen menu listing all incompatible plugins.
+-- When a plugin is selected, a ButtonDialog with override options is displayed.
+-- When an override option is selected, it is applied and the menu is refreshed.
 -- When the main menu is closed, the on_close_callback is invoked.
 -- @table incompatible_plugins List of incompatible plugin tables with name, version, incompatibility_message
 -- @func on_close_callback Callback to execute when the main menu is fully closed (e.g., restart prompt)
 function PluginCompatibility:showIncompatiblePluginsMenu(incompatible_plugins, on_close_callback)
     local self_ref = self
-    local function genMainMenuItemsWrapper()
-        return genMainMenuItems(self_ref, incompatible_plugins)
-    end
     local main_menu
+    local function refreshMenu()
+        if main_menu then
+            local new_items = genMainMenuItems(self_ref, incompatible_plugins, refreshMenu)
+            main_menu:switchItemTable(nil, new_items)
+        end
+    end
     main_menu = Menu:new({
         title = _("Incompatible Plugins"),
-        item_table = genMainMenuItemsWrapper(),
+        item_table = genMainMenuItems(self_ref, incompatible_plugins, refreshMenu),
         is_popout = false,
         is_borderless = true,
         covers_fullscreen = true,
-        onMenuSelect = createMenuSelectHandler(genMainMenuItemsWrapper),
+        onMenuSelect = createMenuSelectHandler(),
         close_callback = createCloseCallback(self_ref, on_close_callback),
     })
     UIManager:show(main_menu)
