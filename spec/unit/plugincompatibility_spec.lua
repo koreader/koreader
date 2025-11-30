@@ -13,8 +13,7 @@ describe("PluginCompatibility module", function()
         compatibility = PluginCompatibility:new()
         -- Reset the settings data to ensure clean state
         compatibility.settings:reset({
-            plugin_load_overrides = {},
-            plugin_compatibility_prompts_shown = {},
+            version_settings = {},
         })
     end)
 

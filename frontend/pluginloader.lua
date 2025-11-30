@@ -207,7 +207,7 @@ function PluginLoader:_load(t)
     local incompatible_plugins_with_prompt = {}
     local compatibility = self:getCompatibility()
 
-    for id, v in ipairs(t) do
+    for __, v in ipairs(t) do -- luacheck: ignore
         mainfile = v.main
         metafile = v.meta
         plugin_root = v.path
@@ -297,25 +297,21 @@ function PluginLoader:_load(t)
     package.path = package_path
     package.cpath = package_cpath
 
-    -- flush here, as shouldLoadPlugin could've changes settings due to e.g. load-once
+    -- flush here, as shouldLoadPlugin could've changed settings due to e.g. load-once
     -- flushing here ensures that those settings are saved, and flushed only once.
     -- If there is a crash down the line, flushing here ensures that load-once plugins aren't
-    -- reloaded neither.
+    -- reloaded either.
     compatibility.settings:purgeOldVersionSettings(3)
     compatibility.settings:flush()
 
     -- If there are incompatible plugins that need prompting, show the menu
     if #incompatible_plugins_with_prompt > 0 then
         UIManager:nextTick(function()
-            self:_showIncompatiblePluginsMenu(incompatible_plugins_with_prompt)
+            self:getCompatibility():showIncompatiblePluginsMenu(incompatible_plugins_with_prompt, function()
+                UIManager:askForRestart()
+            end)
         end)
     end
-end
-
-function PluginLoader:_showIncompatiblePluginsMenu(incompatible_plugins)
-    self:getCompatibility():showIncompatiblePluginsMenu(incompatible_plugins, function()
-        UIManager:askForRestart()
-    end)
 end
 
 function PluginLoader:loadPlugins()
