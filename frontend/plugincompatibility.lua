@@ -182,8 +182,9 @@ local function showOverrideButtonDialog(self, plugin, on_close)
     local dialog
 
     for i, option in ipairs(overrideItems()) do
+        local current_override = self.settings:getLoadOverride(plugin.name, plugin.version)
         table.insert(button_row, {
-            text = option.text,
+            text = option.text .. (current_override == option.action and "  ✓" or ""),
             callback = function()
                 logger.dbg("PluginCompatibility: button dialog action called", plugin.name, option.action)
                 self.settings:removePromptedMark(plugin.name, plugin.version)
@@ -195,16 +196,12 @@ local function showOverrideButtonDialog(self, plugin, on_close)
                 dialog:onClose()
             end,
         })
-        if i % 2 == 0 then
-            table.insert(buttons, button_row)
-            button_row = {}
-        end
-    end
-    if #button_row > 0 then
         table.insert(buttons, button_row)
+        button_row = {}
     end
     dialog = ButtonDialog:new({
-        title = T(_("Choose action for %1"), plugin.fullname or plugin.name),
+        title = T(_("%1"), plugin.fullname or plugin.name),
+        title_align = "center",
         buttons = buttons,
         tap_close_callback = on_close,
     })
