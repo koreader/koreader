@@ -40,6 +40,7 @@ local TextViewer = InputContainer:extend{
     title = nil,
     text = nil,
     file = nil, -- filepath if file content is displayed, triggers showing Pin buttons
+    pinned_page = nil, -- position of the page upper left char
     charlist = nil, -- internal
     width = nil,
     height = nil,
@@ -237,34 +238,69 @@ function TextViewer:init(reinit)
                 hold_callback = function()
                     local pinned_pages = G_reader_settings:readSetting("textviewer_pinned_pages")
                     if pinned_pages == nil then return end
-                    local MultiConfirmBox = require("ui/widget/multiconfirmbox")
-                    UIManager:show(MultiConfirmBox:new{
-                        text = _("Remove pinned page?"),
-                        choice1_text = _("For all files"),
-                        choice1_callback = function()
-                            if self.pinned_page then
-                                self.pinned_page = nil
-                                local pin_button = self.button_table:getButtonById("go_to_pin")
-                                pin_button:disable()
-                                pin_button:refresh()
-                            end
-                            G_reader_settings:delSetting("textviewer_pinned_pages")
-                            UIManager:show(Notification:new{ text = _("All pinned pages removed") })
-                        end,
-                        choice2_text = _("For this file"),
-                        choice2_enabled = self.pinned_page ~= nil,
-                        choice2_callback = function()
-                            self.pinned_page = nil
-                            local pin_button = self.button_table:getButtonById("go_to_pin")
-                            pin_button:disable()
-                            pin_button:refresh()
-                            pinned_pages[self.file] = nil
-                            if next(pinned_pages) == nil then
+                    local dialog
+                    local buttons = {
+                        {{
+                            text = _("Remove pinned pages of all files"),
+                            callback = function()
+                                UIManager:close(dialog)
+                                if self.pinned_page then
+                                    self.pinned_page = nil
+                                    local pin_button = self.button_table:getButtonById("go_to_pin")
+                                    pin_button:disable()
+                                    pin_button:refresh()
+                                end
                                 G_reader_settings:delSetting("textviewer_pinned_pages")
-                            end
-                            UIManager:show(Notification:new{ text = _("Pinned page removed") })
-                        end,
-                    })
+                                UIManager:show(Notification:new{ text = _("All pinned pages removed") })
+                            end,
+                        }},
+                        {{
+                            text = _("Remove pinned pages of deleted files"),
+                            callback = function()
+                                UIManager:close(dialog)
+                                for file in pairs(pinned_pages) do
+                                    if lfs.attributes(file, "mode") ~= "file" then
+                                        pinned_pages[file] = nil
+                                    end
+                                end
+                                if next(pinned_pages) == nil then
+                                    G_reader_settings:delSetting("textviewer_pinned_pages")
+                                end
+                                UIManager:show(Notification:new{ text = _("Pinned pages removed") })
+                            end,
+                        }},
+                        {}, -- separator
+                        {
+                            {
+                                text = _("Cancel"),
+                                callback = function()
+                                    UIManager:close(dialog)
+                                end,
+                            },
+                            {
+                                text = _("Remove"),
+                                enabled = self.pinned_page ~= nil,
+                                callback = function()
+                                    UIManager:close(dialog)
+                                    self.pinned_page = nil
+                                    local pin_button = self.button_table:getButtonById("go_to_pin")
+                                    pin_button:disable()
+                                    pin_button:refresh()
+                                    pinned_pages[self.file] = nil
+                                    if next(pinned_pages) == nil then
+                                        G_reader_settings:delSetting("textviewer_pinned_pages")
+                                    end
+                                    UIManager:show(Notification:new{ text = _("Pinned page removed") })
+                                end,
+                            },
+                        },
+                    }
+                    dialog = ButtonDialog:new{
+                        title = _("Remove pinned page?"),
+                        title_align = "center",
+                        buttons = buttons,
+                    }
+                    UIManager:show(dialog)
                 end,
             },
             {
@@ -274,11 +310,13 @@ function TextViewer:init(reinit)
                     return self.pinned_page ~= nil
                 end,
                 callback = function()
-                    self.scroll_text_w.text_widget.virtual_line_num =
-                        self.scroll_text_w.text_widget:getCharLineNumber(self.pinned_page)
-                    self.scroll_text_w.text_widget:free(false)
-                    self.scroll_text_w.text_widget:_updateLayout()
-                    self.scroll_text_w:updateScrollBar(true)
+                    local new_virtual_line_num = self.scroll_text_w.text_widget:getCharPageTopLineNumber(self.pinned_page)
+                    if self.scroll_text_w.text_widget.virtual_line_num ~= new_virtual_line_num then
+                        self.scroll_text_w.text_widget.virtual_line_num = new_virtual_line_num
+                        self.scroll_text_w.text_widget:free(false)
+                        self.scroll_text_w.text_widget:_updateLayout()
+                        self.scroll_text_w:updateScrollBar(true)
+                    end
                 end,
             },
         }
