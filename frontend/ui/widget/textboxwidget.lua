@@ -1172,32 +1172,6 @@ function TextBoxWidget:getVisibleHeightRatios()
     return low, high
 end
 
-function TextBoxWidget:getCharLineNumber(charpos)
-    if charpos == 1 then
-        return 1
-    end
-    local vertical_string_list_nb = #self.vertical_string_list
-    if vertical_string_list_nb == 0 then
-        return 1
-    elseif charpos >= self.vertical_string_list[vertical_string_list_nb].offset then
-        return vertical_string_list_nb
-    end
-
-    local lo, hi = 1, vertical_string_list_nb
-    while lo <= hi do
-        local mid = bit.rshift(lo + hi, 1)
-        local offset = self.vertical_string_list[mid].offset
-        if charpos == offset then
-            return mid
-        elseif charpos < offset then
-            hi = mid - 1
-        else
-            lo = mid + 1
-        end
-    end
-    return lo - 1
-end
-
 -- Helper function to be used before intanstiating a TextBoxWidget instance
 function TextBoxWidget:getFontSizeToFitHeight(height_px, nb_lines, line_height_em, font_face, font_bold)
     -- Get a font size that would fit nb_lines in height_px.
@@ -1249,6 +1223,20 @@ end
 function TextBoxWidget:getCharPos()
     -- returns virtual_line_num & current_line_num too
     return self.charpos, self.virtual_line_num, self.current_line_num
+end
+
+function TextBoxWidget:getCharPageTopLineNumber(charpos)
+    -- returns top line number of the page containing charpos
+    local ln = 1
+    while true do
+        local lend = ln + self.lines_per_page - 1
+        if lend >= #self.vertical_string_list -- last page
+            or self.vertical_string_list[lend + 1].offset > charpos
+        then
+            return ln
+        end
+        ln = ln + self.lines_per_page
+    end
 end
 
 function TextBoxWidget:getSize()
@@ -1913,21 +1901,10 @@ function TextBoxWidget:scrollViewToCharPos()
         end
         -- and adjust if cursor is out of view
         self:moveCursorToCharPos(self.charpos)
-        return
+    else
+        -- Otherwise, find the "hard" page containing charpos
+        self.virtual_line_num = self:getCharPageTopLineNumber(self.charpos)
     end
-    -- Otherwise, find the "hard" page containing charpos
-    local ln = 1
-    while true do
-        local lend = ln + self.lines_per_page - 1
-        if lend >= #self.vertical_string_list then
-            break -- last page
-        end
-        if self.vertical_string_list[lend+1].offset >= self.charpos then
-            break
-        end
-        ln = ln + self.lines_per_page
-    end
-    self.virtual_line_num = ln
 end
 
 function TextBoxWidget:moveCursorLeft()
