@@ -4,6 +4,7 @@ local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
+local is_touch_device = Device:isTouchDevice() or nil
 local ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
 
 local function hasLastFile()
@@ -24,9 +25,10 @@ local function allowRandomImageFolder()
             or (G_reader_settings:readSetting("screensaver_type") == "cover" and may_ignore_book_cover)
 end
 
-local function genMenuItem(text, setting, value, enabled_func, separator)
+local function genMenuItem(text, setting, value, enabled_func, separator, help_text)
     return {
         text = text,
+        help_text = help_text,
         enabled_func = enabled_func,
         checked_func = function()
             return G_reader_settings:readSetting(setting) == value
@@ -38,6 +40,8 @@ local function genMenuItem(text, setting, value, enabled_func, separator)
         separator = separator,
     }
 end
+
+local exit_help_text = _("'Exit sleep screen' action is in the Device group of the Taps and gestures settings")
 
 return {
     {
@@ -141,8 +145,32 @@ return {
                     genMenuItem(_("1 second"), "screensaver_delay", "1"),
                     genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
-                    genMenuItem(Device:isTouchDevice() and _("Until a tap") or _("Until a key press"), "screensaver_delay", "tap"),
-                    Device:isTouchDevice() and genMenuItem(_("Until 'exit sleep screen' gesture"), "screensaver_delay", "gesture") or nil,
+                    genMenuItem(is_touch_device and _("Until a tap") or _("Until a key press"), "screensaver_delay", "tap"),
+                    is_touch_device and genMenuItem(_("Until 'Exit sleep screen' gesture"), "screensaver_delay", "gesture",
+                        nil, nil, exit_help_text),
+                    is_touch_device and {
+                        text = _("Show 'Exit sleep screen' message"),
+                        enabled_func = function()
+                            return G_reader_settings:readSetting("screensaver_delay") == "gesture"
+                        end,
+                        checked_func = function()
+                            return G_reader_settings:hasNot("screensaver_show_exit_message") -- save 'false' only
+                        end,
+                        callback = function()
+                            G_reader_settings:flipFalse("screensaver_show_exit_message")
+                        end,
+                    },
+                    is_touch_device and {
+                        text = _("Edit 'Exit sleep screen' message"),
+                        enabled_func = function()
+                            return G_reader_settings:readSetting("screensaver_delay") == "gesture"
+                                and G_reader_settings:hasNot("screensaver_show_exit_message")
+                        end,
+                        keep_menu_open = true,
+                        callback = function()
+                            Screensaver:setMessage(true)
+                        end,
+                    },
                 },
             },
             {
