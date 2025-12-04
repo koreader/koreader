@@ -5,7 +5,6 @@ local GestureRange = require("ui/gesturerange")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
-local _ = require("gettext")
 local Screen = Device.screen
 
 local ScreenSaverWidget = InputContainer:extend{
@@ -15,54 +14,33 @@ local ScreenSaverWidget = InputContainer:extend{
 }
 
 function ScreenSaverWidget:init()
+    local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
+
     if Device:hasKeys() then
         self.key_events.AnyKeyPressed = { { Device.input.group.Any } }
     end
     if Device:isTouchDevice() then
-        local range = Geom:new{
-            x = 0, y = 0,
-            w = Screen:getWidth(),
-            h = Screen:getHeight(),
+        self.ges_events.Tap = {
+            GestureRange:new{ ges = "tap", range = Geom:new{ x = 0, y = 0, w = screen_w, h = screen_h } }
         }
-        self.ges_events.Tap = { GestureRange:new{ ges = "tap", range = range } }
     end
-    self:update()
-end
 
-function ScreenSaverWidget:update()
-    self.height = Screen:getHeight()
-    self.width = Screen:getWidth()
-
-    self.region = Geom:new{
-        x = 0, y = 0,
-        w = self.width,
-        h = self.height,
-    }
-    self.main_frame = FrameContainer:new{
+    self[1] = FrameContainer:new{
         radius = 0,
         bordersize = 0,
         padding = 0,
         margin = 0,
         background = self.background,
-        width = self.width,
-        height = self.height,
+        width = screen_w,
+        height = screen_h,
         self.widget,
     }
-    self.dithered = true
-    self[1] = self.main_frame
 end
 
 function ScreenSaverWidget:onShow()
     UIManager:setDirty(self, function()
-        return "full", self.main_frame.dimen
+        return "full", self[1].dimen
     end)
-    return true
-end
-
-function ScreenSaverWidget:onTap(_, ges)
-    if ges.pos:intersectWith(self.main_frame.dimen) then
-        self:onClose()
-    end
     return true
 end
 
@@ -78,6 +56,7 @@ function ScreenSaverWidget:onClose(arg)
     return true
 end
 ScreenSaverWidget.onAnyKeyPressed = ScreenSaverWidget.onClose
+ScreenSaverWidget.onTap = ScreenSaverWidget.onClose
 ScreenSaverWidget.onExitScreensaver = ScreenSaverWidget.onClose
 
 function ScreenSaverWidget:onCloseWidget()
