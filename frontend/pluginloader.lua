@@ -13,11 +13,11 @@ Plugins are controlled by the following settings.
 ]]
 local PluginCompatibility = require("plugincompatibility")
 local UIManager = require("ui/uimanager")
-local _ = require("gettext")
 local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
+local _ = require("gettext")
 
 local DEFAULT_PLUGIN_PATH = "plugins"
 
