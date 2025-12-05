@@ -207,13 +207,23 @@ function Screensaver.isExcluded(ui)
     end
 end
 
-function Screensaver:setMessage()
+function Screensaver:setMessage(exit_sleep_screen)
     local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
     local InputDialog = require("ui/widget/inputdialog")
+    local title, input, setting
+    if exit_sleep_screen then
+        title = _("'Exit sleep screen' message")
+        input = G_reader_settings:readSetting("screensaver_exit_message")
+        setting = "screensaver_exit_message"
+    else
+        title = _("Sleep screen message")
+        input = G_reader_settings:readSetting("screensaver_message") or self.default_screensaver_message
+        setting = "screensaver_message"
+    end
     local input_dialog
     input_dialog = InputDialog:new{
-        title = _("Sleep screen message"),
-        input = G_reader_settings:readSetting("screensaver_message") or self.default_screensaver_message,
+        title = title,
+        input = input,
         allow_newline = true,
         buttons = {
             {
@@ -231,7 +241,9 @@ function Screensaver:setMessage()
                 {
                     text = _("Set message"),
                     callback = function()
-                        G_reader_settings:saveSetting("screensaver_message", input_dialog:getInputText())
+                        local text = input_dialog:getInputText()
+                        text = text ~= "" and text or nil
+                        G_reader_settings:saveSetting(setting, text)
                         UIManager:close(input_dialog)
                     end,
                 },

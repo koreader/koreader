@@ -90,15 +90,21 @@ function ScreenSaverLockWidget:setupGestureEvents()
 end
 
 function ScreenSaverLockWidget:showWaitForGestureMessage()
+    if G_reader_settings:has("screensaver_show_exit_message") then return end -- false
+    local text
+    if self.has_exit_screensaver_gesture then
+        text = G_reader_settings:readSetting("screensaver_exit_message")
+        text = text and self.ui.bookinfo:expandString(text)
+            or _("Waiting for specific gesture to exit screensaver.")
+    else
+        text = _("No exit screensaver gesture configured. Tap to exit.")
+    end
     -- We just paint an InfoMessage on screen directly: we don't want
     -- another widget that we would need to prevent catching events
-    local infomsg = InfoMessage:new{
-        text = self.has_exit_screensaver_gesture
-                    and _("Waiting for specific gesture to exit screensaver.")
-                     or _("No exit screensaver gesture configured. Tap to exit.")
-    }
+    local infomsg = InfoMessage:new{ text = text }
     infomsg:paintTo(Screen.bb, 0, 0)
     infomsg:onShow() -- get the screen refreshed
+    UIManager:forceRePaint()
     infomsg:free()
 
     -- Notify our Resume/Suspend handlers that this is visible, so they know what to do
