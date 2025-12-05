@@ -41,7 +41,7 @@ local function genMenuItem(text, setting, value, enabled_func, separator, help_t
     }
 end
 
-local exit_help_text = _("'Exit sleep screen' action is in the Device group of the Taps and gestures settings")
+local exit_help_text = _("The 'Exit sleep screen' action is located in the Device group of the Taps and gestures settings")
 
 return {
     {
@@ -147,7 +147,7 @@ return {
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
                     genMenuItem(is_touch_device and _("Until a tap") or _("Until a key press"), "screensaver_delay", "tap"),
                     is_touch_device and genMenuItem(_("Until 'Exit sleep screen' gesture"), "screensaver_delay", "gesture",
-                        nil, nil, exit_help_text),
+                        nil, true, exit_help_text),
                     is_touch_device and {
                         text = _("Show 'Exit sleep screen' message"),
                         enabled_func = function()
