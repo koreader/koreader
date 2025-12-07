@@ -2060,6 +2060,11 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
     if self.line_num_to_image and self.line_num_to_image[self.virtual_line_num] then
         local image = self.line_num_to_image[self.virtual_line_num]
         if self.hold_end_pos.x > self.width - image.width and self.hold_end_pos.y < image.height then
+            -- :onHoldStartText() and :onHoldPanText() do not check if on an image,
+            -- so we may have gotten some text selected: clear any.
+            if self:clearHighlight() then
+                self:redrawHighlight()
+            end
             -- Only if low-res image is loaded, so we have something to display
             -- if high-res loading is not implemented or if its loading fails
             if image.bb then
