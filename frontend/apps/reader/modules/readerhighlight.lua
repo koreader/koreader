@@ -10,7 +10,6 @@ local GestureDetector = require("device/gesturedetector")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Notification = require("ui/widget/notification")
-local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
 local SpinWidget = require("ui/widget/spinwidget")
 local TextViewer = require("ui/widget/textviewer")
 local Translator = require("ui/translator")
@@ -2343,7 +2342,7 @@ function ReaderHighlight:editHighlightStyle(index)
         UIManager:setDirty(self.dialog, "ui")
         self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
     end
-    self:showHighlightStyleDialog(apply_drawer, index)
+    self:showHighlightStyleDialog(apply_drawer, item)
 end
 
 function ReaderHighlight:editHighlightColor(index)
@@ -2363,29 +2362,21 @@ function ReaderHighlight:editHighlightColor(index)
     self:showHighlightColorDialog(apply_color, item)
 end
 
-function ReaderHighlight:showHighlightStyleDialog(caller_callback, index)
-    local item_drawer = index and self.ui.annotation.annotations[index].drawer
+function ReaderHighlight:showHighlightStyleDialog(caller_callback, item)
+    local curr_drawer = item and item.drawer
     local dialog
     local buttons = {}
     for i, v in ipairs(highlight_style) do
         buttons[i] = {{
-            text = v[1] .. (v[2] == item_drawer and "  ✓" or ""),
+            text = v[2] == curr_drawer and v[1] .. "  ✓" or v[1],
             menu_style = true,
             callback = function()
-                caller_callback(v[2])
+                if v[2] ~= curr_drawer then
+                    caller_callback(v[2])
+                end
                 UIManager:close(dialog)
             end,
         }}
-    end
-    if index then -- called from ReaderHighlight:editHighlightStyle()
-        table.insert(buttons, {}) -- separator
-        table.insert(buttons, {{
-            text = _("Highlight menu"),
-            callback = function()
-                self:showHighlightDialog(index)
-                UIManager:close(dialog)
-            end,
-        }})
     end
     dialog = ButtonDialog:new{
         width_factor = 0.4,
@@ -2395,40 +2386,30 @@ function ReaderHighlight:showHighlightStyleDialog(caller_callback, index)
 end
 
 function ReaderHighlight:showHighlightColorDialog(caller_callback, item)
-    local default_color, curr_color, keep_shown_on_apply
-    if item then -- called from ReaderHighlight:editHighlightColor()
-        default_color = self.view.highlight.saved_color
-        curr_color = item.color or default_color
-        keep_shown_on_apply = true
-    else
-        default_color = G_reader_settings:readSetting("highlight_color") or self._fallback_color
-        curr_color = self.view.highlight.saved_color
+    local curr_color = item and item.color or self.view.highlight.saved_color
+    local dialog
+    local buttons = {}
+    for i, v in ipairs(self.highlight_colors) do
+        buttons[i] = {{
+            text = v[2] == curr_color and v[1] .. "  ✓" or v[1],
+            menu_style = true,
+            background = BlitBuffer.colorFromName(v[2]) -- @todo fix in the night mode
+                      or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF)),
+            callback = function()
+                if v[2] ~= curr_color then
+                    caller_callback(v[2])
+                end
+                UIManager:close(dialog)
+            end,
+        }}
     end
-    local radio_buttons = {}
-    for _, v in ipairs(self.highlight_colors) do
-        table.insert(radio_buttons, {
-            {
-                text = v[1],
-                checked = curr_color == v[2],
-                bgcolor = BlitBuffer.colorFromName(v[2])
-                       or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF)),
-                provider = v[2],
-            },
-        })
-    end
-    UIManager:show(RadioButtonWidget:new{
-        title_text = _("Highlight color"),
-        width_factor = 0.5,
-        keep_shown_on_apply = keep_shown_on_apply,
-        radio_buttons = radio_buttons,
-        default_provider = default_color,
-        callback = function(radio)
-            caller_callback(radio.provider)
-        end,
-        -- This ensures the waveform mode will be upgraded to a Kaleido wfm on compatible devices
+    dialog = ButtonDialog:new{
+        buttons = buttons,
+        width_factor = 0.4,
         colorful = true,
         dithered = true,
-    })
+    }
+    UIManager:show(dialog)
 end
 
 function ReaderHighlight:showNoteMarkerDialog()
