@@ -431,7 +431,11 @@ Further small adjustments can be done with 'Line Spacing' in the bottom menu.]])
                 id = "font_family_all_inherit",
                 title = _("Ignore publisher font families"),
                 description = _("Disable font-family specified in embedded styles."),
-                css = [[* { font-family: inherit !important; }]],
+                -- but we better keep the classic monospace ones be monospace
+                css = [[
+* { font-family: inherit !important; }
+listing, plaintext, xmp, samp, tt, kbd, pre, code { font-family: monospace !important; }
+                ]],
                 separator = true,
             },
             {
