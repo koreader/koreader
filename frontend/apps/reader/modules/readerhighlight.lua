@@ -2342,7 +2342,7 @@ function ReaderHighlight:editHighlightStyle(index)
         UIManager:setDirty(self.dialog, "ui")
         self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
     end
-    self:showHighlightStyleDialog(apply_drawer, item)
+    self:showHighlightStyleDialog(apply_drawer, item.drawer)
 end
 
 function ReaderHighlight:editHighlightColor(index)
@@ -2359,11 +2359,10 @@ function ReaderHighlight:editHighlightColor(index)
         UIManager:setDirty(self.dialog, "ui")
         self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
     end
-    self:showHighlightColorDialog(apply_color, item)
+    self:showHighlightColorDialog(apply_color, item.color)
 end
 
-function ReaderHighlight:showHighlightStyleDialog(caller_callback, item)
-    local curr_drawer = item and item.drawer
+function ReaderHighlight:showHighlightStyleDialog(caller_callback, curr_drawer)
     local dialog
     local buttons = {}
     for i, v in ipairs(highlight_style) do
@@ -2385,8 +2384,7 @@ function ReaderHighlight:showHighlightStyleDialog(caller_callback, item)
     UIManager:show(dialog)
 end
 
-function ReaderHighlight:showHighlightColorDialog(caller_callback, item)
-    local curr_color = item and item.color or self.view.highlight.saved_color
+function ReaderHighlight:showHighlightColorDialog(caller_callback, curr_color)
     local dialog
     local buttons = {}
     for i, v in ipairs(self.highlight_colors) do
