@@ -2393,8 +2393,8 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, curr_color)
         buttons[i] = {{
             text = color ~= curr_color and color_name or color_name .. "  ✓",
             menu_style = true,
-            background = BlitBuffer.colorFromName(v[2]) --- @todo fix in the night mode
-                      or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF)),
+            background = BlitBuffer.colorFromName(color) --- @todo fix in the night mode
+                      or BlitBuffer.gray(self.view.highlight.lighten_factor),
             callback = function()
                 if color ~= curr_color then
                     caller_callback(color)
