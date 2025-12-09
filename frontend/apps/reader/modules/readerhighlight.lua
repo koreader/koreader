@@ -451,7 +451,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 self.view.highlight.saved_color = color
                 touchmenu_instance:updateItems()
             end
-            self:showHighlightColorDialog(apply_color)
+            self:showHighlightColorDialog(apply_color, self.view.highlight.saved_color)
         end,
         hold_callback = function(touchmenu_instance) -- set color for new highlights in new books
             G_reader_settings:saveSetting("highlight_color", self.view.highlight.saved_color)
@@ -2362,16 +2362,17 @@ function ReaderHighlight:editHighlightColor(index)
     self:showHighlightColorDialog(apply_color, item.color)
 end
 
-function ReaderHighlight:showHighlightStyleDialog(caller_callback, curr_drawer)
+function ReaderHighlight:showHighlightStyleDialog(caller_callback, curr_style)
     local dialog
     local buttons = {}
     for i, v in ipairs(highlight_style) do
+        local style_name, style = unpack(v)
         buttons[i] = {{
-            text = v[2] == curr_drawer and v[1] .. "  ✓" or v[1],
+            text = style ~= curr_style and style_name or style_name .. "  ✓",
             menu_style = true,
             callback = function()
-                if v[2] ~= curr_drawer then
-                    caller_callback(v[2])
+                if style ~= curr_style then
+                    caller_callback(style)
                 end
                 UIManager:close(dialog)
             end,
@@ -2388,14 +2389,15 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, curr_color)
     local dialog
     local buttons = {}
     for i, v in ipairs(self.highlight_colors) do
+        local color_name, color = unpack(v)
         buttons[i] = {{
-            text = v[2] == curr_color and v[1] .. "  ✓" or v[1],
+            text = color ~= curr_color and color_name or color_name .. "  ✓",
             menu_style = true,
             background = BlitBuffer.colorFromName(v[2]) --- @todo fix in the night mode
                       or BlitBuffer.Color8(bit.bxor(0xFF * self.view.highlight.lighten_factor, 0xFF)),
             callback = function()
-                if v[2] ~= curr_color then
-                    caller_callback(v[2])
+                if color ~= curr_color then
+                    caller_callback(color)
                 end
                 UIManager:close(dialog)
             end,
@@ -2411,21 +2413,23 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, curr_color)
 end
 
 function ReaderHighlight:showNoteMarkerDialog()
-    local notemark = self.view.highlight.note_mark or "none"
+    local curr_marker = self.view.highlight.note_mark or "none"
     local dialog
     local buttons = {}
     for i, v in ipairs(note_mark) do
-        local mark = v[2]
+        local marker_name, marker = unpack(v)
         buttons[i] = {{
-            text = v[1] .. (mark == notemark and "  ✓" or ""),
+            text = marker ~= curr_marker and marker_name or marker_name .. "  ✓",
             menu_style = true,
             callback = function()
-                self.view.highlight.note_mark = mark ~= "none" and mark or nil
-                G_reader_settings:saveSetting("highlight_note_marker", self.view.highlight.note_mark)
-                self.view:setupNoteMarkPosition()
-                UIManager:setDirty(self.dialog, "ui")
-                UIManager:close(dialog)
-                self:showNoteMarkerDialog()
+                if marker ~= curr_marker then
+                    self.view.highlight.note_mark = marker ~= "none" and marker or nil
+                    G_reader_settings:saveSetting("highlight_note_marker", self.view.highlight.note_mark)
+                    self.view:setupNoteMarkPosition()
+                    UIManager:setDirty(self.dialog, "ui")
+                    UIManager:close(dialog)
+                    self:showNoteMarkerDialog()
+                end
             end,
         }}
     end
