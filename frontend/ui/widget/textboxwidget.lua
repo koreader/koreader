@@ -1225,6 +1225,20 @@ function TextBoxWidget:getCharPos()
     return self.charpos, self.virtual_line_num, self.current_line_num
 end
 
+function TextBoxWidget:getCharPageTopLineNumber(charpos)
+    -- returns top line number of the page containing charpos
+    local ln = 1
+    while true do
+        local lend = ln + self.lines_per_page - 1
+        if lend >= #self.vertical_string_list -- last page
+            or self.vertical_string_list[lend + 1].offset > charpos
+        then
+            return ln
+        end
+        ln = ln + self.lines_per_page
+    end
+end
+
 function TextBoxWidget:getSize()
     -- Make sure we actually have a BB, in case we're recycling an instance... (c.f., #8241)
     if not self._bb then
@@ -1887,21 +1901,10 @@ function TextBoxWidget:scrollViewToCharPos()
         end
         -- and adjust if cursor is out of view
         self:moveCursorToCharPos(self.charpos)
-        return
+    else
+        -- Otherwise, find the "hard" page containing charpos
+        self.virtual_line_num = self:getCharPageTopLineNumber(self.charpos)
     end
-    -- Otherwise, find the "hard" page containing charpos
-    local ln = 1
-    while true do
-        local lend = ln + self.lines_per_page - 1
-        if lend >= #self.vertical_string_list then
-            break -- last page
-        end
-        if self.vertical_string_list[lend+1].offset >= self.charpos then
-            break
-        end
-        ln = ln + self.lines_per_page
-    end
-    self.virtual_line_num = ln
 end
 
 function TextBoxWidget:moveCursorLeft()
