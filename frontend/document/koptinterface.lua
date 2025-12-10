@@ -801,7 +801,9 @@ function KoptInterface:getReflewOCRWord(doc, pageno, rect)
             kc.getTOCRWord, kc, "dst",
             rect.x, rect.y, rect.w, rect.h,
             self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
-        DocCache:insert(hash, CacheItem:new{ rfocrword = word, size = #word + 64 }) -- estimation
+        if word then
+            DocCache:insert(hash, CacheItem:new{ rfocrword = word, size = #word + 64 }) -- estimation
+        end
         return word
     else
         return cached.rfocrword
