@@ -4,6 +4,7 @@ PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib:"
 # We don't need to duplicate any of the env setup from rcS, since we will only ever run this to *restart* nickel, and not bootstrap it.
 # Meaning we've already got most of the necessary env from nickel itself via both our launcher (fmon/KFMon) and our own startup script.
 # NOTE: LD_LIBRARY_PATH is the only late export from rcS we don't siphon in koreader.sh, for obvious reasons ;).
+# NOTE: For v5, env will be restored properly before nickel start script.
 export LD_LIBRARY_PATH="/usr/local/Kobo"
 # Ditto, 4.28+
 export QT_GSTREAMER_PLAYBIN_AUDIOSINK=alsasink
@@ -17,13 +18,19 @@ unset LC_ALL STARDICT_DATA_DIR EXT_FONT_DIR
 unset KO_DONT_GRAB_INPUT
 unset FBINK_FORCE_ROTA
 
-# Ensures fmon will restart. Note that we don't have to worry about reaping this, nickel kills on-animator.sh on start.
-(
-    if [ "${PLATFORM}" = "freescale" ] || [ "${PLATFORM}" = "mx50-ntx" ] || [ "${PLATFORM}" = "mx6sl-ntx" ]; then
-        usleep 400000
-    fi
-    /etc/init.d/on-animator.sh
-) &
+if [ -e "/etc/init.d/display-init.sh" ]; then
+    /etc/init.d/display-init.sh
+fi
+
+if [ -e "/etc/init.d/on-animator.sh" ]; then
+    # Ensures fmon will restart. Note that we don't have to worry about reaping this, nickel kills on-animator.sh on start.
+    (
+        if [ "${PLATFORM}" = "freescale" ] || [ "${PLATFORM}" = "mx50-ntx" ] || [ "${PLATFORM}" = "mx6sl-ntx" ]; then
+            usleep 400000
+        fi
+        /etc/init.d/on-animator.sh
+    ) &
+fi
 
 # Make sure we kill the Wi-Fi first, because nickel apparently doesn't like it if it's up... (cf. #1520)
 if grep -q "^${WIFI_MODULE} " "/proc/modules"; then
@@ -118,14 +125,6 @@ fi
 unset KOREADER_DIR
 unset CPUFREQ_DVFS CPUFREQ_CONSERVATIVE
 
-# Recreate Nickel's FIFO ourselves, like rcS does, because udev *will* write to it!
-# Plus, we actually *do* want the stuff udev writes in there to be processed by Nickel, anyway.
-rm -f "/tmp/nickel-hardware-status"
-mkfifo "/tmp/nickel-hardware-status"
-
-# Flush buffers to disk, who knows.
-sync
-
 # Handle the sdcard:
 # We need to unmount it ourselves, or Nickel wigs out and shows an "unrecognized FS" popup until the next fake sd add event.
 # The following udev trigger should then ensure there's a single sd add event enqueued in the FIFO for it to process,
@@ -134,11 +133,28 @@ if [ -e "/dev/mmcblk1p1" ]; then
     umount /mnt/sd
 fi
 
-# And finally, simply restart nickel.
-# We don't care about horribly legacy stuff, because if people switch between nickel and KOReader in the first place, I assume they're using a decently recent enough FW version.
-# Last tested on an H2O & a Forma running FW 4.7.x - 4.25.x
-/usr/local/Kobo/hindenburg &
-LIBC_FATAL_STDERR_=1 /usr/local/Kobo/nickel -platform kobo -skipFontLoad &
-[ "${PLATFORM}" != "freescale" ] && udevadm trigger &
+if [ -e "/etc/init.d/z-nickel-hardware-status" ]; then
+    # on v5 use the existing startup scripts
+    # Clear LD_LIBRARY_PATH as it gets prepended by start script
+    export LD_LIBRARY_PATH=
+    /etc/init.d/z-nickel-hardware-status
+    sync
+    /etc/rc.local
+else
+    # Recreate Nickel's FIFO ourselves, like rcS does, because udev *will* write to it!
+    # Plus, we actually *do* want the stuff udev writes in there to be processed by Nickel, anyway.
+    rm -f "/tmp/nickel-hardware-status"
+    mkfifo "/tmp/nickel-hardware-status"
 
-return 0
+    # Flush buffers to disk, who knows.
+    sync
+
+    # And finally, simply restart nickel.
+    # We don't care about horribly legacy stuff, because if people switch between nickel and KOReader in the first place, I assume they're using a decently recent enough FW version.
+    # Last tested on an H2O & a Forma running FW 4.7.x - 4.25.x
+    /usr/local/Kobo/hindenburg &
+    LIBC_FATAL_STDERR_=1 /usr/local/Kobo/nickel -platform kobo -skipFontLoad &
+    [ "${PLATFORM}" != "freescale" ] && udevadm trigger &
+fi
+
+exit 0
