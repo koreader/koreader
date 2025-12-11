@@ -12,17 +12,18 @@ You can skip most of the following instructions if desired, and use our premade 
 ## Prerequisites
 
 To get and compile the source you must have:
-- `autoconf`: version greater than 2.64
-- `bash`: version 4.0 or greater
-- `cmake`: version 3.17.5 or greater
+- `autoconf`: version > 2.64
+- `bash`: version >= 4.0
+- `cmake`: version >= 3.17.5
 - `gcc/g++` or `clang/clang++`: with C11 & C++17 support
+- `gettext`
 - `git`
-- `make`: version 4.1 or greater
-- `meson`: version 1.2.0 or greater
+- `make`: version >= 4.1 (recommended: >= 4.4 for transparent `-j` / `-l` handling)
+- `meson`: version >= 1.2.0
 - `nasm`
-- `ninja`
+- `ninja` (recommended: >= 1.13.2 for make job server support)
 - `patch`
-- `perl`: version 5 or greater
+- `perl`: version >= 5
 - `pkg-config` or `pkgconf`
 - `unzip`
 - `wget`
@@ -31,10 +32,9 @@ For running the emulator / tests:
 - `SDL2`
 
 Optional:
-- `7z`: for packing releases
+- `7z`: for packing releases and the Android build assets
 - `ccache`: recommended for faster recompilation times
-- `gettext`: for updating translations
-- `luacheck`: for linting the codebase with `./kodev check`
+- `luacheck`, `shellcheck` and `shfmt`: for linting the codebase with `./kodev check`
 
 ### Alpine Linux
 
@@ -42,8 +42,9 @@ Install the prerequisites using apk:
 
 ```
 sudo apk add autoconf automake bash cmake coreutils curl diffutils \
-    findutils g++ gcc git grep gzip libtool linux-headers make meson \
-    nasm ninja-build patch perl pkgconf procps-ng sdl2 tar unzip wget
+    findutils g++ gcc gettext-dev git grep gzip libtool linux-headers \
+    make meson nasm ninja-build patch perl pkgconf procps-ng sdl2 tar \
+    unzip wget
 ```
 
 **Note:** don't forget to add `/usr/lib/ninja-build/bin` to `$PATH`
@@ -51,7 +52,7 @@ so the real ninja is used (and not the binary provided by samurai).
 
 Optional:
 ```
-sudo apk add 7zip ccache gettext-dev luacheck
+sudo apk add 7zip ccache luacheck shellcheck shfmt
 ```
 
 ### Arch Linux
@@ -65,7 +66,7 @@ run0 pacman -S base-devel ca-certificates cmake gcc-libs git \
 
 Optional:
 ```
-run0 pacman -S 7zip ccache luacheck
+run0 pacman -S 7zip ccache luacheck shellcheck shfmt
 ```
 
 ### Debian/Ubuntu
@@ -74,20 +75,21 @@ Install the prerequisites using APT:
 
 ```
 sudo apt install autoconf automake build-essential ca-certificates cmake \
-    gcc-multilib git libsdl2-2.0-0 libtool libtool-bin meson nasm ninja-build \
-    patch perl pkg-config unzip wget
+    gcc-multilib gettext git libsdl2-2.0-0 libtool libtool-bin meson nasm \
+    ninja-build patch perl pkg-config unzip wget
 ```
 
-**Note:** Debian distributions might need `meson` to be installed from `bookworm-backports`) because the version provided by the default repositories is too old:
+**Note:** Debian distributions might need `meson` to be installed from `bookworm-backports`
+because the version provided by the default repositories is too old:
 ```
 sudo apt install meson/bookworm-backports
 ```
-The bookworm-backports repository was already included on Linux Mint Dedian Edition 6.
+The bookworm-backports repository was already included on Linux Mint Debian Edition 6.
 Otherwise, follow full up-to-date instructions from here: https://wiki.debian.org/Backports.
 
 Optional:
 ```
-sudo apt install ccache gettext lua-check p7zip-full
+sudo apt install ccache lua-check p7zip-full shellcheck shfmt
 ```
 
 ### Fedora/Red Hat
@@ -95,17 +97,17 @@ sudo apt install ccache gettext lua-check p7zip-full
 Install the prerequisites using DNF:
 
 ```
-sudo dnf install autoconf automake cmake gcc gcc-c++ git libtool meson nasm \
-    ninja-build patch perl-FindBin procps-ng SDL2 unzip wget
+sudo dnf install autoconf automake cmake gcc gcc-c++ gettext git libtool meson \
+    nasm ninja-build patch perl-FindBin procps-ng SDL2 unzip wget
 ```
 
 Optional:
 ```
-sudo dnf install ccache gettext p7zip
+sudo dnf install ccache p7zip
 ```
 And for luacheck:
 ```
-sudo dnf install lua-argparse lua-filesystem luarocks
+sudo dnf install lua-argparse lua-filesystem luarocks shellcheck shfmt
 luarocks install luacheck
 ```
 
@@ -115,7 +117,8 @@ Install the prerequisites using [Homebrew](https://brew.sh/):
 
 ```
 brew install autoconf automake bash binutils cmake coreutils findutils \
-    gnu-getopt libtool make meson nasm ninja pkg-config sdl2 util-linux
+    gettext gnu-getopt libtool make meson nasm ninja pkg-config sdl2 \
+    util-linux
 ```
 
 You will also have to ensure Homebrew's findutils, gnu-getopt, make & util-linux are in your path, e.g., via
@@ -125,7 +128,7 @@ export PATH="$(brew --prefix)/opt/findutils/libexec/gnubin:$(brew --prefix)/opt/
 
 Optional:
 ```
-brew install ccache gettext luacheck p7zip
+brew install ccache luacheck p7zip shellcheck shfmt
 ```
 
 *Note:* You can override the default targeted minimum deployment version by setting `MACOSX_DEPLOYMENT_TARGET`:
