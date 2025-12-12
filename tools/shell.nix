@@ -7,26 +7,27 @@ pkgs.mkShell {
   packages = with pkgs; [
     autoconf
     automake
-    libtool
     cmake
     gcc
+    gettext
     git
     gnumake
+    gnupatch
+    libtool
     meson
     nasm
     ninja
-    gnupatch
     perl
     pkg-config
+    SDL2
     unzip
     wget
-
-    SDL2
-
-    p7zip
+    # optional
     ccache
-    gettext
     luajitPackages.luacheck
+    p7zip
+    shellcheck
+    shfmt
   ];
 
   shellHook = ''
