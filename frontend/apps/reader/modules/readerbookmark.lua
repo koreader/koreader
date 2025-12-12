@@ -223,7 +223,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 separator = true,
             },
             {
-                text = _("Show highlight color"),
+                text = _("Show highlight colors"),
                 checked_func = function()
                     return G_reader_settings:isTrue("bookmarks_items_show_color")
                 end,
@@ -232,16 +232,16 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Include 'gray'"),
+                text = _("Include default highlight color"),
                 enabled_func = function()
                     return G_reader_settings:isTrue("bookmarks_items_show_color")
                 end,
                 checked_func = function()
                     return G_reader_settings:isTrue("bookmarks_items_show_color") and
-                           G_reader_settings:isTrue("bookmarks_items_show_gray")
+                           G_reader_settings:isTrue("bookmarks_items_show_color_default")
                 end,
                 callback = function()
-                    G_reader_settings:flipNilOrFalse("bookmarks_items_show_gray")
+                    G_reader_settings:flipNilOrFalse("bookmarks_items_show_color_default")
                 end,
                 separator = true,
             },
@@ -682,7 +682,7 @@ function ReaderBookmark:onShowBookmark()
     self.sorting_mode = G_reader_settings:readSetting("bookmarks_items_sorting") or "page"
     self.is_reverse_sorting = G_reader_settings:isTrue("bookmarks_items_reverse_sorting")
     local bookmarks_items_show_color = G_reader_settings:isTrue("bookmarks_items_show_color")
-    local bookmarks_items_show_gray = G_reader_settings:isTrue("bookmarks_items_show_gray")
+    local bookmarks_items_show_color_default = G_reader_settings:isTrue("bookmarks_items_show_color_default")
 
     -- build up item_table
     local item_table = {}
@@ -700,12 +700,12 @@ function ReaderBookmark:onShowBookmark()
         if not self.match_table or self:doesBookmarkMatchTable(item) then
             item.text = self:getBookmarkItemText(item)
             if bookmarks_items_show_color then
-                if item.color == nil or item.color == "gray" then
-                    if bookmarks_items_show_gray then
-                        item.text_bgcolor = Blitbuffer.gray(self.view.highlight.lighten_factor)
+                if item.color == self.view.highlight.saved_color or item.color == nil then
+                    if bookmarks_items_show_color_default then
+                        item.text_bgcolor = self.ui.highlight:getHighlightColorHash(self.view.highlight.saved_color)
                     end
                 else
-                    item.text_bgcolor = Blitbuffer.colorFromName(item.color)
+                    item.text_bgcolor = self.ui.highlight:getHighlightColorHash(item.color)
                 end
             end
             item.mandatory = self:getBookmarkPageString(item.page)
