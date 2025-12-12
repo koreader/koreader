@@ -1,6 +1,7 @@
 POCKETBOOK_DIR = $(PLATFORM_DIR)/pocketbook
 PB_PACKAGE = koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).zip
-PB_PACKAGE_OTA = koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).targz
+PB_PACKAGE_OTA = koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).tar.xz
+PB_PACKAGE_OLD_OTA = koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).targz
 
 define UPDATE_PATH_EXCLUDES +=
 tools
@@ -15,10 +16,10 @@ update: all
 	mkdir -p $(INSTALL_DIR)/system/bin
 	$(SYMLINK) $(POCKETBOOK_DIR)/koreader.app $(INSTALL_DIR)/applications/
 	$(SYMLINK) $(POCKETBOOK_DIR)/system_koreader.app $(INSTALL_DIR)/system/bin/koreader.app
-	$(SYMLINK) $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader/
 	$(SYMLINK) $(INSTALL_DIR)/koreader $(INSTALL_DIR)/applications/
 	# Create packages.
-	$(strip $(call mkupdate,--manifest-transform=/^system/d;s/^/..\// $(PB_PACKAGE),applications/koreader)) applications system
-	$(strip $(call mkupdate,--manifest-transform=s/^/..\// $(PB_PACKAGE_OTA),applications/koreader)) applications
+	$(strip $(call mkupdate,--manifest-transform=/^system\//d $(PB_PACKAGE),applications/koreader)) applications system
+	$(strip $(call mkupdate,--manifest-transform=/^system\//d $(PB_PACKAGE_OTA),applications/koreader)) applications system
+	$(strip $(call mkupdate,--manifest-transform=s/^/..\// $(PB_PACKAGE_OLD_OTA),applications/koreader)) applications
 
 PHONY += update
