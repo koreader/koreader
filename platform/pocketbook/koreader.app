@@ -1,9 +1,19 @@
 #!/bin/sh
+
+# Relocalize ourselves to /tmp: this is used by KOReader to detect if the
+# original script has changed after an update (requiring a complete restart
+# from the parent launcher).
+if [ "$(dirname "${0}")" != '/tmp' ]; then
+    cp -pf "${0}" '/tmp/koreader.app'
+    chmod 777 '/tmp/koreader.app'
+    exec '/tmp/koreader.app' "$@"
+fi
+
 export LC_ALL="en_US.UTF-8"
 
 UNPACK_DIR='/mnt/ext1'
 # working directory of koreader
-KOREADER_DIR="${UNPACK_DIR}/applications/koreader"
+export KOREADER_DIR="${UNPACK_DIR}/applications/koreader"
 
 # load our own shared libraries if possible, solely because we don't control InkView, and we'd rather not it have load duplicate system libs...
 # (We handle this via DT_RPATH for our own stuff).
