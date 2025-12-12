@@ -10,7 +10,9 @@ UNPACK_DIR="${KOREADER_DIR%/*}"
 # We rely on starting from our working directory, and it needs to be set, sane and absolute.
 cd "${KOREADER_DIR:-/dev/null}" || exit
 
-# To make USBMS behave, relocalize ourselves outside of onboard
+# To make USBMS behave, relocalize ourselves outside of onboard. Additionally, this used
+# by KOReader to detect if the original script has changed after an update (requiring a
+# complete restart from the parent launcher).
 if [ "${SCRIPT_DIR}" != "/tmp" ]; then
     cp -pf "${0}" "/tmp/koreader.sh"
     chmod 777 "/tmp/koreader.sh"
