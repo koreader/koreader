@@ -800,4 +800,12 @@ function CoverBrowser:extractBooksInDirectory(path)
     end)
 end
 
+function CoverBrowser.getConfigSet()
+    return BookInfoManager:getConfigSet()
+end
+
+function CoverBrowser.saveConfigSet(config_set)
+    BookInfoManager:saveConfigSet(config_set)
+end
+
 return CoverBrowser
