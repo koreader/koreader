@@ -1,7 +1,18 @@
 #!/bin/sh
+
+# Relocalize ourselves to /tmp: this used by KOReader to detect if the original
+# script has changed after an update (requiring a complete restart from the
+# parent launcher).
+if [ "$(dirname "${0}")" != '/tmp' ]; then
+    cp -pf "${0}" '/tmp/koreader.sh'
+    chmod 777 '/tmp/koreader.sh'
+    exec '/tmp/koreader.sh' "$@"
+fi
+
 export LC_ALL="en_US.UTF-8"
+
 # working directory of koreader
-KOREADER_DIR="${0%/*}"
+export KOREADER_DIR="${0%/*}"
 UNPACK_DIR="${KOREADER_DIR%/*}"
 
 # we're always starting from our working directory
