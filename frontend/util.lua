@@ -1452,17 +1452,23 @@ end
 
 --- Encode URL also known as percent-encoding see https://en.wikipedia.org/wiki/Percent-encoding
 --- @string text the string to encode
+--- @string preserve_chars a string containing all the charactes to preserve unencoded - e.g. "/"
 --- @treturn encode string
---- Taken from https://gist.github.com/liukun/f9ce7d6d14fa45fe9b924a3eed5c3d99
-function util.urlEncode(url)
+--- Originally taken from https://gist.github.com/liukun/f9ce7d6d14fa45fe9b924a3eed5c3d99
+--- Modified to comply with RFC 3986's unreserved characters definition:
+---    ALPHA (A-Z, a-z), DIGIT (0-9), '-', '.', '_', '~'
+function util.urlEncode(url, preserve_chars)
     local char_to_hex = function(c)
         return string.format("%%%02X", string.byte(c))
     end
+    preserve_chars = preserve_chars or ""
+    local regexp_base = "^%w%-%._~"
+    local regexp = string.format("([^%s%s])", regexp_base, preserve_chars)
     if url == nil then
         return
     end
     url = url:gsub("\n", "\r\n")
-    url = url:gsub("([^%w%-%.%_%~%!%*%'%(%)])", char_to_hex)
+    url = url:gsub(regexp, char_to_hex)
     return url
 end
 
