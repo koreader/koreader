@@ -1,5 +1,5 @@
 local BD = require("ui/bidi")
-local BlitBuffer = require("ffi/blitbuffer")
+local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -41,8 +41,8 @@ local ReaderHighlight = InputContainer:extend{
 }
 
 function ReaderHighlight:getHighlightColorHash(color)
-    return BlitBuffer.colorFromName(color) --- @todo fix in the night mode; issue #14170, #14667
-        or BlitBuffer.gray(self.view.highlight.lighten_factor) -- 'gray' or unknown color
+    return Blitbuffer.colorFromName(color) --- @todo fix in the night mode; issue #14170, #14667
+        or Blitbuffer.gray(self.view.highlight.lighten_factor) -- 'gray' or unknown color
 end
 
 local function inside_box(pos, box)
