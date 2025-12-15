@@ -854,7 +854,9 @@ function UIManager:unsetRunForeverMode()
     self._gated_quit = function() return self:quit(nil, true) end
 end
 
--- Ignore an empty window stack *once*; for startup w/ a missing last_file shenanigans...
+-- We'll want to return from this without actually quitting, so this is
+-- a slightly mangled UIManager:run() call to coerce the main loop into
+-- submission to ignore an empty window stack *once*.
 function UIManager:runOnce()
     -- We don't actually want to call self.quit, and we need to deal with a bit of trickery in there anyway...
     self._gated_quit = function()
