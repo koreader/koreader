@@ -12,7 +12,8 @@ fi
 export LC_ALL="en_US.UTF-8"
 
 # working directory of koreader
-export KOREADER_DIR="${0%/*}"
+# NOTE: We need to remember the *actual* KOREADER_DIR, not the relocalized version in /tmp...
+export KOREADER_DIR="${KOREADER_DIR:-${0%/*}}"
 UNPACK_DIR="${KOREADER_DIR%/*}"
 
 # we're always starting from our working directory
