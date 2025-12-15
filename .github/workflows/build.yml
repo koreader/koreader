@@ -118,7 +118,7 @@ jobs:
 
       - name: Restore build directory
         id: build-restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: build
           key: ${{ env.CACHE_KEY }}-build-${{ hashFiles('cache-key') }}
@@ -127,7 +127,7 @@ jobs:
 
       - name: Lookup or restore build cache
         id: ccache-restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: /Users/runner/Library/Caches/ccache
           key: ${{ env.CACHE_KEY }}-ccache-${{ hashFiles('cache-key') }}
@@ -180,7 +180,7 @@ jobs:
           ccache --show-stats --verbose
 
       - name: Save build cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         if: steps.build-restore.outputs.cache-hit != 'true' && steps.ccache-restore.outputs.cache-hit != 'true'
         with:
           path: /Users/runner/Library/Caches/ccache
@@ -199,7 +199,7 @@ jobs:
       # }}}
 
       - name: Save build directory
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         if: steps.build-restore.outputs.cache-hit != 'true'
         with:
           path: build
