@@ -232,7 +232,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Include default highlight color"),
+                text = _("Also show default highlight color"),
                 enabled_func = function()
                     return G_reader_settings:isTrue("bookmarks_items_show_color")
                 end,
@@ -699,13 +699,13 @@ function ReaderBookmark:onShowBookmark()
         item.type = self.getBookmarkType(item)
         if not self.match_table or self:doesBookmarkMatchTable(item) then
             item.text = self:getBookmarkItemText(item)
-            if bookmarks_items_show_color then
+            if bookmarks_items_show_color and item.drawer then
                 if item.color == self.view.highlight.saved_color or item.color == nil then
                     if bookmarks_items_show_color_default then
-                        item.text_bgcolor = self.ui.highlight:getHighlightColorHash(self.view.highlight.saved_color)
+                        item.text_bgcolor = self.ui.highlight:getHighlightColor(self.view.highlight.saved_color)
                     end
                 else
-                    item.text_bgcolor = self.ui.highlight:getHighlightColorHash(item.color)
+                    item.text_bgcolor = self.ui.highlight:getHighlightColor(item.color)
                 end
             end
             item.mandatory = self:getBookmarkPageString(item.page)
@@ -1100,14 +1100,9 @@ function ReaderBookmark:updateBookmarkList(item_table, item_number)
         if self.show_edited_only then
             subtitle = _("Filter: edited highlighted text")
         elseif self.show_drawer_only then
-            subtitle = _("Highlight style:") .. " " .. self.ui.highlight:getHighlightStyleString(self.show_drawer_only):lower()
+            subtitle = T(_("Highlight style: %1"), self.ui.highlight:getHighlightStyleString(self.show_drawer_only):lower())
         elseif self.show_color_only then
-            for __, color in ipairs(self.ui.highlight.highlight_colors) do
-                if self.show_color_only == color[2] then
-                    subtitle = T(_("Highlight color: %1"), color[1]:lower())
-                    break
-                end
-            end
+            subtitle = T(_("Highlight color: %1"), self.ui.highlight:getHighlightColorString(self.show_color_only):lower())
         elseif self.match_table then
             if self.match_table.search_str then
                 subtitle = T(_("Query: %1"), self.match_table.search_str)
@@ -1169,7 +1164,11 @@ end
 
 function ReaderBookmark:_getDialogHeader(bookmark)
     local page_str = bookmark.mandatory or self:getBookmarkPageString(bookmark.page)
-    return T(_("Page: %1"), page_str) .. "     " .. T(_("Time: %1"), bookmark.datetime)
+    local text = T(_("Page: %1"), page_str) .. "     " .. T(_("Time: %1"), bookmark.datetime)
+    if bookmark.drawer and bookmark.color then
+        text = text .. "     " .. self.ui.highlight:getHighlightColorString(bookmark.color)
+    end
+    return text
 end
 
 function ReaderBookmark:showBookmarkDetails(item_or_index)
