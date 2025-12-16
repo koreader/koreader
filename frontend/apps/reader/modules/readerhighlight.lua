@@ -40,9 +40,18 @@ local ReaderHighlight = InputContainer:extend{
     },
 }
 
-function ReaderHighlight:getHighlightColorHash(color)
-    return Blitbuffer.colorFromName(color) --- @todo fix in the night mode; issue #14170, #14667
-        or Blitbuffer.gray(self.view.highlight.lighten_factor) -- 'gray' or unknown color
+function ReaderHighlight:getHighlightColorString(color_name)
+    for _, color in ipairs(self.highlight_colors) do
+        if color_name == color[2] then
+            return color[1]
+        end
+    end
+    return _("Gray")
+end
+
+function ReaderHighlight:getHighlightColor(color_name)
+    return Blitbuffer.colorFromName(color_name) --- @todo fix in the night mode; issue #14170, #14667
+        or Blitbuffer.gray(self.view.highlight.lighten_factor) -- 'gray' or unknown color name
 end
 
 local function inside_box(pos, box)
@@ -2398,7 +2407,7 @@ function ReaderHighlight:showHighlightColorDialog(caller_callback, curr_color)
         buttons[i] = {{
             text = color ~= curr_color and color_name or color_name .. "  ✓",
             menu_style = true,
-            background = self:getHighlightColorHash(color),
+            background = self:getHighlightColor(color),
             callback = function()
                 if color ~= curr_color then
                     caller_callback(color)
