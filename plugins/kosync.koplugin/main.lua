@@ -209,14 +209,38 @@ function KOSync:addToMainMenu(menu_items)
             {
                 text = _("Device Hostname"),
                 keep_menu_open = true,
-                tap_input_func = function()
-                    return {
+                callback = function()
+                    local dialog
+                    dialog = MultiInputDialog:new{
+			-- @translators Name of this device defined by user for progress sync (if different than default device name)
                         title = _("Hostname for sync"),
-                        input = self.settings.kosync_hostname or "",
-                        callback = function(input)
-                            self:setHostname(input)
-                        end,
+                        fields = {
+                            {
+                                text = self.settings.kosync_hostname or "",
+                                hint = _("Leave empty to use default"),
+                            },
+                        },
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    id = "close",
+                                    callback = function()
+                                        UIManager:close(dialog)
+                                    end,
+                                },
+                                {
+                                    text = _("OK"),
+                                    callback = function()
+                                        self:setHostname(dialog:getFields()[1])
+                                        UIManager:close(dialog)
+                                    end,
+                                },
+                            },
+                        },
                     }
+                    UIManager:show(dialog)
+                    dialog:onShowKeyboard()
                 end,
             },
             {
@@ -982,3 +1006,4 @@ function KOSync:onCloseWidget()
 end
 
 return KOSync
+
