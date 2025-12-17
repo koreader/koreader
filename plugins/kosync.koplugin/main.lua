@@ -212,7 +212,7 @@ function KOSync:addToMainMenu(menu_items)
                 callback = function()
                     local dialog
                     dialog = MultiInputDialog:new{
-			-- @translators Name of this device defined by user for progress sync (if different than default device name)
+                        -- @translators Name of this device defined by user for progress sync (if different than default device name)
                         title = _("Hostname for sync"),
                         fields = {
                             {
