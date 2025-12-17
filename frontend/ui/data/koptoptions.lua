@@ -12,14 +12,19 @@ local FONT_SCALE_FACTORS = {0.2, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.3, 1.
 -- Font sizes used for the font size widget only
 local FONT_SCALE_DISPLAY_SIZE = {12, 14, 15, 16, 17, 18, 19, 20, 22, 25, 30, 35}
 
+local DKOPTREADER_CONFIG_DOC_LANGS_CODE = require("ui/data/ocr").getOCRLangs()
+
 local KOPTREADER_CONFIG_DOC_LANGS_TEXT = {}
-for _, lang in ipairs(G_defaults:readSetting("DKOPTREADER_CONFIG_DOC_LANGS_CODE")) do
+for _, lang in ipairs(DKOPTREADER_CONFIG_DOC_LANGS_CODE) do
     local langName = IsoLanguage:getLocalizedLanguage(lang)
     if langName then
         table.insert(KOPTREADER_CONFIG_DOC_LANGS_TEXT, langName)
     else
         table.insert(KOPTREADER_CONFIG_DOC_LANGS_TEXT, lang)
     end
+end
+if #KOPTREADER_CONFIG_DOC_LANGS_TEXT == 0 then
+    KOPTREADER_CONFIG_DOC_LANGS_TEXT = {_("No OCR languages")}
 end
 
 -- Get font scale numbers as a table of strings
@@ -558,11 +563,14 @@ This can also be used to remove some gray background or to convert a grayscale o
             {
                 name = "doc_language",
                 name_text = _("Document Language"),
+                enabled_func = function()
+                    return #DKOPTREADER_CONFIG_DOC_LANGS_CODE > 0
+                end,
                 toggle = KOPTREADER_CONFIG_DOC_LANGS_TEXT,
-                values = G_defaults:readSetting("DKOPTREADER_CONFIG_DOC_LANGS_CODE"),
+                values = DKOPTREADER_CONFIG_DOC_LANGS_CODE,
                 default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE"),
                 event = "DocLangUpdate",
-                args = G_defaults:readSetting("DKOPTREADER_CONFIG_DOC_LANGS_CODE"),
+                args = DKOPTREADER_CONFIG_DOC_LANGS_CODE,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set the language to be used by the OCR engine.]]),
             },

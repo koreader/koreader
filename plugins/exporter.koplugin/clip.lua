@@ -1,15 +1,10 @@
+local BookList = require("ui/widget/booklist")
 local DocumentRegistry = require("document/documentregistry")
-local DocSettings = require("docsettings")
-local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
-local ffiutil = require("ffi/util")
 local md5 = require("ffi/sha2").md5
-local util = require("util")
 local _ = require("gettext")
-local T = ffiutil.template
+local T = require("ffi/util").template
 
-local MyClipping = {
-    my_clippings = "/mnt/us/documents/My Clippings.txt",
-}
+local MyClipping = {}
 
 function MyClipping:new(o)
     if o == nil then o = {} end
@@ -18,7 +13,6 @@ function MyClipping:new(o)
     return o
 end
 
---[[
 -- clippings: main table to store parsed highlights and notes entries
 -- {
 --      ["Title(Author Name)"] = {
@@ -38,7 +32,7 @@ end
 --          },
 --      }
 -- }
--- ]]
+
 function MyClipping:parseMyClippings()
     -- My Clippings format:
     -- Title(Author Name)
@@ -46,7 +40,7 @@ function MyClipping:parseMyClippings()
     --
     -- This is a sample highlight.
     -- ==========
-    local file = io.open(self.my_clippings, "r")
+    local file = io.open("/mnt/us/documents/My Clippings.txt", "r")
     local clippings = {}
     if file then
         local index = 1
@@ -70,7 +64,7 @@ function MyClipping:parseMyClippings()
                 if index == 5 then
                     -- entry ends normally
                     local clipping = {
-                        page = info.page or info.location,
+                        page = info.page or info.location or _("N/A"),
                         sort = info.sort,
                         time = info.time,
                         text = text,
@@ -85,7 +79,6 @@ function MyClipping:parseMyClippings()
         end
         file:close()
     end
-
     return clippings
 end
 
@@ -110,17 +103,29 @@ end
 -- extract author name in "Title - Author" format
 function MyClipping:parseTitleFromPath(line)
     line = line:match("^%s*(.-)%s*$") or ""
+
     if extensions[line:sub(-4):lower()] then
         line = line:sub(1, -5)
     elseif extensions[line:sub(-5):lower()] then
         line = line:sub(1, -6)
     end
-    local dummy, title, author
-    dummy, dummy, title, author = line:find("(.-)%s*%((.*)%)")
-    if not author then
-        dummy, dummy, title, author = line:find("(.-)%s*-%s*(.*)")
+
+    local author = line:match("%s*%-?%s*%(([^()]*)%)%s*$")
+    local title
+    if author then
+        -- remove the last parenthesized group to keep earlier parentheses in title
+        title = line:gsub("%s*%-?%s*%([^()]*%)%s*$", "")
+    else
+        -- fallback: "Title - Author"
+        local t, a = line:match("^(.-)%s*%-%s*(.+)%s*$")
+        if t and a then
+            title = t
+            author = a
+        else
+            title = line:match("^%s*(.-)[%s%-]*$")
+        end
     end
-    title = title or line:match("^%s*(.-)%s*$")
+
     return isEmpty(title) and _("Unknown Book") or title,
            isEmpty(author) and _("Unknown Author") or author
 end
@@ -195,23 +200,31 @@ function MyClipping:getTime(line)
 end
 
 function MyClipping:getInfo(line)
-    local info = {}
     line = line or ""
-    local _, _, part1, part2 = line:find("(.+)%s*|%s*(.+)")
 
-    -- find entry type and location
+    local parts = {}
+    for part in line:gmatch("[^|]+") do
+        table.insert(parts, part:match("^%s*(.-)%s*$"))
+    end
+
+    if #parts < 2 then
+        return {}
+    end
+
+    local info = {}
+
     for sort, words in pairs(keywords) do
         for _, word in ipairs(words) do
-            if part1 and part1:find(word) then
+            if parts[1] and parts[1]:find(word) then
                 info.sort = sort
-                info.location = part1:match("(%d+-?%d+)")
+                info.page = tonumber(parts[1]:match("page%s*(%d+)"))
+                info.location = parts[#parts-1]:match("(%d+-?%d+)")
                 break
             end
         end
     end
 
-    -- find entry created time
-    info.time = self:getTime(part2 or "")
+    info.time = self:getTime(parts[#parts])
 
     return info
 end
@@ -248,6 +261,7 @@ function MyClipping:parseAnnotations(annotations, book)
                 chapter = item.chapter,
                 drawer  = item.drawer,
                 color   = item.color,
+                pn_xp   = item.page,
             }
             table.insert(book, { clipping })
         end
@@ -277,6 +291,7 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
                     text    = self:getText(item.text),
                     chapter = item.chapter,
                     drawer  = item.drawer,
+                    pn_xp   = item.page,
                 }
                 local bookmark_found = false
                 for _, bookmark in pairs(bookmarks) do
@@ -338,7 +353,7 @@ function MyClipping:getTitleAuthor(filepath, props)
 end
 
 function MyClipping:getClippingsFromBook(clippings, doc_path)
-    local doc_settings = DocSettings:open(doc_path)
+    local doc_settings = BookList.getDocSettings(doc_path)
     local highlights, bookmarks
     local annotations = doc_settings:readSetting("annotations")
     if annotations == nil then
@@ -347,7 +362,7 @@ function MyClipping:getClippingsFromBook(clippings, doc_path)
         bookmarks = doc_settings:readSetting("bookmarks")
     end
     local props = doc_settings:readSetting("doc_props")
-    props = FileManagerBookInfo.extendProps(props, doc_path)
+    props = self.ui.bookinfo.extendProps(props, doc_path)
     local title, author = self:getTitleAuthor(doc_path, props)
     clippings[title] = {
         file = doc_path,
@@ -365,7 +380,7 @@ end
 function MyClipping:parseHistory()
     local clippings = {}
     for _, item in ipairs(require("readhistory").hist) do
-        if not item.dim and DocSettings:hasSidecarFile(item.file) then
+        if not item.dim and BookList.hasBookBeenOpened(item.file) then
             self:getClippingsFromBook(clippings, item.file)
         end
     end
@@ -375,25 +390,30 @@ end
 function MyClipping:parseFiles(files)
     local clippings = {}
     for file in pairs(files) do
-        if DocSettings:hasSidecarFile(file) then
+        if BookList.hasBookBeenOpened(file) then
             self:getClippingsFromBook(clippings, file)
         end
     end
     return clippings
 end
 
-function MyClipping:parseCurrentDoc(view)
-    local clippings = {}
-    local title, author = self:getTitleAuthor(view.document.file, view.ui.doc_props)
-    clippings[title] = {
-        file = view.document.file,
-        title = title,
-        author = author,
-        -- Replaces characters that are invalid in filenames.
-        output_filename = util.getSafeFilename(title),
-        number_of_pages = view.document.info.number_of_pages,
+function MyClipping:parseCurrentDoc()
+    local title, author = self:getTitleAuthor(self.ui.document.file, self.ui.doc_props)
+    local number_of_pages
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        number_of_pages = select(3, self.ui.pagemap:getCurrentPageLabel())
+    else
+        number_of_pages = self.ui.view.footer.pages
+    end
+    local clippings = {
+        [title] = {
+            file = self.ui.document.file,
+            title = title,
+            author = author,
+            number_of_pages = number_of_pages,
+        },
     }
-    self:parseAnnotations(view.ui.annotation.annotations, clippings[title])
+    self:parseAnnotations(self.ui.annotation.annotations, clippings[title])
     return clippings
 end
 

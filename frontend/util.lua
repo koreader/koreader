@@ -783,12 +783,16 @@ end
 --- Recursively scan directory for files inside
 -- @string path
 -- @func callback(fullpath, name, attr)
-function util.findFiles(dir, cb, recursive)
+-- @bool recursive
+-- @int max_files (maximum number of files to find)
+function util.findFiles(dir, cb, recursive, max_files)
     recursive = recursive ~= false
+    local count = 0
     local function scan(current)
         local ok, iter, dir_obj = pcall(lfs.dir, current)
         if not ok then return end
         for f in iter, dir_obj do
+            if max_files and count >= max_files then return end
             local path = current.."/"..f
             -- lfs can return nil here, as it will follow symlinks!
             local attr = lfs.attributes(path) or {}
@@ -798,6 +802,7 @@ function util.findFiles(dir, cb, recursive)
                 end
             elseif attr.mode == "file" or attr.mode == "link" then
                 cb(path, f, attr)
+                count = count + 1
             end
         end
     end
@@ -954,7 +959,7 @@ end
 -- <code>/</code> poses a problem.
 ---- @string str filename
 ---- @treturn string sanitized filename
-local function replaceAllInvalidChars(str)
+function util.replaceAllInvalidChars(str)
     if str then
         str = str:gsub('[\\/:*?"<>|]', '_')
         str = str:gsub("[.%s]+$", "")
@@ -984,7 +989,7 @@ If an optional path is provided, @{util.getFilesystemType}() will be used to det
 ---- @treturn string safe filename
 function util.getSafeFilename(str, path, limit, limit_ext)
     local filename, suffix = util.splitFileNameSuffix(str)
-    local replaceFunc = replaceAllInvalidChars
+    local replaceFunc = util.replaceAllInvalidChars
     local safe_filename
     -- VFAT supports a maximum of 255 UCS-2 characters, although it's probably treated as UTF-16 by Windows
     -- default to a slightly lower limit just in case
@@ -1006,6 +1011,7 @@ function util.getSafeFilename(str, path, limit, limit_ext)
         suffix = nil
     end
 
+    filename = filename:gsub("\r?\n", " "):gsub("\t", " ")
     filename = util.htmlToPlainTextIfHtml(filename)
     filename = filename:sub(1, limit)
     -- the limit might result in broken UTF-8, which we don't want in the result

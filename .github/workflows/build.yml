@@ -18,18 +18,20 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - image: '13'
+          - image: '15'
             platform: 'x86-64'
-            xcode_version: '15.2'
+            xcode_version: '16.4'
             deployment_target: '10.15'
-          - image: '14'
+            jobs: 5
+          - image: '15'
             platform: 'ARM64'
-            xcode_version: '15.4'
+            xcode_version: '16.4'
             deployment_target: '11.0'
+            jobs: 4
 
     name: "macOS ${{ matrix.image }} ${{ matrix.platform }} 🔨${{ matrix.xcode_version }} 🎯${{ matrix.deployment_target }}"
 
-    runs-on: "macos-${{ matrix.image }}"
+    runs-on: "macos-${{ matrix.image }}${{ matrix.platform == 'x86-64' && '-intel' || '' }}"
 
     env:
       # Bump first number to reset all caches.
@@ -37,7 +39,7 @@ jobs:
       CLICOLOR_FORCE: '1'
       KODEBUG: ""
       MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
-      MAKEFLAGS: 'OUTPUT_DIR=build INSTALL_DIR=install TARGET=macos'
+      MAKEFLAGS: OUTPUT_DIR=build PARALLEL_JOBS=${{ matrix.jobs }} INSTALL_DIR=install TARGET=macos
 
     steps:
 
@@ -50,7 +52,7 @@ jobs:
           xcode-select -p
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -75,7 +77,6 @@ jobs:
             nasm
             ninja
             pkg-config
-            sdl2
             util-linux
           )
           # Don't auto-update.
@@ -100,7 +101,7 @@ jobs:
       # Checkout / fetch. {{{
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           clean: false
           fetch-depth: 0
@@ -112,21 +113,21 @@ jobs:
 
       # }}}
 
-      # Restore / setup caches. {{{
-
       - name: Generate cache key
         run: make TARGET= cache-key
 
       - name: Restore build directory
         id: build-restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: build
           key: ${{ env.CACHE_KEY }}-build-${{ hashFiles('cache-key') }}
 
+      # Restore / setup build cache. {{{
+
       - name: Lookup or restore build cache
         id: ccache-restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: /Users/runner/Library/Caches/ccache
           key: ${{ env.CACHE_KEY }}-ccache-${{ hashFiles('cache-key') }}
@@ -167,7 +168,7 @@ jobs:
 
       # }}}
 
-      # Clean / save caches. {{{
+      # Clean / save build cache. {{{
 
       - name: Clean caches
         if: contains('failure success', steps.build.conclusion) && !cancelled()
@@ -179,18 +180,11 @@ jobs:
           ccache --show-stats --verbose
 
       - name: Save build cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         if: steps.build-restore.outputs.cache-hit != 'true' && steps.ccache-restore.outputs.cache-hit != 'true'
         with:
           path: /Users/runner/Library/Caches/ccache
           key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
-
-      - name: Save build directory
-        uses: actions/cache/save@v4
-        if: steps.build-restore.outputs.cache-hit != 'true'
-        with:
-          path: build
-          key: ${{ steps.build-restore.outputs.cache-primary-key }}
 
       # }}}
 
@@ -204,6 +198,13 @@ jobs:
 
       # }}}
 
+      - name: Save build directory
+        uses: actions/cache/save@v5
+        if: steps.build-restore.outputs.cache-hit != 'true'
+        with:
+          path: build
+          key: ${{ steps.build-restore.outputs.cache-primary-key }}
+
       - name: Test
         run: ./base/utils/fake_tty.py make --assume-old=base testfront
 
@@ -215,7 +216,7 @@ jobs:
         run: make skeleton update --assume-old=base
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: koreader-macos-${{ matrix.platform }}
           path: '*.7z'

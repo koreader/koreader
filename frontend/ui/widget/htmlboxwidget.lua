@@ -268,6 +268,26 @@ function HtmlBoxWidget:setContent(body, css, default_font_size, is_xhtml, no_css
     self:clearHighlight()
 end
 
+--- Use the raw content as given, without any string manipulation to try to improve MuPDF compatibility or rendering.
+--- @string body Content to be rendered in a supported format like (X)HTML or SVG.
+--- @string magic Used to detect document type, like a file name or mime-type.
+--- @number default_font_size Default font size to use for layout, only for some formats like HTML.
+--- @string resource_directory Directory to use for resolving relative resource paths.
+function HtmlBoxWidget:setRawContent(body, magic, default_font_size, resource_directory)
+    local ok
+    ok, self.document = pcall(Mupdf.openDocumentFromText, body, magic, resource_directory)
+    if not ok then
+        logger.warn("Raw content loading error:", self.document)
+        return nil, self.document
+    end
+
+    self.document:layoutDocument(self.dimen.w, self.dimen.h, default_font_size)
+
+    self.page_count = self.document:getPages()
+    self.page_boxes = nil
+    self:clearHighlight()
+end
+
 function HtmlBoxWidget:_render()
     if self.bb then
         return
@@ -532,7 +552,7 @@ function HtmlBoxWidget:scheduleClearHighlightAndRedraw()
             self:redrawHighlight()
         end
     end
-    UIManager:scheduleIn(0.5, self.highlight_clear_and_redraw_action)
+    UIManager:scheduleIn(G_defaults:readSetting("DELAY_CLEAR_HIGHLIGHT_S"), self.highlight_clear_and_redraw_action)
 end
 
 function HtmlBoxWidget:unscheduleClearHighlightAndRedraw()

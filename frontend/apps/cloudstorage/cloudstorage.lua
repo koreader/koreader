@@ -876,4 +876,13 @@ function CloudStorage:onHoldReturn()
     return true
 end
 
+function CloudStorage:onClose()
+    local download_dir = self.cs_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+    local fc = self.ui and self.ui.file_chooser
+    if fc and fc.path == download_dir then
+        fc:refreshPath()
+    end
+    UIManager:close(self)
+end
+
 return CloudStorage

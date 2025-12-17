@@ -347,6 +347,8 @@ function ConfigOption:init()
                     return math.abs(val1 - val2)
                 elseif type(val1) == "string" then
                     return val1 == val2 and 0 or 1
+                elseif val1 == nil then
+                    return 1
                 end
             end
             if self.options[c].name then

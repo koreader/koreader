@@ -1491,11 +1491,32 @@ function CreDocument:buildAlternativeToc()
 end
 
 function CreDocument:buildSyntheticPageMapIfNoneDocumentProvided(chars_per_synthetic_page)
-    self._document:buildSyntheticPageMapIfNoneDocumentProvided(chars_per_synthetic_page or 1024)
+    -- for backward compatibility with legacy user patches
+    -- https://github.com/koreader/koreader/issues/9020#issuecomment-2033259217
+    if not self._document:hasPageMapDocumentProvided() then
+        self._document:buildSyntheticPageMap(chars_per_synthetic_page or 1024)
+    end
+end
+
+function CreDocument:buildSyntheticPageMap(chars_per_synthetic_page)
+    self._document:buildSyntheticPageMap(chars_per_synthetic_page or 1024)
+end
+
+function CreDocument:getSyntheticPageMapCharsPerPage()
+    -- returns 0 if no synthetic pagemap
+    return self._document:getSyntheticPageMapCharsPerPage()
 end
 
 function CreDocument:isPageMapSynthetic()
     return self._document:isPageMapSynthetic()
+end
+
+function CreDocument:hasPageMapDocumentProvided()
+    return self._document:hasPageMapDocumentProvided()
+end
+
+function CreDocument:isPageMapDocumentProvided()
+    return self._document:isPageMapDocumentProvided()
 end
 
 function CreDocument:hasPageMap()
@@ -1548,6 +1569,7 @@ function CreDocument:register(registry)
     registry:addProvider("htm", "text/html", self, 100)
     registry:addProvider("html", "text/html", self, 100)
     registry:addProvider("htm.zip", "application/zip", self, 100)
+    registry:addProvider("htmlz", "application/html+zip", self, 100) -- For calibre OPDS.
     registry:addProvider("html.zip", "application/zip", self, 100)
     registry:addProvider("html.zip", "application/html+zip", self, 100) -- Alternative mimetype for OPDS.
     registry:addProvider("log", "text/plain", self)
@@ -1810,6 +1832,7 @@ function CreDocument:setupCallCache()
             elseif name == "zoomFont" then add_reset = true -- not used by koreader
             elseif name == "resetCallCache" then add_reset = true
             elseif name == "cacheFlows" then add_reset = true
+            elseif name == "buildSyntheticPageMap" then add_reset = true
 
             -- These may have crengine do native highlight or unhighlight
             -- (we could keep the original buffer and use a scratch buffer while

@@ -331,6 +331,7 @@ def main():
                 stdin = sys.stdin
             else:
                 stdin = stack.enter_context(open(args.filter, 'r', encoding=encoding))
+            stdin.reconfigure(errors='replace')
         else:
             # Logcat mode.
             if args.clear:

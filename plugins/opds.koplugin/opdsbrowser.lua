@@ -461,19 +461,42 @@ function OPDSBrowser:parseFeed(item_url)
     end
 end
 
-function OPDSBrowser:getServerFileName(item_url)
+function OPDSBrowser:getServerFileName(item_url, filetype)
     local headers = self:fetchFeed(item_url, true)
+    local filename
+
     if headers then
         logger.dbg("OPDSBrowser: server file headers", socketutil.redact_headers(headers))
-        local header = headers["content-disposition"]
-        if header then
-            return header:match('filename="*([^"]+)"*')
+        local disposition = headers["content-disposition"]
+        if disposition then
+            -- Try to get filename inside quotes (can contain spaces)
+            filename = disposition:match('filename="([^"]+)"')
+            if not filename then
+                -- Fallback: try filename without quotes, until end or semicolon
+                filename = disposition:match('filename=([^;]+)')
+            end
         end
-        header = headers["location"]
-        if header then
-            return header:gsub(".*/", "")
+
+        -- If not found, try from redirect URL (location)
+        if not filename and headers["location"] then
+            filename = headers["location"]:gsub(".*/", "")
         end
     end
+
+    -- If still no filename, extract from original URL (remove path and query params)
+    if not filename then
+        filename = item_url:gsub(".*/", ""):gsub("?.*", "")
+    end
+
+    if filename and filetype then
+        local current_suffix = util.getFileNameSuffix(filename)
+        -- Add extension if missing
+        if not current_suffix then
+            filename = filename .. "." .. filetype:lower()
+        end
+    end
+    filename = util.urlDecode(filename)
+    return filename
 end
 
 -- Generates link to search in catalog
@@ -624,16 +647,29 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                         and link.rel ~= "subsection" then
                         -- Check for the presence of the pdf suffix and add it
                         -- if it's missing.
-                        local href = link.href
+                        local original_href = link.href
+                        local parsed = url.parse(original_href)
+                        if not parsed then parsed = { path = original_href } end
+                        local path = parsed.path or ""
                         -- Calibre web OPDS download links end with "/<filetype>/"
-                        if not util.stringEndsWith(href, "/pdf/") then
-                            if util.getFileNameSuffix(href) ~= "pdf" then
-                                href = href .. ".pdf"
+                        if not util.stringEndsWith(path, "/pdf/") then
+                            local appended = false
+                            if util.getFileNameSuffix(path) ~= "pdf" then
+                                if path == "" then
+                                    path = ".pdf"
+                                else
+                                    path = path .. ".pdf"
+                                end
+                                appended = true
                             end
-                            table.insert(item.acquisitions, {
-                                type = link.title,
-                                href = build_href(href),
-                            })
+                            if appended then
+                                parsed.path = path
+                                local new_href = url.build(parsed)
+                                table.insert(item.acquisitions, {
+                                    type = link.title,
+                                    href = build_href(new_href),
+                                })
+                            end
                         end
                     end
                 end
@@ -742,8 +778,10 @@ function OPDSBrowser:searchCatalog(item_url)
                     callback = function()
                         UIManager:close(dialog)
                         self.catalog_title = _("Search results")
-                        local search_str = dialog:getInputText():gsub(" ", "+")
-                        self:updateCatalog(item_url:gsub("%%s", search_str))
+                        local search_str = util.urlEncode(dialog:getInputText())
+                        -- Use function replacement to avoid % being treated as capture refs
+                        item_url = item_url:gsub("%%s", function() return search_str end)
+                        self:updateCatalog(item_url)
                     end,
                 },
             },
@@ -958,7 +996,7 @@ end
 
 function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url)
     local download_dir = self:getCurrentDownloadDir()
-    filename = filename and filename .. "." .. filetype:lower() or self:getServerFileName(remote_url)
+    filename = filename and filename .. "." .. filetype:lower() or self:getServerFileName(remote_url, filetype)
     filename = util.getSafeFilename(filename, download_dir)
     filename = (download_dir ~= "/" and download_dir or "") .. '/' .. filename
     return util.fixUtf8(filename, "_")
@@ -1458,7 +1496,7 @@ function OPDSBrowser:getFileName(item)
     if self.root_catalog_raw_names then
         filename = nil
     end
-    return filename, filename_orig
+    return util.replaceAllInvalidChars(filename), util.replaceAllInvalidChars(filename_orig)
 end
 
 function OPDSBrowser:updateFieldInCatalog(item, name, value)

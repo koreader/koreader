@@ -213,6 +213,7 @@ function ReaderMenu:setUpdateItemTable()
             {
                 text = _("Save document settings as default"),
                 keep_menu_open = true,
+                separator = true,
                 callback = function()
                     UIManager:show(ConfirmBox:new{
                         text = _("Save current document settings as default values?"),
@@ -229,6 +230,51 @@ function ReaderMenu:setUpdateItemTable()
             },
         },
     }
+
+    if not Device:isTouchDevice() then
+        -- This menu entry is a duplicate of the one found in page_turns for touch devices
+        -- but we need to add it here for non-touch devices.
+        table.insert(self.menu_items.document_settings.sub_item_table, {
+            text_func = function()
+                local text = _("Invert document-related dialogs")
+                if G_reader_settings:isTrue("invert_ui_layout") then
+                    text = text .. "   ★"
+                end
+                return text
+            end,
+            checked_func = function()
+                return self.view:shouldInvertBiDiLayoutMirroring()
+            end,
+            callback = function()
+                UIManager:broadcastEvent(Event:new("ToggleUILayoutMiroring"))
+            end,
+            hold_callback = function(touchmenu_instance)
+                local invert_ui_layout = G_reader_settings:isTrue("invert_ui_layout")
+                local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+                UIManager:show(MultiConfirmBox:new{
+                    text = invert_ui_layout and _("The default (★) for newly opened books is to Invert document-related dialogs.\n\nWould you like to change it?")
+                    or _("The default (★) for newly opened books is not to Invert document-related dialogs.\n\nWould you like to change it?"),
+                    choice1_text_func = function()
+                        return invert_ui_layout and _("Don't invert") or _("Don't invert") .." (★)"
+                    end,
+                    choice1_callback = function()
+                        G_reader_settings:makeFalse("invert_ui_layout")
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                    choice2_text_func = function()
+                        return invert_ui_layout and _("Invert") .." (★)" or _("Invert")
+                    end,
+                    choice2_callback = function()
+                        G_reader_settings:makeTrue("invert_ui_layout")
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                })
+            end,
+            help_text = _([[
+When enabled the UI direction for the Table of Contents, Book Map, and Page Browser dialogs will mirror the default UI direction.
+Useful when used alongside 'Invert page turn taps and swipes'.]]),
+        })
+    end
 
     self.menu_items.page_overlap = dofile("frontend/ui/elements/page_overlap.lua")
 
@@ -253,30 +299,25 @@ function ReaderMenu:setUpdateItemTable()
     end
 
     if Device:supportsScreensaver() then
-        local ss_book_settings = {
+        local screensaver_sub_item_table = dofile("frontend/ui/elements/screensaver_menu.lua")
+        table.insert(screensaver_sub_item_table, {
             text = _("Do not show this book cover on sleep screen"),
             enabled_func = function()
-                if self.ui and self.ui.document then
-                    local screensaverType = G_reader_settings:readSetting("screensaver_type")
-                    return screensaverType == "cover" or screensaverType == "disable"
-                else
-                    return false
-                end
+                local screensaver_type = G_reader_settings:readSetting("screensaver_type")
+                return screensaver_type == "cover" or screensaver_type == "disable"
             end,
             checked_func = function()
-                return self.ui and self.ui.doc_settings and self.ui.doc_settings:isTrue("exclude_screensaver")
+                return self.ui.doc_settings:isTrue("exclude_screensaver")
             end,
             callback = function()
-                if Screensaver:isExcluded() then
+                if Screensaver.isExcluded(self.ui) then
                     self.ui.doc_settings:makeFalse("exclude_screensaver")
                 else
                     self.ui.doc_settings:makeTrue("exclude_screensaver")
                 end
                 self.ui:saveSettings()
             end,
-        }
-        local screensaver_sub_item_table = dofile("frontend/ui/elements/screensaver_menu.lua")
-        table.insert(screensaver_sub_item_table, ss_book_settings)
+        })
         self.menu_items.screensaver = {
             text = _("Sleep screen"),
             sub_item_table = screensaver_sub_item_table,
@@ -522,6 +563,12 @@ end
 
 function ReaderMenu:registerToMainMenu(widget)
     table.insert(self.registered_widgets, widget)
+end
+
+function ReaderMenu:onShowCloudStorage()
+    local CloudStorage = require("apps/cloudstorage/cloudstorage")
+    UIManager:show(CloudStorage:new{ ui = self.ui })
+    return true
 end
 
 return ReaderMenu

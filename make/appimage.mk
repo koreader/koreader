@@ -1,11 +1,11 @@
 APPIMAGE_DIR = $(PLATFORM_DIR)/appimage
 
-APPIMAGETOOL = appimagetool-x86_64.AppImage
+APPIMAGETOOL = appimagetool-$(APPIMAGE_ARCH).AppImage
 APPIMAGETOOL_URL = https://github.com/AppImage/appimagetool/releases/download/continuous/$(APPIMAGETOOL)
 
-KOREADER_APPIMAGE = koreader-$(DIST)-$(MACHINE)-$(VERSION).AppImage
+KOREADER_APPIMAGE = koreader-$(DIST)-$(APPIMAGE_ARCH)-$(VERSION).AppImage
 
-UBUNTU_LIBBSD = /lib/x86_64-linux-gnu/libbsd.so.0
+UBUNTU_LIBBSD = /lib/$(TARGET_MACHINE)/libbsd.so.0
 
 define UPDATE_PATH_EXCLUDES +=
 plugins/SSH.koplugin
@@ -14,7 +14,16 @@ plugins/timesync.koplugin
 $(filter-out tools/trace_require.lua tools/wbuilder.lua,$(wildcard tools/*))
 endef
 
-update: all
+appimagetool $(APPIMAGETOOL):
+	wget -O $(APPIMAGETOOL).part '$(APPIMAGETOOL_URL)'
+	# Zero-out AppImage magic bytes from the ELF header extended ABI version so
+	# binfmt+qemu can be used (e.g. when executed from `docker run --platform …`).
+	# Cf. https://github.com/AppImage/AppImageKit/issues/1056.
+	printf '\0\0\0' | dd conv=notrunc obs=1 seek=8 of=$(APPIMAGETOOL).part
+	chmod +x ./$(APPIMAGETOOL).part
+	mv $(APPIMAGETOOL).part $(APPIMAGETOOL)
+
+update: all $(APPIMAGETOOL)
 	cd $(INSTALL_DIR)/koreader && '$(abspath tools/mkrelease.sh)' ../appimage/ . $(release_excludes)
 	cp $(APPIMAGE_DIR)/{AppRun,koreader.desktop} resources/koreader.png $(INSTALL_DIR)/appimage/
 	sed -e 's/%%VERSION%%/$(VERSION)/' -e 's/%%DATE%%/$(RELEASE_DATE)/' $(PLATFORM_DIR)/common/koreader.metainfo.xml >$(INSTALL_DIR)/appimage/koreader.appdata.xml
@@ -25,12 +34,8 @@ ifeq (,$(wildcard $(UBUNTU_LIBBSD)))
 else
 	cp $(UBUNTU_LIBBSD) $(INSTALL_DIR)/appimage/libs/
 endif
-ifeq (,$(wildcard $(APPIMAGETOOL)))
-	# Download appimagetool.
-	wget '$(APPIMAGETOOL_URL)'
-	chmod a+x ./$(APPIMAGETOOL)
-endif
 	# Generate AppImage.
-	ARCH=x86_64 ./$(APPIMAGETOOL) --appimage-extract-and-run $(INSTALL_DIR)/appimage $(KOREADER_APPIMAGE)
+	ARCH='$(APPIMAGE_ARCH)' ./$(APPIMAGETOOL) --appimage-extract-and-run $(INSTALL_DIR)/appimage $(KOREADER_APPIMAGE)
 
-PHONY += update
+PHONY += appimagetool update
+SOUND += $(APPIMAGETOOL)

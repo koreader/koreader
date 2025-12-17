@@ -17,7 +17,7 @@ executors:
 
   base:
     docker:
-      - image: koreader/kobase:0.4.1-22.04
+      - image: koreader/kobase:0.5.3-22.04
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
@@ -39,7 +39,8 @@ jobs:
       CLICOLOR_FORCE: "1"
       EMULATE_READER: "1"
       KODEBUG: ""
-      MAKEFLAGS: "PARALLEL_JOBS=3 OUTPUT_DIR=build INSTALL_DIR=install"
+      MAKEFLAGS: "OUTPUT_DIR=build INSTALL_DIR=install"
+      PARALLEL_JOBS: "3"
     steps:
       # Checkout / fetch. {{{
       - checkout
