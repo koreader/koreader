@@ -3,6 +3,7 @@ local Device = require("device")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
 local Math = require("optmath")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
@@ -211,15 +212,11 @@ function KOSync:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 callback = function()
                     local dialog
-                    dialog = MultiInputDialog:new{
+                    dialog = InputDialog:new{
                         -- @translators Name of this device defined by user for progress sync (if different than default device name)
                         title = _("Hostname for sync"),
-                        fields = {
-                            {
-                                text = self.settings.kosync_hostname or "",
-                                hint = _("Leave empty to use default"),
-                            },
-                        },
+                        input = self.settings.kosync_hostname,
+                        input_hint = _("Leave empty to use default"),
                         buttons = {
                             {
                                 {
@@ -231,8 +228,11 @@ function KOSync:addToMainMenu(menu_items)
                                 },
                                 {
                                     text = _("OK"),
+                                    is_enter_default = true,
                                     callback = function()
-                                        self:setHostname(dialog:getFields()[1])
+                                        local hostname = dialog:getInputText()
+                                        logger.dbg("KOSync: Setting custom hostname to:", hostname)
+                                        self.settings.kosync_hostname = hostname ~= "" and hostname or nil
                                         UIManager:close(dialog)
                                     end,
                                 },
@@ -428,11 +428,6 @@ end
 function KOSync:setCustomServer(server)
     logger.dbg("KOSync: Setting custom server to:", server)
     self.settings.custom_server = server ~= "" and server or nil
-end
-
-function KOSync:setHostname(hostname)
-    logger.dbg("KOSync: Setting custom hostname to:", hostname)
-    self.settings.kosync_hostname = hostname ~= "" and hostname or nil
 end
 
 function KOSync:setSyncForward(strategy)
@@ -1006,4 +1001,3 @@ function KOSync:onCloseWidget()
 end
 
 return KOSync
-
