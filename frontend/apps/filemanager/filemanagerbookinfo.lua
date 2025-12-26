@@ -1093,7 +1093,7 @@ function BookInfo:expandString(str, file, timestamp)
                         end
                     end
                     if patterns["%h"] then
-                        pages = self.ui.toc:getChapterPagesLeft(pageno) or pages
+                        pages = self.ui.toc:getChapterPagesLeft(pageno, true) or pages
                         local time_left = self.ui.statistics:getTimeForPages(pages)
                         if time_left then
                             patterns["%h"] = time_left
