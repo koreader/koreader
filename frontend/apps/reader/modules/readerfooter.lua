@@ -2017,7 +2017,7 @@ end
 
 function ReaderFooter:loadPreset(preset)
     local old_text_font_size = self.settings.text_font_size
-    local old_text_font_fase = self.settings.text_font_face
+    local old_text_font_face = self.settings.text_font_face
     local old_text_font_bold = self.settings.text_font_bold
     G_reader_settings:saveSetting("footer", util.tableDeepCopy(preset.footer))
     G_reader_settings:saveSetting("reader_footer_mode", preset.reader_footer_mode)
