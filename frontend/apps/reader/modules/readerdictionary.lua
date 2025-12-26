@@ -1014,68 +1014,91 @@ function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progre
             end
         end
         table.insert(args, "--") -- prevent words starting with a "-" to be interpreted as a sdcv option
-        util.arrayAppend(args, words)
 
-        local cmd = util.shell_escape(args)
-        -- cmd = "sleep 7 ; " .. cmd     -- uncomment to simulate long lookup time
+        -- Batch words to avoid command line length limits
+        local BATCH_SIZE = 200
+        for i = 1, #words, BATCH_SIZE do
+            local batch_words = {}
+            for j = i, math.min(i + BATCH_SIZE - 1, #words) do
+                table.insert(batch_words, words[j])
+            end
 
-        -- Some sdcv lookups, when using fuzzy search with many dictionaries
-        -- and a really bad selected text, can take up to 10 seconds.
-        -- It is nice to be able to cancel it when noticing wrong text was
-        -- selected.
-        -- Because sdcv starts outputting its output only at the end when it has
-        -- done its work, we can use Trapper:dismissablePopen() to cancel it as
-        -- long as we are waiting for output.
-        -- When fuzzy search is enabled, we have a lookup_progress_msg that can
-        -- be used to catch a tap and trigger cancellation.
-        -- When fuzzy search is disabled, we provide false instead so an
-        -- invisible non-event-forwarding TrapWidget is used to catch a tap
-        -- and trigger cancellation (invisible so there's no need for repaint
-        -- and refresh with the usually fast non-fuzzy search lookups).
-        -- We must ensure we will have some output to be readable (if no
-        -- definition found, sdcv will output some message on stderr, and
-        -- let stdout empty) by appending an "echo":
-        cmd = cmd .. "; echo"
-        -- NOTE: Bionic doesn't support rpath, but does honor LD_LIBRARY_PATH...
-        --       Give it a shove so it can actually find the STL.
-        if android then
-            C.setenv("LD_LIBRARY_PATH", android.nativeLibraryDir, 1)
-        end
-        local completed, results_str = Trapper:dismissablePopen(cmd, lookup_progress_msg)
-        if android then
-            -- NOTE: It's unset by default, so this is perfectly fine.
-            C.unsetenv("LD_LIBRARY_PATH")
-        end
-        lookup_cancelled = not completed
-        if results_str and results_str ~= "\n" then -- \n is when lookup was cancelled
-            -- sdcv can return multiple results if we passed multiple words to
-            -- the cmdline. In this case, the lookup results for each word are
-            -- newline separated. The JSON output doesn't contain raw newlines
-            -- so it's safe to split. Ideally luajson would support jsonl but
-            -- unfortunately it doesn't and it also seems to decode the last
-            -- object rather than the first one if there are multiple.
-            local result_word_idx = 0
-            for _, entry_str in ipairs(util.splitToArray(results_str, "\n")) do
-                result_word_idx = result_word_idx + 1
-                local ok, results = pcall(JSON.decode, entry_str)
-                if not ok or not results then
-                    logger.warn("JSON data cannot be decoded", results)
-                    -- Need to insert an empty table so that the word entries
-                    -- match up to the result entries (so that callers can
-                    -- batch lookups to reduce the cost of bulk lookups while
-                    -- still being able to figure out which lookup came from
-                    -- which word).
-                    results = {}
+            local batch_args = util.tableDeepCopy(args)
+            util.arrayAppend(batch_args, batch_words)
+
+            local cmd = util.shell_escape(batch_args)
+            -- cmd = "sleep 7 ; " .. cmd     -- uncomment to simulate long lookup time
+
+            -- Some sdcv lookups, when using fuzzy search with many dictionaries
+            -- and a really bad selected text, can take up to 10 seconds.
+            -- It is nice to be able to cancel it when noticing wrong text was
+            -- selected.
+            -- Because sdcv starts outputting its output only at the end when it has
+            -- done its work, we can use Trapper:dismissablePopen() to cancel it as
+            -- long as we are waiting for output.
+            -- When fuzzy search is enabled, we have a lookup_progress_msg that can
+            -- be used to catch a tap and trigger cancellation.
+            -- When fuzzy search is disabled, we provide false instead so an
+            -- invisible non-event-forwarding TrapWidget is used to catch a tap
+            -- and trigger cancellation (invisible so there's no need for repaint
+            -- and refresh with the usually fast non-fuzzy search lookups).
+            -- We must ensure we will have some output to be readable (if no
+            -- definition found, sdcv will output some message on stderr, and
+            -- let stdout empty) by appending an "echo":
+            cmd = cmd .. "; echo"
+            -- NOTE: Bionic doesn't support rpath, but does honor LD_LIBRARY_PATH...
+            --       Give it a shove so it can actually find the STL.
+            if android then
+                C.setenv("LD_LIBRARY_PATH", android.nativeLibraryDir, 1)
+            end
+            local completed, results_str = Trapper:dismissablePopen(cmd, lookup_progress_msg)
+            if android then
+                -- NOTE: It's unset by default, so this is perfectly fine.
+                C.unsetenv("LD_LIBRARY_PATH")
+            end
+            lookup_cancelled = not completed
+            if lookup_cancelled then
+                break -- don't do any more batches
+            end
+            if results_str and results_str ~= "\n" then -- \n is when lookup was cancelled
+                -- sdcv can return multiple results if we passed multiple words to
+                -- the cmdline. In this case, the lookup results for each word are
+                -- newline separated. The JSON output doesn't contain raw newlines
+                -- so it's safe to split. Ideally luajson would support jsonl but
+                -- unfortunately it doesn't and it also seems to decode the last
+                -- object rather than the first one if there are multiple.
+                local result_word_idx_offset = i - 1
+                local result_word_idx = 0
+                for _, entry_str in ipairs(util.splitToArray(results_str, "\n")) do
+                    result_word_idx = result_word_idx + 1
+                    local ok, results = pcall(JSON.decode, entry_str)
+                    if not ok or not results then
+                        logger.warn("JSON data cannot be decoded", results)
+                        -- Need to insert an empty table so that the word entries
+                        -- match up to the result entries (so that callers can
+                        -- batch lookups to reduce the cost of bulk lookups while
+                        -- still being able to figure out which lookup came from
+                        -- which word).
+                        results = {}
+                    end
+                    local original_idx = result_word_idx_offset + result_word_idx
+                    if all_results[original_idx] then
+                        util.arrayAppend(all_results[original_idx], results)
+                    else
+                        -- This may create holes if a previous batch had fewer results
+                        all_results[original_idx] = results
+                    end
                 end
-                if all_results[result_word_idx] then
-                    util.arrayAppend(all_results[result_word_idx], results)
-                else
-                    table.insert(all_results, results)
+                if result_word_idx ~= #batch_words then
+                    logger.warn("sdcv returned a different number of results than the number of words in the batch")
                 end
             end
-            if result_word_idx ~= #words then
-                logger.warn("sdcv returned a different number of results than the number of words")
-            end
+        end
+    end
+    -- Fill in any holes that may have been created by batching
+    for i = 1, #words do
+        if not all_results[i] then
+            all_results[i] = {}
         end
     end
     return lookup_cancelled, all_results
