@@ -88,6 +88,7 @@ Widget that displays an item for menu
 local MenuItem = InputContainer:extend{
     font = "smallinfofont",
     infont = "infont",
+    text_bgcolor = nil,
     linesize = Size.line.medium,
     single_line = false,
     multilines_forced = false, -- set to true to always use TextBoxWidget
@@ -200,6 +201,8 @@ function MenuItem:init()
     local mandatory_w = mandatory_widget:getWidth()
 
     local available_width = self.content_width - state_width - text_mandatory_padding - mandatory_w
+    local text_fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil
+    local text_bgcolor = self.text_bgcolor
     local item_name
 
     -- Whether we show text on a single or multiple lines, we don't want it shortened
@@ -230,7 +233,7 @@ function MenuItem:init()
                 face = self.post_text_face,
                 max_width = math.floor(available_width / 2), -- keep some space for the other stuff
                 bold = self.bold,
-                fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+                fgcolor = text_fgcolor,
             }
             available_width = available_width - post_text_widget:getWidth() - post_text_left_padding - post_text_right_padding
         end
@@ -240,7 +243,7 @@ function MenuItem:init()
             face = self.face,
             bold = self.bold,
             truncate_left = self.truncate_left,
-            fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+            fgcolor = text_fgcolor,
         }
         local w = item_name:getWidth()
         if w > available_width then
@@ -307,6 +310,15 @@ function MenuItem:init()
                 post_text_widget.forced_baseline = mdtr_baseline
             end
         end
+        if text_bgcolor then
+            item_name = FrameContainer:new{
+                width = math.max(item_name:getWidth(), available_width), -- if the ellipsis doesn't fit
+                background = text_bgcolor,
+                bordersize = 0,
+                padding = 0,
+                item_name,
+            }
+        end
 
     elseif self.multilines_show_more_text then
         -- Multi-lines, with font size decrease if needed to show more of the text.
@@ -319,13 +331,14 @@ function MenuItem:init()
                 item_name:free()
             end
             logger.dbg("multilines_show_more_text trying font size", font_size)
-            item_name = TextBoxWidget:new {
+            item_name = TextBoxWidget:new{
                 text = text,
                 face = Font:getFace(self.font, font_size),
                 width = available_width,
                 alignment = "left",
                 bold = self.bold,
-                fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+                fgcolor = text_fgcolor,
+                bgcolor = text_bgcolor,
             }
             -- return true if we fit
             return item_name:getSize().h <= max_item_height
@@ -372,7 +385,7 @@ function MenuItem:init()
 
     else
         -- Multi-lines, with fixed user provided font size
-        item_name = TextBoxWidget:new {
+        item_name = TextBoxWidget:new{
             text = text,
             face = self.face,
             width = available_width,
@@ -381,7 +394,8 @@ function MenuItem:init()
             height_overflow_show_ellipsis = true,
             alignment = "left",
             bold = self.bold,
-            fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+            fgcolor = text_fgcolor,
+            bgcolor = text_bgcolor,
         }
     end
 
@@ -1081,6 +1095,7 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
             show_parent = self.show_parent,
             state_w = self.state_w,
             text = Menu.getMenuText(item),
+            text_bgcolor = item.text_bgcolor,
             bidi_wrap_func = item.bidi_wrap_func,
             post_text = item.post_text,
             mandatory = item.mandatory,
