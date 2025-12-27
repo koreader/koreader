@@ -74,7 +74,7 @@ function WebDav:uploadFile(url, address, username, password, local_path, callbac
 end
 
 function WebDav:createFolder(url, address, username, password, folder_name, callback_close)
-    local code_response = WebDavApi:createFolder(address .. WebDavApi.urlEncode(url .. "/" .. folder_name), username, password, folder_name)
+    local code_response = WebDavApi:createFolder(address .. util.urlEncode(url .. "/" .. folder_name, "/"), username, password, folder_name)
     if code_response == 201 then
         if callback_close then
             callback_close()
