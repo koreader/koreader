@@ -1,5 +1,11 @@
 #!/bin/sh
 
+export LC_ALL="en_US.UTF-8"
+
+UNPACK_DIR='/mnt/us'
+# KOReader's working directory.
+KOREADER_DIR="${UNPACK_DIR}/koreader"
+
 # NOTE: Stupid workaround to make sure the script we end up running is a *copy*,
 # living in a magical land that doesn't suffer from gross filesystem deficiencies.
 # Otherwise, the vfat+fuse mess means an OTA update will break the script on exit,
@@ -13,16 +19,10 @@ if [ "$(dirname "${0}")" != "/var/tmp" ]; then
     exec /var/tmp/koreader.sh "$@"
 fi
 
-export LC_ALL="en_US.UTF-8"
-
 PROC_KEYPAD="/proc/keypad"
 PROC_FIVEWAY="/proc/fiveway"
 [ -e "${PROC_KEYPAD}" ] && echo unlock >"${PROC_KEYPAD}"
 [ -e "${PROC_FIVEWAY}" ] && echo unlock >"${PROC_FIVEWAY}"
-
-UNPACK_DIR='/mnt/us'
-# KOReader's working directory
-export KOREADER_DIR="${UNPACK_DIR}/koreader"
 
 # NOTE: Same vfat+fuse shenanigans needed for FBInk, before we source libko...
 cp -pf "${KOREADER_DIR}/fbink" /var/tmp/fbink

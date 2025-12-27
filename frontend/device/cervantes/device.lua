@@ -196,6 +196,12 @@ function Cervantes:powerOff()
     os.execute("sleep 1 && halt &")
 end
 
+function Cervantes:isStartupScriptUpToDate()
+    local md5 = require("ffi/MD5")
+    -- Compare the hash of the *active* script to the *potential* one.
+    return md5.sumFile("/tmp/koreader.sh") == md5.sumFile("koreader.sh")
+end
+
 -- This method is the same as the one in kobo/device.lua except the sleep cover part.
 function Cervantes:setEventHandlers(UIManager)
     -- We do not want auto suspend procedure to waste battery during
