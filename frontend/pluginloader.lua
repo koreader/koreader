@@ -14,6 +14,7 @@ Plugins are controlled by the following settings.
 local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local safemode = require("safemode")
 local util = require("util")
 local _ = require("gettext")
 
@@ -187,6 +188,10 @@ function PluginLoader:_discover()
 end
 
 function PluginLoader:_load(t)
+    if safemode.disable_plugins() then
+        return
+    end
+
     -- keep reference to old value so they can be restored later
     local package_path = package.path
     local package_cpath = package.cpath
@@ -222,9 +227,7 @@ function PluginLoader:_load(t)
     end
     package.path = package_path
     package.cpath = package_cpath
-
 end
-
 
 function PluginLoader:loadPlugins()
     if self.enabled_plugins then return self.enabled_plugins, self.disabled_plugins end

@@ -3,17 +3,14 @@
 PHONY += run run-prompt run-wbuilder
 
 define run_script
-for a in $(RARGS); do
-    [[ "$$a" = [-/]* ]] || a="$${PWD}/$$a";
-    set -- "$$@" "$$a";
-done;
-cd $(INSTALL_DIR)/koreader &&
-while true; do
-    code=0;
-    $(RWRAP) ./luajit reader.lua "$$@" || code=$$?;
-    [ $${code} -eq 85 ] || exit $${code};
-    set --;
-done
+	for a in $(RARGS); do \
+		[[ "$$a" = [-/]* ]] || a="$${PWD}/$$a"; \
+		set -- "$$@" "$$a"; \
+	done; \
+	cp platform/linux/koreader-emulator.sh $(INSTALL_DIR)/koreader/koreader_emulator.sh && \
+	chmod +x $(INSTALL_DIR)/koreader/koreader_emulator.sh && \
+	cd $(INSTALL_DIR)/koreader && \
+	$(RWRAP) ./koreader_emulator.sh "$$@"
 endef
 
 run: all

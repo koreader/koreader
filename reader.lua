@@ -83,6 +83,7 @@ local function showusage()
     print("-v               debug in verbose mode")
     print("-p               enable Lua code profiling")
     print("-h               show this usage help")
+    print("--crash-count=number     enabling safe-mode if necessary")
     print("")
     print("If you give the name of a directory instead of a file path, a file")
     print("chooser will show up and let you select a file")
@@ -182,6 +183,10 @@ local UIManager = require("ui/uimanager")
 
 -- Apply developer patches
 userpatch.applyPatches(userpatch.late)
+
+-- Show a notification about safe-mode if it is active
+local safemode = require("safemode")
+safemode.check()
 
 -- Inform once about color rendering on newly supported devices
 -- (there are some android devices that may not have a color screen,

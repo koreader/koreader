@@ -5,6 +5,7 @@ The contents in `koreader/patches/` are applied on calling `userpatch.applyPatch
 --]]--
 
 local isAndroid, android = pcall(require, "android")
+local safemode = require("safemode")
 
 local userpatch = {
     -- priorities for user patches,
@@ -26,6 +27,10 @@ local userpatch = {
 
 if isAndroid and android.prop.flavor == "fdroid" then
     return userpatch -- allows to use applyPatches as a no-op on F-Droid flavor
+end
+
+if safemode.disable_userpatches() then
+    return userpatch
 end
 
 local lfs = require("libs/libkoreader-lfs")
@@ -63,7 +68,7 @@ local function runUserPatchTasks(dir, priority)
 
     table.sort(patches, sort.natsort_cmp())
 
-    for i, entry in ipairs(patches) do
+    for _, entry in ipairs(patches) do
         local fullpath = dir .. "/" .. entry
         if lfs.attributes(fullpath, "mode") == "file" then
             if fullpath:match("%.lua$") then -- execute patch-files first
