@@ -70,7 +70,9 @@ function ArchiveViewer:openFile(file)
         is_popout = false,
         title_multilines = true,
         onMenuSelect = function(self_menu, item)
-            if item.is_file then
+            if item.is_extract_all then
+                self:extractAllDialog()
+            elseif item.is_file then
                 self:showFileDialog(item.path)
             else
                 local title = item.path == "" and filename or filename.."/"..item.path
@@ -121,7 +123,12 @@ function ArchiveViewer:getItemTable(path)
     if path == nil or path == "" then -- root
         path = "/"
         prefix = ""
-        item_table = {}
+        item_table = {
+            {
+                text = _("Extract all files"),
+                is_extract_all = true,
+            },
+        }
     else
         prefix = path
         item_table = {
@@ -206,6 +213,33 @@ function ArchiveViewer:showFileDialog(filepath)
     UIManager:show(dialog)
 end
 
+function ArchiveViewer:extractAllDialog()
+    local dialog
+    local buttons = {
+        {
+            {
+                text = _("Extract"),
+                callback = function()
+                    UIManager:close(dialog)
+                    self:extractAll()
+                end,
+            },
+            {
+                text = _("Cancel"),
+                callback = function()
+                    UIManager:close(dialog)
+                end,
+            },
+        },
+    }
+    dialog = ButtonDialog:new{
+        title = _("Extract all files?") .. "\n\n" .. _("If the files already exist, they will be overwritten."),
+        width_factor = 0.8,
+        buttons = buttons,
+    }
+    UIManager:show(dialog)
+end
+
 function ArchiveViewer:viewFile(filepath)
     if DocumentRegistry:isImageFile(filepath) then
         local index = 0
@@ -254,6 +288,23 @@ end
 function ArchiveViewer:extractFile(filepath)
     local directory = util.splitFilePathName(self.arc.filepath)
     self.fm_updated = self.arc:extractToPath(filepath, directory .. filepath)
+end
+
+function ArchiveViewer:extractAll()
+    local archive_dir = util.splitFilePathName(self.arc.filepath)
+
+    for entry in self.arc:iterate() do
+        if entry.mode == "file" then
+            self.arc:extractToPath(entry.path, archive_dir .. entry.path)
+        end
+    end
+
+    self.fm_updated = true
+
+    local InfoMessage = require("ui/widget/infomessage")
+    UIManager:show(InfoMessage:new{
+        text = T(_("All files extracted to %1"), archive_dir),
+    })
 end
 
 function ArchiveViewer:extractContent(filepath)
