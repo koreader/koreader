@@ -24,7 +24,7 @@ KO_RC_RESTART=85
 RETURN_VALUE=-1
 
 while [ ${RETURN_VALUE} -ne 0 ]; do
-    ./luajit reader.lua "${ARGS}" --crash-count=${CRASH_COUNT}
+    CRASH_COUNT=${CRASH_COUNT} ./reader.lua "${ARGS}"
     RETURN_VALUE=$?
 
     # Check Exit or Restart

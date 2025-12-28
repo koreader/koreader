@@ -11,14 +11,7 @@ local safemode = {
     disable_all_count = 4,
 }
 
--- Matches "--crash-count=" followed by one or more digits
-for i = #arg, 1, -1 do
-    local crash_count = arg[i]:match("^%-%-crash%-count=(%d+)$")
-    if crash_count then
-        safemode.crash_count = tonumber(crash_count)
-        break
-    end
-end
+safemode.crash_count = tonumber(os.getenv("CRASH_COUNT")) or 0
 
 function safemode.disable_userpatches()
     local count = safemode.crash_count

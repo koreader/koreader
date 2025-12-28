@@ -418,7 +418,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         ko_do_dns
     fi
 
-    ./reader.lua "$@" --crash-count=${CRASH_COUNT} >>crash.log 2>&1
+    CRASH_COUNT=${CRASH_COUNT} ./reader.lua "$@" >>crash.log 2>&1
     RETURN_VALUE=$?
 
     # Did we crash?
