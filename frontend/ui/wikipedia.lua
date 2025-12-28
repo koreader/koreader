@@ -112,38 +112,59 @@ local function getUrlContent(url, timeout, maxtime)
     end
     if not timeout then timeout = 10 end
 
-    local sink = {}
-    socketutil:set_timeout(timeout, maxtime or 30)
-    local request = {
-        url     = url,
-        method  = "GET",
-        sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
-    }
+    local max_retries = 3
+    local retry_count = 0
+    local code, headers, status, content
 
-    local code, headers, status = socket.skip(1, http.request(request))
-    socketutil:reset_timeout()
-    local content = table.concat(sink) -- empty or content accumulated till now
-    -- logger.dbg("code:", code)
-    -- logger.dbg("headers:", headers)
-    -- logger.dbg("status:", status)
-    -- logger.dbg("#content:", #content)
+    repeat
+        local sink = {}
+        socketutil:set_timeout(timeout, maxtime or 30)
+        local request = {
+            url     = url,
+            method  = "GET",
+            sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
+        }
 
-    if code == socketutil.TIMEOUT_CODE or
-       code == socketutil.SSL_HANDSHAKE_CODE or
-       code == socketutil.SINK_TIMEOUT_CODE
-    then
-        logger.warn("request interrupted:", code)
-        return false, code
+        code, headers, status = socket.skip(1, http.request(request))
+        socketutil:reset_timeout()
+        content = table.concat(sink)
+
+        if code == socketutil.TIMEOUT_CODE or
+           code == socketutil.SSL_HANDSHAKE_CODE or
+           code == socketutil.SINK_TIMEOUT_CODE
+        then
+            logger.warn("request interrupted:", code)
+            return false, code
+        end
+
+        if headers == nil then
+            logger.warn("No HTTP headers:", status or code or "network unreachable")
+            return false, "Network or remote server unavailable"
+        end
+
+        -- Check for rate limiting (429)
+        if code == 429 and retry_count < max_retries then
+            retry_count = retry_count + 1
+            local retry_after = tonumber(headers["retry-after"]) or 10
+            logger.info("Rate limited (429), waiting", retry_after, "seconds before retry", retry_count, "/", max_retries)
+            ffiutil.sleep(retry_after)
+            -- Continue loop to retry
+        elseif not code or code < 200 or code > 299 then
+            logger.warn("HTTP status not okay:", status or code or "network unreachable")
+            logger.dbg("Response headers:", headers)
+            return false, "Remote server error or unavailable"
+        else
+            -- Success, break out of retry loop
+            break
+        end
+    until retry_count >= max_retries
+
+    -- If we exhausted retries with 429, return error
+    if code == 429 then
+        logger.warn("Rate limit exceeded after", max_retries, "retries")
+        return false, "Rate limit exceeded"
     end
-    if headers == nil then
-        logger.warn("No HTTP headers:", status or code or "network unreachable")
-        return false, "Network or remote server unavailable"
-    end
-    if not code or code < 200 or code > 299 then -- all 200..299 HTTP codes are OK
-        logger.warn("HTTP status not okay:", status or code or "network unreachable")
-        logger.dbg("Response headers:", headers)
-        return false, "Remote server error or unavailable"
-    end
+
     if headers and headers["content-length"] then
         -- Check we really got the announced content size
         local content_length = tonumber(headers["content-length"])
