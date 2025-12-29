@@ -16,7 +16,6 @@ local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util = require("util")
 local _ = require("gettext")
 
 local DEFAULT_PLUGIN_PATH = "plugins"
@@ -71,6 +70,24 @@ local function getMenuTable(plugin)
     return t
 end
 
+--- Gets the display name for a plugin, used in UI elements.
+--- Priority order for determining the display name:
+---   1. plugin.fullname (if set in _meta.lua, typically wrapped in _() for translation)
+---   2. Directory-based name
+--
+--- Note: plugin.name is reserved for internal identification and always uses
+--- the directory-based name (e.g., "hello" from "hello.koplugin").
+--
+--- @param plugin table The plugin module
+--- @param plugin_meta table The plugin metadata from _meta.lua (optional)
+--- @treturn string The display name to show in UI
+local function getPluginDisplayName(plugin, plugin_meta)
+    if plugin.fullname and plugin.fullname ~= "" then
+        return plugin.fullname
+    end
+    return plugin.name
+end
+
 -- Event handlers defined by plugins are wrapped in a HandlerSandbox.
 -- The purpose of the sandbox is to get meaningful stack-traces out of errors happening in plugins.
 local HandlerSandbox = { mt = {} }
@@ -92,14 +109,18 @@ function HandlerSandbox:call(module, ...)
     local ok, re
     if self.log_stacktrace then
         local traceback = function(err)
-             -- do not print 2 topmost entries in traceback. The first is this local function
-             -- and the second is the `call` method of HandlerSandbox.
-             logger.err("An error occurred while executing a handler:\n"..err.."\n"..debug.traceback(self.context.name..":"..self.fname, 2))
+            -- do not print 2 topmost entries in traceback. The first is this local function
+            -- and the second is the `call` method of HandlerSandbox.
+            logger.err("An error occurred while executing a handler:\n" ..
+                err .. "\n" .. debug.traceback(self.context.name .. ":" .. self.fname, 2))
         end
         ok, re = xpcall(self.f, traceback, module, ...)
     else
         ok, re = pcall(self.f, module, ...)
-        if not ok then logger.err("An error occurred while executing handler "..self.context.name..":"..self.fname..":\n", re) end
+        if not ok then
+            logger.err(
+                "An error occurred while executing handler " .. self.context.name .. ":" .. self.fname .. ":\n", re)
+        end
     end
     -- NOTE backward compatibility with previous implementation
     -- of handler wrapping that returned false on error
@@ -152,7 +173,7 @@ function PluginLoader:_discover()
             extra_paths = { extra_paths }
         end
         if type(extra_paths) == "table" then
-            for _,extra_path in ipairs(extra_paths) do
+            for _, extra_path in ipairs(extra_paths) do
                 local extra_path_mode = lfs.attributes(extra_path, "mode")
                 if extra_path_mode == "directory" and extra_path ~= DEFAULT_PLUGIN_PATH then
                     table.insert(lookup_path_list, extra_path)
@@ -172,25 +193,29 @@ function PluginLoader:_discover()
     for _, lookup_path in ipairs(lookup_path_list) do
         logger.info("Looking for plugins in directory:", lookup_path)
         for entry in lfs.dir(lookup_path) do
-            local plugin_root = lookup_path.."/"..entry
+            local plugin_root = lookup_path .. "/" .. entry
             local mode = lfs.attributes(plugin_root, "mode")
             -- A valid KOReader plugin directory ends with .koplugin
             if mode == "directory" and entry:sub(-9) == ".koplugin" then
-                local mainfile = plugin_root.."/main.lua"
-                local metafile = plugin_root.."/_meta.lua"
+                local mainfile = plugin_root .. "/main.lua"
+                local metafile = plugin_root .. "/_meta.lua"
+                -- Extract directory-based name for consistent internal identification.
+                -- This name is used for the plugins_disabled setting and throughout
+                -- the plugin lifecycle. Display names are handled separately via
+                -- getPluginDisplayName().
+                local plugin_name = entry:sub(1, -10)
                 local disabled = false
-                if plugins_disabled and plugins_disabled[entry:sub(1, -10)] then
+                if plugins_disabled and plugins_disabled[plugin_name] then
                     mainfile = metafile
                     disabled = true
                 end
-                local __, name = util.splitFilePathName(plugin_root)
 
                 table.insert(discovered, {
                     ["main"] = mainfile,
                     ["meta"] = metafile,
                     ["path"] = plugin_root,
                     ["disabled"] = disabled,
-                    ["name"] = name,
+                    ["name"] = plugin_name,
                 })
             end
         end
@@ -220,13 +245,23 @@ function PluginLoader:_load(t)
         local plugin_name = plugin_root:match("/(.-)%.koplugin")
         if not ok_meta then
             plugin_meta = {
-                name = plugin_name,
+                name = v.name,
                 version = "unknown",
             }
         end
-        if not plugin_meta.name or plugin_meta.name == "" then
-            plugin_meta.name = plugin_name
+
+        -- Warn if _meta.lua defines a name field that differs from directory name
+        -- See https://github.com/koreader/koreader/issues/14756
+        if plugin_meta.name and plugin_meta.name ~= "" and plugin_meta.name ~= v.name then
+            logger.warn(string.format(
+                "Plugin %s: _meta.lua 'name' field ('%s') is ignored. Using directory-based name '%s' instead. " ..
+                "Please remove the 'name' field from _meta.lua and use 'fullname' for display purposes.",
+                plugin_root, plugin_meta.name, v.name
+            ))
         end
+
+        plugin_meta.name = v.name
+
         if not plugin_meta.version or plugin_meta.version == "" then
             plugin_meta.version = "unknown"
         end
@@ -243,14 +278,29 @@ function PluginLoader:_load(t)
                 logger.warn("Error when loading", mainfile, plugin_module)
             elseif type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
                 plugin_module.path = plugin_root
-                plugin_module.name = plugin_module.name or plugin_name
+                -- Always use directory-based name for internal identification.
+                -- This ensures consistent behavior for disabled plugin checks and
+                -- plugin settings, regardless of name field in _meta.lua.
+                plugin_module.name = v.name
                 if disabled then
+                    -- For user-disabled plugins, preserve display name from metadata
+                    if not plugin_module.fullname then
+                        plugin_module.fullname = getPluginDisplayName(plugin_module, plugin_meta)
+                    end
                     table.insert(self.disabled_plugins, plugin_module)
                 else
                     -- Merge metadata into plugin module
                     if plugin_meta then
                         for k, module in pairs(plugin_meta) do
-                            plugin_module[k] = module
+                            -- Skip 'name' field - we enforce directory-based name for
+                            -- internal identification. Display names use 'fullname'.
+                            if k ~= "name" then
+                                plugin_module[k] = module
+                            end
+                        end
+                        -- Set display name if not already set by metadata
+                        if not plugin_module.fullname then
+                            plugin_module.fullname = getPluginDisplayName(plugin_module, plugin_meta)
                         end
                     end
                     sandboxPluginEventHandlers(plugin_module)
@@ -288,7 +338,7 @@ function PluginLoader:loadPlugins()
         package.cpath = string.format("%s;%s/lib/?.so", package.cpath, plugin.path)
     end
 
-    table.sort(self.enabled_plugins, function(v1,v2) return v1.path < v2.path end)
+    table.sort(self.enabled_plugins, function(v1, v2) return v1.path < v2.path end)
 
     return self.enabled_plugins, self.disabled_plugins
 end
@@ -371,10 +421,10 @@ end
 
 function PluginLoader:createPluginInstance(plugin, attr)
     local ok, re = pcall(plugin.new, plugin, attr)
-    if ok then  -- re is a plugin instance
+    if ok then -- re is a plugin instance
         self.loaded_plugins[plugin.name] = re
         return ok, re
-    else  -- re is the error message
+    else -- re is the error message
         logger.err("Failed to initialize", plugin.name, "plugin:", re)
         return nil, re
     end
@@ -397,13 +447,13 @@ end
 
 --- Checks if a specific plugin is instantiated
 function PluginLoader:isPluginLoaded(name)
-   return self.loaded_plugins[name] ~= nil
+    return self.loaded_plugins[name] ~= nil
 end
 
 --- Returns the current instance of a specific Plugin (if any)
 --- (NOTE: You can also usually access it via self.ui[plugin_name])
 function PluginLoader:getPluginInstance(name)
-   return self.loaded_plugins[name]
+    return self.loaded_plugins[name]
 end
 
 -- *MUST* be called on destruction of whatever called createPluginInstance!
