@@ -454,20 +454,6 @@ function Wikipedia:addImages(page, lang, more_images, image_size_factor, hi_imag
     -- extracted from html) made to have the same keys for common processing
     local wimages = {}
 
-    -- Wikipedia's thumbnail steps (https://w.wiki/GHai)
-    -- Wikipedia will serve the next larger size from this list
-    local thumbnail_steps = {20, 40, 60, 120, 250, 330, 500, 960}
-    local function round_to_thumbnail_step(width)
-        -- Find the next larger thumbnail step (or largest if width exceeds all)
-        for _, step in ipairs(thumbnail_steps) do
-            if width <= step then
-                return step
-            end
-        end
-        -- If requested width is larger than all steps, use the largest
-        return thumbnail_steps[#thumbnail_steps]
-    end
-
     -- We got what Wikipedia scored as the most interesting image for this
     -- page in page.thumbnail, and its filename in page.pageimage, ie:
     --  "thumbnail": {
@@ -502,6 +488,20 @@ function Wikipedia:addImages(page, lang, more_images, image_size_factor, hi_imag
         end
     end
 
+    -- Wikipedia's thumbnail steps (https://w.wiki/GHai)
+    -- Wikipedia will serve the next larger size from this list
+    local thumbnail_steps = {20, 40, 60, 120, 250, 330, 500, 960}
+    local function round_to_thumbnail_step(width)
+        -- Find the next larger thumbnail step (or largest if width exceeds all)
+        for _, step in ipairs(thumbnail_steps) do
+            if width <= step then
+                return step
+            end
+        end
+        -- If requested width is larger than all steps, use the largest
+        return thumbnail_steps[#thumbnail_steps]
+    end
+
     -- All our wimages now have the keys: source, width, height, filename, caption
     for _, wimage in ipairs(wimages) do
         -- We trust wikipedia, and our x4.5 factor in :getFullPageImages(), for adequate
@@ -516,24 +516,23 @@ function Wikipedia:addImages(page, lang, more_images, image_size_factor, hi_imag
         end
         width = math.ceil(width * image_size_factor)
         height = math.ceil(height * image_size_factor)
+        -- Ask for the next largest thumbnail, and then rely on scaling down.
+        local request_width = round_to_thumbnail_step(width)
         -- All wikipedia image urls like .../wikipedia/commons/A/BC/<filename>
         -- or .../wikipedia/commons/thumb/A/BC/<filename>/<width>px-<filename>
         -- can be transformed to another url with a requested new_width with the form:
         --   /wikipedia/commons/thumb/A/BC/<filename>/<new_width>px-<filename>
         -- (Additionally, the image format can be changed by appending .png,
         -- .jpg or .gif to it)
-        -- The resize is so done on Wikipedia servers from the source image for
-        -- the best quality.
         -- Round to Wikipedia's thumbnail steps to avoid 429 errors
-        width = round_to_thumbnail_step(width)
-        local source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1"..width.."%2")
+        local source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1"..request_width.."%2")
         -- We build values for a high resolution version of the image, to be displayed
         -- with ImageViewer (x 4 by default)
         local hi_width = width * (hi_image_size_factor or 4)
         local hi_height = height * (hi_image_size_factor or 4)
         -- Round hi-res width to thumbnail steps as well
-        hi_width = round_to_thumbnail_step(hi_width)
-        local hi_source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1"..hi_width.."%2")
+        local request_hi_width = round_to_thumbnail_step(hi_width)
+        local hi_source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1"..request_hi_width.."%2")
         local title = wimage.filename
         if title then
             title = title:gsub("_", " ")
