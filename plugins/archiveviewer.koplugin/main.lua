@@ -69,11 +69,7 @@ function ArchiveViewer:openFile(file)
     self.booklist = BookList:new({
         title = filename,
         item_table = self:getItemTable(),
-        covers_fullscreen = true,
-        is_borderless = true,
-        is_popout = false,
         title_multilines = true,
-        title_bar_fm_style = true,
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function()
             self:showMenu()
@@ -213,22 +209,10 @@ end
 function ArchiveViewer:showFileDialog(filepath)
     local dialog
     local buttons = {
-        {
-            {
-                text = _("Choose folder"),
-                callback = function()
-                    require("ui/downloadmgr")
-                        :new({
-                            onConfirm = function(path)
-                                self.extract_dir = path
-                                UIManager:close(dialog)
-                                self:showFileDialog(filepath)
-                            end,
-                        })
-                        :chooseDir(self.extract_dir)
-                end,
-            },
-        },
+        self:getChooseFolderButton(function()
+            UIManager:close(dialog)
+            self:showFileDialog(filepath)
+        end),
         {
             {
                 text = _("View"),
@@ -260,22 +244,10 @@ end
 function ArchiveViewer:extractAllDialog()
     local dialog
     local buttons = {
-        {
-            {
-                text = _("Choose folder"),
-                callback = function()
-                    require("ui/downloadmgr")
-                        :new({
-                            onConfirm = function(path)
-                                self.extract_dir = path
-                                UIManager:close(dialog)
-                                self:extractAllDialog()
-                            end,
-                        })
-                        :chooseDir(self.extract_dir)
-                end,
-            },
-        },
+        self:getChooseFolderButton(function()
+            UIManager:close(dialog)
+            self:extractAllDialog()
+        end),
         {
             {
                 text = _("Cancel"),
@@ -300,6 +272,27 @@ function ArchiveViewer:extractAllDialog()
         buttons = buttons,
     })
     UIManager:show(dialog)
+end
+
+function ArchiveViewer:getChooseFolderButton(callback)
+    return {
+        {
+            text = _("Choose folder"),
+            callback = function()
+                require("ui/downloadmgr")
+                    :new({
+                        onConfirm = function(path)
+                            if path:sub(-1) ~= "/" then
+                                path = path .. "/"
+                            end
+                            self.extract_dir = path
+                            callback(path)
+                        end,
+                    })
+                    :chooseDir(self.extract_dir)
+            end,
+        },
+    }
 end
 
 function ArchiveViewer:viewFile(filepath)
@@ -350,10 +343,6 @@ end
 function ArchiveViewer:extractFile(filepath)
     local directory = self.extract_dir
 
-    if directory:sub(-1) ~= "/" then
-        directory = directory .. "/"
-    end
-
     self.fm_updated = self.arc:extractToPath(filepath, directory .. filepath)
 
     UIManager:show(InfoMessage:new({
@@ -364,10 +353,6 @@ end
 
 function ArchiveViewer:extractAll()
     local archive_dir = self.extract_dir
-
-    if archive_dir:sub(-1) ~= "/" then
-        archive_dir = archive_dir .. "/"
-    end
 
     for entry in self.arc:iterate() do
         if entry.mode == "file" then
