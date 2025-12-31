@@ -93,8 +93,7 @@ fi
 
 # update to new version from OTA directory
 ko_update_check() {
-    NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
-    INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
+    NEWUPDATE="${KOREADER_DIR}/ota/update.zip"
     if [ -f "${NEWUPDATE}" ]; then
         # Clear screen to delete UI leftovers
         ./fbink --cls
@@ -113,18 +112,11 @@ ko_update_check() {
             PBAR_WFM="AUTO"
         fi
         FBINK_PID="$(./fbink --daemon 1 %KOREADER% -q -y -6 -P 0 -W ${PBAR_WFM})"
-        # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
-        # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
-        FILESIZE="$(stat -c %b "${NEWUPDATE}")"
-        BLOCKS="$((FILESIZE / 20))"
-        export CPOINTS="$((BLOCKS / 100))"
-        # shellcheck disable=SC2016
-        ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='printf "%s" $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}'
+        (cd "${UNPACK_DIR}" && "${KOREADER_DIR}/unpack" -X "${NEWUPDATE}" >"${FBINK_NAMED_PIPE}")
         fail=$?
         kill -TERM "${FBINK_PID}"
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
-            mv "${NEWUPDATE}" "${INSTALLED}"
             # Cleanup leftovers from previous install.
             (cd "${UNPACK_DIR}" && grep -xvFf "${KOREADER_DIR}/ota/package.index" /tmp/package.index | xargs -r rm -vf)
             ./fbink -q -y -6 -pm "Update successful :)"
@@ -140,8 +132,7 @@ ko_update_check() {
             ./fbink -q -y -5 -pm "KOReader may fail to function properly!"
         fi
         rm -f /tmp/package.index "${NEWUPDATE}" # always purge newupdate to prevent update loops
-        unset CPOINTS FBINK_NAMED_PIPE
-        unset BLOCKS FILESIZE FBINK_PID
+        unset FBINK_NAMED_PIPE FBINK_PID
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         sync
     fi
@@ -521,7 +512,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
             continue
         fi
 
-        if ! ./tar xzf "./data/KoboUSBMS.tar.gz" -C "${USBMS_HOME}"; then
+        if ! (cd "${USBMS_HOME}" && "${KOREADER_DIR}/unpack" -x "${KOREADER_DIR}/data/KoboUSBMS.tar.gz"); then
             echo "Couldn't unpack KoboUSBMS, restarting KOReader . . ." >>crash.log 2>&1
             if ! umount "${USBMS_HOME}"; then
                 echo "Couldn't unmount the USBMS tmpfs, shutting down in 30 sec!" >>crash.log 2>&1
