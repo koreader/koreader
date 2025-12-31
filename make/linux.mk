@@ -30,7 +30,7 @@ update: all
 	cd $(INSTALL_DIR)/linux && \
 		'$(abspath tools/mkrelease.sh)' \
 		$(if $(PARALLEL_JOBS),--jobs $(PARALLEL_JOBS)) \
-		--options=-$(LINUX_PACKAGE_COMPRESSION_LEVEL) \
+		--options='-$(LINUX_PACKAGE_COMPRESSION_LEVEL) --block-list=0' \
 		'$(abspath $(LINUX_PACKAGE))' . $(call release_excludes,lib/koreader/)
 
 PHONY += update
