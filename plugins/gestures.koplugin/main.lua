@@ -1371,6 +1371,15 @@ function Gestures:onIgnoreHoldCorners(ignore_hold_corners, no_notification)
     return true
 end
 
+function Gestures:onIgnoreHoldCornersTime(seconds)
+    if G_reader_settings:hasNot("ignore_hold_corners") then
+        self:onIgnoreHoldCorners()
+        UIManager:scheduleIn(seconds, function()
+            self:onIgnoreHoldCorners()
+        end)
+    end
+end
+
 function Gestures:onFlushSettings()
     if self.settings_data and self.updated then
         self.settings_data:flush()
