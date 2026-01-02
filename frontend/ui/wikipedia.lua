@@ -449,7 +449,7 @@ local function image_load_bb_func(image, highres, cached_cookies)
     -- We use dismissableRunInSubprocess with simple string return value to
     -- avoid serialization/deserialization of a long string of image bytes
     local completed, data = Trapper:dismissableRunInSubprocess(function()
-        local success, data, _cached_cookie = getUrlContent(source, timeout, maxtime, cached_cookies)
+        local success, data = getUrlContent(source, timeout, maxtime, cached_cookies)
         -- With simple string value, we're not able to return the failure
         -- reason, so log it here
         if not success then
@@ -1576,7 +1576,7 @@ abbr.abbr {
                 src = img.src2x
             end
             logger.dbg("Getting img ", src)
-            local success, content, _cached_cookie = getUrlContent(src, nil, nil, self.cached_cookies) -- is_image_request = true
+            local success, content = getUrlContent(src, nil, nil, self.cached_cookies) -- is_image_request = true
             -- success, content = getUrlContent(src..".unexistant") -- to simulate failure
             if success then
                 logger.dbg("success, size:", #content)
