@@ -204,8 +204,8 @@ function PluginLoader:_load(t)
     local package_cpath = package.cpath
 
     local mainfile, metafile, plugin_root, disabled
-    local incompatible_plugins_with_prompt = {}
     local compatibility = self:getCompatibility()
+    compatibility:reset()
 
     for __, v in ipairs(t) do -- luacheck: ignore
         mainfile = v.main
@@ -218,57 +218,23 @@ function PluginLoader:_load(t)
         local ok_meta, plugin_metamodule = pcall(dofile, metafile)
         local plugin_meta = ok_meta and plugin_metamodule or nil
         local plugin_name = plugin_root:match("/(.-)%.koplugin")
-
         if not ok_meta then
             plugin_meta = {
                 name = plugin_name,
                 version = "unknown",
             }
         end
-
         if not plugin_meta.name or plugin_meta.name == "" then
             plugin_meta.name = plugin_name
         end
-
         if not plugin_meta.version or plugin_meta.version == "" then
             plugin_meta.version = "unknown"
         end
-
         -- Check compatibility before loading the main plugin file
-        local should_load, incompat_reason, incompat_message, should_prompt =
-            compatibility:shouldLoadPlugin(plugin_meta)
-
+        local should_load, plugin_stub = compatibility:shouldLoadPlugin(plugin_meta, plugin_root)
         if not should_load and not disabled then
             -- Plugin is incompatible and should not be loaded
-            logger.dbg("Plugin", plugin_name, "is incompatible:", incompat_reason)
-
-            -- Create a minimal plugin entry for the disabled list
-            local plugin_stub = {
-                name = plugin_meta.name,
-                path = plugin_root,
-                incompatible = true,
-                incompatibility_reason = incompat_reason,
-                incompatibility_message = incompat_message,
-                should_prompt_user = should_prompt,
-                version = plugin_meta.version,
-                fullname = plugin_meta and plugin_meta.fullname or plugin_name,
-            }
-
-            -- Copy metadata if available
-            if plugin_meta then
-                for k, meta_val in pairs(plugin_meta) do
-                    if not plugin_stub[k] then
-                        plugin_stub[k] = meta_val
-                    end
-                end
-            end
-
-            -- Track plugins that should prompt the user
-            if should_prompt then
-                logger.dbg("Plugin", plugin_name, "will prompt user about incompatibility.")
-                table.insert(incompatible_plugins_with_prompt, plugin_stub)
-            end
-
+            logger.dbg("Plugin", plugin_name, "is incompatible:", plugin_stub.incompatibility_reason)
             table.insert(self.disabled_plugins, plugin_stub)
         else
             -- Load the plugin normally
@@ -296,22 +262,14 @@ function PluginLoader:_load(t)
     end
     package.path = package_path
     package.cpath = package_cpath
-
-    -- flush here, as shouldLoadPlugin could've changed settings due to e.g. load-once
-    -- flushing here ensures that those settings are saved, and flushed only once.
-    -- If there is a crash down the line, flushing here ensures that load-once plugins aren't
-    -- reloaded either.
-    compatibility.settings:purgeOldVersionSettings(3)
-    compatibility.settings:flush()
-
-    -- If there are incompatible plugins that need prompting, show the menu
-    if #incompatible_plugins_with_prompt > 0 then
-        UIManager:nextTick(function()
-            self:getCompatibility():showIncompatiblePluginsMenu(incompatible_plugins_with_prompt, function()
-                UIManager:askForRestart()
-            end)
-        end)
-    end
+    -- Flush settings - shouldLoadPlugin could've changed settings due to load-once.
+    -- Flushing here ensures that those settings are saved, and flushed only once.
+    -- If there is a crash down the line, flushing here ensures that load-once plugins aren't reloaded.
+    compatibility:purgeAndFlushSettings()
+    -- Show incompatible plugins menu if needed
+    compatibility:promptUserInNextTickIfNeeded(function()
+        UIManager:askForRestart()
+    end)
 end
 
 function PluginLoader:loadPlugins()
@@ -351,7 +309,6 @@ function PluginLoader:genPluginManagerSubItem()
             local element = getMenuTable(plugin)
             element.enable = false
             element.plugin_ref = plugin
-
             -- Add incompatibility information to the description
             if plugin.incompatible and plugin.incompatibility_message then
                 element.fullname = element.fullname .. " ⚠"

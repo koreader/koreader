@@ -49,7 +49,14 @@ PluginCompatibility.__index = PluginCompatibility
 function PluginCompatibility:new()
     local instance = setmetatable({}, self)
     instance.settings = PluginCompatibilitySettings:open()
+    instance.incompatible_plugins_requiring_prompt = {}
     return instance
+end
+
+--- Reset the list of incompatible plugins requiring prompts.
+-- Call this when starting a new plugin loading cycle.
+function PluginCompatibility:reset()
+    self.incompatible_plugins_requiring_prompt = {}
 end
 
 --- Check whether plugin compatibility checks are enabled.
@@ -105,43 +112,64 @@ function PluginCompatibility.checkCompatibility(plugin_meta)
     return true, nil, nil
 end
 
+--- Create a plugin stub with compatibility information.
+-- @table plugin_meta The plugin's metadata
+-- @table plugin_root Plugin root directory path
+-- @string reason Incompatibility reason
+-- @string message Incompatibility message
+-- @bool should_prompt Whether user should be prompted
+-- @treturn table plugin stub
+function PluginCompatibility:_createPluginStub(plugin_meta, plugin_root, reason, message, should_prompt)
+    local stub = {
+        name = plugin_meta.name,
+        path = plugin_root,
+        version = plugin_meta.version,
+        fullname = plugin_meta.fullname or plugin_meta.name,
+        incompatible = true,
+        incompatibility_reason = reason,
+        incompatibility_message = message,
+        should_prompt_user = should_prompt,
+    }
+    for k, meta_val in pairs(plugin_meta) do
+        if not stub[k] then
+            stub[k] = meta_val
+        end
+    end
+    return stub
+end
+
 --- Determine if a plugin should be loaded based on compatibility and overrides.
 -- @table plugin_meta The plugin's metadata
+-- @table plugin_root Plugin root directory path
 -- @treturn boolean true if should load, false otherwise
--- @treturn string|nil reason for not loading or nil
--- @treturn string|nil incompatibility message or nil
--- @treturn boolean true if user should be prompted
-function PluginCompatibility:shouldLoadPlugin(plugin_meta)
+-- @treturn table|nil plugin_stub table with compatibility info, or nil if compatible
+function PluginCompatibility:shouldLoadPlugin(plugin_meta, plugin_root)
     local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
     if is_compatible then
-        -- Plugin is compatible, load it
-        return true, nil, nil, false
+        return true, nil
     end
     -- Plugin is incompatible, check for overrides
     local override = self.settings:getLoadOverride(plugin_meta.name, plugin_meta.version)
     if override == "always" then
-        -- User wants to always load this plugin despite incompatibility
-        return true, nil, nil, false
+        return true, nil
     elseif override == "never" then
-        -- User explicitly doesn't want this plugin loaded
-        return false, reason, message, false
+        local stub = self:_createPluginStub(plugin_meta, plugin_root, reason, message, false)
+        return false, stub
     elseif override == "load-once" then
-        -- User wants to load it once for testing
-        -- Clear the override so next time it won't auto-load
         self.settings:clearLoadOnceOverride(plugin_meta.name)
         self.settings:removePromptedMark(plugin_meta.name, plugin_meta.version)
-        return true, nil, nil, false
+        return true, nil
     end
     -- No override exists, check if we've already prompted the user
     local has_been_prompted = self.settings:hasBeenPrompted(plugin_meta.name, plugin_meta.version)
     logger.dbg("PluginCompatibility: has_been_prompted for", plugin_meta.name, "is", has_been_prompted)
-    if has_been_prompted then
-        -- We've asked before and user didn't set an override, so don't load
-        return false, reason, message, false
-    else
-        -- First time seeing this incompatibility, prompt the user
-        return false, reason, message, true
+    local should_prompt = not has_been_prompted
+    local stub = self:_createPluginStub(plugin_meta, plugin_root, reason, message, should_prompt)
+    if should_prompt then
+        logger.dbg("Plugin", plugin_meta.name, "will prompt user about incompatibility.")
+        table.insert(self.incompatible_plugins_requiring_prompt, stub)
     end
+    return false, stub
 end
 
 --- Get a human-readable description of the load override action.
@@ -267,6 +295,28 @@ local function createCloseCallback(self, on_close_callback)
             on_close_callback()
         end
         self.settings:flush()
+    end
+end
+
+--- Purge old version settings and flush settings to disk.
+-- This should be called after all plugins have been loaded to clean up old settings
+-- and ensure any changes (like load-once) are persisted.
+function PluginCompatibility:purgeAndFlushSettings()
+    self.settings:purgeOldVersionSettings(3)
+    self.settings:flush()
+end
+
+--- Show incompatible plugins menu in next tick if there are plugins requiring prompts.
+-- This should be called after all plugins have been checked via shouldLoadPlugin.
+-- @func on_close_callback Callback when menu is closed (e.g., restart prompt)
+function PluginCompatibility:promptUserInNextTickIfNeeded(on_close_callback)
+    if #self.incompatible_plugins_requiring_prompt > 0 then
+        UIManager:nextTick(function()
+            self:showIncompatiblePluginsMenu(
+                self.incompatible_plugins_requiring_prompt,
+                on_close_callback
+            )
+        end)
     end
 end
 
