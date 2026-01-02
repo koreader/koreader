@@ -1318,7 +1318,17 @@ function Wallabag:archiveArticle(path)
                 return true
             end
         else
+
             local body = { archive = 1 }
+
+            -- if rated 5 stars, star article in Wallabag
+            local doc_settings = DocSettings:open(path)
+            local summary = doc_settings:readSetting("summary")
+            local rating = summary.rating
+            if rating and rating == 5 then
+                body = { archive = 1, starred = 1 }
+            end
+
             local bodyJSON = JSON.encode(body)
             local headers = {
                 ["Content-type"] = "application/json",
