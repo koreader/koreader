@@ -24,6 +24,9 @@ local Wikipedia = {
    wiki_server = "https://%s.wikipedia.org",
    wiki_path = "/w/api.php",
    default_lang = "en",
+   -- Wikipedia gives cookies their own throttling bucket (70 / 30), use it for image sizes.
+   -- See https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/core/+blame/90f9bb549d5fc17eb7e71c094ded6264a71f609c/includes/MainConfigSchema.php#8997
+   cached_cookies = nil,
    -- See https://www.mediawiki.org/wiki/API:Main_page for details.
    -- Search query, returns introductory texts (+ main thumbnail image)
    wiki_search_params = {
@@ -98,8 +101,43 @@ function Wikipedia:getWikiServer(lang)
     return string.format(self.wiki_server, lang or self.default_lang)
 end
 
+-- Search for the response header 'set-cookie', and extract the associated cookies
+local function extractCookies(headers)
+    if not headers then return nil end
+    local cookies = {}
+    for key, value in pairs(headers) do
+        if string.lower(key) == "set-cookie" then
+            for cookie_part in string.gmatch(value, "([^,]+)") do
+                -- Only extract the name=value part, and not browser attributes after ';'
+                local name, cookie_value = cookie_part:match("([^=]+)=([^;]+)")
+                if name and cookie_value then
+                    name = name:match("^%s*(.-)%s*$")
+                    cookie_value = cookie_value:match("^%s*(.-)%s*$")
+                    table.insert(cookies, name .. "=" .. cookie_value)
+                end
+            end
+        end
+    end
+    if #cookies > 0 then
+        -- String representation of cookie, i.e. "WMF-...; WMF-Last_Access..."
+        return table.concat(cookies, "; ")
+    end
+    return nil
+end
+
+-- Images require a cookie and user agent to avoid throttling.
+-- See user agent policy: https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy
+local function getImageHeaders(cookie)
+    return {
+        -- KOReader doesn't have a user agent, just provide an identifier that meets the policy requirements
+        ["user-agent"] = "KOReader/0.0 (https://koreader.rocks/; https://github.com/koreader/koreader/issues)",
+        cookie = cookie,
+        referer = "https://en.wikipedia.org/"
+    }
+end
+
 -- Get URL content
-local function getUrlContent(url, timeout, maxtime)
+local function getUrlContent(url, timeout, maxtime, image_cookie)
     local http = require("socket.http")
     local ltn12 = require("ltn12")
     local socket = require("socket")
@@ -119,10 +157,20 @@ local function getUrlContent(url, timeout, maxtime)
         method  = "GET",
         sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
     }
+    -- Add headers only when an image_cookie is present, otherwise make a default call
+    if image_cookie then
+        logger.dbg("Making a request with cookies:", image_cookie)
+        request.headers = getImageHeaders(image_cookie)
+    end
 
     local code, headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
     local content = table.concat(sink) -- empty or content accumulated till now
+    -- Cache cookies from Wikipedia API responses
+    local response_cookie = nil
+    if not image_cookie and headers then
+        response_cookie = extractCookies(headers)
+    end
     -- logger.dbg("code:", code)
     -- logger.dbg("headers:", headers)
     -- logger.dbg("status:", status)
@@ -151,7 +199,7 @@ local function getUrlContent(url, timeout, maxtime)
             return false, "Incomplete content received"
         end
     end
-    return true, content
+    return true, content, response_cookie
 end
 
 function Wikipedia:setTrapWidget(trap_widget)
@@ -203,13 +251,13 @@ function Wikipedia:loadPage(text, lang, page_type, plain)
     end
 
     local built_url = url.build(parsed)
-    local completed, success, content
+    local completed, success, content, response_cookie
     if self.trap_widget then -- if previously set with Wikipedia:setTrapWidget()
         local Trapper = require("ui/trapper")
         local timeout, maxtime = 30, 60
         -- We use dismissableRunInSubprocess with complex return values:
-        completed, success, content = Trapper:dismissableRunInSubprocess(function()
-            return getUrlContent(built_url, timeout, maxtime)
+        completed, success, content, response_cookie = Trapper:dismissableRunInSubprocess(function()
+            return getUrlContent(built_url, timeout, maxtime, nil)
         end, self.trap_widget)
         if not completed then
             error(self.dismissed_error_code) -- "Interrupted by user"
@@ -219,8 +267,9 @@ function Wikipedia:loadPage(text, lang, page_type, plain)
         -- blocking without one (but 20s may be needed to fetch the main HTML
         -- page of big articles when making an EPUB).
         local timeout, maxtime = 20, 60
-        success, content = getUrlContent(built_url, timeout, maxtime)
+        success, content, response_cookie = getUrlContent(built_url, timeout, maxtime, nil)
     end
+    self.cached_cookies = response_cookie
     if not success then
         error(content)
     end
@@ -376,7 +425,7 @@ function Wikipedia:getFullPageImages(wiki_title, lang)
 end
 
 -- Function wrapped and plugged to image objects returned by :addImages()
-local function image_load_bb_func(image, highres)
+local function image_load_bb_func(image, highres, cached_cookies)
     local source, trap_widget
     if not highres then
         -- We use an invisible widget that will resend the dismiss event,
@@ -400,7 +449,7 @@ local function image_load_bb_func(image, highres)
     -- We use dismissableRunInSubprocess with simple string return value to
     -- avoid serialization/deserialization of a long string of image bytes
     local completed, data = Trapper:dismissableRunInSubprocess(function()
-        local success, data = getUrlContent(source, timeout, maxtime)
+        local success, data, _cached_cookie = getUrlContent(source, timeout, maxtime, cached_cookies)
         -- With simple string value, we're not able to return the failure
         -- reason, so log it here
         if not success then
@@ -488,20 +537,6 @@ function Wikipedia:addImages(page, lang, more_images, image_size_factor, hi_imag
         end
     end
 
-    -- Wikipedia's thumbnail steps (https://w.wiki/GHai)
-    -- Wikipedia will serve the next larger size from this list
-    local thumbnail_steps = {20, 40, 60, 120, 250, 330, 500, 960}
-    local function round_to_thumbnail_step(width)
-        -- Find the next larger thumbnail step (or largest if width exceeds all)
-        for _, step in ipairs(thumbnail_steps) do
-            if width <= step then
-                return step
-            end
-        end
-        -- If requested width is larger than all steps, use the largest
-        return thumbnail_steps[#thumbnail_steps]
-    end
-
     -- All our wimages now have the keys: source, width, height, filename, caption
     for _, wimage in ipairs(wimages) do
         -- We trust wikipedia, and our x4.5 factor in :getFullPageImages(), for adequate
@@ -516,23 +551,18 @@ function Wikipedia:addImages(page, lang, more_images, image_size_factor, hi_imag
         end
         width = math.ceil(width * image_size_factor)
         height = math.ceil(height * image_size_factor)
-        -- Ask for the next largest thumbnail, and then rely on scaling down.
-        local request_width = round_to_thumbnail_step(width)
         -- All wikipedia image urls like .../wikipedia/commons/A/BC/<filename>
         -- or .../wikipedia/commons/thumb/A/BC/<filename>/<width>px-<filename>
         -- can be transformed to another url with a requested new_width with the form:
         --   /wikipedia/commons/thumb/A/BC/<filename>/<new_width>px-<filename>
         -- (Additionally, the image format can be changed by appending .png,
         -- .jpg or .gif to it)
-        -- Round to Wikipedia's thumbnail steps to avoid 429 errors
-        local source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1"..request_width.."%2")
+        local source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1"..width.."%2")
         -- We build values for a high resolution version of the image, to be displayed
         -- with ImageViewer (x 4 by default)
         local hi_width = width * (hi_image_size_factor or 4)
         local hi_height = height * (hi_image_size_factor or 4)
-        -- Round hi-res width to thumbnail steps as well
-        local request_hi_width = round_to_thumbnail_step(hi_width)
-        local hi_source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1"..request_hi_width.."%2")
+        local hi_source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1"..hi_width.."%2")
         local title = wimage.filename
         if title then
             title = title:gsub("_", " ")
@@ -553,7 +583,7 @@ function Wikipedia:addImages(page, lang, more_images, image_size_factor, hi_imag
         }
         -- If bb or hi_bb is nil, TextBoxWidget will call a method named "load_bb_func"
         image.load_bb_func = function(highres)
-            return image_load_bb_func(image, highres)
+            return image_load_bb_func(image, highres, self.cached_cookies)
         end
         table.insert(page.images, image)
     end
@@ -1546,7 +1576,7 @@ abbr.abbr {
                 src = img.src2x
             end
             logger.dbg("Getting img ", src)
-            local success, content = getUrlContent(src)
+            local success, content, _cached_cookie = getUrlContent(src, nil, nil, self.cached_cookies) -- is_image_request = true
             -- success, content = getUrlContent(src..".unexistant") -- to simulate failure
             if success then
                 logger.dbg("success, size:", #content)
