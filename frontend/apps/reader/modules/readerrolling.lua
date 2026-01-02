@@ -335,6 +335,10 @@ function ReaderRolling:showSuggestReloadConfirmBox(warn_txt)
 end
 
 function ReaderRolling:onSaveSettings()
+    if self.ui.document then
+        -- if triggered by a separate "FlushSettings" event, not by closing the document
+        self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
+    end
     self.ui.doc_settings:delSetting("last_percent") -- deprecated
     self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
     self.ui.doc_settings:saveSetting("hide_nonlinear_flows", self.hide_nonlinear_flows)
