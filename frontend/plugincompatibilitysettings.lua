@@ -51,11 +51,14 @@ function PluginCompatibilitySettings:open()
 end
 
 --- Get the settings table for a specific KOReader version, creating it if needed.
--- @string koreader_version The KOReader version (defaults to current)
+-- KOReader versions must be v-prefixed (e.g., "v2025.01")
+-- @string koreader_version The KOReader version with "v" prefix (defaults to current version with "v" prefix)
 -- @bool create_if_missing If true, create the structure if it doesn't exist
 -- @treturn table|nil The settings table for this version, or nil if not found and not creating
 function PluginCompatibilitySettings:_getVersionSettings(koreader_version, create_if_missing)
-    koreader_version = koreader_version or Version:getShortVersion()
+    if not koreader_version then
+        koreader_version = "v" .. Version:getShortVersion()
+    end
     if not self.data.version_settings then
         if create_if_missing then
             self.data.version_settings = {}
@@ -122,7 +125,7 @@ end
 --- Get the load override action for a plugin.
 -- @string plugin_name The name of the plugin
 -- @string plugin_version The version of the plugin
--- @string koreader_version Optional, defaults to current KOReader version
+-- @string koreader_version Optional, defaults to current KOReader version with "v" prefix. If provided, must include "v" prefix (e.g., "v2025.01")
 -- @treturn string|nil "always", "never", "load-once", or nil if no override
 function PluginCompatibilitySettings:getLoadOverride(plugin_name, plugin_version, koreader_version)
     local version_settings = self:_getVersionSettings(koreader_version, false)
@@ -174,27 +177,11 @@ function PluginCompatibilitySettings:clearLoadOnceOverride(plugin_name)
     end
 end
 
---- Normalize a version string for comparison.
--- Uses Version:getNormalizedVersion with a "v" prefix if needed.
--- @string version_str Version string like "2024.01" or "2024.01.1-123"
--- @treturn number|nil Normalized version number, or nil if invalid
-function PluginCompatibilitySettings:_normalizeVersion(version_str)
-    if not version_str then
-        return nil
-    end
-    -- getNormalizedVersion expects "v" prefix
-    local prefixed = version_str
-    if not version_str:match("^v") then
-        prefixed = "v" .. version_str
-    end
-    local normalized, _ = Version:getNormalizedVersion(prefixed)
-    return normalized
-end
 
 --- Purge settings for KOReader versions older than the specified threshold.
 -- @int keep_versions Number of versions to keep (relative to current version).
---                    For example, if keep_versions is 2 and current version is 2025.03,
---                    settings for 2025.01 and earlier will be deleted.
+--                    For example, if keep_versions is 2 and current version is v2025.03,
+--                    settings for v2025.01 and earlier will be deleted.
 -- @treturn int Number of versions purged
 function PluginCompatibilitySettings:purgeOldVersionSettings(keep_versions)
     if not self.data.version_settings then
@@ -203,7 +190,7 @@ function PluginCompatibilitySettings:purgeOldVersionSettings(keep_versions)
     -- Collect all versions with their normalized values
     local versions = {}
     for version_str, _ in pairs(self.data.version_settings) do
-        local normalized = self:_normalizeVersion(version_str)
+        local normalized, _ = Version:getNormalizedVersion(version_str)
         if normalized then
             table.insert(versions, {
                 str = version_str,
@@ -227,14 +214,14 @@ function PluginCompatibilitySettings:purgeOldVersionSettings(keep_versions)
 end
 
 --- Get a list of all KOReader versions that have settings stored.
--- @treturn table Array of version strings, sorted newest first
+-- @treturn table Array of version strings (with "v" prefix), sorted newest first
 function PluginCompatibilitySettings:getStoredVersions()
     if not self.data.version_settings then
         return {}
     end
     local versions = {}
     for version_str, _ in pairs(self.data.version_settings) do
-        local normalized = self:_normalizeVersion(version_str)
+        local normalized, _ = Version:getNormalizedVersion(version_str)
         if normalized then
             table.insert(versions, {
                 str = version_str,

@@ -200,9 +200,9 @@ describe("PluginCompatibilitySettings module", function()
             -- Set up some settings under current version
             settings:setLoadOverride("testplugin", "1.0", "always")
             settings:markAsPrompted("testplugin", "1.0")
-            local current_version = Version:getShortVersion()
+            local current_version = "v" .. Version:getShortVersion()
             -- Manually create settings for a different version
-            local other_version = "2099.12"
+            local other_version = "v2099.12"
             settings.data.version_settings[other_version] = {
                 plugin_load_overrides = {
                     testplugin = { action = "never", version = "1.0" },
@@ -228,29 +228,29 @@ describe("PluginCompatibilitySettings module", function()
         it("should return all stored versions sorted newest first", function()
             -- Manually set up multiple versions
             settings.data.version_settings = {
-                ["2025.01"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
-                ["2025.03"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
-                ["2025.02"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.01"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.03"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.02"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
             }
             local versions = settings:getStoredVersions()
             assert.equals(3, #versions)
-            assert.equals("2025.03", versions[1])
-            assert.equals("2025.02", versions[2])
-            assert.equals("2025.01", versions[3])
+            assert.equals("v2025.03", versions[1])
+            assert.equals("v2025.02", versions[2])
+            assert.equals("v2025.01", versions[3])
         end)
 
         it("should handle versions with point releases", function()
             settings.data.version_settings = {
-                ["2025.01"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
-                ["2025.01.1"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
-                ["2025.01.2"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.01"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.01.1"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.01.2"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
             }
             local versions = settings:getStoredVersions()
             assert.equals(3, #versions)
             -- Point releases should sort correctly
-            assert.equals("2025.01.2", versions[1])
-            assert.equals("2025.01.1", versions[2])
-            assert.equals("2025.01", versions[3])
+            assert.equals("v2025.01.2", versions[1])
+            assert.equals("v2025.01.1", versions[2])
+            assert.equals("v2025.01", versions[3])
         end)
     end)
 
@@ -263,79 +263,79 @@ describe("PluginCompatibilitySettings module", function()
 
         it("should keep all versions when count is less than or equal to keep_versions", function()
             settings.data.version_settings = {
-                ["2025.01"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
-                ["2025.02"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.01"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.02"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
             }
             local purged = settings:purgeOldVersionSettings(3)
             assert.equals(0, purged)
-            assert.is_not_nil(settings.data.version_settings["2025.01"])
-            assert.is_not_nil(settings.data.version_settings["2025.02"])
+            assert.is_not_nil(settings.data.version_settings["v2025.01"])
+            assert.is_not_nil(settings.data.version_settings["v2025.02"])
         end)
 
         it("should purge older versions when count exceeds keep_versions", function()
             settings.data.version_settings = {
-                ["2025.01"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
-                ["2025.02"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
-                ["2025.03"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
-                ["2025.04"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.01"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.02"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.03"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.04"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
             }
             local purged = settings:purgeOldVersionSettings(2)
             assert.equals(2, purged)
             -- Newest 2 should remain
-            assert.is_not_nil(settings.data.version_settings["2025.04"])
-            assert.is_not_nil(settings.data.version_settings["2025.03"])
+            assert.is_not_nil(settings.data.version_settings["v2025.04"])
+            assert.is_not_nil(settings.data.version_settings["v2025.03"])
             -- Oldest 2 should be purged
-            assert.is_nil(settings.data.version_settings["2025.02"])
-            assert.is_nil(settings.data.version_settings["2025.01"])
+            assert.is_nil(settings.data.version_settings["v2025.02"])
+            assert.is_nil(settings.data.version_settings["v2025.01"])
         end)
 
         it("should keep only 1 version when keep_versions is 1", function()
             settings.data.version_settings = {
-                ["2025.01"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
-                ["2025.02"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
-                ["2025.03"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.01"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.02"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.03"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
             }
             local purged = settings:purgeOldVersionSettings(1)
             assert.equals(2, purged)
             -- Only newest should remain
-            assert.is_not_nil(settings.data.version_settings["2025.03"])
-            assert.is_nil(settings.data.version_settings["2025.02"])
-            assert.is_nil(settings.data.version_settings["2025.01"])
+            assert.is_not_nil(settings.data.version_settings["v2025.03"])
+            assert.is_nil(settings.data.version_settings["v2025.02"])
+            assert.is_nil(settings.data.version_settings["v2025.01"])
         end)
 
         it("should handle versions with point releases correctly", function()
             settings.data.version_settings = {
-                ["2025.01"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
-                ["2025.01.1"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
-                ["2025.02"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.01"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.01.1"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.02"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
             }
             local purged = settings:purgeOldVersionSettings(2)
             assert.equals(1, purged)
-            -- 2025.02 and 2025.01.1 should remain (newest 2)
-            assert.is_not_nil(settings.data.version_settings["2025.02"])
-            assert.is_not_nil(settings.data.version_settings["2025.01.1"])
-            -- 2025.01 (oldest) should be purged
-            assert.is_nil(settings.data.version_settings["2025.01"])
+            -- v2025.02 and v2025.01.1 should remain (newest 2)
+            assert.is_not_nil(settings.data.version_settings["v2025.02"])
+            assert.is_not_nil(settings.data.version_settings["v2025.01.1"])
+            -- v2025.01 (oldest) should be purged
+            assert.is_nil(settings.data.version_settings["v2025.01"])
         end)
 
         it("should handle versions with revision numbers correctly", function()
             settings.data.version_settings = {
-                ["2025.01"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
-                ["2025.01-100"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
-                ["2025.01-200"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.01"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.01-100"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
+                ["v2025.01-200"] = { plugin_load_overrides = {}, plugin_compatibility_prompts_shown = {} },
             }
             local purged = settings:purgeOldVersionSettings(2)
             assert.equals(1, purged)
-            -- 2025.01-200 and 2025.01-100 should remain (newest 2)
-            assert.is_not_nil(settings.data.version_settings["2025.01-200"])
-            assert.is_not_nil(settings.data.version_settings["2025.01-100"])
-            -- 2025.01 (oldest) should be purged
-            assert.is_nil(settings.data.version_settings["2025.01"])
+            -- v2025.01-200 and v2025.01-100 should remain (newest 2)
+            assert.is_not_nil(settings.data.version_settings["v2025.01-200"])
+            assert.is_not_nil(settings.data.version_settings["v2025.01-100"])
+            -- v2025.01 (oldest) should be purged
+            assert.is_nil(settings.data.version_settings["v2025.01"])
         end)
 
         it("should delete all old settings including prompts and overrides", function()
             settings.data.version_settings = {
-                ["2025.01"] = {
+                ["v2025.01"] = {
                     plugin_load_overrides = {
                         plugin1 = { action = "always", version = "1.0" },
                     },
@@ -343,7 +343,7 @@ describe("PluginCompatibilitySettings module", function()
                         ["plugin1-1.0"] = true,
                     },
                 },
-                ["2025.02"] = {
+                ["v2025.02"] = {
                     plugin_load_overrides = {
                         plugin2 = { action = "never", version = "2.0" },
                     },
@@ -354,48 +354,11 @@ describe("PluginCompatibilitySettings module", function()
             }
             local purged = settings:purgeOldVersionSettings(1)
             assert.equals(1, purged)
-            -- 2025.01 and all its contents should be gone
-            assert.is_nil(settings.data.version_settings["2025.01"])
-            -- 2025.02 should still have its data
-            assert.is_not_nil(settings.data.version_settings["2025.02"])
-            assert.is_not_nil(settings.data.version_settings["2025.02"].plugin_load_overrides.plugin2)
-        end)
-    end)
-
-    describe("_normalizeVersion", function()
-        it("should normalize simple version strings", function()
-            local normalized = settings:_normalizeVersion("2025.01")
-            assert.is_not_nil(normalized)
-            assert.is_number(normalized)
-        end)
-
-        it("should handle versions with point releases", function()
-            local v1 = settings:_normalizeVersion("2025.01")
-            local v2 = settings:_normalizeVersion("2025.01.1")
-            assert.is_not_nil(v1)
-            assert.is_not_nil(v2)
-            assert.is_true(v2 > v1)
-        end)
-
-        it("should handle versions with revision numbers", function()
-            local v1 = settings:_normalizeVersion("2025.01")
-            local v2 = settings:_normalizeVersion("2025.01-100")
-            assert.is_not_nil(v1)
-            assert.is_not_nil(v2)
-            assert.is_true(v2 > v1)
-        end)
-
-        it("should handle versions already prefixed with v", function()
-            local v1 = settings:_normalizeVersion("2025.01")
-            local v2 = settings:_normalizeVersion("v2025.01")
-            assert.is_not_nil(v1)
-            assert.is_not_nil(v2)
-            assert.equals(v1, v2)
-        end)
-
-        it("should return nil for invalid versions", function()
-            local normalized = settings:_normalizeVersion(nil)
-            assert.is_nil(normalized)
+            -- v2025.01 and all its contents should be gone
+            assert.is_nil(settings.data.version_settings["v2025.01"])
+            -- v2025.02 should still have its data
+            assert.is_not_nil(settings.data.version_settings["v2025.02"])
+            assert.is_not_nil(settings.data.version_settings["v2025.02"].plugin_load_overrides.plugin2)
         end)
     end)
 end)
