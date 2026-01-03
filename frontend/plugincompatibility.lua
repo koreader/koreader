@@ -112,17 +112,15 @@ function PluginCompatibility.checkCompatibility(plugin_meta)
     return true, nil, nil
 end
 
---- Create a plugin stub with compatibility information.
+--- Create incompatible plugin metadata with compatibility information.
 -- @table plugin_meta The plugin's metadata
--- @table plugin_root Plugin root directory path
 -- @string reason Incompatibility reason
 -- @string message Incompatibility message
 -- @bool should_prompt Whether user should be prompted
--- @treturn table plugin stub
-function PluginCompatibility:_createPluginStub(plugin_meta, plugin_root, reason, message, should_prompt)
-    local stub = {
+-- @treturn table incompatible plugin metadata
+function PluginCompatibility:_createIncompatiblePluginMetadata(plugin_meta, reason, message, should_prompt)
+    local incompatible_plugin = {
         name = plugin_meta.name,
-        path = plugin_root,
         version = plugin_meta.version,
         fullname = plugin_meta.fullname or plugin_meta.name,
         incompatible = true,
@@ -131,19 +129,18 @@ function PluginCompatibility:_createPluginStub(plugin_meta, plugin_root, reason,
         should_prompt_user = should_prompt,
     }
     for k, meta_val in pairs(plugin_meta) do
-        if not stub[k] then
-            stub[k] = meta_val
+        if not incompatible_plugin[k] then
+            incompatible_plugin[k] = meta_val
         end
     end
-    return stub
+    return incompatible_plugin
 end
 
 --- Determine if a plugin should be loaded based on compatibility and overrides.
 -- @table plugin_meta The plugin's metadata
--- @table plugin_root Plugin root directory path
 -- @treturn boolean true if should load, false otherwise
--- @treturn table|nil plugin_stub table with compatibility info, or nil if compatible
-function PluginCompatibility:shouldLoadPlugin(plugin_meta, plugin_root)
+-- @treturn table|nil incompatible_plugin table with compatibility info, or nil if compatible
+function PluginCompatibility:shouldLoadPlugin(plugin_meta)
     local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
     if is_compatible then
         return true, nil
@@ -153,8 +150,8 @@ function PluginCompatibility:shouldLoadPlugin(plugin_meta, plugin_root)
     if override == "always" then
         return true, nil
     elseif override == "never" then
-        local stub = self:_createPluginStub(plugin_meta, plugin_root, reason, message, false)
-        return false, stub
+        local incompatible_plugin = self:_createIncompatiblePluginMetadata(plugin_meta, reason, message, false)
+        return false, incompatible_plugin
     elseif override == "load-once" then
         self.settings:clearLoadOnceOverride(plugin_meta.name)
         self.settings:removePromptedMark(plugin_meta.name, plugin_meta.version)
@@ -164,12 +161,12 @@ function PluginCompatibility:shouldLoadPlugin(plugin_meta, plugin_root)
     local has_been_prompted = self.settings:hasBeenPrompted(plugin_meta.name, plugin_meta.version)
     logger.dbg("PluginCompatibility: has_been_prompted for", plugin_meta.name, "is", has_been_prompted)
     local should_prompt = not has_been_prompted
-    local stub = self:_createPluginStub(plugin_meta, plugin_root, reason, message, should_prompt)
+    local incompatible_plugin = self:_createIncompatiblePluginMetadata(plugin_meta, reason, message, should_prompt)
     if should_prompt then
         logger.dbg("Plugin", plugin_meta.name, "will prompt user about incompatibility.")
-        table.insert(self.incompatible_plugins_requiring_prompt, stub)
+        table.insert(self.incompatible_plugins_requiring_prompt, incompatible_plugin)
     end
-    return false, stub
+    return false, incompatible_plugin
 end
 
 --- Get a human-readable description of the load override action.
@@ -191,10 +188,10 @@ end
 -- @treturn table
 local function overrideItems()
     return {
-        { action = nil, text = _("Ask on incompatibility (default)") },
+        { action = nil,         text = _("Ask on incompatibility (default)") },
         { action = "load-once", text = _("Load once (for testing)") },
-        { action = "always", text = _("Always load (ignore incompatibility)") },
-        { action = "never", text = _("Never load") },
+        { action = "always",    text = _("Always load (ignore incompatibility)") },
+        { action = "never",     text = _("Never load") },
     }
 end
 
@@ -306,15 +303,27 @@ function PluginCompatibility:purgeAndFlushSettings()
     self.settings:flush()
 end
 
+--- Finalize plugin loading by flushing settings and prompting for incompatible plugins.
+-- This should be called after all plugins have been loaded. It performs two critical tasks:
+-- 1. Purges old version settings and flushes to disk to persist any changes made during
+--    plugin loading (especially load-once overrides). Flushing here ensures settings are
+--    saved only once and prevents load-once plugins from reloading after a crash.
+-- 2. Shows the incompatible plugins menu if any plugins require user prompts.
+function PluginCompatibility:finalize()
+    self:purgeAndFlushSettings()
+    self:promptUserInNextTickIfNeeded()
+end
+
 --- Show incompatible plugins menu in next tick if there are plugins requiring prompts.
 -- This should be called after all plugins have been checked via shouldLoadPlugin.
--- @func on_close_callback Callback when menu is closed (e.g., restart prompt)
-function PluginCompatibility:promptUserInNextTickIfNeeded(on_close_callback)
+function PluginCompatibility:promptUserInNextTickIfNeeded()
     if #self.incompatible_plugins_requiring_prompt > 0 then
         UIManager:nextTick(function()
             self:showIncompatiblePluginsMenu(
                 self.incompatible_plugins_requiring_prompt,
-                on_close_callback
+                function()
+                    UIManager:askForRestart()
+                end
             )
         end)
     end
@@ -386,6 +395,20 @@ function PluginCompatibility:genPluginOverrideSubMenu(plugin)
         })
     end
     return sub_menu
+end
+
+--- Modify menu item for incompatible plugins by replacing callback with override submenu.
+-- If the plugin has an incompatible plugin_ref, this removes the original callback
+-- and adds a sub_item_table with override options (ask/load-once/always/never).
+-- @table menu_item Menu item table to modify in place
+-- @table plugin Plugin table that may contain a plugin_ref with incompatibility info
+function PluginCompatibility:tweakMenuItemIfIncompatible(menu_item, plugin)
+    if not (plugin.plugin_ref and plugin.plugin_ref.incompatible) then
+        return
+    end
+
+    menu_item.callback = nil
+    menu_item.sub_item_table = self:genPluginOverrideSubMenu(plugin.plugin_ref)
 end
 
 return PluginCompatibility

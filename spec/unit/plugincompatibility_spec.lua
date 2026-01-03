@@ -159,9 +159,9 @@ describe("PluginCompatibility module", function()
                     max_version = string.format("v%d.12-999", max_year),
                 },
             }
-            local should_load, plugin_stub = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
+            local should_load, incompatible_plugin = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
             assert.is_true(should_load)
-            assert.is_nil(plugin_stub)
+            assert.is_nil(incompatible_plugin)
         end)
 
         it("should not load incompatible plugin on first encounter and prompt user", function()
@@ -172,12 +172,12 @@ describe("PluginCompatibility module", function()
                     max_version = "2000.01-1",
                 },
             }
-            local should_load, plugin_stub = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
+            local should_load, incompatible_plugin = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
             assert.is_false(should_load)
-            assert.is_not_nil(plugin_stub)
-            assert.equals("above_maximum", plugin_stub.incompatibility_reason)
-            assert.is_not_nil(plugin_stub.incompatibility_message)
-            assert.is_true(plugin_stub.should_prompt_user)
+            assert.is_not_nil(incompatible_plugin)
+            assert.equals("above_maximum", incompatible_plugin.incompatibility_reason)
+            assert.is_not_nil(incompatible_plugin.incompatibility_message)
+            assert.is_true(incompatible_plugin.should_prompt_user)
         end)
 
         it("should not prompt again after user has been prompted once", function()
@@ -189,15 +189,15 @@ describe("PluginCompatibility module", function()
                 },
             }
             -- First time - should prompt
-            local _, plugin_stub = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
-            assert.is_true(plugin_stub.should_prompt_user)
+            local _, incompatible_plugin = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
+            assert.is_true(incompatible_plugin.should_prompt_user)
             -- Mark as prompted
             compatibility.settings:markAsPrompted("testplugin", "1.0")
             -- Second time - should not prompt
             local should_load
-            should_load, plugin_stub = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
+            should_load, incompatible_plugin = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
             assert.is_false(should_load)
-            assert.is_false(plugin_stub.should_prompt_user)
+            assert.is_false(incompatible_plugin.should_prompt_user)
         end)
 
         it("should load incompatible plugin when override is 'always'", function()
@@ -209,9 +209,9 @@ describe("PluginCompatibility module", function()
                 },
             }
             compatibility.settings:setLoadOverride("testplugin", "1.0", "always")
-            local should_load, plugin_stub = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
+            local should_load, incompatible_plugin = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
             assert.is_true(should_load)
-            assert.is_nil(plugin_stub)
+            assert.is_nil(incompatible_plugin)
         end)
 
         it("should not load plugin when override is 'never'", function()
@@ -223,12 +223,12 @@ describe("PluginCompatibility module", function()
                 },
             }
             compatibility.settings:setLoadOverride("testplugin", "1.0", "never")
-            local should_load, plugin_stub = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
+            local should_load, incompatible_plugin = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
             assert.is_false(should_load)
-            assert.is_not_nil(plugin_stub)
-            assert.equals("above_maximum", plugin_stub.incompatibility_reason)
-            assert.is_not_nil(plugin_stub.incompatibility_message)
-            assert.is_false(plugin_stub.should_prompt_user)
+            assert.is_not_nil(incompatible_plugin)
+            assert.equals("above_maximum", incompatible_plugin.incompatibility_reason)
+            assert.is_not_nil(incompatible_plugin.incompatibility_message)
+            assert.is_false(incompatible_plugin.should_prompt_user)
         end)
 
         it("should load plugin once with 'load-once' override and then clear it", function()
@@ -240,9 +240,9 @@ describe("PluginCompatibility module", function()
                 },
             }
             compatibility.settings:setLoadOverride("testplugin", "1.0", "load-once")
-            local should_load, plugin_stub = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
+            local should_load, incompatible_plugin = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
             assert.is_true(should_load)
-            assert.is_nil(plugin_stub)
+            assert.is_nil(incompatible_plugin)
             -- Verify the override was cleared
             local override = compatibility.settings:getLoadOverride("testplugin", "1.0")
             assert.is_nil(override)
@@ -293,9 +293,9 @@ describe("PluginCompatibility module", function()
                     max_version = "2000.01-1",
                 },
             }
-            local should_load, plugin_stub = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
+            local should_load, incompatible_plugin = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
             assert.is_true(should_load)
-            assert.is_nil(plugin_stub)
+            assert.is_nil(incompatible_plugin)
         end)
 
         it("should respect compatibility checks when flag is re-enabled", function()
@@ -432,12 +432,12 @@ describe("PluginCompatibility module", function()
                     max_version = "2000.01-1",
                 },
             }
-            local should_load, plugin_stub = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
+            local should_load, incompatible_plugin = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
             assert.is_false(should_load)
-            assert.is_not_nil(plugin_stub)
-            assert.is_not_nil(plugin_stub.incompatibility_message)
-            assert.equals("above_maximum", plugin_stub.incompatibility_reason)
-            assert.is_true(plugin_stub.should_prompt_user, "User should be prompted again after resetting to 'Ask on incompatibility'")
+            assert.is_not_nil(incompatible_plugin)
+            assert.is_not_nil(incompatible_plugin.incompatibility_message)
+            assert.equals("above_maximum", incompatible_plugin.incompatibility_reason)
+            assert.is_true(incompatible_plugin.should_prompt_user, "User should be prompted again after resetting to 'Ask on incompatibility'")
         end)
 
         it("should keep prompted marker when selecting non-nil action", function()
