@@ -218,11 +218,11 @@ function PluginLoader:_load(t)
             table.insert(self.disabled_plugins, plugin_meta)
         else
             -- Check compatibility before loading the main plugin file
-            local should_load, incompatible_plugin = self.compatibility:shouldLoadPlugin(plugin_meta)
+            local should_load = self.compatibility:shouldLoadPlugin(plugin_meta)
             if not should_load then
                 -- Plugin is incompatible and should not be loaded
-                logger.dbg("Plugin", plugin_name, "is incompatible:", incompatible_plugin.incompatibility_reason)
-                table.insert(self.disabled_plugins, incompatible_plugin)
+                logger.dbg("Plugin", plugin_name, "is incompatible:", plugin_meta.incompatibility_reason)
+                table.insert(self.disabled_plugins, plugin_meta)
             else
                 -- Load the plugin normally
                 local ok, plugin_module = pcall(dofile, mainfile)
@@ -245,6 +245,7 @@ function PluginLoader:_load(t)
     end
     package.path = package_path
     package.cpath = package_cpath
+    -- Save settings and prompt user re incompatible plugins if needed
     self.compatibility:finalize()
 end
 

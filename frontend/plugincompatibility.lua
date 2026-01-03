@@ -151,12 +151,12 @@ function PluginCompatibility:shouldLoadPlugin(plugin_meta)
     local has_been_prompted = self.settings:hasBeenPrompted(plugin_meta.name, plugin_meta.version)
     logger.dbg("PluginCompatibility: has_been_prompted for", plugin_meta.name, "is", has_been_prompted)
     local should_prompt = not has_been_prompted
-    local incompatible_plugin = self:_updatePluginMetadataIncompatible(plugin_meta, reason, message, should_prompt)
+    self:_updatePluginMetadataIncompatible(plugin_meta, reason, message, should_prompt)
     if should_prompt then
         logger.dbg("Plugin", plugin_meta.name, "will prompt user about incompatibility.")
-        table.insert(self.incompatible_plugins_requiring_prompt, incompatible_plugin)
+        table.insert(self.incompatible_plugins_requiring_prompt, plugin_meta)
     end
-    return false, incompatible_plugin
+    return false, plugin_meta
 end
 
 --- Get a human-readable description of the load override action.
