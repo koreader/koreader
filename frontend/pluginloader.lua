@@ -207,10 +207,10 @@ function PluginLoader:_load(t)
         local ok_meta, plugin_metamodule = pcall(dofile, metafile)
         local plugin_meta = ok_meta and plugin_metamodule or {}
         local plugin_name = plugin_root:match("/(.-)%.koplugin")
-        if not ok_meta or (not plugin_meta.name or plugin_meta.name == "") then
+        if not ok_meta or not plugin_meta.name or plugin_meta.name == "" then
             plugin_meta.name = plugin_name
         end
-        if not ok_meta or (not plugin_meta.version or plugin_meta.version == "") then
+        if not ok_meta or not plugin_meta.version or plugin_meta.version == "" then
             plugin_meta.version = "unknown"
         end
         plugin_meta.path = plugin_root
@@ -219,7 +219,7 @@ function PluginLoader:_load(t)
         else
             -- Check compatibility before loading the main plugin file
             local should_load, incompatible_plugin = self.compatibility:shouldLoadPlugin(plugin_meta)
-            if not should_load and not disabled then
+            if not should_load then
                 -- Plugin is incompatible and should not be loaded
                 logger.dbg("Plugin", plugin_name, "is incompatible:", incompatible_plugin.incompatibility_reason)
                 table.insert(self.disabled_plugins, incompatible_plugin)
@@ -285,11 +285,6 @@ function PluginLoader:genPluginManagerSubItem()
             local element = getMenuTable(plugin)
             element.enable = false
             element.plugin_ref = plugin
-            -- Add incompatibility information to the description
-            if plugin.incompatible and plugin.incompatibility_message then
-                element.fullname = element.fullname .. " ⚠"
-                element.description = element.description .. "\n\n" .. plugin.incompatibility_message
-            end
             table.insert(self.all_plugins, element)
         end
 
