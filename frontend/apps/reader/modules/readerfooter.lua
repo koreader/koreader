@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
+local BookList = require("ui/widget/booklist")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
@@ -315,7 +316,7 @@ footerTextGeneratorMap = {
         if prefix then
             string_percentage = prefix .. " " .. string_percentage
         end
-        return string_percentage:format(footer:getBookProgress() * 100)
+        return string_percentage:format(footer.percent_finished * 100)
     end,
     book_time_to_read = function(footer)
         local symbol_type = footer.settings.item_prefix
@@ -1839,7 +1840,7 @@ function ReaderFooter:genProgressPercentageFormatMenuItems(value)
         if prefix then
             string_percentage = prefix .. " " .. string_percentage
         end
-        return string_percentage:format(self:getBookProgress() * 100)
+        return string_percentage:format(self.percent_finished * 100)
     end
     if value == nil then
         return progressPercentage(self.settings.progress_pct_format)
@@ -2158,7 +2159,7 @@ function ReaderFooter:onUpdateFooter(force_repaint, full_repaint)
     if self.settings.chapter_progress_bar then
         self.progress_bar:setPercentage(self:getChapterProgress(true))
     else
-        self.progress_bar:setPercentage(self:getBookProgress())
+        self.progress_bar:setPercentage(self.percent_finished)
     end
     self:updateFooterText(force_repaint, full_repaint)
 end
@@ -2306,6 +2307,10 @@ function ReaderFooter:onPageUpdate(pageno)
                 self:setTocMarkers(true)
             end
         end
+    end
+    if self.pages then
+        self.percent_finished = self:getBookProgress()
+        BookList.setBookInfoCacheProperty(self.ui.document.file, "percent_finished", self.percent_finished)
     end
     self:onUpdateFooter()
 end

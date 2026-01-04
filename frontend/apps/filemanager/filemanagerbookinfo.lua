@@ -1067,7 +1067,7 @@ function BookInfo:expandString(str, file, timestamp)
                         patterns["%c"] = patterns["%c"] and pageno
                     end
                 end
-                patterns["%p"] = patterns["%p"] and Math.round(footer:getBookProgress() * 100)
+                patterns["%p"] = patterns["%p"] and Math.round(footer.percent_finished * 100)
                 if patterns["%C"] then
                     local title = self.ui.toc:getTocTitleByPage(pageno)
                     if title and title ~= "" then
