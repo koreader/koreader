@@ -93,7 +93,7 @@ describe("PluginCompatibility module", function()
                 name = "testplugin",
                 version = "1.0",
                 compatibility = {
-                    max_version = "2000.01-1",
+                    max_version = "v2000.01-1",
                 },
             }
             local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
@@ -108,7 +108,7 @@ describe("PluginCompatibility module", function()
                 name = "testplugin",
                 version = "1.0",
                 compatibility = {
-                    min_version = "2000.01-1",
+                    min_version = "v2000.01-1",
                 },
             }
             local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
@@ -169,7 +169,7 @@ describe("PluginCompatibility module", function()
                 name = "testplugin",
                 version = "1.0",
                 compatibility = {
-                    max_version = "2000.01-1",
+                    max_version = "v2000.01-1",
                 },
             }
             local should_load, incompatible_plugin = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
@@ -185,7 +185,7 @@ describe("PluginCompatibility module", function()
                 name = "testplugin",
                 version = "1.0",
                 compatibility = {
-                    max_version = "2000.01-1",
+                    max_version = "v2000.01-1",
                 },
             }
             -- First time - should prompt
@@ -205,7 +205,7 @@ describe("PluginCompatibility module", function()
                 name = "testplugin",
                 version = "1.0",
                 compatibility = {
-                    max_version = "2000.01-1",
+                    max_version = "v2000.01-1",
                 },
             }
             compatibility.settings:setLoadOverride("testplugin", "1.0", "always")
@@ -219,7 +219,7 @@ describe("PluginCompatibility module", function()
                 name = "testplugin",
                 version = "1.0",
                 compatibility = {
-                    max_version = "2000.01-1",
+                    max_version = "v2000.01-1",
                 },
             }
             compatibility.settings:setLoadOverride("testplugin", "1.0", "never")
@@ -236,7 +236,7 @@ describe("PluginCompatibility module", function()
                 name = "testplugin",
                 version = "1.0",
                 compatibility = {
-                    max_version = "2000.01-1",
+                    max_version = "v2000.01-1",
                 },
             }
             compatibility.settings:setLoadOverride("testplugin", "1.0", "load-once")
@@ -273,7 +273,7 @@ describe("PluginCompatibility module", function()
                 name = "testplugin",
                 version = "1.0",
                 compatibility = {
-                    max_version = "2000.01-1",
+                    max_version = "v2000.01-1",
                 },
             }
             local is_compatible, reason, message = require("plugincompatibility").checkCompatibility(plugin_meta)
@@ -290,7 +290,7 @@ describe("PluginCompatibility module", function()
                 name = "testplugin",
                 version = "1.0",
                 compatibility = {
-                    max_version = "2000.01-1",
+                    max_version = "v2000.01-1",
                 },
             }
             local should_load, incompatible_plugin = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
@@ -303,7 +303,7 @@ describe("PluginCompatibility module", function()
                 name = "testplugin",
                 version = "1.0",
                 compatibility = {
-                    max_version = "2000.01-1",
+                    max_version = "v2000.01-1",
                 },
             }
             local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
@@ -429,7 +429,7 @@ describe("PluginCompatibility module", function()
                 name = "testplugin",
                 version = "1.0",
                 compatibility = {
-                    max_version = "2000.01-1",
+                    max_version = "v2000.01-1",
                 },
             }
             local should_load, incompatible_plugin = compatibility:shouldLoadPlugin(plugin_meta, "/fake/path")
