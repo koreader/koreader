@@ -24,9 +24,9 @@ local Wikipedia = {
    wiki_server = "https://%s.wikipedia.org",
    wiki_path = "/w/api.php",
    default_lang = "en",
-   -- Wikipedia gives cookies their own throttling bucket (70 / 30), use it for image sizes.
+   -- Wikipedia gives user cookies their own throttling bucket (70 / 30), use it for image resizing which has strict rate throttling.
    -- See https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/core/+blame/90f9bb549d5fc17eb7e71c094ded6264a71f609c/includes/MainConfigSchema.php#8997
-   cached_cookies = nil,
+   cached_cookie = nil,
    -- See https://www.mediawiki.org/wiki/API:Main_page for details.
    -- Search query, returns introductory texts (+ main thumbnail image)
    wiki_search_params = {
@@ -129,8 +129,6 @@ end
 -- See user agent policy: https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy
 local function getImageHeaders(cookie)
     return {
-        -- KOReader doesn't have a user agent, just provide an identifier that meets the policy requirements
-        ["user-agent"] = "KOReader/0.0 (https://koreader.rocks/; https://github.com/koreader/koreader/issues)",
         cookie = cookie,
         referer = "https://en.wikipedia.org/"
     }
@@ -157,9 +155,9 @@ local function getUrlContent(url, timeout, maxtime, image_cookie)
         method  = "GET",
         sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
     }
-    -- Add headers only when an image_cookie is present, otherwise make a default call
+    -- Add headers only when an image_cookie is present, otherwise make a default call without cookie headers
     if image_cookie then
-        logger.dbg("Making a request with cookies:", image_cookie)
+        logger.dbg("Creating a request with cookie header:", image_cookie)
         request.headers = getImageHeaders(image_cookie)
     end
 
@@ -257,7 +255,7 @@ function Wikipedia:loadPage(text, lang, page_type, plain)
         local timeout, maxtime = 30, 60
         -- We use dismissableRunInSubprocess with complex return values:
         completed, success, content, response_cookie = Trapper:dismissableRunInSubprocess(function()
-            return getUrlContent(built_url, timeout, maxtime, nil)
+            return getUrlContent(built_url, timeout, maxtime)
         end, self.trap_widget)
         if not completed then
             error(self.dismissed_error_code) -- "Interrupted by user"
@@ -267,9 +265,9 @@ function Wikipedia:loadPage(text, lang, page_type, plain)
         -- blocking without one (but 20s may be needed to fetch the main HTML
         -- page of big articles when making an EPUB).
         local timeout, maxtime = 20, 60
-        success, content, response_cookie = getUrlContent(built_url, timeout, maxtime, nil)
+        success, content, response_cookie = getUrlContent(built_url, timeout, maxtime)
     end
-    self.cached_cookies = response_cookie
+    self.cached_cookie = response_cookie
     if not success then
         error(content)
     end
@@ -425,7 +423,7 @@ function Wikipedia:getFullPageImages(wiki_title, lang)
 end
 
 -- Function wrapped and plugged to image objects returned by :addImages()
-local function image_load_bb_func(image, highres, cached_cookies)
+local function image_load_bb_func(image, highres, cached_cookie)
     local source, trap_widget
     if not highres then
         -- We use an invisible widget that will resend the dismiss event,
@@ -449,7 +447,7 @@ local function image_load_bb_func(image, highres, cached_cookies)
     -- We use dismissableRunInSubprocess with simple string return value to
     -- avoid serialization/deserialization of a long string of image bytes
     local completed, data = Trapper:dismissableRunInSubprocess(function()
-        local success, data = getUrlContent(source, timeout, maxtime, cached_cookies)
+        local success, data = getUrlContent(source, timeout, maxtime, cached_cookie) -- cached_cookie for images
         -- With simple string value, we're not able to return the failure
         -- reason, so log it here
         if not success then
@@ -557,6 +555,8 @@ function Wikipedia:addImages(page, lang, more_images, image_size_factor, hi_imag
         --   /wikipedia/commons/thumb/A/BC/<filename>/<new_width>px-<filename>
         -- (Additionally, the image format can be changed by appending .png,
         -- .jpg or .gif to it)
+        -- The resize is so done on Wikipedia servers from the source image for
+        -- the best quality.
         local source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1"..width.."%2")
         -- We build values for a high resolution version of the image, to be displayed
         -- with ImageViewer (x 4 by default)
@@ -583,7 +583,7 @@ function Wikipedia:addImages(page, lang, more_images, image_size_factor, hi_imag
         }
         -- If bb or hi_bb is nil, TextBoxWidget will call a method named "load_bb_func"
         image.load_bb_func = function(highres)
-            return image_load_bb_func(image, highres, self.cached_cookies)
+            return image_load_bb_func(image, highres, self.cached_cookie) -- cached_cookie for images
         end
         table.insert(page.images, image)
     end
@@ -1576,7 +1576,7 @@ abbr.abbr {
                 src = img.src2x
             end
             logger.dbg("Getting img ", src)
-            local success, content = getUrlContent(src, nil, nil, self.cached_cookies) -- is_image_request = true
+            local success, content = getUrlContent(src, nil, nil, self.cached_cookie) -- use cached cookie for images
             -- success, content = getUrlContent(src..".unexistant") -- to simulate failure
             if success then
                 logger.dbg("success, size:", #content)
