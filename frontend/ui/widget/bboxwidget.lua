@@ -81,6 +81,10 @@ function BBoxWidget:paintTo(bb, x, y)
     bb:invertRect(bbox.x0, bbox.y0, self.linesize, bbox.y1 - bbox.y0 + self.linesize)
     -- right edge
     bb:invertRect(bbox.x1, bbox.y0 + self.linesize, self.linesize, bbox.y1 - bbox.y0)
+    -- center crosshair (always visible)
+    local center_x = Math.round((bbox.x0 + bbox.x1) / 2)
+    local center_y = Math.round((bbox.y0 + bbox.y1) / 2)
+    self:_drawIndicator(bb, center_x, center_y)
     if self._confirm_stage == 1 then
         -- left top indicator
         self:_drawIndicator(bb, bbox.x0, bbox.y0)
@@ -154,9 +158,10 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
     local bottom_center = Geom:new{ x = (bbox.x0 + bbox.x1) / 2, y = bbox.y1}
     local right_center = Geom:new{ x = bbox.x1, y = (bbox.y0 + bbox.y1) / 2}
     local left_center = Geom:new{ x = bbox.x0, y = (bbox.y0 + bbox.y1) / 2}
+    local center = Geom:new{ x = (bbox.x0 + bbox.x1) / 2, y = (bbox.y0 + bbox.y1) / 2}
     local anchors = {
         upper_left, upper_center,     upper_right,
-        left_center,                 right_center,
+        left_center, center,         right_center,
         bottom_left, bottom_center, bottom_right,
     }
     local _, nearest = Math.tmin(anchors, function(a,b)
@@ -221,6 +226,42 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
             upper_left.x = upper_left.x + delta
         else
             upper_left.x = ges.pos.x
+        end
+    elseif nearest == center then
+        -- Move entire box while preserving width/height. Clamp to page area.
+        local w = bbox.x1 - bbox.x0
+        local h = bbox.y1 - bbox.y0
+        local new_cx = ges.pos.x
+        local new_cy = ges.pos.y
+
+        upper_left.x = new_cx - w / 2
+        upper_left.y = new_cy - h / 2
+        bottom_right.x = new_cx + w / 2
+        bottom_right.y = new_cy + h / 2
+
+        -- Clamp to page boundaries (page area is in screen coords)
+        local offset = self.view.state.offset
+        local page_area = self.view.page_area
+        local min_x = offset.x
+        local min_y = offset.y
+        local max_x = offset.x + page_area.w
+        local max_y = offset.y + page_area.h
+
+        if upper_left.x < min_x then
+            upper_left.x = min_x
+            bottom_right.x = upper_left.x + w
+        end
+        if bottom_right.x > max_x then
+            bottom_right.x = max_x
+            upper_left.x = bottom_right.x - w
+        end
+        if upper_left.y < min_y then
+            upper_left.y = min_y
+            bottom_right.y = upper_left.y + h
+        end
+        if bottom_right.y > max_y then
+            bottom_right.y = max_y
+            upper_left.y = bottom_right.y - h
         end
     end
     self.screen_bbox = {
