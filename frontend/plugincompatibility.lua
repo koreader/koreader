@@ -84,7 +84,7 @@ function PluginCompatibility.checkCompatibility(plugin_meta)
     end
     local current_version, __ = Version:getNormalizedCurrentVersion()
     if not current_version then
-        logger.warn("PluginCompatibility: Could not get current KOReader version")
+        logger.err("PluginCompatibility: Could not get current KOReader version")
         return true, nil, nil
     end
     local min_version = compatibility.min_version
@@ -92,21 +92,29 @@ function PluginCompatibility.checkCompatibility(plugin_meta)
     -- Check minimum version requirement
     if min_version then
         local min_ver = Version:getNormalizedVersion(min_version)
-        if min_ver and current_version < min_ver then
-            local message = T(_("Requires KOReader %1 or later (current: %2)"), min_version, Version:getShortVersion())
-            return false, "below_minimum", message
+        if min_ver and min_ver > 0 then
+           if current_version < min_ver then
+              local message = T(_("Requires KOReader %1 or later (current: %2)"), min_version, Version:getShortVersion())
+              return false, "below_minimum", message
+            end
+        else
+          logger.err("PluginCompatibility: could not determine normalized version for", min_version, "it might not be correctly formatted")
         end
     end
     -- Check maximum version requirement
     if max_version then
         local max_ver = Version:getNormalizedVersion(max_version)
-        if max_ver and current_version > max_ver then
-            local message = T(
-                _("Not compatible with KOReader %1 and newer. Requires KOReader %2 or older"),
-                Version:getShortVersion(),
-                max_version
-            )
-            return false, "above_maximum", message
+        if max_ver and max_ver > 0 then
+            if current_version > max_ver then
+              local message = T(
+                  _("Not compatible with KOReader %1 and newer. Requires KOReader %2 or older"),
+                  Version:getShortVersion(),
+                  max_version
+              )
+              return false, "above_maximum", message
+            end
+        else
+          logger.err("PluginCompatibility: could not determine normalized version for", max_version, "it might not be correctly formatted")
         end
     end
     return true, nil, nil
@@ -377,8 +385,11 @@ function PluginCompatibility:genPluginOverrideSubMenu(plugin)
                 return settings:getLoadOverride(plugin_name, plugin_version) == option.action
             end,
             callback = function()
+                settings:removePromptedMark(plugin_name, plugin_version)
                 settings:setLoadOverride(plugin_name, plugin_version, option.action)
-                settings:markAsPrompted(plugin_name, plugin_version)
+                if option.action then
+                  settings:markAsPrompted(plugin_name, plugin_version)
+                end
                 settings:flush()
                 UIManager:askForRestart()
             end,

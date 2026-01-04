@@ -138,6 +138,50 @@ describe("PluginCompatibility module", function()
             assert.is_nil(reason)
             assert.is_nil(message)
         end)
+
+        it("should log error when min_version format is invalid (missing v prefix)", function()
+            local logger = require("logger")
+            stub(logger, "err")
+
+            local plugin_meta = {
+                name = "testplugin",
+                version = "1.0",
+                compatibility = {
+                    min_version = "2024.01-1",  -- missing "v" prefix
+                },
+            }
+            local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
+
+            assert.is_true(is_compatible)
+            assert.is_nil(reason)
+            assert.is_nil(message)
+            assert.stub(logger.err).was.called()
+            assert.stub(logger.err).was.called_with("PluginCompatibility: could not determine normalized version for", "2024.01-1", "it might not be correctly formatted")
+
+            logger.err:revert()
+        end)
+
+        it("should log error when max_version format is invalid (missing v prefix)", function()
+            local logger = require("logger")
+            stub(logger, "err")
+
+            local plugin_meta = {
+                name = "testplugin",
+                version = "1.0",
+                compatibility = {
+                    max_version = "2024.01-1",  -- missing "v" prefix
+                },
+            }
+            local is_compatible, reason, message = PluginCompatibility.checkCompatibility(plugin_meta)
+
+            assert.is_true(is_compatible)
+            assert.is_nil(reason)
+            assert.is_nil(message)
+            assert.stub(logger.err).was.called()
+            assert.stub(logger.err).was.called_with("PluginCompatibility: could not determine normalized version for", "2024.01-1", "it might not be correctly formatted")
+
+            logger.err:revert()
+        end)
     end)
 
     describe("shouldLoadPlugin", function()

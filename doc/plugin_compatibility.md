@@ -5,7 +5,7 @@
 If a plugin sets a `compatibility` table in its `_meta.lua`, for example:
 
 ```lua
--- NOTE: the format must be vYYYY.MM(-\{d}+)?
+-- NOTE: the format must be vYYYY.MM(-\d+)?
 meta.compatibility = {
     min_version = "v0000.01-1",
     max_version = "v1111.09-9",
