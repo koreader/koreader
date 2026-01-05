@@ -2318,6 +2318,10 @@ end
 function ReaderFooter:onPosUpdate(pos, pageno)
     self.pageno = pageno
     self.initial_pageno = self.initial_pageno or pageno
+    if self.pages then
+        self.percent_finished = self:getBookProgress()
+        BookList.setBookInfoCacheProperty(self.ui.document.file, "percent_finished", self.percent_finished)
+    end
     self:onUpdateFooter()
 end
 
