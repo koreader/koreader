@@ -1324,9 +1324,8 @@ function Wallabag:archiveArticle(path)
             -- if rated 5 stars, star article in Wallabag
             local doc_settings = DocSettings:open(path)
             local summary = doc_settings:readSetting("summary")
-            local rating = summary.rating
-            if rating and rating == 5 then
-                body = { archive = 1, starred = 1 }
+            if summary and summary.rating == 5 then
+                body.starred = 1
             end
 
             local bodyJSON = JSON.encode(body)
