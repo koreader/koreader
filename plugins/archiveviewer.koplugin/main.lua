@@ -3,7 +3,8 @@ local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local DocumentRegistry = require("document/documentregistry")
 local ImageViewer = require("ui/widget/imageviewer")
-local Menu = require("ui/widget/menu")
+local BookList = require("ui/widget/booklist")
+local InfoMessage = require("ui/widget/infomessage")
 local RenderImage = require("ui/renderimage")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
@@ -52,23 +53,27 @@ function ArchiveViewer:isFileTypeSupported(file)
 end
 
 function ArchiveViewer:openFile(file)
-    local _, filename = util.splitFilePathName(file)
+    local path, filename = util.splitFilePathName(file)
 
     self.arc = Archiver.Reader:new()
     self.fm_updated = nil
     self.list_table = {}
 
+    -- default extraction directory is the directory of the file
+    self.extract_dir = path
+
     if self.arc:open(file) then
         self:getListTable()
     end
 
-    self.menu = Menu:new{
+    self.booklist = BookList:new({
         title = filename,
         item_table = self:getItemTable(),
-        covers_fullscreen = true,
-        is_borderless = true,
-        is_popout = false,
         title_multilines = true,
+        title_bar_left_icon = "appbar.menu",
+        onLeftButtonTap = function()
+            self:showMenu()
+        end,
         onMenuSelect = function(self_menu, item)
             if item.is_file then
                 self:showFileDialog(item.path)
@@ -78,13 +83,36 @@ function ArchiveViewer:openFile(file)
             end
         end,
         close_callback = function()
-            UIManager:close(self.menu)
+            UIManager:close(self.booklist)
             if self.fm_updated then
                 self.ui:onRefresh()
             end
         end,
-    }
-    UIManager:show(self.menu)
+    })
+    UIManager:show(self.booklist)
+end
+
+function ArchiveViewer:showMenu()
+    local dialog
+    dialog = ButtonDialog:new({
+        buttons = {
+            {
+                {
+                    text = _("Extract all files"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:extractAllDialog()
+                    end,
+                    align = "left",
+                },
+            },
+        },
+        shrink_unneeded_width = true,
+        anchor = function()
+            return self.booklist.title_bar.left_button.image.dimen
+        end,
+    })
+    UIManager:show(dialog)
 end
 
 function ArchiveViewer:getListTable()
@@ -181,14 +209,11 @@ end
 function ArchiveViewer:showFileDialog(filepath)
     local dialog
     local buttons = {
+        self:getChooseFolderButton(function()
+            UIManager:close(dialog)
+            self:showFileDialog(filepath)
+        end),
         {
-            {
-                text = _("Extract"),
-                callback = function()
-                    UIManager:close(dialog)
-                    self:extractFile(filepath)
-                end,
-            },
             {
                 text = _("View"),
                 callback = function()
@@ -196,14 +221,78 @@ function ArchiveViewer:showFileDialog(filepath)
                     self:viewFile(filepath)
                 end,
             },
+
+            {
+                text = _("Extract"),
+                callback = function()
+                    UIManager:close(dialog)
+                    self:extractFile(filepath)
+                end,
+            },
         },
     }
-    dialog = ButtonDialog:new{
-        title = filepath .. "\n\n" .. _("On extraction, if the file already exists, it will be overwritten."),
+    dialog = ButtonDialog:new({
+        title = T(_("Extract %1 to %2?"), filepath, BD.dirpath(self.extract_dir)) .. "\n\n" .. _(
+            "On extraction, if the file already exists, it will be overwritten."
+        ),
         width_factor = 0.8,
         buttons = buttons,
-    }
+    })
     UIManager:show(dialog)
+end
+
+function ArchiveViewer:extractAllDialog()
+    local dialog
+    local buttons = {
+        self:getChooseFolderButton(function()
+            UIManager:close(dialog)
+            self:extractAllDialog()
+        end),
+        {
+            {
+                text = _("Cancel"),
+                callback = function()
+                    UIManager:close(dialog)
+                end,
+            },
+            {
+                text = _("Extract"),
+                callback = function()
+                    UIManager:close(dialog)
+                    self:extractAll()
+                end,
+            },
+        },
+    }
+    dialog = ButtonDialog:new({
+        title = T(_("Extract all files to %1?"), BD.dirpath(self.extract_dir)) .. "\n\n" .. _(
+            "On extraction, if the files already exist, they will be overwritten."
+        ),
+        width_factor = 0.8,
+        buttons = buttons,
+    })
+    UIManager:show(dialog)
+end
+
+function ArchiveViewer:getChooseFolderButton(callback)
+    return {
+        {
+            text = _("Choose folder"),
+            callback = function()
+                require("ui/downloadmgr")
+                    :new({
+                        onConfirm = function(path)
+                            if path:sub(-1) ~= "/" then
+                                path = path .. "/"
+                            end
+                            self.extract_dir = path
+                            callback()
+                        end,
+                    })
+                    :chooseDir(self.extract_dir)
+            end,
+        },
+    }
 end
 
 function ArchiveViewer:viewFile(filepath)
@@ -211,7 +300,7 @@ function ArchiveViewer:viewFile(filepath)
         local index = 0
         local curr_index
         local images_list = {}
-        for i, item in ipairs(self.menu.item_table) do
+        for i, item in ipairs(self.booklist.item_table) do
             local item_path = item.path
             if item.is_file and DocumentRegistry:isImageFile(item_path) then
                 table.insert(images_list, item_path)
@@ -252,8 +341,31 @@ function ArchiveViewer:viewFile(filepath)
 end
 
 function ArchiveViewer:extractFile(filepath)
-    local directory = util.splitFilePathName(self.arc.filepath)
+    local directory = self.extract_dir
+
     self.fm_updated = self.arc:extractToPath(filepath, directory .. filepath)
+
+    UIManager:show(InfoMessage:new({
+        text = T(_("Extracted to %1"), BD.filepath(directory .. filepath)),
+        timeout = 2,
+    }))
+end
+
+function ArchiveViewer:extractAll()
+    local archive_dir = self.extract_dir
+
+    for entry in self.arc:iterate() do
+        if entry.mode == "file" then
+            self.arc:extractToPath(entry.path, archive_dir .. entry.path)
+        end
+    end
+
+    self.fm_updated = true
+
+    UIManager:show(InfoMessage:new({
+        text = T(_("All files extracted to %1"), archive_dir),
+        timeout = 2,
+    }))
 end
 
 function ArchiveViewer:extractContent(filepath)
