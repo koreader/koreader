@@ -495,7 +495,7 @@ function OPDSBrowser:getServerFileName(item_url, filetype)
             filename = filename .. "." .. filetype:lower()
         end
     end
-
+    filename = util.urlDecode(filename)
     return filename
 end
 

@@ -413,6 +413,12 @@ function PocketBook:getDefaultCoverPath()
     return "/mnt/ext1/system/logo/offlogo/cover.bmp"
 end
 
+function PocketBook:isStartupScriptUpToDate()
+    local md5 = require("ffi/MD5")
+    -- Compare the hash of the *active* script to the *potential* one.
+    return md5.sumFile("/tmp/koreader.app") == md5.sumFile(os.getenv("KOREADER_DIR") .. "/koreader.app")
+end
+
 function PocketBook:UIManagerReady(uimgr)
     UIManager = uimgr
 end
