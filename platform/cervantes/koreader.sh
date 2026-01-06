@@ -104,7 +104,7 @@ while [ "${RETURN_VALUE}" -ne 0 ]; do
     fi
 
     # run KOReader
-    ./reader.lua "$@" >>crash.log 2>&1
+    CRASH_COUNT=${CRASH_COUNT} ./reader.lua "$@" >>crash.log 2>&1
     RETURN_VALUE=$?
 
     if [ ${RETURN_VALUE} -ne 0 ] && [ "${RETURN_VALUE}" -ne "${ENTER_USBMS}" ] && [ "${RETURN_VALUE}" -ne "${ENTER_QBOOKAPP}" ] && [ "${RETURN_VALUE}" -ne "${RESTART_KOREADER}" ]; then
