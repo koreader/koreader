@@ -58,12 +58,12 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         echo "!!!! Crash n°${CRASH_COUNT} on $(date +'%x @ %X')"
 
         if [ ${CRASH_COUNT} -ge 5 ] || [ "${ALWAYS_ABORT}" = "true" ]; then
-            echo "Exit: Too much crashes or 'dev_abort_on_crash'."
+            echo "Exit: Too many crashes or 'dev_abort_on_crash'."
             break
         fi
 
         CRASH_PREV_TS=${CRASH_TS}
-        echo "Try reastart in 2 seconds"
+        echo "Try restart in 2 seconds"
         sleep 2
     fi
 done
