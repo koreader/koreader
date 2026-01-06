@@ -452,6 +452,10 @@ EMULATOR OPTIONS:
 ANDROID TARGET:
 
     Install and run KOReader on an Android device connected through ADB.
+
+EMULATOR ENVIRONMENT VARIABLES:
+    EMULATE_SAFEMODE         if set, runs the safmode emulation
+    CRASH_COUNT              if set, emulates pas CRASH_COUNT crashes
 "
     local short_opts="tg:::cW:H:D:s:w:"
     local long_opts="disable-touch,gdb::,valgrind::,callgrind,screen-width:,screen-height:,screen-dpi:,simulate:,wrap:"

@@ -3,17 +3,22 @@
 PHONY += run run-prompt run-wbuilder
 
 define run_script
-for a in $(RARGS); do \
-    [[ "$$a" = [-/]* ]] || a="$${PWD}/$$a"; \
-    set -- "$$@" "$$a"; \
-done; \
+for a in $(RARGS); do
+    [[ "$$a" = [-/]* ]] || a="$${PWD}/$$a";
+    set -- "$$@" "$$a";
+done;
 cp platform/linux/koreader-emulator.sh $(INSTALL_DIR)/koreader/koreader_emulator.sh && \
-chmod +x $(INSTALL_DIR)/koreader/koreader_emulator.sh && \
 cd $(INSTALL_DIR)/koreader && \
 if [ -z "$(EMULATE_SAFEMODE)" ]; then \
-    $(RWRAP) ./reader.lua "$$@"; \
+    while true; do
+        code=0;
+        $(RWRAP) ./luajit reader.lua "$$@" || code=$$?;
+        [ $${code} -eq 85 ] || exit $${code};
+        set --;
+    done
 else \
-    $(RWRAP) ./koreader_emulator.sh "$$@"; \
+    chmod +x ./koreader_emulator.sh;
+    $(RWRAP) ./koreader_emulator.sh "$$@";
 fi
 endef
 
