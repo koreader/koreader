@@ -364,6 +364,8 @@ local Kindle = Generic:extend{
     canHWDither = no,
     -- Device has an Ambient Light Sensor
     hasLightSensor = no,
+    -- Device has fancy gesture detection when tapping the *frame*
+    hasFancyTaps = no,
     -- The time the device went into suspend
     suspend_time = 0,
     framework_lipc_handle = frameworkStopped(),
@@ -489,14 +491,19 @@ function Kindle:openInputDevices()
         FBInkInput = { fbink_input_scan = function() end }
     end
     local dev_count = ffi.new("size_t[1]")
-    -- We care about: the touchscreen, a properly scaled stylus, pagination buttons, a home button and a fiveway.
-    local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_SCALED_TABLET, C.INPUT_PAGINATION_BUTTONS, C.INPUT_HOME_BUTTON, C.INPUT_DPAD)
+    -- We care about: the touchscreen, a properly scaled stylus, pagination buttons, a home button, a fiveway; and the fancy "tap on frame" stuff.
+    local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_SCALED_TABLET, C.INPUT_PAGINATION_BUTTONS, C.INPUT_HOME_BUTTON, C.INPUT_DPAD, C.INPUT_KINDLE_FRAME_TAP)
     local devices = FBInkInput.fbink_input_scan(match_mask, 0, 0, dev_count)
     if devices ~= nil then
         for i = 0, tonumber(dev_count[0]) - 1 do
             local dev = devices[i]
             if dev.matched then
                 self.input:fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
+
+                -- Automagically flip the hasFancyTaps cap
+                if bit.band(dev.type, C.INPUT_KINDLE_FRAME_TAP) ~= 0 then
+                    self.hasFancyTaps = yes
+                end
             end
         end
         C.free(devices)
@@ -607,6 +614,15 @@ function Kindle:init()
 
     -- Auto-detect & open input devices
     self:openInputDevices()
+
+    -- Deal with the fancy "double-tap on the device frame" thingy, c.f., #14461
+    if self:hasFancyTaps() then
+        -- Make sure we setup key handlers, in case the device is otherwise touch-only
+        self.hasKeys = yes
+
+        -- And that we map the double-tap keycode properly, because, sure, F7, why not, lab126...
+        self.input.event_map[65] = "RPgFwd"
+    end
 
     -- Follow user preference for the hall effect sensor's state
     if self.powerd:hasHallSensor() then
@@ -780,6 +796,12 @@ function Kindle:readyToSuspend(delay)
     logger.dbg("Kindle:readyToSuspend", delay)
     self.powerd:readyToSuspend(delay)
     self.suspend_time = time.boottime_or_realtime_coarse()
+end
+
+function Kindle:isStartupScriptUpToDate()
+    local md5 = require("ffi/MD5")
+    -- Compare the hash of the *active* script to the *potential* one.
+    return md5.sumFile("/var/tmp/koreader.sh") == md5.sumFile(os.getenv("KOREADER_DIR") .. "/koreader.sh")
 end
 
 function Kindle:UIManagerReady(uimgr)
@@ -1903,7 +1925,7 @@ local pw5_set = Set { "1Q0", "1PX", "1VD", "21A", "2BJ", "2DK" }
 local pw5se_set = Set { "1LG", "219", "2BH" }
 local kt5_set = Set { "22D", "25T", "23A", "2AQ", "2AP", "1XH", "22C" }
 local ks_set = Set { "27J", "2BL", "263", "227", "2BM", "23L", "23M", "270" }
-local kcs_set = Set { "3H2", "3H4", "3H6", "3H7", "3H9", "3JT", "3J6", "456", "34X", "3HB" }
+local kcs_set = Set { "3H2", "3H4", "3H6", "3H7", "3H9", "3JT", "3J6", "455", "456", "4EP", "34X", "3HB" }
 local kt6_set = Set { "A89", "3L2", "3L3", "3L4", "3L5", "3L6", "3KM" }
 local pw6_set = Set { "33W", "33X", "346", "349", "3H3", "3H5", "3H8", "3HA", "3J5", "3JS" } --- some of these are probably SE :/
 local ks2_set = Set { "3V0", "3V1", "3X5", "3UV", "3X4", "3X3", "41E", "410" }

@@ -101,9 +101,8 @@ function BookInfo:show(doc_settings_or_file, book_props)
     -- Book section
     -- book_props may be provided if caller already has them available
     -- but it may lack "pages", that we may get from sidecar file
-    if not book_props or not book_props.pages then
-        book_props = self:getDocProps(file, book_props)
-    end
+    book_props = book_props or self:getDocProps(file, book_props)
+    book_props.pages = book_props.pages or BookList.getBookInfo(file).pages
     -- cover image
     self.custom_book_cover = DocSettings:findCustomCoverFile(file)
     local key_text = self.prop_text["cover"]
@@ -120,6 +119,7 @@ function BookInfo:show(doc_settings_or_file, book_props)
         separator = true,
     })
     -- metadata
+    local n_a = _("N/A")
     local custom_props
     local custom_metadata_file = DocSettings:findCustomMetadataFile(file)
     if custom_metadata_file then
@@ -130,7 +130,7 @@ function BookInfo:show(doc_settings_or_file, book_props)
     for _i, prop_key in ipairs(self.props) do
         local prop = book_props[prop_key]
         if prop == nil or prop == "" then
-            prop = _("N/A")
+            prop = n_a
         elseif prop_key == "title" then
             prop = BD.auto(prop)
         elseif prop_key == "authors" or prop_key == "keywords" then
@@ -166,7 +166,68 @@ function BookInfo:show(doc_settings_or_file, book_props)
         })
     end
     -- pages
-    table.insert(kv_pairs, { self.prop_text["pages"], book_props["pages"] or _("N/A"), separator = true })
+    local pages = book_props.pages or n_a
+    local pages_callback
+    if self.is_current_doc then
+        pages = doc_settings_or_file:readSetting("doc_pages")
+        local screen_pages = _("Screen pages") .. ":\n" .. pages
+        if self.document:hasHiddenFlows() then
+            screen_pages = screen_pages .. " " .. _("(including hidden flows)")
+        end
+        local t_page, t_info = {}, {}
+        if self.ui.pagemap and self.ui.pagemap.has_pagemap then
+            if not self.ui.pagemap.use_page_labels then
+                table.insert(t_page, pages)
+                table.insert(t_info, screen_pages)
+            end
+            if self.ui.pagemap.chars_per_synthetic_page then
+                -- @translators characters per page
+                local txt = self.ui.pagemap:getLastPageLabel() .. " (" .. T(N_("1 char per page", "%1 chars per page",
+                    self.ui.pagemap.chars_per_synthetic_page), self.ui.pagemap.chars_per_synthetic_page) .. ")"
+                table.insert(t_page, txt)
+                table.insert(t_info, _("Synthetic pages") .. ":\n" .. txt)
+                if self.ui.pagemap.use_page_labels then
+                    table.insert(t_page, pages)
+                    table.insert(t_info, screen_pages)
+                end
+            end
+            if self.ui.pagemap.has_pagemap_document_provided then
+                if self.ui.pagemap.chars_per_synthetic_page then
+                    table.insert(t_page, "(℗)")
+                    table.insert(t_info, _("Publisher pages (℗):\navailable"))
+                else
+                    local count = select(3, self.ui.pagemap:getCurrentPageLabel())
+                    local first = self.ui.pagemap:getFirstPageLabel(true)
+                    local last = self.ui.pagemap:getLastPageLabel(true)
+                    local source = self.ui.document:getPageMapSource()
+                    if source == nil or source == "" then
+                        source = n_a
+                    end
+                    table.insert(t_page, count .. " (℗ " .. last .. ")")
+                    local t = _([[
+Publisher pages (℗):
+%1 (%2 - %3)
+Source (print edition):
+%4]])
+                    table.insert(t_info, T(t, count, first, last, source))
+                    if self.ui.pagemap.use_page_labels then
+                        table.insert(t_page, pages)
+                        table.insert(t_info, screen_pages)
+                    end
+                end
+            end
+        else
+            table.insert(t_page, pages)
+            table.insert(t_info, screen_pages)
+        end
+        pages = table.concat(t_page, " | ")
+        pages_callback = function()
+            UIManager:show(InfoMessage:new{
+                text = table.concat(t_info, "\n\n"),
+            })
+        end
+    end
+    table.insert(kv_pairs, { self.prop_text["pages"], pages, callback = pages_callback, separator = true })
 
     -- Current page
     if self.document then
@@ -184,7 +245,7 @@ function BookInfo:show(doc_settings_or_file, book_props)
     end
     table.insert(kv_pairs, { _("Rating:"), ("★"):rep(rating) .. ("☆"):rep(self.rating_max - rating),
         hold_callback = summary_hold_callback })
-    table.insert(kv_pairs, { _("Review:"), summary.note or _("N/A"),
+    table.insert(kv_pairs, { _("Review:"), summary.note or n_a,
         hold_callback = summary_hold_callback, separator = true })
 
     -- Notebook file
@@ -975,11 +1036,11 @@ function BookInfo:expandString(str, file, timestamp)
         return str
     end
 
-    local na = _("N/A")
+    local n_a = _("N/A")
     local doc_patterns, is_doc_required = "%T%A%S%t%c%p%H%C%l%P%h"
     local patterns = {}
     for p in str:gmatch("%%%a") do
-        patterns[p] = na -- calculate only needed items
+        patterns[p] = n_a -- calculate only needed items
         if not is_doc_required and doc_patterns:find(p, 1, true) then
             is_doc_required = true
         end
@@ -992,17 +1053,21 @@ function BookInfo:expandString(str, file, timestamp)
             local doc = self.document and self.document.file == file and self.document
             if doc then -- Reader, currently opened file
                 props = self.ui.doc_props
-                local pageno = self.ui.view.footer.pageno
+                local footer = self.ui.view.footer
+                local pageno = footer.pageno
                 if patterns["%t"] or patterns["%c"] then
-                    if doc:hasHiddenFlows() then
+                    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+                        patterns["%t"] = patterns["%t"] and self.ui.pagemap:getLastPageLabel(true)
+                        patterns["%c"] = patterns["%c"] and self.ui.pagemap:getCurrentPageLabel(true)
+                    elseif doc:hasHiddenFlows() then
                         patterns["%t"] = patterns["%t"] and doc:getTotalPagesInFlow(doc:getPageFlow(pageno))
                         patterns["%c"] = patterns["%c"] and doc:getPageNumberInFlow(pageno)
                     else
-                        patterns["%t"] = patterns["%t"] and self.ui.view.footer.pages
+                        patterns["%t"] = patterns["%t"] and footer.pages
                         patterns["%c"] = patterns["%c"] and pageno
                     end
                 end
-                patterns["%p"] = patterns["%p"] and Math.round(self.ui.view.footer:getBookProgress() * 100)
+                patterns["%p"] = patterns["%p"] and Math.round(footer.percent_finished * 100)
                 if patterns["%C"] then
                     local title = self.ui.toc:getTocTitleByPage(pageno)
                     if title and title ~= "" then
@@ -1012,13 +1077,13 @@ function BookInfo:expandString(str, file, timestamp)
                 if patterns["%l"] then
                     local pages_left_in_chapter = self.ui.toc:getChapterPagesLeft(pageno) or doc:getTotalPagesLeft(pageno)
                     if pages_left_in_chapter then
-                        if self.ui.view.footer.settings.pages_left_includes_current_page then
+                        if footer.settings.pages_left_includes_current_page then
                              pages_left_in_chapter = pages_left_in_chapter + 1
                         end
                         patterns["%l"] = pages_left_in_chapter
                     end
                 end
-                patterns["%P"] = patterns["%P"] and Math.round(self.ui.view.footer:getChapterProgress(true) * 100)
+                patterns["%P"] = patterns["%P"] and Math.round(footer:getChapterProgress(true) * 100)
                 if (patterns["%H"] or patterns["%h"]) and self.ui.statistics then
                     local pages = doc:getTotalPagesLeft(pageno)
                     if patterns["%H"] then
@@ -1028,7 +1093,7 @@ function BookInfo:expandString(str, file, timestamp)
                         end
                     end
                     if patterns["%h"] then
-                        pages = self.ui.toc:getChapterPagesLeft(pageno) or pages
+                        pages = self.ui.toc:getChapterPagesLeft(pageno, true) or pages
                         local time_left = self.ui.statistics:getTimeForPages(pages)
                         if time_left then
                             patterns["%h"] = time_left

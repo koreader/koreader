@@ -801,7 +801,9 @@ function KoptInterface:getReflewOCRWord(doc, pageno, rect)
             kc.getTOCRWord, kc, "dst",
             rect.x, rect.y, rect.w, rect.h,
             self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
-        DocCache:insert(hash, CacheItem:new{ rfocrword = word, size = #word + 64 }) -- estimation
+        if word then
+            DocCache:insert(hash, CacheItem:new{ rfocrword = word, size = #word + 64 }) -- estimation
+        end
         return word
     else
         return cached.rfocrword
@@ -985,7 +987,8 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
         local prev_word
         local prev_word_end_x
         for j = j0, j1 do
-            local word = boxes[i][j].word
+            local box = boxes[i][j]
+            local word = box and box.word
             if word then
                 if not line_first_word_seen then
                     line_first_word_seen = true
@@ -1005,7 +1008,6 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
                         end
                     end
                 end
-                local box = boxes[i][j]
                 if prev_word then
                     -- A box should have been made for each word, so assume
                     -- we want a space between them, with some exceptions

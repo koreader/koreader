@@ -13,6 +13,19 @@ local time = require("ui/time")
 local _ = require("gettext")
 local T = ffiutil.template
 
+local function removeSubstring(str, substr)
+    local iter = 1
+    local i, j
+    repeat
+        i, j = string.find(str, substr, iter, true)
+        if i then
+            str = string.sub(str, 1, i-1) .. string.sub(str, j+1, -1)
+            iter = i
+        end
+    until not i
+    return str
+end
+
 local EpubDownloadBackend = {
    -- Can be set so HTTP requests will be done under Trapper and
    -- be interruptible
@@ -29,12 +42,24 @@ local FeedCache = CacheSQLite:new{
     size = 1024 * 1024 * 10, -- 10MB
 }
 
--- filter HTML using CSS selector
-local function filter(text, element)
-    local htmlparser = require("htmlparser")
-    local root = htmlparser.parse(text, 5000)
-    local filtered = nil
-    local selectors = {
+---Returns user specified or default options.
+---@param user table
+---@param default table
+---@return table
+local function userOrDefault(user, default)
+    if type(user) == "table" and next(user) == nil then
+        return default
+    else
+        return user
+    end
+end
+
+---Selects the first matching node from the root node.
+---@param root_node ElementNode
+---@param user_wanted_selectors table
+---@return ElementNode
+local function selectMatchingNode(root_node, user_wanted_selectors)
+    local default_wanted_selectors = {
         "main",
         "article",
         "div#main",
@@ -53,34 +78,66 @@ local function filter(text, element)
         "div#article-inner",
         "div#newsstorytext",
         "div.general",
-        }
-    if type(element) == "string" and element ~= "" then
-        table.insert(selectors, 1, element)  -- Insert string at the beginning
-    elseif type(element) == "table" then
-        for _, el in ipairs(element) do
-            if type(el) == "string" and el ~= "" then
-                table.insert(selectors, 1, el)  -- Insert each non-empty element at the beginning
+    }
+    local wanted_selectors = userOrDefault(user_wanted_selectors, default_wanted_selectors)
+    logger.dbg("Selecting first matching", wanted_selectors)
+    for _, selector in ipairs(wanted_selectors) do
+        local nodes = root_node:select(selector)
+        if nodes then
+            for _, node in ipairs(nodes) do
+                if node:getcontent() then
+                    logger.dbg("found by selector", selector)
+                    return node
+                end
             end
         end
     end
-    for _, sel in ipairs(selectors) do
-       local elements = root:select(sel)
-       if elements then
-           for _, e in ipairs(elements) do
-               filtered = e:getcontent()
-               if filtered then
-                   break
-               end
-           end
-           if filtered then
-               break
-           end
-       end
+
+    return root_node
+end
+
+---Removes unwanted nodes from previously selected node.
+---@param wanted_node ElementNode
+---@param user_unwanted_selectors table
+---@return string
+local function removeUnwantedNodes(wanted_node, user_unwanted_selectors)
+    local default_unwanted_selectors = {
+        "div.article__social",
+        "figure.is-type-video",
+        "div.fluid-width-video-wrapper",
+        "div.youtube-wrap",
+    }
+    local unwanted_selectors = userOrDefault(user_unwanted_selectors, default_unwanted_selectors)
+    logger.dbg("removing by selectors:", unwanted_selectors)
+    local node_content = wanted_node:getcontent()
+    for _, unwanted_selector in ipairs(unwanted_selectors) do
+        local unwanted_nodes = wanted_node:select(unwanted_selector)
+        if unwanted_nodes then
+            for _,unwanted_node in ipairs(unwanted_nodes) do
+                logger.dbg("removing", unwanted_selector)
+                local unwanted_text = unwanted_node:gettext()
+                node_content = removeSubstring(node_content, unwanted_text)
+            end
+        end
     end
-    if not filtered then
-        return text
-    end
-    return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
+    return node_content
+end
+
+---Reduces the HTML to declutter the output. It uses wanted_elements and
+---unwanted_elements to "select" and "cut" parts of the HTML.
+---@param input_html string
+---@param user_wanted_elements table
+---@param user_unwanted_elements table
+---@return string
+local function reduceHTML(input_html, user_wanted_elements, user_unwanted_elements)
+    local htmlparser = require("htmlparser")
+    local root = htmlparser.parse(input_html, 5000)
+
+    local wanted_node = selectMatchingNode(root, user_wanted_elements)
+    local cleaned_inner_html = removeUnwantedNodes(wanted_node, user_unwanted_elements)
+    local output_html = "<!DOCTYPE html><html><head></head><body>" .. cleaned_inner_html .. "</body></html>"
+
+    return output_html
 end
 
 -- From https://github.com/lunarmodules/luasocket/blob/1fad1626900a128be724cba9e9c19a6b2fe2bf6b/samples/cookie.lua
@@ -321,7 +378,7 @@ local ext_to_mimetype = {
     woff = "application/font-woff",
 }
 -- Create an epub file (with possibly images)
-function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element)
+function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element, block_element)
     logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ")")
     -- Use Trapper to display progress and ask questions through the UI.
     -- We need to have been Trapper.wrap()'ed for UI to be used, otherwise
@@ -343,7 +400,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
     -- should it changes if content is updated (as now, including the wikipedia revisionId),
     -- or should it stays the same even if revid changes (content of the same book updated).
-    if filter_enable then html = filter(html, filter_element) end
+    if filter_enable then html = reduceHTML(html, filter_element, block_element) end
     local images = {}
     local seen_images = {}
     local imagenum = 1

@@ -37,11 +37,13 @@ local Notification = require("ui/widget/notification")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
+local ReaderTypography = require("apps/reader/modules/readertypography")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
 local Screen = Device.screen
 local UIManager = require("ui/uimanager")
 local util = require("util")
 local _ = require("gettext")
+local C_ = _.pgettext
 local NC_ = _.npgettext
 local T = require("ffi/util").template
 
@@ -84,6 +86,7 @@ local settingsList = {
     exit = {category="none", event="Exit", title=_("Exit KOReader"), device=true, separator=true},
     ----
     toggle_hold_corners = {category="none", event="IgnoreHoldCorners", title=_("Toggle long-press on corners"), device=true, condition=Device:isTouchDevice()},
+    ignore_hold_corners = {category="absolutenumber", event="IgnoreHoldCornersTime", default=10, min=5, max=30, unit=C_("Time", "s"), title=_("Ignore long-press on corners"), device=true, separator=true, condition=Device:isTouchDevice()},
     touch_input_on = {category="none", event="IgnoreTouchInput", arg=false, title=_("Enable touch input"), device=true, condition=Device:isTouchDevice()},
     touch_input_off = {category="none", event="IgnoreTouchInput", arg=true, title=_("Disable touch input"), device=true, condition=Device:isTouchDevice()},
     toggle_touch_input = {category="none", event="IgnoreTouchInput", title=_("Toggle touch input"), device=true, separator=true, condition=Device:isTouchDevice()},
@@ -168,6 +171,9 @@ local settingsList = {
     page_jmp = {category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Turn pages"), reader=true},
     go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), reader=true},
     skim = {category="none", event="ShowSkimtoDialog", title=_("Skim document"), reader=true},
+    pin_current_page = {category="none", event="PinPage", title=_("Pin current page"), reader=true},
+    go_to_pinned_page = {category="none", event="GoToPinnedPage", title=_("Go to pinned page"), reader=true, separator=true},
+    ----
     prev_bookmark = {category="none", event="GotoPreviousBookmarkFromPage", title=_("Previous bookmark"), reader=true},
     next_bookmark = {category="none", event="GotoNextBookmarkFromPage", title=_("Next bookmark"), reader=true},
     first_bookmark = {category="none", event="GotoFirstBookmark", title=_("First bookmark"), reader=true},
@@ -206,8 +212,8 @@ local settingsList = {
     set_inverse_reading_order = {category="string", event="ToggleReadingOrder", title=_("Invert page turn taps and swipes"), reader=true, condition=Device:isTouchDevice(), args={true, false}, toggle={_("on"), _("off")}},
     toggle_inverse_reading_order = {category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), reader=true, condition=Device:isTouchDevice()},
     toggle_page_change_animation = {category="none", event="TogglePageChangeAnimation", title=_("Toggle page turn animations"), reader=true, condition=Device:canDoSwipeAnimation()},
-    toggle_handmade_toc = {category="none", event="ToggleHandmadeToc", title=_("Toggle custom TOC"), reader=true, condition=Device:isTouchDevice()},
-    toggle_handmade_flows = {category="none", event="ToggleHandmadeFlows", title=_("Toggle custom hidden flows"), reader=true, separator=true, condition=Device:isTouchDevice()},
+    toggle_handmade_toc = {category="none", event="ToggleHandmadeToc", title=_("Toggle custom TOC"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
+    toggle_handmade_flows = {category="none", event="ToggleHandmadeFlows", title=_("Toggle custom hidden flows"), reader=true, separator=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
     ----
     set_highlight_action = {category="string", event="SetHighlightAction", title=_("Set highlight action"), args_func=ReaderHighlight.getHighlightActions, reader=true},
     cycle_highlight_action = {category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), reader=true},
@@ -218,6 +224,7 @@ local settingsList = {
     export_annotations = {category="none", event="ExportAnnotations", title=_("Export annotations"), reader=true},
 
     -- Reflowable documents
+    set_typography_lang = {category="string", event="SetTypographyLanguage", title=_("Set typography language"), args_func=ReaderTypography.getLangTags, rolling=true, separator=true},
     set_font = {category="string", event="SetFont", title=_("Font face"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
     increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size"), rolling=true},
     decrease_font = {category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size"), rolling=true},
@@ -280,8 +287,8 @@ local settingsList = {
     kopt_text_wrap = {category="string", paging=true},
     kopt_contrast = {category="string", paging=true},
     kopt_page_opt = {category="configurable", paging=true},
-    kopt_hw_dithering = {category="configurable", paging=true},
-    kopt_sw_dithering = {category="configurable", paging=true},
+    kopt_hw_dithering = {category="string", paging=true},
+    kopt_sw_dithering = {category="string", paging=true},
     kopt_quality = {category="configurable", paging=true},
     kopt_doc_language = {category="string", paging=true},
     kopt_forced_ocr = {category="configurable", paging=true},
@@ -328,6 +335,7 @@ local dispatcher_menu_order = {
     "exit",
     ----
     "toggle_hold_corners",
+    "ignore_hold_corners",
     "touch_input_on",
     "touch_input_off",
     "toggle_touch_input",
@@ -412,6 +420,9 @@ local dispatcher_menu_order = {
     "page_jmp",
     "go_to",
     "skim",
+    "pin_current_page",
+    "go_to_pinned_page",
+    ----
     "prev_bookmark",
     "next_bookmark",
     "first_bookmark",
@@ -462,6 +473,8 @@ local dispatcher_menu_order = {
     "export_annotations",
 
     -- Reflowable documents
+    "set_typography_lang",
+    ----
     "set_font",
     "increase_font",
     "decrease_font",
@@ -858,6 +871,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                         end
                         local items = SpinWidget:new{
                             value = location[settings] ~= nil and location[settings][k] or settingsList[k].default or settingsList[k].min,
+                            default_value = settingsList[k].default,
                             value_min = settingsList[k].min,
                             value_step = settingsList[k].step,
                             precision = precision,
@@ -941,6 +955,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                                     end
                                 end
                             end,
+                            radio = true,
                             callback = function()
                                 setValue(k, settingsList[k].args[i])
                             end,
@@ -1001,6 +1016,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             return location[settings] ~= nil and Dispatcher:_itemsCount(location[settings]) == 0
         end,
         check_callback_updates_menu = true,
+        radio = true,
         callback = function(touchmenu_instance)
             local function do_remove()
                 local actions = location[settings]
@@ -1195,6 +1211,7 @@ function Dispatcher:execute(settings, exec_props)
     local has_many = Dispatcher:_itemsCount(settings) > 1
     if has_many then
         UIManager:broadcastEvent(Event:new("BatchedUpdate"))
+        UIManager:setSilentMode(true)
     end
     Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
     if settings.settings and settings.settings.notify then
@@ -1241,6 +1258,7 @@ function Dispatcher:execute(settings, exec_props)
     end
     Notification:resetNotifySource()
     if has_many then
+        UIManager:setSilentMode(false)
         UIManager:broadcastEvent(Event:new("BatchedUpdateDone"))
     end
 end

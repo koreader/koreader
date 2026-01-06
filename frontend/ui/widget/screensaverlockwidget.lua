@@ -16,16 +16,19 @@ local ScreenSaverLockWidget = InputContainer:extend{
 
 function ScreenSaverLockWidget:init()
     if Device:isTouchDevice() then
+        local range = Geom:new{
+            x = 0, y = 0,
+            w = Screen:getWidth(),
+            h = Screen:getHeight(),
+        }
         if G_reader_settings:readSetting("screensaver_delay") == "gesture" then
+            if self.orig_dimen then -- sleep screen rotated
+                self.ui:updateTouchZonesOnScreenResize(range)
+            end
             self:setupGestureEvents()
         end
         if not self.has_exit_screensaver_gesture then
             -- Exit with gesture not enabled, or no configured gesture found: allow exiting with tap
-            local range = Geom:new{
-                x = 0, y = 0,
-                w = Screen:getWidth(),
-                h = Screen:getHeight(),
-            }
             self.ges_events.Tap = { GestureRange:new{ ges = "tap", range = range } }
         end
     end
@@ -39,12 +42,7 @@ function ScreenSaverLockWidget:setupGestureEvents()
     -- and handling any configured gesture event.
     -- We need to find all the ones configured for the "exit_screensaver" action,
     -- and clone them so they are handled by this widget.
-    local ReaderUI = require("apps/reader/readerui")
-    local ui = ReaderUI.instance
-    if not ui then
-        local FileManager = require("apps/filemanager/filemanager")
-        ui = FileManager.instance
-    end
+    local ui = self.ui
     if ui and ui.gestures and ui.gestures.gestures then
         local multiswipe_already_met = false
         for gesture, actions in pairs(ui.gestures.gestures) do
@@ -92,22 +90,32 @@ function ScreenSaverLockWidget:setupGestureEvents()
 end
 
 function ScreenSaverLockWidget:showWaitForGestureMessage()
+    if G_reader_settings:has("screensaver_show_exit_message") then return end -- false
+    local text
+    if self.has_exit_screensaver_gesture then
+        text = G_reader_settings:readSetting("screensaver_exit_message")
+        text = text and self.ui.bookinfo:expandString(text)
+            or _("Waiting for specific gesture to exit screensaver.")
+    else
+        text = _("No exit screensaver gesture configured. Tap to exit.")
+    end
     -- We just paint an InfoMessage on screen directly: we don't want
     -- another widget that we would need to prevent catching events
-    local infomsg = InfoMessage:new{
-        text = self.has_exit_screensaver_gesture
-                    and _("Waiting for specific gesture to exit screensaver.")
-                     or _("No exit screensaver gesture configured. Tap to exit.")
-    }
+    local infomsg = InfoMessage:new{ text = text }
     infomsg:paintTo(Screen.bb, 0, 0)
     infomsg:onShow() -- get the screen refreshed
+    UIManager:forceRePaint()
     infomsg:free()
 
     -- Notify our Resume/Suspend handlers that this is visible, so they know what to do
     self.is_infomessage_visible = true
 end
 
-function ScreenSaverLockWidget:onClose()
+function ScreenSaverLockWidget:onClose(arg)
+    if arg and arg.keep_screensaver then return true end -- poweroff, reboot
+    if self.orig_dimen then
+        self.ui:updateTouchZonesOnScreenResize(self.orig_dimen)
+    end
     UIManager:close(self)
     -- Close the actual Screensaver, if any
     local Screensaver = require("ui/screensaver")

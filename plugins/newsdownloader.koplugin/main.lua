@@ -61,6 +61,7 @@ local function getEmptyFeed()
         include_images = true,
         enable_filter = false,
         filter_element = "",
+        block_element = "",
         http_auth = { username = nil, password = nil },
     }
 end
@@ -255,6 +256,20 @@ function NewsDownloader:lazyInitialization()
     end
 end
 
+---Parses comma separated option string into table.
+---@param opt any
+---@return table
+local function parseCommaSeparatedOption(opt)
+    if type(opt) == "string" then
+        local result = {}
+        for part in string.gmatch(opt, "([^,]+)") do
+            table.insert(result, part)
+        end
+        return result
+    end
+    return {}
+end
+
 function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
     local UI = require("ui/trapper")
     logger.dbg("force repaint due to upcoming blocking calls")
@@ -300,7 +315,8 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
         local download_full_article = feed.download_full_article or false
         local include_images = not never_download_images and feed.include_images
         local enable_filter = feed.enable_filter or feed.enable_filter == nil
-        local filter_element = feed.filter_element or feed.filter_element == nil
+        local filter_element = parseCommaSeparatedOption(feed.filter_element)
+        local block_element = parseCommaSeparatedOption(feed.block_element)
         local credentials = feed.credentials
         local http_auth = feed.http_auth
         -- Check if the two required attributes are set.
@@ -318,7 +334,8 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
                 include_images,
                 feed_message,
                 enable_filter,
-                filter_element)
+                filter_element,
+                block_element)
         else
             logger.warn("NewsDownloader: invalid feed config entry.", feed)
         end
@@ -390,7 +407,7 @@ function NewsDownloader:loadConfigAndProcessFeedsWithUI(touchmenu_instance)
     end)
 end
 
-function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, unsupported_feeds_urls, download_full_article, include_images, message, enable_filter, filter_element)
+function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, unsupported_feeds_urls, download_full_article, include_images, message, enable_filter, filter_element, block_element)
     -- Check if we have a cached response first
     local cache = DownloadBackend:getCache()
     local cached_response = cache:check(url)
@@ -552,7 +569,8 @@ function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, un
                     include_images,
                     message,
                     enable_filter,
-                    filter_element
+                    filter_element,
+                    block_element
                 )
         end)
     elseif is_rss then
@@ -567,7 +585,8 @@ function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, un
                     include_images,
                     message,
                     enable_filter,
-                    filter_element
+                    filter_element,
+                    block_element
                 )
         end)
     end
@@ -612,7 +631,7 @@ function NewsDownloader:deserializeXMLString(xml_str)
     return xmlhandler.root
 end
 
-function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit, download_full_article, include_images, message, enable_filter, filter_element)
+function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit, download_full_article, include_images, message, enable_filter, filter_element, block_element)
     local feed_title
     local feed_item
     local total_items
@@ -666,7 +685,7 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit,
             feed_description = feed.description and feed.description[1] or feed.description --- @todo This should select the one with type="html" if there is a choice.
             if feed["content:encoded"] ~= nil then
                 -- Spec: https://web.resource.org/rss/1.0/modules/content/
-                feed_description = feed["content:encoded"]
+                feed_description = feed["content:encoded"] and feed["content:encoded"][1] or feed["content:encoded"]
             end
         elseif feed_type == FEED_TYPE_ATOM then
             feed_title = feed.title and feed.title[1] or feed.title
@@ -676,25 +695,36 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit,
             feed_description = feed.summary
         end
         -- Download the article.
+        local download_full_failed = false
         if download_full_article then
-            self:downloadFeed(
-                feed,
-                cookies,
-                http_auth,
-                feed_output_dir,
-                include_images,
-                article_message,
-                enable_filter,
-                filter_element
-            )
-        else
+            local ok, error = pcall(function()
+                self:downloadFeed(
+                    feed,
+                    cookies,
+                    http_auth,
+                    feed_output_dir,
+                    include_images,
+                    article_message,
+                    enable_filter,
+                    filter_element,
+                    block_element
+                )
+            end)
+            if not ok then
+                local link = self.getFeedLink(feed.link)
+                logger.warn("NewsDownloader: failed to download full article from", link, ":", error)
+                download_full_failed = true
+            end
+        end
+        if not download_full_article or download_full_failed then
             self:createFromDescription(
                 feed,
                 feed_title,
                 feed_description or "",
                 feed_output_dir,
                 include_images,
-                article_message
+                article_message,
+                download_full_failed
             )
         end
     end
@@ -724,7 +754,7 @@ local function getTitleWithDate(feed)
     return title
 end
 
-function NewsDownloader:downloadFeed(feed, cookies, http_auth, feed_output_dir, include_images, message, enable_filter, filter_element)
+function NewsDownloader:downloadFeed(feed, cookies, http_auth, feed_output_dir, include_images, message, enable_filter, filter_element, block_element)
     local title_with_date = getTitleWithDate(feed)
     local news_file_path = ("%s%s%s"):format(feed_output_dir,
                                              title_with_date,
@@ -742,11 +772,11 @@ function NewsDownloader:downloadFeed(feed, cookies, http_auth, feed_output_dir, 
             extra_headers = { ["Authorization"] = "Basic " .. mime.b64((http_auth.username or "") .. ":" .. (http_auth.password or "")) }
         end
         local html = DownloadBackend:loadPage(link, cookies, extra_headers)
-        DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message, enable_filter, filter_element)
+        DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message, enable_filter, filter_element, block_element)
     end
 end
 
-function NewsDownloader:createFromDescription(feed, title, content, feed_output_dir, include_images, message)
+function NewsDownloader:createFromDescription(feed, title, content, feed_output_dir, include_images, message, download_full_failed)
     local title_with_date = getTitleWithDate(feed)
     local news_file_path = ("%s%s%s"):format(feed_output_dir,
                                              title_with_date,
@@ -758,7 +788,12 @@ function NewsDownloader:createFromDescription(feed, title, content, feed_output_
         logger.dbg("NewsDownloader: News file will be stored to :", news_file_path)
         local article_message = T(_("%1\n%2"), message, title_with_date)
         local byline = getByline(feed)
-        local footer = _("If this is only a summary, the full article can be downloaded by going to the News Downloader settings and changing 'Download full article' to 'true'.")
+        local footer
+        if download_full_failed then
+            footer = _("Downloading the full article failed. To retry, delete this file and sync again.")
+        else
+            footer = _("If this is only a summary, the full article can be downloaded by going to the News Downloader settings and changing 'Download full article' to 'true'.")
+        end
 
         local base_url = self.getFeedLink(feed.link)
         if base_url then
@@ -929,6 +964,7 @@ function NewsDownloader:editFeedAttribute(id, key, value)
     if key == FeedView.URL
         or key == FeedView.LIMIT
         or key == FeedView.FILTER_ELEMENT
+        or key == FeedView.BLOCK_ELEMENT
         or key == FeedView.HTTP_AUTH_USERNAME
         or key == FeedView.HTTP_AUTH_PASSWORD then
 
@@ -946,6 +982,10 @@ function NewsDownloader:editFeedAttribute(id, key, value)
         elseif key == FeedView.FILTER_ELEMENT then
             title = _("Edit filter element.")
             description = _("Filter based on the given CSS selector. E.g.: name_of_css.element.class")
+            input_type = "string"
+        elseif key == FeedView.BLOCK_ELEMENT then
+            title = _("Edit block element.")
+            description = _("Block element based on the given CSS selector. E.g.: name_of_css.element.class")
             input_type = "string"
         elseif key == FeedView.HTTP_AUTH_USERNAME then
             title = _("HTTP auth username")
@@ -1135,6 +1175,18 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                         feed,
                         {
                             "filter_element",
+                            value
+                        }
+                    )
+                end
+            elseif key == FeedView.BLOCK_ELEMENT then
+                if feed.block_element then
+                    feed.block_element = value
+                else
+                    table.insert(
+                        feed,
+                        {
+                            "block_element",
                             value
                         }
                     )

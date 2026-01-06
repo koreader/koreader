@@ -4,6 +4,7 @@ local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
+local is_touch_device = Device:isTouchDevice() or nil
 local ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
 
 local function hasLastFile()
@@ -24,9 +25,10 @@ local function allowRandomImageFolder()
             or (G_reader_settings:readSetting("screensaver_type") == "cover" and may_ignore_book_cover)
 end
 
-local function genMenuItem(text, setting, value, enabled_func, separator)
+local function genMenuItem(text, setting, value, enabled_func, separator, help_text)
     return {
         text = text,
+        help_text = help_text,
         enabled_func = enabled_func,
         checked_func = function()
             return G_reader_settings:readSetting(setting) == value
@@ -38,6 +40,8 @@ local function genMenuItem(text, setting, value, enabled_func, separator)
         separator = separator,
     }
 end
+
+local exit_help_text = _("The 'Exit sleep screen' action is located in the Device group of the Taps and gestures settings")
 
 return {
     {
@@ -141,8 +145,32 @@ return {
                     genMenuItem(_("1 second"), "screensaver_delay", "1"),
                     genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
-                    genMenuItem(Device:isTouchDevice() and _("Until a tap") or _("Until a key press"), "screensaver_delay", "tap"),
-                    Device:isTouchDevice() and genMenuItem(_("Until 'exit sleep screen' gesture"), "screensaver_delay", "gesture") or nil,
+                    genMenuItem(is_touch_device and _("Until a tap") or _("Until a key press"), "screensaver_delay", "tap"),
+                    is_touch_device and genMenuItem(_("Until 'Exit sleep screen' gesture"), "screensaver_delay", "gesture",
+                        nil, true, exit_help_text),
+                    is_touch_device and {
+                        text = _("Show 'Exit sleep screen' message"),
+                        enabled_func = function()
+                            return G_reader_settings:readSetting("screensaver_delay") == "gesture"
+                        end,
+                        checked_func = function()
+                            return G_reader_settings:hasNot("screensaver_show_exit_message") -- save 'false' only
+                        end,
+                        callback = function()
+                            G_reader_settings:flipFalse("screensaver_show_exit_message")
+                        end,
+                    },
+                    is_touch_device and {
+                        text = _("Edit 'Exit sleep screen' message"),
+                        enabled_func = function()
+                            return G_reader_settings:readSetting("screensaver_delay") == "gesture"
+                                and G_reader_settings:hasNot("screensaver_show_exit_message")
+                        end,
+                        keep_menu_open = true,
+                        callback = function()
+                            Screensaver:setMessage(true)
+                        end,
+                    },
                 },
             },
             {
@@ -168,7 +196,7 @@ return {
                     },
                     {
                         text = _("Cycle through images in order"),
-                        help_text = _("When enabled, all images (up to 128) will be displayed at least once on the sleep screen in sequence before repeating the cycle."),
+                        help_text = _("When enabled, all images (up to 256) will be displayed at least once on the sleep screen in sequence before repeating the cycle."),
                         enabled_func = allowRandomImageFolder,
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_cycle_images_alphabetically")
@@ -205,14 +233,45 @@ return {
                 end,
             },
             {
-                text = _("Message position"),
+                text = _("Container and position"),
                 enabled_func = function()
                     return G_reader_settings:isTrue("screensaver_show_message")
                 end,
                 sub_item_table = {
-                    genMenuItem(_("Top"), "screensaver_message_position", "top"),
-                    genMenuItem(_("Middle"), "screensaver_message_position", "middle"),
-                    genMenuItem(_("Bottom"), "screensaver_message_position", "bottom"),
+                    genMenuItem(_("Banner"), "screensaver_message_container", "banner"),
+                    genMenuItem(_("Box"), "screensaver_message_container", "box", nil, true),
+                    {
+                        text_func = function()
+                            local percent = G_reader_settings:readSetting("screensaver_message_vertical_position")
+                            local value
+                            if percent == 100 then
+                                value = _("top")
+                            elseif percent == 50 then
+                                value = _("middle")
+                            elseif percent == 0 then
+                                value = _("bottom")
+                            else
+                                value = percent .. "\xE2\x80\xAF%" -- narrow no-break space
+                            end
+                            return T(_("Vertical position: %1"), value)
+                        end,
+                        help_text = _("Set a custom vertical position for the sleep screen message."),
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            Screensaver:setCustomPosition(touchmenu_instance)
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            local alpha = G_reader_settings:readSetting("screensaver_message_alpha", 100)
+                            return T(_("Message opacity: %1"), alpha) .. "\xE2\x80\xAF%"
+                        end,
+                        help_text = _("Set the opacity level of the sleep screen message."),
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            Screensaver:setMessageOpacity(touchmenu_instance)
+                        end,
+                    },
                 },
             },
             {

@@ -35,26 +35,54 @@ end)
 --]]
 
 local Blitbuffer = require("ffi/blitbuffer")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local ProgressWidget = require("ui/widget/progresswidget")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local dbg = require("dbg")
 local time = require("ui/time")
+local Input = Device.input
 local Screen = Device.screen
+local _ = require("gettext")
 
-local ProgressbarDialog = WidgetContainer:extend {
+local ProgressbarDialog = InputContainer:extend {
+    align = "center",
+    vertical_align = "center",
+    dismissable = true,
+    dismiss_callback = nil,
+    dismiss_text = nil,
     refresh_time_seconds = 3,
 }
 
 function ProgressbarDialog:init()
     self.align = "center"
     self.dimen = Screen:getSize()
+
+    if self.dismissable then
+        if Device:hasKeys() then
+            self.key_events.AnyKeyPressed = { { Input.group.Any } }
+        end
+        if Device:isTouchDevice() then
+            self.ges_events.TapClose = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = Geom:new{
+                        x = 0, y = 0,
+                        w = Screen:getWidth(),
+                        h = Screen:getHeight(),
+                    }
+                }
+            }
+        end
+    end
 
     self.progress_bar_visible = self.progress_max ~= nil and self.progress_max > 0
 
@@ -129,7 +157,7 @@ function ProgressbarDialog:redrawProgressbarIfNeeded()
     -- if we are at 100% always redraw
     if current_percentage >= 1 then
         self:redrawProgressbar()
-        return
+        return true
     end
 
     -- check if enough time has passed
@@ -139,12 +167,13 @@ function ProgressbarDialog:redrawProgressbarIfNeeded()
     if time_delta_ms >= refresh_time_ms then
         self.last_redraw_time_ms = current_time_ms
         self:redrawProgressbar()
+        return true
     end
 end
 
 function ProgressbarDialog:redrawProgressbar()
     --UI is not updating during file download so force an update
-    UIManager:setDirty(self, function() return "fast", self.progress_bar.dimen end)
+    UIManager:setDirty(self, function() return "fast", self.dimen end)
     UIManager:forceRePaint()
 end
 
@@ -159,7 +188,7 @@ function ProgressbarDialog:reportProgress(progress)
     self.progress_bar:setPercentage(progress / self.progress_max)
 
     -- actually draw the progress bar update
-    self:redrawProgressbarIfNeeded()
+    return self:redrawProgressbarIfNeeded()
 end
 
 --- Opens dialog.
@@ -171,5 +200,39 @@ end
 function ProgressbarDialog:close()
     UIManager:close(self, "ui")
 end
+
+function ProgressbarDialog:onCloseWidget()
+    if self.dismiss_box then
+        UIManager:close(self.dismiss_box)
+        self.dismiss_box = nil
+    end
+    if self.dismiss_callback then
+        self.dismiss_callback()
+        self.dismiss_callback = nil
+    end
+end
+
+function ProgressbarDialog:onDismiss()
+    if self.dismiss_text then
+        self.dismiss_box = ConfirmBox:new{
+            text = self.dismiss_text,
+            cancel_text = _("Cancel"),
+            cancel_callback = function()
+                self.dismiss_box = nil
+                UIManager:close(self)
+            end,
+            ok_text = _("Continue"),
+            ok_callback = function()
+                self.dismiss_box = nil
+            end,
+            dismissable = false,
+        }
+        UIManager:show(self.dismiss_box)
+    else
+        UIManager:close(self)
+    end
+end
+ProgressbarDialog.onAnyKeyPressed = ProgressbarDialog.onDismiss
+ProgressbarDialog.onTapClose = ProgressbarDialog.onDismiss
 
 return ProgressbarDialog

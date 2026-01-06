@@ -299,6 +299,7 @@ function Gestures:genMenu(ges)
                 return util.tableEquals(self.gestures[ges], self.defaults[ges])
             end,
             check_callback_updates_menu = true,
+            radio = true,
             callback = function(touchmenu_instance)
                 local function do_remove()
                     self.gestures[ges] = util.tableDeepCopy(self.defaults[ges])
@@ -316,6 +317,7 @@ function Gestures:genMenu(ges)
             return self.gestures[ges] == nil
         end,
         check_callback_updates_menu = true,
+        radio = true,
         callback = function(touchmenu_instance)
             local function do_remove()
                 self.gestures[ges] = nil
@@ -1367,6 +1369,15 @@ function Gestures:onIgnoreHoldCorners(ignore_hold_corners, no_notification)
         Notification:notify(_("Ignore long-press on corners: off"))
     end
     return true
+end
+
+function Gestures:onIgnoreHoldCornersTime(seconds)
+    if G_reader_settings:hasNot("ignore_hold_corners") then
+        self:onIgnoreHoldCorners()
+        UIManager:scheduleIn(seconds, function()
+            self:onIgnoreHoldCorners()
+        end)
+    end
 end
 
 function Gestures:onFlushSettings()

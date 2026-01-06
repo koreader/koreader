@@ -228,6 +228,7 @@ function MenuItem:init()
             post_text_widget = TextWidget:new{
                 text = self.post_text,
                 face = self.post_text_face,
+                max_width = math.floor(available_width / 2), -- keep some space for the other stuff
                 bold = self.bold,
                 fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
             }

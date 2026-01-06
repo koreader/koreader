@@ -78,6 +78,18 @@ function BookMapRow:getPageX(page, right_edge)
     return x
 end
 
+function BookMapRow:getIndicatorXY(page, shift_down)
+    local x = self:getPageX(page)
+    local w = self:getPageX(page, true) - x
+    x = x + math.ceil(w/2)
+    local y = self.pages_frame_height + 1
+    if shift_down then
+        -- Shift it a bit down to keep bookmark glyph(s) readable
+        y = y + math.floor(self.span_height * (1/3))
+    end
+    return x, y
+end
+
 function BookMapRow:getPageAtX(x, at_bounds_if_outside)
     x = x - self.pages_frame_offset_x
     if x < 0 then
@@ -499,13 +511,10 @@ function BookMapRow:init()
                 color = Blitbuffer.COLOR_BLACK,
             })
         end
-        -- Indicator for bookmark/highlight type, and current page
+        -- Indicator for bookmark/highlight type
         if self.bookmarked_pages[page] then
             local page_bookmark_types = self.bookmarked_pages[page]
-            local x = self:getPageX(page)
-            local w = self:getPageX(page, true) - x
-            x = x + math.ceil(w/2)
-            local y = self.pages_frame_height + 1
+            local x, y = self:getIndicatorXY(page)
             -- These 3 icons overlap quite ok, so no need for any shift
             if page_bookmark_types["highlight"] then
                 table.insert(self.indicators, {
@@ -531,33 +540,37 @@ function BookMapRow:init()
                 })
             end
         end
+        -- Indicator for pinned page
+        if page == self.pinned_page then
+            local x, y = self:getIndicatorXY(page, self.bookmarked_pages[page])
+            table.insert(self.indicators, {
+                c = 0xF435, -- pin
+                rotation = -90,
+                shift_x_pct = 0.2,
+                x = x, y = y,
+            })
+        end
         -- Indicator for previous locations
         if self.previous_locations[page] and page ~= self.cur_page then
-            local x = self:getPageX(page)
-            local w = self:getPageX(page, true) - x
-            x = x + math.ceil(w/2)
-            local y = self.pages_frame_height + 1
-            if self.bookmarked_pages[page] then
-                -- Shift it a bit down to keep bookmark glyph(s) readable
-                y = y + math.floor(self.span_height * (1/3))
-            end
-            local num = self.previous_locations[page]
+            local x, y = self:getIndicatorXY(page, self.bookmarked_pages[page] or page == self.pinned_page)
+            local num = math.min(self.previous_locations[page], 20)
             table.insert(self.indicators, {
-                c = 0x2775 + (num < 10 and num or 10), -- number in solid black circle
-                -- c = 0x245F + (num < 20 and num or 20), -- number in white circle
+                c = (num <= 10 and 0x2775 or 0x24E0) + num, -- number in solid black circle, 1 to 20
+                x = x, y = y,
+            })
+        end
+        -- Indicator for next locations
+        if self.next_locations[page] and page ~= self.cur_page then
+            local x, y = self:getIndicatorXY(page, self.bookmarked_pages[page] or page == self.pinned_page)
+            local num = math.min(self.next_locations[page], 20)
+            table.insert(self.indicators, {
+                c = 0x245F + num, -- number in white circle, 1 to 20
                 x = x, y = y,
             })
         end
         -- Extra indicator
         if self.extra_symbols_pages and self.extra_symbols_pages[page] then
-            local x = self:getPageX(page)
-            local w = self:getPageX(page, true) - x
-            x = x + math.ceil(w/2)
-            local y = self.pages_frame_height + 1
-            if self.bookmarked_pages[page] then
-                -- Shift it a bit down to keep bookmark glyph(s) readable
-                y = y + math.floor(self.span_height * (1/3))
-            end
+            local x, y = self:getIndicatorXY(page, self.bookmarked_pages[page] or page == self.pinned_page)
             table.insert(self.indicators, {
                 c = self.extra_symbols_pages[page],
                 x = x, y = y,
@@ -565,14 +578,7 @@ function BookMapRow:init()
         end
         -- Current page indicator
         if page == self.cur_page then
-            local x = self:getPageX(page)
-            local w = self:getPageX(page, true) - x
-            x = x + math.ceil(w/2)
-            local y = self.pages_frame_height + 1
-            if self.bookmarked_pages[page] then
-                -- Shift it a bit down to keep bookmark glyph(s) readable
-                y = y + math.floor(self.span_height * (1/3))
-            end
+            local x, y = self:getIndicatorXY(page, self.bookmarked_pages[page] or page == self.pinned_page)
             table.insert(self.indicators, {
                 c = 0x25B2, -- black up-pointing triangle
                 x = x, y = y,
@@ -864,7 +870,9 @@ function BookMapWidget:init()
         self.page_labels = self.ui.document:getPageMap()
     end
     -- Location stack
-    self.previous_locations = self.ui.link:getPreviousLocationPages()
+    self.previous_locations = self.ui.link:getLocationPages()
+    self.next_locations = self.ui.link:getLocationPages(true)
+    self.pinned_page = self.ui.gotopage:getPinnedPageNumber()
 
     -- Update stuff that may be updated by the user while in PageBrowser
     self:updateEditableStuff()
@@ -1250,7 +1258,9 @@ function BookMapWidget:update()
             with_page_sep = self.pages_per_row < self.max_pages_per_row_with_sep,
             toc_items = row_toc_items,
             bookmarked_pages = self.bookmarked_pages,
+            pinned_page = self.pinned_page,
             previous_locations = self.previous_locations,
+            next_locations = self.next_locations,
             extra_symbols_pages = self.extra_symbols_pages,
             hidden_flows = self.hidden_flows,
             read_pages = self.read_pages,
@@ -1497,9 +1507,11 @@ Book map provides a summary of a book's content, showing chapters and pages visu
 Map legend:
 ▲ current page
 ❶ ❷ … previous locations
+① ② … next locations
 ▒ highlighted text
  highlighted text with notes
  bookmarked page
+ pinned page
 ▢ focused page when coming from Pages browser]])
 
     if self.overview_mode then

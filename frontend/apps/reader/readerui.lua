@@ -490,6 +490,7 @@ function ReaderUI:init()
     -- CREngine only reports correct page count after rendering is done
     -- Need the same event for PDF document
     self:handleEvent(Event:new("ReaderReady", self.doc_settings))
+    self.doc_settings:saveSetting("doc_pages", self.document:getPageCount())
 
     for _,v in ipairs(self.postReaderReadyCallback) do
         v()
@@ -500,6 +501,8 @@ function ReaderUI:init()
         self:after_open_callback()
         self.after_open_callback = nil
     end
+
+    BookList.setBookInfoCache(self.document.file, self.doc_settings)
 
     Device:setIgnoreInput(false) -- Allow processing of events (on Android).
     Input:inhibitInputUntil(0.2)
@@ -832,7 +835,8 @@ function ReaderUI:onClose(full_refresh)
     end
     UIManager:close(self.dialog, full_refresh ~= false and "full")
     if file then
-        BookList.setBookInfoCache(file, self.doc_settings)
+        BookList.setBookInfoCacheProperty(file, "percent_finished", self.doc_settings:readSetting("percent_finished"))
+        -- other cached properties of the currently opened document are updated in real time
     end
 end
 
@@ -882,7 +886,7 @@ function ReaderUI:onReload()
     self:reloadDocument()
 end
 
-function ReaderUI:reloadDocument(after_close_callback, seamless)
+function ReaderUI:reloadDocument(after_close_callback, seamless, after_open_callback)
     local file = self.document.file
     local provider = getmetatable(self.document).__index
 
@@ -901,6 +905,7 @@ function ReaderUI:reloadDocument(after_close_callback, seamless)
     end
 
     self.reloading = true
+    self.after_open_callback = after_open_callback
     self:showReader(file, provider, seamless)
 end
 
@@ -922,6 +927,25 @@ end
 
 function ReaderUI:onOpenLastDoc()
     self:switchDocument(self.menu:getPreviousFile())
+end
+
+function ReaderUI:onAnnotationsModified()
+    BookList.setBookInfoCacheProperty(self.document.file, "has_annotations", self.annotation:hasAnnotations())
+end
+
+function ReaderUI:onDocumentRerendered()
+    local pages = self.document:getPageCount()
+    self.doc_settings:saveSetting("doc_pages", pages)
+    if self.doc_settings:nilOrFalse("pagemap_use_page_labels") then
+        BookList.setBookInfoCacheProperty(self.document.file, "pages", pages)
+    end
+end
+
+function ReaderUI:onUsePageLabelsUpdated()
+    local pages = self.doc_settings:isTrue("pagemap_use_page_labels")
+        and self.doc_settings:readSetting("pagemap_doc_pages")
+         or self.doc_settings:readSetting("doc_pages")
+    BookList.setBookInfoCacheProperty(self.document.file, "pages", pages)
 end
 
 function ReaderUI:getCurrentPage()

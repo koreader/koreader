@@ -47,6 +47,10 @@ DOVERLAPPIXELS = 30,
 -- set to 0 to disable showing rectangle and follow link immediately
 FOLLOW_LINK_TIMEOUT = 0.5,
 
+-- delay before clearing highlighted text after dictionary queries
+-- default to 0.5 second
+DELAY_CLEAR_HIGHLIGHT_S = 0.5,
+
 -- customizable tap zones(rectangles)
 -- x: x coordinate of top left corner in proportion to screen width
 -- y: y coordinate of top left corner in proportion to screen height

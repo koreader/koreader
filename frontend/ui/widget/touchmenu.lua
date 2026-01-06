@@ -464,6 +464,8 @@ local TouchMenu = FocusManager:extend{
     bordersize = Size.border.window,
     padding = Size.padding.default, -- (not used at top)
     fface = Font:getFace("ffont"),
+    split_height = Size.line.medium, -- line/span between items
+    split_color = Blitbuffer.COLOR_GRAY,
     width = nil,
     height = nil,
     max_per_page_default = 10,
@@ -629,27 +631,29 @@ function TouchMenu:init()
         -- pad with 10 pixel to align with the up arrow in footer
         HorizontalSpan:new{width = Size.span.horizontal_default},
         LineWidget:new{
-            background = Blitbuffer.COLOR_GRAY,
+            background = self.split_color,
             dimen = Geom:new{
                 w = self.item_width - 2*Size.span.horizontal_default,
-                h = Size.line.medium,
-            }
+                h = self.split_height,
+            },
         },
         HorizontalSpan:new{width = Size.span.horizontal_default},
     }
+    self.split_span = VerticalSpan:new{ width = self.split_height }
     self.footer_top_margin = VerticalSpan:new{width = Size.span.vertical_default}
 
     local menu_height = self.height and math.min(self.height, self.screen_size.h) or self.screen_size.h
     local items_height = menu_height - self.bar:getSize().h - self.footer_top_margin:getSize().h - self.footer:getSize().h
-    self.max_per_page = math.floor(items_height / (self.item_height + self.split_line:getSize().h))
+    self.max_per_page = math.floor(items_height / (self.item_height + self.split_height))
 
     self.bar:switchToTab(self.last_index or 1)
 end
 
 function TouchMenu:updateItems(target_page, target_item_id)
-    if #self.item_table == 0 then return end
+    local item_table_nb = #self.item_table
+    if item_table_nb == 0 then return end
     self.perpage = math.min(self.max_per_page, self.item_table.max_per_page or self.max_per_page_default)
-    self.page_num = math.ceil(#self.item_table / self.perpage)
+    self.page_num = math.ceil(item_table_nb / self.perpage)
     if target_item_id ~= nil then -- show menu page with target item
         for i, v in ipairs(self.item_table) do
             if v.menu_item_id == target_item_id then
@@ -672,7 +676,7 @@ function TouchMenu:updateItems(target_page, target_item_id)
     for c = 1, self.perpage do
         -- calculate index in item_table
         local i = idx_offset + c
-        if i <= #self.item_table then
+        if i <= item_table_nb then
             local item = self.item_table[i]
             item.idx = i
             local item_tmp = TouchMenuItem:new{
@@ -688,8 +692,8 @@ function TouchMenu:updateItems(target_page, target_item_id)
             if item_tmp:isEnabled() then
                 table.insert(self.layout, {[self.cur_tab] = item_tmp}) -- for the focusmanager
             end
-            if item.separator and c ~= self.perpage and i ~= #self.item_table then
-                table.insert(self.item_group, self.split_line)
+            if c ~= self.perpage and i ~= item_table_nb then
+                table.insert(self.item_group, item.separator and self.split_line or self.split_span)
             end
         else
             -- item not enough to fill the whole page, break out of loop
@@ -853,12 +857,14 @@ function TouchMenu:onMenuSelect(item, tap_on_checkmark)
 
     local sub_item_table = item.sub_item_table_func and item.sub_item_table_func() or item.sub_item_table
     if sub_item_table then
-        table.insert(self.item_table_stack, self.item_table)
-        item.menu_item_id = item.menu_item_id or tostring(item) -- unique id
-        self.parent_id = item.menu_item_id
-        self.item_table = sub_item_table
-        self:updateItems(1, self.item_table.open_on_menu_item_id_func
-            and self.item_table.open_on_menu_item_id_func())
+        if #sub_item_table > 0 then
+            table.insert(self.item_table_stack, self.item_table)
+            item.menu_item_id = item.menu_item_id or tostring(item) -- unique id
+            self.parent_id = item.menu_item_id
+            self.item_table = sub_item_table
+            self:updateItems(1, self.item_table.open_on_menu_item_id_func
+                and self.item_table.open_on_menu_item_id_func())
+        end
         return true
     end
 

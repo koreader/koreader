@@ -55,6 +55,7 @@ return {
             text = dpi_auto and T(_("Auto DPI (%1)"), dpi_auto) or _("Auto DPI"),
             help_text = _("The DPI of your screen is automatically detected so items can be drawn with the right amount of pixels. This will usually display at (roughly) the same size on different devices, while remaining sharp. Increasing the DPI setting will result in larger text and icons, while a lower DPI setting will look smaller on the screen."),
             checked_func = isAutoDPI,
+            radio = true,
             callback = function() setDPI() end
         },
         {
@@ -64,6 +65,7 @@ return {
                 local _dpi, _custom = dpi(), custom()
                 return _dpi and _dpi <= 140 and _dpi ~= _custom
             end,
+            radio = true,
             callback = function() setDPI(dpi_small) end
         },
         {
@@ -73,6 +75,7 @@ return {
                 local _dpi, _custom = dpi(), custom()
                 return _dpi and _dpi > 140 and _dpi <= 200 and _dpi ~= _custom
             end,
+            radio = true,
             callback = function() setDPI(dpi_medium) end
         },
         {
@@ -82,6 +85,7 @@ return {
                 local _dpi, _custom = dpi(), custom()
                 return _dpi and _dpi > 200 and _dpi <= 280 and _dpi ~= _custom
             end,
+            radio = true,
             callback = function() setDPI(dpi_large) end
         },
         {
@@ -91,6 +95,7 @@ return {
                 local _dpi, _custom = dpi(), custom()
                 return _dpi and _dpi > 280 and _dpi <= 400 and _dpi ~= _custom
             end,
+            radio = true,
             callback = function() setDPI(dpi_xlarge) end
         },
         {
@@ -100,6 +105,7 @@ return {
                 local _dpi, _custom = dpi(), custom()
                 return _dpi and _dpi > 400 and _dpi <= 560 and _dpi ~= _custom
             end,
+            radio = true,
             callback = function() setDPI(dpi_xxlarge) end
         },
         {
@@ -109,6 +115,7 @@ return {
                 local _dpi, _custom = dpi(), custom()
                 return _dpi and _dpi > 560 and _dpi ~= _custom
             end,
+            radio = true,
             callback = function() setDPI(dpi_xxxlarge) end
         },
         {
@@ -125,6 +132,7 @@ return {
                 local _dpi, _custom = dpi(), custom()
                 return _custom and _dpi == _custom
             end,
+            radio = true,
             callback = function(touchmenu_instance)
                 if custom() then
                     setDPI(custom() or dpi_auto)

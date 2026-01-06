@@ -3,7 +3,12 @@
   "application": "koreader.sh",
   "environment": {
     "LD_PRELOAD": "/home/root/shims/qtfb-shim.so",
-    "KO_DONT_GRAB_INPUT": "1"
+    "QTFB_SHIM_MODEL": "false",
+    "QTFB_SHIM_INPUT_MODE": "NATIVE",
+    "QTFB_SHIM_MODE": "N_RGB565",
+    "QTFB_SHIM_RESPECT_FULL_REFRESH_REQUESTS": "1",
+    "KO_DONT_GRAB_INPUT": "1",
+    "KO_DONT_SET_DEPTH": "1"
   },
   "qtfb": true
 }

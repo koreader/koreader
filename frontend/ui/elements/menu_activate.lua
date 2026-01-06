@@ -1,5 +1,6 @@
-local UIManager = require("ui/uimanager")
 local _ = require("gettext")
+
+local ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
 
 return {
     text = _("Activate menu"),
@@ -15,7 +16,7 @@ return {
                 else
                     G_reader_settings:saveSetting("activate_menu", "swipe_tap")
                 end
-                UIManager:askForRestart()
+                ui.menu.activation_menu = G_reader_settings:readSetting("activate_menu")
             end,
         },
         {
@@ -29,7 +30,7 @@ return {
                 else
                     G_reader_settings:saveSetting("activate_menu", "swipe_tap")
                 end
-                UIManager:askForRestart()
+                ui.menu.activation_menu = G_reader_settings:readSetting("activate_menu")
             end,
             separator = true,
         },
