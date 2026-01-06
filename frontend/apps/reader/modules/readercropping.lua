@@ -9,6 +9,8 @@ local Math = require("optmath")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
+local ConfirmBox = require("ui/widget/confirmbox")
+local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
 local Screen = Device.screen
 local _ = require("gettext")
@@ -61,6 +63,10 @@ function ReaderCropping:onPageCrop(mode)
                 callback = function() self:onCancelPageCrop() end,
             },
             {
+                text = _("Settings"),
+                callback = function() self:onShowCropSettings() end,
+            },
+            {
                 text = _("Apply crop"),
                 callback = function() self:onConfirmPageCrop() end,
             },
@@ -99,6 +105,8 @@ function ReaderCropping:onPageCrop(mode)
         ui = self.ui,
         view = self.view,
         document = self.document,
+        -- allow the widget to callback into this module (keyboard handler will use it)
+        parent_module = self,
     }
     self.crop_dialog = VerticalGroup:new{
         align = "left",
@@ -109,14 +117,73 @@ function ReaderCropping:onPageCrop(mode)
     return true
 end
 
+function ReaderCropping:onShowCropSettings()
+    -- Prepare current values
+    local pageno = self.view.state.page
+    local parity = Math.oddEven(pageno)
+    -- Use explicit nil checks so saved false values are respected.
+    local this_checked = self._apply_tick_this
+    if this_checked == nil then this_checked = true end
+    local odd_checked = self._apply_tick_odd
+    if odd_checked == nil then odd_checked = (parity == "odd") end
+    local even_checked = self._apply_tick_even
+    if even_checked == nil then even_checked = (parity == "even") end
+    local smart_checked = self.smart_crop_enabled or false
+    local grid_checked = self.show_grid_enabled or false
+
+    local cb_this, cb_odd, cb_even, cb_smart, cb_grid
+    local confirm = ConfirmBox:new{
+        text = _("Crop settings"),
+        ok_text = _("Save"),
+        ok_callback = function()
+            -- read states and store on ReaderCropping instance
+            self._apply_tick_this = cb_this.checked
+            self._apply_tick_odd = cb_odd.checked
+            self._apply_tick_even = cb_even.checked
+            self.smart_crop_enabled = cb_smart.checked
+            self.show_grid_enabled = cb_grid.checked
+            -- return to crop dialog (ConfirmBox will close itself)
+        end,
+        flush_events_on_show = true,
+    }
+
+    cb_this = CheckButton:new{ text = _("This page"), checked = this_checked, parent = confirm }
+    confirm:addWidget(cb_this)
+    cb_odd = CheckButton:new{ text = _("Odd pages"), checked = odd_checked, parent = confirm }
+    confirm:addWidget(cb_odd)
+    cb_even = CheckButton:new{ text = _("Even pages"), checked = even_checked, parent = confirm }
+    confirm:addWidget(cb_even)
+    cb_smart = CheckButton:new{ text = _("Lock aspect ratio"), checked = smart_checked, parent = confirm }
+    confirm:addWidget(cb_smart)
+    cb_grid = CheckButton:new{ text = _("Show grid lines"), checked = grid_checked, parent = confirm }
+    confirm:addWidget(cb_grid)
+
+    UIManager:show(confirm)
+    return true
+end
+
 function ReaderCropping:onConfirmPageCrop()
     --DEBUG("new bbox", new_bbox)
     UIManager:close(self.crop_dialog)
     local new_bbox = self.bbox_widget:getModifiedPageBBox()
     self.ui:handleEvent(Event:new("BBoxUpdate", new_bbox))
     local pageno = self.view.state.page
-    self.document.bbox[pageno] = new_bbox
-    self.document.bbox[Math.oddEven(pageno)] = new_bbox
+    -- Apply according to saved scope settings.
+    local parity = Math.oddEven(pageno)
+    -- If no explicit options are set, default to applying to this page only.
+    local apply_this = (self._apply_tick_this == nil) and true or self._apply_tick_this
+    local apply_odd = (self._apply_tick_odd == nil) and (parity == "odd") or self._apply_tick_odd
+    local apply_even = (self._apply_tick_even == nil) and (parity == "even") or self._apply_tick_even
+
+    if apply_this then
+        self.document.bbox[pageno] = new_bbox
+    end
+    if apply_odd then
+        self.document.bbox["odd"] = new_bbox
+    end
+    if apply_even then
+        self.document.bbox["even"] = new_bbox
+    end
     self:exitPageCrop(true)
     return true
 end

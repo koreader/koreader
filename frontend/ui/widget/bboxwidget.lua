@@ -55,6 +55,8 @@ function BBoxWidget:init()
         self.key_events.MoveIndicatorDown  = { { "Down" },  event="MoveIndicator", args = { 0, 1 } }
         self.key_events.MoveIndicatorLeft  = { { "Left" },  event="MoveIndicator", args = { -1, 0 } }
         self.key_events.MoveIndicatorRight = { { "Right" }, event="MoveIndicator", args = { 1, 0 } }
+        -- Keyboard shortcut to open crop settings (calls back to parent module if provided)
+        self.key_events.ShowCropSettings = { { "S" }, event = "ShowCropSettings" }
     end
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
@@ -405,6 +407,19 @@ function BBoxWidget:onSelect()
         })
     end
     return true
+end
+
+function BBoxWidget:onShowCropSettings()
+    -- If the parent module is provided (ReaderCropping passes itself as parent_module), delegate to it.
+    if self.parent_module and type(self.parent_module.onShowCropSettings) == "function" then
+        return self.parent_module:onShowCropSettings()
+    end
+    -- Otherwise, try to emit a UI event for other handlers (no-op if unhandled)
+    if self.ui and self.ui.handleEvent then
+        self.ui:handleEvent(Event:new("ShowCropSettings"))
+        return true
+    end
+    return false
 end
 
 
