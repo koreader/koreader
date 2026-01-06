@@ -22,7 +22,7 @@ end
 
 local protected_modules = {
     ["_G"] = true,
-    ["android"] = true, -- Wichtig auf Android!
+    ["android"] = true, -- important, as we are on Android here
     ["bit"] = true,
     ["ffi"] = true,
 --    ["ffi/*"] = true, -- will be checked below
@@ -49,7 +49,7 @@ while crash_count < 5 do
 
     C.setenv("CRASH_COUNT", tostring(crash_count), 1)
 
-    local chunk, loadError = loadfile(android.dir.."/reader.lua") -- check syntax, don't acutally run it
+    local chunk, loadError = loadfile(android.dir.."/reader.lua") -- check syntax, don't actually run it
 
     if not chunk then
         android.LOGE("Syntax Error: " .. loadError)
