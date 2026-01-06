@@ -1,30 +1,16 @@
 #!/usr/bin/env bash
-export LC_ALL="en_US.UTF-8"
+SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SOURCE_DIR}/linux-common.sh"
 
-# writable storage: ${HOME}/.config/koreader.
+# Writable storage setzen
 export KO_MULTIUSER=1
 
-if [ $# -eq 1 ] && [ -e "$(pwd)/${1}" ]; then
-    ARGS="$(pwd)/${1}"
-else
-    ARGS="${*}"
-fi
+ARGS=$(setup_args "$@")
+# Spezifisches Verzeichnis für koreader.sh
+cd "${SOURCE_DIR}/../lib/koreader" || exit 1
 
-# working directory of koreader
-KOREADER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/koreader"
+run_koreader_loop "${ARGS}"
+RET=$?
 
-# we're always starting from our working directory
-cd "${KOREADER_DIR}" || exit
-
-RETURN_VALUE=85
-while [ ${RETURN_VALUE} -eq 85 ]; do
-    ./reader.lua "${ARGS}"
-    RETURN_VALUE=$?
-    # do not restart with saved arguments
-    ARGS="${HOME}"
-done
-
-# remove the flag to avoid emulator confusion
 export -n KO_MULTIUSER
-
-exit ${RETURN_VALUE}
+exit ${RET}
