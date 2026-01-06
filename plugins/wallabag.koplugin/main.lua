@@ -1127,6 +1127,23 @@ function Wallabag:processRemoteDeletes(remote_ids)
     return count
 end
 
+--- Returns true, if article should be archived/deleted on the Wallabag server.
+-- @tparam string entry_path Path to the article file
+function Wallabag:shouldUploadStatus(entry_path)
+  local doc_settings = DocSettings:open(entry_path)
+  local summary = doc_settings:readSetting("summary")
+  local status = summary and summary.status
+  local percent_finished = doc_settings:readSetting("percent_finished")
+  if status == "complete" then
+    return self.archive_finished
+  elseif status == "abandoned" then
+    return self.archive_abandoned
+  elseif percent_finished == 1 then -- 100% read
+    return self.archive_read
+  end
+  return false
+end
+
 --- Archive (or delete) locally finished articles on the Wallabag server.
 -- @tparam[opt] bool quiet Whether to supress the info message or not
 function Wallabag:uploadStatuses(quiet)
@@ -1162,17 +1179,8 @@ function Wallabag:uploadStatuses(quiet)
                         self:addTagsFromReview(entry_path)
                     end
 
-                    local doc_settings = DocSettings:open(entry_path)
-                    local summary = doc_settings:readSetting("summary")
-                    local status = summary and summary.status
-                    local percent_finished = doc_settings:readSetting("percent_finished")
-
-                    if (
-                        (status == "complete" and self.archive_finished)
-                        or (status == "abandoned" and self.archive_abandoned)
-                        or (percent_finished == 1 and self.archive_read)
-                    ) then
-                        logger.dbg("Wallabag:uploadStatuses: - has been finished, so archiving/deleting on remote…")
+                    if self:shouldUploadStatus(entry_path) then
+                        logger.dbg("Wallabag:uploadStatuses: - archiving/deleting on remote…")
 
                         if self:archiveArticle(entry_path) then
                             count_remote = count_remote + 1
@@ -1193,7 +1201,7 @@ function Wallabag:uploadStatuses(quiet)
                                 count_local = count_local + self:deleteLocalArticle(entry_path)
                             end -- if use local archive
                         end -- if not skip
-                    else -- not finished
+                    else -- not shouldUploadStatus
                         logger.dbg("Wallabag:uploadStatuses: - but has not been finished yet")
                     end -- if finished
                 end -- if has sidecar
