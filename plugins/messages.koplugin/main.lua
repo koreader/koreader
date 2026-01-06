@@ -1,12 +1,15 @@
 --[[--
 message = {
-    text,           patterns supported
-    name,           displayed in message list and action list
+    text,                   patterns supported
+    name,                   displayed in message list and action list
     enabled,
-    registered,     show in action list
-    show_as,        message / notification / textviewer
-    timeout,        message/notification close timeout
-    file,           attach file content to message text
+    registered,             show in action list
+    show_as,                "message"/"notification"/"textviewer"
+    timeout,                message/notification close timeout
+    font_face,              message/notification only
+    font_size,              message/notification only
+    file,                   attach file content to message text
+    show_in_silent_mode,    show in multi-action gesture/profile, "message" stops further executing
 }
 ]]
 
@@ -15,6 +18,8 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
+local Font = require("ui/font")
+local FontChooser = require("ui/widget/fontchooser")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
@@ -30,6 +35,11 @@ local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = ffiUtil.template
+
+local MESSAGE_FONT_FACE_DEFAULT = "./fonts/noto/NotoSans-Regular.ttf"
+local MESSAGE_FONT_SIZE_DEFAULT = 24
+local NOTIFICATION_FONT_FACE_DEFAULT = "./fonts/noto/NotoSans-Regular.ttf"
+local NOTIFICATION_FONT_SIZE_DEFAULT = 20
 
 local Messages = WidgetContainer:extend{
     name = "messages",
@@ -85,25 +95,34 @@ function Messages:onShowMessage(name, force_show)
     end
     text = text or ""
     if message.show_as == "message" then
+        local face = (message.font_face or message.font_size) and
+            Font:getFace(message.font_face or MESSAGE_FONT_FACE_DEFAULT,
+                         message.font_size or MESSAGE_FONT_SIZE_DEFAULT)
         local override_silent = UIManager:isInSilentMode() and message.show_in_silent_mode
         if override_silent then
             UIManager:setSilentMode(false)
         end
         UIManager:show(InfoMessage:new{
             text = text,
+            face = face,
             timeout = message.timeout,
         })
         if override_silent then
             UIManager:setSilentMode(true)
         end
     elseif message.show_as == "notification" then
+        local face = (message.font_face or message.font_size) and
+            Font:getFace(message.font_face or NOTIFICATION_FONT_FACE_DEFAULT,
+                         message.font_size or NOTIFICATION_FONT_SIZE_DEFAULT)
         UIManager:show(Notification:new{
             text = text,
+            face = face,
             timeout = message.timeout,
         })
     elseif message.show_as == "textviewer" then
         UIManager:show(TextViewer:new{
             title = name,
+            title_multilines = true,
             text = text,
             text_type = message.file and "file_content",
         })
@@ -161,7 +180,7 @@ function Messages:getMessageListItemMandatory(message)
     if message.file then
         table.insert(t, "\u{F016}")
     end
-    if message.show_in_silent_mode then
+    if message.show_in_silent_mode and message.show_as == "message" then
         table.insert(t, "\u{F441}")
     end
     if message.registered then
@@ -279,8 +298,8 @@ function Messages:showMessageDialog(item)
     end
 
     local widget_type_strings = {
-        message      = _("Message"),
         notification = _("Notification"),
+        message      = _("Message"),
         textviewer   = _("Text viewer"),
     }
     local function genShowAsButton(widget_type)
@@ -291,7 +310,7 @@ function Messages:showMessageDialog(item)
             end,
             callback = function()
                 if message.show_as ~= widget_type then
-                    setMessageValue("show_as", widget_type)
+                    setMessageValue("show_as", widget_type, true)
                 end
             end,
         }
@@ -299,9 +318,76 @@ function Messages:showMessageDialog(item)
 
     local buttons = {
         {
-            genShowAsButton("message"),
             genShowAsButton("notification"),
+            genShowAsButton("message"),
             genShowAsButton("textviewer"),
+        },
+        {
+            {
+                text = _("Font") .. (message.font_face and message.show_as ~= "textviewer" and "  \u{2713}" or ""),
+                enabled_func = function()
+                    return message.show_as ~= "textviewer"
+                end,
+                callback = function()
+                    local title, default_font_file
+                    if message.show_as == "notification" then
+                        title = _("Notification font")
+                        default_font_file = NOTIFICATION_FONT_FACE_DEFAULT
+                    else
+                        title = _("Message font")
+                        default_font_file = MESSAGE_FONT_FACE_DEFAULT
+                    end
+                    UIManager:show(FontChooser:new{
+                        title = title,
+                        font_file = message.font_face or default_font_file,
+                        default_font_file = default_font_file,
+                        callback = function(file)
+                            setMessageValue("font_face", file ~= default_font_file and file or nil)
+                        end,
+                    })
+                end,
+                hold_callback = function()
+                    if message.font_face then
+                        setMessageValue("font_face", nil)
+                    end
+                end,
+            },
+            {
+                text = message.font_size and message.show_as ~= "textviewer"
+                    and T(_("Font size: %1"), message.font_size) or _("Font size"),
+                enabled_func = function()
+                    return message.show_as ~= "textviewer"
+                end,
+                callback = function()
+                    local title, default_font_size
+                    if message.show_as == "notification" then
+                        title = _("Notification font size")
+                        default_font_size = NOTIFICATION_FONT_SIZE_DEFAULT
+                    else
+                        title = _("Message font size")
+                        default_font_size = MESSAGE_FONT_SIZE_DEFAULT
+                    end
+                    UIManager:show(SpinWidget:new{
+                        title_text = title,
+                        value = message.font_size or default_font_size,
+                        value_min = 10,
+                        value_max = 72,
+                        value_step = 1,
+                        value_hold_step = 2,
+                        default_value = default_font_size,
+                        precision = "%1d",
+                        ok_text = _("Set size"),
+                        callback = function(spin)
+                            setMessageValue("font_size", spin.value ~= default_font_size and spin.value or nil)
+                        end,
+                    })
+                end,
+                hold_callback = function()
+                    if message.font_size then
+                        setMessageValue("font_size", nil)
+                    end
+                end,
+            },
         },
         {
             {
@@ -313,9 +399,18 @@ function Messages:showMessageDialog(item)
                     local file_filter = function() return true end
                     filemanagerutil.showChooseDialog(_("Attached file:"), caller_callback, message.file, nil, file_filter, true)
                 end,
+                hold_callback = function()
+                    if message.file then
+                        setMessageValue("file", nil, true)
+                    end
+                end,
             },
             {
-                text = message.timeout and T(_("Timeout: %1 s"), message.timeout) or _("Timeout"),
+                text = message.timeout and message.show_as ~= "textviewer"
+                    and T(_("Timeout: %1 s"), message.timeout) or _("Timeout"),
+                enabled_func = function()
+                    return message.show_as ~= "textviewer"
+                end,
                 callback = function()
                     UIManager:show(SpinWidget:new{
                         title_text = _("Timeout"),
@@ -336,6 +431,11 @@ function Messages:showMessageDialog(item)
                             setMessageValue("timeout", nil, true)
                         end,
                     })
+                end,
+                hold_callback = function()
+                    if message.timeout then
+                        setMessageValue("timeout", nil, true)
+                    end
                 end,
             },
         },
@@ -369,6 +469,23 @@ function Messages:showMessageDialog(item)
         },
         {
             {
+                text = _("Show in multi-action executing"),
+                enabled_func = function()
+                    return message.show_as == "message"
+                end,
+                checked_func = function()
+                    return message.show_as == "message" and message.show_in_silent_mode
+                end,
+                callback = function()
+                    message.show_in_silent_mode = not message.show_in_silent_mode or nil
+                    item.mandatory = self:getMessageListItemMandatory(message)
+                    self.message_list:updateItems(1, true)
+                    self.updated = true
+                end,
+            },
+        },
+        {
+            {
                 text = message.enabled and _("Disable") or _("Enable"),
                 callback = function()
                     UIManager:close(message_dialog)
@@ -396,20 +513,6 @@ function Messages:showMessageDialog(item)
                         Messages.dispatcherRegisterMessage(name)
                         message.registered = true
                     end
-                    item.mandatory = self:getMessageListItemMandatory(message)
-                    self.message_list:updateItems(1, true)
-                    self.updated = true
-                end,
-            },
-        },
-        {
-            {
-                text = _("Show in multi-action executing"),
-                checked_func = function()
-                    return message.show_in_silent_mode
-                end,
-                callback = function()
-                    message.show_in_silent_mode = not message.show_in_silent_mode or nil
                     item.mandatory = self:getMessageListItemMandatory(message)
                     self.message_list:updateItems(1, true)
                     self.updated = true
