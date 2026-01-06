@@ -1,7 +1,8 @@
 --[[--
     A module to evaluate the --crash-count parameter.
 
-    This is a helper for detecting the need for --safe-mode
+    This is a helper for detecting the need for a safe mode.
+    Currently only userpatches and/or plugins get disabled.
 --]]
 
 local safemode = {
@@ -23,7 +24,7 @@ function safemode.disable_plugins()
     return count == safemode.disable_plugins_count or count >= safemode.disable_all_count
 end
 
-function safemode.check()
+function safemode.showStatusIfActive()
     if safemode.crash_count < safemode.disable_patches_count then
         return
     end
