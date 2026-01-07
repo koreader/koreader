@@ -131,6 +131,11 @@ function ReaderCropping:onShowCropSettings()
     local smart_checked = self.smart_crop_enabled or false
     local grid_checked = self.show_grid_enabled or false
 
+    -- Determine if smart crop should be enabled based on zoom mode
+    -- Only enable for "content" zoom modes (content, contentwidth, contentheight)
+    local zoom_mode = self.orig_zoom_mode or self.view.zoom_mode
+    local smart_enabled = zoom_mode and (zoom_mode:match("^content") ~= nil)
+
     local cb_this, cb_odd, cb_even, cb_smart, cb_grid
     local confirm = ConfirmBox:new{
         text = _("Crop settings"),
@@ -142,6 +147,10 @@ function ReaderCropping:onShowCropSettings()
             self._apply_tick_even = cb_even.checked
             self.smart_crop_enabled = cb_smart.checked
             self.show_grid_enabled = cb_grid.checked
+            -- If smart crop was enabled, force a recalculation of the crop box
+            if self.smart_crop_enabled and self.bbox_widget and type(self.bbox_widget.applySmartCropFull) == "function" then
+                self.bbox_widget:applySmartCropFull()
+            end
             -- return to crop dialog (ConfirmBox will close itself)
         end,
         flush_events_on_show = true,
@@ -153,7 +162,12 @@ function ReaderCropping:onShowCropSettings()
     confirm:addWidget(cb_odd)
     cb_even = CheckButton:new{ text = _("Even pages"), checked = even_checked, parent = confirm }
     confirm:addWidget(cb_even)
-    cb_smart = CheckButton:new{ text = _("Lock aspect ratio"), checked = smart_checked, parent = confirm }
+    cb_smart = CheckButton:new{ 
+        text = _("Lock aspect ratio"), 
+        checked = smart_checked, 
+        enabled = smart_enabled,
+        parent = confirm 
+    }
     confirm:addWidget(cb_smart)
     cb_grid = CheckButton:new{ text = _("Show grid lines"), checked = grid_checked, parent = confirm }
     confirm:addWidget(cb_grid)

@@ -22,6 +22,8 @@ local BBoxWidget = InputContainer:extend{
 
 function BBoxWidget:init()
     self.page_bbox = self.document:getPageBBox(self.view.state.page)
+    -- snapshot original screen bbox at init so we have a constraint to fit within
+    self.original_screen_bbox = self:getScreenBBox(self.page_bbox)
     if Device:isTouchDevice() then
         self.ges_events = {
             TapAdjust = {
@@ -266,11 +268,215 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
             upper_left.y = bottom_right.y - h
         end
     end
+    
+    -- Apply aspect ratio locking if smart crop is enabled (Fit content mode only)
+    if self:isSmartCropEnabled() and nearest ~= center then
+        upper_left, bottom_right = self:applyAspectRatioLock(
+            nearest, 
+            upper_left, 
+            bottom_right, 
+            bbox
+        )
+    end
+    
     self.screen_bbox = {
         x0 = Math.round(upper_left.x),
         y0 = Math.round(upper_left.y),
         x1 = Math.round(bottom_right.x),
         y1 = Math.round(bottom_right.y)
+    }
+
+    UIManager:setDirty(self.ui, "ui")
+end
+
+-- Check if smart crop (aspect ratio lock) is enabled
+function BBoxWidget:isSmartCropEnabled()
+    if self.parent_module and self.parent_module.smart_crop_enabled then
+        -- Also check that we're in a content zoom mode
+        local zoom_mode = self.parent_module.orig_zoom_mode or self.view.zoom_mode
+        return zoom_mode and (zoom_mode:match("^content") ~= nil)
+    end
+    return false
+end
+
+-- Apply aspect ratio lock for Fit content mode
+-- For edges: adjust the opposite dimension to maintain aspect ratio
+-- For corners: project the dragged corner onto the aspect ratio line from the fixed corner
+function BBoxWidget:applyAspectRatioLock(nearest, upper_left, bottom_right, original_bbox)
+    -- Calculate aspect ratio from the viewport (screen dimensions), not the crop box
+    -- This ensures the crop box will fill the screen perfectly in Fit content mode
+    local viewport_w = self.view.dimen.w
+    local viewport_h = self.view.dimen.h
+    if viewport_w <= 0 or viewport_h <= 0 then
+        return upper_left, bottom_right
+    end
+    local aspect_ratio = viewport_h / viewport_w
+    
+    -- Determine which anchor was moved
+    local center_x = (original_bbox.x0 + original_bbox.x1) / 2
+    local center_y = (original_bbox.y0 + original_bbox.y1) / 2
+    
+    -- Check if nearest is an edge anchor (top, bottom, left, right)
+    local is_top_edge = (nearest.y == original_bbox.y0) and (math.abs(nearest.x - center_x) < 1)
+    local is_bottom_edge = (nearest.y == original_bbox.y1) and (math.abs(nearest.x - center_x) < 1)
+    local is_left_edge = (nearest.x == original_bbox.x0) and (math.abs(nearest.y - center_y) < 1)
+    local is_right_edge = (nearest.x == original_bbox.x1) and (math.abs(nearest.y - center_y) < 1)
+    
+    if is_top_edge or is_bottom_edge then
+        -- Vertical edge moved: adjust width to maintain aspect ratio
+        local new_h = bottom_right.y - upper_left.y
+        local new_w = new_h / aspect_ratio
+        local center_x_current = (upper_left.x + bottom_right.x) / 2
+        upper_left.x = center_x_current - new_w / 2
+        bottom_right.x = center_x_current + new_w / 2
+    elseif is_left_edge or is_right_edge then
+        -- Horizontal edge moved: adjust height to maintain aspect ratio
+        local new_w = bottom_right.x - upper_left.x
+        local new_h = new_w * aspect_ratio
+        local center_y_current = (upper_left.y + bottom_right.y) / 2
+        upper_left.y = center_y_current - new_h / 2
+        bottom_right.y = center_y_current + new_h / 2
+    else
+        -- Corner was moved: project onto aspect ratio line through the fixed corner
+        -- Determine which corner was moved by checking which position changed the most
+        local ul_dist = math.abs(upper_left.x - original_bbox.x0) + math.abs(upper_left.y - original_bbox.y0)
+        local br_dist = math.abs(bottom_right.x - original_bbox.x1) + math.abs(bottom_right.y - original_bbox.y1)
+        local ur_dist = math.abs(bottom_right.x - original_bbox.x1) + math.abs(upper_left.y - original_bbox.y0)
+        local bl_dist = math.abs(upper_left.x - original_bbox.x0) + math.abs(bottom_right.y - original_bbox.y1)
+        
+        local fixed_x, fixed_y, moved_x, moved_y
+        local slope_sign -- +1 for upper-left/bottom-right diagonal, -1 for upper-right/bottom-left diagonal
+        
+        -- Find which corner moved the most (that's the one that was dragged)
+        if ul_dist > br_dist and ul_dist > ur_dist and ul_dist > bl_dist then
+            -- Upper-left corner moved, bottom-right is fixed
+            fixed_x = original_bbox.x1
+            fixed_y = original_bbox.y1
+            moved_x = upper_left.x
+            moved_y = upper_left.y
+            slope_sign = 1
+        elseif br_dist > ul_dist and br_dist > ur_dist and br_dist > bl_dist then
+            -- Bottom-right corner moved, upper-left is fixed
+            fixed_x = original_bbox.x0
+            fixed_y = original_bbox.y0
+            moved_x = bottom_right.x
+            moved_y = bottom_right.y
+            slope_sign = 1
+        elseif ur_dist > ul_dist and ur_dist > br_dist and ur_dist > bl_dist then
+            -- Upper-right corner moved, bottom-left is fixed
+            fixed_x = original_bbox.x0
+            fixed_y = original_bbox.y1
+            moved_x = bottom_right.x
+            moved_y = upper_left.y
+            slope_sign = -1
+        else
+            -- Bottom-left corner moved, upper-right is fixed
+            fixed_x = original_bbox.x1
+            fixed_y = original_bbox.y0
+            moved_x = upper_left.x
+            moved_y = bottom_right.y
+            slope_sign = -1
+        end
+        
+        -- Translate to make the line go through origin
+        local p1 = moved_x - fixed_x
+        local p2 = moved_y - fixed_y
+        
+        -- The line has slope K = aspect_ratio * slope_sign
+        -- Using the projection formula: p* = P * p
+        local K = aspect_ratio * slope_sign
+        local denom = 1 + K * K
+        
+        -- p1* = (p1 + K * p2) / (1 + K^2)
+        -- p2* = (K * p1 + K^2 * p2) / (1 + K^2)
+        local p1_proj = (p1 + K * p2) / denom
+        local p2_proj = (K * p1 + K * K * p2) / denom
+        
+        -- Translate back to fixed corner position
+        local new_x = fixed_x + p1_proj
+        local new_y = fixed_y + p2_proj
+        
+        -- Update the appropriate corners
+        if ul_dist > br_dist and ul_dist > ur_dist and ul_dist > bl_dist then
+            upper_left.x = new_x
+            upper_left.y = new_y
+        elseif br_dist > ul_dist and br_dist > ur_dist and br_dist > bl_dist then
+            bottom_right.x = new_x
+            bottom_right.y = new_y
+        elseif ur_dist > ul_dist and ur_dist > br_dist and ur_dist > bl_dist then
+            bottom_right.x = new_x
+            upper_left.y = new_y
+        else
+            upper_left.x = new_x
+            bottom_right.y = new_y
+        end
+    end
+    
+    return upper_left, bottom_right
+end
+
+-- Resize and center the current crop to match viewport aspect ratio while
+-- staying within the original crop bounds. Keeps the crop centered around
+-- its previous center and shrinks only the offending dimension where needed.
+function BBoxWidget:applySmartCropFull()
+    local orig = self.original_screen_bbox or self:getScreenBBox(self.page_bbox)
+    if not orig then return end
+
+    local curr = self.screen_bbox or orig
+    local center_x = (curr.x0 + curr.x1) / 2
+    local center_y = (curr.y0 + curr.y1) / 2
+
+    local viewport_w = self.view.dimen.w
+    local viewport_h = self.view.dimen.h
+    if viewport_w <= 0 or viewport_h <= 0 then return end
+    local K = viewport_h / viewport_w
+
+    local orig_w = orig.x1 - orig.x0
+    local orig_h = orig.y1 - orig.y0
+    local curr_w = curr.x1 - curr.x0
+    local curr_h = curr.y1 - curr.y0
+
+    -- Preferred: keep the non-offending dimension (try width first)
+    local target_h_from_w = curr_w * K
+    local new_w, new_h
+    if target_h_from_w > 0 and target_h_from_w <= orig_h then
+        -- keep width, adjust height
+        new_w = curr_w
+        new_h = target_h_from_w
+    else
+        -- try keeping height
+        local target_w_from_h = curr_h / K
+        if target_w_from_h > 0 and target_w_from_h <= orig_w then
+            new_w = target_w_from_h
+            new_h = curr_h
+        else
+            -- neither fits with current dimensions; choose maximum that fits inside original
+            if orig_w * K <= orig_h then
+                new_w = orig_w
+                new_h = new_w * K
+            else
+                new_h = orig_h
+                new_w = new_h / K
+            end
+        end
+    end
+
+    -- Center and clamp inside original bounds
+    local x0 = center_x - new_w / 2
+    local x1 = center_x + new_w / 2
+    local y0 = center_y - new_h / 2
+    local y1 = center_y + new_h / 2
+
+    if x0 < orig.x0 then x0 = orig.x0; x1 = x0 + new_w end
+    if x1 > orig.x1 then x1 = orig.x1; x0 = x1 - new_w end
+    if y0 < orig.y0 then y0 = orig.y0; y1 = y0 + new_h end
+    if y1 > orig.y1 then y1 = orig.y1; y0 = y1 - new_h end
+
+    self.screen_bbox = {
+        x0 = Math.round(x0),
+        y0 = Math.round(y0),
+        x1 = Math.round(x1),
+        y1 = Math.round(y1),
     }
 
     UIManager:setDirty(self.ui, "ui")
