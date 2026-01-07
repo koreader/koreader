@@ -299,6 +299,58 @@ function BBoxWidget:isSmartCropEnabled()
     return false
 end
 
+-- Project point (mx,my) onto the line through (fx,fy) with slope K.
+-- Uses the orthogonal projection matrix you provided.
+-- Returns the new absolute coordinates (nx, ny).
+function BBoxWidget:projectOntoAspectLine(fx, fy, mx, my, K)
+    -- translate to origin
+    local p1 = mx - fx
+    local p2 = my - fy
+    local denom = 1 + K * K
+    if denom == 0 then return fx, fy end
+    local p1_proj = (p1 + K * p2) / denom
+    local p2_proj = (K * p1 + K * K * p2) / denom
+    return fx + p1_proj, fy + p2_proj
+end
+
+-- Given original bounds (orig_w, orig_h) and current preferred sizes
+-- (curr_w, curr_h) return a (w,h) with aspect ratio K that fits inside
+-- orig and preserves the preferred dimension when possible.
+function BBoxWidget:fitSizeWithin(orig_w, orig_h, curr_w, curr_h, K)
+    -- try keeping width
+    local target_h_from_w = curr_w * K
+    if target_h_from_w > 0 and target_h_from_w <= orig_h then
+        return curr_w, target_h_from_w
+    end
+    -- try keeping height
+    local target_w_from_h = curr_h / K
+    if target_w_from_h > 0 and target_w_from_h <= orig_w then
+        return target_w_from_h, curr_h
+    end
+    -- neither fits, choose the maximal that fits inside orig
+    if orig_w * K <= orig_h then
+        local w = orig_w
+        return w, w * K
+    else
+        local h = orig_h
+        return h / K, h
+    end
+end
+
+-- Center a rectangle of size (w,h) at (cx,cy) and clamp it inside orig bbox
+-- orig is a table with x0,y0,x1,y1
+function BBoxWidget:centerAndClamp(cx, cy, w, h, orig)
+    local x0 = cx - w / 2
+    local x1 = cx + w / 2
+    local y0 = cy - h / 2
+    local y1 = cy + h / 2
+    if x0 < orig.x0 then x0 = orig.x0; x1 = x0 + w end
+    if x1 > orig.x1 then x1 = orig.x1; x0 = x1 - w end
+    if y0 < orig.y0 then y0 = orig.y0; y1 = y0 + h end
+    if y1 > orig.y1 then y1 = orig.y1; y0 = y1 - h end
+    return Math.round(x0), Math.round(y0), Math.round(x1), Math.round(y1)
+end
+
 -- Apply aspect ratio lock for Fit content mode
 -- For edges: adjust the opposite dimension to maintain aspect ratio
 -- For corners: project the dragged corner onto the aspect ratio line from the fixed corner
@@ -378,23 +430,9 @@ function BBoxWidget:applyAspectRatioLock(nearest, upper_left, bottom_right, orig
             slope_sign = -1
         end
         
-        -- Translate to make the line go through origin
-        local p1 = moved_x - fixed_x
-        local p2 = moved_y - fixed_y
-        
-        -- The line has slope K = aspect_ratio * slope_sign
-        -- Using the projection formula: p* = P * p
+        -- Use helper projection to compute new corner position
         local K = aspect_ratio * slope_sign
-        local denom = 1 + K * K
-        
-        -- p1* = (p1 + K * p2) / (1 + K^2)
-        -- p2* = (K * p1 + K^2 * p2) / (1 + K^2)
-        local p1_proj = (p1 + K * p2) / denom
-        local p2_proj = (K * p1 + K * K * p2) / denom
-        
-        -- Translate back to fixed corner position
-        local new_x = fixed_x + p1_proj
-        local new_y = fixed_y + p2_proj
+        local new_x, new_y = self:projectOntoAspectLine(fixed_x, fixed_y, moved_x, moved_y, K)
         
         -- Update the appropriate corners
         if ul_dist > br_dist and ul_dist > ur_dist and ul_dist > bl_dist then
@@ -436,47 +474,15 @@ function BBoxWidget:applySmartCropFull()
     local curr_w = curr.x1 - curr.x0
     local curr_h = curr.y1 - curr.y0
 
-    -- Preferred: keep the non-offending dimension (try width first)
-    local target_h_from_w = curr_w * K
-    local new_w, new_h
-    if target_h_from_w > 0 and target_h_from_w <= orig_h then
-        -- keep width, adjust height
-        new_w = curr_w
-        new_h = target_h_from_w
-    else
-        -- try keeping height
-        local target_w_from_h = curr_h / K
-        if target_w_from_h > 0 and target_w_from_h <= orig_w then
-            new_w = target_w_from_h
-            new_h = curr_h
-        else
-            -- neither fits with current dimensions; choose maximum that fits inside original
-            if orig_w * K <= orig_h then
-                new_w = orig_w
-                new_h = new_w * K
-            else
-                new_h = orig_h
-                new_w = new_h / K
-            end
-        end
-    end
-
-    -- Center and clamp inside original bounds
-    local x0 = center_x - new_w / 2
-    local x1 = center_x + new_w / 2
-    local y0 = center_y - new_h / 2
-    local y1 = center_y + new_h / 2
-
-    if x0 < orig.x0 then x0 = orig.x0; x1 = x0 + new_w end
-    if x1 > orig.x1 then x1 = orig.x1; x0 = x1 - new_w end
-    if y0 < orig.y0 then y0 = orig.y0; y1 = y0 + new_h end
-    if y1 > orig.y1 then y1 = orig.y1; y0 = y1 - new_h end
+    -- Use helper to pick a fitting size and then center+clamp inside original bounds
+    local new_w, new_h = self:fitSizeWithin(orig_w, orig_h, curr_w, curr_h, K)
+    local x0, y0, x1, y1 = self:centerAndClamp(center_x, center_y, new_w, new_h, orig)
 
     self.screen_bbox = {
-        x0 = Math.round(x0),
-        y0 = Math.round(y0),
-        x1 = Math.round(x1),
-        y1 = Math.round(y1),
+        x0 = x0,
+        y0 = y0,
+        x1 = x1,
+        y1 = y1,
     }
 
     UIManager:setDirty(self.ui, "ui")
