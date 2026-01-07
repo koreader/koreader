@@ -188,10 +188,6 @@ function PluginLoader:_discover()
 end
 
 function PluginLoader:_load(t)
-    if safemode.disable_plugins() then
-        return
-    end
-
     -- keep reference to old value so they can be restored later
     local package_path = package.path
     local package_cpath = package.cpath
@@ -311,6 +307,10 @@ function PluginLoader:genPluginManagerSubItem()
 end
 
 function PluginLoader:createPluginInstance(plugin, attr)
+    if safemode.disable_plugins() then
+        return
+    end
+
     local ok, re = pcall(plugin.new, plugin, attr)
     if ok then  -- re is a plugin instance
         self.loaded_plugins[plugin.name] = re

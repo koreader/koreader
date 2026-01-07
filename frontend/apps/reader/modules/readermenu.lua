@@ -9,7 +9,8 @@ local Screensaver = require("ui/screensaver")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local dbg = require("dbg")
-local util  = require("util")
+local util = require("util")
+local safemode = require("safemode")
 local Screen = Device.screen
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -326,7 +327,7 @@ Useful when used alongside 'Invert page turn taps and swipes'.]]),
 
     -- tools tab
     self.menu_items.plugin_management = {
-        text = _("Plugin management"),
+        text = T(_("Plugin management %1"), safemode.disable_plugins() and _("(SAFE MODE)") or ""),
         sub_item_table = PluginLoader:genPluginManagerSubItem(),
     }
     self.menu_items.patch_management = dofile("frontend/ui/elements/patch_management.lua")
