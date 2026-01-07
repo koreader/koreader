@@ -122,6 +122,7 @@ local PluginLoader = {
     show_info = true,
     enabled_plugins = nil,
     disabled_plugins = nil,
+    failed_plugins = nil,
     loaded_plugins = nil,
     all_plugins = nil,
 }
@@ -140,7 +141,7 @@ function PluginLoader:_discover()
             extra_paths = { extra_paths }
         end
         if type(extra_paths) == "table" then
-            for _,extra_path in ipairs(extra_paths) do
+            for _, extra_path in ipairs(extra_paths) do
                 local extra_path_mode = lfs.attributes(extra_path, "mode")
                 if extra_path_mode == "directory" and extra_path ~= DEFAULT_PLUGIN_PATH then
                     table.insert(lookup_path_list, extra_path)
@@ -192,7 +193,7 @@ function PluginLoader:_load(t)
     local package_cpath = package.cpath
 
     local mainfile, metafile, plugin_root, disabled
-    for _, v in ipairs(t) do
+    for dummy, v in ipairs(t) do
         mainfile = v.main
         metafile = v.meta
         plugin_root = v.path
@@ -202,6 +203,11 @@ function PluginLoader:_load(t)
         local ok, plugin_module = pcall(dofile, mainfile)
         if not ok or not plugin_module then
             logger.warn("Error when loading", mainfile, plugin_module)
+            local ok_meta, plugin_metamodule = pcall(dofile, metafile)
+            plugin_module = ok_meta and plugin_metamodule or {fullname = mainfile, description = ""}
+            plugin_module.description = plugin_module.description
+                .. "\n" .. _("This plugins fails loading.\nContact the author.")
+            table.insert(self.failed_plugins, plugin_module)
         elseif type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
             plugin_module.path = plugin_root
             plugin_module.name = plugin_module.name or plugin_root:match("/(.-)%.koplugin")
@@ -222,15 +228,16 @@ function PluginLoader:_load(t)
     end
     package.path = package_path
     package.cpath = package_cpath
-
 end
 
-
 function PluginLoader:loadPlugins()
-    if self.enabled_plugins then return self.enabled_plugins, self.disabled_plugins end
+    if self.enabled_plugins then
+        return self.enabled_plugins, self.disabled_plugins, self.failed_plugins
+    end
 
     self.enabled_plugins = {}
     self.disabled_plugins = {}
+    self.failed_plugins = {}
     self.loaded_plugins = {}
 
     local t = self:_discover()
@@ -244,12 +251,12 @@ function PluginLoader:loadPlugins()
 
     table.sort(self.enabled_plugins, function(v1,v2) return v1.path < v2.path end)
 
-    return self.enabled_plugins, self.disabled_plugins
+    return self.enabled_plugins, self.disabled_plugins, self.failed_plugins
 end
 
 function PluginLoader:genPluginManagerSubItem()
     if not self.all_plugins then
-        local enabled_plugins, disabled_plugins = self:loadPlugins()
+        local enabled_plugins, disabled_plugins, failed_plugins = self:loadPlugins()
         self.all_plugins = {}
 
         for _, plugin in ipairs(enabled_plugins) do
@@ -261,6 +268,13 @@ function PluginLoader:genPluginManagerSubItem()
         for _, plugin in ipairs(disabled_plugins) do
             local element = getMenuTable(plugin)
             element.enable = false
+            table.insert(self.all_plugins, element)
+        end
+
+        -- If loading fails, then add a  to the plugin name
+        for _, plugin in ipairs(failed_plugins) do
+            local element = getMenuTable(plugin)
+            element.fullname = element.fullname .. " ⚠"
             table.insert(self.all_plugins, element)
         end
 
