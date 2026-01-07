@@ -15,8 +15,8 @@ local T = ffiutil.template
 -- https://en.wikipedia.org/w/api.php?action=query&prop=extracts&format=jsonfm&explaintext=&redirects=&titles=E-reader
 --
 -- To get parsed HTML :
--- https://en.wikipedia.org/w/api.php?action=parse&page=E-book
--- https://en.wikipedia.org/w/api.php?action=parse&page=E-book&prop=text|sections|displaytitle|revid&disablelimitreport=&disableeditsection
+-- https://en.wikipedia.org/w/api.php?action=parse&page=Ebook
+-- https://en.wikipedia.org/w/api.php?action=parse&page=Ebook&prop=text|tocdata|displaytitle|revid&disablelimitreport=&disableeditsection
 -- https://www.mediawiki.org/wiki/API:Parsing_wikitext#parse
 --]]
 
@@ -44,19 +44,20 @@ local Wikipedia = {
    -- Full article, parsed to output text (+ main thumbnail image)
    wiki_full_params = {
        action = "query",
-       prop = "extracts|pageimages",
+       prop = "extracts|pageimages|langlinks",
        format = "json",
        -- exintro = nil, -- get more than only the intro
        explaintext = "",
        redirects = "",
        -- title = nil, -- text to lookup, will be added below
+       lllimit = 500, -- (default nb of langlinks returned is 10)
    },
    -- Full article, parsed to output HTML, for Save as EPUB
    wiki_phtml_params = {
        action = "parse",
        format = "json",
        -- we only need the following pieces of information
-       prop = "text|sections|displaytitle|revid",
+       prop = "text|tocdata|displaytitle|revid",
        -- page = nil, -- text to lookup, will be added below
        -- disabletoc = "", -- if we want to remove toc IN html
             -- 20230722: there is no longer the TOC in the html no matter this param
@@ -671,7 +672,7 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
     local wiki_base_url = self:getWikiServer(lang)
 
     -- Get infos from wikipedia result
-    -- (see example at https://en.wikipedia.org/w/api.php?action=parse&page=E-book&prop=text|sections|displaytitle|revid&disablelimitreport=&disableeditsection)
+    -- (see example at https://en.wikipedia.org/w/api.php?action=parse&page=Ebook&prop=text|tocdata|displaytitle|revid&disablelimitreport=&disableeditsection)
     local cancelled = false
     local html = phtml.text["*"] -- html content
     local page_cleaned = page:gsub("_", " ") -- page title
@@ -682,7 +683,8 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
     -- encodes. (We don't escape < or > as these JSON strings may contain HTML tags)
     page_cleaned = util.htmlEntitiesToUtf8(page_cleaned):gsub("&", "&#38;")
     page_htmltitle = util.htmlEntitiesToUtf8(page_htmltitle):gsub("&", "&#38;")
-    local sections = phtml.sections -- Wikipedia provided TOC
+    -- Wikipedia provided TOC (might be "null", that JSON.decode() converts to a function)
+    local sections = type(phtml.tocdata) == "table" and phtml.tocdata.sections or {}
     local bookid = string.format("wikipedia_%s_%s_%s", lang, phtml.pageid, phtml.revid)
     -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
     -- should it changes if content is updated (as now, including the wikipedia revisionId),
@@ -1299,7 +1301,7 @@ abbr.abbr {
         -- We need to do as for page_htmltitle above. But headings can contain
         -- html entities for < and > that we need to put back as html entities
         s_title = util.htmlEntitiesToUtf8(s_title):gsub("&", "&#38;"):gsub(">", "&gt;"):gsub("<", "&lt;")
-        local s_level = s.toclevel
+        local s_level = s.tocLevel
         if s_level > depth then
             depth = s_level -- max depth required in toc.ncx
         end
@@ -1371,7 +1373,7 @@ abbr.abbr {
         -- for the links to be valid.
         local s_anchor = s.anchor:gsub("&", "&amp;"):gsub('"', "&quot;"):gsub(">", "&gt;"):gsub("<", "&lt;")
         local s_title = string.format("%s %s", s.number, s.line)
-        local s_level = s.toclevel
+        local s_level = s.tocLevel
         if s_level == cur_level then
             table.insert(toc_html_parts, "</li>")
         elseif s_level < cur_level then
