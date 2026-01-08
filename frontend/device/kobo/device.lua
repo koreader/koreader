@@ -1778,7 +1778,7 @@ elseif codename == "goldfinch" then
     return KoboGoldfinch
 elseif codename == "condor" then
     return KoboCondor
-elseif codename == "monza" or codename == "monzaTolino" then
+elseif codename == "monza" or codename == "monzaTolino" or codename == "monzaKobo" then
     return KoboMonza
 elseif codename == "spaBW" or codename == "spaTolinoBW" or codename == "spaBWTPV" then
     return KoboSpaBW
