@@ -7,7 +7,7 @@ for a in $(RARGS); do
     [[ "$$a" = [-/]* ]] || a="$${PWD}/$$a";
     set -- "$$@" "$$a";
 done;
-cp platform/linux/koreader-emulator.sh $(INSTALL_DIR)/koreader/koreader_emulator.sh && \
+cp platform/linux/koreader.sh $(INSTALL_DIR)/koreader/koreader.sh && \
 cd $(INSTALL_DIR)/koreader && \
 if [ -z "$(EMULATE_SAFEMODE)" ]; then \
     while true; do
@@ -17,8 +17,8 @@ if [ -z "$(EMULATE_SAFEMODE)" ]; then \
         set --;
     done
 else \
-    chmod +x ./koreader_emulator.sh;
-    $(RWRAP) ./koreader_emulator.sh "$$@";
+    chmod +x ./koreader.sh;
+    KOREADER_EMULATE=1 $(RWRAP) ./koreader.sh "$$@";
 fi
 endef
 

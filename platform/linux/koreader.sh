@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
+
+# env-variables:
+# KOREADER_EMULATE    if set, use '~/koreader/' to store data
+#
+
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -z "${KOREADER_EMULATE}" ]; then
+    ## OK, we are on linux target
+    cd "${SOURCE_DIR}/../lib/koreader" || exit 1
+    # Writable storage in the home directory
+    KO_MULTIUSER=1
+fi
 
 export LC_ALL="en_US.UTF-8"
 
@@ -13,17 +25,17 @@ setup_args() {
 
 # main loop for emulator and linux
 run_koreader_loop() {
-    local ARGS="$1"
+    local CALL_ARGS="$1"
     local CRASH_COUNT=0
     local CRASH_PREV_TS=0
     local KO_RC_RESTART=85
     local RETURN_VALUE=-1
 
     while [ ${RETURN_VALUE} -ne 0 ]; do
-        CRASH_COUNT=${CRASH_COUNT} ./reader.lua "${ARGS}"
+        env ${KO_MULTIUSER:+KO_MULTIUSER=${KO_MULTIUSER}} CRASH_COUNT=${CRASH_COUNT} ./reader.lua "${CALL_ARGS}"
         RETURN_VALUE=$?
 
-        # Falls Neustart (85) oder sauberer Exit (0)
+        # Restart (85) or clean exit (0)
         if [ ${RETURN_VALUE} -eq 0 ] || [ ${RETURN_VALUE} -eq ${KO_RC_RESTART} ]; then
             [ ${RETURN_VALUE} -eq 0 ] && break
             CRASH_COUNT=0
@@ -58,14 +70,8 @@ run_koreader_loop() {
     return ${RETURN_VALUE}
 }
 
-# Writable storage
-export KO_MULTIUSER=1
-
 ARGS=$(setup_args "$@")
-cd "${SOURCE_DIR}/../lib/koreader" || exit 1
+cd "${SOURCE_DIR}" || exit 1
 
 run_koreader_loop "${ARGS}"
-RET=$?
-
-export -n KO_MULTIUSER
-exit ${RET}
+exit $?
