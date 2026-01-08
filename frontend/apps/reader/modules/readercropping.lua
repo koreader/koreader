@@ -132,9 +132,9 @@ function ReaderCropping:onShowCropSettings()
     local grid_checked = self.show_grid_enabled or false
 
     -- Determine if smart crop should be enabled based on zoom mode
-    -- Only enable for "content" zoom modes (content, contentwidth, contentheight)
+    -- Enable for "content", "columns", and "rows" zoom modes
     local zoom_mode = self.orig_zoom_mode or self.view.zoom_mode
-    local smart_enabled = zoom_mode and (zoom_mode:match("^content") ~= nil)
+    local smart_enabled = zoom_mode and (zoom_mode == "content" or zoom_mode == "columns" or zoom_mode == "rows")
 
     local cb_this, cb_odd, cb_even, cb_smart, cb_grid
     local confirm = ConfirmBox:new{
