@@ -98,8 +98,36 @@ function Wikipedia:getWikiServer(lang)
     return string.format(self.wiki_server, lang or self.default_lang)
 end
 
+-- Search for the response header 'set-cookie', and extract the associated cookies
+local function extractCookies(headers)
+    if not headers then return nil end
+    local cookies = {}
+    for key, value in pairs(headers) do
+        if string.lower(key) == "set-cookie" then
+            for cookie_part in string.gmatch(value, "([^,]+)") do
+                -- Only extract the name=value part, and not browser attributes after ';'
+                local name, cookie_value = cookie_part:match("([^=]+)=([^;]+)")
+                if name and cookie_value then
+                    name = name:match("^%s*(.-)%s*$")
+                    cookie_value = cookie_value:match("^%s*(.-)%s*$")
+                    table.insert(cookies, name .. "=" .. cookie_value)
+                end
+            end
+        end
+    end
+    if #cookies > 0 then
+        -- String representation of cookie, i.e. "WMF-...; WMF-Last_Access..."
+        return table.concat(cookies, "; ")
+    end
+    return nil
+end
+
+-- Wikipedia gives user cookies their own throttling bucket (70 / 30), use it for image resizing which has strict rate throttling.
+-- See https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/core/+blame/90f9bb549d5fc17eb7e71c094ded6264a71f609c/includes/MainConfigSchema.php#8997
+local cached_cookie = nil
+
 -- Get URL content
-local function getUrlContent(url, timeout, maxtime)
+local function getUrlContent(url, timeout, maxtime, reuse_cookie)
     local http = require("socket.http")
     local ltn12 = require("ltn12")
     local socket = require("socket")
@@ -119,10 +147,23 @@ local function getUrlContent(url, timeout, maxtime)
         method  = "GET",
         sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
     }
+    -- Add headers only when an image_cookie is present, otherwise make a default call without cookie headers
+    if reuse_cookie then
+        logger.dbg("Creating a request with cookie header:", cached_cookie)
+        request.headers = {
+            cookie = cached_cookie,
+            referer = "https://en.wikipedia.org/"
+        }
+    end
 
     local code, headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
     local content = table.concat(sink) -- empty or content accumulated till now
+    -- Cache cookies from Wikipedia API responses
+    local response_cookie = nil
+    if not reuse_cookie and headers then
+        response_cookie = extractCookies(headers)
+    end
     -- logger.dbg("code:", code)
     -- logger.dbg("headers:", headers)
     -- logger.dbg("status:", status)
@@ -151,7 +192,7 @@ local function getUrlContent(url, timeout, maxtime)
             return false, "Incomplete content received"
         end
     end
-    return true, content
+    return true, content, response_cookie
 end
 
 function Wikipedia:setTrapWidget(trap_widget)
@@ -203,12 +244,12 @@ function Wikipedia:loadPage(text, lang, page_type, plain)
     end
 
     local built_url = url.build(parsed)
-    local completed, success, content
+    local completed, success, content, response_cookie
     if self.trap_widget then -- if previously set with Wikipedia:setTrapWidget()
         local Trapper = require("ui/trapper")
         local timeout, maxtime = 30, 60
         -- We use dismissableRunInSubprocess with complex return values:
-        completed, success, content = Trapper:dismissableRunInSubprocess(function()
+        completed, success, content, response_cookie = Trapper:dismissableRunInSubprocess(function()
             return getUrlContent(built_url, timeout, maxtime)
         end, self.trap_widget)
         if not completed then
@@ -219,10 +260,13 @@ function Wikipedia:loadPage(text, lang, page_type, plain)
         -- blocking without one (but 20s may be needed to fetch the main HTML
         -- page of big articles when making an EPUB).
         local timeout, maxtime = 20, 60
-        success, content = getUrlContent(built_url, timeout, maxtime)
+        success, content, response_cookie = getUrlContent(built_url, timeout, maxtime)
     end
     if not success then
         error(content)
+    end
+    if response_cookie then
+        cached_cookie = response_cookie
     end
 
     if content ~= "" and string.sub(content, 1, 1) == "{" then
@@ -400,7 +444,7 @@ local function image_load_bb_func(image, highres)
     -- We use dismissableRunInSubprocess with simple string return value to
     -- avoid serialization/deserialization of a long string of image bytes
     local completed, data = Trapper:dismissableRunInSubprocess(function()
-        local success, data = getUrlContent(source, timeout, maxtime)
+        local success, data = getUrlContent(source, timeout, maxtime, true) -- reuse_cookie
         -- With simple string value, we're not able to return the failure
         -- reason, so log it here
         if not success then
@@ -1529,7 +1573,7 @@ abbr.abbr {
                 src = img.src2x
             end
             logger.dbg("Getting img ", src)
-            local success, content = getUrlContent(src)
+            local success, content = getUrlContent(src, nil, nil, true) -- reuse_cookie
             -- success, content = getUrlContent(src..".unexistant") -- to simulate failure
             if success then
                 logger.dbg("success, size:", #content)
