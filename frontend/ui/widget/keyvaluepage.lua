@@ -338,6 +338,12 @@ function KeyValuePage:init()
                 range = self.dimen,
             }
         }
+        self.ges_events.Pan = { -- (for mousewheel scrolling support)
+            GestureRange:new{
+                ges = "pan",
+                range = self.dimen,
+            }
+        }
     end
 
     -- return button
@@ -813,6 +819,17 @@ function KeyValuePage:onMultiSwipe(arg, ges_ev)
     -- used to close and where we then allow any multiswipe to close, allow any
     -- multiswipe to close this widget too.
     self:onClose()
+    return true
+end
+
+function KeyValuePage:onPan(arg, ges_ev)
+    if ges_ev.mousewheel_direction then
+        if ges_ev.direction == "north" then
+            self:onNextPage()
+        elseif ges_ev.direction == "south" then
+            self:onPrevPage()
+        end
+    end
     return true
 end
 
