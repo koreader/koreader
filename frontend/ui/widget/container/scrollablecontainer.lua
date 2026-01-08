@@ -621,6 +621,14 @@ function ScrollableContainer:onScrollablePanRelease(_, ges)
     if not self._is_scrollable then
         return false
     end
+    if ges.from_mousewheel and not self._scrolling and ges.relative and ges.relative.y then
+        if ges.relative.y < 0 then
+            self:onScrollPageDown()
+        elseif ges.relative.y > 0 then
+            self:onScrollPageUp()
+        end
+        return true
+    end
     logger.dbg("ScrollableContainer:onScrollablePanRelease", ges)
     if self._scrolling then
         self:_scrollBy(-self._scroll_relative_x, -self._scroll_relative_y)
