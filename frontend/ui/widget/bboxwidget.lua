@@ -477,6 +477,28 @@ function BBoxWidget:getOverlapPerc(kind)
     return tonumber(perc)
 end
 
+-- Grid getters: return the number of columns/rows and overlap percentages.
+-- These are simple stubs so maintainers can integrate real values later.
+function BBoxWidget:getGridColumnCount()
+    -- TODO: Integrate with ReaderZooming:getNumberOf("columns", overlap)
+    -- e.g. return math.floor((self.ui.zooming and self.ui.zooming:getNumberOf and
+    --      self.ui.zooming:getNumberOf("columns", self:getOverlapPerc("h")) ) or 2 + 0.5)
+    return 2
+end
+
+function BBoxWidget:getGridRowCount()
+    -- TODO: Integrate with ReaderZooming:getNumberOf("rows", overlap)
+    return 2
+end
+
+function BBoxWidget:getOverlapH()
+    return tonumber(self:getOverlapPerc("h") or 0)
+end
+
+function BBoxWidget:getOverlapV()
+    return tonumber(self:getOverlapPerc("v") or 0)
+end
+
 -- Compute snapped steps and ideal size given crop size, viewport, and overlap
 function BBoxWidget:_snapSteps(crop_size, viewport_size, overlap_perc)
     local step_delta = viewport_size * (1 - (overlap_perc / 100))
@@ -539,9 +561,9 @@ function BBoxWidget:applyGridSnap(nearest, upper_left, bottom_right, bbox, ancho
         -- Step 1: C is fixed (number of columns), discover R (rows)
         -- For columns mode, we need to determine how many columns from the zooming module
         -- For now, assume C is derived from the view state or default to 2
-        local C = 2  -- TODO: get actual column count from zoom settings
-        local OH = self:getOverlapPerc("h") or 0
-        local OV = self:getOverlapPerc("v") or 0
+        local C = self:getGridColumnCount()
+        local OH = self:getOverlapH()
+        local OV = self:getOverlapV()
         
         logger.info(string.format("Step 1: C (columns) = %d, OH = %.1f%%, OV = %.1f%%", C, OH, OV))
         
@@ -697,9 +719,9 @@ function BBoxWidget:applyGridSnap(nearest, upper_left, bottom_right, bbox, ancho
         
     elseif zoom_mode == "rows" then
         -- Similar logic for rows mode (snaps columns instead)
-        local R = 2  -- TODO: get actual row count
-        local OH = self:getOverlapPerc("h") or 0
-        local OV = self:getOverlapPerc("v") or 0
+        local R = self:getGridRowCount()
+        local OH = self:getOverlapH()
+        local OV = self:getOverlapV()
         
         logger.info(string.format("Step 1: R (rows) = %d, OH = %.1f%%, OV = %.1f%%", R, OH, OV))
         
