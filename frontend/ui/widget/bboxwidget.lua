@@ -1116,7 +1116,101 @@ function BBoxWidget:applyAspectRatioLock(nearest, upper_left, bottom_right, orig
             nearest.x, nearest.y))
     end
     
-    logger.info(string.format("=== ASPECT RATIO RESULT: ul=(%.1f,%.1f) br=(%.1f,%.1f) ===",
+    logger.info(string.format("=== ASPECT RATIO RESULT (before bounds check): ul=(%.1f,%.1f) br=(%.1f,%.1f) ===",
+        upper_left.x, upper_left.y, bottom_right.x, bottom_right.y))
+    
+    -- Get page bounds
+    local offset = self.view.state.offset
+    local page_area = self.view.page_area
+    local min_x = offset.x
+    local min_y = offset.y
+    local max_x = offset.x + page_area.w
+    local max_y = offset.y + page_area.h
+    
+    logger.info(string.format("Page bounds: x=[%.1f-%.1f] y=[%.1f-%.1f]", min_x, max_x, min_y, max_y))
+    
+    -- First, try to shift the box to fit within bounds (preserve size)
+    local w = bottom_right.x - upper_left.x
+    local h = bottom_right.y - upper_left.y
+    
+    logger.info(string.format("Before shifting: x=[%.1f-%.1f] y=[%.1f-%.1f] (w=%.1f h=%.1f)",
+        upper_left.x, bottom_right.x, upper_left.y, bottom_right.y, w, h))
+    
+    -- Try to shift vertically
+    if upper_left.y < min_y then
+        logger.info(string.format("  Top exceeds: %.1f < %.1f, shifting down", upper_left.y, min_y))
+        upper_left.y = min_y
+        bottom_right.y = upper_left.y + h
+    end
+    if bottom_right.y > max_y then
+        logger.info(string.format("  Bottom exceeds: %.1f > %.1f, shifting up", bottom_right.y, max_y))
+        bottom_right.y = max_y
+        upper_left.y = bottom_right.y - h
+    end
+    
+    -- Try to shift horizontally
+    if upper_left.x < min_x then
+        logger.info(string.format("  Left exceeds: %.1f < %.1f, shifting right", upper_left.x, min_x))
+        upper_left.x = min_x
+        bottom_right.x = upper_left.x + w
+    end
+    if bottom_right.x > max_x then
+        logger.info(string.format("  Right exceeds: %.1f > %.1f, shifting left", bottom_right.x, max_x))
+        bottom_right.x = max_x
+        upper_left.x = bottom_right.x - w
+    end
+    
+    logger.info(string.format("After shifting: x=[%.1f-%.1f] y=[%.1f-%.1f]",
+        upper_left.x, bottom_right.x, upper_left.y, bottom_right.y))
+    
+    -- Check if still out of bounds after shifting
+    local x_still_out = (upper_left.x < min_x) or (bottom_right.x > max_x)
+    local y_still_out = (upper_left.y < min_y) or (bottom_right.y > max_y)
+    
+    logger.info(string.format("Still out of bounds: x=%s y=%s", tostring(x_still_out), tostring(y_still_out)))
+    
+    if x_still_out or y_still_out then
+        -- Shifting alone couldn't fix it, need to resize while maintaining aspect ratio
+        if y_still_out and not x_still_out then
+            -- Y dimension is too large, clamp it and adjust width
+            logger.info("  -> Y too large, clamping Y and adjusting width to maintain aspect ratio")
+            upper_left.y = math.max(upper_left.y, min_y)
+            bottom_right.y = math.min(bottom_right.y, max_y)
+            local new_h = bottom_right.y - upper_left.y
+            local new_w = new_h / aspect_ratio
+            local center_x_current = (upper_left.x + bottom_right.x) / 2
+            upper_left.x = center_x_current - new_w / 2
+            bottom_right.x = center_x_current + new_w / 2
+            logger.info(string.format("    Clamped y: [%.1f-%.1f], adjusted width for aspect: [%.1f-%.1f]",
+                upper_left.y, bottom_right.y, upper_left.x, bottom_right.x))
+            
+        elseif x_still_out and not y_still_out then
+            -- X dimension is too large, clamp it and adjust height
+            logger.info("  -> X too large, clamping X and adjusting height to maintain aspect ratio")
+            upper_left.x = math.max(upper_left.x, min_x)
+            bottom_right.x = math.min(bottom_right.x, max_x)
+            local new_w = bottom_right.x - upper_left.x
+            local new_h = new_w * aspect_ratio
+            local center_y_current = (upper_left.y + bottom_right.y) / 2
+            upper_left.y = center_y_current - new_h / 2
+            bottom_right.y = center_y_current + new_h / 2
+            logger.info(string.format("    Clamped x: [%.1f-%.1f], adjusted height for aspect: [%.1f-%.1f]",
+                upper_left.x, bottom_right.x, upper_left.y, bottom_right.y))
+            
+        else
+            -- Both are still out (means box is larger than available space)
+            -- Clamp both dimensions
+            logger.info("  -> Both X and Y too large, clamping both")
+            upper_left.x = math.max(upper_left.x, min_x)
+            bottom_right.x = math.min(bottom_right.x, max_x)
+            upper_left.y = math.max(upper_left.y, min_y)
+            bottom_right.y = math.min(bottom_right.y, max_y)
+            logger.info(string.format("    Clamped to: x=[%.1f-%.1f] y=[%.1f-%.1f]",
+                upper_left.x, bottom_right.x, upper_left.y, bottom_right.y))
+        end
+    end
+    
+    logger.info(string.format("=== ASPECT RATIO FINAL: ul=(%.1f,%.1f) br=(%.1f,%.1f) ===",
         upper_left.x, upper_left.y, bottom_right.x, bottom_right.y))
     
     return upper_left, bottom_right
