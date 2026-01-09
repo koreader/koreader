@@ -147,10 +147,9 @@ function ReaderCropping:onShowCropSettings()
             self._apply_tick_even = cb_even.checked
             self.smart_crop_enabled = cb_smart.checked
             self.show_grid_enabled = cb_grid.checked
-            -- If smart crop was enabled, force a recalculation of the crop box
-            if self.smart_crop_enabled and self.bbox_widget and type(self.bbox_widget.applySmartCropFull) == "function" then
-                self.bbox_widget:applySmartCropFull()
-            end
+            -- If smart crop was enabled, do NOT force a recalculation here.
+            -- Redrawing/applying the smart crop is deferred and will occur when
+            -- the user taps the crop box (keeps settings changes non-destructive).
             -- return to crop dialog (ConfirmBox will close itself)
         end,
         flush_events_on_show = true,

@@ -976,41 +976,6 @@ function BBoxWidget:applyAspectRatioLock(nearest, upper_left, bottom_right, orig
     return upper_left, bottom_right
 end
 
--- Resize and center the current crop to match viewport aspect ratio while
--- staying within the original crop bounds. Keeps the crop centered around
--- its previous center and shrinks only the offending dimension where needed.
-function BBoxWidget:applySmartCropFull()
-    local orig = self.original_screen_bbox or self:getScreenBBox(self.page_bbox)
-    if not orig then return end
-
-    local curr = self.screen_bbox or orig
-    local center_x = (curr.x0 + curr.x1) / 2
-    local center_y = (curr.y0 + curr.y1) / 2
-
-    local viewport_w = self.view.dimen.w
-    local viewport_h = self.view.dimen.h
-    if viewport_w <= 0 or viewport_h <= 0 then return end
-    local K = viewport_h / viewport_w
-
-    local orig_w = orig.x1 - orig.x0
-    local orig_h = orig.y1 - orig.y0
-    local curr_w = curr.x1 - curr.x0
-    local curr_h = curr.y1 - curr.y0
-
-    -- Use helper to pick a fitting size and then center+clamp inside original bounds
-    local new_w, new_h = self:fitSizeWithin(orig_w, orig_h, curr_w, curr_h, K)
-    local x0, y0, x1, y1 = self:centerAndClamp(center_x, center_y, new_w, new_h, orig)
-
-    self.screen_bbox = {
-        x0 = x0,
-        y0 = y0,
-        x1 = x1,
-        y1 = y1,
-    }
-
-    UIManager:setDirty(self.ui, "ui")
-end
-
 function BBoxWidget:onMoveIndicator(args)
     local dx, dy = unpack(args)
     local bbox = self.screen_bbox
