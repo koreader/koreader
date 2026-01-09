@@ -429,7 +429,15 @@ For example, with a trigger "on document closing" the profile will be executed b
         }
         table.insert(sub_item_table, {
             text_func = function()
-                return (v.settings.show_as_quickmenu and "\u{F0CA} " or "\u{F144} ") .. k
+                local prefix
+                if v.settings.show_as_quickmenu then
+                    prefix = "\u{F0CA} "
+                elseif v.settings.execute_one_by_one then
+                    prefix = "\u{F051} "
+                else
+                    prefix = "\u{F144} "
+                end
+                return prefix .. k
             end,
             sub_item_table = sub_items,
         })
