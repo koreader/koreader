@@ -168,7 +168,14 @@ function ReaderCropping:onShowCropSettings()
         parent = confirm 
     }
     confirm:addWidget(cb_smart)
-    cb_grid = CheckButton:new{ text = _("Show grid lines"), checked = grid_checked, parent = confirm }
+    -- Grid lines only available for columns/rows modes
+    local grid_enabled = zoom_mode and (zoom_mode == "columns" or zoom_mode == "rows")
+    cb_grid = CheckButton:new{ 
+        text = _("Show grid lines"), 
+        checked = grid_checked, 
+        enabled = grid_enabled,
+        parent = confirm 
+    }
     confirm:addWidget(cb_grid)
 
     UIManager:show(confirm)

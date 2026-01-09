@@ -85,6 +85,10 @@ function BBoxWidget:paintTo(bb, x, y)
     bb:invertRect(bbox.x0, bbox.y0, self.linesize, bbox.y1 - bbox.y0 + self.linesize)
     -- right edge
     bb:invertRect(bbox.x1, bbox.y0 + self.linesize, self.linesize, bbox.y1 - bbox.y0)
+    -- Draw grid lines if enabled
+    if self:shouldShowGridLines() then
+        self:_drawGridLines(bb, bbox)
+    end
     -- center crosshair (always visible)
     local center_x = Math.round((bbox.x0 + bbox.x1) / 2)
     local center_y = Math.round((bbox.y0 + bbox.y1) / 2)
@@ -339,11 +343,153 @@ end
 -- Check if smart crop (aspect ratio lock) is enabled
 function BBoxWidget:isSmartCropEnabled()
     if self.parent_module and self.parent_module.smart_crop_enabled then
-        -- Also check that we're in a content zoom mode
+        -- Also check that we're in a supported zoom mode
         local zoom_mode = self.parent_module.orig_zoom_mode or self.view.zoom_mode
         return zoom_mode and (zoom_mode == "content" or zoom_mode == "columns" or zoom_mode == "rows")
     end
     return false
+end
+
+-- Check if grid lines should be shown
+-- Requires: smart crop enabled, show_grid_enabled, and columns/rows mode
+function BBoxWidget:shouldShowGridLines()
+    if not self.parent_module then return false end
+    if not self.parent_module.smart_crop_enabled then return false end
+    if not self.parent_module.show_grid_enabled then return false end
+    local zoom_mode = self.parent_module.orig_zoom_mode or self.view.zoom_mode
+    return zoom_mode and (zoom_mode == "columns" or zoom_mode == "rows")
+end
+
+-- Calculate grid layout for the current crop box
+-- Returns table with: cols, rows, cell_w, cell_h, positions (array of {x, y} for each cell)
+function BBoxWidget:getGridInfo()
+    local zoom_mode = self.parent_module and self.parent_module.orig_zoom_mode or self.view.zoom_mode
+    if not zoom_mode or (zoom_mode ~= "columns" and zoom_mode ~= "rows") then
+        return nil
+    end
+    
+    local bbox = self.screen_bbox
+    if not bbox then return nil end
+    
+    local W_crop = bbox.x1 - bbox.x0
+    local H_crop = bbox.y1 - bbox.y0
+    if W_crop <= 0 or H_crop <= 0 then return nil end
+    
+    local W_screen, H_screen = self:getEffectiveViewport()
+    if W_screen <= 0 or H_screen <= 0 then return nil end
+    
+    local OH = self:getOverlapH()
+    local OV = self:getOverlapV()
+    
+    local C, R, cell_w_crop, cell_h_crop
+    
+    if zoom_mode == "columns" then
+        -- Number of columns is fixed
+        C = self:getGridColumnCount()
+        -- Cell width in crop space
+        local cell_portion_w = 1 / (1 + (C - 1) * (100 - OH) / 100)
+        cell_w_crop = W_crop * cell_portion_w
+        -- Zoom factor from crop cell to screen
+        local zoom_factor = W_screen / cell_w_crop
+        -- Cell height in crop space (screen height / zoom)
+        cell_h_crop = H_screen / zoom_factor
+        -- Calculate number of rows
+        if OV == 0 then
+            R = Math.round(H_crop / cell_h_crop)
+        else
+            R = Math.round(1 + ((H_crop / cell_h_crop) - 1) * 100 / (100 - OV))
+        end
+        if R < 1 then R = 1 end
+    else -- rows mode
+        -- Number of rows is fixed
+        R = self:getGridRowCount()
+        -- Cell height in crop space
+        local cell_portion_h = 1 / (1 + (R - 1) * (100 - OV) / 100)
+        cell_h_crop = H_crop * cell_portion_h
+        -- Zoom factor from crop cell to screen
+        local zoom_factor = H_screen / cell_h_crop
+        -- Cell width in crop space (screen width / zoom)
+        cell_w_crop = W_screen / zoom_factor
+        -- Calculate number of columns
+        if OH == 0 then
+            C = Math.round(W_crop / cell_w_crop)
+        else
+            C = Math.round(1 + ((W_crop / cell_w_crop) - 1) * 100 / (100 - OH))
+        end
+        if C < 1 then C = 1 end
+    end
+    
+    return {
+        cols = C,
+        rows = R,
+        cell_w = cell_w_crop,
+        cell_h = cell_h_crop,
+        overlap_h = OH,
+        overlap_v = OV,
+    }
+end
+
+-- Draw grid lines inside the crop box
+function BBoxWidget:_drawGridLines(bb, bbox)
+    local grid = self:getGridInfo()
+    if not grid then return end
+    
+    local C = grid.cols
+    local R = grid.rows
+    local OH = grid.overlap_h
+    local OV = grid.overlap_v
+    
+    -- Calculate cell sizes and step sizes
+    local W_crop = bbox.x1 - bbox.x0
+    local H_crop = bbox.y1 - bbox.y0
+    
+    local cell_w, cell_h, step_x, step_y
+    if C > 1 then
+        cell_w = W_crop / (1 + (C - 1) * (100 - OH) / 100)
+        step_x = cell_w * (100 - OH) / 100
+    else
+        cell_w = W_crop
+        step_x = W_crop
+    end
+    if R > 1 then
+        cell_h = H_crop / (1 + (R - 1) * (100 - OV) / 100)
+        step_y = cell_h * (100 - OV) / 100
+    else
+        cell_h = H_crop
+        step_y = H_crop
+    end
+    
+    -- Draw vertical grid lines (column separators)
+    -- For each column boundary, draw up to 2 lines if there's overlap
+    for i = 1, C - 1 do
+        local x_step = Math.round(bbox.x0 + i * step_x)
+        -- First line: end of non-overlap region (start of overlap)
+        bb:invertRect(x_step, bbox.y0 + self.linesize, self.linesize, H_crop - self.linesize)
+        
+        -- Second line: end of overlap region (if overlap exists)
+        if OH > 0 then
+            local x_overlap_end = Math.round(bbox.x0 + i * step_x + cell_w * OH / 100)
+            if x_overlap_end > x_step then
+                bb:invertRect(x_overlap_end, bbox.y0 + self.linesize, self.linesize, H_crop - self.linesize)
+            end
+        end
+    end
+    
+    -- Draw horizontal grid lines (row separators)
+    -- For each row boundary, draw up to 2 lines if there's overlap
+    for i = 1, R - 1 do
+        local y_step = Math.round(bbox.y0 + i * step_y)
+        -- First line: end of non-overlap region (start of overlap)
+        bb:invertRect(bbox.x0 + self.linesize, y_step, W_crop - self.linesize, self.linesize)
+        
+        -- Second line: end of overlap region (if overlap exists)
+        if OV > 0 then
+            local y_overlap_end = Math.round(bbox.y0 + i * step_y + cell_h * OV / 100)
+            if y_overlap_end > y_step then
+                bb:invertRect(bbox.x0 + self.linesize, y_overlap_end, W_crop - self.linesize, self.linesize)
+            end
+        end
+    end
 end
 
 -- Get effective viewport dimensions, accounting for footer if visible
