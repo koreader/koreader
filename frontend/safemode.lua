@@ -5,6 +5,8 @@
     Currently only userpatches and/or plugins get disabled.
 --]]
 
+local isAndroid, dummy = pcall(require, "android")
+
 local safemode = {
     crash_count = 0,
     disable_patches_count = 2,
@@ -45,7 +47,14 @@ function safemode.showStatusIfActive()
 
     text = text .. "\n\n" .. _("You may wish to deactivate the relevant plugin/patch in the corresponding menu item of the 'More tools' menu.")
 
-    local handle = io.popen("grep -i -B 40 -A 10 \"Crash\" crash.log | tail -n 51")
+    local cmd
+    if not isAndroid then
+        cmd = "grep -i -B 40 -A 10 \"Crash\" crash.log | tail -n 51"
+    else
+        cmd = "logcat -d | grep -i koreader | grep -i -B 40 -A 10 'Crash' | tail -n 51"
+    end
+
+    local handle = io.popen(cmd)
     if handle then
         local tail = handle:read("*a")
         handle:close()
