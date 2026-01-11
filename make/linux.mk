@@ -21,7 +21,6 @@ prepare: all
 	mkdir -p $(INSTALL_DIR)/linux/{bin,lib,share/{applications,doc/koreader,man/man1,metainfo,pixmaps}}
 	sed -e 's/%%VERSION%%/$(VERSION)/g' -e 's/%%DATE%%/$(RELEASE_DATE)/' $(PLATFORM_DIR)/common/koreader.metainfo.xml >$(INSTALL_DIR)/linux/share/metainfo/koreader.metainfo.xml
 	$(SYMLINK) $(LINUX_DIR)/koreader.sh $(INSTALL_DIR)/linux/bin/koreader
-	chmod +x $(LINUX_DIR)/koreader.sh
 	$(SYMLINK) $(INSTALL_DIR)/koreader $(INSTALL_DIR)/linux/lib/
 	$(SYMLINK) resources/koreader.png $(INSTALL_DIR)/linux/share/pixmaps/
 	$(SYMLINK) $(LINUX_DIR)/koreader.desktop $(INSTALL_DIR)/linux/share/applications/
