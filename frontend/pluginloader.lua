@@ -206,7 +206,7 @@ function PluginLoader:_load(t)
             local ok_meta, plugin_metamodule = pcall(dofile, metafile)
             plugin_module = ok_meta and plugin_metamodule or {fullname = mainfile, description = ""}
             plugin_module.description = plugin_module.description
-                .. "\n" .. _("This plugins fails loading.\nContact the author.")
+                .. "\n" .. _("This plugin failed to load.\nContact the author.")
             table.insert(self.failed_plugins, plugin_module)
         elseif type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
             plugin_module.path = plugin_root
