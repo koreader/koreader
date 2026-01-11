@@ -8,6 +8,8 @@ local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local sort = require("sort")
 local userPatch = require("userpatch")
+local safemode = require("safemode")
+
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -99,8 +101,15 @@ https://github.com/koreader/koreader/wiki/User-patches
 
 Patches are an advanced feature, so be careful what you do!]])
 
+local safe_mode_text
+if safemode.disable_userpatches() then
+    safe_mode_text = _("(SAFE MODE)")
+else
+    safe_mode_text = ""
+end
+
 return {
-    text = _("Patch management"),
+    text = T(_("Patch management %1"), safe_mode_text),
     sub_item_table_func = function()
         local sub_item_table = {
             {
@@ -119,7 +128,7 @@ return {
                             count = count + 1
                         end
                     end
-                    return T(_("Patches executed: %1"), count)
+                    return T(_("Patches executed: %1 %2"), count, safe_mode_text)
                 end,
                 keep_menu_open = true,
                 callback = function()

@@ -17,7 +17,8 @@ local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util  = require("util")
+local util = require("util")
+local safemode = require("safemode")
 local _ = require("gettext")
 local T = ffiUtil.template
 
@@ -509,7 +510,7 @@ To:
 
     -- tools tab
     self.menu_items.plugin_management = {
-        text = _("Plugin management"),
+        text = T(_("Plugin management %1"), safemode.disable_plugins() and _("(SAFE MODE)") or ""),
         sub_item_table = PluginLoader:genPluginManagerSubItem(),
     }
     self.menu_items.patch_management = dofile("frontend/ui/elements/patch_management.lua")

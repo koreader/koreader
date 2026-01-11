@@ -183,6 +183,11 @@ local UIManager = require("ui/uimanager")
 -- Apply developer patches
 userpatch.applyPatches(userpatch.late)
 
+-- The activation of the safe mode is done in the affected modules.
+-- If safe mode is active, inform the user.
+local safemode = require("safemode")
+safemode.showStatusIfActive()
+
 -- Inform once about color rendering on newly supported devices
 -- (there are some android devices that may not have a color screen,
 -- and we are not (yet?) able to guess that fact)
