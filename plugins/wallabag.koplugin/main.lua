@@ -1318,7 +1318,6 @@ function Wallabag:archiveArticle(path)
                 return true
             end
         else
-
             local body = { archive = 1 }
 
             -- if rated 5 stars, star article in Wallabag
