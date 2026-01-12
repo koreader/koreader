@@ -109,6 +109,7 @@ end
 local orig_DictQuickLookup_update = DictQuickLookup.update
 function DictQuickLookup:update()
     local orig_displaynb = self.displaynb
+    self.displaynb_custom = orig_displaynb
     self.displaynb = nil
 
     orig_DictQuickLookup_update(self)
