@@ -34,6 +34,7 @@ emu
 luacov.stats.out
 trace-out.txt
 koreader-*
+AGENTS.md
 
 i18n
 
