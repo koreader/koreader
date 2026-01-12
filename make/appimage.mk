@@ -23,7 +23,11 @@ appimagetool $(APPIMAGETOOL):
 	chmod +x ./$(APPIMAGETOOL).part
 	mv $(APPIMAGETOOL).part $(APPIMAGETOOL)
 
-update: all $(APPIMAGETOOL)
+run: prepare
+	@echo "[*] Running via AppImage..."
+	APPIMAGE=1 bash $(INSTALL_DIR)/appimage/AppRun $(RARGS)
+
+prepare: all $(APPIMAGETOOL)
 	cd $(INSTALL_DIR)/koreader && '$(abspath tools/mkrelease.sh)' ../appimage/ . $(release_excludes)
 	cp $(APPIMAGE_DIR)/{AppRun,koreader.desktop} resources/koreader.png $(INSTALL_DIR)/appimage/
 	sed -e 's/%%VERSION%%/$(VERSION)/' -e 's/%%DATE%%/$(RELEASE_DATE)/' $(PLATFORM_DIR)/common/koreader.metainfo.xml >$(INSTALL_DIR)/appimage/koreader.appdata.xml
@@ -34,8 +38,10 @@ ifeq (,$(wildcard $(UBUNTU_LIBBSD)))
 else
 	cp $(UBUNTU_LIBBSD) $(INSTALL_DIR)/appimage/libs/
 endif
-	# Generate AppImage.
+
+update: prepare
+    # Generate AppImage.
 	ARCH='$(APPIMAGE_ARCH)' ./$(APPIMAGETOOL) --appimage-extract-and-run $(INSTALL_DIR)/appimage $(KOREADER_APPIMAGE)
 
-PHONY += appimagetool update
+PHONY += appimagetool update run
 SOUND += $(APPIMAGETOOL)

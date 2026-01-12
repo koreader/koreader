@@ -13,13 +13,52 @@ fi
 # we're always starting from our working directory
 cd "${KOREADER_DIR}" || exit
 
-RETURN_VALUE=85
+# main loop for emulator and linux
+run_koreader_loop() {
+    CALL_ARGS="$1"
+    CRASH_COUNT=0
+    CRASH_PREV_TS=0
+    KO_RC_RESTART=85
+    RETURN_VALUE=-1
 
-while [ ${RETURN_VALUE} -eq 85 ]; do
-    ./reader.lua "${ARGS}"
-    RETURN_VALUE=$?
-    # do not restart with saved arguments
-    ARGS="${HOME}"
-done
+    while [ ${RETURN_VALUE} -ne 0 ]; do
+        KO_MULTIUSER=1 CRASH_COUNT=${CRASH_COUNT} ./reader.lua "${CALL_ARGS}"
+        RETURN_VALUE=$?
 
-exit ${RETURN_VALUE}
+        # Restart (85) or clean exit (0)
+        if [ ${RETURN_VALUE} -eq 0 ] || [ ${RETURN_VALUE} -eq ${KO_RC_RESTART} ]; then
+            [ ${RETURN_VALUE} -eq 0 ] && break
+            CRASH_COUNT=0
+        else
+            # Crash-Handling
+            CRASH_TS
+            CRASH_TS=$(date +'%s')
+
+            CRASH_COUNT=$((CRASH_COUNT + 1))
+
+            [ $((CRASH_TS - CRASH_PREV_TS)) -ge 20 ] && CRASH_COUNT=1
+
+            if grep -q '\["dev_abort_on_crash"\] = true' 'settings.reader.lua' 2>/dev/null; then
+                echo "Exit: 'dev_abort_on_crash' is true."
+                break
+            fi
+
+            echo "--- last logs ---"
+            tail -n 25 crash.log 2>/dev/null | sed -e 's/\t/    /g'
+            echo "!!!! Crash n°${CRASH_COUNT} on $(date +'%x @ %X')"
+
+            if [ ${CRASH_COUNT} -ge 5 ]; then
+                echo "Exit: Too many crashes."
+                break
+            fi
+
+            CRASH_PREV_TS=${CRASH_TS}
+            echo "Try restart in 2 seconds"
+            sleep 2
+        fi
+    done
+    return ${RETURN_VALUE}
+}
+
+run_koreader_loop "${ARGS}"
+exit $?

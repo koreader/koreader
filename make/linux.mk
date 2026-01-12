@@ -11,7 +11,12 @@ plugins/timesync.koplugin
 $(filter-out tools/trace_require.lua tools/wbuilder.lua,$(wildcard tools/*))
 endef
 
-update: all
+# Override the default emulator run target to use the shell script
+run: prepare
+	@echo "[*] Running via koreader.sh..."
+	$(INSTALL_DIR)/linux/bin/koreader $(RARGS)
+
+prepare: all
 	rm -rf $(INSTALL_DIR)/linux
 	mkdir -p $(INSTALL_DIR)/linux/{bin,lib,share/{applications,doc/koreader,man/man1,metainfo,pixmaps}}
 	sed -e 's/%%VERSION%%/$(VERSION)/g' -e 's/%%DATE%%/$(RELEASE_DATE)/' $(PLATFORM_DIR)/common/koreader.metainfo.xml >$(INSTALL_DIR)/linux/share/metainfo/koreader.metainfo.xml
@@ -26,6 +31,8 @@ update: all
 		-e 's/%%ARCH%%/$(LINUX_ARCH_NAME)/' \
 		-e 's/%%ABI%%/$(GLIBC_VERSION)/' \
 		 $(LINUX_DIR)/instructions.txt >$(INSTALL_DIR)/linux/README.md
+
+update: prepare
 	# Create archive.
 	cd $(INSTALL_DIR)/linux && \
 		'$(abspath tools/mkrelease.sh)' \
@@ -33,4 +40,4 @@ update: all
 		--options=-$(LINUX_PACKAGE_COMPRESSION_LEVEL) \
 		'$(abspath $(LINUX_PACKAGE))' . $(call release_excludes,lib/koreader/)
 
-PHONY += update
+PHONY += update run

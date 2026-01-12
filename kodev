@@ -452,6 +452,9 @@ EMULATOR OPTIONS:
 ANDROID TARGET:
 
     Install and run KOReader on an Android device connected through ADB.
+
+EMULATOR ENVIRONMENT VARIABLES:
+    CRASH_COUNT              if set, emulates past CRASH_COUNT crashes
 "
     local short_opts="tg:::cW:H:D:s:w:"
     local long_opts="disable-touch,gdb::,valgrind::,callgrind,screen-width:,screen-height:,screen-dpi:,simulate:,wrap:"
@@ -573,7 +576,7 @@ ANDROID TARGET:
     set -- "${ARGS[@]}"
     # Setup target.
     local target=''
-    if [[ "$1" = android-* ]]; then
+    if [[ "$1" = android-* || "$1" = linux || "$1" = appimage ]]; then
         target="$1"
         shift
     fi
@@ -720,7 +723,7 @@ Supported commands:
     clean               Clean KOReader build
     release             Build KOReader release package
 
-  Emulator & Android:
+  Emulator, android-*, linux, appimage:
 
     run                 Run KOReader
 
