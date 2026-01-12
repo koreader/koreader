@@ -4,6 +4,7 @@ logger.info("Applying custom dictionary popup patch")
 local ReaderUI = require("apps/reader/readerui")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Translator = require("ui/translator")
+local userpatch = require("userpatch")
 local BD = require("ui/bidi")
 local _ = require("gettext")
 
@@ -38,7 +39,7 @@ function DictPopupCustomizer:onDictButtonsReady(dict_popup, buttons)
         {
             id = "dict_counter",
             text_func = function()
-                return dict_popup.displaynb or ""
+                return dict_popup.displaynb_custom or ""
             end,
             enabled = false,
         },
@@ -117,9 +118,20 @@ function DictQuickLookup:update()
     if not self.is_wiki_fullpage then
         local dict_counter_btn = self.button_table:getButtonById("dict_counter")
         if dict_counter_btn then
-            dict_counter_btn:setText(self.displaynb or "", dict_counter_btn.width)
+            dict_counter_btn:setText(self.displaynb_custom or "", dict_counter_btn.width)
             dict_counter_btn:refresh()
         end
+    end
+end
+
+local orig_DictQuickLookup_changeDictionary = DictQuickLookup.changeDictionary
+function DictQuickLookup:changeDictionary(index, skip_update)
+    orig_DictQuickLookup_changeDictionary(self, index, skip_update)
+    if self.is_wiki_fullpage then
+        self.displaynb_custom = nil
+    else
+        self.displaynb_custom = self.displaynb
+        self.displaynb = nil
     end
 end
 
@@ -127,3 +139,10 @@ function DictQuickLookup:addQueryWordToResult()
 end
 
 logger.info("Custom dictionary popup patch applied successfully")
+
+userpatch.registerPatchPluginFunc("vocabbuilder", function(VocabBuilder)
+    function VocabBuilder:onDictButtonsReady(dict_popup, buttons)
+        return
+    end
+    logger.info("VocabBuilder onDictButtonsReady patched to remove button")
+end)
