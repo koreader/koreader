@@ -14,19 +14,22 @@ return {--do NOT change this line
  -- set 'limit' to "0" means no limit.
 
  -- 'download_full_article=true' - means download full article (may not always work correctly)
- -- 'download_full_article=false' - means use only feed description to create feeds (usually only beginning of the article)
- -- default value is 'true' (if no 'download_full_article' entry)
+ -- 'download_full_article=false' - means use only feed description to create feeds. Sometimes this is only a summary or the first few lines, sometimes it's the full article.
+ -- default value is 'false' (if no 'download_full_article' entry)
 
  -- 'include_images=true' - means download any images on the page and include them in the article
  -- 'include_images=false' - means ignore any images, only download the text (faster download, smaller file sizes)
  -- default value is 'false' (if no 'include_images' entry)
 
- -- 'enable_filter=true' - means filter using a CSS selector to delimit part of the page to just that (does not apply if download_full_article=false)
+ -- 'enable_filter=true' - means filter using a CSS selector to delimit part of the page to just that and removes broken/annoying elements (does not apply if download_full_article=false)
  -- 'enable_filter=false' - means no such filtering and including the full page
  -- default value is 'false'
 
  -- 'filter_element="name_of_css.element.class" - means to filter the chosen CSS selector, it can be easily picked using a modern web browser
  -- The default value is empty. The default list of common selectors is used as fallback if this value is set.
+
+ -- 'block_element="name_of_css.element.class" - means to remove the chosen CSS element, it can be easily picked using a modern web browser
+ -- The default value is empty. The default list of common annoyances is used as fallback if this value is set.
 
 -- Optional 'credentials' element is used to authenticate on subscription based articles.
 -- It is itself comprised of a 'url' strings, that is the url of the connexion form,
@@ -38,7 +41,7 @@ return {--do NOT change this line
 
  -- LIST YOUR FEEDS HERE:
 
- { "https://github.com/koreader/koreader/releases.atom", limit = 3, download_full_article=true, include_images=false, enable_filter=true, filter_element = "div.release-main-section"},
- { "https://ourworldindata.org/atom.xml", limit = 5 , download_full_article=true, include_images=true, enable_filter=false, filter_element = ""},
+ { "https://github.com/koreader/koreader/releases.atom", limit = 3, download_full_article=false, include_images=false, enable_filter=true, filter_element = "div.release-main-section", block_element = ""},
+ { "https://ourworldindata.org/atom.xml", limit = 5 , download_full_article=true, include_images=true, enable_filter=false, filter_element = "", block_element = ""},
 
 }--do NOT change this line

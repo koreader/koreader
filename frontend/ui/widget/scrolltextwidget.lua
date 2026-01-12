@@ -41,6 +41,7 @@ local ScrollTextWidget = InputContainer:extend{
     para_direction_rtl = nil,
     auto_para_direction = false,
     alignment_strict = false,
+    highlight_text_selection = false,
 
     -- for internal use
     for_measurement_only = nil, -- When the widget is a one-off used to compute text height
@@ -68,6 +69,7 @@ function ScrollTextWidget:init()
         auto_para_direction = self.auto_para_direction,
         alignment_strict = self.alignment_strict,
         for_measurement_only = self.for_measurement_only,
+        highlight_text_selection = self.highlight_text_selection,
     }
     local visible_line_count = self.text_widget:getVisLineCount()
     local total_line_count = self.text_widget:getAllLineCount()
@@ -192,6 +194,8 @@ end
 function ScrollTextWidget:resetScroll()
     local low, high = self.text_widget:getVisibleHeightRatios()
     self.v_scroll_bar:set(low, high)
+    self.prev_low = nil
+    self.prev_high = nil
 
     local visible_line_count = self.text_widget:getVisLineCount()
     local total_line_count = self.text_widget:getAllLineCount()

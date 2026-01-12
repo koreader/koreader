@@ -5,6 +5,7 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local DocSettings = require("docsettings")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
@@ -17,6 +18,7 @@ local SpinWidget = require("ui/widget/spinwidget")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
@@ -97,6 +99,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
             checked_func = function()
                 return self.ui.paging.bookmark_flipping_mode
             end,
+            check_callback_closes_menu = true,
             callback = function(touchmenu_instance)
                 self.ui.paging:onToggleBookmarkFlipping()
                 touchmenu_instance:closeMenu()
@@ -239,6 +242,46 @@ function ReaderBookmark:addToMainMenu(menu_items)
                         end,
                     },
                 },
+                separator = true,
+            },
+            {
+                text = _("Export annotations on book closing"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("annotations_export_on_closing")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("annotations_export_on_closing")
+                end,
+            },
+            {
+                text = _("Keep all annotations on import"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("annotations_export_keep_all_on_import")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("annotations_export_keep_all_on_import")
+                end,
+            },
+            {
+                text_func = function()
+                    return T(_("Export / import folder: %1"),
+                        G_reader_settings:readSetting("annotations_export_folder") or _("book metadata folder"))
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local title_header = _("Current annotations export folder:")
+                    local default_path = DocSettings:getSidecarDir(self.ui.document.file)
+                    local current_path = G_reader_settings:readSetting("annotations_export_folder") or default_path
+                    local caller_callback = function(path)
+                        if path == default_path then
+                            G_reader_settings:delSetting("annotations_export_folder")
+                        else
+                            G_reader_settings:saveSetting("annotations_export_folder", path)
+                        end
+                        touchmenu_instance:updateItems()
+                    end
+                    filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path)
+                end,
             },
         },
     }
@@ -336,6 +379,7 @@ function ReaderBookmark:toggleBookmark(pageno)
     local index = self:getDogearBookmarkIndex(pn_or_xp)
     if index then
         item = table.remove(self.ui.annotation.annotations, index)
+        index = -index
     else
         local text
         local chapter = self.ui.toc:getTocTitleByPage(pn_or_xp)
@@ -350,9 +394,9 @@ function ReaderBookmark:toggleBookmark(pageno)
             text = text,
             chapter = chapter,
         }
-        self.ui.annotation:addItem(item)
+        index = self.ui.annotation:addItem(item)
     end
-    self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
+    self.ui:handleEvent(Event:new("AnnotationsModified", { item, index_modified = index }))
 end
 
 function ReaderBookmark:setDogearVisibility(pn_or_xp)
@@ -416,9 +460,9 @@ function ReaderBookmark:removeItemByIndex(index)
     local item = self.ui.annotation.annotations[index]
     local item_type = self.getBookmarkType(item)
     if item_type == "highlight" then
-        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = -1 }))
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = -1, index_modified = -index }))
     elseif item_type == "note" then
-        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_notes_added = -1 }))
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_notes_added = -1, index_modified = -index }))
     end
     table.remove(self.ui.annotation.annotations, index)
     self.view.footer:maybeUpdateFooter()
@@ -902,6 +946,16 @@ function ReaderBookmark:onShowBookmark()
             table.insert(buttons, {}) -- separator
             table.insert(buttons, {
                 {
+                    text = _("Export annotations"),
+                    callback = function()
+                        UIManager:close(bm_dialog)
+                        bookmark.ui.annotation:onExportAnnotations()
+                    end,
+                },
+            })
+            table.insert(buttons, {}) -- separator
+            table.insert(buttons, {
+                {
                     text = _("Current page"),
                     callback = function()
                         UIManager:close(bm_dialog)
@@ -1134,6 +1188,36 @@ function ReaderBookmark:showBookmarkDetails(item_or_index)
     local buttons_table = {
         {
             {
+                text = "▕◁",
+                enabled = item_idx > 1,
+                callback = function()
+                    _showBookmarkDetails(1)
+                end,
+            },
+            {
+                text = "◁",
+                enabled = item_idx > 1,
+                callback = function()
+                    _showBookmarkDetails(item_idx - 1)
+                end,
+            },
+            {
+                text = "▷",
+                enabled = item_idx < items_nb,
+                callback = function()
+                    _showBookmarkDetails(item_idx + 1)
+                end,
+            },
+            {
+                text = "▷▏",
+                enabled = item_idx < items_nb,
+                callback = function()
+                    _showBookmarkDetails(items_nb)
+                end,
+            },
+        },
+        {
+            {
                 text = _("Reset text"),
                 enabled = item.text_edited and not_select_mode or false,
                 callback = function()
@@ -1177,12 +1261,6 @@ function ReaderBookmark:showBookmarkDetails(item_or_index)
         },
         {
             {
-                text = _("Close"),
-                callback = function()
-                    textviewer:onClose()
-                end,
-            },
-            {
                 text = _("Go to bookmark"),
                 enabled = not (bm_menu and bm_menu.select_count),
                 callback = function()
@@ -1192,34 +1270,10 @@ function ReaderBookmark:showBookmarkDetails(item_or_index)
                     end
                 end,
             },
-        },
-        {
             {
-                text = "▕◁",
-                enabled = item_idx > 1,
+                text = _("Close"),
                 callback = function()
-                    _showBookmarkDetails(1)
-                end,
-            },
-            {
-                text = "◁",
-                enabled = item_idx > 1,
-                callback = function()
-                    _showBookmarkDetails(item_idx - 1)
-                end,
-            },
-            {
-                text = "▷",
-                enabled = item_idx < items_nb,
-                callback = function()
-                    _showBookmarkDetails(item_idx + 1)
-                end,
-            },
-            {
-                text = "▷▏",
-                enabled = item_idx < items_nb,
-                callback = function()
-                    _showBookmarkDetails(items_nb)
+                    textviewer:onClose()
                 end,
             },
         },

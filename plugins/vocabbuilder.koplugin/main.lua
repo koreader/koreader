@@ -384,7 +384,7 @@ function MenuDialog:setupBookMenu(sort_item, onSuccess)
                     item.callback()
                 end
             end
-            self.show_parent:goToPage(self.show_parent.show_page)
+            self.show_parent:onGoToPage(self.show_parent.show_page)
         end
     }
     local select_all_button = {
@@ -396,7 +396,7 @@ function MenuDialog:setupBookMenu(sort_item, onSuccess)
                     item.callback()
                 end
             end
-            self.show_parent:goToPage(self.show_parent.show_page)
+            self.show_parent:onGoToPage(self.show_parent.show_page)
         end
     }
     local select_page_all_button = {
@@ -408,7 +408,7 @@ function MenuDialog:setupBookMenu(sort_item, onSuccess)
                     content.item.callback()
                 end
             end
-            self.show_parent:goToPage(self.show_parent.show_page)
+            self.show_parent:onGoToPage(self.show_parent.show_page)
         end
     }
     local deselect_page_all_button = {
@@ -420,7 +420,7 @@ function MenuDialog:setupBookMenu(sort_item, onSuccess)
                     content.item.callback()
                 end
             end
-            self.show_parent:goToPage(self.show_parent.show_page)
+            self.show_parent:onGoToPage(self.show_parent.show_page)
         end
     }
     local buttons = ButtonTable:new{
@@ -503,6 +503,7 @@ end
 Individual word info dialogue widget
 --]]--
 local WordInfoDialog = FocusManager:extend{
+    word = nil,
     title = nil,
     highlighted_word = nil,
     book_title = nil,
@@ -599,7 +600,7 @@ function WordInfoDialog:init()
     local copy_button = Button:new{
         text = "", -- copy in nerdfont,
         callback = function()
-            Device.input.setClipboardText(self.title)
+            Device.input.setClipboardText(self.word)
             UIManager:show(Notification:new{
                 text = _("Word copied to clipboard."),
             })
@@ -626,9 +627,7 @@ function WordInfoDialog:init()
         show_parent = self
     }
 
-    if not self.update_callback then
-        table.insert(self.layout, {copy_button})
-    end
+    table.insert(self.layout, {copy_button})
     table.insert(self.layout, {self.book_title_button})
     self:mergeLayoutInVertical(focus_button)
 
@@ -656,7 +655,7 @@ function WordInfoDialog:init()
                                     alignment = self.title_align or "left",
                                 },
                                 HorizontalSpan:new{ width=Size.padding.default },
-                                not self.update_callback and copy_button or nil,
+                                copy_button,
                             },
                             self.book_title_button,
                             VerticalSpan:new{width= Size.padding.default},
@@ -1220,7 +1219,7 @@ function VocabItemWidget:onShowBookAssignment(title_changed_cb)
                                             self.show_parent:showChangeBookTitleDialog(sort_item, onSuccess)
                                         end
                                     })
-                                    sort_widget:goToPage(sort_widget.show_page)
+                                    sort_widget:onGoToPage(sort_widget.show_page)
                                 else
                                     UIManager:show(require("ui/widget/notification"):new{
                                         text = _("Book title already in use."),
@@ -2054,19 +2053,35 @@ function VocabBuilder:onDictButtonsReady(dict_popup, buttons)
     if dict_popup.is_wiki_fullpage then
         return
     end
+    local is_adding = true
     table.insert(buttons, 1, {{
         id = "vocabulary",
         text = _("Add to vocabulary builder"),
         font_bold = false,
         callback = function()
-            local book_title = (dict_popup.ui.doc_props and dict_popup.ui.doc_props.display_title) or _("Dictionary lookup")
-            dict_popup.ui:handleEvent(Event:new("WordLookedUp", dict_popup.lookupword, book_title, true)) -- is_manual: true
             local button = dict_popup.button_table.button_by_id["vocabulary"]
-            if button then
-                button:disable()
+            if not button then return end
+            if is_adding then
+                is_adding = false
+                local book_title = (dict_popup.ui.doc_props and dict_popup.ui.doc_props.display_title) or _("Dictionary lookup")
+                dict_popup.ui:handleEvent(Event:new("WordLookedUp", dict_popup.lookupword, book_title, true)) -- is_manual: true
+                button:setText(_("Remove from vocabulary builder"), button.width)
                 UIManager:setDirty(dict_popup, function()
                     return "ui", button.dimen
                 end)
+            else
+                UIManager:show(ConfirmBox:new{
+                    text = T(_("Remove word \"%1\" from vocabulary builder?"), dict_popup.lookupword),
+                    ok_text = _("Remove"),
+                    ok_callback = function()
+                        is_adding = true
+                        DB:remove({word = dict_popup.lookupword})
+                        button:setText(_("Add to vocabulary builder"), button.width)
+                        UIManager:setDirty(dict_popup, function()
+                            return "ui", button.dimen
+                        end)
+                    end
+                })
             end
         end
     }})
@@ -2115,6 +2130,7 @@ function VocabBuilder:onWordLookedUp(word, title, is_manual)
         local time_str = T(_("Review scheduled at %1"), os.date("%Y-%m-%d %H:%M", item.due_time))
         local dialog = WordInfoDialog:new{
             title = _("Vocabulary exists:") .. " " .. word,
+            word = word,
             highlighted_word = item.highlight or word,
             book_title = item.book_title,
             dates = date_str .. " | " .. time_str,

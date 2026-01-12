@@ -1,5 +1,7 @@
 local socket = require("socket")
 local logger = require("logger")
+local _ = require("gettext")
+local T = require("ffi/util").template
 
 -- Reference:
 -- https://lunarmodules.github.io/luasocket/tcp.html
@@ -23,9 +25,14 @@ function SimpleTCPServer:new(o)
 end
 
 function SimpleTCPServer:start()
-    self.server = socket.bind(self.host, self.port)
+    local server, err = socket.bind(self.host, self.port)
+    if not server then
+        return false, (err and T(_("Failed to bind socket: %1"), err) or _("Failed to bind socket"))
+    end
+    self.server = server
     self.server:settimeout(0.01) -- set timeout (10ms)
     logger.dbg("SimpleTCPServer: Server listening on port " .. self.port)
+    return true
 end
 
 function SimpleTCPServer:stop()
@@ -50,7 +57,7 @@ function SimpleTCPServer:waitEvent()
                 logger.dbg("SimpleTCPServer: Received data: ", data)
                 -- Give us more time to process the request and send the response
                 client:settimeout(0.5, "t")
-                self.receiveCallback(data, client)
+                return self.receiveCallback(data, client)
                     -- This should call SimpleTCPServer:send() to send
                     -- the response and close this connection.
             else

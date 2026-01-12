@@ -716,7 +716,7 @@ end
 
 --- Computes the currently available memory
 ---- @treturn tuple of ints: memavailable, memtotal (or nil, nil on unsupported platforms).
-function util:calcFreeMem()
+function util.calcFreeMem()
     local memtotal, memfree, memavailable, buffers, cached
 
     local meminfo = io.open("/proc/meminfo", "r")
@@ -783,12 +783,16 @@ end
 --- Recursively scan directory for files inside
 -- @string path
 -- @func callback(fullpath, name, attr)
-function util.findFiles(dir, cb, recursive)
+-- @bool recursive
+-- @int max_files (maximum number of files to find)
+function util.findFiles(dir, cb, recursive, max_files)
     recursive = recursive ~= false
+    local count = 0
     local function scan(current)
         local ok, iter, dir_obj = pcall(lfs.dir, current)
         if not ok then return end
         for f in iter, dir_obj do
+            if max_files and count >= max_files then return end
             local path = current.."/"..f
             -- lfs can return nil here, as it will follow symlinks!
             local attr = lfs.attributes(path) or {}
@@ -798,6 +802,7 @@ function util.findFiles(dir, cb, recursive)
                 end
             elseif attr.mode == "file" or attr.mode == "link" then
                 cb(path, f, attr)
+                count = count + 1
             end
         end
     end
@@ -920,7 +925,7 @@ end
 function util.diskUsage(dir)
     -- safe way of testing df & awk
     local function doCommand(d)
-        local handle = io.popen("df -k " .. d .. " 2>/dev/null | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }' 2>/dev/null || echo ::ERROR::")
+        local handle = io.popen("df -kP " .. util.shell_escape({d}) .. " 2>/dev/null | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }' 2>/dev/null || echo ::ERROR::")
         if not handle then return end
         local output = handle:read("*all")
         handle:close()
@@ -948,14 +953,17 @@ end
 
 --- Replaces characters that are invalid filenames.
 --
--- Replaces the characters <code>\/:*?"<>|</code> with an <code>_</code>.
+-- Replaces the characters <code>\/:*?"<>|</code> with an <code>_</code>
+-- and removes trailing dots and spaces, in line with <https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions>.
 -- These characters are problematic on Windows filesystems. On Linux only
 -- <code>/</code> poses a problem.
 ---- @string str filename
 ---- @treturn string sanitized filename
-local function replaceAllInvalidChars(str)
+function util.replaceAllInvalidChars(str)
     if str then
-        return str:gsub('[\\,%/,:,%*,%?,%",%<,%>,%|]','_')
+        str = str:gsub('[\\/:*?"<>|]', '_')
+        str = str:gsub("[.%s]+$", "")
+        return str
     end
 end
 
@@ -981,7 +989,7 @@ If an optional path is provided, @{util.getFilesystemType}() will be used to det
 ---- @treturn string safe filename
 function util.getSafeFilename(str, path, limit, limit_ext)
     local filename, suffix = util.splitFileNameSuffix(str)
-    local replaceFunc = replaceAllInvalidChars
+    local replaceFunc = util.replaceAllInvalidChars
     local safe_filename
     -- VFAT supports a maximum of 255 UCS-2 characters, although it's probably treated as UTF-16 by Windows
     -- default to a slightly lower limit just in case
@@ -1003,6 +1011,7 @@ function util.getSafeFilename(str, path, limit, limit_ext)
         suffix = nil
     end
 
+    filename = filename:gsub("\r?\n", " "):gsub("\t", " ")
     filename = util.htmlToPlainTextIfHtml(filename)
     filename = filename:sub(1, limit)
     -- the limit might result in broken UTF-8, which we don't want in the result

@@ -1,3 +1,5 @@
+local CacheSQLite = require("cachesqlite")
+local DataStorage = require("datastorage")
 local Version = require("version")
 local ffiutil = require("ffi/util")
 local http = require("socket.http")
@@ -7,8 +9,22 @@ local ltn12 = require("ltn12")
 local socket = require("socket")
 local socket_url = require("socket.url")
 local socketutil = require("socketutil")
+local time = require("ui/time")
 local _ = require("gettext")
 local T = ffiutil.template
+
+local function removeSubstring(str, substr)
+    local iter = 1
+    local i, j
+    repeat
+        i, j = string.find(str, substr, iter, true)
+        if i then
+            str = string.sub(str, 1, i-1) .. string.sub(str, j+1, -1)
+            iter = i
+        end
+    until not i
+    return str
+end
 
 local EpubDownloadBackend = {
    -- Can be set so HTTP requests will be done under Trapper and
@@ -19,14 +35,31 @@ local EpubDownloadBackend = {
    -- accessible here so that caller can know it's a user dismiss.
    dismissed_error_code = "Interrupted by user",
 }
-local max_redirects = 5; --prevent infinite redirects
 
--- filter HTML using CSS selector
-local function filter(text, element)
-    local htmlparser = require("htmlparser")
-    local root = htmlparser.parse(text, 5000)
-    local filtered = nil
-    local selectors = {
+local FeedCache = CacheSQLite:new{
+    slots = 500,
+    db_path = DataStorage:getDataDir() .. "/cache/newsdownloader.sqlite",
+    size = 1024 * 1024 * 10, -- 10MB
+}
+
+---Returns user specified or default options.
+---@param user table
+---@param default table
+---@return table
+local function userOrDefault(user, default)
+    if type(user) == "table" and next(user) == nil then
+        return default
+    else
+        return user
+    end
+end
+
+---Selects the first matching node from the root node.
+---@param root_node ElementNode
+---@param user_wanted_selectors table
+---@return ElementNode
+local function selectMatchingNode(root_node, user_wanted_selectors)
+    local default_wanted_selectors = {
         "main",
         "article",
         "div#main",
@@ -45,34 +78,66 @@ local function filter(text, element)
         "div#article-inner",
         "div#newsstorytext",
         "div.general",
-        }
-    if type(element) == "string" and element ~= "" then
-        table.insert(selectors, 1, element)  -- Insert string at the beginning
-    elseif type(element) == "table" then
-        for _, el in ipairs(element) do
-            if type(el) == "string" and el ~= "" then
-                table.insert(selectors, 1, el)  -- Insert each non-empty element at the beginning
+    }
+    local wanted_selectors = userOrDefault(user_wanted_selectors, default_wanted_selectors)
+    logger.dbg("Selecting first matching", wanted_selectors)
+    for _, selector in ipairs(wanted_selectors) do
+        local nodes = root_node:select(selector)
+        if nodes then
+            for _, node in ipairs(nodes) do
+                if node:getcontent() then
+                    logger.dbg("found by selector", selector)
+                    return node
+                end
             end
         end
     end
-    for _, sel in ipairs(selectors) do
-       local elements = root:select(sel)
-       if elements then
-           for _, e in ipairs(elements) do
-               filtered = e:getcontent()
-               if filtered then
-                   break
-               end
-           end
-           if filtered then
-               break
-           end
-       end
+
+    return root_node
+end
+
+---Removes unwanted nodes from previously selected node.
+---@param wanted_node ElementNode
+---@param user_unwanted_selectors table
+---@return string
+local function removeUnwantedNodes(wanted_node, user_unwanted_selectors)
+    local default_unwanted_selectors = {
+        "div.article__social",
+        "figure.is-type-video",
+        "div.fluid-width-video-wrapper",
+        "div.youtube-wrap",
+    }
+    local unwanted_selectors = userOrDefault(user_unwanted_selectors, default_unwanted_selectors)
+    logger.dbg("removing by selectors:", unwanted_selectors)
+    local node_content = wanted_node:getcontent()
+    for _, unwanted_selector in ipairs(unwanted_selectors) do
+        local unwanted_nodes = wanted_node:select(unwanted_selector)
+        if unwanted_nodes then
+            for _,unwanted_node in ipairs(unwanted_nodes) do
+                logger.dbg("removing", unwanted_selector)
+                local unwanted_text = unwanted_node:gettext()
+                node_content = removeSubstring(node_content, unwanted_text)
+            end
+        end
     end
-    if not filtered then
-        return text
-    end
-    return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
+    return node_content
+end
+
+---Reduces the HTML to declutter the output. It uses wanted_elements and
+---unwanted_elements to "select" and "cut" parts of the HTML.
+---@param input_html string
+---@param user_wanted_elements table
+---@param user_unwanted_elements table
+---@return string
+local function reduceHTML(input_html, user_wanted_elements, user_unwanted_elements)
+    local htmlparser = require("htmlparser")
+    local root = htmlparser.parse(input_html, 5000)
+
+    local wanted_node = selectMatchingNode(root, user_wanted_elements)
+    local cleaned_inner_html = removeUnwantedNodes(wanted_node, user_unwanted_elements)
+    local output_html = "<!DOCTYPE html><html><head></head><body>" .. cleaned_inner_html .. "</body></html>"
+
+    return output_html
 end
 
 -- From https://github.com/lunarmodules/luasocket/blob/1fad1626900a128be724cba9e9c19a6b2fe2bf6b/samples/cookie.lua
@@ -148,40 +213,39 @@ local function build_cookies(cookies)
     return s
 end
 
--- Get URL content
-local function getUrlContent(url, cookies, timeout, maxtime, redirectCount)
-    logger.dbg("getUrlContent(", url, ",", cookies, ", ", timeout, ",", maxtime, ",", redirectCount, ")")
-    if not redirectCount then
-        redirectCount = 0
-    elseif redirectCount == max_redirects then
-        error("EpubDownloadBackend: reached max redirects: ", redirectCount)
-    end
+local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra_headers)
+    logger.dbg("getUrlContent(", url, ",", cookies, ", ", timeout, ",", maxtime, ",", add_to_cache, ")")
 
     if not timeout then timeout = 10 end
     logger.dbg("timeout:", timeout)
 
     local sink = {}
-    local parsed = socket_url.parse(url)
     socketutil:set_timeout(timeout, maxtime or 30)
     local request = {
         url     = url,
         method  = "GET",
         sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
-        headers = {
-            ["cookie"] = build_cookies(cookies)
-        }
+        headers = (function()
+            local h = { ["cookie"] = build_cookies(cookies) }
+            if extra_headers then
+                for k, v in pairs(extra_headers) do
+                    h[k] = v
+                end
+            end
+            return h
+        end)()
     }
     logger.dbg("request:", request)
     local code, headers, status = socket.skip(1, http.request(request))
 
     socketutil:reset_timeout()
     local content = table.concat(sink) -- empty or content accumulated till now
-    logger.dbg("After http.request")
-    logger.dbg("type(code):", type(code))
-    logger.dbg("code:", code)
-    logger.dbg("headers:", headers)
-    logger.dbg("status:", status)
-    logger.dbg("#content:", #content)
+    logger.dbg(
+        "getUrlContent: after http.request",
+        "type(code):", type(code), "code:", code, "headers:", headers,
+        "status:", status,
+        "#content:", #content
+    )
 
     if code == socketutil.TIMEOUT_CODE or
        code == socketutil.SSL_HANDSHAKE_CODE or
@@ -190,26 +254,13 @@ local function getUrlContent(url, cookies, timeout, maxtime, redirectCount)
         logger.warn("request interrupted:", status or code)
         return false, code
     end
+    if code >= 400 and code < 500 then
+        logger.warn("HTTP error:", status or code)
+        return false, status or code
+    end
     if headers == nil then
         logger.warn("No HTTP headers:", status or code or "network unreachable")
         return false, "Network or remote server unavailable"
-    end
-    if not code or code < 200 or code > 299 then -- all 200..299 HTTP codes are OK
-        if code and code > 299 and code < 400  and headers and headers.location then -- handle 301, 302...
-           local redirected_url = headers.location
-           local parsed_redirect_location = socket_url.parse(redirected_url)
-           if not parsed_redirect_location.host then
-             parsed_redirect_location.host = parsed.host
-             parsed_redirect_location.scheme = parsed.scheme
-             redirected_url = socket_url.build(parsed_redirect_location)
-           end
-           logger.dbg("getUrlContent: Redirecting to url: ", redirected_url)
-           return getUrlContent(redirected_url, timeout, maxtime, redirectCount + 1)
-        else
-           error("EpubDownloadBackend: Don't know how to handle HTTP response status:", status or code)
-        end
-        logger.warn("HTTP status not okay:", status or code)
-        return false, "Remote server error or unavailable"
     end
     if headers and headers["content-length"] then
         -- Check we really got the announced content size
@@ -218,8 +269,21 @@ local function getUrlContent(url, cookies, timeout, maxtime, redirectCount)
             return false, "Incomplete content received"
         end
     end
+
+    if add_to_cache then
+        logger.dbg("Adding to cache", url)
+        FeedCache:insert(url, {
+            headers = headers,
+            content = content,
+        })
+    end
+
     logger.dbg("Returning content ok")
     return true, content
+end
+
+function EpubDownloadBackend:getCache()
+    return FeedCache
 end
 
 function EpubDownloadBackend:getConnectionCookies(url, credentials)
@@ -241,21 +305,24 @@ function EpubDownloadBackend:getConnectionCookies(url, credentials)
     logger.dbg("request:", request, ", body: ", body)
     local code, headers, status = socket.skip(1, http.request(request))
 
-    logger.dbg("code:", code)
-    logger.dbg("headers:", headers)
-    logger.dbg("status:", status)
+    logger.dbg(
+        "getConnectionCookies: after http.request",
+        "code:", code,
+        "headers:", headers,
+        "status:", status
+    )
 
     local cookies = {}
     local to_parse = headers["set-cookie"]
     split_set_cookie(to_parse, cookies)
-    logger.dbg("Cookies: ", cookies)
+    logger.dbg("getConnectionCookies: cookies:", cookies)
 
     return cookies
 end
 
-function EpubDownloadBackend:getResponseAsString(url, cookies)
+function EpubDownloadBackend:getResponseAsString(url, cookies, add_to_cache, extra_headers)
     logger.dbg("EpubDownloadBackend:getResponseAsString(", url, ")")
-    local success, content = getUrlContent(url, cookies)
+    local success, content = getUrlContent(url, cookies, nil, nil, add_to_cache, extra_headers)
     if (success) then
         return content
     else
@@ -271,23 +338,23 @@ function EpubDownloadBackend:resetTrapWidget()
     self.trap_widget = nil
 end
 
-function EpubDownloadBackend:loadPage(url, cookies)
+function EpubDownloadBackend:loadPage(url, cookies, extra_headers)
     local completed, success, content
     if self.trap_widget then -- if previously set with EpubDownloadBackend:setTrapWidget()
         local Trapper = require("ui/trapper")
         local timeout, maxtime = 30, 60
         -- We use dismissableRunInSubprocess with complex return values:
         completed, success, content = Trapper:dismissableRunInSubprocess(function()
-            return getUrlContent(url, cookies, timeout, maxtime)
+            return getUrlContent(url, cookies, timeout, maxtime, nil, extra_headers)
         end, self.trap_widget)
         if not completed then
             error(self.dismissed_error_code) -- "Interrupted by user"
         end
     else
         local timeout, maxtime = 10, 60
-        success, content = getUrlContent(url, cookies, timeout, maxtime)
+        success, content = getUrlContent(url, cookies, timeout, maxtime, nil, extra_headers)
     end
-    logger.dbg("success:", success, "type(content):", type(content), "content:", content:sub(1, 500), "...")
+    logger.dbg("success:", success, "type(content):", type(content), "content:", type(content) == "string" and content:sub(1, 500), "...")
     if not success then
         error(content)
     else
@@ -311,7 +378,7 @@ local ext_to_mimetype = {
     woff = "application/font-woff",
 }
 -- Create an epub file (with possibly images)
-function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element)
+function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element, block_element)
     logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ")")
     -- Use Trapper to display progress and ask questions through the UI.
     -- We need to have been Trapper.wrap()'ed for UI to be used, otherwise
@@ -321,14 +388,19 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     local base_url = socket_url.parse(url)
 
     local cancelled = false
-    local page_htmltitle = html:match([[<title>(.*)</title>]])
+    local page_htmltitle = html:match([[<title[^>]*>(.-)</title>]])
     logger.dbg("page_htmltitle is ", page_htmltitle)
+
+    -- Rejigger HTML into XHTML to avoid unclosed elements. See <https://github.com/koreader/crengine/pull/370#issuecomment-910156921>.
+    local cre = require("libs/libkoreader-cre")
+    html = cre.getBalancedHTML(html, 0x0)
+
 --    local sections = html.sections -- Wikipedia provided TOC
     local bookid = "bookid_placeholder" --string.format("wikipedia_%s_%s_%s", lang, phtml.pageid, phtml.revid)
     -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
     -- should it changes if content is updated (as now, including the wikipedia revisionId),
     -- or should it stays the same even if revid changes (content of the same book updated).
-    if filter_enable then html = filter(html, filter_element) end
+    if filter_enable then html = reduceHTML(html, filter_element, block_element) end
     local images = {}
     local seen_images = {}
     local imagenum = 1
@@ -337,6 +409,10 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
         local src = img_tag:match([[src="([^"]*)"]])
         if src == nil or src == "" then
             logger.dbg("no src found in ", img_tag)
+            return nil
+        end
+        if src:sub(1,5) == "data:" then
+            logger.dbg("skipping data URI", src)
             return nil
         end
         if src:sub(1,2) == "//" then
@@ -353,14 +429,13 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 src_ext = src_ext:match("(.-)%?") -- remove ?blah
             end
             local ext = src_ext:match(".*%.(%S%S%S?%S?%S?)$") -- extensions are only 2 to 5 chars
-            if ext == nil or ext == "" then
-                -- we won't know what mimetype to use, ignore it
-                logger.dbg("no file extension found in ", src)
-                return nil
+            if ext == nil then
+                --- @todo Reverse the logic to download the image first so we can get the mimetype from the headers?
+                ext = ""
             end
             ext = ext:lower()
             local imgid = string.format("img%05d", imagenum)
-            local imgpath = string.format("images/%s.%s", imgid, ext)
+            local imgpath = ext ~= "" and string.format("images/%s.%s", imgid, ext) or string.format("images/%s", imgid)
             local mimetype = ext_to_mimetype[ext] or ""
             local width = tonumber(img_tag:match([[width="([^"]*)"]]))
             local height = tonumber(img_tag:match([[height="([^"]*)"]]))
@@ -429,29 +504,32 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     -- Open the zip file (with .tmp for now, as crengine may still
     -- have a handle to the final epub_path, and we don't want to
     -- delete a good one if we fail/cancel later)
+    local Archiver = require("ffi/archiver")
+    local epub = Archiver.Writer:new{}
     local epub_path_tmp = epub_path .. ".tmp"
-    local ZipWriter = require("ffi/zipwriter")
-    local epub = ZipWriter:new{}
-    if not epub:open(epub_path_tmp) then
+    if not epub:open(epub_path_tmp, "epub") then
         logger.dbg("Failed to open epub_path_tmp")
         return false
     end
 
     -- We now create and add all the required epub files
+    local mtime = os.time()
 
     -- ----------------------------------------------------------------
     -- /mimetype : always "application/epub+zip"
-    epub:add("mimetype", "application/epub+zip")
+    epub:setZipCompression("store")
+    epub:addFileFromMemory("mimetype", "application/epub+zip", mtime)
+    epub:setZipCompression("deflate")
 
     -- ----------------------------------------------------------------
     -- /META-INF/container.xml : always the same content
-    epub:add("META-INF/container.xml", [[
+    epub:addFileFromMemory("META-INF/container.xml", [[
 <?xml version="1.0"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
   <rootfiles>
     <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
   </rootfiles>
-</container>]])
+</container>]], mtime)
     logger.dbg("Added META-INF/container.xml")
 
     -- ----------------------------------------------------------------
@@ -504,7 +582,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
   </spine>
 </package>
 ]])
-    epub:add("OEBPS/content.opf", table.concat(content_opf_parts))
+    epub:addFileFromMemory("OEBPS/content.opf", table.concat(content_opf_parts), mtime)
     logger.dbg("Added OEBPS/content.opf")
 
     -- ----------------------------------------------------------------
@@ -512,9 +590,9 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     --- @todo We told it we'd include a stylesheet.css, so it's probably best
     -- that we do. In theory, we could try to fetch any *.css files linked in
     -- the main html.
-    epub:add("OEBPS/stylesheet.css", [[
+    epub:addFileFromMemory("OEBPS/stylesheet.css", [[
 /* Empty */
-]])
+]], mtime)
     logger.dbg("Added OEBPS/stylesheet.css")
 
     -- ----------------------------------------------------------------
@@ -554,12 +632,12 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
   </navMap>
 </ncx>
 ]])
-    epub:add("OEBPS/toc.ncx", table.concat(toc_ncx_parts))
+    epub:addFileFromMemory("OEBPS/toc.ncx", table.concat(toc_ncx_parts), mtime)
     logger.dbg("Added OEBPS/toc.ncx")
 
     -- ----------------------------------------------------------------
     -- OEBPS/content.html
-    epub:add("OEBPS/content.html", html)
+    epub:addFileFromMemory("OEBPS/content.html", html, mtime)
     logger.dbg("Added OEBPS/content.html")
 
     -- Force a GC to free the memory we used till now (the second call may
@@ -571,27 +649,34 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     -- OEBPS/images/*
     if include_images then
         local nb_images = #images
+        local before_images_time = time.now()
+        local time_prev = before_images_time
         for inum, img in ipairs(images) do
-            -- Process can be interrupted at this point between each image download
+            -- Process can be interrupted every second between image downloads
             -- by tapping while the InfoMessage is displayed
             -- We use the fast_refresh option from image #2 for a quicker download
-            local go_on = UI:info(T(_("%1\n\nRetrieving image %2 / %3 …"), message, inum, nb_images), inum >= 2)
-            if not go_on then
-                logger.dbg("cancelled")
-                cancelled = true
-                break
+            local go_on
+            if time.to_ms(time.since(time_prev)) > 1000 then
+                time_prev = time.now()
+                go_on = UI:info((message and message ~= "" and message .. "\n\n" or "") .. T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2)
+                if not go_on then
+                    cancelled = true
+                    break
+                end
+            else
+                UI:info((message and message ~= "" and message .. "\n\n" or "") .. T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2, true)
             end
             local src = img.src
             if use_img_2x and img.src2x then
                 src = img.src2x
             end
             logger.dbg("Getting img ", src)
-            local success, content = getUrlContent(src, nil)
+            local success, content = getUrlContent(src)
             -- success, content = getUrlContent(src..".unexistant") -- to simulate failure
             if success then
                 logger.dbg("success, size:", #content)
             else
-                logger.dbg("failed fetching:", src)
+                logger.info("failed fetching:", src)
             end
             if success then
                 -- Images do not need to be compressed, so spare some cpu cycles
@@ -599,8 +684,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 if img.mimetype == "image/svg+xml" then -- except for SVG images (which are XML text)
                     no_compression = false
                 end
-                epub:add("OEBPS/"..img.imgpath, content, no_compression)
-                logger.dbg("Adding OEBPS/"..img.imgpath)
+                epub:addFileFromMemory("OEBPS/"..img.imgpath, content, no_compression, mtime)
             else
                 go_on = UI:confirm(T(_("Downloading image %1 failed. Continue anyway?"), inum), _("Stop"), _("Continue"))
                 if not go_on then
@@ -609,6 +693,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 end
             end
         end
+        logger.dbg("Image download time for:", page_htmltitle, time.to_ms(time.since(before_images_time)), "ms")
     end
 
     -- Done with adding files

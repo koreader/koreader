@@ -55,15 +55,14 @@ describe("EPUB document module", function()
 
     local doc
     it("should open document", function()
-        local sample_epub = "spec/front/unit/data/leaves.epub"
-        doc = DocumentRegistry:openDocument(sample_epub)
+        doc = DocumentRegistry:openDocument("spec/front/unit/data/juliet.epub")
         assert.truthy(doc)
     end)
     it("should get cover image", function()
         local image = doc:getCoverPageImage()
         assert.truthy(image)
-        assert.are.same(image:getWidth(), 442)
-        assert.are.same(image:getHeight(), 616)
+        assert.are.same(520, image:getWidth())
+        assert.are.same(800, image:getHeight())
     end)
     it("should register droid sans fallback", function()
         local face_list = cre.getFontFaces()

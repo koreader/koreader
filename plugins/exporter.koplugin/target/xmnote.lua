@@ -1,17 +1,18 @@
-local InputDialog = require("ui/widget/inputdialog")
-local UIManager = require("ui/uimanager")
-local InfoMessage = require("ui/widget/infomessage")
 local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
-local http = require("socket.http")
-local json = require("json")
+local DocSettings = require("docsettings")
+local InputDialog = require("ui/widget/inputdialog")
+local InfoMessage = require("ui/widget/infomessage")
+local SQ3 = require("lua-ljsqlite3/init")
+local UIManager = require("ui/uimanager")
+local datetime = require("datetime")
+local ffiUtil = require("ffi/util")
 local logger = require("logger")
-local ltn12 = require("ltn12")
-local socket = require("socket")
-local socketutil = require("socketutil")
-local util = require("ffi/util")
-local T = util.template
+local util = require("util")
 local _ = require("gettext")
+local T = ffiUtil.template
+
+local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
 
 -- xmnote exporter
 local XMNoteExporter = require("base"):new {
@@ -76,14 +77,78 @@ function XMNoteExporter:getMenuTable()
     }
 end
 
+function XMNoteExporter:getBookReadingDurationsByDay(title, md5)
+    if util.fileExists(db_location) then
+        local conn = SQ3.open(db_location)
+        local sql_query_book_id = [[SELECT id FROM book WHERE title = "%s" and md5 = "%s" LIMIT 1]]
+        local sql_query_durations = [[
+            SELECT date(start_time, 'unixepoch', 'localtime') AS date,
+                   max(page)                                  AS last_page,
+                   sum(duration)                              AS total_duration,
+                   min(start_time)                            AS first_start_time
+            FROM   page_stat
+            WHERE  id_book = %d
+            GROUP  BY Date(start_time, 'unixepoch', 'localtime')
+            ORDER  BY date DESC;
+        ]]
+
+        local result_book_id = conn:exec(string.format(sql_query_book_id, title, md5))
+        if not (result_book_id and result_book_id[1] and result_book_id[1][1]) then
+            return {}
+        end
+        local book_id = tonumber(result_book_id[1][1])
+
+        local result_durations = conn:exec(string.format(sql_query_durations, book_id))
+        conn:close()
+
+        if not result_durations then
+            return {}
+        end
+
+        local durations = {}
+        for i = 1, #result_durations.date do
+            local entry = {
+                date = tonumber(result_durations[4][i]) * 1000,
+                durationSeconds = tonumber(result_durations[3][i]),
+                position = tonumber(result_durations[2][i]),
+            }
+            table.insert(durations, entry)
+        end
+        return durations
+    else
+        return {}
+    end
+end
+
 function XMNoteExporter:createRequestBody(booknotes)
+    local doc_settings = DocSettings:open(booknotes.file)
+    local summary = doc_settings:readSetting("summary") or {}
+    local md5 = doc_settings:readSetting("partial_md5_checksum")
+
+    local reading_status_map = {
+        reading = 2,
+        complete = 3,
+        abandoned = 5,
+    }
+
+    local reading_status_changed_date
+    if summary.modified and summary.modified ~= "" then
+        reading_status_changed_date = datetime.stringToSeconds(summary.modified)
+    else
+        reading_status_changed_date = 0
+    end
+
     local book = {
         title = booknotes.title or "",
         author = booknotes.author or "",
         type = 1,
         locationUnit = 1,
+        readingStatus = reading_status_map[summary.status] or reading_status_map.reading,
+        readingStatusChangedDate = reading_status_changed_date,
+        source = "KOReader"
     }
     local entries = {}
+
     for _, chapter in ipairs(booknotes) do
         for _, clipping in ipairs(chapter) do
             local entry = {
@@ -100,47 +165,15 @@ function XMNoteExporter:createRequestBody(booknotes)
         end
     end
     book.entries = entries
+    book.fuzzyReadingDurations = self:getBookReadingDurationsByDay(book.title, md5)
     return book
-end
-
-function XMNoteExporter:makeRequest(endpoint, method, request_body)
-    local sink = {}
-    local request_body_json = json.encode(request_body)
-    local source = ltn12.source.string(request_body_json)
-    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
-    local url = "http://".. self.settings.ip .. ":" .. self.server_port .. endpoint
-    local request = {
-        url     = url,
-        method  = method,
-        sink    = ltn12.sink.table(sink),
-        source  = source,
-        headers = {
-            ["Content-Length"] = #request_body_json,
-            ["Content-Type"] = "application/json"
-        },
-    }
-    local code, headers, status = socket.skip(1, http.request(request))
-    socketutil:reset_timeout()
-
-    if code ~= 200 then
-        logger.warn("XMNoteClient: HTTP response code <> 200. Response status: ", status)
-        logger.dbg("Response headers:", headers)
-        return nil, status
-    end
-
-    local response = json.decode(sink[1])
-    local api_code = response["code"]
-    if api_code ~= nil and api_code ~= 200 then
-        logger.warn("XMNoteClient: response code <> 200. message: ", response["message"])
-        logger.dbg("Response headers:", headers)
-        return nil, status
-    end
-    return response
 end
 
 function XMNoteExporter:createHighlights(booknotes)
     local body = self:createRequestBody(booknotes)
-    local result, err = self:makeRequest("/send", "POST", body)
+    local url = "http://".. self.settings.ip .. ":" .. self.server_port .. "/send"
+
+    local result, err = self:makeJsonRequest(url, "POST", body)
     if not result then
         logger.warn("error creating highlights", err)
         return false
@@ -149,7 +182,6 @@ function XMNoteExporter:createHighlights(booknotes)
     logger.dbg("createHighlights result", result)
     return true
 end
-
 
 function XMNoteExporter:isReadyToExport()
     if self.settings.ip then return true end
@@ -160,11 +192,12 @@ function XMNoteExporter:export(t)
     if not self:isReadyToExport() then return false end
 
     for _, booknotes in ipairs(t) do
-        local ok = self:createHighlights(booknotes)
-        if not ok then return false end
+        if booknotes.file then
+            local ok = self:createHighlights(booknotes)
+            if not ok then return false end
+        end
     end
     return true
 end
 
 return XMNoteExporter
-

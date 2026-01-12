@@ -24,8 +24,9 @@ local T = require("ffi/util").template
 -- Default globally enabled style tweaks, for new installations
 local DEFAULT_GLOBAL_STYLE_TWEAKS = {}
 -- Display in-page per-specs footnotes for EPUB and FB2:
-DEFAULT_GLOBAL_STYLE_TWEAKS["footnote-inpage_epub_smaller"] = true
+DEFAULT_GLOBAL_STYLE_TWEAKS["footnote-inpage_epub"] = true
 DEFAULT_GLOBAL_STYLE_TWEAKS["footnote-inpage_fb2"] = true
+DEFAULT_GLOBAL_STYLE_TWEAKS["inpage_footnote_font-size_smaller"] = true
 
 local CssTweaks = {
     DEFAULT_GLOBAL_STYLE_TWEAKS = DEFAULT_GLOBAL_STYLE_TWEAKS,
@@ -430,7 +431,11 @@ Further small adjustments can be done with 'Line Spacing' in the bottom menu.]])
                 id = "font_family_all_inherit",
                 title = _("Ignore publisher font families"),
                 description = _("Disable font-family specified in embedded styles."),
-                css = [[* { font-family: inherit !important; }]],
+                -- but we better keep the classic monospace ones be monospace
+                css = [[
+* { font-family: inherit !important; }
+listing, plaintext, xmp, samp, tt, kbd, pre, code { font-family: monospace !important; }
+                ]],
                 separator = true,
             },
             {
@@ -898,7 +903,7 @@ body[name="comments"] > section
         {
             id = "footnote-inpage_epub",
             conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_") end,
-            global_conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_epub") end,
+            global_conflicts_with = false,
             title = _("In-page EPUB footnotes"),
             description = _([[
 Show EPUB footnote text at the bottom of pages that contain links to them.
@@ -921,37 +926,9 @@ This only works with footnotes that have specific attributes set by the publishe
             ]],
         },
         {
-            id = "footnote-inpage_epub_smaller",
-            conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_") end,
-            global_conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_epub") end,
-            title = _("In-page EPUB footnotes (smaller)"),
-            description = _([[
-Show EPUB footnote text at the bottom of pages that contain links to them.
-This only works with footnotes that have specific attributes set by the publisher.]]),
-            -- Restrict this to non-FB2 documents, as FB2 can have <a type="note">
-            -- and we don't want to have them smaller
-            css = [[
-*[type~="note"],
-*[type~="endnote"],
-*[type~="footnote"],
-*[type~="rearnote"],
-*[role~="doc-note"],
-*[role~="doc-endnote"],
-*[role~="doc-footnote"],
-*[role~="doc-rearnote"]
-{
-    -cr-only-if: -fb2-document;
-        -cr-hint: footnote-inpage;
-        margin: 0 !important;
-        font-size: 0.8rem !important;
-}
-            ]],
-            separator = true,
-        },
-        {
             id = "footnote-inpage_wikipedia",
             conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_") end,
-            global_conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_wikipedia") end,
+            global_conflicts_with = false,
             title = _("In-page Wikipedia footnotes"),
             description = _([[Show footnotes at the bottom of pages in Wikipedia EPUBs.]]),
             css = [[
@@ -965,38 +942,20 @@ ol.references > li > .noprint { display: none; }
 ol.references > li > .mw-cite-backlink { display: none; }
             ]],
         },
-        {
-            id = "footnote-inpage_wikipedia_smaller",
-            conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_") end,
-            global_conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_wikipedia") end,
-            title = _("In-page Wikipedia footnotes (smaller)"),
-            description = _([[Show footnotes at the bottom of pages in Wikipedia EPUBs.]]),
-            css = [[
-ol.references > li {
-    -cr-hint: footnote-inpage;
-    list-style-position: -cr-outside;
-    margin: 0 !important;
-    font-size: 0.8rem !important;
-}
-/* hide backlinks */
-ol.references > li > .noprint { display: none; }
-ol.references > li > .mw-cite-backlink { display: none; }
-            ]],
-            separator = true,
-        },
-        -- We can add other classic classnames to the 2 following
-        -- tweaks (except when named 'calibreN', as the N number is
+        -- We can add other classic classnames to the following
+        -- tweak (except when named 'calibreN', as the N number is
         -- usually random across books).
         {
             id = "footnote-inpage_classic_classnames",
             conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_") end,
-            global_conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_classic_classnames") end,
+            global_conflicts_with = false,
             title = _("In-page classic classname footnotes"),
             description = _([[
 Show footnotes with classic classnames at the bottom of pages.
 This tweak can be duplicated as a user style tweak when books contain footnotes wrapped with other class names.]]),
             css = [[
-.footnote, .footnotes, .fn,
+.footnote, .footnote1,
+.footnotes, .fn,
 .note, .note1, .note2, .note3,
 .ntb, .ntb-txt, .ntb-txt-j,
 .fnote, .fnote1,
@@ -1008,28 +967,49 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
     margin: 0 !important;
 }
             ]],
+            separator = true,
         },
         {
-            id = "footnote-inpage_classic_classnames_smaller",
-            conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_") end,
-            global_conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_classic_classnames") end,
-            title = _("In-page classic classname footnotes (smaller)"),
-            description = _([[
-Show footnotes with classic classnames at the bottom of pages.
-This tweak can be duplicated as a user style tweak when books contain footnotes wrapped with other class names.]]),
-            css = [[
-.footnote, .footnotes, .fn,
-.note, .note1, .note2, .note3,
-.ntb, .ntb-txt, .ntb-txt-j,
-.przypis, .przypis1, /* Polish footnotes */
-.voetnoten /* Dutch footnotes */
-{
-    -cr-hint: footnote-inpage;
-    margin: 0 !important;
-    font-size: 0.8rem !important;
+            title = _("In-page footnote extension"),
+            {
+                id = "extend-footnote-inpage_any",
+                conflicts_with = function(id) return util.stringStartsWith(id, "extend-footnote-inpage_") end,
+                title = _("Extend footnote content until next entry"),
+                description = _([[
+Extend in-page footnotes shown at the bottom of pages to include text up to the next footnote.
+This might be needed when books don't correctly mark all text that belongs to the footnote.]]),
+-- :where() and priority are needed to ensure lower specificity than
+-- any other tweaks that check -cr-only-if: (inside-)inpage-footnote
+                priority = -1,
+                css = [[
+:where(*, autoBoxing) {
+    -cr-hint: late;
+    -cr-only-if: following-inpage-footnote -inpage-footnote;
+        -cr-hint: extend-footnote-inpage;
+        margin: 0 !important;
 }
-            ]],
-            separator = true,
+                ]],
+            },
+            {
+                id = "extend-footnote-inpage_until_heading",
+                conflicts_with = function(id) return util.stringStartsWith(id, "extend-footnote-inpage_") end,
+                title = _("Extend footnote content until next header"),
+                description = _([[
+Extend in-page footnotes shown at the bottom of pages to include text up to the next footnote or heading.
+This might be needed when books don't correctly mark all text that belongs to the footnote.
+This tweak can be duplicated as a user style tweak when a book contains other elements between footnotes that should not be shown in-page.]]),
+-- :where() and priority are needed to ensure lower specificity than
+-- any other tweaks that check -cr-only-if: (inside-)inpage-footnote
+                priority = -1,
+                css = [[
+:where(*:not(h1, h2, h3, h4, h5, h6), autoBoxing) {
+    -cr-hint: late;
+    -cr-only-if: following-inpage-footnote -inpage-footnote;
+        -cr-hint: extend-footnote-inpage;
+        margin: 0 !important;
+}
+                ]],
+            },
         },
         -- Next tweaks, with the help of crengine, will apply only to elements that were
         -- matched by previous tweaks that have set them the "footnote-inpage" cr-hint,
@@ -1045,6 +1025,21 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
         (function()
             local sub_table = {
                 title = _("In-page footnote font size"),
+                {
+                    id = "inpage_footnote_font-size_smaller",
+                    conflicts_with = function(id) return util.stringStartsWith(id, "inpage_footnote_font-size_") end,
+                    title = _("Smaller footnotes (80%, legacy)"),
+                    description = _([[
+Decrease size of in-page footnotes. This may have no effect if it's overwritten by publisher styles. The "footnote font size" style tweaks are recommended instead.]]),
+                    css = [[
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: -fb2-document inpage-footnote;
+        font-size: 0.8rem !important;
+}
+                    ]],
+                    separator = true,
+                },
             }
             for __, rem in ipairs( { 1.0, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65 } ) do
                 local pct = rem * 100

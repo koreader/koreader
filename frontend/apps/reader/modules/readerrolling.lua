@@ -116,13 +116,15 @@ end
 function ReaderRolling:onGesture() end
 
 function ReaderRolling:registerKeyEvents()
+    local nextKey = BD.mirroredUILayout() and "Left" or "Right"
+    local prevKey = BD.mirroredUILayout() and "Right" or "Left"
     if Device:hasDPad() and Device:useDPadAsActionKeys() then
         if G_reader_settings:isTrue("left_right_keys_turn_pages") then
-            self.key_events.GotoNextView = { { { "LPgFwd", "Right" } }, event = "GotoViewRel", args = 1, }
-            self.key_events.GotoPrevView = { { { "LPgBack", "Left" } }, event = "GotoViewRel", args = -1, }
+            self.key_events.GotoNextView = { { { "LPgFwd", nextKey } }, event = "GotoViewRel", args = 1, }
+            self.key_events.GotoPrevView = { { { "LPgBack", prevKey } }, event = "GotoViewRel", args = -1, }
         elseif G_reader_settings:nilOrFalse("left_right_keys_turn_pages") then
-            self.key_events.GotoNextChapter = { { "Right" }, event = "GotoNextChapter", args = 1, }
-            self.key_events.GotoPrevChapter = { { "Left" }, event = "GotoPrevChapter", args = -1, }
+            self.key_events.GotoNextChapter = { { nextKey }, event = "GotoNextChapter", args = 1, }
+            self.key_events.GotoPrevChapter = { { prevKey }, event = "GotoPrevChapter", args = -1, }
             self.key_events.GotoNextView = { { "LPgFwd" }, event = "GotoViewRel", args = 1, }
             self.key_events.GotoPrevView = { { "LPgBack" }, event = "GotoViewRel", args = -1, }
         end
@@ -133,8 +135,8 @@ function ReaderRolling:registerKeyEvents()
         self.key_events.MoveDown = { { "Down" }, event = "Panning", args = {0,  1}, }
     end
     if (Device:hasDPad() and not Device:useDPadAsActionKeys()) or (Device:hasKeys() and not Device:useDPadAsActionKeys()) then
-        self.key_events.GotoNextView = { { { "RPgFwd", "LPgFwd", "Right" } }, event = "GotoViewRel", args = 1, }
-        self.key_events.GotoPrevView = { { { "RPgBack", "LPgBack", "Left" } }, event = "GotoViewRel", args = -1, }
+        self.key_events.GotoNextView = { { { "RPgFwd", "LPgFwd", nextKey } }, event = "GotoViewRel", args = 1, }
+        self.key_events.GotoPrevView = { { { "RPgBack", "LPgBack", prevKey } }, event = "GotoViewRel", args = -1, }
     end
     if Device:hasKeyboard() and not Device.k3_alt_plus_key_kernel_translated then
         self.key_events.GotoFirst = { { "1" }, event = "GotoPercent", args = 0,   }
@@ -282,8 +284,6 @@ function ReaderRolling:onCloseDocument()
     UIManager:unschedule(self.onUpdatePos)
 
     self.current_header_height = nil -- show unload progress bar at top
-    -- we cannot do it in onSaveSettings() because getLastPercent() uses self.ui.document
-    self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
 
     local cache_file_path = self.ui.document:getCacheFilePath() -- nil if no cache file
     self.ui.doc_settings:saveSetting("cache_file_path", cache_file_path)
@@ -308,28 +308,32 @@ end
 
 function ReaderRolling:onCheckDomStyleCoherence()
     if self.ui.document and self.ui.document:isBuiltDomStale() then
-        local has_bookmarks_warn_txt = ""
         -- When using an older DOM version, bookmarks may break
-        if self.using_non_normalized_xpointers and self.ui.bookmark:hasBookmarks() then
-            has_bookmarks_warn_txt = _("\nNote that this change in styles may render your bookmarks or highlights no more valid.\nIf some of them do not show anymore, you can just revert the change you just made to have them shown again.\n\n")
-        end
-        UIManager:show(ConfirmBox:new{
-            text = T(_("Styles have changed in such a way that fully reloading the document may be needed for a correct rendering.\n%1Do you want to reload the document?"), has_bookmarks_warn_txt),
-            ok_callback = function()
-                -- Allow for ConfirmBox to be closed before showing
-                -- "Opening file" InfoMessage
-                UIManager:scheduleIn(0.5, function()
-                    -- And check we haven't quit reader in these 0.5s
-                    if self.ui.document then
-                        self.ui:reloadDocument()
-                    end
-                end)
-            end,
-        })
+        local bookmarks_warn_txt = self.using_non_normalized_xpointers and self.ui.annotation:hasAnnotations()
+            and ("\n" .. _("Note that this change in styles may render your bookmarks or highlights invalid.\nIf some of them no longer appear, you can simply revert the change you just made to show them again.") .. "\n\n")
+        self:showSuggestReloadConfirmBox(bookmarks_warn_txt)
     end
 end
 
+function ReaderRolling:showSuggestReloadConfirmBox(warn_txt)
+    UIManager:show(ConfirmBox:new{
+        text = T(_("Styles have changed in such a way that fully reloading the document may be needed for a correct rendering.\n%1Do you want to reload the document?"),
+            warn_txt or ""),
+        ok_callback = function()
+            -- Allow for ConfirmBox to be closed before showing
+            -- "Opening file" InfoMessage
+            UIManager:scheduleIn(0.5, function()
+                -- And check we haven't quit reader in these 0.5s
+                if self.ui.document then
+                    self.ui:reloadDocument()
+                end
+            end)
+        end,
+    })
+end
+
 function ReaderRolling:onSaveSettings()
+    self.ui.doc_settings:saveSetting("percent_finished", self.view.footer.percent_finished)
     self.ui.doc_settings:delSetting("last_percent") -- deprecated
     self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
     self.ui.doc_settings:saveSetting("hide_nonlinear_flows", self.hide_nonlinear_flows)

@@ -5,10 +5,10 @@ local DocSettings = require("docsettings")
 local Event = require("ui/event")
 local FileManager = require("apps/filemanager/filemanager")
 local InfoMessage = require("ui/widget/infomessage")
-local LuaSettings = require("frontend/luasettings")
+local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local util = require("frontend/util")
+local util = require("util")
 local BaseUtil = require("ffi/util")
 local _ = require("gettext")
 
@@ -107,16 +107,21 @@ function MoveToArchive:onMoveToArchive(do_copy)
         require("readcollection"):updateItem(document_full_path, dest_file)
     end
     DocSettings.updateLocation(document_full_path, dest_file, do_copy)
-    UIManager:show(ConfirmBox:new{
-        text = text,
-        ok_callback = function()
-            local ReaderUI = require("apps/reader/readerui")
-            ReaderUI:showReader(dest_file)
-        end,
-        cancel_callback = function()
-            self:openFileBrowser(self.last_copied_from_dir)
-        end,
-    })
+    if UIManager:isInSilentMode() then
+        -- no dialog to allow multi-action executing
+        self:openFileBrowser(self.last_copied_from_dir)
+    else
+        UIManager:show(ConfirmBox:new{
+            text = text,
+            ok_callback = function()
+                local ReaderUI = require("apps/reader/readerui")
+                ReaderUI:showReader(dest_file)
+            end,
+            cancel_callback = function()
+                self:openFileBrowser(self.last_copied_from_dir)
+            end,
+        })
+    end
 end
 
 function MoveToArchive:setArchiveDirectory()

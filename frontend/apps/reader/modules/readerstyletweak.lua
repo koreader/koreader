@@ -248,7 +248,8 @@ local ReaderStyleTweak = WidgetContainer:extend{
     nb_enabled_tweaks = 0, -- for use by main menu item
     css_text = nil, -- aggregated css text from tweaks individual css snippets
     enabled = true, -- allows for toggling between selected tweaks / none
-    dispatcher_prefix = "style_tweak_",
+    dispatcher_prefix_set = "style_tweak_set_",
+    dispatcher_prefix_toggle = "style_tweak_",
 }
 
 function ReaderStyleTweak:isTweakEnabled(tweak_id)
@@ -446,12 +447,11 @@ function ReaderStyleTweak:onSaveSettings()
 end
 
 local function dispatcherRegisterStyleTweak(tweak_id, tweak_title)
-    Dispatcher:registerAction(ReaderStyleTweak.dispatcher_prefix..tweak_id,
-        {category="none", event="ToggleStyleTweak", arg=tweak_id, title=T(_("Toggle style tweak: %1"), tweak_title), rolling=true})
-end
-
-local function dispatcherUnregisterStyleTweak(tweak_id)
-    Dispatcher:removeAction(ReaderStyleTweak.dispatcher_prefix..tweak_id)
+    Dispatcher:registerAction(ReaderStyleTweak.dispatcher_prefix_set..tweak_id,
+        {category="string", event="ToggleStyleTweak", arg=tweak_id, title=T(_("Style tweak '%1'"), tweak_title), rolling=true,
+            args={true, false}, toggle={_("on"), _("off")}})
+    Dispatcher:registerAction(ReaderStyleTweak.dispatcher_prefix_toggle..tweak_id,
+        {category="none", event="ToggleStyleTweak", arg=tweak_id, title=T(_("Style tweak '%1' toggle"), tweak_title), rolling=true})
 end
 
 function ReaderStyleTweak:init()
@@ -565,10 +565,12 @@ You can enable individual tweaks on this book with a tap, or view more details a
                         toggle_tweak_in_dispatcher_callback = function()
                             if self.tweaks_in_dispatcher[item.id] then
                                 self.tweaks_in_dispatcher[item.id] = nil
-                                dispatcherUnregisterStyleTweak(item.id)
-                                if self.ui.profiles then
-                                    self.ui.profiles:updateProfiles(self.dispatcher_prefix..item.id)
-                                end
+                                Dispatcher:removeAction(self.dispatcher_prefix_toggle..item.id)
+                                UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged",
+                                    { old_name = self.dispatcher_prefix_toggle..item.id, new_name = nil }))
+                                Dispatcher:removeAction(self.dispatcher_prefix_set..item.id)
+                                UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged",
+                                    { old_name = self.dispatcher_prefix_set..item.id, new_name = nil }))
                             else
                                 self.tweaks_in_dispatcher[item.id] = item.title
                                 dispatcherRegisterStyleTweak(item.id, item.title)
@@ -714,8 +716,14 @@ function ReaderStyleTweak:addToMainMenu(menu_items)
 end
 
 function ReaderStyleTweak:onToggleStyleTweak(tweak_id, item, no_notification)
-    local text
+    local toggle
+    if type(tweak_id) == "table" then -- Dispatcher action 'Style tweak set on/off'
+        tweak_id, toggle = unpack(tweak_id)
+    end
+    if self.tweaks_by_id[tweak_id] == nil then return true end
     local enabled, g_enabled = self:isTweakEnabled(tweak_id)
+    if enabled == toggle then return true end
+    local text
     if enabled then
         if g_enabled then
             -- if globally enabled, mark it as disabled
@@ -749,6 +757,7 @@ function ReaderStyleTweak:onToggleStyleTweak(tweak_id, item, no_notification)
             text = text,
         })
     end
+    return true
 end
 
 function ReaderStyleTweak:onDispatcherRegisterActions()
@@ -870,6 +879,7 @@ You can then paste it here with long-press in the text box.]]), true},
 
     { _("Private CSS properties"), {
         { "-cr-hint: footnote-inpage;", _("When set on a block element containing the target id of a href, this block element will be shown as an in-page footnote.")},
+        { "-cr-hint: extend-footnote-inpage;", _("When set on a block element following a block element marked `footnote-inpage`, this block will be shown as part of the same in-page footnote as the previous element. Can be chained across multiple elements following an in-page footnote.")},
         { "-cr-hint: non-linear;", _("Can be set on some specific DocFragments (e.g. DocFragment[id$=_16]) to ignore them in the linear pages flow.")},
         { "-cr-hint: non-linear-combining;", _("Can be set on contiguous footnote blocks to ignore them in the linear pages flow.")},
         { "-cr-hint: toc-level1;", _("When set on an element, its text can be used to build the alternative table of contents. toc-level2 to toc-level6 can be used for nested chapters.")},

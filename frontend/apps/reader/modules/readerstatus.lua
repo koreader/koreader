@@ -23,14 +23,11 @@ function ReaderStatus:addToMainMenu(menu_items)
     }
 end
 
-function ReaderStatus:onShowBookStatus(before_show_callback)
+function ReaderStatus:onShowBookStatus(close_callback)
     local status_page = BookStatusWidget:new{
         ui = self.ui,
+        close_callback = close_callback,
     }
-    if before_show_callback then
-        before_show_callback()
-    end
-    status_page.dithered = true
     UIManager:show(status_page, "full")
     return true
 end
@@ -42,7 +39,7 @@ function ReaderStatus:onEndOfBook()
     local QuickStart = require("ui/quickstart")
     local last_file = G_reader_settings:readSetting("lastfile")
     if last_file == QuickStart.quickstart_filename then
-        -- Like onOpenNextDocumentInFolder, delay this so as not to break instance lifecycle
+        -- Like onOpenNextOrPreviousFileInFolder, delay this so as not to break instance lifecycle
         UIManager:nextTick(function()
             self:openFileBrowser()
         end)
@@ -94,7 +91,7 @@ function ReaderStatus:onEndOfBook()
                     enabled = next_file_enabled,
                     callback = function()
                         UIManager:close(button_dialog)
-                        self:onOpenNextDocumentInFolder()
+                        self:onOpenNextOrPreviousFileInFolder()
                     end,
                 },
             },
@@ -135,7 +132,7 @@ function ReaderStatus:onEndOfBook()
             UIManager:show(info)
             UIManager:forceRePaint()
             UIManager:close(info)
-            self:onOpenNextDocumentInFolder()
+            self:onOpenNextOrPreviousFileInFolder()
         else
             UIManager:show(InfoMessage:new{
                 text = _("Could not open next file. Sort by date does not support this feature."),
@@ -157,8 +154,8 @@ function ReaderStatus:onEndOfBook()
     elseif settings == "book_status_file_browser" then
         -- Ditto
         UIManager:nextTick(function()
-            local before_show_callback = function() self:openFileBrowser() end
-            self:onShowBookStatus(before_show_callback)
+            local book_status_close_callback = function() self:openFileBrowser() end
+            self:onShowBookStatus(book_status_close_callback)
         end)
     elseif settings == "delete_file" then
         -- Ditto
@@ -169,28 +166,30 @@ function ReaderStatus:onEndOfBook()
 end
 
 function ReaderStatus:openFileBrowser()
-    local FileManager = require("apps/filemanager/filemanager")
     local file = self.document.file
     self.ui:onClose()
-    if not FileManager.instance then
-        self.ui:showFileManager(file)
-    end
+    self.ui:showFileManager(file)
 end
 
-function ReaderStatus:onOpenNextDocumentInFolder()
+function ReaderStatus:onOpenNextOrPreviousFileInFolder(prev)
+    local collate = G_reader_settings:readSetting("collate")
+    if collate == "access" or collate == "date" then return true end
     local FileChooser = require("ui/widget/filechooser")
-    local next_file = FileChooser:getNextFile(self.document.file)
-    if next_file then
+    local fc = FileChooser:new{ ui = self.ui }
+    local file = fc:getNextOrPreviousFileInFolder(self.document.file, prev)
+    if file then
         -- Delay until the next tick, as this will destroy the Document instance,
         -- but we may not be the final Event caught by said Document...
         UIManager:nextTick(function()
-            self.ui:switchDocument(next_file)
+            self.ui:switchDocument(file)
         end)
     else
         UIManager:show(InfoMessage:new{
-            text = _("This is the last file in the current folder. No next file to open."),
+            text = prev and _("This is the first file in the folder. No previous file to open.")
+                         or _("This is the last file in the folder. No next file to open."),
         })
     end
+    return true
 end
 
 function ReaderStatus:deleteFile()

@@ -117,9 +117,7 @@ function DateTimeWidget:init()
         width_scale_factor = 0.95
     end
     self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) * width_scale_factor)
-    if Device:hasKeys() then
-        self.key_events.Close = { { Device.input.group.Back } }
-    end
+    self:registerKeyEvents()
     if Device:isTouchDevice() then
         self.ges_events.TapClose = {
             GestureRange:new{
@@ -134,6 +132,45 @@ function DateTimeWidget:init()
 
     -- Actually the widget layout
     self:createLayout()
+
+    self.non_touch_with_action_dpad = Device:hasDPad() and Device:useDPadAsActionKeys() and not Device:isTouchDevice()
+    -- Move focus to OK button on NT devices with key_events, saves time for users
+    if self.non_touch_with_action_dpad then
+        -- Since button table is the last row in our layout, and OK is the last button
+        -- We need to set focus to both last row, and last column
+        local last_row = #self.layout
+        local last_col = #self.layout[last_row]
+        self:moveFocusTo(last_col, last_row)
+    end
+end
+
+function DateTimeWidget:registerKeyEvents()
+    if not Device:hasKeys() then return end
+    self.key_events.Close = { { Device.input.group.Back } }
+    if Device:hasDPad() and Device:useDPadAsActionKeys() then
+        if self.nb_pickers == 1 then
+            self.key_events.CenterWidgetValueUp   = { { Device.input.group.PgFwd  }, event = "DateTimeButtonPressed", args = { "center_widget",  1 } }
+            self.key_events.CenterWidgetValueDown = { { Device.input.group.PgBack }, event = "DateTimeButtonPressed", args = { "center_widget", -1 } }
+        elseif self.nb_pickers == 2 or self.nb_pickers == 3 then
+            self.key_events.LeftWidgetValueUp    = { { "LPgFwd"  }, event = "DateTimeButtonPressed", args = { "left_widget",   1 } }
+            self.key_events.LeftWidgetValueDown  = { { "LPgBack" }, event = "DateTimeButtonPressed", args = { "left_widget",  -1 } }
+            self.key_events.RightWidgetValueUp   = { { "RPgFwd"  }, event = "DateTimeButtonPressed", args = { "right_widget",  1 } }
+            self.key_events.RightWidgetValueDown = { { "RPgBack" }, event = "DateTimeButtonPressed", args = { "right_widget", -1 } }
+            if self.nb_pickers == 3 and (Device:hasScreenKB() or Device:hasKeyboard()) then
+                local modifier = Device:hasKeyboard() and "Shift" or "ScreenKB"
+                self.key_events.CenterWidgetValueUp   = {
+                    { modifier, Device.input.group.PgFwd },
+                    event = "DateTimeButtonPressed",
+                    args = { "center_widget",  1 }
+                }
+                self.key_events.CenterWidgetValueDown = {
+                    { modifier, Device.input.group.PgBack },
+                    event = "DateTimeButtonPressed",
+                    args = { "center_widget", -1 }
+                }
+            end
+        end -- if self.nb_pickers
+    end -- if Device:hasDPad() and Device:useDPadAsActionKeys()
 end
 
 function DateTimeWidget:createLayout()
@@ -158,6 +195,17 @@ function DateTimeWidget:createLayout()
             value_step = 1,
             value_hold_step = self.year_hold_step or 4,
             width = number_picker_widgets_width,
+            picker_updated_callback = function(value)
+                if self.month and self.day then
+                    local current_month = self.month_widget:getValue()
+                    local current_day = self.day_widget:getValue()
+                    local days_in_month = self.day_widget:getDaysInMonth(current_month, value)
+                    if current_day > days_in_month then
+                        self.day_widget.value = days_in_month
+                        self.day_widget:update()
+                    end
+                end
+            end,
         }
         self:mergeLayoutInHorizontal(self.year_widget)
     else
@@ -172,6 +220,17 @@ function DateTimeWidget:createLayout()
             value_step = 1,
             value_hold_step = self.month_hold_step or 3,
             width = number_picker_widgets_width,
+            picker_updated_callback = function(value)
+                if self.day then
+                    local current_day = self.day_widget:getValue()
+                    local year_value = self.year and self.year_widget:getValue() or 2021 -- default non-leap year
+                    local days_in_month = self.day_widget:getDaysInMonth(value, year_value)
+                    if current_day > days_in_month then
+                        self.day_widget.value = days_in_month
+                        self.day_widget:update()
+                    end
+                end
+            end,
         }
         self:mergeLayoutInHorizontal(self.month_widget)
     else
@@ -186,6 +245,8 @@ function DateTimeWidget:createLayout()
             value_step = 1,
             value_hold_step = self.day_hold_step or 3,
             width = number_picker_widgets_width,
+            date_month = self.month and self.month_widget or nil,
+            date_year = self.year and self.year_widget or nil,
         }
         self:mergeLayoutInHorizontal(self.day_widget)
     else
@@ -408,6 +469,13 @@ function DateTimeWidget:addWidget(widget)
         widget,
     }
     table.insert(self.date_frame[1],  #self.date_frame[1], widget)
+    if self.non_touch_with_action_dpad then
+        -- We need to reset focus again, otherwise FocusManager will not know about the new additions
+        -- and the cursor keys will become unresponsive.
+        local last_row = #self.layout
+        local last_col = #self.layout[last_row]
+        self:moveFocusTo(last_col, last_row)
+    end
 end
 
 function DateTimeWidget:getAddedWidgetAvailableWidth()
@@ -455,6 +523,44 @@ end
 
 function DateTimeWidget:onClose()
     UIManager:close(self)
+    return true
+end
+
+--[[
+This method processes value changes based on the direction of the spin, applying the appropriate
+step value to the target widget component (left, center, or right).
+
+@param args {table} A table containing:
+    - target_side {string}. Either "left_widget", "center_widget" or "right_widget" indicating which side to modify
+    - direction {number}. The direction of change (1 for increase, -1 for decrease)
+@return {boolean} Returns true to indicate the event was handled
+]]
+function DateTimeWidget:onDateTimeButtonPressed(args)
+    local target_side, direction = unpack(args)
+    local widget_order = {
+        left_widget = { "year", "month", "day", "hour", "min" },
+        center_widget = { "month", "day", "hour", "min", "sec", "year" },
+        right_widget = { "sec", "min", "hour", "day", "month" }
+    }
+    local function get_target_widget(instance, side)
+        for _, key in ipairs(widget_order[side]) do
+            if instance[key] then
+                return instance[key .. "_widget"]
+            end
+        end
+    end
+    local target_widget = get_target_widget(self, target_side)
+
+    if self.day and target_widget == self.day_widget then
+        if target_widget.date_month and target_widget.date_year then
+            target_widget.value_max = target_widget:getDaysInMonth(
+                target_widget.date_month:getValue(),
+                target_widget.date_year:getValue()
+            )
+        end
+    end
+    target_widget.value = target_widget:changeValue(target_widget.value_step * direction)
+    target_widget:update()
     return true
 end
 

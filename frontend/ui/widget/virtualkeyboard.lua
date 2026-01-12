@@ -781,7 +781,7 @@ end
 
 local VirtualKeyboard = FocusManager:extend{
     name = "VirtualKeyboard",
-    visible = nil,
+    visible = false,
     lock_visibility = false,
     covers_footer = true,
     modal = true,
@@ -817,6 +817,7 @@ local VirtualKeyboard = FocusManager:extend{
         fa = "fa_keyboard",
         fr = "fr_keyboard",
         he = "he_keyboard",
+        hu = "hu_keyboard",
         ja = "ja_keyboard",
         ka = "ka_keyboard",
         ko_KR = "ko_KR_keyboard",
@@ -826,6 +827,7 @@ local VirtualKeyboard = FocusManager:extend{
         ro = "ro_keyboard",
         ru = "ru_keyboard",
         sk = "sk_keyboard",
+        sr = "sr_keyboard",
         sv = "sv_keyboard",
         th = "th_keyboard",
         tr = "tr_keyboard",

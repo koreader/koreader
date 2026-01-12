@@ -61,6 +61,7 @@ local linux_evdev_key_code_map = {
     [C.BTN_TOUCH] = "BTN_TOUCH",
     [C.BTN_STYLUS] = "BTN_STYLUS",
     [C.BTN_STYLUS2] = "BTN_STYLUS2",
+    [C.BTN_TOOL_DOUBLETAP] = "BTN_TOOL_DOUBLETAP",
 }
 
 local linux_evdev_abs_code_map = {
@@ -704,6 +705,14 @@ function Input:handleKeyBoardEv(ev)
             return
         end
     end
+    -- On (some?) Kindles, cyttsp will report BTN_TOOL_DOUBLETAP on a two-slot contact... but with no data in the second slot :/.
+    -- c.f., https://github.com/koreader/koreader/pull/13714
+    if ev.code == C.BTN_TOOL_DOUBLETAP and ev.value == 1 and self.cur_slot ~= self.main_finger_slot and (self:getCurrentMtSlotData("x") == nil or self:getCurrentMtSlotData("y") == nil) then
+        -- Drop the empty slot to avoid breaking GestureDetector
+        self:setCurrentMtSlot("id", -1)
+
+        return
+    end
 
     local keycode = self.event_map[ev.code]
     if not keycode then
@@ -773,28 +782,31 @@ function Input:handleKeyBoardEv(ev)
     if ev.value == KEY_PRESS then
         return Event:new("KeyPress", key)
     elseif ev.value == KEY_REPEAT then
-        -- NOTE: We only care about repeat events from the pageturn buttons...
+        -- NOTE: We only care about repeat events from the page-turn buttons and cursor keys...
         --       And we *definitely* don't want to flood the Event queue with useless SleepCover repeats!
-        if keycode == "LPgBack"
-        or keycode == "RPgBack"
-        or keycode == "LPgFwd"
-        or keycode == "RPgFwd" then
+        if keycode == "Up" or keycode == "Down" or keycode == "Left" or keycode == "Right"
+         or keycode == "RPgBack" or keycode == "RPgFwd" or keycode == "LPgBack" or keycode == "LPgFwd" then
             --- @fixme Crappy event staggering!
             --
             -- The Forma & co repeats every 80ms after a 400ms delay, and 500ms roughly corresponds to a flashing update,
             -- so stuff is usually in sync when you release the key.
-            -- Obvious downside is that this ends up slower than just mashing the key.
             --
             -- A better approach would be an onKeyRelease handler that flushes the Event queue...
-            self.repeat_count = self.repeat_count + 1
-            if self.repeat_count == 1 then
+            local rep_period = self.device.key_repeat and self.device.key_repeat[C.REP_PERIOD] or 80
+            local now = time.now()
+            if not self.last_repeat_time then
+                self.last_repeat_time = now
                 return Event:new("KeyRepeat", key)
-            elseif self.repeat_count >= 6 then
-                self.repeat_count = 0
+            else
+                local time_diff = time.to_ms(now - self.last_repeat_time)
+                if time_diff >= rep_period then
+                    self.last_repeat_time = now
+                    return Event:new("KeyRepeat", key)
+                end
             end
         end
     elseif ev.value == KEY_RELEASE then
-        self.repeat_count = 0
+        self.last_repeat_time = nil
         return Event:new("KeyRelease", key)
     end
 end
@@ -817,6 +829,23 @@ function Input:handlePowerManagementOnlyEv(ev)
     if keycode == "SleepCoverClosed" or keycode == "SleepCoverOpened"
     or keycode == "Suspend" or keycode == "Resume" then
         return keycode
+    end
+
+    -- Treat page turn button like the latest kobo firmware when suspended
+    if G_reader_settings:isTrue("pageturn_power") then
+        if keycode == "RPgBack" or keycode == "LPgBack"
+        or keycode == "RPgFwd" or keycode == "LPgFwd" then
+            -- When suspended, pretend that the page turn button is *almost* a power button...
+            if ev.value == KEY_PRESS or ev.value == KEY_REPEAT then
+                -- Swallow key press/release events to avoid sending unbalanced events for the actual key being pressed
+                return
+            elseif ev.value == KEY_RELEASE then
+                -- We only want to deal with key release events,
+                -- to avoid tripping the Kobo-specific "poweroff on hold" PowerPress handler...
+                -- (i.e., Power is a very very specific case where unbalanced press/release events *should* be fine).
+                return "PowerRelease"
+            end
+        end
     end
 
     if self.fake_event_set[keycode] then

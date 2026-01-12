@@ -2,6 +2,7 @@
 This module contains miscellaneous helper functions specific to our usage of LuaSocket/LuaSec.
 ]]
 
+local Device = require("device")
 local Version = require("version")
 local http = require("socket.http")
 local https = require("ssl.https")
@@ -16,7 +17,7 @@ local socketutil = {
 
 --- Builds a sensible UserAgent that fits Wikipedia's UA policy <https://meta.wikimedia.org/wiki/User-Agent_policy>
 local socket_ua = http.USERAGENT
-socketutil.USER_AGENT = "KOReader/" .. Version:getShortVersion() .. " (https://koreader.rocks/) " .. socket_ua:gsub(" ", "/")
+socketutil.USER_AGENT = "KOReader/" .. Version:getShortVersion() .. " (" .. Device.model .. "; " .. jit.os .. "; " .. jit.arch .. ") " .. socket_ua:gsub(" ", "/")
 -- Monkey-patch it in LuaSocket, as it already takes care of inserting the appropriate header to its requests.
 http.USERAGENT = socketutil.USER_AGENT
 
@@ -133,6 +134,60 @@ function socketutil.file_sink(handle, io_err)
     else
         return nil, io_err or "unable to open file"
     end
+end
+
+function socketutil.redact_headers(headers)
+    local sensitive_headers = {
+        ["authorization"] = true,
+        ["cookie"] = true,
+        ["proxy-authorization"] = true,
+        ["set-cookie"] = true,
+    }
+    local safe_headers = {}
+    for key, value in pairs(headers) do
+        if sensitive_headers[key] then
+            safe_headers[key] = "REDACTED"
+        else
+            safe_headers[key] = value
+        end
+    end
+    return safe_headers
+end
+
+function socketutil.redact_request(request)
+    local sensitive_props = {
+        ["password"] = true,
+        ["user"] = true,
+    }
+    local safe_request = {}
+    for key, value in pairs(request) do
+        if sensitive_props[key] then
+            safe_request[key] = "REDACTED"
+        elseif key == "headers" then
+            safe_request[key] = socketutil.redact_headers(value)
+        else
+            safe_request[key] = value
+        end
+    end
+    return safe_request
+end
+
+function socketutil.chainSinkWithProgressCallback(sink, progressCallback)
+    if sink == nil or progressCallback == nil then
+        return sink
+    end
+
+    local downloaded_bytes = 0
+    local progress_reporter_filter = function(chunk, err)
+        if chunk ~= nil then
+            -- accumulate the downloaded bytes so we don't need to check the actual file every time
+            downloaded_bytes = downloaded_bytes + chunk:len()
+            progressCallback(downloaded_bytes)
+        end
+        return chunk, err
+    end
+
+    return ltn12.sink.chain(progress_reporter_filter, sink)
 end
 
 return socketutil

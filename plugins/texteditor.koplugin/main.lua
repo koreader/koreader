@@ -222,7 +222,7 @@ Export text to QR code, that can be scanned, for example, by a phone.]]),
                                 self.last_view_pos = {}
                                 -- remove history items from the parent menu
                                 for j = #sub_item_table, 1, -1 do
-                                    if sub_item_table[j]._texteditor_id then
+                                    if sub_item_table[j].is_file then
                                         table.remove(sub_item_table)
                                     end
                                 end
@@ -258,12 +258,12 @@ Export text to QR code, that can be scanned, for example, by a phone.]]),
         table.insert(sub_item_table, {
             text = T("\u{f016} %1", BD.filename(filename)), -- file symbol
             keep_menu_open = true,
+            is_file = true, -- for history cleanup
             callback = function(touchmenu_instance)
                 self:setupWhenDoneFunc(touchmenu_instance)
                 self:checkEditFile(file_path, true)
             end,
-            _texteditor_id = file_path, -- for removal from menu itself
-            hold_callback = function(touchmenu_instance)
+            hold_callback = function(touchmenu_instance, item)
                 -- Show full path and some info, and propose to remove from history
                 local text
                 local attr = lfs.attributes(file_path)
@@ -281,13 +281,7 @@ Export text to QR code, that can be scanned, for example, by a phone.]]),
                     ok_text = _("Remove"),
                     ok_callback = function()
                         self:removeFromHistory(file_path)
-                        -- Also remove from menu itself
-                        for j=1, #sub_item_table do
-                            if sub_item_table[j]._texteditor_id == file_path then
-                                table.remove(sub_item_table, j)
-                                break
-                            end
-                        end
+                        table.remove(touchmenu_instance.item_table, item.idx)
                         touchmenu_instance:updateItems()
                     end,
                 })
@@ -580,6 +574,7 @@ function TextEditor:editFile(file_path, readonly, caller_callback)
             end
             if self.caller_callback then
                 self.caller_callback(file_path)
+                self.caller_callback = nil
             end
             self:execWhenDoneFunc()
         end,

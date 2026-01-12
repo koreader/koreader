@@ -66,6 +66,14 @@ function SpinWidget:init()
     end
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.WidgetValueUp    = { { Device.input.group.PgFwd  }, event = "SpinButtonPressed", args = {  1, false } }
+        self.key_events.WidgetValueDown  = { { Device.input.group.PgBack }, event = "SpinButtonPressed", args = { -1, false } }
+        if Device:hasScreenKB() or Device:hasKeyboard() then
+            local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            local HOLD = true -- use hold step value
+            self.key_events.WidgetHoldValueUp    = { { modifier, Device.input.group.PgFwd  },  event = "SpinButtonPressed", args = {  1, HOLD } }
+            self.key_events.WidgetHoldValueDown  = { { modifier, Device.input.group.LPgBack }, event = "SpinButtonPressed", args = { -1, HOLD } }
+        end
     end
     if Device:isTouchDevice() then
         self.ges_events.TapClose = {
@@ -84,13 +92,23 @@ function SpinWidget:init()
     end
     -- Actually the widget layout
     self:update()
+
+    self.non_touch_with_action_dpad = Device:hasDPad() and Device:useDPadAsActionKeys() and not Device:isTouchDevice()
+    -- Move focus to OK button on NT devices with key_events, saves time for users
+    if self.non_touch_with_action_dpad then
+        -- Since button table is the last row in our layout, and OK is the last button
+        -- We need to set focus to both last row, and last column
+        local last_row = #self.layout
+        local last_col = #self.layout[last_row]
+        self:moveFocusTo(last_col, last_row)
+    end
 end
 
 function SpinWidget:update(numberpicker_value, numberpicker_value_index)
     local prev_movable_offset = self.movable and self.movable:getMovedOffset()
     local prev_movable_alpha = self.movable and self.movable.alpha
     self.layout = {}
-    local value_widget = NumberPickerWidget:new{
+    self.value_widget = NumberPickerWidget:new{
         show_parent = self,
         value = numberpicker_value or self.value,
         value_table = self.value_table,
@@ -106,10 +124,10 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         end,
         unit = self.unit,
     }
-    self:mergeLayoutInVertical(value_widget)
+    self:mergeLayoutInVertical(self.value_widget)
     local value_group = HorizontalGroup:new{
         align = "center",
-        value_widget,
+        self.value_widget,
     }
 
     local title_bar = TitleBar:new{
@@ -149,12 +167,12 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
             {
                 text = T(_("Default value: %1%2"), value, unit),
                 callback = function()
-                    if value_widget.value_table then
-                        value_widget.value_index = self.default_value
+                    if self.value_widget.value_table then
+                        self.value_widget.value_index = self.default_value
                     else
-                        value_widget.value = self.default_value
+                        self.value_widget.value = self.default_value
                     end
-                    value_widget:update()
+                    self.value_widget:update()
                 end,
             },
         })
@@ -164,7 +182,7 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         text = self.extra_text,
         callback = function()
             if self.extra_callback then
-                self.value, self.value_index = value_widget:getValue()
+                self.value, self.value_index = self.value_widget:getValue()
                 self.extra_callback(self)
             end
             if not self.keep_shown_on_apply then -- assume extra wants it same as ok
@@ -176,7 +194,7 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         text = self.option_text,
         callback = function()
             if self.option_callback then
-                self.value, self.value_index = value_widget:getValue()
+                self.value, self.value_index = self.value_widget:getValue()
                 self.option_callback(self)
             end
             if not self.keep_shown_on_apply then -- assume option wants it same as ok
@@ -203,9 +221,9 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         },
         {
             text = self.ok_text,
-            enabled = self.ok_always_enabled or self.original_value ~= value_widget:getValue(),
+            enabled = self.ok_always_enabled or self.original_value ~= self.value_widget:getValue(),
             callback = function()
-                self.value, self.value_index = value_widget:getValue()
+                self.value, self.value_index = self.value_widget:getValue()
                 self.original_value = self.value
                 if self.callback then
                     self.callback(self)
@@ -299,6 +317,13 @@ function SpinWidget:addWidget(widget, re_init)
     -- Insert widget before the bottom buttons and their previous vspan.
     -- This is different to InputDialog.
     table.insert(self.vgroup, #self.vgroup, widget)
+    if self.non_touch_with_action_dpad then
+        -- We need to reset focus again, otherwise FocusManager will not know about the new additions
+        -- and the cursor keys will become unresponsive.
+        local last_row = #self.layout
+        local last_col = #self.layout[last_row]
+        self:moveFocusTo(last_col, last_row)
+    end
 end
 
 function SpinWidget:getAddedWidgetAvailableWidth()
@@ -335,6 +360,22 @@ function SpinWidget:onClose()
     if self.close_callback then
         self.close_callback()
     end
+    return true
+end
+
+--[[
+This method updates the widget's value based on the direction of the spin.
+
+@param args {table} A table containing:
+    - direction {number}. The direction of the spin (-1 for decrease, 1 for increase)
+    - is_hold_event {boolean}. True if the event is a hold event, false otherwise
+@return boolean Always returns true to indicate the event was handled
+]]
+function SpinWidget:onSpinButtonPressed(args)
+    local direction, is_hold_event = unpack(args)
+    local step = is_hold_event and self.value_hold_step or self.value_step
+    self.value_widget.value = self.value_widget:changeValue(step * direction)
+    self.value_widget:update()
     return true
 end
 

@@ -1,9 +1,10 @@
-local bit = require("bit")
+local BD = require("ui/bidi")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local logger = require("logger")
 local UIManager = require("ui/uimanager")
+local bit = require("bit")
+local logger = require("logger")
 local util = require("util")
 --[[
 Wrapper Widget that manages focus for a whole dialog
@@ -30,6 +31,7 @@ local FocusManager = InputContainer:extend{
     selected = nil, -- defaults to x=1, y=1
     layout = nil, -- mandatory
     movement_allowed = { x = true, y = true },
+    key_events_enabled = true,
 }
 
 -- Only build the default mappings once on initialization, or when an external keyboard is (dis-)/connected.
@@ -155,6 +157,7 @@ function FocusManager:onFocusHalfMove(args)
         end
     elseif direction == "left" then
         dx = - math.floor(#row / 2)
+        if BD.mirroredUILayout() then dx = -dx end
         if dx == 0 then
             dx = -1
         elseif dx + x <= 0 then
@@ -162,11 +165,18 @@ function FocusManager:onFocusHalfMove(args)
         end
     elseif direction == "right" then
         dx = math.floor(#row / 2)
+        if BD.mirroredUILayout() then dx = -dx end
         if dx == 0 then
             dx = 1
         elseif dx + x > #row then
-            dx = #row - y -- last column
+            dx = #row - x -- last column
         end
+    end
+    if dx ~= 0 and BD.mirroredUILayout() then
+        -- When in RTL we mirror horizontally the elements/buttons on the screen, however we don't mirror self.layout
+        -- therefore we must account for this when moving the focus. Since we're already inverting dx in the FocusMove
+        -- method, we need to "unfix" our value here, before calling onFocusMove, where it will be flipped again.
+        dx = -dx
     end
     return self:onFocusMove({dx, dy})
 end
@@ -212,6 +222,13 @@ function FocusManager:onFocusMove(args)
         return false
     end
     local dx, dy = unpack(args)
+
+    -- Flip horizontal direction in RTL mode
+    if dx ~= 0 and BD.mirroredUILayout() then
+        -- When in RTL we mirror horizontally the elements/buttons on the screen, however we don't mirror self.layout
+        -- therefore we must account for this when moving the focus.
+        dx = -dx
+    end
 
     if (dx ~= 0 and not self.movement_allowed.x)
         or (dy ~= 0 and not self.movement_allowed.y) then
@@ -415,7 +432,10 @@ function FocusManager:getFocusItem()
     if not self.layout then
         return nil
     end
-    return self.layout[self.selected.y][self.selected.x]
+    if self.layout[self.selected.y] then
+        return self.layout[self.selected.y][self.selected.x]
+    end
+    return nil
 end
 
 function FocusManager:_sendGestureEventToFocusedWidget(gesture)
@@ -516,5 +536,28 @@ function FocusManager:refocusWidget(nextTick, focus_flags)
         self._parent = nil
     end
 end
+
+function FocusManager:onKeyPress(key)
+    -- Add check for key_events_enabled
+    if not self.key_events_enabled then
+        return false
+    end
+    return InputContainer.onKeyPress(self, key)
+end
+FocusManager.onKeyRepeat = FocusManager.onKeyPress
+
+function FocusManager:getFocusableWidgetXY(widget)
+    if not self.layout then
+        return
+    end
+    for y, row in ipairs(self.layout) do
+        for x, w in ipairs(row) do
+            if w == widget then
+                return x, y
+            end
+        end
+    end
+end
+
 
 return FocusManager

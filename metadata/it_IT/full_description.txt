@@ -1,10 +1,10 @@
-<p>KOReader è un lettore ebook ottimizzato per schermi e-ink. Può aprire molti formati e permette aggiustamenti avanzati del testo.</p>
+<p>KOReader è un lettore di libri digitali ottimizzato per schermi a carta elettronica (inchiostro elettroforetico). Può aprire molti formati e permette aggiustamenti avanzati del testo.</p>
 <p>Vedere di seguito per una selezione delle sue molte caratteristiche:</p>
 <ul>
-  <li>Supporta sia formati di pagina fissi (PDF, DjVu, CBT, CBZ) che formati di e-book riformattabili (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). I documenti PDF&#47;DjVu scansionati possono essere riformattati. Direzioni di flusso speciali per la lettura di PDF a doppia colonna e manga.</li>
-  <li>Interfaccia utente multilingue ottimizzata per schermi e-ink. Aspetto del lettore altamente personalizzabile con opzioni tipografiche complete. Dizionari di sillabazione multilingue inclusi.</li>
+  <li>Supporta sia formati di pagina fissi (PDF, DjVu, CBT, CBZ) che formati di libro digitale riformattabili (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). I documenti PDF&#47;DjVu scansionati possono essere riformattati. Direzioni di flusso speciali per la lettura di PDF a doppia colonna e manga.</li>
+  <li>Interfaccia utente multilingue ottimizzata per schermi a carta elettronica. Aspetto del lettore altamente personalizzabile con opzioni tipografiche complete. Dizionari di sillabazione multilingue inclusi.</li>
   <li>Supporto per libri in scritture non latine, compreso in lingue ebraica, araba, persiana, russa, cinese, giapponese e coreana.</li>
-  <li>Funzionalità uniche di Mappa del Libro e di Browser Pagine per navigare il tuo libro.</li>
+  <li>Funzionalità uniche di Mappa del libro e di Browser Pagine per navigare il tuo libro.</li>
   <li>Speciale modalità di evidenziazione multipagina con molte opzioni di esportazione locali e online.</li>
   <li>Può sincronizzare i tuoi progressi di lettura tra tutti i tuoi dispositivi su cui gira KOReader.</li>
   <li>Integrato con Calibre, Wallabag, Wikipedia, Google Translate e altri fornitori di contenuti.</li>

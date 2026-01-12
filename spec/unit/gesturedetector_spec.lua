@@ -19,6 +19,8 @@ describe("gesturedetector module", function()
                                         DEVICE_ROTATED_COUNTER_CLOCKWISE = 3,
                                      }
             GestureDetector.screen.getTouchRotation = function() return rotation_mode end
+            GestureDetector.screen.getHeight = function() return 800 end
+            GestureDetector.screen.getWidth = function() return 600 end
 
             return GestureDetector:adjustGesCoordinate(ges).direction
         end

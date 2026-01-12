@@ -1,8 +1,8 @@
-<p>KOReader ist ein für E-Ink-Bildschirme optimierter E-Book-Reader. Er kann viele Formate öffnen und bietet erweiterte Textanpassungen.</p>
+<p>KOReader ist eine für E-Papier-Bildschirme optimierte E-Bücher-Software. Sie kann viele Formate öffnen und bietet erweiterte Textanpassungen.</p>
 <p>Im Folgenden finden Sie eine Auswahl der zahlreichen Funktionen:</p>
 <ul>
-  <li>Unterstützt sowohl feste Seitenformate (PDF, DjVu, CBT, CBZ) als auch reflowfähige E-Book-Formate (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Gescannte PDF&#47;DjVu-Dokumente können mit Reflow versehen werden. Spezielle Flussrichtungen für das Lesen zweispaltiger PDFs und Mangas.</li>
-  <li>Mehrsprachige Benutzeroberfläche, optimiert für E-Ink-Bildschirme. Hochgradig anpassbare Leseansicht mit vollständigen Satzoptionen. Mehrsprachige Silbentrennungswörterbücher sind im Lieferumfang enthalten.</li>
+  <li>Unterstützt sowohl feste Seitenformate (PDF, DjVu, CBT, CBZ) als auch reflowfähige E-Büch-Formate (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Gescannte PDF&#47;DjVu-Dokumente können mit Reflow versehen werden. Spezielle Flussrichtungen für das Lesen zweispaltiger PDFs und Mangas.</li>
+  <li>Mehrsprachige Benutzeroberfläche, optimiert für E-Papier-Bildschirme. Hochgradig anpassbare Leseansicht mit vollständigen Satzoptionen. Mehrsprachige Silbentrennungswörterbücher sind im Lieferumfang enthalten.</li>
   <li>Unterstützung nicht-lateinischer Schriften für Bücher, einschließlich Hebräisch, Arabisch, Persisch, Russisch, Chinesisch, Japanisch und Koreanisch.</li>
   <li>Einzigartige Buchkarte und Seitenbrowser zum Navigieren in Ihrem Buch.</li>
   <li>Spezieller mehrseitiger Highlight-Modus mit vielen lokalen und Online-Exportoptionen.</li>

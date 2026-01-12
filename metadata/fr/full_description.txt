@@ -1,11 +1,11 @@
-<p>KOReader is an ebook reader optimized for e-ink screens. It can open many formats and provides advanced text adjustments.</p>
-<p>See below for a selection of its many features:</p>
+<p>KOReader est un lecteur de livres numériques optimisé pour les écrans à encre électronique. Il peut ouvrir de nombreux formats et fournit des ajustements de texte avancés.</p>
+<p>Voir ci-dessous pour une sélection de ses nombreuses caractéristiques :</p>
 <ul>
-  <li>Supports both fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Scanned PDF&#47;DjVu documents can be reflowed. Special flow directions for reading double column PDFs and manga.</li>
-  <li>Multi-lingual user interface optimized for e-ink screens. Highly customizable reader view with complete typesetting options. Multi-lingual hyphenation dictionaries are bundled in.</li>
-  <li>Non-Latin script support for books, including the Hebrew, Arabic, Persian, Russian, Chinese, Japanese and Korean languages.</li>
+  <li>Prend en charge les formats de pages fixes (PDF, DjVu, CBT, CBZ) et les formats de livres électroniques reformatables (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Les documents numérisés PDF&#47;DjVu peuvent être remaniés. Directions spéciales pour la lecture de double colonne PDF et manga.</li>
+  <li>Interface utilisateur multilingue optimisée pour les écrans à encre électronique. Vue lecteur hautement personnalisable avec des options de typographie complètes. Les dictionnaires de coupes multilingues sont groupés.</li>
+  <li>Prise en charge de systèmes d&#39;écriture non latins pour les livres, y compris les langues hébraïque, arabe, persane, russe, chinoise, japonaise et coréenne.</li>
   <li>Fonctionnalités Plan du livre et Navigateur de pages uniques pour naviguer dans votre livre.</li>
-  <li>Special multi-page highlight mode with many local and online export options.</li>
-  <li>Can synchronize your reading progress across all your KOReader running devices.</li>
-  <li>Integrated with Calibre, Wallabag, Wikipedia, Google Translate and other content providers.</li>
+  <li>Mode de surlignage spécial multi-page avec de nombreuses options d&#39;exportation locales et en ligne.</li>
+  <li>Synchronise votre progression de lecture entre tous vos appareils utilisant KOReader.</li>
+  <li>Intégré avec Calibre, Wallabag, Wikipédia, Google Traduction et d&#39;autres fournisseurs de contenu.</li>
 </ul>

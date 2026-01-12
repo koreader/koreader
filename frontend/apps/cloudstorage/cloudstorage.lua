@@ -12,6 +12,7 @@ local LuaSettings = require("luasettings")
 local Menu = require("ui/widget/menu")
 local NetworkMgr = require("ui/network/manager")
 local PathChooser = require("ui/widget/pathchooser")
+local ProgressbarDialog = require("ui/widget/progressbardialog")
 local UIManager = require("ui/uimanager")
 local WebDav = require("apps/cloudstorage/webdav")
 local lfs = require("libs/libkoreader-lfs")
@@ -19,6 +20,7 @@ local logger = require("logger")
 local _ = require("gettext")
 local N_ = _.ngettext
 local T = require("ffi/util").template
+local util = require("util")
 
 local CloudStorage = Menu:extend{
     no_title = false,
@@ -212,30 +214,43 @@ end
 
 function CloudStorage:downloadFile(item)
     local function startDownloadFile(unit_item, address, username, password, path_dir, callback_close)
+        local progressbar_dialog = ProgressbarDialog:new {
+            title = _("Downloading…"),
+            subtitle = unit_item.text,
+            progress_max = unit_item.filesize,
+        }
+
         UIManager:scheduleIn(1, function()
-            if self.type == "dropbox" then
-                DropBox:downloadFile(unit_item, password, path_dir, callback_close)
-            elseif self.type == "ftp" then
-                Ftp:downloadFile(unit_item, address, username, password, path_dir, callback_close)
-            elseif self.type == "webdav" then
-                WebDav:downloadFile(unit_item, address, username, password, path_dir, callback_close)
+            local progress_callback = function(progress)
+                progressbar_dialog:reportProgress(progress)
             end
+
+            if self.type == "dropbox" then
+                DropBox:downloadFile(unit_item, password, path_dir, callback_close, progress_callback)
+            elseif self.type == "ftp" then
+                Ftp:downloadFile(unit_item, address, username, password, path_dir, callback_close, nil)
+            elseif self.type == "webdav" then
+                WebDav:downloadFile(unit_item, address, username, password, path_dir, callback_close, progress_callback)
+            end
+
+            progressbar_dialog:close()
         end)
-        UIManager:show(InfoMessage:new{
-            text = _("Downloading. This might take a moment."),
-            timeout = 1,
-        })
+
+        progressbar_dialog:show()
     end
 
-    local function createTitle(filename_orig, filename, path) -- title for ButtonDialog
-        return T(_("Filename:\n%1\n\nDownload filename:\n%2\n\nDownload folder:\n%3"),
-            filename_orig, filename, BD.dirpath(path))
+    local function createTitle(filename_orig, filesize, filename, path) -- title for ButtonDialog
+        local filesize_str = filesize and util.getFriendlySize(filesize) or _("N/A")
+
+        return T(_("Filename:\n%1\n\nFile size:\n%2\n\nDownload filename:\n%3\n\nDownload folder:\n%4"),
+            filename_orig, filesize_str, filename, BD.dirpath(path))
     end
 
     local cs_settings = self:readSettings()
     local download_dir = cs_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
     local filename_orig = item.text
     local filename = filename_orig
+    local filesize = item.filesize
 
     local buttons = {
         {
@@ -247,7 +262,7 @@ function CloudStorage:downloadFile(item)
                             self.cs_settings:saveSetting("download_dir", path)
                             self.cs_settings:flush()
                             download_dir = path
-                            self.download_dialog:setTitle(createTitle(filename_orig, filename, download_dir))
+                            self.download_dialog:setTitle(createTitle(filename_orig, filesize, filename, download_dir))
                         end,
                     }:chooseDir(download_dir)
                 end,
@@ -278,7 +293,7 @@ function CloudStorage:downloadFile(item)
                                             filename = filename_orig
                                         end
                                         UIManager:close(input_dialog)
-                                        self.download_dialog:setTitle(createTitle(filename_orig, filename, download_dir))
+                                        self.download_dialog:setTitle(createTitle(filename_orig, filesize, filename, download_dir))
                                     end,
                                 },
                             }
@@ -318,7 +333,7 @@ function CloudStorage:downloadFile(item)
     }
 
     self.download_dialog = ButtonDialog:new{
-        title = createTitle(filename_orig, filename, download_dir),
+        title = createTitle(filename_orig, filesize, filename, download_dir),
         buttons = buttons,
     }
     UIManager:show(self.download_dialog)
@@ -388,7 +403,6 @@ function CloudStorage:onMenuHold(item)
                     callback = function()
                         UIManager:close(cs_server_dialog)
                         self:editCloudServer(item)
-
                     end
                 },
                 {
@@ -860,6 +874,15 @@ function CloudStorage:onHoldReturn()
         end
     end
     return true
+end
+
+function CloudStorage:onClose()
+    local download_dir = self.cs_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+    local fc = self.ui and self.ui.file_chooser
+    if fc and fc.path == download_dir then
+        fc:refreshPath()
+    end
+    UIManager:close(self)
 end
 
 return CloudStorage

@@ -4,6 +4,7 @@ describe("Readertoc module", function()
 
     setup(function()
         require("commonrequire")
+        disable_plugins()
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
         Screen = require("device").screen

@@ -43,7 +43,7 @@ function SortItemWidget:init()
             range = self.dimen,
         }
     }
-    self.ges_events.Hold = {
+    self.ges_events.HoldTouch = {
         GestureRange:new{
             ges = "hold",
             range = self.dimen,
@@ -83,10 +83,18 @@ function SortItemWidget:init()
                     dimen = Geom:new{ w = checked_widget:getSize().w },
                     self.checkmark_widget,
                 },
-                TextWidget:new{
-                    text = self.item.text,
-                    max_width = text_max_width,
-                    face = self.item.face or self.face,
+                VerticalGroup:new{
+                    align = "left",
+                    TextWidget:new{
+                        text = self.item.text,
+                        max_width = text_max_width,
+                        face = self.item.face or self.face,
+                        fgcolor = self.item.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+                    },
+                    self.show_parent.underscore_checked_item and item_checked and LineWidget:new{
+                        dimen = Geom:new{ w = text_max_width, h = Size.line.thick },
+                        background = Blitbuffer.COLOR_DARK_GRAY,
+                    },
                 },
             },
         },
@@ -114,7 +122,7 @@ function SortItemWidget:onTap(_, ges)
     return true
 end
 
-function SortItemWidget:onHold()
+function SortItemWidget:onHoldTouch()
     if self.item.hold_callback then
         self.item:hold_callback(function() self.show_parent:_populateItems() end)
     elseif self.item.callback then
@@ -137,6 +145,7 @@ local SortWidget = FocusManager:extend{
 }
 
 function SortWidget:init()
+    self:registerKeyEvents()
     self.layout = {}
     -- no item is selected on start
     self.marked = 0
@@ -148,13 +157,6 @@ function SortWidget:init()
         w = self.width or Screen:getWidth(),
         h = self.height or Screen:getHeight(),
     }
-
-    if Device:hasKeys() then
-        self.key_events.Close = { { Device.input.group.Back } }
-        self.key_events.NextPage = { { Device.input.group.PgFwd } }
-        self.key_events.PrevPage = { { Device.input.group.PgBack } }
-        self.key_events.ShowWidgetMenu = { { "Menu" } }
-    end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
             GestureRange:new{
@@ -201,7 +203,7 @@ function SortWidget:init()
             if self.marked > 0 then
                 self:moveItem(-1)
             else
-                self:goToPage(1)
+                self:onGoToPage(1)
             end
         end,
         bordersize = 0,
@@ -215,7 +217,7 @@ function SortWidget:init()
             if self.marked > 0 then
                 self:moveItem(1)
             else
-                self:goToPage(self.pages)
+                self:onGoToPage(self.pages)
             end
         end,
         bordersize = 0,
@@ -249,7 +251,7 @@ function SortWidget:init()
             callback = function(input)
                 local page = tonumber(input)
                 if page and page >= 1 and page <= self.pages then
-                    self:goToPage(page)
+                    self:onGoToPage(page)
                 end
             end,
             ok_text = _("Go to page"),
@@ -287,6 +289,7 @@ function SortWidget:init()
     local vertical_footer = VerticalGroup:new{
         bottom_line,
         self.page_info,
+        self.dimen.h < Screen:getHeight() and bottom_line or nil,
     }
     local footer = BottomContainer:new{
         dimen = self.dimen:copy(),
@@ -345,6 +348,23 @@ function SortWidget:init()
     }
 end
 
+function SortWidget:registerKeyEvents()
+    if Device:hasKeys() then
+        self.key_events.CancelOrClose = { { Device.input.group.Back } }
+        self.key_events.NextPage = { { Device.input.group.PgFwd } }
+        self.key_events.PrevPage = { { Device.input.group.PgBack } }
+        self.key_events.ShowWidgetMenu = { { "Menu" } }
+        if Device:hasScreenKB() or Device:hasKeyboard() then
+            local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            self.key_events.HoldNonTouch = { { modifier, "Press" } }
+            self.key_events.MoveUp = { { modifier, "Up" }, event = "MoveItemKB", args = -1 }
+            self.key_events.MoveDown = { { modifier, "Down" }, event = "MoveItemKB", args = 1 }
+            self.key_events.FirstPage = { { modifier, Device.input.group.PgBack }, event = "GoToPage", args = 1 }
+            self.key_events.LastPage = { { modifier, Device.input.group.PgFwd }, event = "GoToPage", args = self.pages }
+        end
+    end
+end
+
 function SortWidget:nextPage()
     if self.show_page < self.pages then
         self.show_page = self.show_page + 1
@@ -367,7 +387,7 @@ function SortWidget:prevPage()
     end
 end
 
-function SortWidget:goToPage(page)
+function SortWidget:onGoToPage(page)
     self.show_page = page
     self:_populateItems()
 end
@@ -384,6 +404,12 @@ function SortWidget:moveItem(diff)
         self.marked = move_to
         self:_populateItems()
     end
+end
+
+function SortWidget:onMoveItemKB(diff)
+    -- set self.marked to the item with focus
+    self.marked = self.selected.y + (self.show_page - 1) * self.items_per_page
+    self:moveItem(diff)
 end
 
 -- make sure self.item_margin and self.item_height are set before calling this
@@ -418,11 +444,8 @@ function SortWidget:_populateItems()
         -- Reset the focus to the top of the page when we're not moving an item (#12342)
         self:moveFocusTo(1, 1)
     else
-        -- When we're moving an item, move the focus to the footer (last row),
-        -- while keeping the focus on the current button (or cancel for the initial move,
-        -- as there's only one column of items, so x == 1, which points to the first button, which is cancel).
-        -- even when we change pages and the amount of rows may have changed
-        self:moveFocusTo(self.selected.x, #self.layout)
+        -- Move focus to the moved item.
+        self:moveFocusTo(1, self.marked - idx_offset)
     end
 
     -- NOTE: We forgo our usual "Page x of y" wording because of space constraints given the way the widget is currently built
@@ -556,6 +579,15 @@ function SortWidget:onClose()
     return true
 end
 
+function SortWidget:onCancelOrClose()
+    if self.marked > 0 then
+        self:onCancel()
+    else
+        self:onClose()
+    end
+    return true
+end
+
 function SortWidget:onCancel()
     self.marked = 0
     if self.orig_item_table then
@@ -572,8 +604,17 @@ function SortWidget:onCancel()
         self.orig_item_table = nil
     end
 
-    self:goToPage(self.show_page)
+    self:onGoToPage(self.show_page)
     return true
+end
+
+function SortWidget:onHoldNonTouch()
+    -- Handle keyboard-triggered hold events by acting on the focused item directly
+    local focused_item = self:getFocusItem()
+    if not focused_item then
+        return true
+    end
+    return focused_item:onHoldTouch()
 end
 
 function SortWidget:onReturn()
@@ -590,7 +631,7 @@ function SortWidget:onReturn()
 
     self.marked = 0
     self.orig_item_table = nil
-    self:goToPage(self.show_page)
+    self:onGoToPage(self.show_page)
     return true
 end
 

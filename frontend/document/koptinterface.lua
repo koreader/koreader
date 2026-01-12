@@ -297,7 +297,7 @@ function KoptInterface:reflowPage(doc, pageno, bbox, background)
         kc:setPreCache()
         self.bg_thread = true
     end
-    -- Caculate zoom.
+    -- Calculate zoom.
     kc.zoom = (1.5 * kc.zoom * kc.quality * kc.dev_width) / bbox.x1
     -- Generate pixmap.
     local page = doc._document:openPage(pageno)
@@ -801,7 +801,9 @@ function KoptInterface:getReflewOCRWord(doc, pageno, rect)
             kc.getTOCRWord, kc, "dst",
             rect.x, rect.y, rect.w, rect.h,
             self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
-        DocCache:insert(hash, CacheItem:new{ rfocrword = word, size = #word + 64 }) -- estimation
+        if word then
+            DocCache:insert(hash, CacheItem:new{ rfocrword = word, size = #word + 64 }) -- estimation
+        end
         return word
     else
         return cached.rfocrword
@@ -833,7 +835,9 @@ function KoptInterface:getNativeOCRWord(doc, pageno, rect)
             kc.getTOCRWord, kc, "src",
             0, 0, word_w, word_h,
             self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
-        DocCache:insert(hash, CacheItem:new{ ocrword = word, size = #word + 64 }) -- estimation
+        if word then
+            DocCache:insert(hash, CacheItem:new{ ocrword = word, size = #word + 64 }) -- estimation
+        end
         logger.dbg("word", word)
         page:close()
         kc:free()
@@ -983,7 +987,8 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
         local prev_word
         local prev_word_end_x
         for j = j0, j1 do
-            local word = boxes[i][j].word
+            local box = boxes[i][j]
+            local word = box and box.word
             if word then
                 if not line_first_word_seen then
                     line_first_word_seen = true
@@ -1003,7 +1008,6 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
                         end
                     end
                 end
-                local box = boxes[i][j]
                 if prev_word then
                     -- A box should have been made for each word, so assume
                     -- we want a space between them, with some exceptions
@@ -1199,7 +1203,22 @@ function KoptInterface:getSelectedWordContext(word, nb_words, pos)
     local i_end, j_end = i, j
     local word_array = util.splitToArray(word, " ")
     for idx, split_word in ipairs(word_array) do
-        if boxes[i_end][j_end].word ~= split_word then return end
+        local box_word = boxes[i_end][j_end].word
+        if box_word:sub(-1) == "-" and j_end == #boxes[i_end] and box_word ~= split_word then
+            -- Line final hyphenation.
+            -- Combine word with first word of next line.
+            box_word = box_word:sub(1, -2)
+            i_end = i_end + 1
+            j_end = 1
+            box_word = box_word .. boxes[i_end][j_end].word
+        elseif box_word:sub(-2, -1) == "\u{00AD}" and j_end == #boxes[i_end] and box_word ~= split_word then
+            -- Hyphen
+            box_word = box_word:sub(1, -3)
+            i_end = i_end + 1
+            j_end = 1
+            box_word = box_word .. boxes[i_end][j_end].word
+        end
+        if box_word ~= split_word then return end
         if idx ~= #word_array then
             if j_end == #boxes[i_end] then
                 i_end = i_end + 1
@@ -1209,7 +1228,6 @@ function KoptInterface:getSelectedWordContext(word, nb_words, pos)
             end
         end
     end
-    if boxes[i][j].word ~= word then return end
     local prev_text = get_prev_text(boxes, i, j, nb_words)
     local next_text = get_next_text(boxes, i_end, j_end, nb_words)
     return prev_text, next_text
@@ -1419,7 +1437,7 @@ end
 local function get_pattern_list(pattern, case_insensitive)
     -- pattern list of single words
     local plist = {}
-    -- (as in util.splitToWords(), but only splitting on spaces, keeping punctuations)
+    -- (as in util.splitToWords(), but only splitting on spaces, keeping punctuation marks)
     for word in util.gsplit(pattern, "%s+") do
         if util.hasCJKChar(word) then
             for char in util.gsplit(word, "[\192-\255][\128-\191]+", true) do
@@ -1428,6 +1446,10 @@ local function get_pattern_list(pattern, case_insensitive)
         else
             table.insert(plist, case_insensitive and Utf8Proc.lowercase(util.fixUtf8(word, "?")) or word)
         end
+    end
+    if #plist == 1 then
+        plist.from_start = pattern:sub(1, 1) == " "
+        plist.from_end = pattern:sub(-1) == " "
     end
     return plist
 end
@@ -1450,7 +1472,17 @@ local function all_matches(boxes, plist, case_insensitive)
             local pword = plist[pindex]
             local matched
             if pnb == 1 then -- single word in plist
-                matched = word:find(pword, 1, true)
+                if plist.from_start or plist.from_end then
+                    if plist.from_start and plist.from_end then
+                        matched = word == pword
+                    elseif plist.from_start then
+                        matched = word:sub(1, #pword) == pword
+                    else -- plist.from_end
+                        matched = word:sub(-#pword) == pword
+                    end
+                else
+                    matched = word:find(pword, 1, true)
+                end
             else -- multiple words in plist
                 if pindex == 1 then
                     -- first word of query should match at end of a word from the document

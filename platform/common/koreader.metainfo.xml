@@ -92,13 +92,15 @@
   <content_rating type="oars-1.1"/>
 
   <summary>Ebook reader</summary>
+  <summary xml:lang="bg_BG">Приложение за четене на електронни книги</summary>
+  <summary xml:lang="ca">Lector de llibres electrònics</summary>
   <summary xml:lang="cs">Čtečka e-knih</summary>
   <summary xml:lang="de">E-Book-Reader</summary>
   <summary xml:lang="el">Αναγνώστης ηλεκτρονικών βιβλίων</summary>
   <summary xml:lang="es">Lector de libros electrónicos</summary>
   <summary xml:lang="fr">Liseuse</summary>
   <summary xml:lang="gl">Lector de libros electrónicos</summary>
-  <summary xml:lang="he">מציג ספרים</summary>
+  <summary xml:lang="he">מציג ספרים אלקטרוניים</summary>
   <summary xml:lang="hu">Ebook olvasó</summary>
   <summary xml:lang="it_IT">Lettore ebook</summary>
   <summary xml:lang="ko_KR">전자책 리더</summary>
@@ -111,15 +113,21 @@
   <summary xml:lang="ru">Программа для чтения электронных книг</summary>
   <summary xml:lang="sk">Čítačka elektronických kníh</summary>
   <summary xml:lang="sr">Читач е-књига</summary>
+  <summary xml:lang="tr">E-kitap okuyucu</summary>
+  <summary xml:lang="uk">Програма для читання е-книг</summary>
+  <summary xml:lang="zh_CN">电子书阅读器</summary>
   <description>
     <p>KOReader is an ebook reader optimized for e-ink screens. It can open many formats and provides advanced text adjustments.</p>
-    <p xml:lang="de">KOReader ist ein für E-Ink-Bildschirme optimierter E-Book-Reader. Er kann viele Formate öffnen und bietet erweiterte Textanpassungen.</p>
+    <p xml:lang="bg_BG">KOReader е приложение за четене на електронни книги в различни формати на екрани с електронно мастило. Притежава множество възможности за настройки на текста.</p>
+    <p xml:lang="ca">KOReader és un lector de llibres electrònics optimitzat per pantalles de tinta electrònica. Pot obrir molts formats i proporciona configuracions avançades de text.</p>
+    <p xml:lang="de">KOReader ist eine für E-Papier-Bildschirme optimierte E-Bücher-Software. Sie kann viele Formate öffnen und bietet erweiterte Textanpassungen.</p>
     <p xml:lang="el">Το KOReader είναι ένα πρόγραμμα ανάγνωσης ηλεκτρονικών βιβλίων βελτιστοποιημένο για οθόνες e-ink. Μπορεί να ανοίξει πολλές μορφές αρχείων και παρέχει προηγμένες προσαρμογές κειμένου.</p>
     <p xml:lang="es">KOReader es un lector de libros electrónicos optimizado para pantallas de tinta electrónica. Puede abrir muchos formatos y proporciona ajustes avanzados de texto.</p>
+    <p xml:lang="fr">KOReader est un lecteur de livres numériques optimisé pour les écrans à encre électronique. Il peut ouvrir de nombreux formats et fournit des ajustements de texte avancés.</p>
     <p xml:lang="gl">KOReader é un lector de libros electrónicos optimizado para pantallas e-ink. Pode abrir moitos formatos e permite axustes avanzados de texto.</p>
     <p xml:lang="he">KOReader הוא מציג ספרים אלקטרוניים שמותאם במיוחד למסכי e-ink (דיו אלקטרוני). יכול לפתוח סוגים רבים של קבצים ומספק התאמות טקסט מתקדמות.</p>
     <p xml:lang="hu">A KOReader egy e-ink képernyőkre optimalizált e-könyv olvasó. Több formátumot képes megnyitni, és fejlett szövegbeállításokat biztosít.</p>
-    <p xml:lang="it_IT">KOReader è un lettore ebook ottimizzato per schermi e-ink. Può aprire molti formati e permette aggiustamenti avanzati del testo.</p>
+    <p xml:lang="it_IT">KOReader è un lettore di libri digitali ottimizzato per schermi a carta elettronica (inchiostro elettroforetico). Può aprire molti formati e permette aggiustamenti avanzati del testo.</p>
     <p xml:lang="ko_KR">KOReader는 전자 잉크 스크린에 최적화된 전자책 리더입니다. 다양한 형식을 열 수 있고 고급 텍스트 조정 기능을 제공합니다.</p>
     <p xml:lang="nl_NL">KOReader is een ebooklezer die is geoptimaliseerd voor e-inkschermen. Het kan veel formaten openen en biedt geavanceerde tekstaanpassingen.</p>
     <p xml:lang="pl">KOReader to czytnik e-booków zoptymalizowany pod kątem ekranów e-ink. Może otwierać wiele formatów i zapewnia zaawansowane dostosowania tekstu.</p>
@@ -130,10 +138,16 @@
     <p xml:lang="ru">KOReader это программа для чтения электронных книг различных форматов на экранах E-Ink, обладающая множеством функций для работы с текстом.</p>
     <p xml:lang="sk">KOReader je čítačka elektronických kníh optimalizovaná pre obrazovky s elektronickým atramentom. Dokáže otvoriť mnoho formátov a poskytuje pokročilé úpravy textu.</p>
     <p xml:lang="sr">KOReader је читач е-књига оптимизован за e-ink екране. Може да отвори многе формате и омогућава напредна подешавања текста.</p>
+    <p xml:lang="tr">KOReader, e-mürekkep ekranları için optimize edilmiş bir e-kitap okuyucudur. Birçok formatı açabilir ve gelişmiş metin ayarlamaları sağlar.</p>
+    <p xml:lang="uk">KOReader — це програма для читання е-книг, оптимізована для екранів e-Ink, яка підтримує багато форматів і має багато функцій для роботи з текстом.</p>
+    <p xml:lang="zh_CN">KOReader 是一款针对电子墨水屏优化的电子书阅读器。它可以打开多种格式，并可对文本做各种调整。</p>
     <p>See below for a selection of its many features:</p>
+    <p xml:lang="bg_BG">По-долу е списък с някои от възможностите му:</p>
+    <p xml:lang="ca">A continuació pots veure una selecció de les seves característiques:</p>
     <p xml:lang="de">Im Folgenden finden Sie eine Auswahl der zahlreichen Funktionen:</p>
     <p xml:lang="el">Δείτε παρακάτω μια επιλογή από τα πολλά χαρακτηριστικά του:</p>
     <p xml:lang="es">Vea a continuación una selección de sus muchas características:</p>
+    <p xml:lang="fr">Voir ci-dessous pour une sélection de ses nombreuses caractéristiques :</p>
     <p xml:lang="gl">A continuación unha selección das súas moitas funcións:</p>
     <p xml:lang="he">להלן מבחר מהיכולות המגוונות שלו:</p>
     <p xml:lang="hu">Az alábbiakban számos jellemzőjéből láthat egy válogatást:</p>
@@ -148,45 +162,66 @@
     <p xml:lang="ru">Ниже представлен список возможностей:</p>
     <p xml:lang="sk">Nižšie nájdete výber z mnohých funkcií:</p>
     <p xml:lang="sr">Испод се налази избор неких од његових многих функција:</p>
+    <p xml:lang="tr">Birçok özelliğinden bir seçki için aşağıya bakın:</p>
+    <p xml:lang="uk">Нижче наведений список можливостей:</p>
+    <p xml:lang="zh_CN">请参阅下文，了解其众多功能：</p>
     <ul>
       <li>Supports both fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Scanned PDF&#47;DjVu documents can be reflowed. Special flow directions for reading double column PDFs and manga.</li>
-      <li xml:lang="de">Unterstützt sowohl feste Seitenformate (PDF, DjVu, CBT, CBZ) als auch reflowfähige E-Book-Formate (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Gescannte PDF&#47;DjVu-Dokumente können mit Reflow versehen werden. Spezielle Flussrichtungen für das Lesen zweispaltiger PDFs und Mangas.</li>
+      <li xml:lang="bg_BG">Поддържа както формати с фиксирани страници (PDF, DjVu, CBT, CBZ), така и формати на електронни книги с възможност за прекомпозиране на страниците (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Сканирани PDF&#47;DjVu документи могат да бъдат прекомпозирани. Специални режими на прекомпозиране за четене на PDF документи с текст в две колонии манга.</li>
+      <li xml:lang="ca">Admet formats de pàgina fixa (PDF, DjVu, CBR, CBZ) i formats de llibre electrònic ajustables (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Els documents PDF&#47;DjVu escanejats es poden refluir. Permet refluir PDFs i mangues per llegir-los en mode de columna doble.</li>
+      <li xml:lang="de">Unterstützt sowohl feste Seitenformate (PDF, DjVu, CBT, CBZ) als auch reflowfähige E-Büch-Formate (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Gescannte PDF&#47;DjVu-Dokumente können mit Reflow versehen werden. Spezielle Flussrichtungen für das Lesen zweispaltiger PDFs und Mangas.</li>
       <li xml:lang="el">Υποστηρίζει τόσο μορφές σταθερής διάταξης (PDF, DjVu, CBT, CBZ) όσο και μορφές ηλεκτρονικών βιβλίων μεταβλητής διάταξης (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Στα σαρωμένα έγγραφα PDF&#47;DjVu η διάταξη του κειμένου μπορεί να αλλάξει. Ειδικές κατευθύνσεις ανάγνωσης για αρχεία PDF και manga διπλής στήλης.</li>
-      <li xml:lang="es">Admite formatos de página fija (PDF, DjVu, CBR, CBZ) y formatos de libros electrónicos ajustables (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Los documentos PDF&#47;DjVu escaneados se pueden refluir. Instrucciones de flujo especiales para leer PDFs y manga de doble columna.</li>
+      <li xml:lang="es">Admite formatos de página fija (PDF, DjVu, CBR, CBZ) y formatos de libros electrónicos ajustables (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Los documentos PDF&#47;DjVu escaneados se pueden redistribuir. Instrucciones de redistribución especiales para leer PDFs y manga de doble columna.</li>
+      <li xml:lang="fr">Prend en charge les formats de pages fixes (PDF, DjVu, CBT, CBZ) et les formats de livres électroniques reformatables (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Les documents numérisés PDF&#47;DjVu peuvent être remaniés. Directions spéciales pour la lecture de double colonne PDF et manga.</li>
       <li xml:lang="gl">Soporta formatos de páxina fixa (PDF, DjVu, CBT, CBZ) e formatos de e-book reordenables (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Documentos PDF&#47;DjVu escaneados poden ser reorganizados. Direccións especiais de organización para ler PDFs de dúas columnas e manga.</li>
-      <li xml:lang="he">תמיכה גם בתצורות עם עימוד קבוע (PDF,‏ DjVu,‏ CBT,‏ CBZ) וגם בספרטים אלקטרוניים שניתן להתאים למסך (EPUB,‏ FB2‏, Mobi,‏ DOC,‏ CHM,‏ TXT,‏ HTML)‬. אפשר להתאים מחדש מסמכי PDF&#47;DjVu שנסרקו למסך. הנחיות מיוחדות לגלישת טקסט במסך לקריאת קובצי PDF מפוצלים לשתי עמודות ומאנגה.</li>
+      <li xml:lang="he">תמיכה גם בתצורות עם עימוד קבוע (PDF,‏ DjVu,‏ CBT,‏ CBZ) וגם בספרים אלקטרוניים שניתן להתאים למסך (EPUB,‏ FB2‏, Mobi,‏ DOC,‏ CHM,‏ TXT,‏ HTML)‬. אפשר להתאים מחדש מסמכי PDF&#47;DjVu שנסרקו למסך. הנחיות מיוחדות לגלישת טקסט במסך לקריאת קובצי PDF מפוצלים לשתי עמודות ומאנגה.</li>
       <li xml:lang="hu">Támogatja mind a fix oldalformátumokat (PDF, DjVu, CBT, CBZ), mind az újratördelhető e-könyv formátumokat (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). A beolvasott PDF&#47;DjVu dokumentumokat vissza lehet folyatni. Speciális folyatási irányok a kétoszlopos PDF-ek és mangák olvasásához.</li>
-      <li xml:lang="it_IT">Supporta sia formati di pagina fissi (PDF, DjVu, CBT, CBZ) che formati di e-book riformattabili (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). I documenti PDF&#47;DjVu scansionati possono essere riformattati. Direzioni di flusso speciali per la lettura di PDF a doppia colonna e manga.</li>
+      <li xml:lang="it_IT">Supporta sia formati di pagina fissi (PDF, DjVu, CBT, CBZ) che formati di libro digitale riformattabili (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). I documenti PDF&#47;DjVu scansionati possono essere riformattati. Direzioni di flusso speciali per la lettura di PDF a doppia colonna e manga.</li>
       <li xml:lang="ko_KR">고정 페이지 형식(PDF, DjVu, CBT, CBZ)과 리플로우 가능한 전자책 형식(EPUB, FB2, Mobi, DOC, CHM, TXT, HTML)을 모두 지원합니다. 스캔한 PDF&#47;DjVu 문서는 리플로우할 수 있습니다. 이단 PDF와 만화를 읽기 위한 특수 흐름 방향.</li>
       <li xml:lang="nl_NL">Ondersteunt zowel vaste paginaformaten (PDF, DjVu, CBT, CBZ) als reflowable e-bookformaten (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Gescande PDF&#47;DjVu-documenten kunnen gereflowed worden. Speciale leesrichtingen voor het lezen van PDF&#39;s met dubbele kolommen en manga.</li>
       <li xml:lang="pl">Obsługuje zarówno formaty stron stałych (PDF, DjVu, CBT, CBZ), jak i formaty e-booków z możliwością zmieniania układu (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). W zeskanowanych dokumentach PDF&#47;DjVu można zmieniać układ. Specjalne kierunki układu dotyczące czytania dwukolumnowych plików PDF i mangi.</li>
       <li xml:lang="pt_BR">Suporta tanto a formatos de página fixa (PDF, DjVu, CBT, CBZ) quanto a formatos refluíveis de livro eletrônico (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Documentos digitalizados em formato PDF&#47;DjVu podem ser refluídos. Direções de fluxo especiais para leitura de PDFs com duas colunas e mangás.</li>
+      <li xml:lang="pt_PT">Suporta tanto a formatos de página fixa (PDF, DjVu, CBT, CBZ) quanto a formatos refluíveis de livro eletrônico (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Documentos digitalizados em formato PDF&#47;DjVu podem ser refluídos. Direções de fluxo especiais para leitura de PDFs com duas colunas e mangás.</li>
       <li xml:lang="ro">Suportă formatele cu pagini fixe (PDF, DjVu, CBT, CBZ) și formatele cu text rearanjabil (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Documentele PDF&#47;DjVu scanate pot fi rearanjate. Direcții speciale de rearanjare pentru citirea documentelor cu două coloane sau manga.</li>
       <li xml:lang="ro_MD">Suportă formatele cu pagini fixe (PDF, DjVu, CBT, CBZ) și formatele cu text rearanjabil (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Documentele PDF&#47;DjVu scanate pot fi rearanjate. Direcții speciale de rearanjare pentru citirea documentelor cu două coloane sau manga.</li>
       <li xml:lang="ru">Поддерживаются как форматы с фиксированной страницей (PDF, DjVu, CBT, CBZ), так и форматы электронных книг с перекомпонуемой страницей (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Также доступна перекомпоновка страниц в отсканированных документах PDF&#47;DjVu и разные направления чтения для двухколоночных PDF&#47;манги.</li>
       <li xml:lang="sk">Podporuje ako pevné formáty stránok (PDF, DjVu, CBT, CBZ), tak aj formáty elektronických kníh (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Naskenované dokumenty PDF&#47;DjVu je možné preformátovať. Špeciálne smery toku na čítanie dvojstĺpcových PDF a manga.</li>
       <li xml:lang="sr">Подршка и за формате фиксних страница (PDF, DjVu, CBT, CBZ) и за формате е-књига који дозвољавају преслагање текста (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Скенирани PDF&#47;DjVu документи могу да се пресложе. Посебни смерови тока за читање PDF и manga докумената у две колоне.</li>
+      <li xml:lang="tr">Hem sabit sayfa formatlarını (PDF, DjVu, CBT, CBZ) hem de yeniden akıtılabilir e-kitap formatlarını (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML) destekler. Taranan PDF&#47;DjVu belgeleri yeniden akıtılabilir. Çift sütunlu PDF&#39;leri ve mangaları okumak için özel akış yönleri.</li>
+      <li xml:lang="uk">Підтримує як формати з фіксованими сторінками (PDF, DjVu, CBT, CBZ), так і формати з можливістю зміни форматування тексту (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Також доступне перекомпонування сканованих документів PDF&#47;DjVu та різні напрямки читання двостовпцевих PDF і манґи.</li>
+      <li xml:lang="zh_CN">支持固定页面格式（PDF、DjVu、CBT、CBZ）和可重排电子书格式（EPUB、FB2、Mobi、DOC、CHM、TXT、HTML）。扫描的 PDF&#47;DjVu 文档可以重排。用于阅读双栏 PDF 和漫画的特殊排版。</li>
       <li>Multi-lingual user interface optimized for e-ink screens. Highly customizable reader view with complete typesetting options. Multi-lingual hyphenation dictionaries are bundled in.</li>
-      <li xml:lang="de">Mehrsprachige Benutzeroberfläche, optimiert für E-Ink-Bildschirme. Hochgradig anpassbare Leseansicht mit vollständigen Satzoptionen. Mehrsprachige Silbentrennungswörterbücher sind im Lieferumfang enthalten.</li>
+      <li xml:lang="bg_BG">Многоезичен потребителски интерфейс, оптимизиран за екрани с електронно мастило. Приложението има богат набор от настройки с голям набор от възможности за форматиране на типографията. Включени са многоезични речници за сричкопренасяне.</li>
+      <li xml:lang="ca">Interfície d&#39;usuari multilingüe optimitzada per pantalles de tinta electrònica. Vista de lector altament personalitzable amb opcions completés de composició tipogràfica. Els diccionaris multilingües de separació sil·làbica estan inclosos.</li>
+      <li xml:lang="de">Mehrsprachige Benutzeroberfläche, optimiert für E-Papier-Bildschirme. Hochgradig anpassbare Leseansicht mit vollständigen Satzoptionen. Mehrsprachige Silbentrennungswörterbücher sind im Lieferumfang enthalten.</li>
       <li xml:lang="el">Πολύγλωσση διεπαφή χρήστη, βελτιστοποιημένη για οθόνες e-ink. Εξαιρετικά προσαρμόσιμη προβολή αναγνώστη με πλήρεις επιλογές στοιχειοθεσίας. Περιλαμβάνονται λεξικά συλλαβισμού σε πολλές γλώσσες.</li>
+      <li xml:lang="en_GB">Multi-lingual user interface optimised for e-ink screens. Highly customisable reader view with complete typesetting options. Multi-lingual hyphenation dictionaries are bundled in.</li>
       <li xml:lang="es">Interfaz de usuario multilingüe optimizada para pantallas de tinta electrónica. Vista de lector altamente personalizable con opciones completas de composición tipográfica. Los diccionarios multilingües de separación silábica están incluidos.</li>
+      <li xml:lang="fr">Interface utilisateur multilingue optimisée pour les écrans à encre électronique. Vue lecteur hautement personnalisable avec des options de typographie complètes. Les dictionnaires de coupes multilingues sont groupés.</li>
       <li xml:lang="gl">Interface de usuario multi-linguaxe optimizado para pantallas de tinta electrónica. Vista de lector altamente axustable con opcións completas de tipografía. Dicionarios de separación en sílabas para múltiples linguaxes incluídos.</li>
       <li xml:lang="he">ממשק משתמש רב לשוני ומותאם למסכים אלקטרוניים. תצוגת מקריא גמישה במיוחד עם אפשרויות טיפוגרפיות שלמות. מילוני מיקוף רב לשוניים מובנים.</li>
       <li xml:lang="hu">Többnyelvű, e-ink képernyőkre optimalizált felhasználói felület. Nagymértékben testreszabható olvasónézet teljeskörű szedési lehetőségekkel. Többnyelvű kötőjelszótárak a csomagban.</li>
-      <li xml:lang="it_IT">Interfaccia utente multilingue ottimizzata per schermi e-ink. Aspetto del lettore altamente personalizzabile con opzioni tipografiche complete. Dizionari di sillabazione multilingue inclusi.</li>
+      <li xml:lang="it_IT">Interfaccia utente multilingue ottimizzata per schermi a carta elettronica. Aspetto del lettore altamente personalizzabile con opzioni tipografiche complete. Dizionari di sillabazione multilingue inclusi.</li>
       <li xml:lang="ko_KR">전자 잉크 화면에 최적화된 다국어 사용자 인터페이스. 완벽한 조판 옵션을 갖춘 고도로 사용자 정의 가능한 리더 보기. 다국어 하이픈 연결 사전이 번들로 제공됩니다.</li>
       <li xml:lang="nl_NL">Meertalige gebruikersinterface geoptimaliseerd voor e-inkschermen. Zeer aanpasbare leesweergave met complete zetopties. Meertalige afbreekwoordenboeken zijn gebundeld.</li>
       <li xml:lang="pl">Wielojęzyczny interfejs użytkownika zoptymalizowany pod kątem ekranów e-ink. Wysoce konfigurowalny widok czytnika z pełnymi opcjami składu. W zestawie znajdują się wielojęzyczne słowniki dzielenia wyrazów.</li>
       <li xml:lang="pt_BR">Interface de usuário multilíngue otimizada para telas de tinta eletrônica. Leitor altamente personalizável com opções completas de tipografia. Dicionários de hifenização multilíngue já estão incluídos.</li>
-      <li xml:lang="ro">Interfață utilizator în numeroase limbi, optimizată pentru ecranele e-ink. Afișare cu multe posibilități de particularizare cu opțiuni complete de tipografie. Dicționarele de despărțire în silabe pentru numeroase limbi sunt incluse.</li>
-      <li xml:lang="ro_MD">Interfață utilizator în numeroase limbi, optimizată pentru ecranele e-ink. Afișare cu multe posibilități de particularizare cu opțiuni complete de tipografie. Dicționarele de despărțire în silabe pentru numeroase limbi sînt incluse.</li>
+      <li xml:lang="pt_PT">Interface de utilizador multilíngue otimizada para ecrã de tinta eletrônica. Leitor altamente personalizável com opções completas de tipografia. Dicionários de hifenização multilíngue já estão incluídos.</li>
+      <li xml:lang="ro">Interfață utilizator în numeroase limbi, optimizată pentru ecranele e-ink. Afișare cu multe posibilități de personalizare ,cu opțiuni complete de tipografie. Dicționarele de despărțire în silabe pentru numeroase limbi sunt incluse.</li>
+      <li xml:lang="ro_MD">Interfață utilizator în numeroase limbi, optimizată pentru ecranele e-ink. Afișare cu multe posibilități de personalizare, cu opțiuni complete de tipografie. Dicționarele de despărțire în silabe pentru numeroase limbi sînt incluse.</li>
       <li xml:lang="ru">Пользовательский интерфейс переведён на множество языков и оптимизирован для экранов E-Ink. Программа имеет весьма гибкие настройки с богатыми возможностями форматирования текста. Также в комплекте идут многоязычные словари для расстановки переносов.</li>
       <li xml:lang="sk">Viacjazyčné používateľské rozhranie optimalizované pre obrazovky s elektronickým atramentom. Vysoko prispôsobiteľný vzhľad čítačky s kompletnými možnosťami sadzby textu. Súčasťou sú viacjazyčné slovníky delenia slov.</li>
       <li xml:lang="sr">Вишејезички кориснички интерфејс оптимизован за e-ink екране. Приказ за читање који може да се подеси врло детаљно, са комплетним опцијама словослагања. Испоручује се са речницима хифенације за многе језике.</li>
+      <li xml:lang="tr">E-mürekkep ekranları için optimize edilmiş çok dilli kullanıcı arayüzü. Eksiksiz dizgi seçenekleriyle son derece özelleştirilebilir okuyucu görünümü. Çok dilli tireleme sözlükleri paket halindedir.</li>
+      <li xml:lang="uk">Багатомовний інтерфейс користувача оптимізований для читання на пристроях з екранами на електронних чорнилах (e-Ink). Програма забезпечує дуже гнучке налаштування з широкими можливостями верстки тексту. У комплекті також постачаються словники розставлення перенесень для багатьох мов.</li>
+      <li xml:lang="zh_CN">针对电子墨水屏幕优化的多语言用户界面。高度可定制的阅读器界面，具有完整的排版选项。并集成了多语言断字词典。</li>
       <li>Non-Latin script support for books, including the Hebrew, Arabic, Persian, Russian, Chinese, Japanese and Korean languages.</li>
+      <li xml:lang="bg_BG">Поддръжка на книги с азбука различна от латинската, включително езици като иврит, арабски, персийски, руски, китайски, японски и корейски.</li>
+      <li xml:lang="ca">Suport per escriptura no llatina per llibres, inclou l&#39;hebreu, àrab, persa, rus, xinès, japonès i coreà.</li>
       <li xml:lang="de">Unterstützung nicht-lateinischer Schriften für Bücher, einschließlich Hebräisch, Arabisch, Persisch, Russisch, Chinesisch, Japanisch und Koreanisch.</li>
       <li xml:lang="el">Υποστήριξη μη λατινικής γραφής για βιβλία, συμπεριλαμβανομένων των εβραϊκών, αραβικών, περσικών, ρωσικών, κινεζικών, ιαπωνικών και κορεατικών.</li>
       <li xml:lang="es">Soporte de escritura no latina para libros, incluidos los idiomas Hebreo, Árabe, Persa, Ruso, Chino, Japonés y Coreano.</li>
+      <li xml:lang="fr">Prise en charge de systèmes d&#39;écriture non latins pour les livres, y compris les langues hébraïque, arabe, persane, russe, chinoise, japonaise et coréenne.</li>
       <li xml:lang="gl">Soporte para libros con escritura non latina, incluíndo hebreo, árabe, persa, ruso, chinés, xaponés e coreano.</li>
       <li xml:lang="he">תמיכה בספרים בכתב לא לטיני, כולל לשפות עברית, ערבית, פרסית, רוסית, סינית, יפנית וקוריאנית.</li>
       <li xml:lang="hu">Nem latin betűs szövegek támogatása, beleértve a héber, arab, perzsa, orosz, kínai, japán és koreai nyelveket.</li>
@@ -195,12 +230,18 @@
       <li xml:lang="nl_NL">Ondersteuning van niet-Latijns schrift voor boeken, waaronder Hebreeuws, Arabisch, Perzisch, Russisch, Chinees, Japans en Koreaans.</li>
       <li xml:lang="pl">Obsługa pism innych niż łaciński dla książek, w tym języków: hebrajskiego, arabskiego, perskiego, rosyjskiego, chińskiego, japońskiego i koreańskiego.</li>
       <li xml:lang="pt_BR">Suporte para livro com escrita não latina, incluindo as línguas hebraica, árabe, persa, russa, chinesa, japonesa e coreana.</li>
+      <li xml:lang="pt_PT">Suporte para livros com escrita não latina, incluindo as línguas hebraica, árabe, persa, russa, chinesa, japonesa e coreana.</li>
       <li xml:lang="ro">Suport lingvistic non-latin pentru cărți incluzând ebraică, arabă, persană, rusă, chineză, japoneză și koreană.</li>
       <li xml:lang="ro_MD">Suport lingvistic non-latin pentru cărți incluzînd ebraică, arabă, persană, rusă, chineză, japoneză și koreană.</li>
       <li xml:lang="ru">В книгах поддерживаются отличные от латинского алфавиты, включая иврит, арабский, персидский, русский, китайский, японский и корейский языки.</li>
       <li xml:lang="sk">Podpora nelatinského písma pre knihy vrátane hebrejčiny, arabčiny, perzštiny, ruštiny, čínštiny, japončiny a kórejčiny.</li>
       <li xml:lang="sr">Подршка за књиге писане на језицима који не користе латинично писмо, укључујући хебрејски, арапски, персијски, руски, кинески, јапански и корејски језик.</li>
+      <li xml:lang="tr">İbranice, Arapça, Farsça, Rusça, Çince, Japonca ve Korece dilleri de dahil olmak üzere kitaplar için Latince olmayan alfabe desteği.</li>
+      <li xml:lang="uk">У книгах підтримується різноманітні шрифти: японські, корейські, арабські, іврит, китайські, перські.</li>
+      <li xml:lang="zh_CN">支持非拉丁文字的书籍，包括希伯来语、阿拉伯语、波斯语、俄语、汉语、日语和韩语。</li>
       <li>Unique Book Map and Page Browser features to navigate your book.</li>
+      <li xml:lang="bg_BG">За придвижване в книгата има на разположение възможности като карта на книгата и преглед на страници.</li>
+      <li xml:lang="ca">Funcions úniques de mapa de llibres i navegador de pàgines.</li>
       <li xml:lang="de">Einzigartige Buchkarte und Seitenbrowser zum Navigieren in Ihrem Buch.</li>
       <li xml:lang="el">Μοναδικές λειτουργίες Χάρτη Βιβλίου και Περιήγησης Σελίδων για την περιήγηση στο βιβλίο σας.</li>
       <li xml:lang="es">Funciones únicas de Mapa de Libros y Navegador de Páginas para navegar por su libro.</li>
@@ -208,20 +249,27 @@
       <li xml:lang="gl">Funcionalidades únicas de Mapa do Libro e Explorador de páxinas para navegar polo libro.</li>
       <li xml:lang="he">יכולות ייחודיות כגון מפת ספר ודפדפן עמודים לניווט בספר שלך.</li>
       <li xml:lang="hu">Egyedi könyvtérkép és oldalböngésző funkciók a könyvben való navigáláshoz.</li>
-      <li xml:lang="it_IT">Funzionalità uniche di Mappa del Libro e di Browser Pagine per navigare il tuo libro.</li>
+      <li xml:lang="it_IT">Funzionalità uniche di Mappa del libro e di Browser Pagine per navigare il tuo libro.</li>
       <li xml:lang="ko_KR">고유한 책 지도와 페이지 탐색기 기능으로 책을 탐색할 수 있습니다.</li>
       <li xml:lang="nl_NL">Unieke boekkaart- en paginaverkennerfuncties om door je boek te navigeren.</li>
       <li xml:lang="pl">Unikalne funkcje mapy książki i przeglądarki stron umożliwiające nawigację po książce.</li>
       <li xml:lang="pt_BR">Recursos únicos de Mapa do Livro e no Navegador de Páginas para navegar pelo seu livro.</li>
+      <li xml:lang="pt_PT">Recursos únicos de Mapa do Livro e no Navegador de Páginas para navegar pelo seu livro.</li>
       <li xml:lang="ro">Funcții unicat pentru Harta cărții, Navigatorul de pagini, pentru a face navigarea cărții mai facilă.</li>
       <li xml:lang="ro_MD">Funcții unicat pentru Harta cărții, Navigatorul de pagini, pentru a face navigarea cărții mai facilă.</li>
       <li xml:lang="ru">Для навигации по книгам имеются уникальные возможности книжной карты и браузера страниц.</li>
       <li xml:lang="sk">Jedinečné funkcie knižnej mapy a prehliadača stránok pre navigáciu v knihe.</li>
       <li xml:lang="sr">Јединствене функције Мапа књиге и Прегледач страница помоћу којих се крећете кроз своју књигу.</li>
+      <li xml:lang="tr">Kitabınızda gezinmenizi sağlayacak benzersiz Kitap Haritası ve Sayfa Tarayıcı özellikleri.</li>
+      <li xml:lang="uk">Для навігації книгою наявні унікальні можливості мапи книги та оглядача сторінок.</li>
+      <li xml:lang="zh_CN">独特的书籍地图和页面浏览功能可帮助您浏览图书。</li>
       <li>Special multi-page highlight mode with many local and online export options.</li>
+      <li xml:lang="bg_BG">Специален режим за подчертаване с много възможности за местно и отдалечено изнасяне.</li>
+      <li xml:lang="ca">Mode especial per subratllat de vàries pàgines, amb moltes opcions d&#39;exportació local i en línia.</li>
       <li xml:lang="de">Spezieller mehrseitiger Highlight-Modus mit vielen lokalen und Online-Exportoptionen.</li>
       <li xml:lang="el">Ειδική λειτουργία επισήμανσης πολλαπλών σελίδων με πολλές τοπικές και διαδικτυακές επιλογές εξαγωγής.</li>
       <li xml:lang="es">Modo especial de resaltado de varias páginas con muchas opciones de exportación locales y en línea.</li>
+      <li xml:lang="fr">Mode de surlignage spécial multi-page avec de nombreuses options d&#39;exportation locales et en ligne.</li>
       <li xml:lang="gl">Modo especial de destacar texto multi-páxina con moitas opcións para exportar localmente ou na rede.</li>
       <li xml:lang="he">מצב מיוחד להדגשה רב עמודית, עם אפשרויות רבות לייצוא מקומי ולרשת.</li>
       <li xml:lang="hu">Speciális többoldalas kiemelési mód számos helyi és online exportálási lehetőséggel.</li>
@@ -230,14 +278,23 @@
       <li xml:lang="nl_NL">Speciale markeermodus voor meerdere pagina&#39;s met veel lokale en online exportopties.</li>
       <li xml:lang="pl">Specjalny tryb zaznaczania wielu stron z licznymi opcjami eksportu lokalnego i online.</li>
       <li xml:lang="pt_BR">Modo especial de destaque de múltiplas páginas com várias opções para exportar localmente e online.</li>
+      <li xml:lang="pt_PT">Modo especial de destaque de múltiplas páginas com várias opções para exportar localmente e online.</li>
       <li xml:lang="ro">Mod special de evidențiere multi-pagină cu multiple opțiuni locale și online de export.</li>
       <li xml:lang="ro_MD">Mod special de evidențiere multi-pagină cu multiple opțiuni locale și online de export.</li>
       <li xml:lang="ru">Специальный многостраничный режим выделения с множеством вариантов локального и онлайн-экспорта.</li>
       <li xml:lang="sk">Špeciálny viacstránkový režim zvýraznenia s mnohými lokálnymi a online možnosťami exportu.</li>
       <li xml:lang="sr">Специјални режим за истицање више страница са многим опцијама за локални извоз и за извоз на мрежу.</li>
+      <li xml:lang="tr">Birçok yerel ve çevrim içi dışa aktarma seçeneği bulunan özel çok sayfalı vurgulama kipi.</li>
+      <li xml:lang="uk">Спеціальний режим виділення багатьох сторінок з багатьма варіантами експорту локально і онлайн.</li>
+      <li xml:lang="zh_CN">特殊的多页高亮显示模式，支持多种本地和在线导出方式。</li>
       <li>Can synchronize your reading progress across all your KOReader running devices.</li>
+      <li xml:lang="bg_BG">Дава възможност за синхронизиране не напредъка в четенето на всички ваши устройства, на които има KOReader.</li>
+      <li xml:lang="ca">Pot sincronitzar el progrés de lectura en tots els seus dispositius que utilitzin KOReader.</li>
       <li xml:lang="de">Kann Ihren Lesefortschritt auf allen Ihren KOReader-Geräten synchronisieren.</li>
       <li xml:lang="el">Μπορείτε να συγχρονίσετε την πρόοδο της ανάγνωσής σας σε όλες τις συσκευές σας που λειτουργούν με το KOReader.</li>
+      <li xml:lang="en_GB">Can synchronise your reading progress across all your KOReader running devices.</li>
+      <li xml:lang="es">Puede sincronizar el progreso de lectura entre todos sus dispositivos con KOReader.</li>
+      <li xml:lang="fr">Synchronise votre progression de lecture entre tous vos appareils utilisant KOReader.</li>
       <li xml:lang="gl">Sincroniza o teu progreso de lectura en todos os teus dispositivos onde uses KOReader.</li>
       <li xml:lang="he">אפשר לסנכרן את תהליך הקריאה לשרת בין כל המכשירים שלך שמריצים KOReader.</li>
       <li xml:lang="it_IT">Può sincronizzare i tuoi progressi di lettura tra tutti i tuoi dispositivi su cui gira KOReader.</li>
@@ -251,13 +308,21 @@
       <li xml:lang="ru">Позволяет синхронизировать прогресс чтения на всех ваших устройствах, где установлен KOReader.</li>
       <li xml:lang="sk">Dokáže synchronizovať váš priebeh čítania na všetkých vašich zariadeniach, na ktorých beží KOReader.</li>
       <li xml:lang="sr">Може да синхронизује напредак читања са свим вашим уређајима на којима се извршава KOReader.</li>
+      <li xml:lang="tr">Okuma ilerlemenizi KOReader&#39;ı çalıştıran tüm cihazlarınızda senkronize edebilir.</li>
+      <li xml:lang="uk">Дозволяє синхронізувати поступ читання на усіх ваших пристроях з KOReader.</li>
+      <li xml:lang="zh_CN">可以在你的 KOReader 设备之间同步阅读进度。</li>
       <li>Integrated with Calibre, Wallabag, Wikipedia, Google Translate and other content providers.</li>
+      <li xml:lang="bg_BG">Интеграция с Calibre, Wallabag, Уикипедия, преводи от Гугъл и други доставчици на съдържание.</li>
+      <li xml:lang="ca">Integració amb Calibre, Wallabag, Wikipedia, Google Translate i altres proveïdors de continguts.</li>
       <li xml:lang="de">Integriert mit Calibre, Wallabag, Wikipedia, Google Translate und anderen Inhaltsanbietern.</li>
       <li xml:lang="el">Είναι ενοποιημένο με Calibre, Wallabag, Wikipedia, Google Translate και άλλους παρόχους περιεχομένου.</li>
+      <li xml:lang="es">Integrado con Calibre, Wallabag, Wikipedia, Google Translate y otros proveedores de contenidos.</li>
+      <li xml:lang="fr">Intégré avec Calibre, Wallabag, Wikipédia, Google Traduction et d&#39;autres fournisseurs de contenu.</li>
       <li xml:lang="gl">Integrado con Calibre, Wallabag, Wikipedia, Google Translate e outros provedores de contido.</li>
       <li xml:lang="he">משולבים בו Calibre,‏ Wallabag,‏ ויקיפדיה, Google Translate וספקי תוכן נוספים.</li>
       <li xml:lang="it_IT">Integrato con Calibre, Wallabag, Wikipedia, Google Translate e altri fornitori di contenuti.</li>
-      <li xml:lang="ko_KR">Calibre, Wallabag, 위키피디아, 구글 번역 및 기타 콘텐츠 제공 업체와 통합됩니다.</li>
+      <li xml:lang="ko_KR">캘리버, 왈라백, 위키피디아, 구글 번역 및 기타 콘텐츠 제공 업체와 통합됩니다.</li>
+      <li xml:lang="nl_NL">Geïntegreerd met Calibre, Wallabag, Wikipedia, Google Translate en andere inhoudaanbieders.</li>
       <li xml:lang="pl">Zintegrowany z Calibre, Wallabag, Wikipedią, Tłumaczem Google i innymi dostawcami treści.</li>
       <li xml:lang="pt_BR">Integrado com Calibre, Wallabag, Wikipedia, Google Tradutor e outros provedores de conteúdo.</li>
       <li xml:lang="pt_PT">Integração com Calibre, Wallabag, Wikipedia, Google Translate e outros fornecedores de conteúdo.</li>
@@ -266,6 +331,9 @@
       <li xml:lang="ru">Есть интеграция с Calibre, Wallabag, Википедией, Google-переводчиком и другими поставщиками контента.</li>
       <li xml:lang="sk">Integrované s Calibre, Wallabag, Wikipediou, Google Prekladačom a ďalšími poskytovateľmi obsahu.</li>
       <li xml:lang="sr">Интегрисан је са Calibre, Wallabag, Wikipedia, Google преводилац и са осталим пружаоцима садржаја.</li>
+      <li xml:lang="tr">Calibre, Wallabag, Wikipedia, Google Translate ve diğer içerik sağlayıcılarla entegre edilmiştir.</li>
+      <li xml:lang="uk">Інтегрований з Calibre, Wallabag, Вікіпедією, Google Перекладачем та іншими постачальниками вмісту.</li>
+      <li xml:lang="zh_CN">与 Calibre、Wallabag、Wikipedia、Google Translate 和其他内容提供商集成。</li>
     </ul>
   </description>
   <screenshots>
@@ -281,11 +349,15 @@
   </screenshots>
   <keywords>
     <keyword>reader</keyword>
+    <keyword xml:lang="bg_BG">приложение за четене</keyword>
+    <keyword xml:lang="ca">lector</keyword>
     <keyword xml:lang="de">Leser</keyword>
     <keyword xml:lang="el">αναγνώστης</keyword>
+    <keyword xml:lang="es">lector</keyword>
     <keyword xml:lang="fr">lecteur</keyword>
     <keyword xml:lang="gl">lector</keyword>
     <keyword xml:lang="he">מקריא</keyword>
+    <keyword xml:lang="hr">čitač</keyword>
     <keyword xml:lang="hu">olvasó</keyword>
     <keyword xml:lang="it_IT">lettore</keyword>
     <keyword xml:lang="ko_KR">리더</keyword>
@@ -298,12 +370,19 @@
     <keyword xml:lang="ru">программа чтения</keyword>
     <keyword xml:lang="sk">čítačka</keyword>
     <keyword xml:lang="sr">читач</keyword>
+    <keyword xml:lang="tr">okuyucu</keyword>
+    <keyword xml:lang="uk">програма читання</keyword>
+    <keyword xml:lang="zh_CN">阅读器</keyword>
     <keyword>viewer</keyword>
+    <keyword xml:lang="bg_BG">преглед на текста</keyword>
+    <keyword xml:lang="ca">visor</keyword>
     <keyword xml:lang="de">Betrachter</keyword>
     <keyword xml:lang="el">πρόγραμμα προβολής</keyword>
+    <keyword xml:lang="es">visor</keyword>
     <keyword xml:lang="fr">visualiseur du texte</keyword>
     <keyword xml:lang="gl">visor</keyword>
     <keyword xml:lang="he">מציג</keyword>
+    <keyword xml:lang="hr">prikazivač</keyword>
     <keyword xml:lang="hu">megjelenítő</keyword>
     <keyword xml:lang="it_IT">visualizzatore</keyword>
     <keyword xml:lang="ko_KR">뷰어</keyword>
@@ -315,12 +394,19 @@
     <keyword xml:lang="ru">просмотрщик</keyword>
     <keyword xml:lang="sk">prehliadač</keyword>
     <keyword xml:lang="sr">приказивач</keyword>
+    <keyword xml:lang="tr">metin görüntüleyici</keyword>
+    <keyword xml:lang="uk">переглядач</keyword>
+    <keyword xml:lang="zh_CN">查看器</keyword>
     <keyword>dictionary</keyword>
+    <keyword xml:lang="bg_BG">речник</keyword>
+    <keyword xml:lang="ca">diccionari</keyword>
     <keyword xml:lang="de">Wörterbuch</keyword>
     <keyword xml:lang="el">λεξικό</keyword>
+    <keyword xml:lang="es">diccionario</keyword>
     <keyword xml:lang="fr">dictionnaire</keyword>
     <keyword xml:lang="gl">dicionario</keyword>
     <keyword xml:lang="he">מילון</keyword>
+    <keyword xml:lang="hr">rječnik</keyword>
     <keyword xml:lang="hu">szótár</keyword>
     <keyword xml:lang="it_IT">dizionario</keyword>
     <keyword xml:lang="ko_KR">사전</keyword>
@@ -333,11 +419,17 @@
     <keyword xml:lang="ru">словарь</keyword>
     <keyword xml:lang="sk">slovník</keyword>
     <keyword xml:lang="sr">речник</keyword>
+    <keyword xml:lang="tr">sözlük</keyword>
+    <keyword xml:lang="uk">словник</keyword>
+    <keyword xml:lang="zh_CN">词典</keyword>
     <keyword>wikipedia</keyword>
+    <keyword xml:lang="bg_BG">уикипедия</keyword>
+    <keyword xml:lang="ca">viquipèdia</keyword>
     <keyword xml:lang="de">Wikipedia</keyword>
     <keyword xml:lang="el">βικιπαίδεια</keyword>
     <keyword xml:lang="fr">wikipédia</keyword>
     <keyword xml:lang="he">ויקיפדיה</keyword>
+    <keyword xml:lang="hr">wikipedija</keyword>
     <keyword xml:lang="hu">wikipédia</keyword>
     <keyword xml:lang="ko_KR">위키피디아</keyword>
     <keyword xml:lang="pt_BR">Wikipédia</keyword>
@@ -345,19 +437,27 @@
     <keyword xml:lang="ru">википедия</keyword>
     <keyword xml:lang="sk">wikipédia</keyword>
     <keyword xml:lang="sr">википедија</keyword>
+    <keyword xml:lang="uk">вікіпедія</keyword>
+    <keyword xml:lang="zh_CN">维基百科</keyword>
     <keyword>wallabag</keyword>
     <keyword xml:lang="de">Wallabag</keyword>
     <keyword xml:lang="es">Wallabag</keyword>
-    <keyword xml:lang="ko_KR">Wallabag</keyword>
+    <keyword xml:lang="ko_KR">왈라백</keyword>
     <keyword xml:lang="pt_BR">Wallabag</keyword>
     <keyword xml:lang="pt_PT">Wallabag</keyword>
     <keyword xml:lang="ru">Wallabag</keyword>
+    <keyword xml:lang="uk">Wallabag</keyword>
+    <keyword xml:lang="zh_CN">Wallabag</keyword>
     <keyword>annotations</keyword>
+    <keyword xml:lang="bg_BG">записки</keyword>
+    <keyword xml:lang="ca">anotacions</keyword>
+    <keyword xml:lang="cs">anotace</keyword>
     <keyword xml:lang="de">Anmerkungen</keyword>
     <keyword xml:lang="el">επισημειώσεις</keyword>
     <keyword xml:lang="es">anotaciones</keyword>
     <keyword xml:lang="gl">anotacións</keyword>
     <keyword xml:lang="he">הסברים</keyword>
+    <keyword xml:lang="hr">napomene</keyword>
     <keyword xml:lang="hu">megjegyzések</keyword>
     <keyword xml:lang="it_IT">annotazioni</keyword>
     <keyword xml:lang="ko_KR">주석</keyword>
@@ -365,12 +465,15 @@
     <keyword xml:lang="pl">adnotacje</keyword>
     <keyword xml:lang="pt_BR">anotações</keyword>
     <keyword xml:lang="pt_PT">anotações</keyword>
-    <keyword xml:lang="ro">adnotări</keyword>
-    <keyword xml:lang="ro_MD">adnotări</keyword>
+    <keyword xml:lang="ro">însemnări</keyword>
+    <keyword xml:lang="ro_MD">însemnări</keyword>
     <keyword xml:lang="ru">аннотации</keyword>
     <keyword xml:lang="sk">komentáre</keyword>
     <keyword xml:lang="sr">коментари</keyword>
+    <keyword xml:lang="tr">notlar</keyword>
+    <keyword xml:lang="uk">анотації</keyword>
     <keyword xml:lang="vi">chú giải</keyword>
+    <keyword xml:lang="zh_CN">注释</keyword>
     <keyword>epub</keyword>
     <keyword>fb2</keyword>
     <keyword>pdf</keyword>
@@ -380,14 +483,17 @@
     <release version="%%VERSION%%" date="%%DATE%%">
       <description>
         <p>Release notes available on the link below</p>
+        <p xml:lang="bg_BG">Бележките към изданието са достъпни по-долу</p>
+        <p xml:lang="ca">Notes de la versió disponibles en el següent enllaç</p>
         <p xml:lang="de">Die Versionshinweise sind unter folgendem Link verfügbar</p>
         <p xml:lang="el">Σημειώσεις έκδοσης διαθέσιμες στον παρακάτω σύνδεσμο</p>
         <p xml:lang="es">Notas de la versión disponibles en el siguiente enlace</p>
+        <p xml:lang="fr">Notes de version disponibles via le lien ci-dessous</p>
         <p xml:lang="gl">As notas do lanzamento están na ligazón embaixo</p>
         <p xml:lang="he">הערות הפצה זמינות דרך הקישור למטה</p>
         <p xml:lang="hu">A kiadási megjegyzések az alábbi linken érhetőek el</p>
         <p xml:lang="it_IT">Note di rilascio disponibili sul link qui sotto</p>
-        <p xml:lang="ko_KR">아래 링크에서 릴리스 정보를 확인할 수 있습니다</p>
+        <p xml:lang="ko_KR">아래 링크에서 릴리스 메모를 확인할 수 있습니다</p>
         <p xml:lang="nl_NL">Release-overzicht beschikbaar op de onderstaande link</p>
         <p xml:lang="pl">Informacje o wydaniu dostępne w poniższym łączu</p>
         <p xml:lang="pt_BR">Notas de lançamento disponíveis na ligação abaixo</p>
@@ -397,7 +503,10 @@
         <p xml:lang="ru">Примечания к выпуску по ссылке ниже</p>
         <p xml:lang="sk">Poznámky k vydaniu sú k dispozícii na nižšie uvedenom odkaze</p>
         <p xml:lang="sr">Белешке о издању се налазе на линку испод</p>
+        <p xml:lang="tr">Sürüm notlarına aşağıdaki bağlantıdan ulaşabilirsiniz</p>
+        <p xml:lang="uk">Відомості про випуск див. за посиланням нижче</p>
         <p xml:lang="vi">Ghi chú phát hành có sẵn ở liên kết dưới đây</p>
+        <p xml:lang="zh_CN">发行说明可从以下链接获取</p>
       </description>
       <url>https://github.com/koreader/koreader/releases/tag/%%VERSION%%</url>
     </release>

@@ -7,7 +7,11 @@ local FeedView = {
     DOWNLOAD_FULL_ARTICLE = "download_full_article",
     INCLUDE_IMAGES = "include_images",
     ENABLE_FILTER = "enable_filter",
-    FILTER_ELEMENT = "filter_element"
+    FILTER_ELEMENT = "filter_element",
+    BLOCK_ELEMENT = "block_element",
+    -- HTTP Basic Auth (optional)
+    HTTP_AUTH_USERNAME = "http_auth_username",
+    HTTP_AUTH_PASSWORD = "http_auth_password",
 }
 
 function FeedView:getList(feed_config, callback, edit_feed_attribute_callback, delete_feed_callback)
@@ -63,10 +67,14 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
     end
 
     -- Collect this stuff for later, with the single view.
-    local download_full_article = feed.download_full_article ~= false
+    local download_full_article = feed.download_full_article or false
     local include_images = feed.include_images ~= false
     local enable_filter = feed.enable_filter ~= false
     local filter_element = feed.filter_element
+    local block_element = feed.block_element
+    local http_auth = feed.http_auth or { username = nil, password = nil }
+    local http_auth_username = http_auth.username
+    local http_auth_password_set = type(http_auth.password) == "string" and #http_auth.password > 0
 
     local vc = {
         {
@@ -127,12 +135,48 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
         },
         {
             _("Filter element"),
-            filter_element,
+            filter_element or "",
             callback = function()
                 edit_feed_callback(
                     id,
                     FeedView.FILTER_ELEMENT,
                     filter_element
+                )
+            end
+        },
+        {
+            _("Block element"),
+            block_element or "",
+            callback = function()
+                edit_feed_callback(
+                    id,
+                    FeedView.BLOCK_ELEMENT,
+                    block_element
+                )
+            end
+        },
+        --- HTTP Basic auth fields (optional)
+        "---",
+        {
+            _("HTTP auth username"),
+            http_auth_username or "",
+            callback = function()
+                edit_feed_callback(
+                    id,
+                    FeedView.HTTP_AUTH_USERNAME,
+                    http_auth_username
+                )
+            end
+        },
+        {
+            _("HTTP auth password"),
+            http_auth_password_set and "••••••" or "",
+            callback = function()
+                -- Do not prefill the password; let the user type a new value.
+                edit_feed_callback(
+                    id,
+                    FeedView.HTTP_AUTH_PASSWORD,
+                    ""
                 )
             end
         },
@@ -168,33 +212,19 @@ end
 -- up the food chain, so to speak
 --
 function FeedView:flattenArray(base_array, source_array)
-    for key, value in pairs(source_array) do
+    for _, value in pairs(source_array) do
         if value[2] == nil then
             -- If the value is empty, then it's probably supposed to be a line
-            table.insert(
-                base_array,
-                "---"
-            )
+            table.insert(base_array, "---")
         else
-            if value["callback"] then
-                table.insert(
-                    base_array,
-                    {
-                        value[1], value[2], callback = value["callback"]
-                    }
-                )
-            else
-                table.insert(
-                    base_array,
-                    {
-                        value[1], value[2]
-                    }
-                )
-            end
+            table.insert(base_array, {
+                value[1],
+                value[2],
+                callback = value.callback,
+            })
         end
     end
     return base_array
 end
-
 
 return FeedView

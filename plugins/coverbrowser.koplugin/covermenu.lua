@@ -1,4 +1,3 @@
-local DocSettings = require("docsettings")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
@@ -30,43 +29,6 @@ local nb_drawings_since_last_collectgarbage = 0
 -- Simple holder of methods that will replace those
 -- in the real Menu class or instance
 local CoverMenu = {}
-
-function CoverMenu:updateCache(file, status, do_create, pages)
-    if do_create then -- create new cache entry if absent
-        if self.cover_info_cache[file] then return end
-        local doc_settings = DocSettings:open(file)
-        -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
-        local doc_pages = doc_settings:readSetting("doc_pages")
-        if doc_pages then
-            pages = doc_pages
-        else
-            local stats = doc_settings:readSetting("stats")
-            if stats and stats.pages and stats.pages ~= 0 then -- crengine with statistics disabled stores 0
-                pages = stats.pages
-            end
-        end
-        local percent_finished = doc_settings:readSetting("percent_finished")
-        local summary = doc_settings:readSetting("summary")
-        status = summary and summary.status
-        local has_highlight
-        local annotations = doc_settings:readSetting("annotations")
-        if annotations then
-            has_highlight = #annotations > 0
-        else
-            local highlight = doc_settings:readSetting("highlight")
-            has_highlight = highlight and next(highlight) and true
-        end
-        self.cover_info_cache[file] = table.pack(pages, percent_finished, status, has_highlight) -- may be a sparse array
-    else
-        if self.cover_info_cache and self.cover_info_cache[file] then
-            if status then
-                self.cover_info_cache[file][3] = status
-            else
-                self.cover_info_cache[file] = nil
-            end
-        end
-    end
-end
 
 function CoverMenu:updateItems(select_number, no_recalculate_dimen)
     -- As done in Menu:updateItems()
@@ -230,9 +192,6 @@ function CoverMenu:onCloseWidget()
 
     -- Propagate a call to free() to all our sub-widgets, to release memory used by their _bb
     self.item_group:free()
-
-    -- Clean any short term cache (used by ListMenu to cache some Doc Settings info)
-    self.cover_info_cache = nil
 
     -- Force garbage collecting when leaving too
     -- (delay it a bit so this pause is less noticeable)

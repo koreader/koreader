@@ -147,6 +147,7 @@ TARGET:
     macos                     MacOS app bundle
     pocketbook
     remarkable
+    remarkable-aarch64
     sony-prstux
     ubuntu-touch
     win32
@@ -179,6 +180,7 @@ function setup_target() {
         kobo | kobov4 | kobov5) ;;
         pocketbook) ;;
         remarkable) ;;
+        remarkable-aarch64) ;;
         sony-prstux) ;;
         ubuntu-touch) ;;
         # Invalid.
@@ -309,7 +311,6 @@ function kodev-activate() {
     parse_options '' '' '0' "$@"
     info "adding ${CURDIR} to \$PATH..."
     export PATH="${PATH}:${CURDIR}"
-    eval "$(luarocks --lua-version=5.1 path --bin)"
     exec "${SHELL}"
 }
 
@@ -474,12 +475,17 @@ ANDROID TARGET:
                 if [[ -n "${VALUE}" ]]; then
                     declare -a "wrap=(${VALUE})"
                 else
-                    # Try to use friendly defaults for GDB:
-                    # - DDD is a slightly less nice GUI
-                    # - cgdb is a nice curses-based GDB front
-                    # - GDB standard CLI has a fallback
-                    if ! wrap=("$(command -v ddd cgdb gdb | head -n1)"); then
-                        die 1 "Couldn't find GDB."
+                    local -a candidates
+                    case "${OSTYPE}" in
+                        darwin*) candidates=(lldb) ;;
+                        # Try to use friendly defaults for GDB:
+                        # - DDD is a slightly less nice GUI
+                        # - cgdb is a nice curses-based GDB front
+                        # - GDB standard CLI has a fallback
+                        *) candidates=(ddd cgdb gdb) ;;
+                    esac
+                    if ! wrap=("$(command -v "${candidates[@]}" | head -n1)"); then
+                        die 1 "Couldn't find a supported debugger (${candidates[*]})."
                     fi
                 fi
                 if [[ ${#wrap[@]} -eq 1 ]]; then

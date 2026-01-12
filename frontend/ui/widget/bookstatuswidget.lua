@@ -1,8 +1,8 @@
 local Blitbuffer = require("ffi/blitbuffer")
+local BookList = require("ui/widget/booklist")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
-local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local Font = require("ui/font")
 local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -31,7 +31,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local stats_book = {}
+local stats_book
 
 --[[
 -- Stored in the sidecar metadata, in a dedicated table:
@@ -52,7 +52,7 @@ function BookStatusWidget:init()
     self.layout = {}
     self.summary = self.ui.doc_settings:readSetting("summary")
     self.total_pages = self.ui.document:getPageCount()
-    stats_book = self:getStats()
+    stats_book = self.ui.statistics and self.ui.statistics:getStatsBookStatus() or {}
 
     self.small_font_face = Font:getFace("smallffont")
     self.medium_font_face = Font:getFace("ffont")
@@ -98,10 +98,6 @@ function BookStatusWidget:init()
     }
 
     self.dithered = true
-end
-
-function BookStatusWidget:getStats()
-    return {}
 end
 
 function BookStatusWidget:getStatDays()
@@ -197,6 +193,7 @@ function BookStatusWidget:genHeader(title)
 end
 
 function BookStatusWidget:onChangeBookStatus(option_name, option_value)
+    BookList.setBookInfoCacheProperty(self.ui.document.file, "status", option_name[option_value])
     self.summary.status = option_name[option_value]
     self.summary.modified = os.date("%Y-%m-%d", os.time())
     self.updated = true
@@ -219,6 +216,7 @@ function BookStatusWidget:setStar(num)
     local stars_group = HorizontalGroup:new{ align = "center" }
     local row = {}
     if num then
+        num = (num == 1 and self.summary.rating == 1) and 0 or num
         self.summary.rating = num
         self.updated = true
 
@@ -336,7 +334,7 @@ function BookStatusWidget:genBookInfoGroup()
         HorizontalSpan:new{ width =  split_span_width }
     }
     -- thumbnail
-    local thumbnail = FileManagerBookInfo:getCoverImage(self.ui.document)
+    local thumbnail = self.ui.bookinfo:getCoverImage(self.ui.document)
     if thumbnail then
         -- Much like BookInfoManager, honor AR here
         local cbb_w, cbb_h = thumbnail:getWidth(), thumbnail:getHeight()
@@ -452,7 +450,7 @@ function BookStatusWidget:genSummaryGroup(width)
         padding = text_padding,
         parent = self,
         readonly = self.readonly,
-        hint = _("A few words about the book"),
+        hint = not self.readonly and _("A few words about the book"),
     }
     table.insert(self.layout, {self.input_note})
 
@@ -535,6 +533,9 @@ function BookStatusWidget:onClose()
     end
     -- NOTE: Flash on close to avoid ghosting, since we show an image.
     UIManager:close(self, "flashpartial")
+    if self.close_callback then
+        self.close_callback()
+    end
     return true
 end
 

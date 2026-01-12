@@ -900,6 +900,14 @@ function NetworkMgr:getProxyMenuTable()
             title = _("Enter proxy address"),
             hint = proxy(),
             callback = function(input)
+                local url = require("socket.url")
+                local parsed = url.parse(input)
+                if not parsed or not parsed.scheme or not parsed.host or not parsed.port then
+                    UIManager:show(InfoMessage:new{
+                        text = _("Invalid proxy address"),
+                    })
+                    return false
+                end
                 self:setHTTPProxy(input)
             end,
         },
@@ -957,6 +965,7 @@ function NetworkMgr:getBeforeWifiActionMenuTable()
         checked_func = function()
             return wifi_enable_action_setting == wifi_enable_action
         end,
+        radio = true,
         callback = function()
             wifi_enable_action_setting = wifi_enable_action
             G_reader_settings:saveSetting("wifi_enable_action", wifi_enable_action)
@@ -995,6 +1004,7 @@ function NetworkMgr:getAfterWifiActionMenuTable()
         checked_func = function()
             return wifi_disable_action_setting == wifi_disable_action
         end,
+        radio = true,
         callback = function()
             wifi_disable_action_setting = wifi_disable_action
             G_reader_settings:saveSetting("wifi_disable_action", wifi_disable_action)

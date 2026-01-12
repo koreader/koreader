@@ -614,7 +614,6 @@ function InputDialog:onShowKeyboard(ignore_first_hold_release)
     end
     -- NOTE: There's no VirtualKeyboard widget instantiated at all when readonly,
     --       and our input widget handles that itself, so we don't need any guards here.
-    --       (In which case, isKeyboardVisible will return `nil`, same as if we had a VK instantiated but *never* shown).
     self._input_widget:onShowKeyboard(ignore_first_hold_release)
     -- There's a bit of a chicken or egg issue in init where we would like to check the actual keyboard's visibility state,
     -- but the widget might not exist or be shown yet, so we'll just have to keep this in sync...
@@ -644,7 +643,7 @@ function InputDialog:toggleKeyboard(force_toggle)
     -- Remember the *current* visibility, as the following close will reset it
     local visible = self:isKeyboardVisible()
 
-    -- When we forcibly close the keyboard, remember its current visiblity state, so that we can properly restore it later.
+    -- When we forcibly close the keyboard, remember its current visibility state, so that we can properly restore it later.
     -- (This is used by some buttons in fullscreen mode, where we might want to keep the original keyboard hidden when popping up a new one for another InputDialog).
     if force_toggle == false then
         -- NOTE: visible will be nil between our own init and a show of the keyboard, which is precisely what happens when we *hide* the keyboard.

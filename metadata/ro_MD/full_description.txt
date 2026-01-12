@@ -2,7 +2,7 @@
 <p>Vezi mai jos pentru o selecție a multiplelor funcții:</p>
 <ul>
   <li>Suportă formatele cu pagini fixe (PDF, DjVu, CBT, CBZ) și formatele cu text rearanjabil (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Documentele PDF&#47;DjVu scanate pot fi rearanjate. Direcții speciale de rearanjare pentru citirea documentelor cu două coloane sau manga.</li>
-  <li>Interfață utilizator în numeroase limbi, optimizată pentru ecranele e-ink. Afișare cu multe posibilități de particularizare cu opțiuni complete de tipografie. Dicționarele de despărțire în silabe pentru numeroase limbi sînt incluse.</li>
+  <li>Interfață utilizator în numeroase limbi, optimizată pentru ecranele e-ink. Afișare cu multe posibilități de personalizare, cu opțiuni complete de tipografie. Dicționarele de despărțire în silabe pentru numeroase limbi sînt incluse.</li>
   <li>Suport lingvistic non-latin pentru cărți incluzînd ebraică, arabă, persană, rusă, chineză, japoneză și koreană.</li>
   <li>Funcții unicat pentru Harta cărții, Navigatorul de pagini, pentru a face navigarea cărții mai facilă.</li>
   <li>Mod special de evidențiere multi-pagină cu multiple opțiuni locale și online de export.</li>

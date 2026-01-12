@@ -67,7 +67,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
     end
 
     local sink = {}
-    local data = [[<?xml version="1.0"?><a:propfind xmlns:a="DAV:"><a:prop><a:resourcetype/></a:prop></a:propfind>]]
+    local data = [[<?xml version="1.0"?><a:propfind xmlns:a="DAV:"><a:prop><a:resourcetype/><a:getcontentlength/></a:prop></a:propfind>]]
     socketutil:set_timeout()
     local request = {
         url      = webdav_url,
@@ -109,6 +109,9 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
                                       item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
             local item_path = path .. "/" .. item_name
 
+            -- only available for files, not directories/collections
+            local item_filesize = item:match("<[^:]*:getcontentlength[^>]*>(%d+)</[^:]*:getcontentlength>")
+
             if item:find("<[^:]*:collection[^<]*/>") then
                 item_name = item_name .. "/"
                 if not is_current_dir then
@@ -124,6 +127,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
                     text = item_name,
                     url = item_path,
                     type = "file",
+                    filesize = tonumber(item_filesize)
                 })
             end
         end
@@ -143,6 +147,8 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
             text = files.text,
             url = files.url,
             type = files.type,
+            filesize = files.filesize or nil,
+            mandatory = util.getFriendlySize(files.filesize) or nil
         })
     end
     if folder_mode then
@@ -156,13 +162,17 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
     return webdav_list
 end
 
-function WebDavApi:downloadFile(file_url, user, pass, local_path)
+function WebDavApi:downloadFile(file_url, user, pass, local_path, progress_callback)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     logger.dbg("WebDavApi: downloading file: ", file_url)
-    local code, headers, status = socket.skip(1, http.request{
+
+    local handle = ltn12.sink.file(io.open(local_path, "w"))
+    handle = socketutil.chainSinkWithProgressCallback(handle, progress_callback)
+
+    local code, headers, status = socket.skip(1, http.request {
         url      = file_url,
         method   = "GET",
-        sink     = ltn12.sink.file(io.open(local_path, "w")),
+        sink     = handle,
         user     = user,
         password = pass,
     })

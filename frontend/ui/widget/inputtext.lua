@@ -464,7 +464,7 @@ function InputText:initTextBox(text, char_added)
             padding = self.padding,
             padding_top = 0,
             padding_bottom = 0,
-            margin = self.margin,
+            margin = self.margin + self.bordersize,
             self._check_button,
         }
     else
@@ -706,7 +706,7 @@ function InputText:onKeyPress(key)
             handled = false
         end
     end
-    if not handled and Device:hasDPad() then
+    if not handled then
         -- FocusManager may turn on alternative key maps.
         -- These key map maybe single text keys.
         -- It will cause unexpected focus move instead of enter text to InputText
@@ -777,6 +777,8 @@ function InputText:isKeyboardVisible()
     if self.keyboard then
         return self.keyboard:isVisible()
     end
+    -- NOTE: Never return `nil`, to avoid inheritance issues in (Multi)InputDialog's keyboard_visible flag.
+    return false
 end
 
 function InputText:lockKeyboard(toggle)

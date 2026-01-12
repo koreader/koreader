@@ -43,6 +43,7 @@ local FrameContainer = WidgetContainer:extend{
     focusable = false,
     focus_border_size = Size.border.window * 2,
     focus_border_color = Blitbuffer.COLOR_BLACK,
+    focus_inner_border = false, -- use inner border for focus style
     -- paint hatched background if provided
     stripe_color = nil,
     stripe_width = nil,
@@ -69,11 +70,18 @@ function FrameContainer:onFocus()
     if not self.focusable then
         return false
     end
-    self._origin_bordersize = self.bordersize
-    self._origin_border_color = self.color
-    self.bordersize = self.focus_border_size
-    self.color = self.focus_border_color
-    self._focused = true
+    if not self._focused then
+        if not self.focus_inner_border then
+            self._orig_bordersize = self.bordersize
+            self.bordersize = self.focus_border_size
+        else
+            self._orig_bordersize = self.inner_bordersize
+            self.inner_bordersize = self.focus_border_size
+        end
+        self._orig_border_color = self.color
+        self.color = self.focus_border_color
+        self._focused = true
+    end
     return true
 end
 
@@ -82,14 +90,16 @@ function FrameContainer:onUnfocus()
         return false
     end
     if self._focused then
-        self.bordersize = self._origin_bordersize
-        self.color = self._origin_border_color
+        if not self.focus_inner_border then
+            self.bordersize = self._orig_bordersize
+        else
+            self.inner_bordersize = self._orig_bordersize
+        end
+        self.color = self._orig_border_color
         self._focused = nil
-        return true
     end
-    return false
+    return true
 end
-
 
 function FrameContainer:paintTo(bb, x, y)
     local my_size = self:getSize()
@@ -111,14 +121,27 @@ function FrameContainer:paintTo(bb, x, y)
     end
 
     if self.background then
-        if not self.radius or not self.bordersize then
-            bb:paintRoundedRect(x, y,
-                                container_width, container_height,
-                                self.background, self.radius)
+        local color_bg = not Blitbuffer.isColor8(self.background)
+        if color_bg then
+            if not self.radius or not self.bordersize then
+                bb:paintRoundedRectRGB32(x, y,
+                                    container_width, container_height,
+                                    self.background, self.radius)
+            else
+                bb:paintRoundedRectRGB32(x, y,
+                                    container_width, container_height,
+                                    self.background, self.radius + self.bordersize)
+            end
         else
-            bb:paintRoundedRect(x, y,
-                                container_width, container_height,
-                                self.background, self.radius + self.bordersize)
+            if not self.radius or not self.bordersize then
+                bb:paintRoundedRect(x, y,
+                                    container_width, container_height,
+                                    self.background, self.radius)
+            else
+                bb:paintRoundedRect(x, y,
+                                    container_width, container_height,
+                                    self.background, self.radius + self.bordersize)
+            end
         end
     end
     if self.stripe_width and self.stripe_color and not self.stripe_over then
@@ -126,13 +149,6 @@ function FrameContainer:paintTo(bb, x, y)
         bb:hatchRect(x, y,
                         container_width, container_height,
                         self.stripe_width, self.stripe_color)
-    end
-    if self.inner_bordersize > 0 then
-        --- @warning This doesn't actually support radius, it'll always be a square.
-        bb:paintInnerBorder(x + self.margin, y + self.margin,
-            container_width - self.margin * 2,
-            container_height - self.margin * 2,
-            self.inner_bordersize, self.color, self.radius)
     end
     if self.bordersize > 0 then
         local anti_alias = G_reader_settings:nilOrTrue("anti_alias_ui")
@@ -145,6 +161,13 @@ function FrameContainer:paintTo(bb, x, y)
         self[1]:paintTo(bb,
             x + self.margin + self.bordersize + self._padding_left + shift_x,
             y + self.margin + self.bordersize + self._padding_top)
+    end
+    if self.inner_bordersize > 0 then
+        --- @warning This doesn't actually support radius, it'll always be a square.
+        bb:paintInnerBorder(x + self.margin, y + self.margin,
+            container_width - self.margin * 2,
+            container_height - self.margin * 2,
+            self.inner_bordersize, self.color, self.radius)
     end
     if self.stripe_width and self.stripe_color and self.stripe_over then
         -- (No support for radius when hatched/stripe)

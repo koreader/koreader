@@ -24,6 +24,33 @@ function KindlePowerD:init()
         self.fl_max = self.fl_max + 1
     end
 
+    if self.device:hasAuxBattery() then
+        self.getAuxCapacityHW = function(this)
+            return this:unchecked_read_int_file(self.aux_batt_capacity_file)
+        end
+
+        self.isAuxBatteryConnectedHW = function(this)
+            local status = this:read_str_file(self.aux_batt_status_file)
+            if status == nil then
+                -- File could not be read, assume not connected
+                return false
+            end
+            -- File was read, assume aux battery is connected
+            return true
+        end
+
+        self.isAuxChargingHW = function(this)
+            -- "Discharging" when discharging
+            -- "Full" when full
+            -- "Charging" when charging via DCP
+            return this:read_str_file(this.aux_batt_status_file) ~= "Discharging"
+        end
+
+        self.isAuxChargedHW = function(this)
+            return this:read_str_file(this.aux_batt_status_file) == "Full"
+        end
+    end
+
     self:initWakeupMgr()
 end
 
@@ -238,7 +265,7 @@ function KindlePowerD:checkUnexpectedWakeup()
     if self.device.wakeup_mgr:isWakeupAlarmScheduled() and self.device.wakeup_mgr:wakeupAction(90) then
         logger.info("Kindle scheduled wakeup")
     else
-        logger.warn("Kindle unscheduled wakeup")
+        logger.info("Kindle unscheduled wakeup")
     end
 end
 

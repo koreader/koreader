@@ -1,11 +1,11 @@
 <p>O KOReader é um leitor de livros digitais otimizado para ecrãs de tinta eletrónica. Pode abrir vários formatos e fornece ajustes de texto avançados.</p>
 <p>Veja abaixo uma seleção das suas várias funcionalidades:</p>
 <ul>
-  <li>Supports both fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Scanned PDF&#47;DjVu documents can be reflowed. Special flow directions for reading double column PDFs and manga.</li>
-  <li>Multi-lingual user interface optimized for e-ink screens. Highly customizable reader view with complete typesetting options. Multi-lingual hyphenation dictionaries are bundled in.</li>
-  <li>Non-Latin script support for books, including the Hebrew, Arabic, Persian, Russian, Chinese, Japanese and Korean languages.</li>
-  <li>Unique Book Map and Page Browser features to navigate your book.</li>
-  <li>Special multi-page highlight mode with many local and online export options.</li>
+  <li>Suporta tanto a formatos de página fixa (PDF, DjVu, CBT, CBZ) quanto a formatos refluíveis de livro eletrônico (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Documentos digitalizados em formato PDF&#47;DjVu podem ser refluídos. Direções de fluxo especiais para leitura de PDFs com duas colunas e mangás.</li>
+  <li>Interface de utilizador multilíngue otimizada para ecrã de tinta eletrônica. Leitor altamente personalizável com opções completas de tipografia. Dicionários de hifenização multilíngue já estão incluídos.</li>
+  <li>Suporte para livros com escrita não latina, incluindo as línguas hebraica, árabe, persa, russa, chinesa, japonesa e coreana.</li>
+  <li>Recursos únicos de Mapa do Livro e no Navegador de Páginas para navegar pelo seu livro.</li>
+  <li>Modo especial de destaque de múltiplas páginas com várias opções para exportar localmente e online.</li>
   <li>Sincroniza o seu progresso de leitura através de todos os seus dispositivos com KOReader.</li>
   <li>Integração com Calibre, Wallabag, Wikipedia, Google Translate e outros fornecedores de conteúdo.</li>
 </ul>

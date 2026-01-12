@@ -4,7 +4,7 @@ describe("luadata module", function()
         require("commonrequire")
         DataStorage = require("datastorage")
         lfs = require("libs/libkoreader-lfs")
-        Settings = require("frontend/luadata"):open(DataStorage:getDataDir() .. "/this-is-not-a-valid-file")
+        Settings = require("luadata"):open(DataStorage:getDataDir() .. "/this-is-not-a-valid-file")
     end)
 
     it("should handle undefined keys", function()

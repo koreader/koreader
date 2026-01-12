@@ -1,14 +1,13 @@
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
-local FFIUtil = require("ffi/util")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
-local lfs = require("libs/libkoreader-lfs")
+local ffiUtil = require("ffi/util")
 local logger = require("logger")
 local util = require("util")
-local T = FFIUtil.template
+local T = ffiUtil.template
 local _ = require("gettext")
 
 if not (Device:hasScreenKB() or Device:hasKeyboard()) then
@@ -22,91 +21,57 @@ local HotKeys = InputContainer:extend{
     defaults = nil,
     updated = false,
 }
-local hotkeys_path = FFIUtil.joinPath(DataStorage:getSettingsDir(), "hotkeys.lua")
+local hotkeys_path = ffiUtil.joinPath(DataStorage:getSettingsDir(), "hotkeys.lua")
 
--- mofifier *here* refers to either screenkb or shift
-local hotkeys_list = {
-    -- cursor keys
-    modifier_plus_up                 = Device:hasScreenKB() and _("ScreenKB + Up")      or _("Shift + Up"),
-    modifier_plus_down               = Device:hasScreenKB() and _("ScreenKB + Down")    or _("Shift + Down"),
-    modifier_plus_left               = Device:hasScreenKB() and _("ScreenKB + Left")    or _("Shift + Left"),
-    modifier_plus_right              = Device:hasScreenKB() and _("ScreenKB + Right")   or _("Shift + Right"),
-    -- page turn buttons
-    modifier_plus_left_page_back     = Device:hasScreenKB() and _("ScreenKB + LPgBack") or _("Shift + LPgBack"),
-    modifier_plus_left_page_forward  = Device:hasScreenKB() and _("ScreenKB + LPgFwd")  or _("Shift + LPgFwd"),
-    modifier_plus_right_page_back    = Device:hasScreenKB() and _("ScreenKB + RPgBack") or _("Shift + RPgBack"),
-    modifier_plus_right_page_forward = Device:hasScreenKB() and _("ScreenKB + RPgFwd")  or _("Shift + RPgFwd"),
-    -- function keys
-    modifier_plus_back               = Device:hasScreenKB() and _("ScreenKB + Back")    or _("Shift + Back"),
-    modifier_plus_home               = Device:hasScreenKB() and _("ScreenKB + Home")    or _("Shift + Home"),
-    modifier_plus_press              = Device:hasScreenKB() and _("ScreenKB + Press")   or _("Shift + Press"),
-    -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
+-- Define hotkeys_list
+local hotkeys_list = {}
+local base_keys = {
+    up = "Up", down = "Down", left = "Left", right = "Right",
+    left_page_back = "LPgBack", left_page_forward = "LPgFwd",
+    right_page_back = "RPgBack", right_page_forward = "RPgFwd",
+    back = "Back", home = "Home", press = "Press"
 }
+-- modifier *here* refers to either screenkb or shift
+local modifier_one = Device:hasScreenKB() and "ScreenKB + " or "Shift + "
+-- screenkb/shift + base_keys
+for key, label in pairs(base_keys) do
+    hotkeys_list["modifier_plus_" .. key] = _(modifier_one .. label)
+    -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
+end
 if LuaSettings:open(hotkeys_path).data["press_key_does_hotkeys"] then
-    local hotkeys_list_press = { press = _("Press") }
-    util.tableMerge(hotkeys_list, hotkeys_list_press)
+    util.tableMerge(hotkeys_list, { press = _("Press") })
 end
 if Device:hasKeyboard() then
-    local hotkeys_list_haskeyboard = {
-        modifier_plus_menu          = _("Shift + Menu"),
-        -- NOTE: we will use 'alt' for kindles and 'ctrl' for other devices with keyboards
-        --       but for simplicity we will use in code 'alt+keys' as the array's key for all.
-        -- alt+cursor
-        alt_plus_up                 = Device:hasSymKey() and _("Alt + Up")      or _("Ctrl + Up"),
-        alt_plus_down               = Device:hasSymKey() and _("Alt + Down")    or _("Ctrl + Down"),
-        alt_plus_left               = Device:hasSymKey() and _("Alt + Left")    or _("Ctrl + Left"),
-        alt_plus_right              = Device:hasSymKey() and _("Alt + Right")   or _("Ctrl + Right"),
-        -- alt+page_turn
-        alt_plus_left_page_back     = Device:hasSymKey() and _("Alt + LPgBack") or _("Ctrl + LPgBack"),
-        alt_plus_left_page_forward  = Device:hasSymKey() and _("Alt + LPgFwd")  or _("Ctrl + LPgFwd"),
-        alt_plus_right_page_back    = Device:hasSymKey() and _("Alt + RPgBack") or _("Ctrl + RPgBack"),
-        alt_plus_right_page_forward = Device:hasSymKey() and _("Alt + RPgFwd")  or _("Ctrl + RPgFwd"),
-        -- alt+fn_keys
-        alt_plus_back               = Device:hasSymKey() and _("Alt + Back")    or _("Ctrl + Back"),
-        alt_plus_home               = Device:hasSymKey() and _("Alt + Home")    or _("Ctrl + Home"),
-        alt_plus_press              = Device:hasSymKey() and _("Alt + Press")   or _("Ctrl + Press"),
-        alt_plus_menu               = Device:hasSymKey() and _("Alt + Menu")    or _("Ctrl + Menu"),
-        -- alt+alphabet
-        alt_plus_a = Device:hasSymKey() and _("Alt + A") or _("Ctrl + A"),
-        alt_plus_b = Device:hasSymKey() and _("Alt + B") or _("Ctrl + B"),
-        alt_plus_c = Device:hasSymKey() and _("Alt + C") or _("Ctrl + C"),
-        alt_plus_d = Device:hasSymKey() and _("Alt + D") or _("Ctrl + D"),
-        alt_plus_e = Device:hasSymKey() and _("Alt + E") or _("Ctrl + E"),
-        alt_plus_f = Device:hasSymKey() and _("Alt + F") or _("Ctrl + F"),
-        alt_plus_g = Device:hasSymKey() and _("Alt + G") or _("Ctrl + G"),
-        alt_plus_h = Device:hasSymKey() and _("Alt + H") or _("Ctrl + H"),
-        alt_plus_i = Device:hasSymKey() and _("Alt + I") or _("Ctrl + I"),
-        alt_plus_j = Device:hasSymKey() and _("Alt + J") or _("Ctrl + J"),
-        alt_plus_k = Device:hasSymKey() and _("Alt + K") or _("Ctrl + K"),
-        alt_plus_l = Device:hasSymKey() and _("Alt + L") or _("Ctrl + L"),
-        alt_plus_m = Device:hasSymKey() and _("Alt + M") or _("Ctrl + M"),
-        alt_plus_n = Device:hasSymKey() and _("Alt + N") or _("Ctrl + N"),
-        alt_plus_o = Device:hasSymKey() and _("Alt + O") or _("Ctrl + O"),
-        alt_plus_p = Device:hasSymKey() and _("Alt + P") or _("Ctrl + P"),
-        alt_plus_q = Device:hasSymKey() and _("Alt + Q") or _("Ctrl + Q"),
-        alt_plus_r = Device:hasSymKey() and _("Alt + R") or _("Ctrl + R"),
-        alt_plus_s = Device:hasSymKey() and _("Alt + S") or _("Ctrl + S"),
-        alt_plus_t = Device:hasSymKey() and _("Alt + T") or _("Ctrl + T"),
-        alt_plus_u = Device:hasSymKey() and _("Alt + U") or _("Ctrl + U"),
-        alt_plus_v = Device:hasSymKey() and _("Alt + V") or _("Ctrl + V"),
-        alt_plus_w = Device:hasSymKey() and _("Alt + W") or _("Ctrl + W"),
-        alt_plus_x = Device:hasSymKey() and _("Alt + X") or _("Ctrl + X"),
-        alt_plus_y = Device:hasSymKey() and _("Alt + Y") or _("Ctrl + Y"),
-        alt_plus_z = Device:hasSymKey() and _("Alt + Z") or _("Ctrl + Z"),
-    }
+    local hotkeys_list_haskeyboard = { modifier_plus_menu = _("Shift + Menu") }
+    -- now we can add the "menu" button to base_keys, so we can use it on haskeyboard devices
+    base_keys.menu = "Menu"
+    -- NOTE: we will use 'alt' for kindles and 'ctrl' for other devices with keyboards
+    --       but for simplicity we will use in code 'alt+keys' as the array's key for all.
+    local modifier_two = Device:hasSymKey() and "Alt + " or "Ctrl + "
+    -- Alt/Ctrl + base_keys
+    for key, label in pairs(base_keys) do
+        hotkeys_list_haskeyboard["alt_plus_" .. key] = _(modifier_two .. label)
+    end
+    -- Alt/Ctrl + alphabet keys
+    for dummy, char in ipairs(Device.input.group.Alphabet) do
+        hotkeys_list_haskeyboard["alt_plus_" .. char:lower()] = _(modifier_two .. char)
+    end
     util.tableMerge(hotkeys_list, hotkeys_list_haskeyboard)
 end
 
 function HotKeys:init()
-    local defaults_path = FFIUtil.joinPath(self.path, "defaults.lua")
-    if not lfs.attributes(hotkeys_path, "mode") then
-        FFIUtil.copyFile(defaults_path, hotkeys_path)
-    end
+    local defaults_path = ffiUtil.joinPath(self.path, "defaults.lua")
     self.is_docless = self.ui == nil or self.ui.document == nil
     self.hotkey_mode = self.is_docless and "hotkeys_fm" or "hotkeys_reader"
     self.defaults = LuaSettings:open(defaults_path).data[self.hotkey_mode]
     if not self.settings_data then
         self.settings_data = LuaSettings:open(hotkeys_path)
+        if not next(self.settings_data.data) then
+            logger.warn("No hotkeys file or invalid hotkeys file found, copying defaults")
+            self.settings_data:purge()
+            ffiUtil.copyFile(defaults_path, hotkeys_path)
+            self.settings_data = LuaSettings:open(hotkeys_path)
+        end
     end
     self.hotkeys = self.settings_data.data[self.hotkey_mode]
     self.type_to_search = self.settings_data.data["type_to_search"] or false
@@ -227,27 +192,37 @@ function HotKeys:genMenu(hotkey)
         local default_text = default_action and Dispatcher:menuTextFunc(default_action) or _("No action")
         table.insert(sub_items, {
             text = T(_("%1 (default)"), default_text),
-            keep_menu_open = true,
             checked_func = function()
                 return util.tableEquals(self.hotkeys[hotkey], self.defaults[hotkey])
             end,
-            callback = function()
-                self.hotkeys[hotkey] = util.tableDeepCopy(self.defaults[hotkey])
-                self.updated = true
+            check_callback_updates_menu = true,
+            radio = true,
+            callback = function(touchmenu_instance)
+                local function do_remove()
+                    self.hotkeys[hotkey] = util.tableDeepCopy(self.defaults[hotkey])
+                    self.updated = true
+                    touchmenu_instance:updateItems()
+                end
+                Dispatcher.removeActions(self.hotkeys[hotkey], do_remove)
             end,
         })
     end
     table.insert(sub_items, {
         text = _("No action"),
-        keep_menu_open = true,
-        separator = true,
         checked_func = function()
-            return self.hotkeys[hotkey] == nil
+            return self.hotkeys[hotkey] == nil or next(self.hotkeys[hotkey]) == nil
         end,
-        callback = function()
-            self.hotkeys[hotkey] = nil
-            self.updated = true
+        check_callback_updates_menu = true,
+        radio = true,
+        callback = function(touchmenu_instance)
+            local function do_remove()
+                self.hotkeys[hotkey] = nil
+                self.updated = true
+                touchmenu_instance:updateItems()
+            end
+            Dispatcher.removeActions(self.hotkeys[hotkey], do_remove)
         end,
+        separator = true,
     })
     Dispatcher:addSubMenu(self, sub_items, self.hotkeys, hotkey)
     -- Since we are already handling potential conflicts via overrideConflictingKeyEvents(), both "No action" and "Nothing",
@@ -446,6 +421,11 @@ function HotKeys:overrideConflictingKeyEvents()
         self.ui.bookmark.key_events = {} -- reset it.
         logger.dbg("Hotkey ReaderBookmark:registerKeyEvents() overridden.")
 
+        if self.ui.font then -- readerfont is not available for pdf/djvu files.
+            self.ui.font.key_events = {} -- reset it.
+            logger.dbg("Hotkey ReaderFont:registerKeyEvents() overridden.")
+        end
+
         if Device:hasScreenKB() or Device:hasSymKey() then
             local readerconfig = self.ui.config
             readerconfig.key_events = {} -- reset it, then add our own
@@ -536,7 +516,7 @@ function HotKeys:overrideConflictingKeyEvents()
     if self.is_docless then
         local filemanagermenu = self.ui.menu
         filemanagermenu.key_events = {} -- reset it.
-        filemanagermenu.key_events.ShowMenu = { { "Menu" } }
+        filemanagermenu.key_events.KeyPressShowMenu = { { "Menu" } }
         logger.dbg("Hotkey FileManagerMenu:registerKeyEvents() overridden.")
     end
 end -- overrideConflictingKeyEvents()
@@ -552,19 +532,19 @@ function HotKeys:onFlushSettings()
     end
 end
 
-function HotKeys:updateProfiles(action_old_name, action_new_name)
+function HotKeys:onDispatcherActionNameChanged(action)
     for _, section in ipairs({ "hotkeys_fm", "hotkeys_reader" }) do
         local hotkeys = self.settings_data.data[section]
         for shortcut_name, shortcut in pairs(hotkeys) do
-            if shortcut[action_old_name] then
+            if shortcut[action.old_name] ~= nil then
                 if shortcut.settings and shortcut.settings.order then
-                    for i, action in ipairs(shortcut.settings.order) do
-                        if action == action_old_name then
-                            if action_new_name then
-                                shortcut.settings.order[i] = action_new_name
+                    for i, action_in_order in ipairs(shortcut.settings.order) do
+                        if action_in_order == action.old_name then
+                            if action.new_name then
+                                shortcut.settings.order[i] = action.new_name
                             else
                                 table.remove(shortcut.settings.order, i)
-                                if #shortcut.settings.order == 0 then
+                                if #shortcut.settings.order < 2 then
                                     shortcut.settings.order = nil
                                     if next(shortcut.settings) == nil then
                                         shortcut.settings = nil
@@ -575,10 +555,41 @@ function HotKeys:updateProfiles(action_old_name, action_new_name)
                         end
                     end
                 end
-                shortcut[action_old_name] = nil
-                if action_new_name then
-                    shortcut[action_new_name] = true
+                shortcut[action.old_name] = nil
+                if action.new_name then
+                    shortcut[action.new_name] = true
                 else
+                    if next(shortcut) == nil then
+                        self.settings_data.data[section][shortcut_name] = nil
+                    end
+                end
+                self.updated = true
+            end
+        end
+    end
+end
+
+function HotKeys:onDispatcherActionValueChanged(action)
+    for _, section in ipairs({ "hotkeys_fm", "hotkeys_reader" }) do
+        local hotkeys = self.settings_data.data[section]
+        for shortcut_name, shortcut in pairs(hotkeys) do
+            if shortcut[action.name] == action.old_value then
+                shortcut[action.name] = action.new_value
+                if action.new_value == nil then
+                    if shortcut.settings and shortcut.settings.order then
+                        for i, action_in_order in ipairs(shortcut.settings.order) do
+                            if action_in_order == action.name then
+                                table.remove(shortcut.settings.order, i)
+                                if #shortcut.settings.order < 2 then
+                                    shortcut.settings.order = nil
+                                    if next(shortcut.settings) == nil then
+                                        shortcut.settings = nil
+                                    end
+                                end
+                                break
+                            end
+                        end
+                    end
                     if next(shortcut) == nil then
                         self.settings_data.data[section][shortcut_name] = nil
                     end

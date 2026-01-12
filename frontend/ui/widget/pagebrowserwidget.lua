@@ -4,6 +4,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Event = require("ui/event")
+local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -19,6 +20,7 @@ local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local Widget = require("ui/widget/widget")
 local Input = Device.input
 local Screen = Device.screen
 local logger = require("logger")
@@ -31,7 +33,7 @@ local BookMapWidget = require("ui/widget/bookmapwidget")
 local BookMapRow = BookMapWidget.BookMapRow
 
 -- PageBrowserWidget: shows thumbnails of pages
-local PageBrowserWidget = InputContainer:extend{
+local PageBrowserWidget = FocusManager:extend{
     title = _("Page browser"),
     -- Focus page: will be put at the best place in the thumbnail grid
     -- (that is, the grid will pick thumbnails from pages before and
@@ -42,6 +44,8 @@ local PageBrowserWidget = InputContainer:extend{
 }
 
 function PageBrowserWidget:init()
+    self.layout = {}
+    self.build_focus_layout = not Device:isTouchDevice() and Device:hasDPad() and Device:useDPadAsActionKeys()
     if self.ui.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
@@ -53,15 +57,7 @@ function PageBrowserWidget:init()
     }
     self.covers_fullscreen = true -- hint for UIManager:_repaint()
 
-    if Device:hasKeys() then
-        self.key_events = {
-            Close = { { Device.input.group.Back } },
-            ScrollRowUp = { { "Up" } },
-            ScrollRowDown = { { "Down" } },
-            ScrollPageUp = { { Input.group.PgBack } },
-            ScrollPageDown = { { Input.group.PgFwd } },
-        }
-    end
+    self:registerKeyEvents()
     if Device:isTouchDevice() then
         self.ges_events = {
             Swipe = {
@@ -107,6 +103,16 @@ function PageBrowserWidget:init()
                 }
             },
         }
+    else
+        -- NT: needed for selection
+        self.ges_events = {
+            Tap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = self.dimen,
+                }
+            }
+        }
     end
 
     -- Put the BookMapRow left and right border outside of screen
@@ -116,7 +122,7 @@ function PageBrowserWidget:init()
         fullscreen = true,
         title = self.title,
         left_icon = "appbar.menu",
-        left_icon_tap_callback = function() self:showMenu() end,
+        left_icon_tap_callback = function() self:onShowMenu() end,
         left_icon_hold_callback = function()
             -- Cycle nb of toc span levels shown in bottom row
             if self:updateNbTocSpans(-1, true, true) then
@@ -174,7 +180,9 @@ function PageBrowserWidget:init()
         self.page_labels = self.ui.document:getPageMap()
     end
     -- Location stack
-    self.previous_locations = self.ui.link:getPreviousLocationPages()
+    self.previous_locations = self.ui.link:getLocationPages()
+    self.next_locations = self.ui.link:getLocationPages(true)
+    self.pinned_page = self.ui.gotopage:getPinnedPageNumber()
 
     -- Update stuff that may be updated by the user while in PageBrowser
     self:updateEditableStuff()
@@ -184,6 +192,31 @@ function PageBrowserWidget:init()
     -- (this will call self:update())
     self:updateLayout()
 end
+
+function PageBrowserWidget:registerKeyEvents()
+    if Device:hasKeys() then
+        if Device:isTouchDevice() then
+            -- Remove key handling by FocusManager (there is no ordering/priority
+            -- handling for key_events, unlike with touch zones)
+            self.key_events = {}
+            self.key_events.ScrollRowUp = { { "Up" } }
+            self.key_events.ScrollRowDown = { { "Down" } }
+        elseif Device:hasScreenKB() or Device:hasKeyboard() then
+            local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            self.key_events.ScrollRowUp = { { modifier, "Up" } }
+            self.key_events.ScrollRowDown = { { modifier, "Down" } }
+            -- same events as page-turn buttons for mod+left/right. it gives the impression of movement through the bottom ribbon
+            self.key_events.SwipeRibbonLeftNT = { { modifier, "Left" }, event = "ScrollPageUp" }
+            self.key_events.SwipeRibbonRightNT = { { modifier, "Right" }, event = "ScrollPageDown" }
+            self.key_events.CloseAll = { { modifier, "Back" }, event = "Close", args = true }
+        end
+        self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.ShowMenu = { { "Menu" } }
+        self.key_events.ScrollPageUp = { { Input.group.PgBack } }
+        self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
+    end
+end
+PageBrowserWidget.onPhysicalKeyboardConnected = PageBrowserWidget.registerKeyEvents
 
 function PageBrowserWidget:updateEditableStuff(update_view)
     -- Toc, bookmarks and hidden flows may be edited
@@ -244,6 +277,9 @@ function PageBrowserWidget:updateLayout()
     self.view_finder_y = self.dimen.h - self.row_height - 2*self.view_finder_bw
     -- And put its bottom rounded corner outside of screen
     self.view_finder_h = self.row_height + 2*self.view_finder_bw + Size.radius.window
+
+    -- reset focus layout
+    self.layout = {}
 
     if self.grid then
         self.grid:free()
@@ -316,7 +352,10 @@ function PageBrowserWidget:updateLayout()
     grid_item_outer_h_margin = math.floor((self.grid_width - self.nb_cols * self.grid_item_width - (self.nb_cols-1)*grid_item_inner_h_margin) / 2)
 
     self.grid:clear()
-
+    local focus_row = nil
+    local focus_row_index = 0
+    local focus_nav_border = Screen:scaleBySize(3)
+    local focus_grid_items = {}
     for idx = 1, self.nb_grid_items do
         local row = math.floor((idx-1)/self.nb_cols) -- start from 0
         local col = (idx-1) % self.nb_cols
@@ -343,6 +382,36 @@ function PageBrowserWidget:updateLayout()
             background = Blitbuffer.COLOR_WHITE,
             grid_item,
         })
+        if self.build_focus_layout then
+            local nav_item_frame = FrameContainer:new{
+                is_nav_item = true,
+                overlap_offset = {offset_x, offset_y},
+                initial_overlap_offset = {offset_x, offset_y},
+                margin = 0,
+                padding = 0,
+                bordersize = 0,
+                focusable = true,
+                focus_border_size = focus_nav_border,
+                focus_inner_border = true,
+                Widget:new{
+                    dimen = self.grid_item_dimen:copy()
+                }
+            }
+            table.insert(focus_grid_items, nav_item_frame)
+            if not focus_row or focus_row_index ~= row then
+                focus_row = {}
+                focus_row_index = row
+                table.insert(self.layout, focus_row)
+            end
+            table.insert(focus_row, nav_item_frame)
+        end
+    end
+    if self.build_focus_layout then
+        -- Append these just after the grid items, so we can access them
+        -- by tile index with just adding self.nb_grid_items
+        while #focus_grid_items > 0 do
+            table.insert(self.grid, table.remove(focus_grid_items, 1))
+        end
     end
 
     -- Put the focused (requested) page at some appropriate place in the grid
@@ -380,6 +449,15 @@ function PageBrowserWidget:update()
             local widget = table.remove(self.grid, i)
             widget:free()
         end
+        -- We could restore the original offset and dimen, as pages may not all have
+        -- the same dimensions on PDFs. But it feels best to keep using the previous
+        -- thumbnail size as most often, the new thumbnail will have that size.
+        --[[
+        if self.grid[i] and self.grid[i].is_nav_item then
+            self.grid[i].overlap_offset = self.grid[i].initial_overlap_offset
+            self.grid[i][1].dimen = self.grid_item_dimen:copy()
+        end
+        ]]--
     end
 
     if not self.focus_page then
@@ -425,7 +503,8 @@ function PageBrowserWidget:update()
         local show_at_bottom
         if p >= next_p then
             -- Only show a page text if there is no indicator on that slot
-            if p ~= self.cur_page and not self.bookmarked_pages[p] and not self.previous_locations[p] then
+            if p ~= self.cur_page and not self.bookmarked_pages[p]
+                    and not self.previous_locations[p] and not self.next_locations[p] then
                 show_at_bottom = true
             end
         end
@@ -587,7 +666,9 @@ function PageBrowserWidget:update()
         with_page_sep = true,
         toc_items = row_toc_items,
         bookmarked_pages = self.bookmarked_pages,
+        pinned_page = self.pinned_page,
         previous_locations = self.previous_locations,
+        next_locations = self.next_locations,
         hidden_flows = self.hidden_flows,
         read_pages = self.read_pages,
         current_session_duration = self.current_session_duration,
@@ -660,6 +741,11 @@ function PageBrowserWidget:update()
                 self.wait_for_refresh_on_show_tile = true
             end
         end
+    end
+    if self.build_focus_layout then
+        self.selected.x = math.min(self.selected.x, self.nb_cols)
+        self.selected.y = math.min(self.selected.y, self.nb_rows)
+        self:moveFocusTo(self.selected.x, self.selected.y, FocusManager.FOCUS_ONLY_ON_NT)
     end
     UIManager:setDirty(self, function()
         return "ui", self.dimen
@@ -799,6 +885,23 @@ function PageBrowserWidget:showTile(grid_idx, page, tile, do_refresh)
         table.insert(self.grid, page_num_widget)
     end
 
+    local prev_nav_item_dimen
+    if self.build_focus_layout then
+        -- Resize the focus navigation frame from the grid item size to the page thumbnail size
+        local nav_item_frame = self.grid[self.nb_grid_items + grid_idx]
+        prev_nav_item_dimen = nav_item_frame.dimen and nav_item_frame.dimen:copy()
+        local thumb_frame_dimen = thumb_frame:getSize():copy()
+        local dw = self.grid_item_width - thumb_frame_dimen.w
+        local dh = self.grid_item_height - thumb_frame_dimen.h
+        local dx = math.floor(dw/2)
+        local dy = math.floor(dh/2)
+        local offset_x = nav_item_frame.initial_overlap_offset[1] + dx
+        local offset_y = nav_item_frame.initial_overlap_offset[2] + dy
+        nav_item_frame.overlap_offset = {offset_x, offset_y}
+        nav_item_frame[1].dimen = thumb_frame_dimen
+        nav_item_frame.dimen = nil
+    end
+
     if do_refresh then
         if self.wait_for_refresh_on_show_tile then
             self.wait_for_refresh_on_show_tile = nil
@@ -812,10 +915,14 @@ function PageBrowserWidget:showTile(grid_idx, page, tile, do_refresh)
                 -- by a BookMap launched from the ribbon: don't refresh.
                 return
             end
+            local dimen = thumb_frame.dimen
             if page_num_widget then
-                return "ui", thumb_frame.dimen:combine(page_num_widget.dimen)
+                dimen = dimen:combine(page_num_widget.dimen)
             end
-            return "ui", thumb_frame.dimen
+            if prev_nav_item_dimen then
+                dimen = dimen:combine(prev_nav_item_dimen)
+            end
+            return "ui", dimen
         end)
     end
 end
@@ -862,7 +969,7 @@ function PageBrowserWidget:preloadNextPrevScreenThumbnails()
     end
 end
 
-function PageBrowserWidget:showMenu()
+function PageBrowserWidget:onShowMenu()
     local button_dialog
     -- Width of our -/+ buttons, so it looks fine with Button's default font size of 20
     local plus_minus_width = Screen:scaleBySize(60)
@@ -875,7 +982,7 @@ function PageBrowserWidget:showMenu()
             end,
         }},
         {{
-            text = _("Available gestures"),
+            text = Device:isTouchDevice() and _("Available gestures") or _("Controls"),
             align = "left",
             callback = function()
                 self:showGestures()
@@ -908,6 +1015,11 @@ function PageBrowserWidget:showMenu()
                         self:updateLayout()
                     end
                 end,
+                hold_callback = function()
+                    if self:updateNbCols(-2, true) then
+                        self:updateLayout()
+                    end
+                end,
                 width = plus_minus_width,
             },
             {
@@ -915,6 +1027,11 @@ function PageBrowserWidget:showMenu()
                 enabled_func = function() return self.nb_cols < self.max_nb_cols end,
                 callback = function()
                     if self:updateNbCols(1, true) then
+                        self:updateLayout()
+                    end
+                end,
+                hold_callback = function()
+                    if self:updateNbCols(2, true) then
                         self:updateLayout()
                     end
                 end,
@@ -935,6 +1052,11 @@ function PageBrowserWidget:showMenu()
                         self:updateLayout()
                     end
                 end,
+                hold_callback = function()
+                    if self:updateNbRows(-2, true) then
+                        self:updateLayout()
+                    end
+                end,
                 width = plus_minus_width,
             },
             {
@@ -942,6 +1064,11 @@ function PageBrowserWidget:showMenu()
                 enabled_func = function() return self.nb_rows < self.max_nb_rows end,
                 callback = function()
                     if self:updateNbRows(1, true) then
+                        self:updateLayout()
+                    end
+                end,
+                hold_callback = function()
+                    if self:updateNbRows(2, true) then
                         self:updateLayout()
                     end
                 end,
@@ -1018,23 +1145,26 @@ end
 function PageBrowserWidget:showAbout()
     UIManager:show(InfoMessage:new{
         text = _([[
-Page browser shows thumbnails of pages.
+Page browser shows thumbnails of a book's pages.
 
 The bottom ribbon displays an extract of the book map around the pages displayed:
 
-If statistics are enabled, black bars are shown for already read pages (gray for pages read in the current reading session). Their heights vary depending on the time spent reading the page.
-Chapters are shown above the pages they encompass.
-Under the pages, these indicators may be shown:
+If statistics are enabled, black bars indicate pages that have already been read (gray bars for pages read in the current session). The height of these bars varies based on the time spent reading each page.
+Chapters are indicated above the pages they cover.
+Below the pages, the following indicators may appear:
 ▲ current page
 ❶ ❷ … previous locations
+① ② … next locations
 ▒ highlighted text
  highlighted text with notes
- bookmarked page]]),
+ bookmarked page
+ pinned page]]),
     })
 end
 
 function PageBrowserWidget:showGestures()
-    UIManager:show(InfoMessage:new{
+    local text
+    if Device:isTouchDevice() then
         text = _([[
 Swipe along the top or left screen edge to change the number of columns or rows of thumbnails.
 
@@ -1044,12 +1174,33 @@ Swipe horizontally in the bottom ribbon to move by the full stripe.
 
 Tap in the bottom ribbon on a page to focus thumbnails on this page.
 
-Tap on a thumbnail to read this page.
+Tap on a thumbnail to read that page.
 
 Long-press on ≡ to decrease or reset the number of chapter levels shown in the bottom ribbon.
 
-Any multiswipe will close the page browser.]]),
-    })
+Any multiswipe will close the page browser.]])
+    elseif Device:hasKeyboard() then
+        local lines = {
+            _("The settings (in this menu) can be used to change the number of rows and columns, whether to display page numbers, and to display different chapter-levels in the bottom ribbon."),
+            _("Press Shift+Up to move up by one row, or either previous-page-turn-button to move one screen."),
+            _("Press Shift+Down to move down by one row, or either next-page-turn-button to move one screen."),
+            _("Press Shift+Press on a thumbnail, to open more options."),
+            _("Press Shift+Back closes all instances of Page Browser and Book Map."),
+            _("Select a thumbnail to read that page.")
+        }
+        text = table.concat(lines, "\n\n")
+    elseif Device:hasScreenKB() then
+        local lines = {
+            _("The settings (in this menu) can be used to change the number of rows and columns, whether to display page numbers, and to display different chapter-levels in the bottom ribbon."),
+            _("Press ScreenKB+Up to move up by one row, or either previous-page-turn-button to move one screen."),
+            _("Press ScreenKB+Down to move down by one row, or either next-page-turn-button to move one screen."),
+            _("Press ScreenKB+Press on a thumbnail, to open more options."),
+            _("Press ScreenKB+Back closes all instances of Page Browser and Book Map."),
+            _("Select a thumbnail to read that page.")
+        }
+        text = table.concat(lines, "\n\n")
+    end
+    UIManager:show(InfoMessage:new{text = text})
 end
 
 function PageBrowserWidget:onClose(close_all_parents)
@@ -1087,6 +1238,7 @@ function PageBrowserWidget:onClose(close_all_parents)
         -- As we're getting back to Reader, update the footer and the dogear state
         -- (we may have toggled bookmark for current page) and do a full flashing
         -- refresh to remove any ghost trace of thumbnails or black page slots
+        self.ui.view.footer:setTocMarkers(true)
         UIManager:broadcastEvent(Event:new("UpdateFooter"))
         self.ui.bookmark:onPageUpdate(self.ui:getCurrentPage())
         UIManager:setDirty(self.ui.dialog, "full")
@@ -1271,6 +1423,47 @@ end
 function PageBrowserWidget:onScrollRowDown()
     if self:updateFocusPage(self.nb_cols, true) then
         self:update()
+    end
+    return true
+end
+
+-- Override FocusManager internal methods, so we can scroll the view instead of wrap around
+function PageBrowserWidget:_wrapAroundY(dy)
+    if dy > 0 then
+        self:onScrollRowDown()
+    elseif dy < 0 then
+        self:onScrollRowUp()
+    end
+    return true
+end
+
+function PageBrowserWidget:_wrapAroundX(dx)
+    if dx < 0 then
+        if self.nb_rows == 1 then
+            -- With a single row, it's best to slide one item rather
+            -- than the full row and getting a bit lost
+            if self:updateFocusPage(-1, true) then
+                self:update()
+            end
+        elseif self.selected.y == 1 then
+            self:onScrollRowUp()
+            self.selected.x = self.nb_cols
+        else
+            self.selected.y = self.selected.y - 1
+            self.selected.x = self.nb_cols
+        end
+    elseif dx > 0 then
+        if self.nb_rows == 1 then
+            if self:updateFocusPage(1, true) then
+                self:update()
+            end
+        elseif self.selected.y == self.nb_rows then
+            self:onScrollRowDown()
+            self.selected.x = 1
+        else
+            self.selected.y = self.selected.y + 1
+            self.selected.x = 1
+        end
     end
     return true
 end
@@ -1460,6 +1653,21 @@ function PageBrowserWidget:onTap(arg, ges)
 end
 
 function PageBrowserWidget:onHold(arg, ges)
+    if not ges.pos then
+        if self:getFocusItem() then
+            -- emulator: triggered by ContextMenu key with focused widget, no pos information in event
+            -- set pos to center of widget
+            local pos = self:getFocusItem().dimen:copy()
+            pos.x = pos.x + math.floor(pos.w / 2)
+            pos.y = pos.y + math.floor(pos.h / 2)
+            pos.w = 0
+            pos.h = 0
+            ges.pos = pos;
+        else
+            return false
+        end
+    end
+
     -- If hold in the bottom BookMapRow, open a new BookMapWidget
     -- and focus on this page. We'll show a rounded square below
     -- our current focus_page to help locating where we were (it's
@@ -1469,14 +1677,7 @@ function PageBrowserWidget:onHold(arg, ges)
     if ges.pos.y > Screen:getHeight() - self.row_height then
         local page = self.row[1]:getPageAtX(ges.pos.x)
         if page then
-            local extra_symbols_pages = {}
-            extra_symbols_pages[self.focus_page] = 0x25A2 -- white square with rounder corners
-            UIManager:show(BookMapWidget:new{
-                launcher = self,
-                ui = self.ui,
-                focus_page = page,
-                extra_symbols_pages = extra_symbols_pages,
-            })
+            self:openBookMap(page)
         end
         return true
     end
@@ -1503,11 +1704,23 @@ function PageBrowserWidget:onHold(arg, ges)
     return true
 end
 
+function PageBrowserWidget:openBookMap(page)
+    local extra_symbols_pages = {}
+    extra_symbols_pages[self.focus_page] = 0x25A2 -- white square with rounder corners
+    UIManager:show(BookMapWidget:new{
+        launcher = self,
+        ui = self.ui,
+        focus_page = page,
+        extra_symbols_pages = extra_symbols_pages,
+    })
+end
+
 function PageBrowserWidget:onThumbnailHold(page, ges)
     local handmade_toc_edit_enabled = self.ui.handmade:isHandmadeTocEnabled() and self.ui.handmade:isHandmadeTocEditEnabled()
     local handmade_hidden_flows_edit_enabled = self.ui.handmade:isHandmadeHiddenFlowsEnabled() and self.ui.handmade:isHandmadeHiddenFlowsEditEnabled()
-    if not handmade_toc_edit_enabled and not handmade_hidden_flows_edit_enabled then
+    if Device:isTouchDevice() and not handmade_toc_edit_enabled and not handmade_hidden_flows_edit_enabled then
         -- No other feature enabled: we can toggle bookmark directly
+        -- On NT, we need to add "Go to book map" so we will never be here.
         self.ui.bookmark:toggleBookmark(page)
         self:updateEditableStuff(true)
         return
@@ -1524,6 +1737,16 @@ function PageBrowserWidget:onThumbnailHold(page, ges)
             end,
         }},
     }
+    if not Device:isTouchDevice() then
+        table.insert(buttons, {{
+            text = _("Go to book map"),
+            align = "left",
+            callback = function()
+                UIManager:close(button_dialog)
+                self:openBookMap(page)
+            end,
+        }})
+    end
     if handmade_toc_edit_enabled then
         local has_toc_item = self.ui.handmade:hasPageTocItem(page)
         table.insert(buttons, {{
@@ -1535,9 +1758,11 @@ function PageBrowserWidget:onThumbnailHold(page, ges)
             align = "left",
             callback = function()
                 UIManager:close(button_dialog)
-                self.ui.handmade:addOrEditPageTocItem(page, function()
-                    self:updateEditableStuff(true)
-                end)
+                self.ui.handmade:addOrEditPageTocItem(page, function() self:updateEditableStuff(true) end)
+            end,
+            hold_callback = function() -- no dialog: adds empty TOC item if none existing
+                UIManager:close(button_dialog)
+                self.ui.handmade:addOrEditPageTocItem(page, function() self:updateEditableStuff(true) end, nil, true)
             end,
         }})
     end

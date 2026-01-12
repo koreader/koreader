@@ -1,8 +1,10 @@
+local Archiver = require("ffi/archiver")
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local DocumentRegistry = require("document/documentregistry")
 local ImageViewer = require("ui/widget/imageviewer")
-local Menu = require("ui/widget/menu")
+local BookList = require("ui/widget/booklist")
+local InfoMessage = require("ui/widget/infomessage")
 local RenderImage = require("ui/renderimage")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
@@ -15,28 +17,22 @@ local T = ffiUtil.template
 local ArchiveViewer = WidgetContainer:extend{
     name = "archiveviewer",
     fullname = _("Archive viewer"),
-    arc_file = nil, -- archive
+    arc = nil, -- archive
     -- list_table is a flat table containing archive files and folders
     -- key - a full path of the folder ("/" for root), for all folders and subfolders of any level
     -- value - a subtable of subfolders and files in the folder
     -- subtable key - a name of a subfolder ending with /, or a name of a file (without path)
     -- subtable value - false for subfolders, or file size (string)
     list_table = nil,
-    arc_type = nil,
-    arc_ext = {
-        cbz  = true,
-        epub = true,
-        zip  = true,
-    },
 }
 
-local ZIP_LIST            = "unzip -qql \"%1\""
-local ZIP_EXTRACT_CONTENT = "unzip -qqp \"%1\" \"%2\""
-local ZIP_EXTRACT_FILE    = "unzip -qqo \"%1\" \"%2\" -d \"%3\"" -- overwrite
-
-local function getSuffix(file)
-    return util.getFileNameSuffix(file):lower()
-end
+local SUPPORTED_EXTENSIONS = {
+    cbr  = true,
+    cbz  = true,
+    epub = true,
+    rar  = true,
+    zip  = true,
+}
 
 function ArchiveViewer:init()
     self:registerDocumentRegistryAuxProvider()
@@ -53,32 +49,31 @@ function ArchiveViewer:registerDocumentRegistryAuxProvider()
 end
 
 function ArchiveViewer:isFileTypeSupported(file)
-    return self.arc_ext[getSuffix(file)] and true or false
+    return SUPPORTED_EXTENSIONS[util.getFileNameSuffix(file):lower()] ~= nil
 end
 
 function ArchiveViewer:openFile(file)
-    local _, filename = util.splitFilePathName(file)
-    local fileext = getSuffix(filename)
-    if fileext == "cbz" or fileext == "epub" or fileext == "zip" then
-        self.arc_type = "zip"
-    end
-    self.arc_file = file
+    local path, filename = util.splitFilePathName(file)
 
+    self.arc = Archiver.Reader:new()
     self.fm_updated = nil
     self.list_table = {}
-    if self.arc_type == "zip" then
-        self:getZipListTable()
-    else -- add other archivers here
-        return
+
+    -- default extraction directory is the directory of the file
+    self.extract_dir = path
+
+    if self.arc:open(file) then
+        self:getListTable()
     end
 
-    self.menu = Menu:new{
+    self.booklist = BookList:new({
         title = filename,
         item_table = self:getItemTable(),
-        covers_fullscreen = true,
-        is_borderless = true,
-        is_popout = false,
         title_multilines = true,
+        title_bar_left_icon = "appbar.menu",
+        onLeftButtonTap = function()
+            self:showMenu()
+        end,
         onMenuSelect = function(self_menu, item)
             if item.is_file then
                 self:showFileDialog(item.path)
@@ -88,16 +83,39 @@ function ArchiveViewer:openFile(file)
             end
         end,
         close_callback = function()
-            UIManager:close(self.menu)
+            UIManager:close(self.booklist)
             if self.fm_updated then
                 self.ui:onRefresh()
             end
         end,
-    }
-    UIManager:show(self.menu)
+    })
+    UIManager:show(self.booklist)
 end
 
-function ArchiveViewer:getZipListTable()
+function ArchiveViewer:showMenu()
+    local dialog
+    dialog = ButtonDialog:new({
+        buttons = {
+            {
+                {
+                    text = _("Extract all files"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:extractAllDialog()
+                    end,
+                    align = "left",
+                },
+            },
+        },
+        shrink_unneeded_width = true,
+        anchor = function()
+            return self.booklist.title_bar.left_button.image.dimen
+        end,
+    })
+    UIManager:show(dialog)
+end
+
+function ArchiveViewer:getListTable()
     local function parse_path(filepath, filesize)
         if not filepath then return end
         local path, name = util.splitFilePathName(filepath)
@@ -119,14 +137,10 @@ function ArchiveViewer:getZipListTable()
         end
     end
 
-    local std_out = io.popen(T(ZIP_LIST, self.arc_file))
-    if std_out then
-        for line in std_out:lines() do
-            -- entry datetime not used so far
-            local fsize, fname = string.match(line, "%s+(%d+)%s+[-0-9]+%s+[0-9:]+%s+(.+)")
-            parse_path(fname, fsize or 0)
+    for entry in self.arc:iterate() do
+        if entry.mode == "file" then
+            parse_path(entry.path, entry.size)
         end
-        std_out:close()
     end
 end
 
@@ -195,14 +209,11 @@ end
 function ArchiveViewer:showFileDialog(filepath)
     local dialog
     local buttons = {
+        self:getChooseFolderButton(function()
+            UIManager:close(dialog)
+            self:showFileDialog(filepath)
+        end),
         {
-            {
-                text = _("Extract"),
-                callback = function()
-                    UIManager:close(dialog)
-                    self:extractFile(filepath)
-                end,
-            },
             {
                 text = _("View"),
                 callback = function()
@@ -210,14 +221,78 @@ function ArchiveViewer:showFileDialog(filepath)
                     self:viewFile(filepath)
                 end,
             },
+
+            {
+                text = _("Extract"),
+                callback = function()
+                    UIManager:close(dialog)
+                    self:extractFile(filepath)
+                end,
+            },
         },
     }
-    dialog = ButtonDialog:new{
-        title = filepath .. "\n\n" .. _("On extraction, if the file already exists, it will be overwritten."),
+    dialog = ButtonDialog:new({
+        title = T(_("Extract %1 to %2?"), filepath, BD.dirpath(self.extract_dir)) .. "\n\n" .. _(
+            "On extraction, if the file already exists, it will be overwritten."
+        ),
         width_factor = 0.8,
         buttons = buttons,
-    }
+    })
     UIManager:show(dialog)
+end
+
+function ArchiveViewer:extractAllDialog()
+    local dialog
+    local buttons = {
+        self:getChooseFolderButton(function()
+            UIManager:close(dialog)
+            self:extractAllDialog()
+        end),
+        {
+            {
+                text = _("Cancel"),
+                callback = function()
+                    UIManager:close(dialog)
+                end,
+            },
+            {
+                text = _("Extract"),
+                callback = function()
+                    UIManager:close(dialog)
+                    self:extractAll()
+                end,
+            },
+        },
+    }
+    dialog = ButtonDialog:new({
+        title = T(_("Extract all files to %1?"), BD.dirpath(self.extract_dir)) .. "\n\n" .. _(
+            "On extraction, if the files already exist, they will be overwritten."
+        ),
+        width_factor = 0.8,
+        buttons = buttons,
+    })
+    UIManager:show(dialog)
+end
+
+function ArchiveViewer:getChooseFolderButton(callback)
+    return {
+        {
+            text = _("Choose folder"),
+            callback = function()
+                require("ui/downloadmgr")
+                    :new({
+                        onConfirm = function(path)
+                            if path:sub(-1) ~= "/" then
+                                path = path .. "/"
+                            end
+                            self.extract_dir = path
+                            callback()
+                        end,
+                    })
+                    :chooseDir(self.extract_dir)
+            end,
+        },
+    }
 end
 
 function ArchiveViewer:viewFile(filepath)
@@ -225,7 +300,7 @@ function ArchiveViewer:viewFile(filepath)
         local index = 0
         local curr_index
         local images_list = {}
-        for i, item in ipairs(self.menu.item_table) do
+        for i, item in ipairs(self.booklist.item_table) do
             local item_path = item.path
             if item.is_file and DocumentRegistry:isImageFile(item_path) then
                 table.insert(images_list, item_path)
@@ -266,29 +341,35 @@ function ArchiveViewer:viewFile(filepath)
 end
 
 function ArchiveViewer:extractFile(filepath)
-    if self.arc_type == "zip" then
-        local std_out = io.popen(T(ZIP_EXTRACT_FILE, self.arc_file, filepath, util.splitFilePathName(self.arc_file)))
-        if std_out then
-            std_out:close()
+    local directory = self.extract_dir
+
+    self.fm_updated = self.arc:extractToPath(filepath, directory .. filepath)
+
+    UIManager:show(InfoMessage:new({
+        text = T(_("Extracted to %1"), BD.filepath(directory .. filepath)),
+        timeout = 2,
+    }))
+end
+
+function ArchiveViewer:extractAll()
+    local archive_dir = self.extract_dir
+
+    for entry in self.arc:iterate() do
+        if entry.mode == "file" then
+            self.arc:extractToPath(entry.path, archive_dir .. entry.path)
         end
-    else
-        return
     end
+
     self.fm_updated = true
+
+    UIManager:show(InfoMessage:new({
+        text = T(_("All files extracted to %1"), archive_dir),
+        timeout = 2,
+    }))
 end
 
 function ArchiveViewer:extractContent(filepath)
-    local content
-    if self.arc_type == "zip" then
-        local std_out = io.popen(T(ZIP_EXTRACT_CONTENT, self.arc_file, filepath))
-        if std_out then
-            content = std_out:read("*all")
-            std_out:close()
-            return content
-        end
-    else
-        return
-    end
+    return self.arc:extractToMemory(filepath)
 end
 
 return ArchiveViewer

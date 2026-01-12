@@ -88,6 +88,9 @@ function KeyValueItem:init()
     local key_w = math.floor(frame_internal_width * ratio - middle_padding)
     local value_w = math.floor(frame_internal_width * (1-ratio))
 
+    if self.key_bold == false then
+        self.key_font_name = self.value_font_name
+    end
     local key_widget = TextWidget:new{
         text = self.key,
         max_width = available_width,
@@ -190,6 +193,7 @@ function KeyValueItem:init()
         bordersize = 0,
         focusable = true,
         focus_border_size = Size.border.thin,
+        focus_inner_border = true,
         background = Blitbuffer.COLOR_WHITE,
         HorizontalGroup:new{
             dimen = content_dimen,
@@ -297,22 +301,29 @@ local KeyValuePage = FocusManager:extend{
 }
 
 function KeyValuePage:init()
+    local screen_w = Screen:getWidth()
+    local screen_h = Screen:getHeight()
     self.show_parent = self.show_parent or self
     self.kv_pairs = self.kv_pairs or {}
     self.dimen = Geom:new{
         x = 0,
         y = 0,
-        w = self.width or Screen:getWidth(),
-        h = self.height or Screen:getHeight(),
+        w = self.width or screen_w,
+        h = self.height or screen_h,
     }
-    if self.dimen.w == Screen:getWidth() and self.dimen.h == Screen:getHeight() then
+    if self.dimen.w == screen_w and self.dimen.h == screen_h then
         self.covers_fullscreen = true -- hint for UIManager:_repaint()
     end
 
     if Device:hasKeys() then
-        self.key_events.Close = { { Input.group.Back } }
+        self.key_events.CloseWithKey = { { Input.group.Back } }
         self.key_events.NextPage = { { Input.group.PgFwd } }
         self.key_events.PrevPage = { { Input.group.PgBack } }
+        if Device:hasScreenKB() or Device:hasKeyboard() then
+            local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            self.key_events.FirstPage = { { modifier, Input.group.PgFwd }, event = "GoToPage", args = 1 }
+            self.key_events.LastPage = { { modifier, Input.group.PgBack }, event = "GoToPage", args = self.pages}
+        end
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
@@ -324,6 +335,12 @@ function KeyValuePage:init()
         self.ges_events.MultiSwipe = {
             GestureRange:new{
                 ges = "multiswipe",
+                range = self.dimen,
+            }
+        }
+        self.ges_events.Pan = { -- (for mousewheel scrolling support)
+            GestureRange:new{
+                ges = "pan",
                 range = self.dimen,
             }
         }
@@ -466,7 +483,8 @@ function KeyValuePage:init()
                          - 2*Size.line.thick
                             -- account for possibly 2 separator lines added
 
-    self.items_per_page = G_reader_settings:readSetting("keyvalues_per_page") or self.getDefaultItemsPerPage()
+    local nb_items_landscape, nb_items_portrait = KeyValuePage.getCurrentItemsPerPage()
+    self.items_per_page = screen_h < screen_w and nb_items_landscape or nb_items_portrait
     if self.single_page and self.items_per_page < #self.kv_pairs then
         self.items_per_page = #self.kv_pairs
     end
@@ -520,10 +538,24 @@ end
 function KeyValuePage.getDefaultItemsPerPage()
     -- Get a default according to Screen DPI (roughly following
     -- the former implementation building logic)
+    local screen_w = Screen:getWidth()
+    local screen_h = Screen:getHeight()
+    if screen_w > screen_h then
+        screen_w, screen_h = screen_h, screen_w
+    end
     local default_item_height = Size.item.height_default * 1.5 -- we were adding 1/2 as margin
-    local nb_items = math.floor(Screen:getHeight() / default_item_height)
-    nb_items = nb_items - 3 -- account for title and footer heights
-    return nb_items
+    local nb_items_landscape = math.floor(screen_w / default_item_height) - 3 -- account for title and footer heights
+    local nb_items_portrait = math.floor(screen_h / default_item_height) - 3
+    return nb_items_landscape, nb_items_portrait
+end
+
+function KeyValuePage.getCurrentItemsPerPage(nb_items_landscape_default, nb_items_portrait_default)
+    if nb_items_landscape_default == nil then
+        nb_items_landscape_default, nb_items_portrait_default = KeyValuePage.getDefaultItemsPerPage()
+    end
+    local nb_items_landscape = G_reader_settings:readSetting("keyvalues_per_page_landscape") or nb_items_landscape_default
+    local nb_items_portrait = G_reader_settings:readSetting("keyvalues_per_page") or nb_items_portrait_default
+    return nb_items_landscape, nb_items_portrait
 end
 
 function KeyValuePage:nextPage()
@@ -545,6 +577,11 @@ end
 function KeyValuePage:goToPage(page)
     self.show_page = page
     self:_populateItems()
+end
+
+function KeyValuePage:onGoToPage(page)
+    self:goToPage(page)
+    return true
 end
 
 -- make sure self.item_margin and self.item_height are set before calling this
@@ -660,6 +697,7 @@ function KeyValuePage:_populateItems()
                 width = self.item_width,
                 width_ratio = width_ratio,
                 font_size = self.items_font_size,
+                key_bold = entry.key_bold,
                 key = entry[1],
                 value = entry[2],
                 value_lang = self.values_lang,
@@ -784,6 +822,17 @@ function KeyValuePage:onMultiSwipe(arg, ges_ev)
     return true
 end
 
+function KeyValuePage:onPan(arg, ges_ev)
+    if ges_ev.mousewheel_direction then
+        if ges_ev.direction == "north" then
+            self:onNextPage()
+        elseif ges_ev.direction == "south" then
+            self:onPrevPage()
+        end
+    end
+    return true
+end
+
 function KeyValuePage:setTitleBarLeftIcon(icon)
     self.title_bar:setLeftIcon(icon)
 end
@@ -793,6 +842,14 @@ function KeyValuePage:onClose()
     if self.close_callback then
         self.close_callback()
     end
+    return true
+end
+
+function KeyValuePage:onCloseWithKey()
+    if self.page_return_arrow and self.callback_return then
+        self:callback_return()
+    end
+    self:onClose()
     return true
 end
 

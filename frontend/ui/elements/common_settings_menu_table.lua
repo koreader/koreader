@@ -192,7 +192,7 @@ if Device:setDateTime() then
                 day = curr_day,
                 ok_text = _("Set date"),
                 title_text = _("Set date"),
-                info_text = _("Date is in years, months and days."),
+                info_text = _("The date format is year, month, day."),
                 callback = function(time)
                     now_t = os.date("*t")
                     if Device:setDateTime(time.year, time.month, time.day, now_t.hour, now_t.min, now_t.sec) then
@@ -237,11 +237,23 @@ if Device:isKobo() then
             UIManager:askForRestart()
         end
     }
+
+    if Device:hasKeys() and Device:isMTK() then
+        common_settings.pageturn_power = {
+            text = _("Wake up on page-turn button press"),
+            checked_func = function()
+                return G_reader_settings:isTrue("pageturn_power")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("pageturn_power")
+            end
+        }
+    end
 end
 
-if Device:isKindle() and PowerD:hasHallSensor() then
+if PowerD:hasHallSensor() then
     common_settings.cover_events = {
-        text = _("Disable Kindle cover events"),
+        text = _("Disable cover events"),
         help_text = _([[Toggle the Hall effect sensor.
 This is used to detect if the cover is closed, which will automatically sleep and wake the device. If there is no cover present the sensor may cause spurious wakeups when located next to a magnetic source.]]),
         keep_menu_open = true,
@@ -280,10 +292,19 @@ if Device:isTouchDevice() then
             return G_reader_settings:isTrue("ignore_hold_corners")
         end,
         callback = function()
-            UIManager:broadcastEvent(Event:new("IgnoreHoldCorners"))
+            UIManager:broadcastEvent(Event:new("IgnoreHoldCorners", nil, true)) -- no notification
         end,
     }
-    common_settings.screen_disable_double_tab = dofile("frontend/ui/elements/screen_disable_double_tap_table.lua")
+    common_settings.screen_disable_double_tap = {
+        text = _("Disable double tap"),
+        checked_func = function()
+            return G_reader_settings:nilOrTrue("disable_double_tap")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrTrue("disable_double_tap")
+            UIManager:askForRestart()
+        end,
+    }
     common_settings.menu_activate = dofile("frontend/ui/elements/menu_activate.lua")
 end
 
@@ -379,13 +400,13 @@ local back_to_exit_str = {
     always = {_("Always"), _("always")},
     disable ={_("Disable"), _("disable")},
 }
-local function genGenericMenuEntry(title, setting, value, default, radiomark)
+local function genGenericMenuEntry(title, setting, value, default)
     return {
         text = title,
         checked_func = function()
             return G_reader_settings:readSetting(setting, default) == value
         end,
-        radio = radiomark,
+        radio = true,
         callback = function()
             G_reader_settings:saveSetting(setting, value)
         end,
@@ -422,6 +443,7 @@ common_settings.back_in_filemanager = {
             checked_func = function()
                 return G_reader_settings:readSetting("back_in_filemanager", "default") == "default"
             end,
+            radio = true,
             callback = function()
                 G_reader_settings:saveSetting("back_in_filemanager", "default")
             end,
@@ -454,6 +476,7 @@ common_settings.back_in_reader = {
             checked_func = function()
                 return G_reader_settings:readSetting("back_in_reader") == "default"
             end,
+            radio = true,
             callback = function()
                 G_reader_settings:saveSetting("back_in_reader", "default")
             end,
@@ -539,6 +562,7 @@ local function genAutoSaveMenuItem(value)
         checked_func = function()
             return G_reader_settings:readSetting(setting_name) == value
         end,
+        radio = true,
         callback = function()
             G_reader_settings:saveSetting(setting_name, value)
         end,
@@ -678,14 +702,15 @@ common_settings.document_end_action = {
             end,
             separator = true,
         },
-        genGenericMenuEntry(_("Ask with popup dialog"), "end_document_action", "pop-up", "pop-up", true),
-        genGenericMenuEntry(_("Do nothing"), "end_document_action", "nothing", nil, true),
-        genGenericMenuEntry(_("Book status"), "end_document_action", "book_status", nil, true),
-        genGenericMenuEntry(_("Delete file"), "end_document_action", "delete_file", nil, true),
+        genGenericMenuEntry(_("Ask with popup dialog"), "end_document_action", "pop-up", "pop-up"),
+        genGenericMenuEntry(_("Do nothing"), "end_document_action", "nothing", nil),
+        genGenericMenuEntry(_("Book status"), "end_document_action", "book_status", nil),
+        genGenericMenuEntry(_("Delete file"), "end_document_action", "delete_file", nil),
         {
             text = _("Open next file"),
             enabled_func = function()
-                return G_reader_settings:readSetting("collate") ~= "access"
+                local collate = G_reader_settings:readSetting("collate")
+                return collate ~= "access" and collate ~= "date"
             end,
             checked_func = function()
                 return G_reader_settings:readSetting("end_document_action") == "next_file"
@@ -695,10 +720,10 @@ common_settings.document_end_action = {
                 G_reader_settings:saveSetting("end_document_action", "next_file")
             end,
         },
-        genGenericMenuEntry(_("Go to beginning"), "end_document_action", "goto_beginning", nil, true),
-        genGenericMenuEntry(_("Return to file browser"), "end_document_action", "file_browser", nil, true),
-        genGenericMenuEntry(_("Mark book as finished"), "end_document_action", "mark_read", nil, true),
-        genGenericMenuEntry(_("Book status and return to file browser"), "end_document_action", "book_status_file_browser", nil, true),
+        genGenericMenuEntry(_("Go to beginning"), "end_document_action", "goto_beginning", nil),
+        genGenericMenuEntry(_("Return to file browser"), "end_document_action", "file_browser", nil),
+        genGenericMenuEntry(_("Mark book as finished"), "end_document_action", "mark_read", nil),
+        genGenericMenuEntry(_("Book status and return to file browser"), "end_document_action", "book_status_file_browser", nil),
     }
 }
 
@@ -734,19 +759,21 @@ common_settings.units = {
             end,
             separator = true,
         },
-        genGenericMenuEntry(_("Metric system"),   "dimension_units", "mm", nil, true),
-        genGenericMenuEntry(_("Imperial system"), "dimension_units", "in", nil, true),
-        genGenericMenuEntry(_("Pixels"),          "dimension_units", "px", nil, true),
+        genGenericMenuEntry(_("Metric system"),   "dimension_units", "mm", nil),
+        genGenericMenuEntry(_("Imperial system"), "dimension_units", "in", nil),
+        genGenericMenuEntry(_("Pixels"),          "dimension_units", "px", nil),
     }
 }
 
-common_settings.screenshot = {
-    text = _("Screenshot folder"),
-    callback = function()
-        local Screenshoter = require("ui/widget/screenshoter")
-        Screenshoter:chooseFolder()
-    end,
-    keep_menu_open = true,
-}
+if Device:isTouchDevice() or Device:hasKeyboard() or Device:hasScreenKB() then
+    common_settings.screenshot = {
+        text = _("Screenshot folder"),
+        callback = function()
+            local Screenshoter = require("ui/widget/screenshoter")
+            Screenshoter:chooseFolder()
+        end,
+        keep_menu_open = true,
+    }
+end
 
 return common_settings

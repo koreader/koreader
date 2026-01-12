@@ -74,13 +74,13 @@ function UIManager:init()
         end,
     }
     self.poweroff_action = function()
-        self._entered_poweroff_stage = true
-        logger.info("Powering off the device...")
-        self:broadcastEvent(Event:new("PowerOff"))
-        self:broadcastEvent(Event:new("Close"))
         local Screensaver = require("ui/screensaver")
         Screensaver:setup("poweroff", _("Powered off"))
         Screensaver:show()
+        self._entered_poweroff_stage = true
+        logger.info("Powering off the device...")
+        self:broadcastEvent(Event:new("PowerOff"))
+        self:broadcastEvent(Event:new("Close", { keep_screensaver = true }))
         self:nextTick(function()
             Device:saveSettings()
             Device:powerOff()
@@ -92,13 +92,13 @@ function UIManager:init()
         end)
     end
     self.reboot_action = function()
-        self._entered_poweroff_stage = true
-        logger.info("Rebooting the device...")
-        self:broadcastEvent(Event:new("Reboot"))
-        self:broadcastEvent(Event:new("Close"))
         local Screensaver = require("ui/screensaver")
         Screensaver:setup("reboot", _("Rebooting…"))
         Screensaver:show()
+        self._entered_poweroff_stage = true
+        logger.info("Rebooting the device...")
+        self:broadcastEvent(Event:new("Reboot"))
+        self:broadcastEvent(Event:new("Close", { keep_screensaver = true }))
         self:nextTick(function()
             Device:saveSettings()
             Device:reboot()
@@ -122,6 +122,14 @@ end
 function UIManager:setIgnoreTouchInput(state)
     local InputContainer = require("ui/widget/container/inputcontainer")
     InputContainer:setIgnoreTouchInput(state)
+end
+
+function UIManager:setSilentMode(toggle)
+    self.silent_mode = toggle or nil
+end
+
+function UIManager:isInSilentMode()
+    return self.silent_mode or false
 end
 
 --[[--
@@ -148,6 +156,10 @@ If refreshtype is omitted, no refresh will be enqueued at this time.
 function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     if not widget then
         logger.dbg("attempted to show a nil widget")
+        return
+    end
+    if self.silent_mode and widget.honor_silent_mode then
+        logger.dbg("widget show disabled:", widget.id or widget.name or tostring(widget))
         return
     end
     logger.dbg("show widget:", widget.id or widget.name or tostring(widget))
@@ -842,7 +854,9 @@ function UIManager:unsetRunForeverMode()
     self._gated_quit = function() return self:quit(nil, true) end
 end
 
--- Ignore an empty window stack *once*; for startup w/ a missing last_file shenanigans...
+-- We'll want to return from this without actually quitting, so this is
+-- a slightly mangled UIManager:run() call to coerce the main loop into
+-- submission to ignore an empty window stack *once*.
 function UIManager:runOnce()
     -- We don't actually want to call self.quit, and we need to deal with a bit of trickery in there anyway...
     self._gated_quit = function()

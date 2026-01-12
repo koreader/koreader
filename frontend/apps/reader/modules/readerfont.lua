@@ -127,6 +127,7 @@ function ReaderFont:setupFaceMenuTable()
             hold_callback = function(touchmenu_instance)
                 self:makeDefault(v, is_monospace, touchmenu_instance)
             end,
+            radio = true,
             checked_func = function()
                 return v == self.font_face
             end,
@@ -296,10 +297,15 @@ end
 
 function ReaderFont:onSetFont(face)
     if face and self.font_face ~= face then
-        self.font_face = face
-        self.ui.document:setFontFace(face)
-        -- signal readerrolling to update pos in new height
-        self.ui:handleEvent(Event:new("UpdatePos"))
+        for _, fontinfo in pairs(FontList.fontinfo) do
+            if fontinfo[1].name == face then
+                self.font_face = face
+                self.ui.document:setFontFace(face)
+                -- signal readerrolling to update pos in new height
+                self.ui:handleEvent(Event:new("UpdatePos"))
+                return
+            end
+        end
     end
 end
 
@@ -572,6 +578,7 @@ Enabling this will ignore such font names and make sure your preferred family fo
                         self:updateFontFamilyFonts()
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
+                    radio = true,
                     checked_func = function()
                         if self.font_family_fonts[family_tag] == false then
                             return true
@@ -639,6 +646,7 @@ Enabling this will ignore such font names and make sure your preferred family fo
                         self:updateFontFamilyFonts()
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
+                    radio = true,
                     checked_func = function()
                         if self.font_family_fonts[family_tag] then
                             return self.font_family_fonts[family_tag] == v

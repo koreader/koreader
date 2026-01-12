@@ -6,6 +6,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local Math = require("optmath")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
+local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
@@ -164,6 +165,10 @@ local function validateUser(user, pass)
 end
 
 function KOSync:onDispatcherRegisterActions()
+    Dispatcher:registerAction("kosync_set_autosync",
+        { category="string", event="KOSyncToggleAutoSync", title=_("Set auto progress sync"), reader=true,
+        args={true, false}, toggle={_("on"), _("off")},})
+    Dispatcher:registerAction("kosync_toggle_autosync", { category="none", event="KOSyncToggleAutoSync", title=_("Toggle auto progress sync"), reader=true,})
     Dispatcher:registerAction("kosync_push_progress", { category="none", event="KOSyncPushProgress", title=_("Push progress from this device"), reader=true,})
     Dispatcher:registerAction("kosync_pull_progress", { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), reader=true, separator=true,})
 end
@@ -225,23 +230,7 @@ function KOSync:addToMainMenu(menu_items)
                 checked_func = function() return self.settings.auto_sync end,
                 help_text = _([[This may lead to nagging about toggling WiFi on document close and suspend/resume, depending on the device's connectivity.]]),
                 callback = function()
-                    -- Actively recommend switching the before wifi action to "turn_on" instead of prompt, as prompt will just not be practical (or even plain usable) here.
-                    if Device:hasSeamlessWifiToggle() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" and not self.settings.auto_sync then
-                        UIManager:show(InfoMessage:new{ text = _("You will have to switch the 'Action when Wi-Fi is off' Network setting to 'turn on' to be able to enable this feature!") })
-                        return
-                    end
-
-                    self.settings.auto_sync = not self.settings.auto_sync
-                    self:registerEvents()
-                    if self.settings.auto_sync then
-                        -- Since we will update the progress when closing the document,
-                        -- pull the current progress now so as not to silently overwrite it.
-                        self:getProgress(true, true)
-                    else
-                        -- Since we won't update the progress when closing the document,
-                        -- push the current progress now so as not to lose it.
-                        self:updateProgress(true, true)
-                    end
+                    self:onKOSyncToggleAutoSync(nil, true)
                 end,
             },
             {
@@ -447,6 +436,7 @@ function KOSync:login(menu)
                     text = _("Login"),
                     callback = function()
                         local username, password = unpack(dialog:getFields())
+                        username = util.trim(username)
                         local ok, err = validateUser(username, password)
                         if not ok then
                             UIManager:show(InfoMessage:new{
@@ -469,6 +459,7 @@ function KOSync:login(menu)
                     text = _("Register"),
                     callback = function()
                         local username, password = unpack(dialog:getFields())
+                        username = util.trim(username)
                         local ok, err = validateUser(username, password)
                         if not ok then
                             UIManager:show(InfoMessage:new{
@@ -915,6 +906,37 @@ end
 
 function KOSync:onKOSyncPullProgress()
     self:getProgress(true, true)
+end
+
+function KOSync:onKOSyncToggleAutoSync(toggle, from_menu)
+    if toggle == self.settings.auto_sync then
+        return true
+    end
+    -- Actively recommend switching the before wifi action to "turn_on" instead of prompt,
+    -- as prompt will just not be practical (or even plain usable) here.
+    if not self.settings.auto_sync
+            and Device:hasSeamlessWifiToggle()
+            and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
+        UIManager:show(InfoMessage:new{ text = _("You will have to switch the 'Action when Wi-Fi is off' Network setting to 'turn on' to be able to enable this feature!") })
+        return true
+    end
+    self.settings.auto_sync = not self.settings.auto_sync
+    self:registerEvents()
+
+    if self.settings.auto_sync then
+        -- Since we will update the progress when closing the document,
+        -- pull the current progress now so as not to silently overwrite it.
+        self:getProgress(true, true)
+    elseif from_menu then
+        -- Since we won't update the progress when closing the document,
+        -- push the current progress now so as not to lose it.
+        self:updateProgress(true, true)
+    end
+
+    if not from_menu then
+        Notification:notify(self.settings.auto_sync and _("Auto progress sync: on") or _("Auto progress sync: off"))
+    end
+    return true
 end
 
 function KOSync:registerEvents()

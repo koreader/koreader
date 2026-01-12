@@ -127,7 +127,7 @@ function TimeoutHelper:getTimeoutMenuTable()
     end
 
     return {
-        text = _("Screen Timeout"),
+        text = _("Screen timeout"),
         sub_item_table = t
     }
 end

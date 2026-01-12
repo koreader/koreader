@@ -240,7 +240,7 @@ function PocketBook:init()
     -- Unhandled events will leave Input:waitEvent() as "GenericInput"
     -- NOTE: This all happens in ffi/input_pocketbook.lua
 
-    self._model_init()
+    self:_model_init()
     -- NOTE: `self.input.open` is a method, and we want it to call `self.input.input.open`
     -- with `self.input` as first argument, which the imp supports to get access to
     -- `self.input.raw_input`, hence the double `self.input` arguments.
@@ -413,6 +413,12 @@ function PocketBook:getDefaultCoverPath()
     return "/mnt/ext1/system/logo/offlogo/cover.bmp"
 end
 
+function PocketBook:isStartupScriptUpToDate()
+    local md5 = require("ffi/MD5")
+    -- Compare the hash of the *active* script to the *potential* one.
+    return md5.sumFile("/tmp/koreader.app") == md5.sumFile("../koreader.app")
+end
+
 function PocketBook:UIManagerReady(uimgr)
     UIManager = uimgr
 end
@@ -543,6 +549,14 @@ local PocketBook617 = PocketBook:extend{
 local PocketBook618 = PocketBook:extend{
     model = "PBBLux4",
     display_dpi = 212,
+}
+
+-- PocketBook Verse Lite (619)
+local PocketBook619 = PocketBook:extend{
+    model = "PBVerseLite",
+    display_dpi = 212,
+    isAlwaysPortrait = yes,
+    hasKeys = no,
 }
 
 -- PocketBook Touch (622)
@@ -864,6 +878,8 @@ elseif codename == "617" then
     return PocketBook617
 elseif codename == "618" then
     return PocketBook618
+elseif codename == "619" then
+    return PocketBook619
 elseif codename == "622" then
     return PocketBook622
 elseif codename == "623" then

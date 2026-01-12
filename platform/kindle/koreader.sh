@@ -1,24 +1,28 @@
 #!/bin/sh
 
+export LC_ALL="en_US.UTF-8"
+
+UNPACK_DIR='/mnt/us'
+# KOReader's working directory.
+KOREADER_DIR="${UNPACK_DIR}/koreader"
+
 # NOTE: Stupid workaround to make sure the script we end up running is a *copy*,
 # living in a magical land that doesn't suffer from gross filesystem deficiencies.
 # Otherwise, the vfat+fuse mess means an OTA update will break the script on exit,
 # and potentially leave the user in a broken state, with the WM still paused...
+# Additionally, this is used by KOReader to detect if the original script has
+# changed after an update (requiring a complete restart from the parent
+# launcher).
 if [ "$(dirname "${0}")" != "/var/tmp" ]; then
     cp -pf "${0}" /var/tmp/koreader.sh
     chmod 777 /var/tmp/koreader.sh
     exec /var/tmp/koreader.sh "$@"
 fi
 
-export LC_ALL="en_US.UTF-8"
-
 PROC_KEYPAD="/proc/keypad"
 PROC_FIVEWAY="/proc/fiveway"
 [ -e "${PROC_KEYPAD}" ] && echo unlock >"${PROC_KEYPAD}"
 [ -e "${PROC_FIVEWAY}" ] && echo unlock >"${PROC_FIVEWAY}"
-
-# KOReader's working directory
-export KOREADER_DIR="/mnt/us/koreader"
 
 # NOTE: Same vfat+fuse shenanigans needed for FBInk, before we source libko...
 cp -pf "${KOREADER_DIR}/fbink" /var/tmp/fbink
@@ -123,6 +127,8 @@ ko_update_check() {
         logmsg "Updating KOReader . . ."
         # Let our checkpoint script handle the detailed visual feedback...
         eips_print_bottom_centered "Updating KOReader" 3
+        # Keep a copy of the old manifest for cleaning leftovers later.
+        cp "${KOREADER_DIR}/ota/package.index" /tmp/
         # Setup the FBInk daemon
         export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
         rm -f "${FBINK_NAMED_PIPE}"
@@ -146,6 +152,8 @@ ko_update_check() {
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
             mv "${NEWUPDATE}" "${INSTALLED}"
+            # Cleanup leftovers from previous install.
+            (cd "${UNPACK_DIR}" && grep -xvFf "${KOREADER_DIR}/ota/package.index" /tmp/package.index | xargs -r rm -vf)
             logmsg "Update successful :)"
             eips_print_bottom_centered "Update successful :)" 2
             eips_print_bottom_centered "KOReader will start momentarily . . ." 1
@@ -160,7 +168,7 @@ ko_update_check() {
             eips_print_bottom_centered "Update failed :(" 2
             eips_print_bottom_centered "KOReader may fail to function properly" 1
         fi
-        rm -f "${NEWUPDATE}" # always purge newupdate to prevent update loops
+        rm -f /tmp/package.index "${NEWUPDATE}" # always purge newupdate to prevent update loops
         unset CPOINTS FBINK_NAMED_PIPE
         unset BLOCKS FILESIZE FBINK_PID
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!

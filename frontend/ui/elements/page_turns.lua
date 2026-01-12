@@ -1,4 +1,5 @@
 local Device = require("device")
+local Event = require("ui/event")
 local ReaderUI = require("apps/reader/readerui")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
@@ -17,6 +18,7 @@ local function genTapZonesMenu(tap_zones_type)
         checked_func = function()
             return G_reader_settings:readSetting("page_turns_tap_zones", "default") == tap_zones_type
         end,
+        radio = true,
         callback = function()
             G_reader_settings:saveSetting("page_turns_tap_zones", tap_zones_type)
             ReaderUI.instance.view:setupTouchZones()
@@ -151,18 +153,44 @@ local PageTurns = {
             end,
         },
         {
-            text = _("Also invert document-related dialogs"),
-            checked_func = function()
-                return G_reader_settings:isTrue("invert_ui_layout_mirroring")
+            text_func = function()
+                local text = _("Invert document-related dialogs")
+                if G_reader_settings:isTrue("invert_ui_layout") then
+                    text = text .. "   ★"
+                end
+                return text
             end,
-            enabled_func = function()
-                return ReaderUI.instance.view.inverse_reading_order
+            checked_func = function()
+                return ReaderUI.instance.view:shouldInvertBiDiLayoutMirroring()
             end,
             callback = function()
-                G_reader_settings:flipNilOrFalse("invert_ui_layout_mirroring")
+                UIManager:broadcastEvent(Event:new("ToggleUILayoutMiroring"))
+            end,
+            hold_callback = function(touchmenu_instance)
+                local invert_ui_layout = G_reader_settings:isTrue("invert_ui_layout")
+                local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+                UIManager:show(MultiConfirmBox:new{
+                    text = invert_ui_layout and _("The default (★) for newly opened books is to Invert document-related dialogs.\n\nWould you like to change it?")
+                    or _("The default (★) for newly opened books is not to Invert document-related dialogs.\n\nWould you like to change it?"),
+                    choice1_text_func = function()
+                        return invert_ui_layout and _("Don't invert") or _("Don't invert") .. " (★)"
+                    end,
+                    choice1_callback = function()
+                        G_reader_settings:makeFalse("invert_ui_layout")
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                    choice2_text_func = function()
+                        return invert_ui_layout and _("Invert") .. " (★)" or _("Invert")
+                    end,
+                    choice2_callback = function()
+                        G_reader_settings:makeTrue("invert_ui_layout")
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                })
             end,
             help_text = _([[
-When enabled the UI direction for the Table of Contents, Book Map, and Page Browser dialogs will follow the page turn direction instead of the default UI direction.]]),
+When enabled the UI direction for the Table of Contents, Book Map, and Page Browser dialogs will mirror the default UI direction.
+Useful when used alongside 'Invert page turn taps and swipes'.]]),
             separator = true,
         },
         Device:canDoSwipeAnimation() and {

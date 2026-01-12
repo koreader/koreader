@@ -1,7 +1,7 @@
 --[[--
 module used for terminal emulator to override InputText
 
-@module koplugin.terminal
+@module koplugin.terminal.terminputtext
 ]]
 
 local InputText = require("ui/widget/inputtext")
@@ -777,6 +777,12 @@ function TermInputText:delChar()
         return
     end
     InputText.delChar(self)
+end
+
+function TermInputText:delWord(left_to_cursor)
+    if self.parent and self.parent.del_word_callback then
+        self.parent.del_word_callback(left_to_cursor)
+    end
 end
 
 function TermInputText:delToStartOfLine()

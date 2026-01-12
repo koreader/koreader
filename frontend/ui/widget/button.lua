@@ -66,12 +66,21 @@ local Button = InputContainer:extend{
     text_font_face = "cfont",
     text_font_size = 20,
     text_font_bold = true,
+    menu_style = nil, -- see init()
     vsync = nil, -- when "flash_ui" is enabled, allow bundling the highlight with the callback, and fence that batch away from the unhighlight. Avoid delays when callback requires a "partial" on Kobo Mk. 7, c.f., ffi/framebuffer_mxcfb for more details.
 }
 
 function Button:init()
+    if self.menu_style then
+        self.align = "left"
+        self.padding_h = Size.padding.large
+        self.text_font_face = "smallinfofont"
+        self.text_font_size = 22
+        self.text_font_bold = false
+    end
+
     -- Prefer an optional text_func over text
-    if self.text_func and type(self.text_func) == "function" then
+    if self.text_func then
         self.text = self.text_func()
     end
 
@@ -498,7 +507,7 @@ function Button:onTapSelectButton()
             end
         elseif self.tap_input then
             self:onInput(self.tap_input)
-        elseif type(self.tap_input_func) == "function" then
+        elseif self.tap_input_func then
             self:onInput(self.tap_input_func())
         end
     end
@@ -537,7 +546,7 @@ function Button:onHoldSelectButton()
         elseif self.hold_input then
             self:onInput(self.hold_input, true)
             self._hold_handled = true
-        elseif type(self.hold_input_func) == "function" then
+        elseif self.hold_input_func then
             self:onInput(self.hold_input_func(), true)
             self._hold_handled = true
         end

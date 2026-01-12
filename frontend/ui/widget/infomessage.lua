@@ -46,6 +46,7 @@ local Screen = Device.screen
 
 local InfoMessage = InputContainer:extend{
     modal = true,
+    honor_silent_mode = true,
     face = nil,
     monospace_font = false,
     text = "",
@@ -53,6 +54,7 @@ local InfoMessage = InputContainer:extend{
     _timeout_func = nil,
     width = nil,  -- The width of the InfoMessage. Keep it nil to use default value.
     height = nil,  -- The height of the InfoMessage. If this field is set, a scrollbar may be shown.
+    force_one_line = false,  -- Attempt to show text in one single line. This setting and height are not to be used conjointly.
     -- The image shows at the left of the InfoMessage. Image data will be freed
     -- by InfoMessage, caller should not manage its lifecycle
     image = nil,
@@ -175,10 +177,24 @@ function InfoMessage:init()
         dimen = Screen:getSize(),
         self.movable,
     }
+
     if not self.height then
-        -- Reduce font size until widget fit screen height if needed
+        local max_height
+        if self.force_one_line and not self.text:find("\n") then
+            local icon_height = self.show_icon and image_widget:getSize().h or 0
+            -- Calculate the size of the frame container when it's only displaying one line.
+            max_height = math.max(text_widget:getLineHeight(), icon_height) + 2*frame.bordersize + 2*frame.padding
+        else
+            max_height = Screen:getHeight() * 0.95
+        end
+
+        -- Reduce font size if the text is too long
         local cur_size = frame:getSize()
-        if cur_size and cur_size.h > 0.95 * Screen:getHeight() then
+        if self.force_one_line and not (self._initial_orig_font and self._initial_orig_size) then
+            self._initial_orig_font = text_widget.face.orig_font
+            self._initial_orig_size = text_widget.face.orig_size
+        end
+        if cur_size and cur_size.h > max_height then
             local orig_font = text_widget.face.orig_font
             local orig_size = text_widget.face.orig_size
             local real_size = text_widget.face.size
@@ -192,6 +208,12 @@ function InfoMessage:init()
                     if self.face.size < real_size then
                         break
                     end
+                end
+                if self.force_one_line and orig_size < 16 then
+                    -- Do not reduce the font size any longer, at around this point, our font is too small for the max_height check to be useful
+                    -- anymore (when icon_height), at those sizes (or lower) two lines fit inside the max_height so, simply disable it.
+                    self.face = Font:getFace(self._initial_orig_font, self._initial_orig_size)
+                    self.force_one_line = false
                 end
                 -- re-init this widget
                 self:free()

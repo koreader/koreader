@@ -4,6 +4,8 @@ describe("Exporter plugin module", function()
     local DocumentRegistry, Screen
     setup(function()
         require("commonrequire")
+        disable_plugins()
+        load_plugin("exporter.koplugin")
         local ReaderUI = require("apps/reader/readerui")
         DocumentRegistry = require("document/documentregistry")
         Screen = require("device").screen
@@ -76,10 +78,9 @@ describe("Exporter plugin module", function()
     end)
 
     it("should write clippings to a timestamped txt file", function()
-        local timestamp = os.time()
-        readerui.exporter.targets["text"].timestamp = timestamp
+        readerui.exporter.targets["text"].filepath = readerui.exporter.targets["text"]:getTimeStamp()
         local exportable = { sample_clippings.Title1 }
-        local file_path = readerui.exporter.targets["text"]:getFilePath(exportable)
+        local file_path = readerui.exporter.targets["text"]:getFilePath()
         readerui.exporter.targets["text"]:export(exportable)
         local f = io.open(file_path, "r")
         assert.is.truthy(string.find(f:read("*all"), "Some important stuff 1"))

@@ -1,4 +1,4 @@
-PHONY = all android-ndk android-sdk base clean distclean doc fetchthirdparty po pot re static-check
+PHONY = all android-ndk android-sdk base clean distclean doc fetchthirdparty re static-check
 SOUND = $(INSTALL_DIR)/%
 
 # koreader-base directory
@@ -81,6 +81,7 @@ ev_replay.py
 help
 history
 l10n/templates
+l10n/*/*.po
 ota
 resources/fonts*
 resources/icons/src*
@@ -104,6 +105,7 @@ endef
 define UPDATE_PATH_EXCLUDES +=
 dummy-test-file*
 file.sdr*
+i18n-test
 readerbookmark.*
 readerhighlight.*
 testdata
@@ -112,6 +114,8 @@ endef
 
 # Globally excluded.
 define UPDATE_GLOBAL_EXCLUDES
+*.dbg
+*.dSYM
 *.orig
 *.swo
 *.swp
@@ -126,13 +130,14 @@ release_excludes = $(strip $(UPDATE_PATH_EXCLUDES:%='-x!$1%') $(UPDATE_GLOBAL_EX
 define mkupdate
 cd $(INSTALL_DIR) &&
 '$(abspath tools/mkrelease.sh)'
+--epoch="$$(git log -1 --format='%cs' "$$(git describe --tags | cut -d- -f1)")"
 $(if $(PARALLEL_JOBS),--jobs $(PARALLEL_JOBS))
 --manifest=$(or $2,koreader)/ota/package.index
 $(foreach a,$1,'$(if $(filter --%,$a),$a,$(abspath $a))') $(or $2,koreader)
 $(call release_excludes,$(or $2,koreader)/)
 endef
 
-all: base
+all: base mo
 	install -d $(INSTALL_DIR)/koreader
 	rm -f $(INSTALL_DIR)/koreader/git-rev; echo "$(VERSION)" > $(INSTALL_DIR)/koreader/git-rev
 ifdef ANDROID
@@ -154,12 +159,6 @@ endif
 ifdef WIN32
 	@echo "[*] Install runtime libraries for win32..."
 	$(SYMLINK) $(WIN32_DIR)/*.dll $(INSTALL_DIR)/koreader/
-endif
-ifdef SHIP_SHARED_STL
-	@echo "[*] Install C++ runtime..."
-	cp -fL $(SHARED_STL_LIB) $(INSTALL_DIR)/koreader/libs/
-	chmod 755 $(INSTALL_DIR)/koreader/libs/$(notdir $(SHARED_STL_LIB))
-	$(STRIP) --strip-unneeded $(INSTALL_DIR)/koreader/libs/$(notdir $(SHARED_STL_LIB))
 endif
 	@echo "[*] Install plugins"
 	$(SYMLINK) plugins $(INSTALL_DIR)/koreader/
@@ -194,7 +193,7 @@ else
 	git submodule update --jobs 3 --init --recursive
 endif
 
-clean: base-clean
+clean: base-clean mo-clean
 	rm -rf $(INSTALL_DIR)
 
 distclean: clean base-distclean
@@ -213,30 +212,13 @@ ifneq (,$(wildcard make/$(TARGET).mk))
   include make/$(TARGET).mk
 endif
 
+include make/gettext.mk
+
 android-ndk:
 	$(MAKE) -C $(KOR_BASE)/toolchain $(ANDROID_NDK_HOME)
 
 android-sdk:
 	$(MAKE) -C $(KOR_BASE)/toolchain $(ANDROID_HOME)
-
-# for gettext
-DOMAIN=koreader
-TEMPLATE_DIR=l10n/templates
-XGETTEXT_BIN=xgettext
-
-pot: po
-	mkdir -p $(TEMPLATE_DIR)
-	$(XGETTEXT_BIN) --from-code=utf-8 \
-		--keyword=C_:1c,2 --keyword=N_:1,2 --keyword=NC_:1c,2,3 \
-		--add-comments=@translators \
-		reader.lua `find frontend -iname "*.lua" | sort` \
-		`find plugins -iname "*.lua" | sort` \
-		`find tools -iname "*.lua" | sort` \
-		-o $(TEMPLATE_DIR)/$(DOMAIN).pot
-
-po:
-	git submodule update --remote l10n
-
 
 static-check:
 	@if which luacheck > /dev/null; then \

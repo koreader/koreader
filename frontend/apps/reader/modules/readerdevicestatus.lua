@@ -182,7 +182,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
-                    local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
+                    local DoubleSpinWidget = require("ui/widget/doublespinwidget")
                     local thresholds_widget
                     thresholds_widget = DoubleSpinWidget:new{
                         title_text = _("Battery level alert thresholds"),

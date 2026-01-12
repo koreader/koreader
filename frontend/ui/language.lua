@@ -7,7 +7,7 @@ local Language = {
         C = "English",
         en = "English",
         en_GB = "English (United Kingdom)",
-        ca = "Catalá",
+        ca = "Català",
         cs = "Čeština",
         da = "Dansk",
         de = "Deutsch",
@@ -46,7 +46,7 @@ local Language = {
         ja = "日本語",
         ka = "ქართული",
         kk = "Қазақ",
-        ko_KR = "한글",
+        ko_KR = "한국어",
         ru = "Русский",
         sr = "Српски",
         uk = "Українська",
@@ -105,6 +105,7 @@ function Language:genLanguageSubItem(lang_locale)
         checked_func = function()
             return G_reader_settings:readSetting("language") == lang_locale
         end,
+        radio = true,
         callback = function()
             self:changeLanguage(lang_locale)
         end

@@ -77,7 +77,7 @@ local CreDocument = Document:extend{
     last_linear_page = nil,
 }
 
-function CreDocument:cacheInit()
+function CreDocument.cacheInit()
     -- remove legacy cr3cache directory
     if lfs.attributes("./cr3cache", "mode") == "directory" then
         os.execute("rm -r ./cr3cache")
@@ -112,7 +112,7 @@ function CreDocument:engineInit()
         end)
 
         -- initialize cache
-        self:cacheInit()
+        CreDocument.cacheInit()
 
         -- initialize hyph dictionaries
         cre.initHyphDict("./data/hyph/")
@@ -163,7 +163,7 @@ function CreDocument:init()
     -- The other css files (htm.css, rtf.css...) have not been updated in the
     -- same way, and are kept as-is for when a previously opened document
     -- requests one of them.
-    self.default_css = self.is_fb2 and "./data/fb2.css" or "./data/epub.css"
+    self.default_css = (self.is_fb2 or self.is_txt) and "./data/fb2.css" or "./data/epub.css"
 
     -- This mode must be the same as the default one set as ReaderView.view_mode
     self._view_mode = G_defaults:readSetting("DCREREADER_VIEW_MODE") == "scroll" and self.SCROLL_VIEW_MODE or self.PAGE_VIEW_MODE
@@ -702,13 +702,15 @@ function CreDocument:getScreenBoxesFromPositions(pos0, pos1, get_segments)
     local line_boxes = {}
     if pos0 and pos1 then
         local word_boxes = self._document:getWordBoxesFromPositions(pos0, pos1, get_segments)
-        for i = 1, #word_boxes do
-            local line_box = word_boxes[i]
-            table.insert(line_boxes, Geom:new{
-                x = line_box.x0, y = line_box.y0,
-                w = line_box.x1 - line_box.x0,
-                h = line_box.y1 - line_box.y0,
-            })
+        if word_boxes then
+            for i = 1, #word_boxes do
+                local line_box = word_boxes[i]
+                table.insert(line_boxes, Geom:new{
+                    x = line_box.x0, y = line_box.y0,
+                    w = line_box.x1 - line_box.x0,
+                    h = line_box.y1 - line_box.y0,
+                })
+            end
         end
     end
     return line_boxes
@@ -1489,11 +1491,32 @@ function CreDocument:buildAlternativeToc()
 end
 
 function CreDocument:buildSyntheticPageMapIfNoneDocumentProvided(chars_per_synthetic_page)
-    self._document:buildSyntheticPageMapIfNoneDocumentProvided(chars_per_synthetic_page or 1024)
+    -- for backward compatibility with legacy user patches
+    -- https://github.com/koreader/koreader/issues/9020#issuecomment-2033259217
+    if not self._document:hasPageMapDocumentProvided() then
+        self._document:buildSyntheticPageMap(chars_per_synthetic_page or 1024)
+    end
+end
+
+function CreDocument:buildSyntheticPageMap(chars_per_synthetic_page)
+    self._document:buildSyntheticPageMap(chars_per_synthetic_page or 1024)
+end
+
+function CreDocument:getSyntheticPageMapCharsPerPage()
+    -- returns 0 if no synthetic pagemap
+    return self._document:getSyntheticPageMapCharsPerPage()
 end
 
 function CreDocument:isPageMapSynthetic()
     return self._document:isPageMapSynthetic()
+end
+
+function CreDocument:hasPageMapDocumentProvided()
+    return self._document:hasPageMapDocumentProvided()
+end
+
+function CreDocument:isPageMapDocumentProvided()
+    return self._document:isPageMapDocumentProvided()
 end
 
 function CreDocument:hasPageMap()
@@ -1546,6 +1569,7 @@ function CreDocument:register(registry)
     registry:addProvider("htm", "text/html", self, 100)
     registry:addProvider("html", "text/html", self, 100)
     registry:addProvider("htm.zip", "application/zip", self, 100)
+    registry:addProvider("htmlz", "application/html+zip", self, 100) -- For calibre OPDS.
     registry:addProvider("html.zip", "application/zip", self, 100)
     registry:addProvider("html.zip", "application/html+zip", self, 100) -- Alternative mimetype for OPDS.
     registry:addProvider("log", "text/plain", self)
@@ -1808,6 +1832,7 @@ function CreDocument:setupCallCache()
             elseif name == "zoomFont" then add_reset = true -- not used by koreader
             elseif name == "resetCallCache" then add_reset = true
             elseif name == "cacheFlows" then add_reset = true
+            elseif name == "buildSyntheticPageMap" then add_reset = true
 
             -- These may have crengine do native highlight or unhighlight
             -- (we could keep the original buffer and use a scratch buffer while
