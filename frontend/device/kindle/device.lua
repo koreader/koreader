@@ -236,7 +236,7 @@ local function kindleScanThenGetResults()
         end)
 
         if not success then
-            logger.warn("kindleScanThenGetResults: Failed to get scanState, aborting scan")
+            logger.warn("kindleScanThenGetResults: failed to get scanState, aborting scan")
             break
         end
 
