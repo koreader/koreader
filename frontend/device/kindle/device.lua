@@ -154,7 +154,13 @@ local function kindleGetScanList()
         local success, cm_state = pcall(function()
             return lipc_handle:get_string_property("com.lab126.wifid", "cmState")
         end)
-        if not success or (cm_state and cm_state ~= "CONNECTED") then
+        if not success then
+            -- cmState may fail when the LIPC backend is temporarily unavailable (e.g., suspend/lock).
+            logger.warn("kindleGetScanList: failed to access cmState")
+        end
+        -- Fall back to scanList if cmState is unavailable or not CONNECTED (cm_state may be nil).
+        local need_scan = (not success) or (cm_state ~= "CONNECTED")
+        if need_scan then
             local ha_input = lipc_handle:new_hasharray()
             local success_scan, ha_results = pcall(function()
                 return lipc_handle:access_hash_property("com.lab126.wifid", "scanList", ha_input)
