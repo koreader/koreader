@@ -607,6 +607,13 @@ function Gestures:onShowGestureOverview()
                             })
                         end
                     end
+                    if gest.settings then
+                        if gest.settings.show_as_quickmenu then
+                            value = value .. " \u{F0CA}"
+                        elseif gest.settings.execute_one_by_one then
+                            value = value .. " \u{F051}"
+                        end
+                    end
                     table.insert(kv_pairs, { key, value, callback = callback, key_bold = false })
                     added = true
                 end
