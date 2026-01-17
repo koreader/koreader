@@ -121,11 +121,8 @@ function OPDS:showFileDownloadedDialog(file)
             end
         end,
     }
-    UIManager:show(confirm_box)
-    -- Kindle/e-ink: OPDS download completion ConfirmBox may be partially rendered; force a light redraw on next tick.
     UIManager:nextTick(function()
-        UIManager:setDirty(confirm_box, "ui")
-        UIManager:forceRePaint()
+        UIManager:show(confirm_box)
     end)
 end
 
