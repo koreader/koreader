@@ -108,7 +108,7 @@ end
 
 function OPDS:showFileDownloadedDialog(file)
     self.last_downloaded_file = file
-    local cb = ConfirmBox:new{
+    local confirm_box = ConfirmBox:new{
         text = T(_("File saved to:\n%1\nWould you like to read the downloaded book now?"), BD.filepath(file)),
         ok_text = _("Read now"),
         ok_callback = function()
@@ -121,10 +121,10 @@ function OPDS:showFileDownloadedDialog(file)
             end
         end,
     }
-    UIManager:show(cb)
+    UIManager:show(confirm_box)
     -- Kindle/e-ink: OPDS download completion ConfirmBox may be partially rendered; force a light redraw on next tick.
     UIManager:nextTick(function()
-        UIManager:setDirty("ui", "ui")
+        UIManager:setDirty(confirm_box, "ui")
         UIManager:forceRePaint()
     end)
 end
