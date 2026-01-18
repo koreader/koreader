@@ -108,7 +108,7 @@ end
 
 function OPDS:showFileDownloadedDialog(file)
     self.last_downloaded_file = file
-    UIManager:show(ConfirmBox:new{
+    local confirm_box = ConfirmBox:new{
         text = T(_("File saved to:\n%1\nWould you like to read the downloaded book now?"), BD.filepath(file)),
         ok_text = _("Read now"),
         ok_callback = function()
@@ -120,7 +120,10 @@ function OPDS:showFileDownloadedDialog(file)
                 self.ui:openFile(file)
             end
         end,
-    })
+    }
+    UIManager:nextTick(function()
+        UIManager:show(confirm_box)
+    end)
 end
 
 function OPDS:onFlushSettings()
