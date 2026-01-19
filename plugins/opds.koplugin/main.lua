@@ -121,6 +121,7 @@ function OPDS:showFileDownloadedDialog(file)
             end
         end,
     }
+    -- As the InfoMessage "Downloading" is getting closed, show this ConfirmBox on the next UI tick to avoid e-Ink rendering congestion
     UIManager:nextTick(function()
         UIManager:show(confirm_box)
     end)
