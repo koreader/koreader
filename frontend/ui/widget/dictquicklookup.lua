@@ -178,7 +178,7 @@ function DictQuickLookup:init()
                 },
                 -- callback function when HoldReleaseText is handled as args
                 args = function(text, hold_duration, pos0, pos1)
-                    if self.ui and self.ui.languagesupport and pos0 and pos1 then
+                    if self.ui and self.ui.languagesupport and self.ui.languagesupport:hasActiveLanguagePlugins() and pos0 and pos1 then
                         local lang = self.lang
                         local textbox = nil
                         if self.stw_widget then
