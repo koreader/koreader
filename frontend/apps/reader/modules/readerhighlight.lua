@@ -51,7 +51,7 @@ end
 
 function ReaderHighlight:getHighlightColor(color_name)
     return Blitbuffer.colorFromName(color_name) --- @todo fix in the night mode; issue #14170, #14667
-        or Blitbuffer.gray(self.view.highlight.lighten_factor) -- 'gray' or unknown color name
+        or Blitbuffer.gray(G_reader_settings:readSetting("highlight_lighten_factor") or 0.2) -- 'gray' or unknown color name
 end
 
 local function inside_box(pos, box)
