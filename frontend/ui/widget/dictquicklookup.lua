@@ -177,7 +177,35 @@ function DictQuickLookup:init()
                     range = range,
                 },
                 -- callback function when HoldReleaseText is handled as args
-                args = function(text, hold_duration)
+                args = function(text, hold_duration, pos0, pos1)
+                    if self.ui and self.ui.languagesupport and pos0 and pos1 then
+                        local lang = self.lang
+                        local textbox = nil
+                        if self.stw_widget then
+                            textbox = self.stw_widget.text_widget
+                        end
+
+                        if textbox and textbox.charlist then
+                            local callbacks = textbox:getLanguageSupportCallbacks()
+
+                            local new_pos0, new_pos1 = self.ui.languagesupport:improveBufferSelection({
+                                text = text,
+                                pos0 = pos0,
+                                pos1 = pos1,
+                                callbacks = callbacks
+                            }, lang)
+
+                            if new_pos0 then
+                                textbox.highlight_start_idx = new_pos0
+                                textbox.highlight_end_idx = new_pos1
+                                textbox:updateHighlight()
+                                textbox:redrawHighlight()
+
+                                text = callbacks.get_text_in_range(new_pos0, new_pos1)
+                            end
+                        end
+                    end
+
                     -- do this lookup in the same domain (dict/wikipedia)
                     local lookup_wikipedia = self.is_wiki
                     if hold_duration >= time.s(3) then

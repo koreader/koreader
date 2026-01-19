@@ -134,6 +134,20 @@ local TextBoxWidget = InputContainer:extend{
         -- right) of some lines in the provided text.
 }
 
+function TextBoxWidget:getLanguageSupportCallbacks()
+    return {
+        get_prev_char_pos = function(pos) return pos > 1 and pos - 1 or nil end,
+        get_next_char_pos = function(pos) return pos < #self.charlist and pos + 1 or nil end,
+        get_text_in_range = function(p0, p1)
+            if self._xtext then
+                return self._xtext:getText(p0, p1)
+            else
+                return table.concat(self.charlist, "", p0, p1)
+            end
+        end,
+    }
+end
+
 function TextBoxWidget:init()
     if not self._face_adjusted then
         self._face_adjusted = true -- only do that once

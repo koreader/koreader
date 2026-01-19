@@ -230,6 +230,28 @@ function LanguageSupport:improveWordSelection(selection)
     }
 end
 
+--- Called from widgets that hold text buffer (like TextBoxWidget) to improve selection.
+-- @param selection Table with { text, pos0, pos1, callbacks }
+-- @param language_code String
+-- @return new_pos0, new_pos1 (or nil if no improvement)
+function LanguageSupport:improveBufferSelection(selection, language_code)
+    if not self:hasActiveLanguagePlugins() then return end
+
+    language_code = language_code or "unknown"
+
+    local new_pos0, new_pos1 = unpack(self:_findAndCallPlugin(
+        language_code, "WordSelection",
+        selection
+    ) or {})
+
+    if not new_pos0 or not new_pos1 or
+        (new_pos0 == selection.pos0 and new_pos1 == selection.pos1) then
+        return
+    end
+
+    return new_pos0, new_pos1
+end
+
 --- Called from ReaderHighlight:startSdcv after the selected has text has been
 -- OCR'd, cleaned, and otherwise made ready for sdcv.
 -- @tparam string text Original text being searched by the user.
