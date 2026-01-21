@@ -46,7 +46,7 @@ function ReaderHighlight:getHighlightColorString(color_name)
             return color[1]
         end
     end
-    return _("Gray")
+    return color_name -- unknown
 end
 
 function ReaderHighlight:getHighlightColor(color_name)
