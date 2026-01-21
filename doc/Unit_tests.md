@@ -9,6 +9,16 @@ You can run them with `./kodev test`, examples:
 - to run all tests (frontend & base): `./kodev test`
 - frontend only: `./kodev test front`
 - to run one specific base test: `./kodev test base util`
+- to run one specific frontend test: `./kodev test front readerpanelnav`
 - to list available tests: `./kodev test -l`
 
 Check the output of `./kodev test -h` for the full usage.
+
+## Notable Test Files
+
+| Test File | Description |
+|-----------|-------------|
+| `readerpanelnav_spec.lua` | Panel navigation for comics/manga (sorting, merging, filtering) |
+| `readerhighlight_spec.lua` | Text selection and highlighting |
+| `readerpaging_spec.lua` | Page-based navigation |
+| `koptinterface_spec.lua` | K2pdfopt interface for document processing |

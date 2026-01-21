@@ -698,6 +698,43 @@ function KoptInterface:getPanelFromPage(doc, pageno, ges)
 end
 
 --[[--
+Get all panels from a page.
+
+Returns an array of panel bounding boxes detected on the page.
+Panels are sorted according to reading direction settings.
+
+@param doc document object
+@param pageno page number
+@treturn table array of panel rectangles {x, y, w, h}, or nil if no panels found
+--]]
+function KoptInterface:getAllPanelsFromPage(doc, pageno)
+    local hash = "allpanels|"..doc.file.."|"..pageno
+    local cached = DocCache:check(hash)
+    if cached then
+        return cached.panels
+    end
+
+    local page_size = Document.getNativePageDimensions(doc, pageno)
+    local bbox = {
+        x0 = 0, y0 = 0,
+        x1 = page_size.w,
+        y1 = page_size.h,
+    }
+    local kc = self:createContext(doc, pageno, bbox)
+    kc:setZoom(1.0)
+    local page = doc._document:openPage(pageno)
+    page:getPagePix(kc, doc.render_mode)
+    local panels = kc:getAllPanelsFromPage()
+    page:close()
+    kc:free()
+
+    if panels then
+        DocCache:insert(hash, CacheItem:new{ panels = panels, size = #panels * 32 })
+    end
+    return panels
+end
+
+--[[--
 Get text boxes in native page via optical method.
 
 Done by OCR pre-processing in Tesseract and Leptonica.

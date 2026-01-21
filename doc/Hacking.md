@@ -49,3 +49,17 @@ demonstration.
 
 You can add more `UIManager:show` call at the end of `tools/wbuilder.lua` to
 test your new widgets.
+
+
+## Debugging Specific Features
+
+### Panel Navigation (Comics/Manga)
+
+The panel navigation module has built-in debugging features:
+
+1. **Visual Debug Mode**: Enable "Show all detected panel boxes (debug)" in the Panel zoom menu to see:
+   - Green boxes around all detected panels
+   - Red box around the current panel
+   - Panel numbers and coordinates displayed on each panel
+
+See [PanelNavigation.md](PanelNavigation.md) for complete documentation.
