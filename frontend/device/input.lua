@@ -186,6 +186,10 @@ local Input = {
     ev_slots = nil, -- table
     gesture_detector = nil,
 
+    -- tool type constants (for stylus support)
+    TOOL_TYPE_FINGER = TOOL_TYPE_FINGER,  -- 0
+    TOOL_TYPE_PEN = TOOL_TYPE_PEN,        -- 1
+
     -- simple internal clipboard implementation, can be overridden to use system clipboard
     hasClipboardText = function()
         return _internal_clipboard_text ~= ""
@@ -1758,9 +1762,5 @@ function Input:inhibitInputUntil(set_or_seconds)
     UIManager:scheduleIn(delay_s, self._inhibitInputUntil_func)
     self:inhibitInput(true)
 end
-
--- Export tool type constants for plugins
-Input.TOOL_TYPE_FINGER = TOOL_TYPE_FINGER  -- 0
-Input.TOOL_TYPE_PEN = TOOL_TYPE_PEN        -- 1
 
 return Input
