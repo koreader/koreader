@@ -435,7 +435,7 @@ describe("ReaderPanelNav module", function()
 
         it("should handle empty panels array", function()
             local clipped = panelnav:clipPanelsToPage({}, 500, 500)
-            assert.are.equal(0, #clipped)
+            assert.is_nil(clipped)
         end)
 
         it("should handle nil panels", function()
