@@ -1723,6 +1723,35 @@ function ReaderHighlight:onPanelZoom(arg, ges)
     if not hold_pos then return false end -- outside page boundary
     local rect = self.ui.document:getPanelFromPage(hold_pos.page, hold_pos)
     if not rect then return false end -- panel not found, return
+
+    -- Delegate to panelnav module if available
+    if self.ui.panelnav and self.ui.panelnav.panel_nav_enabled then
+        local panelnav = self.ui.panelnav
+
+        -- Initialize panel navigation state from this position
+        local panels = panelnav:getPanelsForCurrentPage()
+        if panels and #panels > 0 then
+            -- Find which panel we're viewing based on tap position
+            local found_index = 0
+            for i, panel in ipairs(panels) do
+                if hold_pos.x >= panel.x and hold_pos.x <= panel.x + panel.w and
+                   hold_pos.y >= panel.y and hold_pos.y <= panel.y + panel.h then
+                    found_index = i
+                    break
+                end
+            end
+            -- Fallback: if no match found, set to 1
+            panelnav.current_panel_index = found_index > 0 and found_index or 1
+        else
+            panelnav.current_panel_index = 1
+        end
+
+        -- Use panelnav's showPanel which handles everything
+        panelnav:showPanel(rect)
+        return true
+    end
+
+    -- Existing: show panel without navigation (panelnav module not available)
     local image, rotate = self.ui.document:drawPagePart(hold_pos.page, rect, 0)
 
     if image then
@@ -1734,106 +1763,6 @@ function ReaderHighlight:onPanelZoom(arg, ges)
             fullscreen = true,
             rotated = rotate,
         }
-
-        -- Add panel navigation if panelnav module is available and enabled
-        if self.ui.panelnav and self.ui.panelnav.panel_nav_enabled then
-            local panelnav = self.ui.panelnav
-
-            -- Initialize panel navigation state from this position
-            local panels = panelnav:getPanelsForCurrentPage()
-            if panels and #panels > 0 then
-                -- Find which panel we're viewing
-                for i, panel in ipairs(panels) do
-                    if hold_pos.x >= panel.x and hold_pos.x <= panel.x + panel.w and
-                       hold_pos.y >= panel.y and hold_pos.y <= panel.y + panel.h then
-                        panelnav.current_panel_index = i
-                        break
-                    end
-                end
-                -- Fallback: if no match found, set to 1
-                if panelnav.current_panel_index == 0 then
-                    panelnav.current_panel_index = 1
-                end
-            end
-
-            -- Add keyboard shortcuts
-            if Device:hasKeys() then
-                imgviewer.key_events.NextPanel = { { "Right" }, event = "NextPanel" }
-                imgviewer.key_events.PrevPanel = { { "Left" }, event = "PrevPanel" }
-            end
-
-            -- Add panel navigation handlers
-            imgviewer.onNextPanel = function(self_viewer)
-                UIManager:close(self_viewer)
-                local nav_panels = panelnav:getPanelsForCurrentPage()
-                if nav_panels and panelnav.current_panel_index < #nav_panels then
-                    panelnav.current_panel_index = panelnav.current_panel_index + 1
-                    panelnav:showPanel(nav_panels[panelnav.current_panel_index])
-                elseif nav_panels then
-                    -- At last panel, go to next page
-                    panelnav.current_panel_index = 0
-                    panelnav.current_page_panels = nil
-                    panelnav.panels_page = nil
-                    panelnav.ui:handleEvent(require("ui/event"):new("GotoViewRel", 1))
-                    UIManager:nextTick(function()
-                        local new_panels = panelnav:getPanelsForCurrentPage()
-                        if new_panels and #new_panels > 0 then
-                            panelnav.current_panel_index = 1
-                            panelnav:showPanel(new_panels[1])
-                        end
-                    end)
-                end
-                return true
-            end
-
-            imgviewer.onPrevPanel = function(self_viewer)
-                UIManager:close(self_viewer)
-                local nav_panels = panelnav:getPanelsForCurrentPage()
-                if panelnav.current_panel_index > 1 then
-                    panelnav.current_panel_index = panelnav.current_panel_index - 1
-                    panelnav:showPanel(nav_panels[panelnav.current_panel_index])
-                else
-                    -- At first panel, go to previous page
-                    panelnav.current_page_panels = nil
-                    panelnav.panels_page = nil
-                    panelnav.ui:handleEvent(require("ui/event"):new("GotoViewRel", -1))
-                    UIManager:nextTick(function()
-                        local new_panels = panelnav:getPanelsForCurrentPage()
-                        if new_panels and #new_panels > 0 then
-                            panelnav.current_panel_index = #new_panels
-                            panelnav:showPanel(new_panels[panelnav.current_panel_index])
-                        end
-                    end)
-                end
-                return true
-            end
-
-            -- Override onTap for touch-based panel navigation
-            imgviewer.onTap = function(self_viewer, arg2, tap_ges)
-                -- Check if tap is outside the main frame (close viewer)
-                if self_viewer.main_frame and tap_ges.pos:notIntersectWith(self_viewer.main_frame.dimen) then
-                    self_viewer:onClose()
-                    return true
-                end
-
-                -- Determine if tap is on left or right edge for panel navigation
-                local screen_width = Screen:getWidth()
-                local tap_zone_width = screen_width / 4  -- 25% on each side
-
-                local is_left_tap = tap_ges.pos.x < tap_zone_width
-                local is_right_tap = tap_ges.pos.x > screen_width - tap_zone_width
-
-                if is_right_tap then
-                    return self_viewer:onNextPanel()
-                elseif is_left_tap then
-                    return self_viewer:onPrevPanel()
-                end
-
-                -- Not in navigation zone, no action needed
-                return true
-            end
-        end
-
         UIManager:show(imgviewer)
         return true
     end

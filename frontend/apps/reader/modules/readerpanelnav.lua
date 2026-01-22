@@ -84,15 +84,6 @@ end
 
 ReaderPanelNav.onPhysicalKeyboardConnected = ReaderPanelNav.registerKeyEvents
 
-function ReaderPanelNav:onReaderReady()
-    self:setupTouchZones()
-end
-
-function ReaderPanelNav:setupTouchZones()
-    if not Device:isTouchDevice() then return end
-    -- Touch zones can be added here if needed for swipe-based panel navigation
-end
-
 function ReaderPanelNav:onReadSettings(config)
     -- Use hasNot to check if setting exists, otherwise use global or default
     if config:has("panel_nav_enabled") then
@@ -474,11 +465,11 @@ Panels that are completely outside the page are removed.
 @param panels array of panel rectangles {x, y, w, h}
 @param page_width width of the page
 @param page_height height of the page
-@treturn table array of clipped panels
+@treturn table array of clipped panels, or nil if no panels
 --]]
 function ReaderPanelNav:clipPanelsToPage(panels, page_width, page_height)
     if not panels or #panels == 0 then
-        return panels
+        return nil
     end
 
     local clipped = {}
@@ -525,16 +516,16 @@ Get panels for the current page, sorted by reading direction.
 @treturn table array of sorted panels, or nil if no panels found
 --]]
 function ReaderPanelNav:getPanelsForCurrentPage()
+    -- Check if document supports panel detection
+    if not self.ui.document.getAllPanelsFromPage then
+        return nil
+    end
+
     local pageno = self.ui.paging.current_page
 
     -- Return cached panels if available for current page
     if self.current_page_panels and self.panels_page == pageno then
         return self.current_page_panels
-    end
-
-    -- Check if document supports panel detection
-    if not self.ui.document.getAllPanelsFromPage then
-        return nil
     end
 
     -- Get panels from document
@@ -665,10 +656,9 @@ Show a specific panel in the ImageViewer.
 @param panel panel rectangle {x, y, w, h}
 --]]
 function ReaderPanelNav:showPanel(panel)
-    if not panel then
-        logger.dbg("ReaderPanelNav: showPanel called with nil panel")
-        return
-    end
+    local dbg = require("dbg")
+    dbg.dassert(panel, "showPanel called with nil panel")
+    if not panel then return end
 
     logger.dbg("ReaderPanelNav: showPanel called with panel:", panel)
 

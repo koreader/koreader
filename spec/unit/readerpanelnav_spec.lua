@@ -3,7 +3,6 @@ describe("ReaderPanelNav module", function()
 
     setup(function()
         require("commonrequire")
-        -- We need to mock the UI dependencies since we're testing the module in isolation
         ReaderPanelNav = require("apps/reader/modules/readerpanelnav")
     end)
 
