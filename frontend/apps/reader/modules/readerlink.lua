@@ -299,6 +299,10 @@ local function isPreferFootnoteEnabled()
     return G_reader_settings:isTrue("link_prefer_footnote")
 end
 
+local function isFootnoteLinkInPopupExtraBottomPaddingEnabled()
+    return G_reader_settings:isTrue("footnote_popup_add_bottom_padding")
+end
+
 local function isSwipeToGoBackEnabled()
     return G_reader_settings:isTrue("swipe_to_go_back")
 end
@@ -351,6 +355,59 @@ From the footnote popup, you can jump to the footnote location in the book by sw
                         not isPreferFootnoteEnabled())
                 end,
                 help_text = _([[Loosen footnote detection rules to show more links as footnotes.]]),
+                separator = Device:isTouchDevice() and true or false,
+            },
+            {
+                text = _("Add footnote popup bottom padding"),
+                enabled_func = function()
+                    return isFootnoteLinkInPopupEnabled() and
+                        (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
+                end,
+                checked_func = function()
+                    return G_reader_settings:isTrue("footnote_popup_add_bottom_padding")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("footnote_popup_add_bottom_padding")
+                end,
+                help_text = _([[
+Add adjustable bottom padding to the footnote popup, so that the footnote content is moved further from the bottom edge of the screen. Especially useful for screens with rounded corners.]]),
+            },
+            {
+                text = _("Set footnote popup bottom padding size"),
+                enabled_func = function()
+                    return isFootnoteLinkInPopupExtraBottomPaddingEnabled() and
+                        (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
+                end,
+                keep_menu_open = true,
+                callback = function()
+                    local spin_widget
+                    local get_bottom_padding_size_widget
+                    get_bottom_padding_size_widget = function(show_bottom_padding_size_widget)
+                        local SpinWidget = require("ui/widget/spinwidget")
+                        if show_bottom_padding_size_widget then
+                            spin_widget = SpinWidget:new{
+                                width = math.floor(Screen:getWidth() * 0.75),
+                                value = G_reader_settings:readSetting("footnote_popup_bottom_padding_size")
+                                                or Screen:scaleBySize(0),
+                                value_min = 0,
+                                value_max = 255,
+                                precision = "%d",
+                                ok_text = _("Set bottom padding size"),
+                                title_text =  _("Set footnote popup bottom padding size"),
+                                info_text = _([[
+The padding for the bottom of the footnote popup can be increased to move the text further from the bottom edge, which is especially useful for screens with rounded corners.]]),
+                                callback = function(spin)
+                                    G_reader_settings:saveSetting("footnote_popup_bottom_padding_size", spin.value)
+                                end,
+                            }
+                        end
+                        return spin_widget
+                    end
+                    local show_bottom_padding_size_widget = G_reader_settings:has("footnote_popup_add_bottom_padding")
+                    spin_widget = get_bottom_padding_size_widget(show_bottom_padding_size_widget)
+                    UIManager:show(spin_widget)
+                end,
+                help_text = _([[The footnote popup bottom padding can be adjusted to move the content further from the screen edge.]]),
                 separator = Device:isTouchDevice() and true or false,
             },
             {
