@@ -52,9 +52,14 @@ if Device:hasKeyboard() then
     for key, label in pairs(base_keys) do
         hotkeys_list_haskeyboard["alt_plus_" .. key] = _(modifier_two .. label)
     end
-    -- Alt/Ctrl + alphabet keys
+
+    local type_to_search = LuaSettings:open(hotkeys_path).data["type_to_search"]
+    -- Alt/Ctrl + alphabet keys and (no modifier) + alphabet keys
     for dummy, char in ipairs(Device.input.group.Alphabet) do
         hotkeys_list_haskeyboard["alt_plus_" .. char:lower()] = _(modifier_two .. char)
+        if not type_to_search then
+            hotkeys_list_haskeyboard[char:lower()] = char
+        end
     end
     util.tableMerge(hotkeys_list, hotkeys_list_haskeyboard)
 end
@@ -170,6 +175,12 @@ function HotKeys:registerKeyEvents()
             addKeyEvents(second_modifier, top_row_keys, "HotkeyAction", "alt_plus_")
         end
         addKeyEvents(second_modifier, remaining_keys, "HotkeyAction", "alt_plus_")
+
+        if not self.type_to_search then
+            for _, key in ipairs(Device.input.group.Alphabet) do
+                self.key_events[key] = { { key }, event = "HotkeyAction", args = key:lower() }
+            end
+        end
     end -- if hasKeyboard()
 
     local key_event_count = util.tableSize(self.key_events)
@@ -395,6 +406,19 @@ function HotKeys:addToMainMenu(menu_items)
                 "alt_plus_s", "alt_plus_t", "alt_plus_u", "alt_plus_v", "alt_plus_w", "alt_plus_x", "alt_plus_y", "alt_plus_z",
             }),
         })
+        if not self.type_to_search then
+            table.insert(menu_items.hotkeys.sub_item_table, {
+                text = _("Alphabet keys (single key)"),
+                enabled_func = function()
+                    return self.hotkey_mode == "hotkeys_reader"
+                end,
+                sub_item_table = self:genSubItemTable({
+                    "a", "b", "c", "d", "e", "f", "g", "h", "i",
+                    "j", "k", "l", "m", "n", "o", "p", "q", "r",
+                    "s", "t", "u", "v", "w", "x", "y", "z",
+                }),
+            })
+        end
     end
 end
 
@@ -467,8 +491,8 @@ function HotKeys:overrideConflictingKeyEvents()
                 event = "ShowFulltextSearchInput",
                 args = ""
             }
+            self.ui.highlight.key_events.StartHighlightIndicator = nil -- remove 'H' shortcut used for highlight indicator
             if self.type_to_search then
-                self.ui.highlight.key_events.StartHighlightIndicator = nil -- remove 'H' shortcut used for highlight indicator
                 readersearch.key_events.Alphabet = {
                     { Device.input.group.Alphabet }, { "Shift", Device.input.group.Alphabet },
                     event = "ShowFulltextSearchInput",
