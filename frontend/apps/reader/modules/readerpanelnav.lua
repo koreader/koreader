@@ -65,24 +65,9 @@ end
 
 function ReaderPanelNav:init()
     self:onDispatcherRegisterActions()
-    self:registerKeyEvents()
     -- Register as view module to draw panel boxes
     self.view:registerViewModule("panel_nav", self)
 end
-
-function ReaderPanelNav:registerKeyEvents()
-    if Device:hasKeys() then
-        -- P enters panel navigation view from the main view
-        self.key_events = {
-            EnterPanelNavMode = {
-                { "P" },
-                event = "EnterPanelNavMode",
-            },
-        }
-    end
-end
-
-ReaderPanelNav.onPhysicalKeyboardConnected = ReaderPanelNav.registerKeyEvents
 
 function ReaderPanelNav:onReadSettings(config)
     -- Use hasNot to check if setting exists, otherwise use global or default
@@ -153,121 +138,304 @@ function ReaderPanelNav:getDirectionDescription(direction)
 end
 
 --[[--
-Sort panels according to panel reading direction.
+Assign row and column indices to panels based on 30% overlap.
+Panels are grouped into lanes (rows/columns) and indices are assigned.
 
 @param panels array of panel rectangles {x, y, w, h}
-@treturn table sorted array of panels
+@treturn table panels with row/col fields added
+--]]
+function ReaderPanelNav:assignGridByOverlap(panels)
+    if not panels or #panels == 0 then
+        return panels
+    end
+
+    local direction = self.panel_direction or "LRTB"
+
+    -- Helper to find unique lanes (Rows or Columns) based on 30% overlap
+    local function getLanes(axis, dim)
+        local lanes = {}
+        
+        -- Sort panels by dimension size (smallest first) so narrow/short panels
+        -- establish lanes before wide/tall panels can merge them
+        local sorted_panels = {}
+        for i, p in ipairs(panels) do
+            sorted_panels[i] = p
+        end
+        table.sort(sorted_panels, function(a, b)
+            return a[dim] < b[dim]
+        end)
+        
+        for _, p in ipairs(sorted_panels) do
+            local found = false
+            for _, lane in ipairs(lanes) do
+                -- Calculate overlap between panel and existing lane
+                local overlapStart = math.max(p[axis], lane.start)
+                local overlapEnd = math.min(p[axis] + p[dim], lane.stop)
+                local overlapSize = overlapEnd - overlapStart
+
+                -- Check if overlap is > 30% of either the panel or the lane height/width
+                if overlapSize > 0 then
+                    local ratio = overlapSize / math.min(p[dim], lane.stop - lane.start)
+                    if ratio > 0.30 then
+                        found = true
+                        -- Expand lane boundaries to encompass this panel
+                        lane.start = math.min(lane.start, p[axis])
+                        lane.stop = math.max(lane.stop, p[axis] + p[dim])
+                        break
+                    end
+                end
+            end
+            if not found then
+                table.insert(lanes, { start = p[axis], stop = p[axis] + p[dim] })
+            end
+        end
+        -- Sort lanes based on position (ascending by default)
+        table.sort(lanes, function(a, b) return a.start < b.start end)
+        return lanes
+    end
+
+    -- Identify all global rows and columns
+    local rows = getLanes("y", "h")
+    local cols = getLanes("x", "w")
+
+    -- Handle reverse directions (BT or RL) by reversing the lane indices
+    if direction:find("BT") then
+        table.sort(rows, function(a, b) return a.start > b.start end)
+    end
+    if direction:find("RL") then
+        table.sort(cols, function(a, b) return a.start > b.start end)
+    end
+
+    -- Assign row/column indices to each panel
+    for _, p in ipairs(panels) do
+        -- Assign row
+        for i, row in ipairs(rows) do
+            local overlap = math.min(p.y + p.h, row.stop) - math.max(p.y, row.start)
+            -- Use min of panel height and lane height for consistent comparison with getLanes
+            local minHeight = math.min(p.h, row.stop - row.start)
+            if overlap / minHeight > 0.30 then
+                p.row = i
+                break
+            end
+        end
+        -- Assign column
+        for j, col in ipairs(cols) do
+            local overlap = math.min(p.x + p.w, col.stop) - math.max(p.x, col.start)
+            -- Use min of panel width and lane width for consistent comparison with getLanes
+            local minWidth = math.min(p.w, col.stop - col.start)
+            if overlap / minWidth > 0.30 then
+                p.col = j
+                break
+            end
+        end
+        logger.dbg("ReaderPanelNav: panel", p.x, p.y, p.w, p.h, "-> row", p.row, "col", p.col)
+    end
+
+    logger.dbg("ReaderPanelNav: rows:", #rows, "cols:", #cols)
+    for i, row in ipairs(rows) do
+        logger.dbg("  row", i, ":", row.start, "-", row.stop)
+    end
+    for j, col in ipairs(cols) do
+        logger.dbg("  col", j, ":", col.start, "-", col.stop)
+    end
+    return panels
+end
+
+--[[--
+Sort panels according to panel reading direction.
+
+Groups panels into rows/columns based on overlap, then sorts accordingly.
+For LRTB: group by rows (Y overlap), sort rows top-to-bottom, panels left-to-right.
+For TBLR: group by columns (X overlap), sort columns left-to-right, panels top-to-bottom.
+
+@param panels array of panel rectangles {x, y, w, h}
+@treturn table sorted array of panels with row/col fields added
 --]]
 function ReaderPanelNav:sortPanelsByReadingDirection(panels)
     if not panels or #panels == 0 then
         return panels
     end
 
-    -- Get direction settings
-    local dir_settings = self.direction_settings[self.panel_direction] or self.direction_settings.LRTB
-
-    -- Create a copy to sort
+    -- Create a copy to work with
     local sorted = {}
     for i, p in ipairs(panels) do
-        sorted[i] = p
+        sorted[i] = { x = p.x, y = p.y, w = p.w, h = p.h }
     end
 
-    -- Calculate panel centers for comparison
-    local function getCenter(panel)
-        return {
-            x = panel.x + panel.w / 2,
-            y = panel.y + panel.h / 2,
-        }
-    end
+    local direction = self.panel_direction or "LRTB"
+    local primary = direction:sub(1, 2)
+    local secondary = direction:sub(3, 4)
 
-    -- Minimum overlap threshold to consider panels in the same row/column
-    -- Overlap must be at least this fraction of the smaller panel's dimension
-    local overlap_threshold = 0.3  -- 30%
+    -- Determine sort direction flags
+    local y_ascending = (secondary == "TB")  -- Top to Bottom
+    local x_ascending = (primary == "LR")    -- Left to Right
+    local row_first = (primary == "LR" or primary == "RL")
 
-    -- Check if two panels overlap significantly in X axis (same column)
-    -- Returns true only if overlap is >= threshold of smaller panel's width
-    local function overlapsInX(pa, pb)
-        local a_left, a_right = pa.x, pa.x + pa.w
-        local b_left, b_right = pb.x, pb.x + pb.w
+    local overlap_threshold = 0.25  -- 25% overlap required to be in same row/column
+    local position_threshold = 5     -- Positions within 5 pixels are considered equal
 
-        -- Calculate overlap amount
-        local overlap_left = math.max(a_left, b_left)
-        local overlap_right = math.min(a_right, b_right)
-        local overlap_amount = overlap_right - overlap_left
-
-        if overlap_amount <= 0 then
-            return false
-        end
-
-        -- Check if overlap is significant relative to smaller panel's width
-        local smaller_width = math.min(pa.w, pb.w)
-        return overlap_amount / smaller_width >= overlap_threshold
-    end
-
-    -- Check if two panels overlap significantly in Y axis (same row)
-    -- Returns true only if overlap is >= threshold of smaller panel's height
-    local function overlapsInY(pa, pb)
-        local a_top, a_bottom = pa.y, pa.y + pa.h
-        local b_top, b_bottom = pb.y, pb.y + pb.h
-
-        -- Calculate overlap amount
-        local overlap_top = math.max(a_top, b_top)
-        local overlap_bottom = math.min(a_bottom, b_bottom)
-        local overlap_amount = overlap_bottom - overlap_top
-
-        if overlap_amount <= 0 then
-            return false
-        end
-
-        -- Check if overlap is significant relative to smaller panel's height
-        local smaller_height = math.min(pa.h, pb.h)
-        return overlap_amount / smaller_height >= overlap_threshold
-    end
-
-    -- Sort panels based on panel reading direction
-    -- primary = "h" means horizontal first (row mode): group by Y overlap, then sort by X
-    -- primary = "v" means vertical first (column mode): group by X overlap, then sort by Y
-    -- primary_order: 1 = increasing (L-R or T-B), -1 = decreasing (R-L or B-T)
-    -- secondary_order: same for the secondary axis
-    table.sort(sorted, function(a, b)
-        local ca, cb = getCenter(a), getCenter(b)
-
-        if dir_settings.primary == "v" then
-            -- Column mode: panels that overlap in X are in the same column
-            if overlapsInX(a, b) then
-                -- Same column, sort by Y (primary_order: 1=top-to-bottom, -1=bottom-to-top)
-                if dir_settings.primary_order == -1 then
-                    return ca.y > cb.y
-                else
-                    return ca.y < cb.y
-                end
+    if row_first then
+        -- LRTB, LRBT, RLTB, RLBT: Group by rows first
+        -- Sort by Y to process top-to-bottom (or bottom-to-top)
+        table.sort(sorted, function(a, b)
+            if y_ascending then
+                return a.y < b.y
             else
-                -- Different columns, sort by X (secondary_order: 1=left-to-right, -1=right-to-left)
-                if dir_settings.secondary_order == -1 then
-                    return ca.x > cb.x
-                else
-                    return ca.x < cb.x
+                return a.y > b.y
+            end
+        end)
+
+        -- Group panels into rows based on Y overlap
+        local rows = {}
+        for _, panel in ipairs(sorted) do
+            local p_top, p_bottom = panel.y, panel.y + panel.h
+            local assigned = false
+
+            for _, row in ipairs(rows) do
+                local overlap_start = math.max(p_top, row.start_y)
+                local overlap_end = math.min(p_bottom, row.end_y)
+                local overlap_size = overlap_end - overlap_start
+
+                if overlap_size > 0 then
+                    local row_height = row.end_y - row.start_y
+                    if overlap_size / row_height >= overlap_threshold then
+                        table.insert(row.panels, panel)
+                        row.start_y = math.min(row.start_y, p_top)
+                        row.end_y = math.max(row.end_y, p_bottom)
+                        assigned = true
+                        break
+                    end
                 end
             end
-        else
-            -- Row mode: panels that overlap in Y are in the same row
-            if overlapsInY(a, b) then
-                -- Same row, sort by X (primary_order: 1=left-to-right, -1=right-to-left)
-                if dir_settings.primary_order == -1 then
-                    return ca.x > cb.x
-                else
-                    return ca.x < cb.x
-                end
-            else
-                -- Different rows, sort by Y (secondary_order: 1=top-to-bottom, -1=bottom-to-top)
-                if dir_settings.secondary_order == -1 then
-                    return ca.y > cb.y
-                else
-                    return ca.y < cb.y
-                end
+
+            if not assigned then
+                table.insert(rows, {
+                    start_y = p_top,
+                    end_y = p_bottom,
+                    panels = { panel },
+                })
             end
         end
-    end)
+
+        -- Sort rows by Y position
+        table.sort(rows, function(a, b)
+            if y_ascending then
+                return a.start_y < b.start_y
+            else
+                return a.start_y > b.start_y
+            end
+        end)
+
+        -- Build result: for each row, sort panels by X (with Y as tiebreaker)
+        local result = {}
+        for row_num, row in ipairs(rows) do
+            table.sort(row.panels, function(a, b)
+                if math.abs(a.x - b.x) > position_threshold then
+                    if x_ascending then
+                        return a.x < b.x
+                    else
+                        return a.x > b.x
+                    end
+                else
+                    -- X within threshold, use Y as tiebreaker
+                    if y_ascending then
+                        return a.y < b.y
+                    else
+                        return a.y > b.y
+                    end
+                end
+            end)
+            for col_num, panel in ipairs(row.panels) do
+                panel.row = row_num
+                panel.col = col_num
+                table.insert(result, panel)
+            end
+        end
+        sorted = result
+    else
+        -- TBLR, TBRL, BTLR, BTRL: Group by columns first
+        -- Sort by X to process left-to-right (or right-to-left)
+        table.sort(sorted, function(a, b)
+            if x_ascending then
+                return a.x < b.x
+            else
+                return a.x > b.x
+            end
+        end)
+
+        -- Group panels into columns based on X overlap
+        local columns = {}
+        for _, panel in ipairs(sorted) do
+            local p_left, p_right = panel.x, panel.x + panel.w
+            local assigned = false
+
+            for _, col in ipairs(columns) do
+                local overlap_start = math.max(p_left, col.start_x)
+                local overlap_end = math.min(p_right, col.end_x)
+                local overlap_size = overlap_end - overlap_start
+
+                if overlap_size > 0 then
+                    local col_width = col.end_x - col.start_x
+                    if overlap_size / col_width >= overlap_threshold then
+                        table.insert(col.panels, panel)
+                        col.start_x = math.min(col.start_x, p_left)
+                        col.end_x = math.max(col.end_x, p_right)
+                        assigned = true
+                        break
+                    end
+                end
+            end
+
+            if not assigned then
+                table.insert(columns, {
+                    start_x = p_left,
+                    end_x = p_right,
+                    panels = { panel },
+                })
+            end
+        end
+
+        -- Sort columns by X position
+        table.sort(columns, function(a, b)
+            if x_ascending then
+                return a.start_x < b.start_x
+            else
+                return a.start_x > b.start_x
+            end
+        end)
+
+        -- Build result: for each column, sort panels by Y (with X as tiebreaker)
+        local result = {}
+        for col_num, col in ipairs(columns) do
+            table.sort(col.panels, function(a, b)
+                if math.abs(a.y - b.y) > position_threshold then
+                    if y_ascending then
+                        return a.y < b.y
+                    else
+                        return a.y > b.y
+                    end
+                else
+                    -- Y within threshold, use X as tiebreaker
+                    if x_ascending then
+                        return a.x < b.x
+                    else
+                        return a.x > b.x
+                    end
+                end
+            end)
+            for row_num, panel in ipairs(col.panels) do
+                panel.row = row_num
+                panel.col = col_num
+                table.insert(result, panel)
+            end
+        end
+        sorted = result
+    end
+
+    logger.dbg("ReaderPanelNav: sorted order (direction:", direction, "):")
+    for i, p in ipairs(sorted) do
+        logger.dbg("  ", i, ": (", p.x, ",", p.y, ")-(", p.x + p.w, ",", p.y + p.h, ") row=", p.row, "col=", p.col)
+    end
 
     return sorted
 end
@@ -590,7 +758,9 @@ function ReaderPanelNav:onGotoNextPanel()
     if not panels or #panels == 0 then
         -- No panels on this page, go to next page
         logger.dbg("ReaderPanelNav: no panels, going to next page")
+        self._turning_page = true
         self.ui:handleEvent(Event:new("GotoViewRel", 1))
+        self._turning_page = false
         return true
     end
 
@@ -605,7 +775,9 @@ function ReaderPanelNav:onGotoNextPanel()
         self.current_panel_index = 0
         self.current_page_panels = nil
         self.panels_page = nil
+        self._turning_page = true
         self.ui:handleEvent(Event:new("GotoViewRel", 1))
+        self._turning_page = false
     end
 
     return true
@@ -635,7 +807,9 @@ function ReaderPanelNav:onGotoPrevPanel()
         -- At full page view, go to previous page and show last panel
         self.current_page_panels = nil
         self.panels_page = nil
+        self._turning_page = true
         self.ui:handleEvent(Event:new("GotoViewRel", -1))
+        self._turning_page = false
         -- After page change, we need to get panels for the new page
         -- and navigate to the last panel
         UIManager:nextTick(function()
@@ -962,13 +1136,9 @@ function ReaderPanelNav:paintTo(bb, x, y)
                 -- Right
                 bb:paintRectRGB32(rect.x + rect.w - line_width, rect.y, line_width, rect.h, color)
 
-                -- Only draw panel number and coordinates in debug mode (show_panel_boxes)
+                -- Only draw panel number in debug mode (show_panel_boxes)
                 if self.show_panel_boxes then
-                    local x_left = math.floor(panel.x)
-                    local y_top = math.floor(panel.y)
-                    local x_right = math.floor(panel.x + panel.w)
-                    local y_bottom = math.floor(panel.y + panel.h)
-                    local num_text = string.format("%d (%d,%d)-(%d,%d)", i, x_left, y_top, x_right, y_bottom)
+                    local num_text = tostring(i)
                     local text_size = RenderText:sizeUtf8Text(0, Screen:getWidth(), number_font, num_text)
                     local num_w = text_size.x + 8
                     local num_h = number_font.size + 4
