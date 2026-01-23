@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20250929
+local CURRENT_MIGRATION_DATE = 20260123
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -941,6 +941,24 @@ if last_migration_date < 20250929 then
                 G_reader_settings:saveSetting(new_position_key, 0)
             end
             G_reader_settings:delSetting(old_position_key)
+        end
+    end
+end
+
+-- 20260123, Hotkeys plugin: add text_selection to hotkeys_reader defaults
+-- https://github.com/koreader/koreader/pull/14867
+if last_migration_date < 20260123 then
+    logger.info("Performing one-time migration for 20260123")
+
+    local Device = require("device")
+    if Device:hasKeyboard() then
+        local hotkeys_path = ffiUtil.joinPath(DataStorage:getSettingsDir(), "hotkeys.lua")
+        if lfs.attributes(hotkeys_path, "mode") == "file" then
+            local hotkeys_settings = LuaSettings:open(hotkeys_path)
+            if hotkeys_settings.data.hotkeys_reader and not hotkeys_settings.data.hotkeys_reader.h then
+                hotkeys_settings.data.hotkeys_reader.h = {text_selection = true}
+                hotkeys_settings:flush()
+            end
         end
     end
 end
