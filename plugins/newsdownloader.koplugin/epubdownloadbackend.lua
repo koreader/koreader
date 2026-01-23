@@ -216,8 +216,8 @@ end
 local function path_percentage_encode(url)
     local parsed_url = socket_url.parse(url)
     local path = parsed_url.path or "/"
-
     local encoded_path = ""
+
     for i = 1, #path do
         local char = path:sub(i, i)
         if char:match("[a-zA-Z0-9.-_~!$&'()*+,;=:@]") then -- Unreserved characters
@@ -227,6 +227,7 @@ local function path_percentage_encode(url)
         encoded_path = encoded_path .. string.format("%%%02X", code)
         end
     end
+
     parsed_url.path = encoded_path
     return socket_url.build(parsed_url)
 end
