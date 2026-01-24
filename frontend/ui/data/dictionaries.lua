@@ -2956,6 +2956,14 @@ local dictionaries = {
         url = "https://www.reader-dict.com/file/ja/dict-ja-ja.zip"
     },
     {
+        name = "reader.dict Lithuanian",
+        lang_in = "lit",
+        lang_out = "lit",
+        entries = 662554,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/lt/dict-lt-lt.zip"
+    },
+    {
         name = "reader.dict Norwegian",
         lang_in = "nor",
         lang_out = "nor",

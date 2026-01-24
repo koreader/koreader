@@ -1024,7 +1024,7 @@ function ReaderHighlight:onTap(_, ges)
     end
     if ges and #self.view.highlight.visible_boxes > 0 then
         local pos = self.view:screenToPageTransform(ges.pos)
-        local highlights_tapped = {}
+        local highlights_tapped, highlights_added = {}, {}
         for _, box in ipairs(self.view.highlight.visible_boxes) do
             if inside_box(pos, box.rect) then
                 if self.select_mode then
@@ -1038,7 +1038,9 @@ function ReaderHighlight:onTap(_, ges)
                         end
                         return true
                     end
-                else
+                elseif not highlights_added[box.index] then
+                    -- a highlight may contain overlapping boxes, avoid double adding
+                    highlights_added[box.index] = true
                     table.insert(highlights_tapped, box.index)
                 end
             end
