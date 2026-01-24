@@ -442,9 +442,6 @@ end
 ]]
 function HotKeys:overrideConflictingKeyEvents()
     if not self.is_docless then
-        self.ui.bookmark.key_events = {} -- reset it.
-        logger.dbg("Hotkey ReaderBookmark:registerKeyEvents() overridden.")
-
         if self.ui.font then -- readerfont is not available for pdf/djvu files.
             self.ui.font.key_events = {} -- reset it.
             logger.dbg("Hotkey ReaderFont:registerKeyEvents() overridden.")
@@ -461,37 +458,7 @@ function HotKeys:overrideConflictingKeyEvents()
             logger.dbg("Hotkey ReaderConfig:registerKeyEvents() overridden.")
         end
 
-        local readerlink = self.ui.link
-        readerlink.key_events = {} -- reset it.
-        if Device:hasScreenKB() or Device:hasSymKey() then
-            readerlink.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
-        elseif Device:hasKeyboard() then
-            readerlink.key_events = {
-                SelectNextPageLink = {
-                    { "Tab" },
-                    event = "SelectNextPageLink",
-                },
-                SelectPrevPageLink = {
-                    { "Shift", "Tab" },
-                    event = "SelectPrevPageLink",
-                },
-                GotoSelectedPageLink = {
-                    { "Press" },
-                    event = "GotoSelectedPageLink",
-                },
-            }
-        end
-        logger.dbg("Hotkey ReaderLink:registerKeyEvents() overridden.")
-
         if Device:hasKeyboard() then
-            local readersearch = self.ui.search
-            readersearch.key_events = {} -- reset it.
-            readersearch.key_events.ShowFulltextSearchInputBlank = {
-                { "Alt", "Shift", "S" }, { "Ctrl", "Shift", "S" },
-                event = "ShowFulltextSearchInput",
-                args = ""
-            }
-            self.ui.highlight.key_events.StartHighlightIndicator = nil -- remove 'H' shortcut used for highlight indicator
             if self.type_to_search then
                 readersearch.key_events.Alphabet = {
                     { Device.input.group.Alphabet }, { "Shift", Device.input.group.Alphabet },
@@ -499,34 +466,10 @@ function HotKeys:overrideConflictingKeyEvents()
                     args = ""
                 }
             end
-            logger.dbg("Hotkey ReaderSearch:registerKeyEvents() overridden.")
         end
-
-        self.ui.toc.key_events = {} -- reset it.
-        logger.dbg("Hotkey ReaderToc:registerKeyEvents() overridden.")
-
-        self.ui.thumbnail.key_events = {} -- reset it.
-        logger.dbg("Hotkey ReaderThumbnail:registerKeyEvents() overridden.")
-
-        local readerui = self.ui
-        readerui.key_events = {} -- reset it, then add our own
-        readerui.key_events.Home = { { "Home" } }
-        readerui.key_events.Back = { { Device.input.group.Back } }
-        if Device:hasDPad() and Device:useDPadAsActionKeys() then
-            readerui.key_events.KeyContentSelection = { { { "Up", "Down" } }, event = "StartHighlightIndicator" }
-        elseif Device:hasKeyboard() then
-            readerui.key_events.Reload = { { "F5" } }
-        end
-        logger.dbg("Hotkey ReaderUI:registerKeyEvents() overridden.")
     end
 
     if Device:hasKeyboard() then
-        self.ui.dictionary.key_events = {} -- reset it.
-        logger.dbg("Hotkey ReaderDictionary:registerKeyEvents() overridden.")
-
-        self.ui.wikipedia.key_events = {} -- reset it.
-        logger.dbg("Hotkey ReaderWikipedia:registerKeyEvents() overridden.")
-
         local filesearcher = self.ui.filesearcher
         filesearcher.key_events = {} -- reset it.
         filesearcher.key_events.ShowFileSearchBlank = {

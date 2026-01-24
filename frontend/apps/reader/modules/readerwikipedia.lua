@@ -29,7 +29,6 @@ local ReaderWikipedia = ReaderDictionary:extend{
 }
 
 function ReaderWikipedia:init()
-    self:registerKeyEvents()
     self.wiki_languages = {}
     -- Read this from G_reader_settings for when used in FileBrowser
     -- (:onReadSettings() may replace it from the one saved in doc_settings)
@@ -37,15 +36,6 @@ function ReaderWikipedia:init()
     self.ui.menu:registerToMainMenu(self)
     if not wikipedia_history then
         wikipedia_history = LuaData:open(DataStorage:getSettingsDir() .. "/wikipedia_history.lua", "WikipediaHistory")
-    end
-end
-
-function ReaderWikipedia:registerKeyEvents()
-    if Device:hasKeyboard() then
-        self.key_events.ShowWikipediaLookup = { { "Alt", "W" }, { "Ctrl", "W" } }
-        if Device.k3_alt_plus_key_kernel_translated then
-            self.key_events.ShowWikipediaLookup = { { Device.k3_alt_plus_key_kernel_translated["W"] } }
-        end
     end
 end
 

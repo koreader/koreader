@@ -40,8 +40,6 @@ local ReaderBookmark = InputContainer:extend{
 }
 
 function ReaderBookmark:init()
-    self:registerKeyEvents()
-
     if G_reader_settings:hasNot("bookmarks_items_per_page") then
         -- The Bookmarks items per page and items' font size can now be
         -- configured. Previously, the ones set for the file browser
@@ -63,16 +61,6 @@ function ReaderBookmark:init()
 end
 
 function ReaderBookmark:onGesture() end
-
-function ReaderBookmark:registerKeyEvents()
-    if Device:hasKeyboard() then
-        self.key_events.ShowBookmark = { { "B" }, { "Shift", "Left" } }
-        self.key_events.ToggleBookmark = { { "Shift", "Right" } }
-    elseif Device:hasScreenKB() then
-        self.key_events.ShowBookmark = { { "ScreenKB", "Left" } }
-        self.key_events.ToggleBookmark = { { "ScreenKB", "Right" } }
-    end
-end
 
 ReaderBookmark.onPhysicalKeyboardConnected = ReaderBookmark.registerKeyEvents
 

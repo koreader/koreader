@@ -36,8 +36,6 @@ local ReaderToc = InputContainer:extend{
 }
 
 function ReaderToc:init()
-    self:registerKeyEvents()
-
     if G_reader_settings:hasNot("toc_items_per_page") then
         -- The TOC items per page and items' font size can now be
         -- configured. Previously, the ones set for the file browser
@@ -61,14 +59,6 @@ end
 
 function ReaderToc:onGesture() end
 
-function ReaderToc:registerKeyEvents()
-    if Device:hasScreenKB() then
-        self.key_events.ShowToc = { { "ScreenKB", "Up" } }
-    elseif Device:hasKeyboard() then
-        self.key_events.ShowToc = { { "T" }, { "Shift", "Up" } }
-    end
-end
-
 function ReaderToc:getTitle()
     local title = _("Table of contents")
     -- Handmade ToC has precedence over alternative ToC
@@ -79,8 +69,6 @@ function ReaderToc:getTitle()
     end
     return title
 end
-
-ReaderToc.onPhysicalKeyboardConnected = ReaderToc.registerKeyEvents
 
 function ReaderToc:onReadSettings(config)
     self.toc_ticks_ignored_levels = config:readSetting("toc_ticks_ignored_levels") or {}
