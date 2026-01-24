@@ -101,6 +101,7 @@ function Wallabag:init()
     self.delete_instead                = self.wb_settings.data.wallabag.delete_instead or false
     self.auto_archive                  = self.wb_settings.data.wallabag.auto_archive or false
     self.sync_remote_archive           = self.wb_settings.data.wallabag.sync_remote_archive or false
+    self.sync_local_deletions          = self.wb_settings.data.wallabag.sync_local_deletions or false
     self.articles_per_sync             = self.wb_settings.data.wallabag.articles_per_sync or 30
     self.send_review_as_tags           = self.wb_settings.data.wallabag.send_review_as_tags or false
     self.remove_finished_from_history  = self.wb_settings.data.wallabag.remove_finished_from_history or false
@@ -330,6 +331,14 @@ function Wallabag:addToMainMenu(menu_items)
                                 checked_func = function() return self.delete_instead end,
                                 callback = function()
                                     self.delete_instead = not self.delete_instead
+                                    self:saveSettings()
+                                end,
+                            },
+                            {
+                                text = _("Process locally deleted articles"),
+                                checked_func = function() return self.sync_local_deletions end,
+                                callback = function()
+                                    self.sync_local_deletions = not self.sync_local_deletions
                                     self:saveSettings()
                                 end,
                             },
@@ -1127,6 +1136,56 @@ function Wallabag:processRemoteDeletes(remote_ids)
     return count
 end
 
+--- Compare remote article IDs with local files and archive/delete articles missing locally.
+-- This handles the case where the user manually deleted files from the file manager.
+-- @treturn int Number of articles archived/deleted on the server
+function Wallabag:processLocalDeletes()
+    logger.dbg("Wallabag:processLocalDeletes: starting")
+
+    local info = InfoMessage:new{ text = _("Processing locally deleted articles…") }
+    UIManager:show(info)
+    UIManager:forceRePaint()
+
+    local count = 0
+
+    -- Get the list of unread articles from the server
+    local remote_articles = self:getArticleList()
+    if not remote_articles then
+        logger.warn("Wallabag:processLocalDeletes: could not get remote article list")
+        UIManager:close(info)
+        return count
+    end
+
+    -- Build a set of local article IDs
+    local local_ids = {}
+    for entry in lfs.dir(self.directory) do
+        local entry_path = FFIUtil.joinPath(self.directory, entry)
+        if entry ~= "." and entry ~= ".." and lfs.attributes(entry_path, "mode") == "file" then
+            local local_id = self:getArticleID(entry_path)
+            if local_id then
+                local_ids[local_id] = true
+            end
+        end
+    end
+
+    -- Check each remote article - if not found locally, delete/archive on server
+    for _, article in ipairs(remote_articles) do
+        local remote_id = tostring(article.id)
+        if not local_ids[remote_id] then
+            logger.dbg("Wallabag:processLocalDeletes: article", remote_id, "not found locally, archiving/deleting on server")
+            -- Build a fake path just for logging in archiveArticle (it only uses the ID)
+            local fake_path = FFIUtil.joinPath(self.directory, article_id_prefix .. remote_id .. article_id_postfix .. "deleted")
+            if self:archiveArticle(fake_path) then
+                count = count + 1
+            end
+        end
+    end
+
+    logger.dbg("Wallabag:processLocalDeletes: processed", count, "articles")
+    UIManager:close(info)
+    return count
+end
+
 --- Returns true, if article should be archived/deleted on the Wallabag server.
 -- @tparam string entry_path Path to the article file
 function Wallabag:shouldUploadStatus(entry_path)
@@ -1153,6 +1212,7 @@ function Wallabag:uploadStatuses(quiet)
 
     local count_remote = 0
     local count_local = 0
+    local count_deleted = 0
 
     -- Update bearer token if needed
     if self:getBearerToken() == false then
@@ -1211,9 +1271,15 @@ function Wallabag:uploadStatuses(quiet)
         UIManager:close(info)
     end -- if self.archive
 
+    -- Process locally deleted articles if enabled
+    if self.sync_local_deletions then
+        count_deleted = self:processLocalDeletes()
+    end
+
     logger.info("Wallabag:uploadStatuses: upload finished")
     logger.info("Wallabag:uploadStatuses: - count_remote =", count_remote)
     logger.info("Wallabag:uploadStatuses: - count_local =", count_local)
+    logger.info("Wallabag:uploadStatuses: - count_deleted =", count_deleted)
     logger.dbg("Wallabag:uploadStatuses: - quiet =", quiet)
 
     if not quiet then
@@ -1229,6 +1295,14 @@ function Wallabag:uploadStatuses(quiet)
             msg = msg.."\n"..T(_("- archived in KOReader: %1"), count_local)
         else
             msg = msg.."\n"..T(_("- deleted from KOReader: %1"), count_local)
+        end
+
+        if self.sync_local_deletions then
+            if self.delete_instead then
+                msg = msg.."\n"..T(_("- locally deleted, removed from Wallabag: %1"), count_deleted)
+            else
+                msg = msg.."\n"..T(_("- locally deleted, archived on Wallabag: %1"), count_deleted)
+            end
         end
 
         local info = InfoMessage:new{ text = msg }
@@ -1649,6 +1723,7 @@ function Wallabag:saveSettings()
         delete_instead                = self.delete_instead,
         auto_archive                  = self.auto_archive,
         sync_remote_archive           = self.sync_remote_archive,
+        sync_local_deletions          = self.sync_local_deletions,
         articles_per_sync             = self.articles_per_sync,
         send_review_as_tags           = self.send_review_as_tags,
         remove_finished_from_history  = self.remove_finished_from_history,
