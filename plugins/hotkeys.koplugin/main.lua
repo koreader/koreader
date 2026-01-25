@@ -460,6 +460,7 @@ function HotKeys:overrideConflictingKeyEvents()
 
         if Device:hasKeyboard() then
             if self.type_to_search then
+                local readersearch = self.ui.search
                 readersearch.key_events.Alphabet = {
                     { Device.input.group.Alphabet }, { "Shift", Device.input.group.Alphabet },
                     event = "ShowFulltextSearchInput",

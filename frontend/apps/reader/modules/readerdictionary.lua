@@ -177,6 +177,11 @@ function ReaderDictionary:init()
     }
 end
 
+-- function ReaderDictionary:registerKeyEvents()
+    -- Now handled by hotkeys.koplugin:
+    -- onShowDictionaryLookup = { { "Alt", "D" }, { "Ctrl", "D" } }
+-- end
+
 function ReaderDictionary:sortAvailableIfos()
     table.sort(available_ifos, function(lifo, rifo)
         local lord = self.dicts_order[lifo.file]

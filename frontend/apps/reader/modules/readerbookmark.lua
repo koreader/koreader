@@ -62,7 +62,11 @@ end
 
 function ReaderBookmark:onGesture() end
 
-ReaderBookmark.onPhysicalKeyboardConnected = ReaderBookmark.registerKeyEvents
+-- function ReaderBookmark:registerKeyEvents()
+    -- Now handled by hotkeys.koplugin:
+    -- onShowBookmark (B, Shift-Left)
+    -- onToggleBookmark (Shift-Right)
+-- end
 
 function ReaderBookmark:addToMainMenu(menu_items)
     menu_items.bookmarks = {

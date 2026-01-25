@@ -1,6 +1,5 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
-local Device = require("device")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -38,6 +37,11 @@ function ReaderWikipedia:init()
         wikipedia_history = LuaData:open(DataStorage:getSettingsDir() .. "/wikipedia_history.lua", "WikipediaHistory")
     end
 end
+
+-- function ReaderWikipedia:registerKeyEvents()
+    -- Now handled by hotkeys.koplugin:
+    -- onShowWikipediaLookup = { { "Alt", "W" }, { "Ctrl", "W" } }
+-- end
 
 function ReaderWikipedia:lookupInput()
     self.input_dialog = InputDialog:new{

@@ -59,6 +59,11 @@ end
 
 function ReaderToc:onGesture() end
 
+-- function ReaderToc:registerKeyEvents()
+--     -- Now handled by hotkeys.koplugin:
+--     -- onShowToc = { { "T" }, { "Shift", "Up" } }
+-- end
+
 function ReaderToc:getTitle()
     local title = _("Table of contents")
     -- Handmade ToC has precedence over alternative ToC

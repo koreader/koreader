@@ -63,6 +63,12 @@ function ReaderThumbnail:init()
     end
 end
 
+-- function ReaderThumbnail:registerKeyEvents()
+    -- Now handled by hotkeys.koplugin:
+    -- onShowBookMap = { { "Shift", "Down" } }
+
+-- end
+
 function ReaderThumbnail:addToMainMenu(menu_items)
     menu_items.book_map = {
         text = _("Book map"),
