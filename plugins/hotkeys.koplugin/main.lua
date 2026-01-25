@@ -425,19 +425,6 @@ end
 --[[
     Description:
     This function resets existing key_event tables in various modules to resolve conflicts and customize key event handling
-    Details:
-    - Resets and overrides key events for the following modules:
-        - ReaderBookmark
-        - ReaderConfig
-        - ReaderLink
-        - ReaderSearch; also adds a type to search feature.
-        - ReaderToc
-        - ReaderThumbnail
-        - ReaderUI
-        - ReaderDictionary
-        - ReaderWikipedia
-        - FileSearcher
-        - FileManagerMenu (if in docless mode)
     - Logs debug messages indicating which key events have been overridden.
 ]]
 function HotKeys:overrideConflictingKeyEvents()
