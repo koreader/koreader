@@ -47,6 +47,16 @@ local C_ = _.pgettext
 local NC_ = _.npgettext
 local T = require("ffi/util").template
 
+local HAS_EINK_SCREEN = Device:hasEinkScreen()
+local IS_TOUCH_DEVICE = Device:isTouchDevice()
+local HAS_KEYS = Device:hasKeys()
+local HAS_D_PAD = Device:hasDPad()
+local USE_D_PAD_AS_ACTION_KEYS = Device:useDPadAsActionKeys()
+local HAS_FRONTLIGHT = Device:hasFrontlight()
+local HAS_NATURAL_LIGHT = Device:hasNaturalLight()
+local HAS_G_SENSOR = Device:hasGSensor()
+local HAS_WIFI_TOGGLE = Device:hasWifiToggle()
+
 local Dispatcher = {
     initialized = false,
 }
@@ -77,7 +87,7 @@ local settingsList = {
     ----
 
     -- Device
-    exit_screensaver = {category="none", event="ExitScreensaver", title=_("Exit sleep screen"), device=true, condition=Device:isTouchDevice()},
+    exit_screensaver = {category="none", event="ExitScreensaver", title=_("Exit sleep screen"), device=true, condition=IS_TOUCH_DEVICE},
     start_usbms = {category="none", event="RequestUSBMS", title=_("Start USB storage"), device=true, condition=Device:canToggleMassStorage()},
     suspend = {category="none", event="RequestSuspend", title=_("Sleep"), device=true, condition=Device:canSuspend()},
     restart = {category="none", event="Restart", title=_("Restart KOReader"), device=true, condition=Device:canRestart()},
@@ -85,57 +95,57 @@ local settingsList = {
     poweroff = {category="none", event="RequestPowerOff", title=_("Power off"), device=true, condition=Device:canPowerOff()},
     exit = {category="none", event="Exit", title=_("Exit KOReader"), device=true, separator=true},
     ----
-    toggle_hold_corners = {category="none", event="IgnoreHoldCorners", title=_("Toggle long-press on corners"), device=true, condition=Device:isTouchDevice()},
-    ignore_hold_corners = {category="absolutenumber", event="IgnoreHoldCornersTime", default=10, min=5, max=30, unit=C_("Time", "s"), title=_("Ignore long-press on corners"), device=true, separator=true, condition=Device:isTouchDevice()},
-    touch_input_on = {category="none", event="IgnoreTouchInput", arg=false, title=_("Enable touch input"), device=true, condition=Device:isTouchDevice()},
-    touch_input_off = {category="none", event="IgnoreTouchInput", arg=true, title=_("Disable touch input"), device=true, condition=Device:isTouchDevice()},
-    toggle_touch_input = {category="none", event="IgnoreTouchInput", title=_("Toggle touch input"), device=true, separator=true, condition=Device:isTouchDevice()},
+    toggle_hold_corners = {category="none", event="IgnoreHoldCorners", title=_("Toggle long-press on corners"), device=true, condition=IS_TOUCH_DEVICE},
+    ignore_hold_corners = {category="absolutenumber", event="IgnoreHoldCornersTime", default=10, min=5, max=30, unit=C_("Time", "s"), title=_("Ignore long-press on corners"), device=true, separator=true, condition=IS_TOUCH_DEVICE},
+    touch_input_on = {category="none", event="IgnoreTouchInput", arg=false, title=_("Enable touch input"), device=true, condition=IS_TOUCH_DEVICE},
+    touch_input_off = {category="none", event="IgnoreTouchInput", arg=true, title=_("Disable touch input"), device=true, condition=IS_TOUCH_DEVICE},
+    toggle_touch_input = {category="none", event="IgnoreTouchInput", title=_("Toggle touch input"), device=true, separator=true, condition=IS_TOUCH_DEVICE},
     ----
-    swap_left_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg="left", title=_("Invert left-side page-turn buttons"), device=true, condition= Device:hasDPad() and Device:useDPadAsActionKeys()},
-    swap_right_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg="right", title=_("Invert right-side page-turn buttons"), device=true, condition= Device:hasDPad() and Device:useDPadAsActionKeys()},
-    swap_page_turn_buttons = {category="none", event="SwapPageTurnButtons", title=_("Invert page-turn buttons"), device=true, condition=Device:hasKeys()},
-    set_page_turn_buttons = {category="string", event="SetPageTurnButtonDirection", title=_("Set page-turn button inversion"), device=true, condition=Device:hasKeys(), args = {true, false}, toggle = { _("on"), _("off")}, separator=true},
+    swap_left_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg="left", title=_("Invert left-side page-turn buttons"), device=true, condition= HAS_D_PAD and USE_D_PAD_AS_ACTION_KEYS},
+    swap_right_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg="right", title=_("Invert right-side page-turn buttons"), device=true, condition= HAS_D_PAD and USE_D_PAD_AS_ACTION_KEYS},
+    swap_page_turn_buttons = {category="none", event="SwapPageTurnButtons", title=_("Invert page-turn buttons"), device=true, condition=HAS_KEYS},
+    set_page_turn_buttons = {category="string", event="SetPageTurnButtonDirection", title=_("Set page-turn button inversion"), device=true, condition=HAS_KEYS, args = {true, false}, toggle = { _("on"), _("off")}, separator=true},
     ----
-    toggle_key_repeat = {category="none", event="ToggleKeyRepeat", title=_("Toggle key repeat"), device=true, condition=Device:hasKeys() and Device:canKeyRepeat(), separator=true},
-    toggle_gsensor = {category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:hasGSensor()},
-    temp_gsensor_on = {category="none", event="TempGSensorOn", title=_("Enable accelerometer for 5 seconds"), device=true, condition=Device:hasGSensor()},
-    lock_gsensor = {category="none", event="LockGSensor", title=_("Toggle lock auto rotation to current orientation"), device=true, condition=Device:hasGSensor()},
-    set_lock_gsensor = {category="string", event="SetLockGSensor", title=_("Set lock auto rotation to current orientation"), device=true, condition=Device:hasGSensor(), args = {true, false}, toggle = { _("true"), _("false")}},
+    toggle_key_repeat = {category="none", event="ToggleKeyRepeat", title=_("Toggle key repeat"), device=true, condition=HAS_KEYS and Device:canKeyRepeat(), separator=true},
+    toggle_gsensor = {category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=HAS_G_SENSOR},
+    temp_gsensor_on = {category="none", event="TempGSensorOn", title=_("Enable accelerometer for 5 seconds"), device=true, condition=HAS_G_SENSOR},
+    lock_gsensor = {category="none", event="LockGSensor", title=_("Toggle lock auto rotation to current orientation"), device=true, condition=HAS_G_SENSOR},
+    set_lock_gsensor = {category="string", event="SetLockGSensor", title=_("Set lock auto rotation to current orientation"), device=true, condition=HAS_G_SENSOR, args = {true, false}, toggle = { _("true"), _("false")}},
     rotation_mode = {category="string", device=true}, -- title=_("Rotation"), parsed from CreOptions
     toggle_rotation = {category="none", event="SwapRotation", title=_("Toggle orientation"), device=true},
     invert_rotation = {category="none", event="InvertRotation", title=_("Invert rotation"), device=true},
     iterate_rotation = {category="none", event="IterateRotation", title=_("Rotate by 90° CW"), device=true},
     iterate_rotation_ccw = {category="none", event="IterateRotation", arg=true, title=_("Rotate by 90° CCW"), device=true, separator=true},
     ----
-    wifi_on = {category="none", event="InfoWifiOn", title=_("Turn on Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
-    wifi_off = {category="none", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
-    toggle_wifi = {category="none", event="ToggleWifi", title=_("Toggle Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
+    wifi_on = {category="none", event="InfoWifiOn", title=_("Turn on Wi-Fi"), device=true, condition=HAS_WIFI_TOGGLE},
+    wifi_off = {category="none", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=HAS_WIFI_TOGGLE},
+    toggle_wifi = {category="none", event="ToggleWifi", title=_("Toggle Wi-Fi"), device=true, condition=HAS_WIFI_TOGGLE},
     toggle_fullscreen = {category="none", event="ToggleFullscreen", title=_("Toggle Fullscreen"), device=true, condition=not Device:isAlwaysFullscreen()},
     show_network_info = {category="none", event="ShowNetworkInfo", title=_("Show network info"), device=true, separator=true},
     ----
 
     -- Screen and lights
-    show_frontlight_dialog = {category="none", event="ShowFlDialog", title=_("Show frontlight dialog"), screen=true, condition=Device:hasFrontlight()},
-    toggle_frontlight = {category="none", event="ToggleFrontlight", title=_("Toggle frontlight"), screen=true, condition=Device:hasFrontlight()},
-    set_frontlight = {category="absolutenumber", event="SetFlIntensity", min=0, max=Device:getPowerDevice().fl_max, title=_("Set frontlight brightness"), screen=true, condition=Device:hasFrontlight()},
-    increase_frontlight = {category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Increase frontlight brightness"), screen=true, condition=Device:hasFrontlight()},
-    decrease_frontlight = {category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Decrease frontlight brightness"), screen=true, condition=Device:hasFrontlight()},
-    set_frontlight_warmth = {category="absolutenumber", event="SetFlWarmth", min=0, max=100, title=_("Set frontlight warmth"), screen=true, condition=Device:hasNaturalLight()},
-    increase_frontlight_warmth = {category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Increase frontlight warmth"), screen=true, condition=Device:hasNaturalLight()},
-    decrease_frontlight_warmth = {category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth"), screen=true, condition=Device:hasNaturalLight(), separator=true},
+    show_frontlight_dialog = {category="none", event="ShowFlDialog", title=_("Show frontlight dialog"), screen=true, condition=HAS_FRONTLIGHT},
+    toggle_frontlight = {category="none", event="ToggleFrontlight", title=_("Toggle frontlight"), screen=true, condition=HAS_FRONTLIGHT},
+    set_frontlight = {category="absolutenumber", event="SetFlIntensity", min=0, max=Device:getPowerDevice().fl_max, title=_("Set frontlight brightness"), screen=true, condition=HAS_FRONTLIGHT},
+    increase_frontlight = {category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Increase frontlight brightness"), screen=true, condition=HAS_FRONTLIGHT},
+    decrease_frontlight = {category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Decrease frontlight brightness"), screen=true, condition=HAS_FRONTLIGHT},
+    set_frontlight_warmth = {category="absolutenumber", event="SetFlWarmth", min=0, max=100, title=_("Set frontlight warmth"), screen=true, condition=HAS_NATURAL_LIGHT},
+    increase_frontlight_warmth = {category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Increase frontlight warmth"), screen=true, condition=HAS_NATURAL_LIGHT},
+    decrease_frontlight_warmth = {category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth"), screen=true, condition=HAS_NATURAL_LIGHT, separator=true},
     night_mode = {category="none", event="ToggleNightMode", title=_("Toggle night mode"), screen=true},
     set_night_mode = {category="string", event="SetNightMode", title=_("Set night mode"), screen=true, args={true, false}, toggle={_("on"), _("off")}, separator=true},
     ----
     full_refresh = {category="none", event="FullRefresh", title=_("Full screen refresh"), screen=true},
-    set_refresh_rate = {category="absolutenumber", event="SetBothRefreshRates", min=-1, max=200, title=_("Full refresh rate (always)"), screen=true, condition=Device:hasEinkScreen()},
-    set_day_refresh_rate = {category="absolutenumber", event="SetDayRefreshRate", min=-1, max=200, title=_("Full refresh rate (not in night mode)"), screen=true, condition=Device:hasEinkScreen()},
-    set_night_refresh_rate = {category="absolutenumber", event="SetNightRefreshRate", min=-1, max=200, title=_("Full refresh rate (in night mode)"), screen=true, condition=Device:hasEinkScreen()},
-    set_flash_on_chapter_boundaries = {category="string", event="SetFlashOnChapterBoundaries", title=_("Always flash on chapter boundaries"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("on"), _("off")}},
-    toggle_flash_on_chapter_boundaries = {category="none", event="ToggleFlashOnChapterBoundaries", title=_("Toggle flashing on chapter boundaries"), screen=true, condition=Device:hasEinkScreen()},
-    set_no_flash_on_second_chapter_page = {category="string", event="SetNoFlashOnSecondChapterPage", title=_("Never flash on chapter's 2nd page"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("on"), _("off")}},
-    toggle_no_flash_on_second_chapter_page = {category="none", event="ToggleNoFlashOnSecondChapterPage", title=_("Toggle flashing on chapter's 2nd page"), screen=true, condition=Device:hasEinkScreen()},
-    set_flash_on_pages_with_images = {category="string", event="SetFlashOnPagesWithImages", title=_("Always flash on pages with images"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("on"), _("off")}},
-    toggle_flash_on_pages_with_images = {category="none", event="ToggleFlashOnPagesWithImages", title=_("Toggle flashing on pages with images"), screen=true, condition=Device:hasEinkScreen(), separator=true},
+    set_refresh_rate = {category="absolutenumber", event="SetBothRefreshRates", min=-1, max=200, title=_("Full refresh rate (always)"), screen=true, condition=HAS_EINK_SCREEN},
+    set_day_refresh_rate = {category="absolutenumber", event="SetDayRefreshRate", min=-1, max=200, title=_("Full refresh rate (not in night mode)"), screen=true, condition=HAS_EINK_SCREEN},
+    set_night_refresh_rate = {category="absolutenumber", event="SetNightRefreshRate", min=-1, max=200, title=_("Full refresh rate (in night mode)"), screen=true, condition=HAS_EINK_SCREEN},
+    set_flash_on_chapter_boundaries = {category="string", event="SetFlashOnChapterBoundaries", title=_("Always flash on chapter boundaries"), screen=true, condition=HAS_EINK_SCREEN, args={true, false}, toggle={_("on"), _("off")}},
+    toggle_flash_on_chapter_boundaries = {category="none", event="ToggleFlashOnChapterBoundaries", title=_("Toggle flashing on chapter boundaries"), screen=true, condition=HAS_EINK_SCREEN},
+    set_no_flash_on_second_chapter_page = {category="string", event="SetNoFlashOnSecondChapterPage", title=_("Never flash on chapter's 2nd page"), screen=true, condition=HAS_EINK_SCREEN, args={true, false}, toggle={_("on"), _("off")}},
+    toggle_no_flash_on_second_chapter_page = {category="none", event="ToggleNoFlashOnSecondChapterPage", title=_("Toggle flashing on chapter's 2nd page"), screen=true, condition=HAS_EINK_SCREEN},
+    set_flash_on_pages_with_images = {category="string", event="SetFlashOnPagesWithImages", title=_("Always flash on pages with images"), screen=true, condition=HAS_EINK_SCREEN, args={true, false}, toggle={_("on"), _("off")}},
+    toggle_flash_on_pages_with_images = {category="none", event="ToggleFlashOnPagesWithImages", title=_("Toggle flashing on pages with images"), screen=true, condition=HAS_EINK_SCREEN, separator=true},
     ----
 
     -- File browser
@@ -185,9 +195,9 @@ local settingsList = {
     next_location = {category="none", event="GoForwardLink", arg=true, title=_("Forward to next location"), reader=true},
     follow_nearest_link = {category="arg", event="GoToPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest link"), reader=true},
     follow_nearest_internal_link = {category="arg", event="GoToInternalPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest internal link"), reader=true},
-    select_prev_page_link = { category="none", event = "SelectPrevPageLink", title=_("Select previous link in current page"), reader=true, condition=not Device:isTouchDevice()},
-    select_next_page_link = { category="none", event = "SelectNextPageLink", title=_("Select next link in current page"), reader=true, condition=not Device:isTouchDevice()},
-    toggle_tap_links = {category="none", event="ToggleTapLinks", title=_("Toggle tap-to-follow links"), reader=true, condition=Device:isTouchDevice()},
+    select_prev_page_link = { category="none", event = "SelectPrevPageLink", title=_("Select previous link in current page"), reader=true, condition=not IS_TOUCH_DEVICE},
+    select_next_page_link = { category="none", event = "SelectNextPageLink", title=_("Select next link in current page"), reader=true, condition=not IS_TOUCH_DEVICE},
+    toggle_tap_links = {category="none", event="ToggleTapLinks", title=_("Toggle tap-to-follow links"), reader=true, condition=IS_TOUCH_DEVICE},
     add_location_to_history = {category="none", event="AddCurrentLocationToStack", arg=true, title=_("Add current location to history"), reader=true},
     clear_location_history = {category="none", event="ClearLocationStack", arg=true, title=_("Clear location history"), reader=true, separator=true},
     ----
@@ -195,9 +205,9 @@ local settingsList = {
     fulltext_search_findall_results = {category="none", event="ShowFindAllResults", title=_("Last fulltext search results"), reader=true},
     fulltext_search_start_page = {category="none", event="GoToStartPage", title=_("Fulltext search: go back to original page"), reader=true},
     toc = {category="none", event="ShowToc", title=_("Table of contents"), reader=true},
-    book_map = {category="none", event="ShowBookMap", title=_("Book map"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
-    book_map_overview = {category="none", event="ShowBookMap", arg=true, title=_("Book map (overview)"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
-    page_browser = {category="none", event="ShowPageBrowser", title=_("Page browser"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
+    book_map = {category="none", event="ShowBookMap", title=_("Book map"), reader=true, condition=IS_TOUCH_DEVICE or (HAS_D_PAD and USE_D_PAD_AS_ACTION_KEYS)},
+    book_map_overview = {category="none", event="ShowBookMap", arg=true, title=_("Book map (overview)"), reader=true, condition=IS_TOUCH_DEVICE or (HAS_D_PAD and USE_D_PAD_AS_ACTION_KEYS)},
+    page_browser = {category="none", event="ShowPageBrowser", title=_("Page browser"), reader=true, condition=IS_TOUCH_DEVICE or (HAS_D_PAD and USE_D_PAD_AS_ACTION_KEYS)},
     bookmarks = {category="none", event="ShowBookmark", title=_("Bookmarks"), reader=true},
     bookmark_search = {category="none", event="SearchBookmark", title=_("Bookmark search"), reader=true},
     toggle_bookmark = {category="none", event="ToggleBookmark", title=_("Toggle bookmark"), reader=true, separator=true},
@@ -209,11 +219,11 @@ local settingsList = {
     ----
     translate_page = {category="none", event="TranslateCurrentPage", title=_("Translate current page"), reader=true, separator=true},
     ----
-    set_inverse_reading_order = {category="string", event="ToggleReadingOrder", title=_("Invert page turn taps and swipes"), reader=true, condition=Device:isTouchDevice(), args={true, false}, toggle={_("on"), _("off")}},
-    toggle_inverse_reading_order = {category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), reader=true, condition=Device:isTouchDevice()},
+    set_inverse_reading_order = {category="string", event="ToggleReadingOrder", title=_("Invert page turn taps and swipes"), reader=true, condition=IS_TOUCH_DEVICE, args={true, false}, toggle={_("on"), _("off")}},
+    toggle_inverse_reading_order = {category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), reader=true, condition=IS_TOUCH_DEVICE},
     toggle_page_change_animation = {category="none", event="TogglePageChangeAnimation", title=_("Toggle page turn animations"), reader=true, condition=Device:canDoSwipeAnimation()},
-    toggle_handmade_toc = {category="none", event="ToggleHandmadeToc", title=_("Toggle custom TOC"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
-    toggle_handmade_flows = {category="none", event="ToggleHandmadeFlows", title=_("Toggle custom hidden flows"), reader=true, separator=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
+    toggle_handmade_toc = {category="none", event="ToggleHandmadeToc", title=_("Toggle custom TOC"), reader=true, condition=IS_TOUCH_DEVICE or (HAS_D_PAD and USE_D_PAD_AS_ACTION_KEYS)},
+    toggle_handmade_flows = {category="none", event="ToggleHandmadeFlows", title=_("Toggle custom hidden flows"), reader=true, separator=true, condition=IS_TOUCH_DEVICE or (HAS_D_PAD and USE_D_PAD_AS_ACTION_KEYS)},
     ----
     set_highlight_action = {category="string", event="SetHighlightAction", title=_("Set highlight action"), args_func=ReaderHighlight.getHighlightActions, reader=true},
     cycle_highlight_action = {category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), reader=true},
@@ -936,7 +946,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                             callback = function(spin)
                                 setValue(k, spin.value, touchmenu_instance)
                             end,
-                            option_text = Device:isTouchDevice() and caller.profiles == nil and _("Use gesture distance"), -- Gesture manager only
+                            option_text = IS_TOUCH_DEVICE and caller.profiles == nil and _("Use gesture distance"), -- Gesture manager only
                             option_callback = function()
                                 setValue(k, 0, touchmenu_instance)
                             end,
