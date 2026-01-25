@@ -442,20 +442,13 @@ end
 ]]
 function HotKeys:overrideConflictingKeyEvents()
     if not self.is_docless then
-        if self.ui.font then -- readerfont is not available for pdf/djvu files.
-            self.ui.font.key_events = {} -- reset it.
-            logger.dbg("Hotkey ReaderFont:registerKeyEvents() overridden.")
-        end
-
         if Device:hasScreenKB() or Device:hasSymKey() then
-            local readerconfig = self.ui.config
-            readerconfig.key_events = {} -- reset it, then add our own
             if self.settings_data.data["press_key_does_hotkeys"] then
+                local readerconfig = self.ui.config
+                readerconfig.key_events = {} -- reset it, then add our own
                 readerconfig.key_events.ShowConfigMenu = { { "AA" }, event = "ShowConfigMenu" }
-            else
-                readerconfig.key_events.ShowConfigMenu = { { { "Press", "AA" } }, event = "ShowConfigMenu" }
+                logger.dbg("Hotkey ReaderConfig:registerKeyEvents() overridden. press_key_does_hotkeys = true")
             end
-            logger.dbg("Hotkey ReaderConfig:registerKeyEvents() overridden.")
         end
 
         if Device:hasKeyboard() then
@@ -468,24 +461,6 @@ function HotKeys:overrideConflictingKeyEvents()
                 }
             end
         end
-    end
-
-    if Device:hasKeyboard() then
-        local filesearcher = self.ui.filesearcher
-        filesearcher.key_events = {} -- reset it.
-        filesearcher.key_events.ShowFileSearchBlank = {
-            { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" },
-            event = "ShowFileSearch",
-            args = ""
-        }
-        logger.dbg("Hotkey FileSearcher:registerKeyEvents() overridden.")
-    end
-
-    if self.is_docless then
-        local filemanagermenu = self.ui.menu
-        filemanagermenu.key_events = {} -- reset it.
-        filemanagermenu.key_events.KeyPressShowMenu = { { "Menu" } }
-        logger.dbg("Hotkey FileManagerMenu:registerKeyEvents() overridden.")
     end
 end -- overrideConflictingKeyEvents()
 

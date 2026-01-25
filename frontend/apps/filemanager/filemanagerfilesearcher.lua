@@ -33,8 +33,9 @@ function FileSearcher:init()
 end
 
 function FileSearcher:registerKeyEvents()
+    -- now handled by hotkeys.koplugin:
+    -- onShowFileSearch = { { "Alt", "F" }, { "Ctrl", "F" } }
     if Device:hasKeyboard() then
-        self.key_events.ShowFileSearch = { { "Alt", "F" }, { "Ctrl", "F" } }
         self.key_events.ShowFileSearchBlank = { { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" }, event = "ShowFileSearch", args = "" }
     end
 end
