@@ -955,8 +955,10 @@ if last_migration_date < 20260123 then
         local hotkeys_path = ffiUtil.joinPath(DataStorage:getSettingsDir(), "hotkeys.lua")
         if lfs.attributes(hotkeys_path, "mode") == "file" then
             local hotkeys_settings = LuaSettings:open(hotkeys_path)
-            if hotkeys_settings.data.hotkeys_reader and not hotkeys_settings.data.hotkeys_reader.h then
+            if hotkeys_settings.data.hotkeys_reader then
+                hotkeys_settings.data.hotkeys_reader.b = {bookmarks = true}
                 hotkeys_settings.data.hotkeys_reader.h = {text_selection = true}
+                hotkeys_settings.data.hotkeys_reader.t = {toc = true}
                 hotkeys_settings:flush()
             end
         end
