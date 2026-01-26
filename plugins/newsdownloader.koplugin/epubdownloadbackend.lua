@@ -11,6 +11,7 @@ local socket_url = require("socket.url")
 local socketutil = require("socketutil")
 local time = require("ui/time")
 local _ = require("gettext")
+local util = require("util")
 local T = ffiutil.template
 
 local function removeSubstring(str, substr)
@@ -213,26 +214,14 @@ local function build_cookies(cookies)
     return s
 end
 
-local function path_percentage_encode(url)
+local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra_headers)
     local parsed_url = socket_url.parse(url)
-    local path = parsed_url.path or "/"
-    local encoded_path = ""
-
-    for i = 1, #path do
-        local char = path:sub(i, i)
-        if char:match("[a-zA-Z0-9.-_~!$&'()*+,;=:@]") then -- Unreserved characters
-        encoded_path = encoded_path .. char
-        else
-        local code = string.byte(char)
-        encoded_path = encoded_path .. string.format("%%%02X", code)
-        end
+    local path = parsed_url.path
+    if path then
+        parsed_url.path = util.urlEncode(path)
+        url = socket_url.build(parsed_url)
     end
 
-    parsed_url.path = encoded_path
-    return socket_url.build(parsed_url)
-end
-
-local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra_headers)
     logger.dbg("getUrlContent(", url, ",", cookies, ", ", timeout, ",", maxtime, ",", add_to_cache, ")")
 
     if not timeout then timeout = 10 end
@@ -241,7 +230,7 @@ local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra
     local sink = {}
     socketutil:set_timeout(timeout, maxtime or 30)
     local request = {
-        url     = path_percentage_encode(url),
+        url     = url,
         method  = "GET",
         sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
         headers = (function()
