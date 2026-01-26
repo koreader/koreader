@@ -8,6 +8,7 @@ in the order specified by zoom_direction_settings (reading direction).
 @module readerpanelnav
 --]]
 
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
@@ -29,6 +30,7 @@ local ReaderPanelNav = InputContainer:extend{
     current_page_panels = nil,  -- cached panels for current page
     current_panel_index = 0,    -- 0 means no panel selected (full page view)
     panels_page = nil,          -- page number for cached panels
+    _panel_viewer = nil,        -- current ImageViewer widget (reused for performance)
 
     -- Visualization options
     highlight_current_panel = false, -- highlight only the current panel
@@ -736,7 +738,6 @@ function ReaderPanelNav:getPanelsForCurrentPage()
     self.panels_page = pageno
     self.current_panel_index = 0  -- Reset to full page view
 
-    logger.dbg("ReaderPanelNav: found", #self.current_page_panels, "panels on page", pageno)
     return self.current_page_panels
 end
 
@@ -852,11 +853,40 @@ function ReaderPanelNav:showPanel(panel)
     local image, rotate = self.ui.document:drawPagePart(pageno, panel, 0)
 
     if image then
-        logger.dbg("ReaderPanelNav: got image for panel, showing ImageViewer")
+        -- If we already have an ImageViewer open, just update the image
+        if self._panel_viewer then
+            logger.dbg("ReaderPanelNav: reusing existing ImageViewer")
+            -- Guard against updating while a repaint is in progress
+            if self._panel_viewer._updating then
+                logger.dbg("ReaderPanelNav: skipping update, already updating")
+                return
+            end
+            self._panel_viewer._updating = true
+            self._panel_viewer.image = image
+            -- Immediately clean the image widget so any pending refresh uses new image
+            self._panel_viewer:_clean_image_wg()
+            -- Now trigger the update synchronously
+            self._panel_viewer:update()
+            self._panel_viewer._updating = false
+            return
+        end
+
+        logger.dbg("ReaderPanelNav: creating new ImageViewer")
         local ImageViewer = require("ui/widget/imageviewer")
+        local Geom = require("ui/geometry")
 
         -- Keep reference to self for callbacks
         local panelnav = self
+        local panels = self:getPanelsForCurrentPage()
+        local total_panels = panels and #panels or 0
+
+        -- Calculate height to leave room for status bar (footer)
+        local footer_height = 0
+        if self.view.footer and self.view.footer_visible
+           and not self.view.footer.settings.reclaim_height then
+            footer_height = self.view.footer:getHeight()
+        end
+        local viewer_height = Screen:getHeight() - footer_height
 
         local imgviewer = ImageViewer:new{
             image = image,
@@ -864,37 +894,68 @@ function ReaderPanelNav:showPanel(panel)
             with_title_bar = false,
             fullscreen = true,
             rotated = rotate,
+            height = viewer_height, -- Leave room for footer
         }
+
+        -- Patch update() to use our custom height (leaving room for footer)
+        -- This ensures buttons appear above the status bar
+        local orig_update = imgviewer.update
+        imgviewer.update = function(iv)
+            -- Temporarily override height before update runs
+            local saved_getHeight = Screen.getHeight
+            Screen.getHeight = function() return viewer_height end
+            orig_update(iv)
+            Screen.getHeight = saved_getHeight
+            -- Also ensure region is correct
+            iv.region.h = viewer_height
+        end
+
+        -- Paint footer on top of ImageViewer if visible
+        if footer_height > 0 then
+            local orig_paintTo = imgviewer.paintTo
+            local last_footer_page = pageno  -- Track which page footer was last updated for
+            imgviewer.paintTo = function(self_viewer, bb, x, y)
+                orig_paintTo(self_viewer, bb, x, y)
+                -- Paint footer at the bottom of the screen
+                if panelnav.view.footer and panelnav.view.footer_visible then
+                    local current_page = panelnav.ui.paging.current_page
+                    -- Only refresh footer content when page changes
+                    if current_page ~= last_footer_page then
+                        logger.dbg("ReaderPanelNav: page changed from", last_footer_page, "to", current_page, "- refreshing footer")
+                        panelnav.view.footer:onUpdateFooter(true)
+                        last_footer_page = current_page
+                    end
+                    panelnav.view.footer:paintTo(bb, x, y)
+                end
+            end
+        end
 
         -- Only add panel navigation if enabled
         if self.panel_nav_enabled then
-            -- Add panel navigation key events
-            if Device:hasKeys() then
-                imgviewer.key_events.NextPanel = { { "Right" }, event = "NextPanel" }
-                imgviewer.key_events.PrevPanel = { { "Left" }, event = "PrevPanel" }
-            end
+            local is_rtl = BD.mirroredUILayout()
 
-            -- Add panel navigation handlers
+            -- Panel navigation handlers
             imgviewer.onNextPanel = function(self_viewer)
-                logger.dbg("ImageViewer: onNextPanel triggered")
-                UIManager:close(self_viewer)
-                -- Navigate to next panel
                 local panels = panelnav:getPanelsForCurrentPage()
                 if panels and panelnav.current_panel_index < #panels then
+                    -- Same page: just update the image in place
                     panelnav.current_panel_index = panelnav.current_panel_index + 1
                     panelnav:showPanel(panels[panelnav.current_panel_index])
                 elseif panels then
-                    -- At last panel, go to next page
+                    -- End of page: go to next page, keep viewer open
+                    -- Do everything in one tick so image updates before repaint
                     panelnav.current_panel_index = 0
                     panelnav.current_page_panels = nil
                     panelnav.panels_page = nil
-                    panelnav.ui:handleEvent(Event:new("GotoViewRel", 1))
-                    -- Show first panel of next page
                     UIManager:nextTick(function()
+                        panelnav.ui:handleEvent(Event:new("GotoViewRel", 1))
                         local new_panels = panelnav:getPanelsForCurrentPage()
                         if new_panels and #new_panels > 0 then
                             panelnav.current_panel_index = 1
                             panelnav:showPanel(new_panels[1])
+                        else
+                            -- No panels on new page, close viewer
+                            UIManager:close(self_viewer)
                         end
                     end)
                 end
@@ -902,73 +963,91 @@ function ReaderPanelNav:showPanel(panel)
             end
 
             imgviewer.onPrevPanel = function(self_viewer)
-                logger.dbg("ImageViewer: onPrevPanel triggered")
-                UIManager:close(self_viewer)
-                -- Navigate to previous panel
                 local panels = panelnav:getPanelsForCurrentPage()
                 if panelnav.current_panel_index > 1 then
+                    -- Same page: just update the image in place
                     panelnav.current_panel_index = panelnav.current_panel_index - 1
                     panelnav:showPanel(panels[panelnav.current_panel_index])
                 else
-                    -- At first panel, go to previous page
+                    -- Start of page: go to previous page, keep viewer open
+                    -- Do everything in one tick so image updates before repaint
                     panelnav.current_page_panels = nil
                     panelnav.panels_page = nil
-                    panelnav.ui:handleEvent(Event:new("GotoViewRel", -1))
-                    -- Show last panel of previous page
                     UIManager:nextTick(function()
+                        panelnav.ui:handleEvent(Event:new("GotoViewRel", -1))
                         local new_panels = panelnav:getPanelsForCurrentPage()
                         if new_panels and #new_panels > 0 then
                             panelnav.current_panel_index = #new_panels
                             panelnav:showPanel(new_panels[panelnav.current_panel_index])
+                        else
+                            -- No panels on new page, close viewer
+                            UIManager:close(self_viewer)
                         end
                     end)
                 end
                 return true
             end
 
-            -- Override onTap for touch-based panel navigation
-            -- Tap on right side: next panel, tap on left side: previous panel
-            imgviewer.onTap = function(self_viewer, _, ges)
-                local BD = require("ui/bidi")
+            -- Key bindings (replace default zoom with panel navigation)
+            if Device:hasKeys() then
+                imgviewer.key_events.ZoomIn = nil
+                imgviewer.key_events.ZoomOut = nil
+                imgviewer.key_events.NextPanel = { { { "RPgFwd", "LPgFwd", is_rtl and "Left" or "Right" } }, event = "NextPanel" }
+                imgviewer.key_events.PrevPanel = { { { "RPgBack", "LPgBack", is_rtl and "Right" or "Left" } }, event = "PrevPanel" }
+            end
 
-                -- Check if tap is outside the main frame (close viewer)
-                if self_viewer.main_frame and ges.pos:notIntersectWith(self_viewer.main_frame.dimen) then
-                    self_viewer:onClose()
-                    return true
-                end
-
-                -- Determine if tap is on left or right edge for panel navigation
-                local screen_width = Screen:getWidth()
-                local tap_zone_width = screen_width / 4  -- 25% on each side for navigation
-
-                local is_left_tap = ges.pos.x < tap_zone_width
-                local is_right_tap = ges.pos.x > screen_width - tap_zone_width
-
-                -- Account for RTL layout (manga reading direction)
-                local go_prev, go_next
-                if BD.mirroredUILayout() then
-                    go_prev = is_right_tap
-                    go_next = is_left_tap
-                else
-                    go_prev = is_left_tap
-                    go_next = is_right_tap
-                end
-
-                if go_next then
-                    logger.dbg("ImageViewer: tap on right side, going to next panel")
-                    return self_viewer:onNextPanel()
-                elseif go_prev then
-                    logger.dbg("ImageViewer: tap on left side, going to previous panel")
-                    return self_viewer:onPrevPanel()
-                else
-                    -- Tap in the middle: toggle buttons visibility (default behavior)
-                    self_viewer.buttons_visible = not self_viewer.buttons_visible
-                    self_viewer:update()
-                    return true
-                end
+            -- Touch zones (tap left/right edges)
+            if Device:isTouchDevice() then
+                imgviewer:registerTouchZones({
+                    {
+                        id = "panel_tap_forward",
+                        ges = "tap",
+                        screen_zone = is_rtl
+                            and { ratio_x = 0, ratio_y = 0, ratio_w = 0.25, ratio_h = 1 }
+                            or  { ratio_x = 0.75, ratio_y = 0, ratio_w = 0.25, ratio_h = 1 },
+                        handler = function() return imgviewer:onNextPanel() end,
+                    },
+                    {
+                        id = "panel_tap_backward",
+                        ges = "tap",
+                        screen_zone = is_rtl
+                            and { ratio_x = 0.75, ratio_y = 0, ratio_w = 0.25, ratio_h = 1 }
+                            or  { ratio_x = 0, ratio_y = 0, ratio_w = 0.25, ratio_h = 1 },
+                        handler = function() return imgviewer:onPrevPanel() end,
+                    },
+                })
             end
         end
 
+        -- Handle device rotation: apply rotation, close viewer, re-show panel
+        imgviewer.onSetRotationMode = function(self_viewer, mode)
+            if mode ~= nil and mode ~= Screen:getRotationMode() then
+                UIManager:close(self_viewer)
+                -- Apply rotation via ReaderView
+                panelnav.view:onSetRotationMode(mode)
+                -- Re-show panel after rotation
+                UIManager:nextTick(function()
+                    local panels = panelnav:getPanelsForCurrentPage()
+                    if panels and panelnav.current_panel_index > 0 then
+                        panelnav:showPanel(panels[panelnav.current_panel_index])
+                    end
+                end)
+            end
+            return true
+        end
+
+        -- Clear reference when ImageViewer is closed, but call original cleanup first
+        local orig_onCloseWidget = imgviewer.onCloseWidget
+        imgviewer.onCloseWidget = function(self_viewer)
+            panelnav._panel_viewer = nil
+            -- Call original cleanup to free resources
+            if orig_onCloseWidget then
+                orig_onCloseWidget(self_viewer)
+            end
+        end
+
+        -- Store reference for reuse
+        self._panel_viewer = imgviewer
         UIManager:show(imgviewer)
         logger.dbg("ReaderPanelNav: showing panel", self.current_panel_index, "of", #self.current_page_panels)
     else
