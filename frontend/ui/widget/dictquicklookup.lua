@@ -186,22 +186,19 @@ function DictQuickLookup:init()
                         end
 
                         if textbox and textbox.charlist then
-                            local callbacks = textbox:getLanguageSupportCallbacks()
-
-                            local new_pos0, new_pos1 = self.ui.languagesupport:improveBufferSelection({
+                            local result = self.ui.languagesupport:improveWordSelection({
                                 text = text,
                                 pos0 = pos0,
                                 pos1 = pos1,
-                                callbacks = callbacks
-                            }, lang)
+                            }, textbox, lang)
 
-                            if new_pos0 then
-                                textbox.highlight_start_idx = new_pos0
-                                textbox.highlight_end_idx = new_pos1
+                            if result then
+                                textbox.highlight_start_idx = result.pos0
+                                textbox.highlight_end_idx = result.pos1
                                 textbox:updateHighlight()
                                 textbox:redrawHighlight()
 
-                                text = callbacks.get_text_in_range(new_pos0, new_pos1)
+                                text = result.text
                             end
                         end
                     end

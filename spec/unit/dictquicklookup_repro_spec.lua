@@ -24,7 +24,7 @@ describe("DictQuickLookup interaction", function()
         UIManager:quit()
     end)
 
-    it("should use improveBufferSelection and expand selection when holding text", function()
+    it("should use improveWordSelection and expand selection when holding text", function()
         dictionary = readerui.dictionary
         dictionary:onLookupWord("test")
         fastforward_ui_events()
