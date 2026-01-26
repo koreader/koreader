@@ -156,7 +156,7 @@ function ReaderPanelNav:assignGridByOverlap(panels)
     -- Helper to find unique lanes (Rows or Columns) based on 30% overlap
     local function getLanes(axis, dim)
         local lanes = {}
-        
+
         -- Sort panels by dimension size (smallest first) so narrow/short panels
         -- establish lanes before wide/tall panels can merge them
         local sorted_panels = {}
@@ -166,7 +166,7 @@ function ReaderPanelNav:assignGridByOverlap(panels)
         table.sort(sorted_panels, function(a, b)
             return a[dim] < b[dim]
         end)
-        
+
         for _, p in ipairs(sorted_panels) do
             local found = false
             for _, lane in ipairs(lanes) do
@@ -873,12 +873,9 @@ function ReaderPanelNav:showPanel(panel)
 
         logger.dbg("ReaderPanelNav: creating new ImageViewer")
         local ImageViewer = require("ui/widget/imageviewer")
-        local Geom = require("ui/geometry")
 
         -- Keep reference to self for callbacks
         local panelnav = self
-        local panels = self:getPanelsForCurrentPage()
-        local total_panels = panels and #panels or 0
 
         -- Calculate height to leave room for status bar (footer)
         local footer_height = 0
@@ -936,12 +933,12 @@ function ReaderPanelNav:showPanel(panel)
 
             -- Panel navigation handlers
             imgviewer.onNextPanel = function(self_viewer)
-                local panels = panelnav:getPanelsForCurrentPage()
-                if panels and panelnav.current_panel_index < #panels then
+                local cur_panels = panelnav:getPanelsForCurrentPage()
+                if cur_panels and panelnav.current_panel_index < #cur_panels then
                     -- Same page: just update the image in place
                     panelnav.current_panel_index = panelnav.current_panel_index + 1
-                    panelnav:showPanel(panels[panelnav.current_panel_index])
-                elseif panels then
+                    panelnav:showPanel(cur_panels[panelnav.current_panel_index])
+                elseif cur_panels then
                     -- End of page: go to next page, keep viewer open
                     -- Do everything in one tick so image updates before repaint
                     panelnav.current_panel_index = 0
@@ -963,11 +960,11 @@ function ReaderPanelNav:showPanel(panel)
             end
 
             imgviewer.onPrevPanel = function(self_viewer)
-                local panels = panelnav:getPanelsForCurrentPage()
+                local cur_panels = panelnav:getPanelsForCurrentPage()
                 if panelnav.current_panel_index > 1 then
                     -- Same page: just update the image in place
                     panelnav.current_panel_index = panelnav.current_panel_index - 1
-                    panelnav:showPanel(panels[panelnav.current_panel_index])
+                    panelnav:showPanel(cur_panels[panelnav.current_panel_index])
                 else
                     -- Start of page: go to previous page, keep viewer open
                     -- Do everything in one tick so image updates before repaint
@@ -1027,9 +1024,9 @@ function ReaderPanelNav:showPanel(panel)
                 panelnav.view:onSetRotationMode(mode)
                 -- Re-show panel after rotation
                 UIManager:nextTick(function()
-                    local panels = panelnav:getPanelsForCurrentPage()
-                    if panels and panelnav.current_panel_index > 0 then
-                        panelnav:showPanel(panels[panelnav.current_panel_index])
+                    local rot_panels = panelnav:getPanelsForCurrentPage()
+                    if rot_panels and panelnav.current_panel_index > 0 then
+                        panelnav:showPanel(rot_panels[panelnav.current_panel_index])
                     end
                 end)
             end
