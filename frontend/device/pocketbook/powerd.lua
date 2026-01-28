@@ -84,6 +84,8 @@ end
 
 function PocketBookPowerD:afterResume()
     self:invalidateCapacityCache()
+
+    -- Restore user input and emit the Resume event.
     self.device:_afterResume()
 
     -- PB700-specific: Sync orientation after resume to fix hibernation rotation bug
@@ -91,7 +93,6 @@ function PocketBookPowerD:afterResume()
     if self.device.model == "PB700" then
         logger.dbg("afterResume: Running orientation sync for PB700")
 
-        -- Query current physical orientation from GSensor
         local current_orientation = inkview.GetGSensorOrientation()
         local current_rotation = self.device.screen:getRotationMode()
 
