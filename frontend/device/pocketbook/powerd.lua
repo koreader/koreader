@@ -1,6 +1,7 @@
 local BasePowerD = require("device/generic/powerd")
 local ffi = require("ffi")
 local inkview = ffi.load("inkview")
+local logger = require("logger")
 
 local PocketBookPowerD = BasePowerD:new{
     is_charging = nil,
@@ -83,9 +84,42 @@ end
 
 function PocketBookPowerD:afterResume()
     self:invalidateCapacityCache()
-
-    -- Restore user input and emit the Resume event.
     self.device:_afterResume()
+
+    -- PB700-specific: Sync orientation after resume to fix hibernation rotation bug
+    -- c.f., https://github.com/koreader/koreader/issues/11033
+    if self.device.model == "PB700" then
+        logger.dbg("afterResume: Running orientation sync for PB700")
+
+        -- Query current physical orientation from GSensor
+        local current_orientation = inkview.GetGSensorOrientation()
+        local current_rotation = self.device.screen:getRotationMode()
+
+        -- Translate InkView's rotation values to KOReaders rotation scheme
+        local target_rotation
+        if current_orientation == 0 then
+            target_rotation = 0
+        elseif current_orientation == 2 then
+            target_rotation = 1
+        elseif current_orientation == 3 then
+            target_rotation = 2
+        elseif current_orientation == 1 then
+            target_rotation = 3
+        end
+
+        logger.dbg("afterResume: GSensor:", current_orientation, "Current:", current_rotation, "Target:", target_rotation)
+
+        -- Without this we end up with inverted screen orientation after resume
+        inkview.iv_update_orientation(current_orientation)
+
+        -- Apply rotation if it changed during suspend
+        if target_rotation and target_rotation ~= current_rotation then
+            logger.dbg("afterResume: Applying rotation change from", current_rotation, "to", target_rotation)
+            self.device.screen:setRotationMode(target_rotation)
+            local UIManager = require("ui/uimanager")
+            UIManager:onRotation()
+        end
+    end
 end
 
 return PocketBookPowerD
