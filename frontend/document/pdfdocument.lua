@@ -116,6 +116,10 @@ function PdfDocument:getPanelFromPage(pageno, pos)
     return self.koptinterface:getPanelFromPage(self, pageno, pos)
 end
 
+function PdfDocument:getAllPanelsFromPage(pageno)
+    return self.koptinterface:getAllPanelsFromPage(self, pageno)
+end
+
 function PdfDocument:getWordFromPosition(spos)
     return self.koptinterface:getWordFromPosition(self, spos)
 end

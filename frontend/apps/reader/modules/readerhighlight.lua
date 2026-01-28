@@ -921,7 +921,7 @@ Except when in two columns mode, where this is limited to showing only the previ
 end
 
 function ReaderHighlight:genPanelZoomMenu()
-    return {
+    local menu = {
         {
             text = _("Allow panel zoom"),
             checked_func = function()
@@ -952,6 +952,83 @@ function ReaderHighlight:genPanelZoomMenu()
             separator = true,
         },
     }
+    -- Add panel navigation options if the module is loaded
+    if self.ui.panelnav then
+        local panelnav = self.ui.panelnav
+        -- Panel reading direction submenu
+        local direction_codes = { "LRTB", "LRBT", "RLTB", "RLBT", "TBLR", "TBRL", "BTLR", "BTRL" }
+        local direction_submenu = {}
+        for _, code in ipairs(direction_codes) do
+            table.insert(direction_submenu, {
+                text = code .. " - " .. panelnav:getDirectionDescription(code),
+                icon = "direction." .. code,
+                checked_func = function()
+                    return panelnav.panel_direction == code
+                end,
+                callback = function()
+                    panelnav:setPanelDirection(code)
+                end,
+                hold_callback = function()
+                    G_reader_settings:saveSetting("panel_direction", code)
+                end,
+            })
+        end
+        -- Add panel navigation options at top level
+        table.insert(menu, {
+            text = _("Enable panel navigation"),
+            help_text = _("Navigate panel-by-panel through comics/manga using automatic panel detection. Use Left/Right arrow keys or tap left/right sides of zoomed panel to move between panels."),
+            checked_func = function()
+                return panelnav.panel_nav_enabled
+            end,
+            callback = function()
+                panelnav:togglePanelNavEnabled()
+            end,
+            hold_callback = function()
+                G_reader_settings:saveSetting("panel_nav_enabled", not G_reader_settings:isTrue("panel_nav_enabled"))
+            end,
+            enabled_func = function()
+                return self.panel_zoom_enabled
+            end,
+        })
+        table.insert(menu, {
+            text_func = function()
+                return _("Panel reading direction") .. ": " .. panelnav.panel_direction
+            end,
+            help_text = _("Set the reading direction for panel navigation. This determines the order in which panels are numbered and navigated."),
+            enabled_func = function()
+                return self.panel_zoom_enabled and panelnav.panel_nav_enabled
+            end,
+            sub_item_table = direction_submenu,
+        })
+        table.insert(menu, {
+            text = _("Highlight current panel"),
+            help_text = _("Show a red bounding box around the currently selected panel on the page."),
+            checked_func = function()
+                return panelnav.highlight_current_panel
+            end,
+            callback = function()
+                panelnav.highlight_current_panel = not panelnav.highlight_current_panel
+                UIManager:setDirty(panelnav.dialog, "ui")
+            end,
+            enabled_func = function()
+                return self.panel_zoom_enabled and panelnav.panel_nav_enabled
+            end,
+        })
+        table.insert(menu, {
+            text = _("Show all detected panel boxes") .. " (" .. _("debug") .. ")",
+            help_text = _("Debug option: show green bounding boxes around all detected panels on the current page with panel numbers and coordinates. Current panel is shown in red."),
+            checked_func = function()
+                return panelnav.show_panel_boxes
+            end,
+            callback = function()
+                panelnav:onToggleShowPanelBoxes()
+            end,
+            enabled_func = function()
+                return self.panel_zoom_enabled and panelnav.panel_nav_enabled
+            end,
+        })
+    end
+    return menu
 end
 
 -- Returns a unique id, that can be provided on delayed call to :clear(id)
@@ -1646,6 +1723,35 @@ function ReaderHighlight:onPanelZoom(arg, ges)
     if not hold_pos then return false end -- outside page boundary
     local rect = self.ui.document:getPanelFromPage(hold_pos.page, hold_pos)
     if not rect then return false end -- panel not found, return
+
+    -- Delegate to panelnav module if available
+    if self.ui.panelnav and self.ui.panelnav.panel_nav_enabled then
+        local panelnav = self.ui.panelnav
+
+        -- Initialize panel navigation state from this position
+        local panels = panelnav:getPanelsForCurrentPage()
+        if panels and #panels > 0 then
+            -- Find which panel we're viewing based on tap position
+            local found_index = 0
+            for i, panel in ipairs(panels) do
+                if hold_pos.x >= panel.x and hold_pos.x <= panel.x + panel.w and
+                   hold_pos.y >= panel.y and hold_pos.y <= panel.y + panel.h then
+                    found_index = i
+                    break
+                end
+            end
+            -- Fallback: if no match found, set to 1
+            panelnav.current_panel_index = found_index > 0 and found_index or 1
+        else
+            panelnav.current_panel_index = 1
+        end
+
+        -- Use panelnav's showPanel which handles everything
+        panelnav:showPanel(rect)
+        return true
+    end
+
+    -- Existing: show panel without navigation (panelnav module not available)
     local image, rotate = self.ui.document:drawPagePart(hold_pos.page, rect, 0)
 
     if image then

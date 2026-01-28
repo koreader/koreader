@@ -44,6 +44,7 @@ local ReaderKoptListener = require("apps/reader/modules/readerkoptlistener")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local ReaderMenu = require("apps/reader/modules/readermenu")
 local ReaderPageMap = require("apps/reader/modules/readerpagemap")
+local ReaderPanelNav = require("apps/reader/modules/readerpanelnav")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
 local ReaderPaging = require("apps/reader/modules/readerpaging")
 local ReaderRolling = require("apps/reader/modules/readerrolling")
@@ -293,6 +294,13 @@ function ReaderUI:init()
         self:registerModule("hinting", ReaderHinting:new{
             dialog = self.dialog,
             zoom = self.zooming,
+            view = self.view,
+            ui = self,
+            document = self.document,
+        })
+        -- panel navigation controller for comics/manga
+        self:registerModule("panelnav", ReaderPanelNav:new{
+            dialog = self.dialog,
             view = self.view,
             ui = self,
             document = self.document,
