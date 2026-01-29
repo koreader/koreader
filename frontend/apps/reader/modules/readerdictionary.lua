@@ -103,8 +103,6 @@ local function getDictionaryFixHtmlFunc(path)
 end
 
 function ReaderDictionary:init()
-    self:registerKeyEvents()
-
     self.disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history")
     self.dicts_order = G_reader_settings:readSetting("dicts_order", {})
     self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})
@@ -179,11 +177,10 @@ function ReaderDictionary:init()
     }
 end
 
-function ReaderDictionary:registerKeyEvents()
-    if Device:hasKeyboard() then
-        self.key_events.ShowDictionaryLookup = { { "Alt", "D" }, { "Ctrl", "D" } }
-    end
-end
+-- function ReaderDictionary:registerKeyEvents()
+    -- Now handled by hotkeys.koplugin:
+    -- onShowDictionaryLookup = { { "Alt", "D" }, { "Ctrl", "D" } }
+-- end
 
 function ReaderDictionary:sortAvailableIfos()
     table.sort(available_ifos, function(lifo, rifo)

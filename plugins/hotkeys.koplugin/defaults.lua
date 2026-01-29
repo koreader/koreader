@@ -63,6 +63,14 @@ return {
         alt_plus_x = nil,
         alt_plus_y = nil,
         alt_plus_z = nil,
+        -- alphabet (no modifier)
+        -- Note: these are all nil in FM mode since we already use them
+        --       as shortcuts for opening documents.
+        -- a = nil, b = nil, c = nil, d = nil, e = nil, f = nil,
+        -- g = nil, h = nil, i = nil, j = nil, k = nil, l = nil,
+        -- m = nil, n = nil, o = nil, p = nil, q = nil, r = nil,
+        -- s = nil, t = nil, u = nil, v = nil, w = nil, x = nil,
+        -- y = nil, z = nil,
     },
     hotkeys_reader = {
         modifier_plus_up                 = {toc = true,},
@@ -119,5 +127,14 @@ return {
         alt_plus_x = nil,
         alt_plus_y = nil,
         alt_plus_z = nil,
+        -- alphabet (no modifier)
+        a = nil,
+        b = Device:hasKeyboard() and {bookmarks = true,} or {},
+        c = nil, d = nil, e = nil, f = nil, g = nil,
+        h = Device:hasKeyboard() and {text_selection = true,} or {},
+        i = nil, j = nil, k = nil, l = nil, m = nil, n = nil,
+        o = nil, p = nil, q = nil, r = nil, s = nil,
+        t = Device:hasKeyboard() and {toc = true,} or {},
+        u = nil, v = nil, w = nil, x = nil, y = nil, z = nil,
     },
 }

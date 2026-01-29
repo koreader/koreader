@@ -84,9 +84,9 @@ SRELL_ERROR_CODES[111] = _("Expression too complex, some hits will not be shown.
 SRELL_ERROR_CODES[666] = _("Expression may lead to an extremely long search time.")
 
 function ReaderSearch:registerKeyEvents()
+    -- handled by hotkeys.koplugin:
     if Device:hasKeyboard() then
         self.key_events.ShowFulltextSearchInputBlank = { { "Alt", "Shift", "S" }, { "Ctrl", "Shift", "S" }, event = "ShowFulltextSearchInput", args = "" }
-        self.key_events.ShowFulltextSearchInputRecent = { { "Alt", "S" }, { "Ctrl", "S" }, event = "ShowFulltextSearchInput" }
     end
 end
 
