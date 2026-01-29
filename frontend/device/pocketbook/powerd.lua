@@ -95,12 +95,12 @@ function PocketBookPowerD:afterResume()
 
         local current_orientation = inkview.GetGSensorOrientation()
         local current_rotation = self.device.screen:getRotationMode()
-        logger.dbg("afterResume: GSensor:", current_orientation, "Current:", current_rotation, "Target:", target_rotation)
 
         -- Without this we end up with inverted screen orientation after resume
         inkview.iv_update_orientation(current_orientation)
 
         local gyro_value = self.device.input.input.translateInkViewOrientation(current_orientation)
+        logger.dbg("afterResume: GSensor:", current_orientation, "Current:", current_rotation, "Target:", gyro_value)
 
         -- Create a synthetic MSC_GYRO event and let the existing handler process it
         local synthetic_event = { value = gyro_value }
