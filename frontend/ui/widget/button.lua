@@ -52,7 +52,7 @@ local Button = InputContainer:extend{
     allow_hold_when_disabled = false,
     margin = 0,
     bordersize = Size.border.button,
-    background = Blitbuffer.COLOR_WHITE,
+    background = nil, -- white by default
     radius = nil,
     padding = Size.padding.button,
     padding_h = nil,
@@ -157,6 +157,7 @@ function Button:init()
                         height_adjust = true,
                         height_overflow_show_ellipsis = true,
                         fgcolor = fgcolor,
+                        bgcolor = self.background,
                         bold = self.text_font_bold,
                         face = Font:getFace(self.text_font_face, new_size),
                     }
@@ -216,12 +217,22 @@ function Button:init()
             self.label_widget,
         }
     end
+    local background_color, border_color, radius
+    if self.background then -- colored button
+        background_color = self.background
+        border_color = background_color -- without black border
+        radius = self.radius or Size.radius.button -- with rounded corners
+    else
+        background_color = Blitbuffer.COLOR_WHITE
+        radius = self.radius
+    end
     self.frame = FrameContainer:new{
         margin = self.margin,
         show_parent = self.show_parent,
         bordersize = self.bordersize,
-        background = self.background,
-        radius = self.radius,
+        background = background_color,
+        color = border_color,
+        radius = radius,
         padding_top = self.padding_v,
         padding_bottom = self.padding_v,
         padding_left = self.padding_h,
@@ -388,7 +399,7 @@ function Button:_doFeedbackHighlight()
     if self.text then
         -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
         -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
-        if self[1].radius == nil then
+        if self[1].radius == nil or self.background then
             self[1].radius = Size.radius.button
             -- And here, it's easier to just invert the bg/fg colors ourselves,
             -- so as to preserve the rounded corners in one step.

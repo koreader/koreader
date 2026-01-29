@@ -94,6 +94,7 @@ function ButtonTable:init()
                 text_font_face = btn_entry.font_face,
                 text_font_size = btn_entry.font_size,
                 text_font_bold = btn_entry.font_bold,
+                background = btn_entry.background,
                 menu_style = btn_entry.menu_style,
                 show_parent = self.show_parent,
             }
