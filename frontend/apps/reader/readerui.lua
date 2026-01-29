@@ -178,7 +178,8 @@ function ReaderUI:init()
     self:registerModule("bookmark", ReaderBookmark:new{
         dialog = self.dialog,
         view = self.view,
-        ui = self
+        ui = self,
+        document = self.document,
     })
     self:registerModule("annotation", ReaderAnnotation:new{
         dialog = self.dialog,
