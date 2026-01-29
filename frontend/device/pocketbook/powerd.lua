@@ -95,30 +95,20 @@ function PocketBookPowerD:afterResume()
 
         local current_orientation = inkview.GetGSensorOrientation()
         local current_rotation = self.device.screen:getRotationMode()
-
-        -- Translate InkView's rotation values to KOReaders rotation scheme
-        local target_rotation
-        if current_orientation == 0 then
-            target_rotation = 0
-        elseif current_orientation == 2 then
-            target_rotation = 1
-        elseif current_orientation == 3 then
-            target_rotation = 2
-        elseif current_orientation == 1 then
-            target_rotation = 3
-        end
-
         logger.dbg("afterResume: GSensor:", current_orientation, "Current:", current_rotation, "Target:", target_rotation)
 
         -- Without this we end up with inverted screen orientation after resume
         inkview.iv_update_orientation(current_orientation)
 
-        -- Apply rotation if it changed during suspend
-        if target_rotation and target_rotation ~= current_rotation then
-            logger.dbg("afterResume: Applying rotation change from", current_rotation, "to", target_rotation)
-            self.device.screen:setRotationMode(target_rotation)
+        local gyro_value = self.device.input.input.translateInkViewOrientation(current_orientation)
+
+        -- Create a synthetic MSC_GYRO event and let the existing handler process it
+        local synthetic_event = { value = gyro_value }
+        local Event = self.device.input:handleMiscGyroEv(synthetic_event)
+
+        if Event then
             local UIManager = require("ui/uimanager")
-            UIManager:onRotation()
+            UIManager:sendEvent(Event)
         end
     end
 end
