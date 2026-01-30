@@ -1495,6 +1495,11 @@ function util.checkLuaSyntax(lua_text)
     return err
 end
 
+--- Convert UTF-8 string to lower case.
+function util.stringLower(str)
+   return str and Utf8Proc.lowercase(util.fixUtf8(str, "?"))
+end
+
 --- Simple startsWith string helper.
 --
 -- C.f., <http://lua-users.org/wiki/StringRecipes>.
