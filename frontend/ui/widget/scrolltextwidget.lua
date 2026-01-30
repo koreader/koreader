@@ -194,6 +194,8 @@ end
 function ScrollTextWidget:resetScroll()
     local low, high = self.text_widget:getVisibleHeightRatios()
     self.v_scroll_bar:set(low, high)
+    self.prev_low = nil
+    self.prev_high = nil
 
     local visible_line_count = self.text_widget:getVisLineCount()
     local total_line_count = self.text_widget:getAllLineCount()
