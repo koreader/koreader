@@ -1462,13 +1462,13 @@ function util.urlEncode(url, preserve_chars)
         return string.format("%%%02X", string.byte(c))
     end
     preserve_chars = preserve_chars or ""
-    local regexp_base = "^%w%-%._~"
-    local regexp = string.format("([^%s%s])", regexp_base, preserve_chars)
+    local pattern_base = "^%w%-%._~"
+    local pattern = string.format("([%s%s])", pattern, preserve_chars)
     if url == nil then
         return
     end
     url = url:gsub("\n", "\r\n")
-    url = url:gsub(regexp, char_to_hex)
+    url = url:gsub(pattern, char_to_hex)
     return url
 end
 
