@@ -39,6 +39,7 @@ local order = {
     },
     document = {
         "document_metadata_location",
+        "separate_annotation_file",
         "document_metadata_location_move",
         "document_auto_save",
         "document_end_action",
