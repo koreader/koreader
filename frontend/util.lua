@@ -1463,7 +1463,7 @@ function util.urlEncode(url, preserve_chars)
     end
     preserve_chars = preserve_chars or ""
     local pattern_base = "^%w%-%._~"
-    local pattern = string.format("([%s%s])", pattern, preserve_chars)
+    local pattern = string.format("([%s%s])", pattern_base, preserve_chars)
     if url == nil then
         return
     end
