@@ -31,6 +31,9 @@ local ReaderWikipedia = ReaderDictionary:extend{
 function ReaderWikipedia:init()
     self:registerKeyEvents()
     self.wiki_languages = {}
+    -- Read this from G_reader_settings for when used in FileBrowser
+    -- (:onReadSettings() may replace it from the one saved in doc_settings)
+    self.wiki_last_language = G_reader_settings:readSetting("wikipedia_last_language")
     self.ui.menu:registerToMainMenu(self)
     if not wikipedia_history then
         wikipedia_history = LuaData:open(DataStorage:getSettingsDir() .. "/wikipedia_history.lua", "WikipediaHistory")
@@ -92,6 +95,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
             local kv_pairs = {}
             local previous_title
             self:initLanguages() -- so current lang is set
+            local main_lang = self.wiki_languages[1]:lower()
             for i = #wikipedia_history_table, 1, -1 do
                 local value = wikipedia_history_table[i]
                 if value.book_title ~= previous_title then
@@ -103,8 +107,8 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                     type_s = "▤ " -- full page: large square with lines
                 end
                 local lang_s = ""
-                if value.lang ~= self.wiki_languages[1]:lower() then
-                    -- We show item's lang only when different from current lang
+                if value.lang ~= main_lang then
+                    -- We show item's language only when different from first user-set wiki language
                     lang_s = " ["..value.lang:upper().."]"
                 end
                 local text = type_s .. value.word .. lang_s
@@ -384,12 +388,13 @@ function ReaderWikipedia:lookupWikipedia(word, is_sane, box, get_fullpage, force
     self:initLanguages(word)
     local lang
     if forced_lang then
-        -- use provided lang (from readerlink when noticing that an external link is a wikipedia url,
+        -- use provided language (from readerlink when noticing that an external link is a wikipedia url,
         -- of from Wikipedia lookup history, or when switching to next language in DictQuickLookup)
         lang = forced_lang
     else
-        -- use first lang from self.wiki_languages
-        lang = self.wiki_languages[1]
+        -- use last language selected, or first language from self.wiki_languages
+        lang = self.wiki_last_language or self.wiki_languages[1]
+        self.wiki_last_language_used = true
     end
     logger.dbg("lookup word:", word, box, get_fullpage)
     -- no need to clean word if get_fullpage, as it is the exact wikipetia page title
@@ -415,7 +420,7 @@ function ReaderWikipedia:lookupWikipedia(word, is_sane, box, get_fullpage, force
         })
     end
 
-    -- Fix lookup message to include lang and set appropriate error texts
+    -- Fix lookup message to include language and set appropriate error texts
     local no_result_text, req_failure_text
     if get_fullpage then
         self.lookup_msg = T(_("Retrieving Wikipedia %2 article:\n%1"), "%1", lang:upper())
@@ -477,6 +482,7 @@ function ReaderWikipedia:lookupWikipedia(word, is_sane, box, get_fullpage, force
                 lang = lang,
                 rtl_lang = Wikipedia:isWikipediaLanguageRTL(lang),
                 images = page.images,
+                lang_links = page.langlinks, -- available when get_fullpage
             }
             table.insert(results, result)
         end
@@ -501,67 +507,45 @@ function ReaderWikipedia:lookupWikipedia(word, is_sane, box, get_fullpage, force
                 lang = lang,
             }
         }
-        -- Also put this as a k/v into the results array: if we end up with this
-        -- after lang rotation, DictQuickLookup will not update this lang rotation.
-        results.no_result = true
         logger.dbg("dummy result table:", word, results)
     end
     self:showDict(word, results, box, nil, dict_close_callback)
 end
 
-function ReaderWikipedia:getWikiLanguages(first_lang)
-    -- Always return a copy of ours
-    local wiki_languages = {unpack(self.wiki_languages)}
-    local is_first_lang = first_lang == wiki_languages[1]
-    if not is_first_lang then
-        -- return a wiki_languages with requested lang at first
-        if util.arrayContains(wiki_languages, first_lang) then
-            -- first_lang in the list: rotate until it is first
-            while wiki_languages[1] ~= first_lang do
-                table.insert(wiki_languages, table.remove(wiki_languages, 1))
-            end
-        else
-            -- first_lang not in the list: add it first
-            table.insert(wiki_languages, 1, first_lang)
-        end
+function ReaderWikipedia:getWikiLanguages()
+    local wiki_languages = self.wiki_languages
+    -- If for some reason (wiki languages array changed) the last language is no longer
+    -- in the array, add it at the end (so we at least get 2 languages so the menu
+    -- is enabled and the user can switch)
+    if self.wiki_last_language and not util.arrayContains(wiki_languages, self.wiki_last_language) then
+        wiki_languages = {unpack(self.wiki_languages)} -- copy
+        table.insert(wiki_languages, self.wiki_last_language)
     end
-    local update_wiki_languages_on_close = false
-    if DictQuickLookup.rotated_update_wiki_languages_on_close ~= nil then
-        -- Flag set by DictQuickLookup when rotating, forwarding the flag
-        -- of the rotated out DictQuickLookup instance: trust it
-        update_wiki_languages_on_close = DictQuickLookup.rotated_update_wiki_languages_on_close
-        DictQuickLookup.rotated_update_wiki_languages_on_close = nil
-    else
-        -- Not a rotation. Only if it's the first request with the current
-        -- first language, we will have it (and any lang rotation from it)
-        -- update the main ReaderWikipedia.wiki_languages. That is, queries
-        -- from Wikipedia url links for another language, or from Wikipedia
-        -- lookup history with other languages (and any lang rotation made
-        -- from them) won't update it.
-        if is_first_lang then
-            update_wiki_languages_on_close = true
-            for i = #DictQuickLookup.window_list-1, 1, -1 do -- (ignore the last one, which is the one calling this)
-                if DictQuickLookup.window_list[i].is_wiki then
-                    -- Another upper Wikipedia result: only this one may update it
-                    update_wiki_languages_on_close = false
-                    break
-                end
-            end
-        end
-    end
-    return wiki_languages, update_wiki_languages_on_close
+    return wiki_languages, self.wiki_last_language or self.wiki_languages[1]
 end
 
-function ReaderWikipedia:onUpdateWikiLanguages(wiki_languages)
-    -- Update our self.wiki_languages in-place
-    while table.remove(self.wiki_languages) do end
-    for _, lang in ipairs(wiki_languages) do
-        table.insert(self.wiki_languages, lang)
-    end
+function ReaderWikipedia:setLastSelectedLanguage(lang)
+    self.wiki_last_language = lang
+    self.wiki_last_language_updated = true
 end
 
--- override onSaveSettings in ReaderDictionary
+function ReaderWikipedia:onReadSettings(config)
+    self.wiki_last_language = config:readSetting("wikipedia_language")
+                or G_reader_settings:readSetting("wikipedia_last_language")
+end
+
 function ReaderWikipedia:onSaveSettings()
+    if self.ui.doc_settings and self.wiki_last_language_used then
+        -- Only save it if it has really been used (which, if it came from G_reader_settings,
+        -- means the user is fine with this language, otherwise he will have changed it;
+        -- if not, on a next opening we will get to use the actual global setting)
+        self.ui.doc_settings:saveSetting("wikipedia_language", self.wiki_last_language)
+    end
+    if self.wiki_last_language_updated then
+        -- Only save it if it has been changed (so a different wikipedia_language coming
+        -- from the book previous docsetting don't get to be the new global)
+        G_reader_settings:saveSetting("wikipedia_last_language", self.wiki_last_language)
+    end
 end
 
 function ReaderWikipedia:onShowWikipediaLookup()

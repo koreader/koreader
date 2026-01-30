@@ -1017,6 +1017,10 @@ function TextBoxWidget:_renderImage(start_row_idx)
     -- logger.dbg("display_bb:", display_bb, "display_alt", display_alt, "status_text:", status_text, "do_schedule_update:", do_schedule_update)
     -- Do what's been decided
     if display_bb then
+        -- If in nightmode, invert the image while we draw it
+        if Screen.night_mode then
+            image.bb:invert()
+        end
         -- With alpha-blending if the image contains an alpha channel
         local bbtype = image.bb:getType()
         if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
@@ -1032,6 +1036,9 @@ function TextBoxWidget:_renderImage(start_row_idx)
             else
                 self._bb:blitFrom(image.bb, self.width - image.width, 0)
             end
+        end
+        if Screen.night_mode then -- invert it back
+            image.bb:invert()
         end
 
         -- Request dithering
