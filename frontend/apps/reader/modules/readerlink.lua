@@ -243,15 +243,6 @@ function ReaderLink:onGesture() end
 function ReaderLink:registerKeyEvents()
     if Device:hasScreenKB() or Device:hasSymKey() then
         self.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
-        if Device:hasKeyboard() then
-            self.key_events.AddCurrentLocationToStackNonTouch = { { "Shift", "Press" } }
-            self.key_events.SelectNextPageLink = { { "Shift", "LPgFwd" }, event = "SelectNextPageLink" }
-            self.key_events.SelectPrevPageLink = { { "Shift", "LPgBack" }, event = "SelectPrevPageLink" }
-        else
-            self.key_events.AddCurrentLocationToStackNonTouch = { { "ScreenKB", "Press" } }
-            self.key_events.SelectNextPageLink = { { "ScreenKB", "LPgFwd" }, event = "SelectNextPageLink" }
-            self.key_events.SelectPrevPageLink = { { "ScreenKB", "LPgBack" }, event = "SelectPrevPageLink" }
-        end
     elseif Device:hasKeys() then
         self.key_events = {
             SelectNextPageLink = {
