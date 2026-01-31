@@ -63,7 +63,7 @@ local PocketBook = Generic:extend{
     -- That historically wasn't the case, hence this defaulting to false.
     inkview_translates_buttons = false,
 
-    -- Some Pocketbook devices need special handling after resume to restore the correct orientation
+    -- Some Pocketbook devices need special handling after resume to restore the correct orientation.
     -- See https://github.com/koreader/koreader/issues/11033 for details.
     needs_orientation_sync_after_resume = false,
 
