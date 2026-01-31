@@ -88,10 +88,8 @@ function PocketBookPowerD:afterResume()
     -- Restore user input and emit the Resume event.
     self.device:_afterResume()
 
-    -- PB700 / PBEraColor: Sync orientation after resume to fix hibernation rotation bug
-    -- c.f., https://github.com/koreader/koreader/issues/11033
-    if self.device.model == "PB700" or self.device.model == "PBEraColor" then
-        logger.dbg("afterResume: Running orientation sync for PB700 / PBEraColor")
+    if self.device.needsOrientationSyncAfterResume then
+        logger.dbg("afterResume: Running orientation sync")
 
         local current_orientation = inkview.GetGSensorOrientation()
         local current_rotation = self.device.screen:getRotationMode()

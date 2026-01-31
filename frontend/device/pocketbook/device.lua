@@ -66,6 +66,10 @@ local PocketBook = Generic:extend{
     -- Will be set appropriately at init
     isB288SoC = no,
 
+    -- Some Pocketbook devices need special handling after resume to restore the correct orientation
+    -- See https://github.com/koreader/koreader/issues/11033 for details.
+    needsOrientationSyncAfterResume = false,
+
     -- Private per-model kludges
     _fb_init = function() end,
     _model_init = function() end,
@@ -699,6 +703,7 @@ local PocketBook700 = PocketBook:extend{
     hasNaturalLight = yes,
     -- c.f., https://github.com/koreader/koreader/issues/9556
     inkview_translates_buttons = true,
+    needsOrientationSyncAfterResume = true,
 }
 
 -- PocketBook Era Color (PB700K3)
@@ -712,6 +717,7 @@ local PocketBook700K3 = PocketBook:extend{
     hasNaturalLight = yes,
     -- c.f., https://github.com/koreader/koreader/issues/9556
     inkview_translates_buttons = true,
+    needsOrientationSyncAfterResume = true,
 }
 
 function PocketBook700K3._fb_init(fb, finfo, vinfo)
