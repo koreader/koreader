@@ -88,7 +88,7 @@ function PocketBookPowerD:afterResume()
     -- Restore user input and emit the Resume event.
     self.device:_afterResume()
 
-    if self.device.needsOrientationSyncAfterResume then
+    if self.device:needs_orientation_sync_after_resume() then
         logger.dbg("afterResume: Running orientation sync")
 
         local current_orientation = inkview.GetGSensorOrientation()
