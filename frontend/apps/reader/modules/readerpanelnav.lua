@@ -244,195 +244,213 @@ function ReaderPanelNav:assignGridByOverlap(panels)
 end
 
 --[[--
-Sort panels according to panel reading direction.
+Sort panels in LRTB order (left-to-right, top-to-bottom).
 
-Groups panels into rows/columns based on overlap, then sorts accordingly.
-For LRTB: group by rows (Y overlap), sort rows top-to-bottom, panels left-to-right.
-For TBLR: group by columns (X overlap), sort columns left-to-right, panels top-to-bottom.
+Algorithm Overview:
+1. Identify rightmost panels per Y-bucket to avoid expanding row bounds with edge panels
+2. Sort panels by Y then X (top-to-bottom, left-to-right) as initial reading order
+3. Group panels into rows by detecting X-axis wrapping (when X decreases)
+   - New rows always start from a leftmost panel with its full Y bounds preserved
+4. For wrap-left events: check if panel fits within current row's Y extent
+   - Fit: add to same row (allows tall panels on left to bridge across)
+   - No fit: close row and start new row with this leftmost panel
+5. For continuing right: check Y overlap with current row
+   - Overlap: add to same row
+   - No overlap: close row and start new row with this leftmost panel
+6. Within each row, sort panels by X then Y for final reading order
+
+Key insight: New rows always start from a leftmost panel, so we initialize with its full
+bounds and expand only when adding subsequent panels (except rightmost panels which don't expand).
+
+@param panels array of panel rectangles {x, y, w, h, ref?}
+@param overlap_threshold unused (kept for API compatibility)
+@treturn table array of rows, each containing sorted panels
+--]]
+function ReaderPanelNav:sortLRTB(panels, overlap_threshold)
+    if not panels or #panels == 0 then
+        return {}
+    end
+
+    local POS_THRESHOLD = 5      -- Positions within 5 pixels are considered equal
+    local BUCKET_SIZE = 8        -- Y bucket size for rightmost detection
+
+    -- Step 1: Identify rightmost panels in each Y bucket
+    -- Rightmost panels don't expand row bounds (they're edge panels)
+    local rightmost_by_bucket = {}
+    for _, panel in ipairs(panels) do
+        local panel_right = panel.x + panel.w
+        local start_bucket = math.floor(panel.y / BUCKET_SIZE)
+        local end_bucket = math.floor((panel.y + panel.h) / BUCKET_SIZE)
+
+        for bucket = start_bucket, end_bucket do
+            if not rightmost_by_bucket[bucket] or panel_right > rightmost_by_bucket[bucket].right_edge then
+                rightmost_by_bucket[bucket] = { panel = panel, right_edge = panel_right }
+            end
+        end
+    end
+
+    -- Mark all panels that are rightmost in ANY bucket they span
+    local is_rightmost = {}
+    for _, info in pairs(rightmost_by_bucket) do
+        is_rightmost[info.panel] = true
+    end
+
+    -- Step 2: Sort panels by Y then X (reading order)
+    local sorted = {}
+    for i, p in ipairs(panels) do
+        sorted[i] = p
+    end
+    table.sort(sorted, function(a, b)
+        if math.abs(a.y - b.y) > POS_THRESHOLD then
+            return a.y < b.y  -- Different rows: sort by Y
+        else
+            return a.x < b.x  -- Same row: sort by X
+        end
+    end)
+
+    -- Step 3: Group panels into rows
+    local rows = {}
+    local current_row = nil
+    local prev_x = -math.huge
+
+    for _, panel in ipairs(sorted) do
+        local p_top = panel.y
+        local p_bottom = panel.y + panel.h
+
+        -- Detect if X coordinate wraps back to left
+        local wrapped_left = panel.x < prev_x - POS_THRESHOLD
+
+        if current_row == nil then
+            -- Start first row: leftmost panel with its full Y bounds preserved
+            current_row = {
+                start_y = p_top,
+                end_y = p_bottom,
+                panels = { panel },
+            }
+        elseif wrapped_left then
+            -- X wrapped left: check if panel fits within current row's Y extent
+            local fits_in_current_row = p_top >= current_row.start_y - POS_THRESHOLD and
+                                        p_bottom <= current_row.end_y + POS_THRESHOLD
+
+            if fits_in_current_row then
+                -- Panel fits: add to same row (tall panel bridges columns)
+                table.insert(current_row.panels, panel)
+                if not is_rightmost[panel] then
+                    -- Expand row bounds unless this is a rightmost panel
+                    current_row.start_y = math.min(current_row.start_y, p_top)
+                    current_row.end_y = math.max(current_row.end_y, p_bottom)
+                end
+            else
+                -- Doesn't fit: close current row and start new row
+                -- New row starts from this leftmost panel with its full Y bounds
+                table.insert(rows, current_row)
+                current_row = {
+                    start_y = p_top,
+                    end_y = p_bottom,
+                    panels = { panel },
+                }
+            end
+        else
+            -- X continuing right: check if panel overlaps current row's Y extent
+            local overlap_start = math.max(p_top, current_row.start_y)
+            local overlap_end = math.min(p_bottom, current_row.end_y)
+            local has_overlap = overlap_end > overlap_start
+
+            if has_overlap then
+                -- Overlaps: add to same row
+                table.insert(current_row.panels, panel)
+                if not is_rightmost[panel] then
+                    -- Expand row bounds unless this is a rightmost panel
+                    current_row.start_y = math.min(current_row.start_y, p_top)
+                    current_row.end_y = math.max(current_row.end_y, p_bottom)
+                end
+            else
+                -- No overlap: close current row and start new row
+                -- New row starts from this leftmost panel with its full Y bounds
+                table.insert(rows, current_row)
+                current_row = {
+                    start_y = p_top,
+                    end_y = p_bottom,
+                    panels = { panel },
+                }
+            end
+        end
+
+        prev_x = panel.x
+    end
+
+    -- Add the final row
+    if current_row then
+        table.insert(rows, current_row)
+    end
+
+    -- Step 4: Sort panels within each row by X then Y
+    for _, row in ipairs(rows) do
+        table.sort(row.panels, function(a, b)
+            if math.abs(a.x - b.x) > POS_THRESHOLD then
+                return a.x < b.x
+            else
+                return a.y < b.y
+            end
+        end)
+    end
+
+    return rows
+end
+
+--[[--
+Sort panels by reading direction using coordinate transformation.
+
+Transforms all coordinates to LRTB-equivalent, sorts using sortLRTB,
+then maps back to original panels with row/col assigned.
 
 @param panels array of panel rectangles {x, y, w, h}
 @treturn table sorted array of panels with row/col fields added
 --]]
 function ReaderPanelNav:sortPanelsByReadingDirection(panels)
-    if not panels or #panels == 0 then
-        return panels
-    end
-
-    -- Create a copy to work with
-    local sorted = {}
-    for i, p in ipairs(panels) do
-        sorted[i] = { x = p.x, y = p.y, w = p.w, h = p.h }
-    end
+    if not panels or #panels == 0 then return panels end
 
     local direction = self.panel_direction or "LRTB"
-    local primary = direction:sub(1, 2)
-    local secondary = direction:sub(3, 4)
+    local primary, secondary = direction:sub(1, 2), direction:sub(3, 4)
+    local is_row_first = (primary == "LR" or primary == "RL")
 
-    -- Determine sort direction flags
-    local y_ascending = (secondary == "TB")  -- Top to Bottom
-    local x_ascending = (primary == "LR")    -- Left to Right
-    local row_first = (primary == "LR" or primary == "RL")
+    -- 1. Transform coordinates to LRTB-equivalent
+    local transformed = {}
+    for i, p in ipairs(panels) do
+        local tp = { x = p.x, y = p.y, w = p.w, h = p.h, ref = p }
 
-    local overlap_threshold = 0.25  -- 25% overlap required to be in same row/column
-    local position_threshold = 5     -- Positions within 5 pixels are considered equal
-
-    if row_first then
-        -- LRTB, LRBT, RLTB, RLBT: Group by rows first
-        -- Sort by Y to process top-to-bottom (or bottom-to-top)
-        table.sort(sorted, function(a, b)
-            if y_ascending then
-                return a.y < b.y
-            else
-                return a.y > b.y
-            end
-        end)
-
-        -- Group panels into rows based on Y overlap
-        local rows = {}
-        for _, panel in ipairs(sorted) do
-            local p_top, p_bottom = panel.y, panel.y + panel.h
-            local assigned = false
-
-            for _, row in ipairs(rows) do
-                local overlap_start = math.max(p_top, row.start_y)
-                local overlap_end = math.min(p_bottom, row.end_y)
-                local overlap_size = overlap_end - overlap_start
-
-                if overlap_size > 0 then
-                    local row_height = row.end_y - row.start_y
-                    if overlap_size / row_height >= overlap_threshold then
-                        table.insert(row.panels, panel)
-                        row.start_y = math.min(row.start_y, p_top)
-                        row.end_y = math.max(row.end_y, p_bottom)
-                        assigned = true
-                        break
-                    end
-                end
-            end
-
-            if not assigned then
-                table.insert(rows, {
-                    start_y = p_top,
-                    end_y = p_bottom,
-                    panels = { panel },
-                })
-            end
+        -- Transform X (if Right-to-Left)
+        if (is_row_first and primary == "RL") or (not is_row_first and secondary == "RL") then
+            tp.x = -p.x - p.w
         end
-
-        -- Sort rows by Y position
-        table.sort(rows, function(a, b)
-            if y_ascending then
-                return a.start_y < b.start_y
-            else
-                return a.start_y > b.start_y
-            end
-        end)
-
-        -- Build result: for each row, sort panels by X (with Y as tiebreaker)
-        local result = {}
-        for row_num, row in ipairs(rows) do
-            table.sort(row.panels, function(a, b)
-                if math.abs(a.x - b.x) > position_threshold then
-                    if x_ascending then
-                        return a.x < b.x
-                    else
-                        return a.x > b.x
-                    end
-                else
-                    -- X within threshold, use Y as tiebreaker
-                    if y_ascending then
-                        return a.y < b.y
-                    else
-                        return a.y > b.y
-                    end
-                end
-            end)
-            for col_num, panel in ipairs(row.panels) do
-                panel.row = row_num
-                panel.col = col_num
-                table.insert(result, panel)
-            end
+        -- Transform Y (if Bottom-to-Top)
+        if (is_row_first and secondary == "BT") or (not is_row_first and primary == "BT") then
+            tp.y = -p.y - p.h
         end
-        sorted = result
-    else
-        -- TBLR, TBRL, BTLR, BTRL: Group by columns first
-        -- Sort by X to process left-to-right (or right-to-left)
-        table.sort(sorted, function(a, b)
-            if x_ascending then
-                return a.x < b.x
-            else
-                return a.x > b.x
-            end
-        end)
-
-        -- Group panels into columns based on X overlap
-        local columns = {}
-        for _, panel in ipairs(sorted) do
-            local p_left, p_right = panel.x, panel.x + panel.w
-            local assigned = false
-
-            for _, col in ipairs(columns) do
-                local overlap_start = math.max(p_left, col.start_x)
-                local overlap_end = math.min(p_right, col.end_x)
-                local overlap_size = overlap_end - overlap_start
-
-                if overlap_size > 0 then
-                    local col_width = col.end_x - col.start_x
-                    if overlap_size / col_width >= overlap_threshold then
-                        table.insert(col.panels, panel)
-                        col.start_x = math.min(col.start_x, p_left)
-                        col.end_x = math.max(col.end_x, p_right)
-                        assigned = true
-                        break
-                    end
-                end
-            end
-
-            if not assigned then
-                table.insert(columns, {
-                    start_x = p_left,
-                    end_x = p_right,
-                    panels = { panel },
-                })
-            end
+        -- Swap axes for column-first (TB/BT primary) to treat columns as "rows"
+        if not is_row_first then
+            tp.x, tp.y = tp.y, tp.x
+            tp.w, tp.h = tp.h, tp.w
         end
-
-        -- Sort columns by X position
-        table.sort(columns, function(a, b)
-            if x_ascending then
-                return a.start_x < b.start_x
-            else
-                return a.start_x > b.start_x
-            end
-        end)
-
-        -- Build result: for each column, sort panels by Y (with X as tiebreaker)
-        local result = {}
-        for col_num, col in ipairs(columns) do
-            table.sort(col.panels, function(a, b)
-                if math.abs(a.y - b.y) > position_threshold then
-                    if y_ascending then
-                        return a.y < b.y
-                    else
-                        return a.y > b.y
-                    end
-                else
-                    -- Y within threshold, use X as tiebreaker
-                    if x_ascending then
-                        return a.x < b.x
-                    else
-                        return a.x > b.x
-                    end
-                end
-            end)
-            for row_num, panel in ipairs(col.panels) do
-                panel.row = row_num
-                panel.col = col_num
-                table.insert(result, panel)
-            end
-        end
-        sorted = result
+        transformed[i] = tp
     end
+
+    -- 2. Sort using standard LRTB logic
+    local rows = self:sortLRTB(transformed)
+
+    -- 3. Map back to original panels with row/col assigned
+    local sorted = {}
+    for r_idx, row in ipairs(rows) do
+        for c_idx, tp in ipairs(row.panels) do
+            if is_row_first then
+                tp.ref.row, tp.ref.col = r_idx, c_idx
+            else
+                tp.ref.col, tp.ref.row = r_idx, c_idx
+            end
+            table.insert(sorted, tp.ref)
+        end
+    end
+
 
     logger.dbg("ReaderPanelNav: sorted order (direction:", direction, "):")
     for i, p in ipairs(sorted) do

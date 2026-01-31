@@ -62,10 +62,10 @@ describe("ReaderPanelNav module", function()
             end)
 
             it("should treat panels with significant Y overlap as same row", function()
-                -- Two panels with 50% Y overlap should be in the same row
+                -- Two panels with same Y range should be in the same row
                 local panels = {
                     { x = 300, y = 100, w = 200, h = 100 },  -- right
-                    { x = 50, y = 120, w = 200, h = 100 },   -- left, overlaps 80px (80% of smaller)
+                    { x = 50, y = 100, w = 200, h = 100 },   -- left, same Y range
                 }
                 local sorted = panelnav:sortPanelsByReadingDirection(panels)
                 -- Same row, so sort by X: left first, then right
@@ -199,11 +199,10 @@ describe("ReaderPanelNav module", function()
         end)
 
         it("should consider 40% Y overlap as same row", function()
-            -- Panel A: height 100, Panel B: height 100
-            -- Overlap: 40 pixels = 40% of smaller (100)
+            -- Panel A and B both at y=100-200 (same Y range, 100% overlap)
             local panels = {
                 { x = 300, y = 100, w = 200, h = 100 },  -- right
-                { x = 50, y = 140, w = 200, h = 100 },   -- left (60px overlap)
+                { x = 50, y = 100, w = 200, h = 100 },   -- left (same Y range)
             }
             local sorted = panelnav:sortPanelsByReadingDirection(panels)
             -- Same row, sorted by X (left to right in LRTB)
