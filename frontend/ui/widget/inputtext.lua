@@ -574,6 +574,7 @@ function InputText:initTextBox(text, char_added)
     if self.edit_callback then
         self.edit_callback(self.is_text_edited)
     end
+    Device:startTextInput()
 end
 
 function InputText:initKeyboard()
@@ -588,12 +589,14 @@ function InputText:unfocus()
     self.focused = false
     self.text_widget:unfocus()
     self._frame_textwidget.color = Blitbuffer.COLOR_DARK_GRAY
+    Device:stopTextInput()
 end
 
 function InputText:focus()
     self.focused = true
     self.text_widget:focus()
     self._frame_textwidget.color = Blitbuffer.COLOR_BLACK
+    Device:startTextInput()
 end
 
 -- NOTE: This key_map can be used for keyboards without numeric keys, such as on Kindles with keyboards. It is loosely 'inspired' by the symbol layer on the virtual keyboard but,
@@ -634,10 +637,14 @@ function InputText:onKeyPress(key)
             self:rightChar()
         -- NOTE: When we are not showing the virtual keyboard, let focusmanger handle up/down keys, as they  are used to directly move around the widget
         --       seamlessly in and out of text fields and onto virtual buttons like `[cancel] [search dict]`, no need to unfocus first.
-        elseif key["Up"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
-            self:upLine()
-        elseif key["Down"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
-            self:downLine()
+        elseif key["Up"] then
+            if Device:isSDL() or G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
+                self:upLine()
+            end
+        elseif key["Down"] then
+            if Device:isSDL() or G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
+                self:downLine()
+            end
         elseif key["End"] then
             self:goToEnd()
         elseif key["Home"] then
@@ -646,6 +653,15 @@ function InputText:onKeyPress(key)
             self:addChars("\n")
         elseif key["Tab"] then
             self:addChars("    ")
+        elseif key["Back"] and Device:isSDL() and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+            if self.focused then
+                self:unfocus()
+                UIManager:scheduleIn(0, function()
+                    local Key = require("device/key")
+                    local Event = require("ui/event")
+                    UIManager:sendEvent(Event:new("KeyPress", Key:new("Down", {})))
+                end)
+            end
         -- as stated before, we also don't need to unfocus when there is no keyboard, one less key press to exit widgets, yay!
         elseif key["Back"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
             if self.focused then
@@ -791,6 +807,7 @@ function InputText:onCloseWidget()
     if self.keyboard then
         self.keyboard:free()
     end
+    Device:stopTextInput()
     self:free()
 end
 
