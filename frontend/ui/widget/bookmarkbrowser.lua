@@ -206,6 +206,7 @@ function BookmarkBrowser:getItemTable()
                         color        = a.color,
                         text_edited  = a.edited,
                         note         = a.note,
+                        chapter      = a.chapter,
                         page         = a.page,
                         pos0         = a.pos0,
                         text_orig    = a.text or "",
@@ -317,6 +318,7 @@ function BookmarkBrowser:showBookmarkDetails(item)
     local text = {
         T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Title")..TextBoxWidget.PTF_BOLD_END, book.doc_props.display_title),
         T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Author(s)")..TextBoxWidget.PTF_BOLD_END, book.authors),
+        T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Chapter")..TextBoxWidget.PTF_BOLD_END, item.chapter or ""),
         "",
         table.concat(bm_info, self.separator),
         "",
