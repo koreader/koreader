@@ -61,7 +61,8 @@ local settingsList = {
     history_search = {category="none", event="SearchHistory", title=_("History search"), general=true},
     favorites = {category="none", event="ShowColl", title=_("Favorites"), general=true},
     collections = {category="none", event="ShowCollList", title=_("Collections"), general=true},
-    collections_search = {category="none", event="ShowCollectionsSearchDialog", title=_("Collections search"), general=true, separator=true},
+    collections_search = {category="none", event="ShowCollectionsSearchDialog", title=_("Collections search"), general=true},
+    bookmark_browser = {category="none", event="ShowBookmarkBrowser", title=_("Bookmark browser"), general=true, separator=true},
     ----
     dictionary_lookup = {category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), general=true},
     load_dictionary_preset = {category="string", event="LoadDictionaryPreset", title=_("Load dictionary preset"), args_func=ReaderDictionary.getPresets, general=true},
@@ -311,6 +312,7 @@ local dispatcher_menu_order = {
     "favorites",
     "collections",
     "collections_search",
+    "bookmark_browser",
     ----
     "dictionary_lookup",
     "load_dictionary_preset",
