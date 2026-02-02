@@ -574,7 +574,6 @@ function InputText:initTextBox(text, char_added)
     if self.edit_callback then
         self.edit_callback(self.is_text_edited)
     end
-    Device:startTextInput()
 end
 
 function InputText:initKeyboard()
