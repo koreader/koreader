@@ -667,7 +667,7 @@ function InputText:onKeyPress(key)
         elseif key["Back"] and Device:isSDL() and G_reader_settings:isFalse("virtual_keyboard_enabled") then
             if self.focused then
                 self:unfocus()
-                UIManager:scheduleIn(0, function()
+                UIManager:nextTick(function()
                     local Key = require("device/key")
                     local Event = require("ui/event")
                     UIManager:sendEvent(Event:new("KeyPress", Key:new("Down", {})))
