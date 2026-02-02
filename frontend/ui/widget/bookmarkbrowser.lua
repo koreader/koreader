@@ -124,35 +124,37 @@ function BookmarkBrowser:getBookList(files)
     local books = {}
     for file in pairs(files) do
         local is_current_file = file == current_file or nil
-        local doc_settings, doc_props
+        local doc_settings, doc_props, annotations
         if is_current_file then
             doc_settings = self.ui.doc_settings
             doc_props = self.ui.doc_props
+            annotations = self.ui.annotation.annotations
         else
             doc_settings = BookList.hasBookBeenOpened(file) and BookList.getDocSettings(file)
-            doc_props = doc_settings and doc_settings:readSetting("doc_props")
-        end
-        if doc_props then
-            local annotations = doc_settings:readSetting("annotations")
-            if #annotations > 0 then
-                if not is_current_file then
-                    doc_props = self.ui.bookinfo.extendProps(doc_props, file)
-                end
-                doc_props.has_cover = true -- enable "Book cover" button in the book dialog
-                local authors = doc_props.authors and doc_props.authors:gsub("\n.*", " et al.") or _("Unknown author")
-                table.insert(books, {
-                    enabled = true, -- start with showing all books from the source
-                    file = file,
-                    is_current_file = is_current_file,
-                    doc_settings = doc_settings,
-                    doc_props = doc_props,
-                    authors = authors,
-                    sort_string = util.stringLower(authors .. doc_props.display_title),
-                    -- will be filled when building item table
-                    item_table_idx = nil,
-                    bookmarks_nb = nil,
-                })
+            if doc_settings then
+                doc_props = doc_settings:readSetting("doc_props")
+                annotations = doc_settings:readSetting("annotations")
             end
+        end
+        if annotations and #annotations > 0 then
+            if not is_current_file then
+                doc_props = self.ui.bookinfo.extendProps(doc_props, file)
+            end
+            doc_props.has_cover = true -- enable "Book cover" button in the book dialog
+            local authors = doc_props.authors and doc_props.authors:gsub("\n.*", " et al.") or _("Unknown author")
+            table.insert(books, {
+                enabled = true, -- start with showing all books from the source
+                file = file,
+                is_current_file = is_current_file,
+                doc_settings = doc_settings,
+                doc_props = doc_props,
+                annotations = annotations,
+                authors = authors,
+                sort_string = util.stringLower(authors .. doc_props.display_title),
+                -- will be filled when building item table
+                item_table_idx = nil,
+                bookmarks_nb = nil,
+            })
         end
     end
     if #books > 1 then
@@ -183,12 +185,11 @@ function BookmarkBrowser:getItemTable()
         if book.enabled then
             local book_item_table_idx = #item_table + 1
             local bookmark_idx = 0
-            local annotations = book.doc_settings:readSetting("annotations")
-            local annotations_nb = #annotations
+            local annotations_nb = #book.annotations
             local num = annotations_nb + 1
             local book_item_table = {}
             for i = 1, annotations_nb do
-                local a = annotations[self.is_reverse_sorting and num - i or i]
+                local a = book.annotations[self.is_reverse_sorting and num - i or i]
                 local a_type = ReaderBookmark.getBookmarkType(a)
                 if no_filter or self:doesBookmarkMatch(a, a_type) then
                     bookmark_idx = bookmark_idx + 1
