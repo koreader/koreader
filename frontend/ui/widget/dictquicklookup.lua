@@ -815,6 +815,7 @@ function DictQuickLookup:registerKeyEvents()
             self.key_events.ChangeToPrevDict = { { modifier, Input.group.PgBack } }
             self.key_events.ChangeToNextDict = { { modifier, Input.group.PgFwd } }
             self.key_events.SetTemporaryLargeWindowMode = { { modifier, "Home" } }
+            self.key_events.TextSelectorModifierPress = { { modifier, "Press" } }
             self.key_events.StartOrUpTextSelectorIndicator   = { { modifier, "Up" },   event = "StartOrMoveTextSelectorIndicator", args = { 0, -1, true } }
             self.key_events.StartOrDownTextSelectorIndicator = { { modifier, "Down" }, event = "StartOrMoveTextSelectorIndicator", args = { 0,  1, true } }
             self.key_events.FastLeftTextSelectorIndicator  = { { modifier, "Left" },  event = "MoveTextSelectorIndicator", args = { -1, 0, true } }
@@ -1920,7 +1921,6 @@ function DictQuickLookup:onStopTextSelectorIndicator(need_clear_selection)
     self._previous_indicator_pos = rect
     self._text_selection_started = false
     self.nt_text_selector_indicator = nil
-    if self._hold_duration then self._hold_duration = nil end
     -- Mark definition widget area as dirty for clean re-draw
     UIManager:setDirty(self, function() return "ui", self.definition_widget.dimen end)
     if need_clear_selection then self:clearDictionaryHighlight() end
@@ -1992,8 +1992,6 @@ function DictQuickLookup:onTextSelectorPress()
     if not self._text_selection_started then
         -- start text selection on first press
         self._text_selection_started = true
-        -- we'll time the hold duration to allow switching from wiki to dict
-        self._hold_duration = time.now() -- on your marks, get set, go!
         selection_widget:onHoldStartText(nil, self:_createTextSelectionGesture("hold"))
         -- center indicator on selected text if available
         if selection_widget.highlight_rects and #selection_widget.highlight_rects > 0 then
@@ -2008,33 +2006,28 @@ function DictQuickLookup:onTextSelectorPress()
     -- second press,
     -- process the hold release event which finalizes text selection
     selection_widget:onHoldReleaseText(nil, self:_createTextSelectionGesture("hold_release"))
-    local hold_duration = time.to_s(time.since(self._hold_duration))
-    local selected_text
-    -- both text_widget and htmlbox_widget handle text parsing a bit differently, ¯\_(ツ)_/¯
-    if self.is_html then
-        -- For HtmlBoxWidget, highlight_text should contain the complete text selection.
-        selected_text = selection_widget.highlight_text
-    else
-        -- For TextBoxWidget, extract the selected text using the indices.
-        selected_text = selection_widget.text:sub(
-            selection_widget.highlight_start_idx,
-            selection_widget.highlight_end_idx
-        )
-    end
-    if selected_text then
-        local lookup_wikipedia = self.is_wiki
-        if lookup_wikipedia and hold_duration > 5 then
-            -- allow switching domain with a long hold (> 5 secs)
-            lookup_wikipedia = false
-        end
-        local new_dict_close_callback = function() self:clearDictionaryHighlight() end
-        if lookup_wikipedia then
-            self:lookupWikipedia(false, selected_text, nil, nil, new_dict_close_callback)
-        else
-            self.ui:handleEvent(Event:new("LookupWord", selected_text, nil, nil, nil, nil, new_dict_close_callback))
-        end
-    end
+    self:_performLookupOnSelection(selection_widget, false)
     self:onStopTextSelectorIndicator()
+    return true
+end
+
+function DictQuickLookup:onTextSelectorModifierPress()
+    if not self.nt_text_selector_indicator then return false end
+    local selection_widget = self:_getSelectionWidget(self)
+    if not selection_widget then return false end
+    -- If we have an active text selection (started via onTextSelectorPress), Mod+Press switches domain (Dict <-> Wiki)
+    if self._text_selection_started then
+        self:_performLookupOnSelection(selection_widget, true) -- switch domain
+        self:onStopTextSelectorIndicator()
+        return true
+    end
+    -- Otherwise, just treat it as a tap, as we want to be able to follow links in HTML dictionaries.
+    local ges = self:_createTextSelectionGesture("tap")
+    -- HtmlBoxWidget handles links, if we find one, we stop here
+    if selection_widget.onTapText and selection_widget:onTapText(nil, ges) then
+        self:onStopTextSelectorIndicator()
+    end
+    -- We explicitly do NOT fallback to self:onTap here, onTap would trigger a Next/Prev result.
     return true
 end
 
@@ -2047,6 +2040,31 @@ function DictQuickLookup:onStartOrMoveTextSelectorIndicator(args)
     return true
 end
 
+function DictQuickLookup:_performLookupOnSelection(selection_widget, switch_domain)
+    if not selection_widget then return false end
+    local selected_text
+    -- both text_widget and htmlbox_widget handle text parsing a bit differently, ¯\_(ツ)_/¯
+    if self.is_html then
+        -- For HtmlBoxWidget, highlight_text should contain the complete text selection.
+        selected_text = selection_widget.highlight_text
+    else
+        -- For TextBoxWidget, extract the selected text using the indices.
+        selected_text = selection_widget.text:sub(
+            selection_widget.highlight_start_idx,
+            selection_widget.highlight_end_idx
+        )
+    end
+    if not selected_text then return false end
+    local new_dict_close_callback = function() self:clearDictionaryHighlight() end
+    local use_wiki = switch_domain and not self.is_wiki or not switch_domain and self.is_wiki
+    if use_wiki then
+        self:lookupWikipedia(false, selected_text, nil, nil, new_dict_close_callback)
+    else
+        self.ui:handleEvent(Event:new("LookupWord", selected_text, nil, nil, nil, nil, new_dict_close_callback))
+    end
+    return true
+end
+
 -- helper function to get the actual widget that handles text selection
 function DictQuickLookup:_getSelectionWidget(instance)
     return instance.is_html and instance.text_widget.htmlbox_widget or instance.text_widget.text_widget
@@ -2054,9 +2072,9 @@ end
 
 function DictQuickLookup:_createTextSelectionGesture(gesture)
     local point = self.nt_text_selector_indicator:copy()
-    -- Add the definition_widget's absolute position to get correct screen coordinates
-    point.x = point.x + point.w / 2 + self.definition_widget.dimen.x
-    point.y = point.y + point.h / 2 + self.definition_widget.dimen.y
+    -- Use text_widget abs position to ensure we account for container padding
+    point.x = point.x + point.w / 2 + self.text_widget.dimen.x
+    point.y = point.y + point.h / 2 + self.text_widget.dimen.y
     point.w = 0
     point.h = 0
     return {
