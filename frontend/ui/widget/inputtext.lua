@@ -639,11 +639,22 @@ function InputText:onKeyPress(key)
         --       seamlessly in and out of text fields and onto virtual buttons like `[cancel] [search dict]`, no need to unfocus first.
         elseif key["Up"] then
             if Device:isSDL() or G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
+                local old_charpos, old_top = self.charpos, self.top_line_num
                 self:upLine()
+                if self.charpos == old_charpos and self.top_line_num == old_top then
+                    return false -- let FocusManager move focus up
+                end
             end
         elseif key["Down"] then
             if Device:isSDL() or G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
+                if #self.charlist == 0 then
+                    return false -- let FocusManager move focus down
+                end
+                local old_charpos, old_top = self.charpos, self.top_line_num
                 self:downLine()
+                if self.charpos == old_charpos and self.top_line_num == old_top then
+                    return false -- let FocusManager move focus down
+                end
             end
         elseif key["End"] then
             self:goToEnd()
