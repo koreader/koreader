@@ -479,14 +479,13 @@ function ReaderBookmark:removeItem(item, item_idx)
 end
 
 function ReaderBookmark:removeItemByIndex(index)
-    local item = self.ui.annotation.annotations[index]
+    local item = table.remove(self.ui.annotation.annotations, index)
     local item_type = self.getBookmarkType(item)
     if item_type == "highlight" then
         self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = -1, index_modified = -index }))
     elseif item_type == "note" then
         self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_notes_added = -1, index_modified = -index }))
     end
-    table.remove(self.ui.annotation.annotations, index)
     self.view.footer:maybeUpdateFooter()
 end
 
