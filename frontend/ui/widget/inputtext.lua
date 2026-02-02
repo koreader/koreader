@@ -403,6 +403,9 @@ function InputText:init()
         self:initKeyboard()
         self:initEventListener()
     end
+    if self.focused then
+        Device:startTextInput()
+    end
 end
 
 -- This will be called when we add or del chars, as we need to recreate
