@@ -635,26 +635,24 @@ function InputText:onKeyPress(key)
             self:leftChar()
         elseif key["Right"] then
             self:rightChar()
-        -- NOTE: When we are not showing the virtual keyboard, let focusmanger handle up/down keys, as they  are used to directly move around the widget
-        --       seamlessly in and out of text fields and onto virtual buttons like `[cancel] [search dict]`, no need to unfocus first.
+        -- NOTE: The VirtualKeyboard has focus when shown, and handles up/down/left/right.
         elseif key["Up"] then
-            if Device:isSDL() or G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
-                local old_charpos, old_top = self.charpos, self.top_line_num
-                self:upLine()
-                if self.charpos == old_charpos and self.top_line_num == old_top then
-                    return false -- let FocusManager move focus up
-                end
+            if #self.charlist == 0 then
+                return false -- let FocusManager move focus up
+            end
+            local old_charpos, old_top = self.charpos, self.top_line_num
+            self:upLine()
+            if self.charpos == old_charpos and self.top_line_num == old_top then
+                return false -- let FocusManager move focus up
             end
         elseif key["Down"] then
-            if Device:isSDL() or G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
-                if #self.charlist == 0 then
-                    return false -- let FocusManager move focus down
-                end
-                local old_charpos, old_top = self.charpos, self.top_line_num
-                self:downLine()
-                if self.charpos == old_charpos and self.top_line_num == old_top then
-                    return false -- let FocusManager move focus down
-                end
+            if #self.charlist == 0 then
+                return false -- let FocusManager move focus down
+            end
+            local old_charpos, old_top = self.charpos, self.top_line_num
+            self:downLine()
+            if self.charpos == old_charpos and self.top_line_num == old_top then
+                return false -- let FocusManager move focus down
             end
         elseif key["End"] then
             self:goToEnd()
