@@ -664,19 +664,12 @@ function InputText:onKeyPress(key)
             self:addChars("\n")
         elseif key["Tab"] then
             self:addChars("    ")
-        elseif key["Back"] and Device:isSDL() and G_reader_settings:isFalse("virtual_keyboard_enabled") then
-            if self.focused then
-                self:unfocus()
-                UIManager:nextTick(function()
-                    local Key = require("device/key")
-                    local Event = require("ui/event")
-                    UIManager:sendEvent(Event:new("KeyPress", Key:new("Down", {})))
-                end)
-            end
         -- as stated before, we also don't need to unfocus when there is no keyboard, one less key press to exit widgets, yay!
-        elseif key["Back"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
-            if self.focused then
+        elseif key["Back"] then
+            if G_reader_settings:nilOrTrue("virtual_keyboard_enabled") and self.focused then
                 self:unfocus()
+            elseif self.parent then
+                UIManager:close(self.parent)
             end
         else
             handled = false
