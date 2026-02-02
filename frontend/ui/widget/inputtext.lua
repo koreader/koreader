@@ -664,6 +664,8 @@ function InputText:onKeyPress(key)
         -- as stated before, we also don't need to unfocus when there is no keyboard, one less key press to exit widgets, yay!
         elseif key["Back"] then
             if G_reader_settings:nilOrTrue("virtual_keyboard_enabled") and self.focused then
+                -- NOTE: This effectively stops SDL text input when a keyboard is hidden (... but navigational stuff still works).
+                -- If you instead wanted it to be enabled as long as an input dialog is displayed, regardless of VK's state, something more complex would need to be implemented.
                 self:unfocus()
             elseif self.parent then
                 UIManager:close(self.parent)
