@@ -403,7 +403,7 @@ function InputText:init()
         self:initKeyboard()
         self:initEventListener()
     end
-    -- @TODO: Investigate why this fires too much. See <https://github.com/koreader/koreader/pull/14901#issuecomment-3837678877>.
+    --- @TODO: Investigate why this fires too much. See <https://github.com/koreader/koreader/pull/14901#issuecomment-3837678877>.
     if self.focused then
         Device:startTextInput()
     end
