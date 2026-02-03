@@ -403,8 +403,10 @@ function InputText:init()
         self:initKeyboard()
         self:initEventListener()
     end
-    --- @todo Investigate why this fires too much. See <https://github.com/koreader/koreader/pull/14901#issuecomment-3837678877>.
-    if self.focused then
+    --- @todo In MultiInputDialogs, this will fire multiple times as that widget both inherits
+    -- inputtexts from InputDialog and also creates its own.
+    -- See <https://github.com/koreader/koreader/pull/14901#issuecomment-3837678877>.
+    if self.focused and not self.for_measurement_only then
         Device:startTextInput()
     end
 end
@@ -665,7 +667,6 @@ function InputText:onKeyPress(key)
             self:addChars("\n")
         elseif key["Tab"] then
             self:addChars("    ")
-        -- as stated before, we also don't need to unfocus when there is no keyboard, one less key press to exit widgets, yay!
         elseif key["Back"] then
             if self.parent and not self.keyboard:isVisible() then
                 UIManager:close(self.parent)
