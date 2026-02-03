@@ -1556,7 +1556,7 @@ end
 function FileManagerCollection:genExportHighlightsButton(files, caller_pre_callback, button_disabled)
     return {
         text = _("Export highlights"),
-        enabled = self.ui.exporter and not button_disabled,
+        enabled = self.ui.exporter and not button_disabled or false,
         callback = function()
             if caller_pre_callback then
                 caller_pre_callback()
