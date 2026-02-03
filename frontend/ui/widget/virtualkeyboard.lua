@@ -870,30 +870,13 @@ function VirtualKeyboard:init()
     if keyboard.wrapInputBox then
         self.uwrap_func = keyboard.wrapInputBox(self.inputbox) or self.uwrap_func
     end
-    if Device:hasDPad() then
-        -- hadDPad() would have FocusManager handle arrow keys strokes to navigate
-        -- and activate this VirtualKeyboard's touch keys (needed on non-touch Kindle).
-        -- If we have a keyboard, we'd prefer arrow keys (and Enter, and Del) to be
-        -- handled by InputText to navigate the cursor inside the text box, and to
-        -- add newline and delete chars. And if we are a touch device, we don't
-        -- need focus manager to help us navigate keys and fields.
-        -- So, disable all key_event handled by FocusManager
-        if Device:isTouchDevice() then
-            -- Remove all FocusManager key event handlers.
-            for k, _ in pairs(self.builtin_key_events) do
+    if Device:hasDPad() and Device:hasKeyboard() then
+        -- Use physical keyboard for most characters
+        -- For special characters not available in physical keyboard
+        -- Use arrow and Press keys to select in VirtualKeyboard
+        for k, seq in pairs(self.extra_key_events) do
+            if self:_isTextKeyWithoutModifier(seq) then
                 self.key_events[k] = nil
-            end
-            for k, _ in pairs(self.extra_key_events) do
-                self.key_events[k] = nil
-            end
-        elseif Device:hasKeyboard() then
-            -- Use physical keyboard for most characters
-            -- For special characters not available in physical keyboard
-            -- Use arrow and Press keys to select in VirtualKeyboard
-            for k, seq in pairs(self.extra_key_events) do
-                if self:_isTextKeyWithoutModifier(seq) then
-                    self.key_events[k] = nil
-                end
             end
         end
     end
@@ -939,17 +922,6 @@ end
 
 function VirtualKeyboard:onClose()
     UIManager:close(self)
-    if self.inputbox and Device:hasDPad() then
-        -- Let InputText handle this KeyPress "Back" event to unfocus, otherwise, another extra Back event is needed.
-        -- NOTE: Keep in mind InputText is a special snowflake, and implements the raw onKeyPress handler for this!
-        -- Also, notify another widget that actually may want to know when *we* get closed, i.e., the parent (Input*Dialog*).
-        -- We need to do this manually because InputText's onKeyPress handler will very likely return true,
-        -- stopping event propagation (c.f., the last hasDPad branch of said handler).
-        if self.inputbox and self.inputbox.parent and self.inputbox.parent.onKeyboardClosed then
-            self.inputbox.parent:onKeyboardClosed()
-        end
-        return false
-    end
     return true
 end
 

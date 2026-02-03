@@ -403,6 +403,7 @@ function InputText:init()
         self:initKeyboard()
         self:initEventListener()
     end
+    -- @TODO: Investigate why this fires too much. See <https://github.com/koreader/koreader/pull/14901#issuecomment-3837678877>.
     if self.focused then
         Device:startTextInput()
     end
@@ -666,11 +667,7 @@ function InputText:onKeyPress(key)
             self:addChars("    ")
         -- as stated before, we also don't need to unfocus when there is no keyboard, one less key press to exit widgets, yay!
         elseif key["Back"] then
-            if G_reader_settings:nilOrTrue("virtual_keyboard_enabled") and self.focused then
-                -- NOTE: This effectively stops SDL text input when a keyboard is hidden (... but navigational stuff still works).
-                -- If you instead wanted it to be enabled as long as an input dialog is displayed, regardless of VK's state, something more complex would need to be implemented.
-                self:unfocus()
-            elseif self.parent then
+            if self.parent and not self.keyboard:isVisible() then
                 UIManager:close(self.parent)
             end
         else
