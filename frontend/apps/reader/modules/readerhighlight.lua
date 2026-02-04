@@ -50,8 +50,16 @@ function ReaderHighlight:getHighlightColorString(color_name)
 end
 
 function ReaderHighlight:getHighlightColor(color_name)
-    return Blitbuffer.colorFromName(color_name) --- @todo fix in the night mode; issue #14170, #14667
-        or Blitbuffer.gray(G_reader_settings:readSetting("highlight_lighten_factor") or 0.2) -- 'gray' or unknown color name
+    local color = Blitbuffer.colorFromName(color_name)
+    if color then
+        if Screen.night_mode then
+            local r, g, b = Blitbuffer.HIGHLIGHT_COLORS[color_name]:match("#(..)(..)(..)")
+            return Blitbuffer.colorFromString(string.format("#%02x%02x%02x",
+                255 - tonumber(r, 16), 255 - tonumber(g, 16), 255 - tonumber(b, 16)))
+        end
+        return color
+    end
+    return Blitbuffer.gray(G_reader_settings:readSetting("highlight_lighten_factor") or 0.2)
 end
 
 local function inside_box(pos, box)
