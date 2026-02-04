@@ -3,6 +3,7 @@ local Device = require("device")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
 local Math = require("optmath")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
@@ -204,6 +205,42 @@ function KOSync:addToMainMenu(menu_items)
                             self:setCustomServer(input)
                         end,
                     }
+                end,
+            },
+            {
+                text = _("Device hostname"),
+                keep_menu_open = true,
+                callback = function()
+                    local dialog
+                    dialog = InputDialog:new{
+                        -- @translators Name of this device defined by user for progress sync (if different than default device name)
+                        title = _("Hostname for sync"),
+                        input = self.settings.kosync_hostname,
+                        input_hint = _("Leave empty to use default"),
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    id = "close",
+                                    callback = function()
+                                        UIManager:close(dialog)
+                                    end,
+                                },
+                                {
+                                    text = _("OK"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        local hostname = dialog:getInputText()
+                                        logger.dbg("KOSync: Setting custom hostname to:", hostname)
+                                        self.settings.kosync_hostname = hostname ~= "" and hostname or nil
+                                        UIManager:close(dialog)
+                                    end,
+                                },
+                            },
+                        },
+                    }
+                    UIManager:show(dialog)
+                    dialog:onShowKeyboard()
                 end,
             },
             {
@@ -643,6 +680,7 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
     local doc_digest = self:getDocumentDigest()
     local progress = self:getLastProgress()
     local percentage = self:getLastPercent()
+    local chosen_device_name = self.settings.kosync_hostname or Device.model
     local ok, err = pcall(client.update_progress,
         client,
         self.settings.username,
@@ -650,7 +688,7 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
         doc_digest,
         progress,
         percentage,
-        Device.model,
+        chosen_device_name,
         self.device_id,
         function(ok, body)
             logger.dbg("KOSync: [Push] progress to", percentage * 100, "% =>", progress, "for", self.view.document.file)
