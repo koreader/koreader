@@ -34,7 +34,7 @@ function BookmarkBrowser:show(files, ui)
     self.items_per_page = G_reader_settings:readSetting("bookmarks_items_per_page")
         or G_reader_settings:readSetting("items_per_page") or Menu.items_per_page_default
     self.items_font_size = G_reader_settings:readSetting("bookmarks_items_font_size")
-        or G_reader_settings:readSetting("items_font_size") or Menu.getItemFontSize(self.bookmarks_items_per_page)
+        or G_reader_settings:readSetting("items_font_size") or Menu.getItemFontSize(self.items_per_page)
     self.items_max_lines = G_reader_settings:readSetting("bookmarks_items_max_lines")
     self.multilines_show_more_text = G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
     self.line_color = G_reader_settings:isTrue("bookmarks_items_show_separator")
@@ -869,8 +869,7 @@ function BookmarkBrowser:showSourceDialog(ui)
                         end
                     end)
                 end
-                local FileManagerCollection = require("apps/filemanager/filemanagercollection")
-                FileManagerCollection:onShowCollList({}, caller_callback, true)
+                self.ui.collections:onShowCollList({}, caller_callback, true)
             end,
         }},
         {{
