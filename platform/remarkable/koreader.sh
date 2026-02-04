@@ -1,5 +1,12 @@
 #!/bin/sh
 
+export LC_ALL="en_US.UTF-8"
+
+# KOReader's working directory.
+# NOTE: We need to remember the *actual* KOREADER_DIR, not the relocalized version in /tmp...
+export KOREADER_DIR="${KOREADER_DIR:-${0%/*}}"
+UNPACK_DIR="${KOREADER_DIR%/*}"
+
 # Relocalize ourselves to /tmp: this is used by KOReader to detect if the
 # original script has changed after an update (requiring a complete restart
 # from the parent launcher).
@@ -8,12 +15,6 @@ if [ "$(dirname "${0}")" != '/tmp' ]; then
     chmod 777 '/tmp/koreader.sh'
     exec '/tmp/koreader.sh' "$@"
 fi
-
-export LC_ALL="en_US.UTF-8"
-
-# working directory of koreader
-export KOREADER_DIR="${0%/*}"
-UNPACK_DIR="${KOREADER_DIR%/*}"
 
 # we're always starting from our working directory
 cd "${KOREADER_DIR}" || exit

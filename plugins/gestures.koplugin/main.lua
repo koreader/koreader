@@ -607,6 +607,13 @@ function Gestures:onShowGestureOverview()
                             })
                         end
                     end
+                    if gest.settings then
+                        if gest.settings.show_as_quickmenu then
+                            value = value .. " \u{F0CA}"
+                        elseif gest.settings.execute_one_by_one then
+                            value = value .. " \u{F051}"
+                        end
+                    end
                     table.insert(kv_pairs, { key, value, callback = callback, key_bold = false })
                     added = true
                 end
@@ -1369,6 +1376,15 @@ function Gestures:onIgnoreHoldCorners(ignore_hold_corners, no_notification)
         Notification:notify(_("Ignore long-press on corners: off"))
     end
     return true
+end
+
+function Gestures:onIgnoreHoldCornersTime(seconds)
+    if G_reader_settings:hasNot("ignore_hold_corners") then
+        self:onIgnoreHoldCorners()
+        UIManager:scheduleIn(seconds, function()
+            self:onIgnoreHoldCorners()
+        end)
+    end
 end
 
 function Gestures:onFlushSettings()

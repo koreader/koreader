@@ -66,8 +66,6 @@ local DictQuickLookup = InputContainer:extend{
 
     -- Static class member, holds a ref to the currently opened widgets (in instantiation order).
     window_list = {},
-    -- Static class member, used by ReaderWiktionary to communicate state from a closed widget to the next opened one.
-    rotated_update_wiki_languages_on_close = nil,
 
     _is_temporary_large_window = false,
 }
@@ -85,7 +83,8 @@ end
 
 function DictQuickLookup:canSearch()
     if self.is_wiki then
-        -- In the Wiki variant of this widget, the Search button is coopted to cycle between enabled languages.
+        -- In the Wiki variant of this widget, the Search button is coopted to show and select
+        -- between user-defined (or UI+book) languages.
         if #self.wiki_languages > 1 then
             return true
         end
@@ -226,9 +225,7 @@ function DictQuickLookup:init()
 
     -- And here comes the initial widget layout...
     if self.is_wiki then
-        -- Get a copy of ReaderWikipedia.wiki_languages, with the current result
-        -- lang first (rotated, or added)
-        self.wiki_languages, self.update_wiki_languages_on_close = self.ui.wikipedia:getWikiLanguages(self.lang)
+        self.wiki_languages, self.wiki_last_language = self.ui.wikipedia:getWikiLanguages()
     end
 
     -- Bigger window if fullpage Wikipedia article being shown,
@@ -259,7 +256,11 @@ function DictQuickLookup:init()
         left_icon = "appbar.menu",
         left_icon_tap_callback = function()
             if self.is_wiki then
-                self:showWikiResultsMenu()
+                if self.is_wiki_fullpage then
+                    self:showWikiFullOtherLangsMenu()
+                else
+                    self:showWikiResultsMenu()
+                end
             else
                 self:onShowResultsMenu()
             end
@@ -375,8 +376,7 @@ function DictQuickLookup:init()
                     callback = function()
                         local InfoMessage = require("ui/widget/infomessage")
                         local ConfirmBox = require("ui/widget/confirmbox")
-                        -- if forced_lang was specified, it may not be in our wiki_languages,
-                        -- but ReaderWikipedia will have put it in result.lang
+                        -- We should have a self.lang set, but let's have a fallback
                         local lang = self.lang or self.wiki_languages[1]
                         -- Find a directory to save file into
                         local dir
@@ -498,7 +498,7 @@ function DictQuickLookup:init()
                     text_func = function()
                         if self.is_wiki then
                             -- @translators Full Wikipedia article.
-                            return C_("Button", "Wikipedia full")
+                            return C_("Wikipedia", "Full article")
                         else
                             return _("Wikipedia")
                         end
@@ -509,23 +509,49 @@ function DictQuickLookup:init()
                         end)
                     end,
                 },
-                -- Rotate thru available wikipedia languages, or Search in book if dict window
+                -- Allow selecting a different wikipedia language, or Search in book if dict window
                 {
                     id = "search",
-                    -- if more than one language, enable it and display "current lang > next lang"
-                    -- otherwise, just display current lang
-                    text = self.is_wiki
-                        and ( #self.wiki_languages > 1 and BD.wrap(self.wiki_languages[1]).." > "..BD.wrap(self.wiki_languages[2])
-                                                        or self.wiki_languages[1] ) -- (this " > " will be auro-mirrored by bidi)
-                        or _("Search"),
+                    text = self.is_wiki and C_("Wikipedia", "Language").." \u{2261}" or _("Search"),
                     enabled = self:canSearch(),
                     callback = function()
                         if self.is_wiki then
-                            -- We're rotating: forward this flag from the one we're closing so
-                            -- that ReaderWikipedia can give it to the one we'll be showing
-                            DictQuickLookup.rotated_update_wiki_languages_on_close = self.update_wiki_languages_on_close
-                            self:lookupWikipedia(false, nil, nil, self.wiki_languages[2])
-                            self:onClose(true)
+                            local button_dialog
+                            local lang_buttons = {}
+                            for idx, lang in ipairs(self.wiki_languages) do
+                                local bold = lang == self.lang -- bold the language currently shown
+                                local row = {
+                                    {
+                                        text = lang,
+                                        font_bold = bold,
+                                        align = "left",
+                                        callback = function()
+                                            self.ui.wikipedia:setLastSelectedLanguage(lang)
+                                            self:lookupWikipedia(false, nil, nil, lang)
+                                            self:onClose(true)
+                                        end,
+                                    },
+                                }
+                                -- Show them in reverse, so first/prefered ones are at the bottom near the button where the user tap'ed
+                                table.insert(lang_buttons, 1, row)
+                            end
+                            local search_btn = self.button_table:getButtonById("search")
+                            button_dialog = ButtonDialog:new{
+                                buttons = lang_buttons,
+                                width = search_btn.dimen.w,
+                                anchor = function()
+                                    return Geom:new{
+                                        x = search_btn.dimen.x,
+                                        -- We want its bottom border overlapping the whole DictQuickLookup window bottom border
+                                        y = self.dict_frame.dimen.y + self.dict_frame.dimen.h,
+                                    }
+                                end,
+                                tap_close_callback = function()
+                                    self.menu_opened[button_dialog] = nil
+                                end
+                            }
+                            self.menu_opened[button_dialog] = true
+                            UIManager:show(button_dialog)
                         else
                             self.ui:handleEvent(Event:new("HighlightSearch"))
                             self:onClose(true) -- don't unhighlight (or we might erase a search hit)
@@ -1286,13 +1312,6 @@ function DictQuickLookup:onClose(no_clear)
         DictQuickLookup.temp_large_window_request = nil
     end
 
-    if self.update_wiki_languages_on_close then
-        -- except if we got no result for current language
-        if not self.results.no_result then
-            self.ui:handleEvent(Event:new("UpdateWikiLanguages", self.wiki_languages))
-        end
-    end
-
     if self.save_highlight then
         self.highlight:saveHighlight()
         self.highlight:clear()
@@ -1508,8 +1527,8 @@ end
 
 function DictQuickLookup:lookupWikipedia(get_fullpage, word, is_sane, lang, dict_close_callback)
     if not lang then
-        -- Use the lang of the current or nearest is_wiki DictQuickLookup.
-        -- Otherwise, first lang in ReaderWikipedia.wiki_languages will be used.
+        -- Use the language of the current or nearest is_wiki DictQuickLookup.
+        -- Otherwise, LookupWikipedia will use wiki_last_language
         for i = #DictQuickLookup.window_list, 1, -1 do
             local window = DictQuickLookup.window_list[i]
             if window.is_wiki and window.lang then
@@ -1774,6 +1793,59 @@ function DictQuickLookup:showWikiResultsMenu()
         end
     }
     button_dialog:setScrolledOffset(self.menu_scrolled_offsets["wiki"])
+    self.menu_opened[button_dialog] = true
+    UIManager:show(button_dialog)
+end
+
+function DictQuickLookup:showWikiFullOtherLangsMenu()
+    -- Show one row for each article available in other languages
+    local max_width = math.floor(self.width * 0.75)
+    local font_size = 18
+    local button_dialog
+    local buttons = {}
+    local lang_links = self.results[1].lang_links
+    -- We'll show the articles in the wikipedia languages set by the user first (and in bold)
+    local user_wiki_languages = {}
+    for _, lang in ipairs(self.wiki_languages) do
+        user_wiki_languages[lang] = true
+    end
+    local nb_user_lang_links = 0
+    for i=1, #lang_links do
+        if user_wiki_languages[lang_links[i].lang] then
+            nb_user_lang_links = nb_user_lang_links + 1
+            table.insert(lang_links, nb_user_lang_links, table.remove(lang_links, i))
+        end
+    end
+    for idx, lang_link in ipairs(lang_links) do
+        local lang, page = lang_link.lang, lang_link["*"]
+        local bold = idx <= nb_user_lang_links
+        local row = {{
+            text = T("%1: %2", lang_link.lang, lang_link["*"]),
+            lang = lang,
+            font_size = font_size,
+            font_bold = bold,
+            align = "left",
+            callback = function()
+                -- As the new article will be displayed in a new window, keep the
+                -- popup menu opened so we get to it when done to try another lang
+                self:lookupWikipedia(true, page, true, lang)
+            end,
+        }}
+        table.insert(buttons, row)
+    end
+    button_dialog = ButtonDialog:new{
+        width = max_width,
+        shrink_unneeded_width = true,
+        buttons = buttons,
+        anchor = function()
+            return self.dict_title.left_button.image.dimen, true -- pop down
+        end,
+        tap_close_callback = function()
+            self.menu_scrolled_offsets["wikifull"] = button_dialog:getScrolledOffset()
+            self.menu_opened[button_dialog] = nil
+        end
+    }
+    button_dialog:setScrolledOffset(self.menu_scrolled_offsets["wikifull"])
     self.menu_opened[button_dialog] = true
     UIManager:show(button_dialog)
 end

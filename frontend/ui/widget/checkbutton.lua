@@ -18,11 +18,14 @@ local Blitbuffer = require("ffi/blitbuffer")
 local CheckMark = require("ui/widget/checkmark")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local LeftContainer = require("ui/widget/container/leftcontainer")
 local RadioMark = require("ui/widget/radiomark")
 local TextBoxWidget = require("ui/widget/textboxwidget")
+local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -35,8 +38,10 @@ local CheckButton = InputContainer:extend{
     enabled = true,
     radio = false, -- radio mark when true
     face = Font:getFace("smallinfofont"),
+    checkmark_face = Font:getFace("smallinfofont"),
     background = Blitbuffer.COLOR_WHITE,
     text = nil,
+    single_line = nil,
     parent = nil, -- parent widget, must be set by the caller
     width = nil, -- default value: parent widget's added widgets available width
     -- If the parent widget has no getAddedWidgetAvailableWidth() method, the width must be set by the caller.
@@ -53,7 +58,7 @@ function CheckButton:initCheckButton(checked)
             checkable = self.checkable,
             checked = self.checked,
             enabled = self.enabled,
-            face = self.face,
+            face = self.checkmark_face,
             parent = self.parent or self,
             show_parent = self.show_parent or self,
         }
@@ -62,32 +67,54 @@ function CheckButton:initCheckButton(checked)
             checkable = self.checkable,
             checked = self.checked,
             enabled = self.enabled,
-            face = self.face,
+            face = self.checkmark_face,
             parent = self.parent or self,
             show_parent = self.show_parent or self,
         }
     end
+
     local fgcolor = self.fgcolor or Blitbuffer.COLOR_BLACK
-    self._textwidget = TextBoxWidget:new{
-        text = self.text,
-        face = self.face,
-        width = (self.width or self.parent:getAddedWidgetAvailableWidth()) - self._checkmark.dimen.w,
-        bold = self.bold,
-        fgcolor = self.enabled and fgcolor or Blitbuffer.COLOR_DARK_GRAY,
-        bgcolor = self.bgcolor,
-    }
-    local textbox_shift = math.max(0, self._checkmark.baseline - self._textwidget:getBaseline())
-    self._verticalgroup = VerticalGroup:new{
-        align = "left",
-        VerticalSpan:new{
-            width = textbox_shift,
-        },
-        self._textwidget,
-    }
+    local max_width = (self.width or self.parent:getAddedWidgetAvailableWidth()) - self._checkmark.dimen.w
+    local textwidget
+    if self.single_line then
+        local checkmark_h = self._checkmark:getSize().h
+        textwidget = TextWidget:new{
+            text = self.text,
+            face = self.face,
+            max_width = max_width,
+            bold = self.bold,
+            fgcolor = self.enabled and fgcolor or Blitbuffer.COLOR_DARK_GRAY,
+            forced_baseline = self._checkmark.baseline,
+            forced_height = checkmark_h,
+        }
+        textwidget = LeftContainer:new{
+            dimen = Geom:new{
+                w = max_width,
+                h = checkmark_h,
+            },
+            textwidget,
+        }
+    else
+        textwidget = TextBoxWidget:new{
+            text = self.text,
+            face = self.face,
+            width = max_width,
+            bold = self.bold,
+            fgcolor = self.enabled and fgcolor or Blitbuffer.COLOR_DARK_GRAY,
+            bgcolor = self.bgcolor,
+        }
+        textwidget = VerticalGroup:new{
+            align = "left",
+            VerticalSpan:new{
+                width = math.max(0, self._checkmark.baseline - textwidget:getBaseline()),
+            },
+            textwidget,
+        }
+    end
     self._horizontalgroup = HorizontalGroup:new{
         align = "top",
         self._checkmark,
-        self._verticalgroup,
+        textwidget,
     }
     self._frame = FrameContainer:new{
         bordersize = 0,

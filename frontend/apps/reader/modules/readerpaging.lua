@@ -157,7 +157,7 @@ function ReaderPaging:onSaveSettings()
     --- @todo only save current_page page position
     self.ui.doc_settings:saveSetting("page_positions", self.page_positions)
     self.ui.doc_settings:saveSetting("last_page", self:getTopPage())
-    self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
+    self.ui.doc_settings:saveSetting("percent_finished", self.view.footer.percent_finished)
     self.ui.doc_settings:saveSetting("flipping_zoom_mode", self.flipping_zoom_mode)
     self.ui.doc_settings:saveSetting("flipping_scroll_mode", self.flipping_scroll_mode)
 end

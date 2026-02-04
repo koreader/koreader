@@ -212,31 +212,30 @@ if G_reader_settings:isTrue("color_rendering") and not Device:hasColorScreen() t
             UIManager:broadcastEvent(Event:new("ColorRenderingUpdate"))
         end,
     })
+    -- This will only return once the user has made a choice.
+    UIManager:runOnce()
 end
 
--- Get which file to start with
-local last_file = G_reader_settings:readSetting("lastfile")
-local start_with = G_reader_settings:readSetting("start_with") or "filemanager"
+local exit_code
 
--- Helpers
-local function retryLastFile()
+if not Device:isStartupScriptUpToDate() then
     local ConfirmBox = require("ui/widget/confirmbox")
-    return ConfirmBox:new{
-        text = _("Cannot open last file.\nThis could be because it was deleted or because external storage is still being mounted.\nDo you want to retry?"),
+    UIManager:show(ConfirmBox:new{
+        text = _("KOReader's startup script has been updated. You'll need to completely exit KOReader to finalize the update."),
+        cancel_text = _("Ignore"),
+        ok_text = _("Quit"),
         ok_callback = function()
-            if lfs.attributes(last_file, "mode") ~= "file" then
-                UIManager:show(retryLastFile())
-            end
+            exit_code = 0
         end,
-        cancel_callback = function()
-            start_with = "filemanager"
-        end,
-    }
+    })
+    -- This will only return once the user has made a choice.
+    UIManager:runOnce()
 end
 
 -- Start app
-local exit_code
-if file then
+if exit_code then -- luacheck: ignore
+    -- We're quitting to finalize an update.
+elseif file then
     local ReaderUI = require("apps/reader/readerui")
     ReaderUI:showReader(file)
     exit_code = UIManager:run()
@@ -245,6 +244,10 @@ elseif directory then
     FileManager:showFiles(directory)
     exit_code = UIManager:run()
 else
+    -- Get which file to start with
+    local last_file = G_reader_settings:readSetting("lastfile")
+    local start_with = G_reader_settings:readSetting("start_with") or "filemanager"
+
     local QuickStart = require("ui/quickstart")
     if not QuickStart:isShown() then
         start_with = "last"
@@ -252,10 +255,22 @@ else
     end
 
     if start_with == "last" and last_file and lfs.attributes(last_file, "mode") ~= "file" then
+        local function retryLastFile()
+            local ConfirmBox = require("ui/widget/confirmbox")
+            return ConfirmBox:new{
+                text = _("Cannot open last file.\nThis could be because it was deleted or because external storage is still being mounted.\nDo you want to retry?"),
+                ok_callback = function()
+                    if lfs.attributes(last_file, "mode") ~= "file" then
+                        UIManager:show(retryLastFile())
+                    end
+                end,
+                cancel_callback = function()
+                    start_with = "filemanager"
+                end,
+            }
+        end
         UIManager:show(retryLastFile())
-        -- We'll want to return from this without actually quitting,
-        -- so this is a slightly mangled UIManager:run() call to coerce the main loop into submission...
-        -- We'll call :run properly in either of the following branches once returning.
+        -- This will only return once the file is available or the user gave up.
         UIManager:runOnce()
     end
     if start_with == "last" and last_file then

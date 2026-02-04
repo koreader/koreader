@@ -10,6 +10,7 @@ local socket = require("socket")
 local socket_url = require("socket.url")
 local socketutil = require("socketutil")
 local time = require("ui/time")
+local util = require("util")
 local _ = require("gettext")
 local T = ffiutil.template
 
@@ -214,6 +215,13 @@ local function build_cookies(cookies)
 end
 
 local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra_headers)
+    local parsed_url = socket_url.parse(url)
+    local path = parsed_url.path
+    if path then
+        parsed_url.path = util.urlEncode(path)
+        url = socket_url.build(parsed_url)
+    end
+
     logger.dbg("getUrlContent(", url, ",", cookies, ", ", timeout, ",", maxtime, ",", add_to_cache, ")")
 
     if not timeout then timeout = 10 end

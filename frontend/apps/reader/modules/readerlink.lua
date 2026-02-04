@@ -842,7 +842,9 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
             if not neglect_current_location then
                 self:addCurrentLocationToStack()
             end
+            local page = self.ui.paging.current_page
             self.ui:handleEvent(Event:new("GotoPage", link.page + 1, link.pos))
+            Notification:notify(T(_("Link from page %1"), page), Notification.SOURCE_OTHER)
             return true
         end
         link_url = link.uri -- external link

@@ -403,6 +403,12 @@ function InputText:init()
         self:initKeyboard()
         self:initEventListener()
     end
+    --- @todo In MultiInputDialogs, this will fire multiple times as that widget both inherits
+    -- inputtexts from InputDialog and also creates its own.
+    -- See <https://github.com/koreader/koreader/pull/14901#issuecomment-3837678877>.
+    if self.focused and not self.for_measurement_only then
+        Device:startTextInput()
+    end
 end
 
 -- This will be called when we add or del chars, as we need to recreate
@@ -588,12 +594,14 @@ function InputText:unfocus()
     self.focused = false
     self.text_widget:unfocus()
     self._frame_textwidget.color = Blitbuffer.COLOR_DARK_GRAY
+    Device:stopTextInput()
 end
 
 function InputText:focus()
     self.focused = true
     self.text_widget:focus()
     self._frame_textwidget.color = Blitbuffer.COLOR_BLACK
+    Device:startTextInput()
 end
 
 -- NOTE: This key_map can be used for keyboards without numeric keys, such as on Kindles with keyboards. It is loosely 'inspired' by the symbol layer on the virtual keyboard but,
@@ -632,12 +640,25 @@ function InputText:onKeyPress(key)
             self:leftChar()
         elseif key["Right"] then
             self:rightChar()
-        -- NOTE: When we are not showing the virtual keyboard, let focusmanger handle up/down keys, as they  are used to directly move around the widget
-        --       seamlessly in and out of text fields and onto virtual buttons like `[cancel] [search dict]`, no need to unfocus first.
-        elseif key["Up"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
+        -- NOTE: The VirtualKeyboard has focus when shown, and handles up/down/left/right.
+        elseif key["Up"] then
+            if #self.charlist == 0 then
+                return false -- let FocusManager move focus up
+            end
+            local old_charpos, old_top = self.charpos, self.top_line_num
             self:upLine()
-        elseif key["Down"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
+            if self.charpos == old_charpos and self.top_line_num == old_top then
+                return false -- let FocusManager move focus up
+            end
+        elseif key["Down"] then
+            if #self.charlist == 0 then
+                return false -- let FocusManager move focus down
+            end
+            local old_charpos, old_top = self.charpos, self.top_line_num
             self:downLine()
+            if self.charpos == old_charpos and self.top_line_num == old_top then
+                return false -- let FocusManager move focus down
+            end
         elseif key["End"] then
             self:goToEnd()
         elseif key["Home"] then
@@ -646,10 +667,9 @@ function InputText:onKeyPress(key)
             self:addChars("\n")
         elseif key["Tab"] then
             self:addChars("    ")
-        -- as stated before, we also don't need to unfocus when there is no keyboard, one less key press to exit widgets, yay!
-        elseif key["Back"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
-            if self.focused then
-                self:unfocus()
+        elseif key["Back"] then
+            if self.parent and not self.keyboard:isVisible() then
+                UIManager:close(self.parent)
             end
         else
             handled = false
@@ -791,6 +811,7 @@ function InputText:onCloseWidget()
     if self.keyboard then
         self.keyboard:free()
     end
+    Device:stopTextInput()
     self:free()
 end
 

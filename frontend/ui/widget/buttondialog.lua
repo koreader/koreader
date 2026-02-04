@@ -66,6 +66,7 @@ local ButtonDialog = FocusManager:extend{
     shrink_unneeded_width = false, -- have 'width' meaning 'max_width'
     shrink_min_width = nil, -- default to ButtonTable's default
     tap_close_callback = nil,
+    colorful = false, -- should be set to true if any of the buttons' text is colorful
     alpha = nil, -- passed to MovableContainer
     -- If scrolling, prefers using this/these numbers of buttons rows per page
     -- (depending on what the screen height allows) to compute the height.
@@ -84,6 +85,10 @@ local ButtonDialog = FocusManager:extend{
 }
 
 function ButtonDialog:init()
+    -- If the device doesn't support Kaleido wfm, or color is disabled, don't bother tweaking the wfm
+    if self.colorful and not (Screen:isColorEnabled() and Device:hasKaleidoWfm()) then
+        self.colorful = false
+    end
     if not self.width then
         if not self.width_factor then
             self.width_factor = 0.9 -- default if no width specified
@@ -321,7 +326,7 @@ end
 
 function ButtonDialog:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self.movable.dimen
+        return self.colorful and "full" or "ui", self.movable.dimen
     end)
 end
 
