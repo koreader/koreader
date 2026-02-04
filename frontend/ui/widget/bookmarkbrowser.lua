@@ -869,8 +869,7 @@ function BookmarkBrowser:showSourceDialog(ui)
                         end
                     end)
                 end
-                local FileManagerCollection = require("apps/filemanager/filemanagercollection")
-                FileManagerCollection:onShowCollList({}, caller_callback, true)
+                self.ui.collections:onShowCollList({}, caller_callback, true)
             end,
         }},
         {{
