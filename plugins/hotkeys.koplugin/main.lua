@@ -439,8 +439,13 @@ function HotKeys:overrideConflictingKeyEvents()
         end
 
         if Device:hasKeyboard() then
+            local readersearch = self.ui.search
+            readersearch.key_events.ShowFulltextSearchInputBlank = {
+                { "Alt", "Shift", "S" }, { "Ctrl", "Shift", "S" },
+                event = "ShowFulltextSearchInput",
+                args = ""
+            }
             if self.type_to_search then
-                local readersearch = self.ui.search
                 readersearch.key_events.Alphabet = {
                     { Device.input.group.Alphabet }, { "Shift", Device.input.group.Alphabet },
                     event = "ShowFulltextSearchInput",
@@ -448,6 +453,14 @@ function HotKeys:overrideConflictingKeyEvents()
                 }
             end
         end
+    end
+    if Device:hasKeyboard() then
+        local filesearcher = self.ui.filesearcher
+        filesearcher.key_events.ShowFileSearchBlank = {
+            { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" },
+            event = "ShowFileSearch",
+            args = ""
+        }
     end
 end -- overrideConflictingKeyEvents()
 
