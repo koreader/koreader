@@ -437,7 +437,16 @@ function HotKeys:overrideConflictingKeyEvents()
                 logger.dbg("Hotkey ReaderConfig:registerKeyEvents() overridden. press_key_does_hotkeys = true")
             end
         end
-
+        local readerlink = self.ui.link
+        if Device:hasScreenKB() or Device:hasSymKey() then
+            readerlink.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
+        elseif Device:hasKeyboard() then
+            readerlink.key_events = {
+                SelectNextPageLink = { { "Tab" }, event = "SelectNextPageLink" },
+                SelectPrevPageLink = { { "Shift", "Tab" }, event = "SelectPrevPageLink" },
+                GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" },
+            }
+        end
         if Device:hasKeyboard() then
             local readersearch = self.ui.search
             readersearch.key_events.ShowFulltextSearchInputBlank = {
