@@ -855,6 +855,8 @@ function ReaderDictionary:cleanSelection(text, is_sane)
         text = text:gsub("·", "") -- interpunct
         text = text:gsub("|", "") -- pipe
         text = text:gsub("↑", "") -- and up arrow, used in some dictionaries to indicate related words
+        text = text:gsub("ˈ", "") -- primary stress mark, used in phonetic transcriptions to indicate a stressed syllable
+        text = text:gsub("ˌ", "") -- secondary stress mark, used in phonetic transcriptions to indicate a weaker stressed syllable
         -- Strip some common english grammatical construct
         text = text:gsub("'s$", '') -- english possessive
         -- Strip some common french grammatical constructs

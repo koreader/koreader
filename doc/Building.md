@@ -19,7 +19,7 @@ To get and compile the source you must have:
 - `gettext`
 - `git`
 - `make`: version >= 4.1 (recommended: >= 4.4 for transparent `-j` / `-l` handling)
-- `meson`: version >= 1.2.0
+- `meson`: version >= 1.2.0 on Linux, >= 1.8.3 on macOS
 - `nasm`
 - `ninja` (recommended: >= 1.13.2 for make job server support)
 - `patch`

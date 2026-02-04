@@ -870,30 +870,13 @@ function VirtualKeyboard:init()
     if keyboard.wrapInputBox then
         self.uwrap_func = keyboard.wrapInputBox(self.inputbox) or self.uwrap_func
     end
-    if Device:hasDPad() then
-        -- hadDPad() would have FocusManager handle arrow keys strokes to navigate
-        -- and activate this VirtualKeyboard's touch keys (needed on non-touch Kindle).
-        -- If we have a keyboard, we'd prefer arrow keys (and Enter, and Del) to be
-        -- handled by InputText to navigate the cursor inside the text box, and to
-        -- add newline and delete chars. And if we are a touch device, we don't
-        -- need focus manager to help us navigate keys and fields.
-        -- So, disable all key_event handled by FocusManager
-        if Device:isTouchDevice() then
-            -- Remove all FocusManager key event handlers.
-            for k, _ in pairs(self.builtin_key_events) do
+    if Device:hasDPad() and Device:hasKeyboard() then
+        -- Use physical keyboard for most characters
+        -- For special characters not available in physical keyboard
+        -- Use arrow and Press keys to select in VirtualKeyboard
+        for k, seq in pairs(self.extra_key_events) do
+            if self:_isTextKeyWithoutModifier(seq) then
                 self.key_events[k] = nil
-            end
-            for k, _ in pairs(self.extra_key_events) do
-                self.key_events[k] = nil
-            end
-        elseif Device:hasKeyboard() then
-            -- Use physical keyboard for most characters
-            -- For special characters not available in physical keyboard
-            -- Use arrow and Press keys to select in VirtualKeyboard
-            for k, seq in pairs(self.extra_key_events) do
-                if self:_isTextKeyWithoutModifier(seq) then
-                    self.key_events[k] = nil
-                end
             end
         end
     end
@@ -939,17 +922,6 @@ end
 
 function VirtualKeyboard:onClose()
     UIManager:close(self)
-    if self.inputbox and Device:hasDPad() then
-        -- Let InputText handle this KeyPress "Back" event to unfocus, otherwise, another extra Back event is needed.
-        -- NOTE: Keep in mind InputText is a special snowflake, and implements the raw onKeyPress handler for this!
-        -- Also, notify another widget that actually may want to know when *we* get closed, i.e., the parent (Input*Dialog*).
-        -- We need to do this manually because InputText's onKeyPress handler will very likely return true,
-        -- stopping event propagation (c.f., the last hasDPad branch of said handler).
-        if self.inputbox and self.inputbox.parent and self.inputbox.parent.onKeyboardClosed then
-            self.inputbox.parent:onKeyboardClosed()
-        end
-        return false
-    end
     return true
 end
 
@@ -970,23 +942,12 @@ end
 function VirtualKeyboard:onShow()
     self:_refresh(true)
     self.visible = true
-    Device:startTextInput()
     return true
 end
 
 function VirtualKeyboard:onCloseWidget()
     self:_refresh(true)
     self.visible = false
-    -- NOTE: This effectively stops SDL text input when a keyboard is hidden (... but navigational stuff still works).
-    --       If you instead wanted it to be enabled as long as an input dialog is displayed, regardless of VK's state,
-    --       this could be moved to InputDialog's onShow/onCloseWidget handlers (but, it would allow input on unfocused fields).
-    -- NOTE: But something more complex, possibly based on an in-class ref count would have to be implemented in order to be able to deal
-    --       with multiple InputDialogs being shown and closed in asymmetric fashion... Ugh.
-    -- NOTE: You would also have to deal with the fact that, once InputText loses focus,
-    --       it will stop dealing with key events because it wouldn't know where to send them when there are multiple live instances of it,
-    --       specifically because, given how we propagate events, the key event will go to whichever inputtext comes earlier in the container's array...
-    -- c.f., 2ccf7601fe1cbd9794aea0be754ea4166b9767d7 in #12361 and the comments surrounding it ;).
-    Device:stopTextInput()
 end
 
 function VirtualKeyboard:lockVisibility(toggle)

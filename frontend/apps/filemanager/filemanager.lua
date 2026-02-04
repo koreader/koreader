@@ -286,6 +286,12 @@ function FileManager:setupLayout()
                     FileManagerConverter:genConvertButton(file, close_dialog_callback, refresh_callback)
                 })
             end
+            if been_opened and #doc_settings_or_file:readSetting("annotations") > 0 then
+                table.insert(buttons, {
+                    file_manager.collections:genExportHighlightsButton({ [file] = true }, close_dialog_callback),
+                    file_manager.collections:genBookmarkBrowserButton({ [file] = true }, close_dialog_callback),
+                })
+            end
             table.insert(buttons, {
                 {
                     text = _("Open with…"),
@@ -572,13 +578,8 @@ function FileManager:getPlusDialogButtons()
                     close_dialog_callback, toggle_select_mode_callback, not actions_enabled),
             },
             {
-                {
-                    text = _("Export highlights"),
-                    enabled = (actions_enabled and self.exporter) and true or false,
-                    callback = function()
-                        self.exporter:exportFilesNotes(self.selected_files)
-                    end,
-                },
+                self.collections:genExportHighlightsButton(self.selected_files, close_dialog_callback, not actions_enabled),
+                self.collections:genBookmarkBrowserButton(self.selected_files, close_dialog_callback, not actions_enabled),
             },
             {}, -- separator
             {
@@ -1543,7 +1544,7 @@ function FileManager:showOpenWithDialog(file)
     UIManager:show(dialog)
 end
 
-function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_callback)
+function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_callback, after_open_callback)
     local is_provider_forced = provider ~= nil
     provider = provider or DocumentRegistry:getProvider(file, true) -- include auxiliary
     if provider and provider.order then -- auxiliary
@@ -1560,7 +1561,7 @@ function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_ca
             doc_caller_callback()
         end
         local ReaderUI = require("apps/reader/readerui")
-        ReaderUI:showReader(file, provider, nil, is_provider_forced)
+        ReaderUI:showReader(file, provider, nil, is_provider_forced, after_open_callback)
     end
 end
 

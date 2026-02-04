@@ -173,6 +173,7 @@ local order = {
         "----------------------------",
         "favorites",
         "collections",
+        "bookmark_browser",
         "----------------------------",
         "mass_storage_actions", -- if Device:canToggleMassStorage()
         "----------------------------",
