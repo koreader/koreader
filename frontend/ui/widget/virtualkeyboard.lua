@@ -882,7 +882,6 @@ function VirtualKeyboard:init()
     end
     -- Set initial focus to the last key ("Enter"), to facilitate introducing new lines
     -- on devices with a physical keyboard and the virtual keyboard on display.
-    -- ONLY applied if the input widget's parent (the InputDialog) is in full screen mode.
     if self.layout and #self.layout > 0 and Device:hasKeyboard()
        and self.inputbox and self.inputbox.parent then
         local last_row = #self.layout
