@@ -142,14 +142,26 @@ local function initTouchEvents()
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
             else
-                if self.keyboard then
-                    self.keyboard:showKeyboard()
+                if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+                    do end -- luacheck: ignore 541
+                else
+                    self:onShowKeyboard()
                 end
+                Device:startTextInput()
                 -- Make sure we're flagged as in focus again.
                 -- NOTE: self:focus() does a full free/reinit cycle, which is completely unnecessary to begin with,
                 --       *and* resets cursor position, which is problematic when tapping on an already in-focus field (#12444).
                 --       So, just flip our own focused flag, that's the only thing we need ;).
                 self.focused = true
+            end
+            -- We might have a visual focus if we used a DPad, so we need to remove it.
+            if Device:hasDPad() then
+                local x, y = self.parent:getFocusableWidgetXY(self)
+                if x and y then
+                    -- Use FORCED_FOCUS to guarantee visual updates (Unfocus old, Focus new)
+                    -- even on touch devices where this is usually suppressed.
+                    self.parent:moveFocusTo(x, y, FocusManager.FORCED_FOCUS)
+                end
             end
             if self._frame_textwidget.dimen ~= nil -- zh keyboard with candidates shown here has _frame_textwidget.dimen = nil
                     and #self.charlist > 0 then -- do not move cursor within a hint
@@ -669,7 +681,7 @@ function InputText:onKeyPress(key)
             self:addChars("    ")
         elseif key["Back"] then
             if self.parent and not self.keyboard:isVisible() then
-                UIManager:close(self.parent)
+                self.parent:onCloseDialog()
             end
         else
             handled = false
