@@ -711,6 +711,7 @@ function TextViewer:setTextBold(start_pos, len)
 end
 
 function TextViewer:onShowMenu()
+    if not self.titlebar.left_icon then return end -- Menu could be triggered with a key event.
     local dialog
     local buttons = {
         {{
@@ -763,7 +764,9 @@ function TextViewer:onShowMenu()
         shrink_unneeded_width = true,
         buttons = buttons,
         anchor = function()
-            return self.titlebar.left_button.image.dimen
+            if self.titlebar.left_button then
+                return self.titlebar.left_button.image.dimen
+            end
         end,
     }
     UIManager:show(dialog)
