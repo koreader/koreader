@@ -680,8 +680,10 @@ function InputText:onKeyPress(key)
         elseif key["Tab"] then
             self:addChars("    ")
         elseif key["Back"] then
-            if self.parent and self.parent.onCloseDialog and not self.keyboard:isVisible() then
+            if self.parent.onCloseDialog then
                 self.parent:onCloseDialog()
+            else
+                UIManager:close(self.parent)
             end
         else
             handled = false
