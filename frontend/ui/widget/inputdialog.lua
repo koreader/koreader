@@ -921,6 +921,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                 id = "keyboard",
                 callback = function()
                     self:toggleKeyboard()
+                    Device:startTextInput()
                 end,
             })
         end
@@ -943,12 +944,14 @@ function InputDialog:_addScrollButtons(nav_bar)
                                     callback = function()
                                         UIManager:close(input_dialog)
                                         self:toggleKeyboard()
+                                        Device:startTextInput()
                                     end,
                                 },
                                 {
                                     text = _("Find first"),
                                     callback = function()
                                         self:findCallback(input_dialog, true)
+                                        Device:startTextInput()
                                     end,
                                 },
                                 {
@@ -956,6 +959,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                                     is_enter_default = true,
                                     callback = function()
                                         self:findCallback(input_dialog)
+                                        Device:startTextInput()
                                     end,
                                 },
                             },
@@ -999,6 +1003,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                                     callback = function()
                                         UIManager:close(input_dialog)
                                         self:toggleKeyboard()
+                                        Device:startTextInput()
                                     end,
                                 },
                                 {
@@ -1011,6 +1016,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                                             self:toggleKeyboard()
                                             self._input_widget:moveCursorToCharPos(self._input_widget:getLineCharPos(new_line_num))
                                         end
+                                        Device:startTextInput()
                                     end,
                                 },
                             },
