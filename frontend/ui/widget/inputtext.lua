@@ -142,9 +142,7 @@ local function initTouchEvents()
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
             else
-                if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
-                    do end -- luacheck: ignore 541
-                else
+                if not ((Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled")) then
                     self:onShowKeyboard()
                 end
                 Device:startTextInput()
