@@ -154,7 +154,7 @@ local function initTouchEvents()
                 --       So, just flip our own focused flag, that's the only thing we need ;).
                 self.focused = true
             end
-            -- We might have a visual focus if we used a DPad, so we need to remove it.
+            -- We might have an incorrect visual focus if we used a DPad, so we need to remove it.
             if Device:hasDPad() then
                 local x, y = self.parent:getFocusableWidgetXY(self)
                 if x and y then
