@@ -680,7 +680,7 @@ function InputText:onKeyPress(key)
         elseif key["Tab"] then
             self:addChars("    ")
         elseif key["Back"] then
-            if self.parent and not self.keyboard:isVisible() then
+            if self.parent and self.parent.onCloseDialog and not self.keyboard:isVisible() then
                 self.parent:onCloseDialog()
             end
         else
