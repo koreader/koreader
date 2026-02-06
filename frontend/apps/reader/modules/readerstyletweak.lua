@@ -13,7 +13,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
+local FocusManager = require("ui/widget/focusmanager")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local Notification = require("ui/widget/notification")
 local Size = require("ui/size")
@@ -31,7 +31,7 @@ local Screen = Device.screen
 local T = require("ffi/util").template
 
 -- Simple widget for showing tweak info
-local TweakInfoWidget = InputContainer:extend{
+local TweakInfoWidget = FocusManager:extend{
     tweak = nil,
     is_global_default = nil,
     toggle_global_default_callback = function() end,
@@ -158,6 +158,28 @@ function TweakInfoWidget:init()
         show_parent = self,
     }
 
+    if Device:hasDPad() then
+        self.css_frame.onFocus = function(this)
+            this.bordersize = Size.border.thick
+            UIManager:setDirty(this, "ui")
+        end
+        self.css_frame.onUnfocus = function(this)
+            this.bordersize = Size.border.thin
+            UIManager:setDirty(this, "ui")
+        end
+        self.css_frame.onPress = function()
+            local item = self:getFocusItem()
+            if item == self.css_frame and Device:hasClipboard() then
+                self:copyTextToClipboard(self.css_text)
+                return true
+            end
+        end
+        self.layout = {}
+        table.insert(self.layout, 1, { self.css_frame })
+        self:mergeLayoutInVertical(button_table)
+        self:refocusWidget()
+    end
+
     self.movable = MovableContainer:new{
         FrameContainer:new{
             background = Blitbuffer.COLOR_WHITE,
@@ -207,10 +229,7 @@ function TweakInfoWidget:onTap(arg, ges)
         -- Tap inside CSS text copies it into clipboard (so it
         -- can be pasted into the book-specific tweak editor)
         -- (Add \n on both sides for easier pasting)
-        Device.input.setClipboardText("\n"..self.css_text.."\n")
-        UIManager:show(Notification:new{
-            text = _("CSS text copied to clipboard"),
-        })
+        self:copyTextToClipboard(self.css_text)
         return true
     elseif ges.pos:notIntersectWith(self.movable.dimen) then
         -- Tap outside closes widget
@@ -218,6 +237,14 @@ function TweakInfoWidget:onTap(arg, ges)
         return true
     end
     return false
+end
+
+function TweakInfoWidget:copyTextToClipboard(text)
+    Device.input.setClipboardText("\n"..text.."\n")
+    UIManager:show(Notification:new{
+        text = _("CSS text copied to clipboard"),
+    })
+    return true
 end
 
 function TweakInfoWidget:onSelect()
