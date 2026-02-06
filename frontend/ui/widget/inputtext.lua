@@ -173,6 +173,7 @@ local function initTouchEvents()
         end
 
         function InputText:onHoldTextBox(arg, ges)
+            -- Logic moved below as it is also used when not isTouchDevice
             self:holdTextBox(arg, ges)
             return true
         end
