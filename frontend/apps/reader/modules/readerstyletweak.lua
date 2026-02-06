@@ -162,21 +162,6 @@ function TweakInfoWidget:init()
     }
 
     if Device:hasDPad() then
-        self.css_frame.onFocus = function(this)
-            if not this._focused then
-                this._orig_inner_bordersize = this.inner_bordersize
-                this.inner_bordersize = this.focus_border_size
-                this._focused = true
-            end
-            UIManager:setDirty(this, "ui")
-        end
-        self.css_frame.onUnfocus = function(this)
-            if this._focused then
-                this.inner_bordersize = this._orig_inner_bordersize
-                this._focused = false
-            end
-            UIManager:setDirty(this, "ui")
-        end
         self.css_frame.onPress = function()
             local item = self:getFocusItem()
             if item == self.css_frame and Device:hasClipboard() then
