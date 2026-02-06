@@ -161,10 +161,12 @@ function TweakInfoWidget:init()
         show_parent = self,
     }
 
-    if Device:hasDPad() then
+    -- Note: for devices with DPad but no clipboard, button_table is a FocusManager
+    --       so the widget should work correctly nonetheless.
+    if Device:hasDPad() and Device:hasClipboard() then
         self.css_frame.onPress = function()
             local item = self:getFocusItem()
-            if item == self.css_frame and Device:hasClipboard() then
+            if item == self.css_frame then
                 self:copyTextToClipboard(self.css_text)
                 return true
             end
