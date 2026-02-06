@@ -225,6 +225,7 @@ local settingsList = {
     export_annotations = {category="none", event="ExportAnnotations", title=_("Export annotations"), reader=true},
 
     -- Reflowable documents
+    edit_book_tweak = {category="none", event="EditBookTweak", title=_("Edit book-specific style tweak"), rolling=true},
     set_typography_lang = {category="string", event="SetTypographyLanguage", title=_("Set typography language"), args_func=ReaderTypography.getLangTags, rolling=true, separator=true},
     set_font = {category="string", event="SetFont", title=_("Font"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
     increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size"), rolling=true},
@@ -476,6 +477,7 @@ local dispatcher_menu_order = {
     "export_annotations",
 
     -- Reflowable documents
+    "edit_book_tweak",
     "set_typography_lang",
     ----
     "set_font",

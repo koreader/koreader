@@ -936,6 +936,10 @@ If used as-is, they will act on ALL elements!]]), true},
     }},
 }
 
+function ReaderStyleTweak:onEditBookTweak(touchmenu_instance)
+    self:editBookTweak()
+end
+
 function ReaderStyleTweak:editBookTweak(touchmenu_instance)
     local InputDialog = require("ui/widget/inputdialog")
     local editor -- our InputDialog instance
@@ -1195,12 +1199,16 @@ function ReaderStyleTweak:editBookTweak(touchmenu_instance)
             if should_apply then
                 -- Let menu be closed and previous page be refreshed,
                 -- so one can see how the text is changed by the tweak.
-                touchmenu_instance:closeMenu()
+                if touchmenu_instance then
+                    touchmenu_instance:closeMenu()
+                end
                 UIManager:scheduleIn(0.2, function()
                     self:updateCssText(true) -- have it applied
                 end)
             else
-                touchmenu_instance:updateItems()
+                if touchmenu_instance then
+                    touchmenu_instance:updateItems()
+                end
             end
             editor.save_callback_called = true
             return true, msg
