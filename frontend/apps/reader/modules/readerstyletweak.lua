@@ -95,6 +95,9 @@ function TweakInfoWidget:init()
     self.css_frame = FrameContainer:new{
         bordersize = Size.border.thin,
         padding = Size.padding.large,
+        focusable = true,
+        focus_border_size = Size.border.thick,
+        focus_inner_border = true,
         TextBoxWidget:new{
             text = self.css_text,
             face = Font:getFace("infont", 16),
@@ -160,11 +163,18 @@ function TweakInfoWidget:init()
 
     if Device:hasDPad() then
         self.css_frame.onFocus = function(this)
-            this.bordersize = Size.border.thick
+            if not this._focused then
+                this._orig_inner_bordersize = this.inner_bordersize
+                this.inner_bordersize = this.focus_border_size
+                this._focused = true
+            end
             UIManager:setDirty(this, "ui")
         end
         self.css_frame.onUnfocus = function(this)
-            this.bordersize = Size.border.thin
+            if this._focused then
+                this.inner_bordersize = this._orig_inner_bordersize
+                this._focused = false
+            end
             UIManager:setDirty(this, "ui")
         end
         self.css_frame.onPress = function()
@@ -228,7 +238,6 @@ function TweakInfoWidget:onTap(arg, ges)
     if ges.pos:intersectWith(self.css_frame.dimen) and Device:hasClipboard() then
         -- Tap inside CSS text copies it into clipboard (so it
         -- can be pasted into the book-specific tweak editor)
-        -- (Add \n on both sides for easier pasting)
         self:copyTextToClipboard(self.css_text)
         return true
     elseif ges.pos:notIntersectWith(self.movable.dimen) then
@@ -240,6 +249,7 @@ function TweakInfoWidget:onTap(arg, ges)
 end
 
 function TweakInfoWidget:copyTextToClipboard(text)
+    -- (Add \n on both sides for easier pasting)
     Device.input.setClipboardText("\n"..text.."\n")
     UIManager:show(Notification:new{
         text = _("CSS text copied to clipboard"),
