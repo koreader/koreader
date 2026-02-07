@@ -340,7 +340,7 @@ function FileSearcher:onMenuSelect(item)
         if item.is_file then
             item.dim = not item.dim and true or nil
             self._manager.selected_files[item.path] = item.dim
-            self._manager:updateItemTable()
+            self:updateItems(1, true)
         end
     else
         if item.is_file then
@@ -449,6 +449,15 @@ function FileSearcher:onMenuHold(item)
                 end,
             },
         })
+        if been_opened then
+            local annotations = doc_settings_or_file:readSetting("annotations")
+            if annotations and #annotations > 0 then
+                table.insert(buttons, {
+                    self._manager.ui.collections:genExportHighlightsButton({ [file] = true }, close_dialog_callback),
+                    self._manager.ui.collections:genBookmarkBrowserButton({ [file] = true }, close_dialog_callback),
+                })
+            end
+        end
         table.insert(buttons, {
             filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback),
             filemanagerutil.genBookInformationButton(doc_settings_or_file, book_props, close_dialog_callback),
@@ -517,7 +526,7 @@ function FileSearcher:showSelectModeDialog()
                     for _, item in ipairs(item_table) do
                         item.dim = nil
                     end
-                    self:updateItemTable()
+                    self.booklist_menu:updateItems(1, true)
                 end,
             },
             {
@@ -530,7 +539,7 @@ function FileSearcher:showSelectModeDialog()
                             self.selected_files[item.path] = true
                         end
                     end
-                    self:updateItemTable()
+                    self.booklist_menu:updateItems(1, true)
                 end,
             },
         },
@@ -546,7 +555,7 @@ function FileSearcher:showSelectModeDialog()
                             item.dim = nil
                         end
                     end
-                    self:updateItemTable()
+                    self.booklist_menu:updateItems(1, true)
                 end,
             },
             {

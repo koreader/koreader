@@ -286,11 +286,14 @@ function FileManagerCollection:onMenuHold(item)
             end,
         },
     })
-    if been_opened and #doc_settings_or_file:readSetting("annotations") > 0 then
-        table.insert(buttons, {
-            self._manager:genExportHighlightsButton({ [file] = true }, close_dialog_callback),
-            self._manager:genBookmarkBrowserButton({ [file] = true }, close_dialog_callback),
-        })
+    if been_opened then
+        local annotations = doc_settings_or_file:readSetting("annotations")
+        if annotations and #annotations > 0 then
+            table.insert(buttons, {
+                self._manager:genExportHighlightsButton({ [file] = true }, close_dialog_callback),
+                self._manager:genBookmarkBrowserButton({ [file] = true }, close_dialog_callback),
+            })
+        end
     end
     table.insert(buttons, {
         filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback),
@@ -1556,7 +1559,7 @@ end
 function FileManagerCollection:genExportHighlightsButton(files, caller_pre_callback, button_disabled)
     return {
         text = _("Export highlights"),
-        enabled = self.ui.exporter and not button_disabled or false,
+        enabled = (self.ui.exporter and self.ui.exporter:isReady()) and not button_disabled or false,
         callback = function()
             if caller_pre_callback then
                 caller_pre_callback()
