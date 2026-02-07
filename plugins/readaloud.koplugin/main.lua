@@ -294,7 +294,7 @@ function ReadAloud:_restartFromCurrentView()
     if self._internal_page_turn then
         return
     end
-    android.tts.stop()
+    pcall(android.tts.stop)
     UIManager:unschedule(self._continue_func)
     UIManager:scheduleIn(0.05, self._continue_func)
 end
