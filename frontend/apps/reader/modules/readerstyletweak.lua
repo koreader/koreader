@@ -706,17 +706,10 @@ You can enable individual tweaks on this book with a tap, or view more details a
         enabled_func = function() return self.enabled end,
         checked_func = function() return self.book_style_tweak_enabled end,
         callback = function(touchmenu_instance)
-            if self.book_style_tweak then
-                -- There is a tweak: toggle it on tap, like other tweaks
-                self.book_style_tweak_enabled = not self.book_style_tweak_enabled
-                self:updateCssText(true) -- apply it immediately
-            else
-                -- No tweak defined: launch editor
-                self:editBookTweak(touchmenu_instance)
-            end
+            self:onToggleBookTweak(touchmenu_instance, true)
         end,
         hold_callback = function(touchmenu_instance)
-            self:editBookTweak(touchmenu_instance)
+            self:onEditBookTweak(touchmenu_instance)
         end,
     }
     table.insert(self.tweaks_table, book_tweak_item)
@@ -936,11 +929,30 @@ If used as-is, they will act on ALL elements!]]), true},
     }},
 }
 
-function ReaderStyleTweak:onEditBookTweak(touchmenu_instance)
-    self:editBookTweak()
+function ReaderStyleTweak:onToggleBookTweak(touchmenu_instance, no_notification)
+    if self.book_style_tweak then
+        -- There is a tweak: toggle it on tap, like other tweaks
+        self.book_style_tweak_enabled = not self.book_style_tweak_enabled
+        self:updateCssText(true) -- apply it immediately
+        if not no_notification then
+            -- Same format as for individual tweaks
+            local text = _("Book-specific tweak")
+            if self.book_style_tweak_enabled then
+                text = T(C_("Style tweak", "On: %1"), text)
+            else
+                text = T(C_("Style tweak", "Off: %1"), text)
+            end
+            UIManager:show(Notification:new{
+                text = text,
+            })
+        end
+    else
+        -- No tweak defined: launch editor
+        self:onEditBookTweak(touchmenu_instance)
+    end
 end
 
-function ReaderStyleTweak:editBookTweak(touchmenu_instance)
+function ReaderStyleTweak:onEditBookTweak(touchmenu_instance)
     local InputDialog = require("ui/widget/inputdialog")
     local editor -- our InputDialog instance
     local tweak_button_id = "editBookTweakButton"
