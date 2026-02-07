@@ -340,7 +340,7 @@ function FileSearcher:onMenuSelect(item)
         if item.is_file then
             item.dim = not item.dim and true or nil
             self._manager.selected_files[item.path] = item.dim
-            self._manager:updateItemTable()
+            self:updateItems(1, true)
         end
     else
         if item.is_file then
@@ -526,7 +526,7 @@ function FileSearcher:showSelectModeDialog()
                     for _, item in ipairs(item_table) do
                         item.dim = nil
                     end
-                    self:updateItemTable()
+                    self.booklist_menu:updateItems(1, true)
                 end,
             },
             {
@@ -539,7 +539,7 @@ function FileSearcher:showSelectModeDialog()
                             self.selected_files[item.path] = true
                         end
                     end
-                    self:updateItemTable()
+                    self.booklist_menu:updateItems(1, true)
                 end,
             },
         },
@@ -555,7 +555,7 @@ function FileSearcher:showSelectModeDialog()
                             item.dim = nil
                         end
                     end
-                    self:updateItemTable()
+                    self.booklist_menu:updateItems(1, true)
                 end,
             },
             {
