@@ -62,6 +62,26 @@ local function chunkText(text, max_len)
     local i = 1
     local n = #text
 
+    local function isUtf8ContinuationByte(b)
+        return b ~= nil and b >= 128 and b <= 191
+    end
+
+    local function utf8SafeCut(start_pos, cut_pos)
+        local b = text:byte(cut_pos)
+        if isUtf8ContinuationByte(b) then
+            local k = cut_pos
+            while k > start_pos and isUtf8ContinuationByte(text:byte(k)) do
+                k = k - 1
+            end
+            -- k now points to a likely leading byte; cut before it.
+            cut_pos = k - 1
+            if cut_pos < start_pos then
+                cut_pos = start_pos
+            end
+        end
+        return cut_pos
+    end
+
     while i <= n do
         local j = math.min(i + max_len - 1, n)
         local cut = nil
@@ -95,7 +115,7 @@ local function chunkText(text, max_len)
             end
         end
 
-        cut = cut or j
+        cut = utf8SafeCut(i, cut or j)
         local chunk = normalizeText(text:sub(i, cut))
         if chunk ~= "" then
             table.insert(chunks, chunk)
