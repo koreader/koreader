@@ -787,6 +787,7 @@ function ReaderStyleTweak:onToggleStyleTweaks(no_notification)
     self.enabled = not self.enabled
     self:updateCssText(true) -- apply it immediately
     if not no_notification then
+        local text
         if self.enabled then
             text = _("Enabled style tweaks.")
         else
