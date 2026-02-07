@@ -783,16 +783,14 @@ function ReaderStyleTweak:onDispatcherRegisterActions()
     end
 end
 
-function ReaderStyleTweak:onToggleAllEnabledTweaks(no_notification)
+function ReaderStyleTweak:onToggleStyleTweaks(no_notification)
     self.enabled = not self.enabled
     self:updateCssText(true) -- apply it immediately
     if not no_notification then
-        -- Same format as for individual tweaks
-        local text = _("All enabled style tweaks")
         if self.enabled then
-            text = T(C_("Style tweak", "On: %1"), text)
+            text = _("Enabled style tweaks.")
         else
-            text = T(C_("Style tweak", "Off: %1"), text)
+            text = _("Disabled style tweaks.")
         end
         UIManager:show(Notification:new{
             text = text,
