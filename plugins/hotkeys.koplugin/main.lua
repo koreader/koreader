@@ -1,6 +1,7 @@
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
+local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
@@ -87,6 +88,9 @@ end
     @return (boolean) Returns true if the hotkey action was successfully executed, otherwise returns nil.
 ]]
 function HotKeys:onHotkeyAction(hotkey)
+    -- Note: we could have started text selection and then trigger a reflow through hotkeys (e.g., increase
+    --       font-size) which will cause pandemonium to ensue (invalid coordinates).
+    self.ui:handleEvent(Event:new("StopHighlightIndicator", {args=true}))
     local hotkey_action_list = self.hotkeys[hotkey]
     local context = self.is_docless and "FileManager" or "Reader"
     if hotkey_action_list == nil then
