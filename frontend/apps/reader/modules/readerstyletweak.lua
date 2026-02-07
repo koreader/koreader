@@ -783,6 +783,46 @@ function ReaderStyleTweak:onDispatcherRegisterActions()
     end
 end
 
+function ReaderStyleTweak:onToggleAllEnabledTweaks(no_notification)
+    self.enabled = not self.enabled
+    self:updateCssText(true) -- apply it immediately
+    if not no_notification then
+        -- Same format as for individual tweaks
+        local text = _("All enabled style tweaks")
+        if self.enabled then
+            text = T(C_("Style tweak", "On: %1"), text)
+        else
+            text = T(C_("Style tweak", "Off: %1"), text)
+        end
+        UIManager:show(Notification:new{
+            text = text,
+        })
+    end
+end
+
+function ReaderStyleTweak:onToggleBookTweak(touchmenu_instance, no_notification)
+    if self.book_style_tweak then
+        -- There is a tweak: toggle it on tap, like other tweaks
+        self.book_style_tweak_enabled = not self.book_style_tweak_enabled
+        self:updateCssText(true) -- apply it immediately
+        if not no_notification then
+            -- Same format as for individual tweaks
+            local text = _("Book-specific tweak")
+            if self.book_style_tweak_enabled then
+                text = T(C_("Style tweak", "On: %1"), text)
+            else
+                text = T(C_("Style tweak", "Off: %1"), text)
+            end
+            UIManager:show(Notification:new{
+                text = text,
+            })
+        end
+    else
+        -- No tweak defined: launch editor
+        self:onEditBookTweak(touchmenu_instance)
+    end
+end
+
 local BOOK_TWEAK_SAMPLE_CSS = [[
 /* Remove indent from some P used as titles */
 p.someTitleClassName {
@@ -928,29 +968,6 @@ If used as-is, they will act on ALL elements!]]), true},
         { "::before {content: '█ '}", _("Prepend a visible marker.")},
     }},
 }
-
-function ReaderStyleTweak:onToggleBookTweak(touchmenu_instance, no_notification)
-    if self.book_style_tweak then
-        -- There is a tweak: toggle it on tap, like other tweaks
-        self.book_style_tweak_enabled = not self.book_style_tweak_enabled
-        self:updateCssText(true) -- apply it immediately
-        if not no_notification then
-            -- Same format as for individual tweaks
-            local text = _("Book-specific tweak")
-            if self.book_style_tweak_enabled then
-                text = T(C_("Style tweak", "On: %1"), text)
-            else
-                text = T(C_("Style tweak", "Off: %1"), text)
-            end
-            UIManager:show(Notification:new{
-                text = text,
-            })
-        end
-    else
-        -- No tweak defined: launch editor
-        self:onEditBookTweak(touchmenu_instance)
-    end
-end
 
 function ReaderStyleTweak:onEditBookTweak(touchmenu_instance)
     local InputDialog = require("ui/widget/inputdialog")
