@@ -41,8 +41,6 @@ local ReaderSearch = InputContainer:extend{
 }
 
 function ReaderSearch:init()
-    self:registerKeyEvents()
-
      -- number of words before and after the search string in All search results
     self.findall_nb_context_words = G_reader_settings:readSetting("fulltext_search_nb_context_words") or 5
     self.findall_results_per_page = G_reader_settings:readSetting("fulltext_search_results_per_page") or 10
@@ -83,12 +81,12 @@ SRELL_ERROR_CODES[110] = _("No preceding expression in repetition.")
 SRELL_ERROR_CODES[111] = _("Expression too complex, some hits will not be shown.")
 SRELL_ERROR_CODES[666] = _("Expression may lead to an extremely long search time.")
 
-function ReaderSearch:registerKeyEvents()
-    if Device:hasKeyboard() then
-        self.key_events.ShowFulltextSearchInputBlank = { { "Alt", "Shift", "S" }, { "Ctrl", "Shift", "S" }, event = "ShowFulltextSearchInput", args = "" }
-        self.key_events.ShowFulltextSearchInputRecent = { { "Alt", "S" }, { "Ctrl", "S" }, event = "ShowFulltextSearchInput" }
-    end
-end
+-- function ReaderSearch:registerKeyEvents()
+    -- handled by hotkeys.koplugin:
+--     if Device:hasKeyboard() then
+--         onShowFulltextSearchInputBlank = { { "Alt", "Shift", "S" }, { "Ctrl", "Shift", "S" } }
+--     end
+-- end
 
 function ReaderSearch:addToMainMenu(menu_items)
     menu_items.fulltext_search_settings = {
