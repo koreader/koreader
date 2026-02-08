@@ -1104,10 +1104,11 @@ function BookInfo:expandString(str, file, timestamp)
                 local doc_settings = BookList.getDocSettings(file)
                 props = BookInfo.extendProps(doc_settings:readSetting("doc_props"), file)
                 if patterns["%t"] or patterns["%c"] or patterns["%p"] then
-                    local pages = doc_settings:readSetting("doc_pages")
+                    local book_info = BookList.getBookInfo(file)
+                    local pages = book_info.pages
                     if pages then
                         patterns["%t"] = patterns["%t"] and pages
-                        local percent = doc_settings:readSetting("percent_finished")
+                        local percent = book_info.percent_finished
                         if percent then
                             patterns["%c"] = patterns["%c"] and Math.round(percent * pages)
                             patterns["%p"] = patterns["%p"] and Math.round(percent * 100)
