@@ -135,6 +135,7 @@ function ReaderConfig:onShowConfigMenu()
         covers_footer = true,
         close_callback = function() self:onCloseCallback() end,
     }
+    self.ui.highlight:onStopHighlightIndicator(true) -- stop any text selection in progress, if applicable
     self.ui:handleEvent(Event:new("DisableHinting"))
     -- show last used panel when opening config dialog
     self.config_dialog:onShowConfigPanel(self.last_panel_index)
