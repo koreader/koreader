@@ -2778,7 +2778,6 @@ function ReaderHighlight:onHighlightPress(skip_tap_check)
             pos.y + pos.h / 2 - self._current_indicator_pos.h / 2
         )
     end
-    UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
     return true
 end
 
