@@ -555,6 +555,16 @@ This can also be used to remove some gray background or to convert a grayscale o
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[In reflow mode, sets the quality of the text and image extraction processing and output.]]),
             },
+            {
+                name = "nightmode_document",
+                name_text = _("Invert Document"),
+                toggle = {_("off"), _("on")},
+                values = {0, 1},
+                default_value = 0,
+                show_func = function() return Device.screen.night_mode end,
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Invert document in night mode. Useful for image-heavy documents such as comics or manga.]]),
+            },
         }
     },
     {
