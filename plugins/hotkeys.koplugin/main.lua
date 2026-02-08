@@ -1,7 +1,6 @@
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
-local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
