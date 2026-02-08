@@ -135,9 +135,6 @@ function ReaderConfig:onShowConfigMenu()
         covers_footer = true,
         close_callback = function() self:onCloseCallback() end,
     }
-    -- Note: on devices with DPad, we could start text selection and then trigger a reflow
-    --       (e.g., increase font-size) which will cause pandemonium to ensue (invalid coordinates).
-    self.ui:handleEvent(Event:new("StopHighlightIndicator", {args=true}))
     self.ui:handleEvent(Event:new("DisableHinting"))
     -- show last used panel when opening config dialog
     self.config_dialog:onShowConfigPanel(self.last_panel_index)

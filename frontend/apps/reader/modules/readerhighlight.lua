@@ -359,6 +359,28 @@ function ReaderHighlight:setupTouchZones()
 end
 
 function ReaderHighlight:onReaderReady()
+    if Device:hasDPad() then
+        self._guarded = self._guarded or {}
+        local function wrapWithGuard(module, func_name)
+            if not module or not module[func_name] then return end
+            local original_func = module[func_name]
+            if self._guarded[original_func] then return end
+
+            module[func_name] = function(this, ...)
+                if self._start_indicator_highlight then
+                    self:onStopHighlightIndicator(true)
+                end
+                return original_func(this, ...)
+            end
+            self._guarded[module[func_name]] = true
+        end
+
+        -- Note: on devices with DPad, we could start text selection and then trigger a reflow
+        --       (e.g., increase font-size) which will cause pandemonium to ensue (invalid coordinates).
+        wrapWithGuard(self.ui.config, "onShowConfigMenu")
+        wrapWithGuard(self.ui.menu, "onShowMenu")
+    end
+
     self:setupTouchZones()
     if self.document.is_pdf and G_reader_settings:isTrue("highlight_write_into_pdf_notify") then
         UIManager:show(Notification:new{

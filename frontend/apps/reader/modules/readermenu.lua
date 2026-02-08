@@ -412,9 +412,6 @@ function ReaderMenu:exitOrRestart(callback, force)
 end
 
 function ReaderMenu:onShowMenu(tab_index, do_not_show)
-    -- Note: on devices with DPad, we could start text selection and then trigger a reflow
-    --       (e.g., change typeface) which will cause pandemonium to ensue (invalid coordinates).
-    self.ui:handleEvent(Event:new("StopHighlightIndicator", {args=true}))
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
     end
