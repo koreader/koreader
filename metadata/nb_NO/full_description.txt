@@ -1,0 +1,11 @@
+<p>KOReader is an ebook reader optimized for e-ink screens. It can open many formats and provides advanced text adjustments.</p>
+<p>Se nedenfor for et utvalg av de mange funksjonene:</p>
+<ul>
+  <li>Supports both fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Scanned PDF&#47;DjVu documents can be reflowed. Special flow directions for reading double column PDFs and manga.</li>
+  <li>Flerspråklig brukergrensesnitt optimalisert for e-ink-skjermer. Svært tilpassbar leservisning med komplette alternativer for setting av skrifttyper. Flerspråklige ordbøker for orddeling er inkludert.</li>
+  <li>Støtte for ikke-latinsk skrifttyper for bøker, inkludert hebraisk, arabisk, persisk, russisk, kinesisk, japansk og koreansk.</li>
+  <li>Unique Book Map and Page Browser features to navigate your book.</li>
+  <li>Special multi-page highlight mode with many local and online export options.</li>
+  <li>Kan synkronisere lesefremgangen din på tvers av alle enhetene som kjører KOReader.</li>
+  <li>Integrert med Calibre, Wallabag, Wikipedia, Google Translate og andre innholdsleverandører.</li>
+</ul>

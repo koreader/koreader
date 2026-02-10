@@ -1,0 +1,11 @@
+<p>KOReader on e-kirjojen lukulaite, joka on optimoitu e-ink-näytöille. Se pystyy avaamaan monia formaatteja ja tarjoaa kehittyneitä tekstin säätöjä.</p>
+<p>Katso alla valikoima sen monista ominaisuuksista:</p>
+<ul>
+  <li>Tukee sekä kiinteitä sivumuotoja (PDF, DjVu, CBT, CBZ) että uudelleen muokattavia e-kirjaformaatteja (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Skannattuja PDF&#47;DjVu-dokumentteja voidaan muokata uudelleen. Erityiset virtaussuunnat kaksoispalstaisia PDF-tiedostoja ja mangaa varten.</li>
+  <li>Monikielinen käyttöliittymä, joka on optimoitu e-ink-näytöille. Erittäin muokattavissa oleva lukijanäkymä, jossa on täydelliset kirjoitusasetukset. Mukana on monikieliset yhdyssanakirjat.</li>
+  <li>Muiden kuin latinalaisen kirjoitusasun tuki kirjoille, mukaan lukien heprean, arabian, persian, venäjän, kiinan, japanin ja korean kielet.</li>
+  <li>Ainutlaatuiset Book Map- ja Page Browser -ominaisuudet kirjan selaamiseen.</li>
+  <li>Erityinen monisivuinen korostustila, jossa on monia paikallisia ja online-vientivaihtoehtoja.</li>
+  <li>Voi synkronoida lukemisen edistymisen kaikissa KOReader-laitteissasi.</li>
+  <li>Integroitu Calibren, Wallabagin, Wikipedian, Google Translaten ja muiden sisällöntuottajien kanssa.</li>
+</ul>
