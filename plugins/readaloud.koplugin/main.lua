@@ -24,6 +24,8 @@ local DEFAULT_SETTINGS = {
     max_chunk_len = 3200,
 }
 
+local MAX_SPEAK_FAILS = 50
+
 local function fillDefaults(settings)
     settings = settings or {}
     for k, v in pairs(DEFAULT_SETTINGS) do
@@ -209,16 +211,22 @@ function ReadAloud:_speakNextChunk()
     if not self.chunks or self.chunk_index > #self.chunks then
         return false
     end
-    local chunk = self.chunks[self.chunk_index]
-    self.chunk_index = self.chunk_index + 1
 
+    local chunk = self.chunks[self.chunk_index]
     local ok = android.tts.speak(chunk, android.tts.QUEUE_FLUSH)
-    if not ok then
-        logger.warn("ReadAloud: ttsSpeak returned false")
-        self:stop()
-        self:_showInfo(_("Text-to-Speech failed to speak."))
+    if ok then
+        self._speak_fail_count = 0
+        self.chunk_index = self.chunk_index + 1
+        return true
     end
-    return ok
+
+    self._speak_fail_count = (self._speak_fail_count or 0) + 1
+    logger.warn("ReadAloud: ttsSpeak returned false")
+    if self._speak_fail_count >= MAX_SPEAK_FAILS then
+        self:stop()
+        self:_showInfo(_("Text-to-Speech is not ready.\n\nPlease install a TTS engine and voice data in Android settings."))
+    end
+    return false
 end
 
 function ReadAloud:_schedulePoll()
@@ -329,6 +337,7 @@ function ReadAloud:start()
 
     PluginShare.pause_auto_suspend = true
     self.playing = true
+    self._speak_fail_count = 0
     self.chunks = self:_prepareChunksForCurrentView()
     self.chunk_index = 1
 
@@ -348,6 +357,7 @@ function ReadAloud:stop()
     end
     self.playing = false
     self._internal_page_turn = false
+    self._speak_fail_count = 0
 
     UIManager:unschedule(self._poll_func)
     UIManager:unschedule(self._continue_func)
