@@ -7,5 +7,5 @@
   <li>Recursos únicos de Mapa do Livro e no Navegador de Páginas para navegar pelo seu livro.</li>
   <li>Modo especial de destaque de múltiplas páginas com várias opções para exportar localmente e online.</li>
   <li>Consegue sincronizar seu progresso de leitura através de todos os seus dispositivos com KOReader.</li>
-  <li>Integrado com Calibre, Wallabag, Wikipedia, Google Tradutor e outros provedores de conteúdo.</li>
+  <li>Integrado com Calibre, Wallabag, Wikipédia, Google Tradutor e outros provedores de conteúdo.</li>
 </ul>
