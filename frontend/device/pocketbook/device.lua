@@ -364,7 +364,7 @@ function PocketBook:initNetworkManager(NetworkMgr)
         UIManager:unschedule(keepWifiAlive)
 
         if NetworkMgr:isWifiOn() then
-            if hasNetMgrPing then
+            if hasNetMgrPing() then
                 logger.dbg("ping wifi keep alive and reschedule")
 
                 inkview.NetMgrPing()
