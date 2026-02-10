@@ -44,11 +44,14 @@ local metadata = {
     },
     screenshots = {
         { image = "https://github.com/koreader/koreader-artwork/raw/master/koreader-menu-framed.png",
+          caption = "Document menu.",
           default = true,
         },
         { image = "https://github.com/koreader/koreader-artwork/raw/master/koreader-footnotes-framed.png",
+          caption = "Document footnotes.",
         },
         { image = "https://github.com/koreader/koreader-artwork/raw/master/koreader-dictionary-framed.png",
+          caption = "Dictionary popup.",
         }
     },
     keywords = {
@@ -67,7 +70,7 @@ local metadata = {
 
     -- appstream metadata that needs no translation
     component = [[
-  <id>rocks.koreader.KOReader</id>
+  <id>rocks.koreader.koreader</id>
 
   <name>KOReader</name>
   <developer id="rocks.koreader">
@@ -147,7 +150,7 @@ local metadata = {
     <mediatype>text/plain</mediatype>
   </provides>
 
-  <launchable type="desktop-id">rocks.koreader.KOReader.desktop</launchable>
+  <launchable type="desktop-id">rocks.koreader.koreader.desktop</launchable>
 
   <categories>
     <category>Office</category>
