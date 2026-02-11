@@ -32,6 +32,21 @@ local DEFAULT_SETTINGS = {
 
 local MAX_SPEAK_FAILS = 50
 
+local ReadAloud = WidgetContainer:extend{
+    name = "readaloud",
+    is_doc_only = true,
+
+    playing = false,
+    chunks = nil,
+    chunk_index = 1,
+
+    _poll_func = nil,
+    _continue_func = nil,
+    _pageupdate_func = nil,
+    _internal_page_turn = false,
+    _advance_from_key = nil,
+}
+
 local function fillDefaults(settings)
     settings = settings or {}
     for k, v in pairs(DEFAULT_SETTINGS) do
@@ -129,21 +144,6 @@ local function chunkText(text, max_len)
 
     return chunks
 end
-
-local ReadAloud = WidgetContainer:extend{
-    name = "readaloud",
-    is_doc_only = true,
-
-    playing = false,
-    chunks = nil,
-    chunk_index = 1,
-
-    _poll_func = nil,
-    _continue_func = nil,
-    _pageupdate_func = nil,
-    _internal_page_turn = false,
-    _advance_from_key = nil,
-}
 
 function ReadAloud:init()
     self.settings = fillDefaults(G_reader_settings:readSetting("readaloud", {}))
@@ -504,7 +504,7 @@ function ReadAloud:_showControlDialog(menu)
                     align = "left",
                 },
                 {
-                    text = _("text-to-speech settings"),
+                    text = _("Text-to-speech settings"),
                     callback = function()
                         UIManager:close(dialog)
                         android.tts.openSettings()
