@@ -1,7 +1,14 @@
 APPIMAGE_DIR = $(PLATFORM_DIR)/appimage
 
-APPIMAGETOOL = appimagetool-$(APPIMAGE_ARCH).AppImage
-APPIMAGETOOL_URL = https://github.com/AppImage/appimagetool/releases/download/continuous/$(APPIMAGETOOL)
+MKAPPIMAGE = mkappimage-$(APPIMAGE_ARCH).AppImage
+define MKAPPIMAGE_URL
+$(WGET) -O - https://api.github.com/repos/probonopd/go-appimage/releases | jq -r '.[]
+ | select(.tag_name == "continuous")
+ | .assets[]
+ | select(.name | test("^mkappimage-.*-$(APPIMAGE_ARCH).AppImage$$"))
+ | .browser_download_url
+'
+endef
 
 APPID = rocks.koreader.koreader
 APPDIR = $(INSTALL_DIR)/appimage
@@ -19,16 +26,16 @@ plugins/timesync.koplugin
 $(filter-out tools/trace_require.lua tools/wbuilder.lua,$(wildcard tools/*))
 endef
 
-appimagetool $(APPIMAGETOOL):
-	wget -O $(APPIMAGETOOL).part '$(APPIMAGETOOL_URL)'
+mkappimage $(MKAPPIMAGE):
+	$(WGET) -O $(MKAPPIMAGE).part "$$($(strip $(MKAPPIMAGE_URL)))"
 	# Zero-out AppImage magic bytes from the ELF header extended ABI version so
 	# binfmt+qemu can be used (e.g. when executed from `docker run --platform …`).
 	# Cf. https://github.com/AppImage/AppImageKit/issues/1056.
-	printf '\0\0\0' | dd conv=notrunc obs=1 seek=8 of=$(APPIMAGETOOL).part
-	chmod +x ./$(APPIMAGETOOL).part
-	mv $(APPIMAGETOOL).part $(APPIMAGETOOL)
+	printf '\0\0\0' | dd conv=notrunc obs=1 seek=8 of=$(MKAPPIMAGE).part
+	chmod +x ./$(MKAPPIMAGE).part
+	mv $(MKAPPIMAGE).part $(MKAPPIMAGE)
 
-update: all $(APPIMAGETOOL)
+update: all $(MKAPPIMAGE)
 	cd $(INSTALL_DIR)/koreader && '$(abspath tools/mkrelease.sh)' $(abspath $(APPDIR))/ . $(release_excludes)
 	# Launcher.
 	install -D $(APPIMAGE_DIR)/AppRun $(APPDIR)/
@@ -49,7 +56,7 @@ else
 	install $(UBUNTU_LIBBSD) $(APPDIR)/libs/
 endif
 	# Generate AppImage.
-	ARCH='$(APPIMAGE_ARCH)' ./$(APPIMAGETOOL) --appimage-extract-and-run $(APPDIR) $(KOREADER_APPIMAGE)
+	ARCH='$(APPIMAGE_ARCH)' VERSION='$(VERSION)' ./$(MKAPPIMAGE) --appimage-extract-and-run $(APPDIR) $(KOREADER_APPIMAGE)
 
-PHONY += appimagetool update
-SOUND += $(APPIMAGETOOL)
+PHONY += mkappimage update
+SOUND += $(MKAPPIMAGE)
