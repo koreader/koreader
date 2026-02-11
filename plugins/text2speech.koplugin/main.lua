@@ -31,9 +31,11 @@ local DEFAULT_SETTINGS = {
 }
 
 local MAX_SPEAK_FAILS = 50
+local SETTINGS_KEY = "text2speech"
+local LEGACY_SETTINGS_KEY = "readaloud"
 
 local ReadAloud = WidgetContainer:extend{
-    name = "readaloud",
+    name = "text2speech",
     is_doc_only = true,
 
     playing = false,
@@ -146,7 +148,11 @@ local function chunkText(text, max_len)
 end
 
 function ReadAloud:init()
-    self.settings = fillDefaults(G_reader_settings:readSetting("readaloud", {}))
+    local settings = G_reader_settings:readSetting(SETTINGS_KEY)
+    if settings == nil then
+        settings = G_reader_settings:readSetting(LEGACY_SETTINGS_KEY, {})
+    end
+    self.settings = fillDefaults(settings)
 
     self._poll_func = function()
         self:_poll()
@@ -162,7 +168,7 @@ function ReadAloud:init()
 end
 
 function ReadAloud:_saveSettings()
-    G_reader_settings:saveSetting("readaloud", self.settings)
+    G_reader_settings:saveSetting(SETTINGS_KEY, self.settings)
 end
 
 function ReadAloud:_showInfo(text)
@@ -519,15 +525,15 @@ function ReadAloud:_showControlDialog(menu)
 end
 
 function ReadAloud:addToMainMenu(menu_items)
-    menu_items.read_aloud = {
+    menu_items.text_to_speech = {
         sorting_hint = "navi",
         text_func = function()
             local rate = tonumber(self.settings.rate_percent) or DEFAULT_SETTINGS.rate_percent
             local suffix = string.format("%.2fx", rate / 100)
             if self.playing then
-                return T(_("Read aloud: %1"), suffix)
+                return T(_("Text-to-speech: %1"), suffix)
             end
-            return _("Read aloud")
+            return _("Text-to-speech")
         end,
         checked_func = function() return self.playing end,
         callback = function(menu)
