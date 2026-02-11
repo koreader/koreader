@@ -25,7 +25,6 @@ local PocketBook = Generic:extend{
     isPocketBook = yes,
     hasOTAUpdates = yes,
     hasWifiToggle = yes,
-    hasNetMgrPing = yes,
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
@@ -364,7 +363,8 @@ function PocketBook:initNetworkManager(NetworkMgr)
         UIManager:unschedule(keepWifiAlive)
 
         if NetworkMgr:isWifiOn() then
-            if self.hasNetMgrPing() then
+            -- check if NetMgrPing is available on the device and skip keepalive if not
+            if pcall(function() return inkview.NetMgrPing and true end) then
                 logger.dbg("ping wifi keep alive and reschedule")
 
                 inkview.NetMgrPing()
@@ -579,7 +579,6 @@ local PocketBook622 = PocketBook:extend{
 local PocketBook623 = PocketBook:extend{
     model = "PBTouchLux",
     display_dpi = 212,
-    hasNetMgrPing = no,
 }
 
 -- PocketBook Basic Touch (624)
