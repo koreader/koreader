@@ -1,3 +1,13 @@
+local Device = require("device")
+if not Device:isAndroid() then
+    return { disabled = true }
+end
+
+local isAndroid, android = pcall(require, "android")
+if not isAndroid or not android or not android.tts then
+    return { disabled = true }
+end
+
 local ButtonDialog = require("ui/widget/buttondialog")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
@@ -5,15 +15,11 @@ local PluginShare = require("pluginshare")
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Screen = require("device").screen
+local Screen = Device.screen
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
-
-local hasAndroid, android = pcall(require, "android")
-if not hasAndroid or type(android) ~= "table" or type(android.tts) ~= "table" then
-    return { disabled = true }
-end
 
 local DEFAULT_SETTINGS = {
     rate_percent = 100,
@@ -38,16 +44,8 @@ end
 
 local function normalizeText(text)
     if type(text) ~= "string" then return "" end
-    text = text:gsub("\r\n", "\n")
-    text = text:gsub("\r", "\n")
-    -- Keep paragraph boundaries, but reduce excessive whitespace.
-    text = text:gsub("[ \t]+", " ")
-    text = text:gsub("\n[ \t]+", "\n")
-    text = text:gsub("[ \t]+\n", "\n")
-    text = text:gsub("\n\n\n+", "\n\n")
-    text = text:gsub("^%s+", "")
-    text = text:gsub("%s+$", "")
-    return text
+    text = text:gsub("\r\n", "\n"):gsub("\r", "\n")
+    return util.cleanupSelectedText(text)
 end
 
 local function chunkText(text, max_len)
@@ -63,6 +61,10 @@ local function chunkText(text, max_len)
     local chunks = {}
     local i = 1
     local n = #text
+
+    -- NOTE: KOReader ships utf8proc and various UTF-8 helpers (see util.UTF8_CHAR_PATTERN).
+    -- Here we only need to ensure we don't split inside a multibyte codepoint at a byte boundary,
+    -- so a continuation-byte check is sufficient and fast.
 
     local function isUtf8ContinuationByte(b)
         return b ~= nil and b >= 128 and b <= 191
@@ -169,7 +171,7 @@ end
 
 function ReadAloud:_ttsEnsureReady()
     if not android.tts.init() then
-        self:_showInfo(_("Failed to initialize Text-to-Speech.\n\nPlease install a TTS engine and voice data in Android settings."))
+        self:_showInfo(_("Failed to initialize the text-to-speech engine.\n\nPlease install a text-to-speech engine and voice data in system settings."))
         return false
     end
     android.tts.setSpeechRate(self.settings.rate_percent)
@@ -224,7 +226,7 @@ function ReadAloud:_speakNextChunk()
     logger.warn("ReadAloud: ttsSpeak returned false")
     if self._speak_fail_count >= MAX_SPEAK_FAILS then
         self:stop()
-        self:_showInfo(_("Text-to-Speech is not ready.\n\nPlease install a TTS engine and voice data in Android settings."))
+        self:_showInfo(_("The text-to-speech engine is not ready.\n\nPlease install a text-to-speech engine and voice data in system settings."))
     end
     return false
 end
@@ -494,7 +496,7 @@ function ReadAloud:_showControlDialog(menu)
             },
             {
                 {
-                    text = _("Install TTS data"),
+                    text = _("Install voice data"),
                     callback = function()
                         UIManager:close(dialog)
                         android.tts.installData()
@@ -502,7 +504,7 @@ function ReadAloud:_showControlDialog(menu)
                     align = "left",
                 },
                 {
-                    text = _("TTS settings"),
+                    text = _("text-to-speech settings"),
                     callback = function()
                         UIManager:close(dialog)
                         android.tts.openSettings()
