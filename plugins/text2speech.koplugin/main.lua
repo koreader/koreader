@@ -32,9 +32,8 @@ local DEFAULT_SETTINGS = {
 
 local MAX_SPEAK_FAILS = 50
 local SETTINGS_KEY = "text2speech"
-local LEGACY_SETTINGS_KEY = "readaloud"
 
-local ReadAloud = WidgetContainer:extend{
+local Text2Speech = WidgetContainer:extend{
     name = "text2speech",
     is_doc_only = true,
 
@@ -147,11 +146,8 @@ local function chunkText(text, max_len)
     return chunks
 end
 
-function ReadAloud:init()
-    local settings = G_reader_settings:readSetting(SETTINGS_KEY)
-    if settings == nil then
-        settings = G_reader_settings:readSetting(LEGACY_SETTINGS_KEY, {})
-    end
+function Text2Speech:init()
+    local settings = G_reader_settings:readSetting(SETTINGS_KEY, {})
     self.settings = fillDefaults(settings)
 
     self._poll_func = function()
@@ -167,15 +163,15 @@ function ReadAloud:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function ReadAloud:_saveSettings()
+function Text2Speech:_saveSettings()
     G_reader_settings:saveSetting(SETTINGS_KEY, self.settings)
 end
 
-function ReadAloud:_showInfo(text)
+function Text2Speech:_showInfo(text)
     UIManager:show(InfoMessage:new{ text = text })
 end
 
-function ReadAloud:_ttsEnsureReady()
+function Text2Speech:_ttsEnsureReady()
     if not android.tts.init() then
         self:_showInfo(_("Failed to initialize the text-to-speech engine.\n\nPlease install a text-to-speech engine and voice data in system settings."))
         return false
@@ -185,7 +181,7 @@ function ReadAloud:_ttsEnsureReady()
     return true
 end
 
-function ReadAloud:_getCurrentViewText()
+function Text2Speech:_getCurrentViewText()
     local doc = self.ui.document
     if not doc then return end
 
@@ -200,7 +196,7 @@ function ReadAloud:_getCurrentViewText()
     return res and res.text
 end
 
-function ReadAloud:_prepareChunksForCurrentView()
+function Text2Speech:_prepareChunksForCurrentView()
     local text = self:_getCurrentViewText()
     if not text then
         return nil
@@ -212,7 +208,7 @@ function ReadAloud:_prepareChunksForCurrentView()
     return chunks
 end
 
-function ReadAloud:_speakNextChunk()
+function Text2Speech:_speakNextChunk()
     if not self.playing then
         return false
     end
@@ -229,7 +225,7 @@ function ReadAloud:_speakNextChunk()
     end
 
     self._speak_fail_count = (self._speak_fail_count or 0) + 1
-    logger.warn("ReadAloud: ttsSpeak returned false")
+    logger.warn("Text2Speech: ttsSpeak returned false")
     if self._speak_fail_count >= MAX_SPEAK_FAILS then
         self:stop()
         self:_showInfo(_("The text-to-speech engine is not ready.\n\nPlease install a text-to-speech engine and voice data in system settings."))
@@ -237,12 +233,12 @@ function ReadAloud:_speakNextChunk()
     return false
 end
 
-function ReadAloud:_schedulePoll()
+function Text2Speech:_schedulePoll()
     UIManager:unschedule(self._poll_func)
     UIManager:scheduleIn(self.settings.poll_interval, self._poll_func)
 end
 
-function ReadAloud:_poll()
+function Text2Speech:_poll()
     if not self.playing then
         return
     end
@@ -252,7 +248,7 @@ function ReadAloud:_poll()
     if ok then
         speaking = res and true or false
     else
-        logger.warn("ReadAloud: android.tts.isSpeaking failed:", res)
+        logger.warn("Text2Speech: android.tts.isSpeaking failed:", res)
     end
 
     if speaking then
@@ -282,7 +278,7 @@ function ReadAloud:_poll()
     UIManager:scheduleIn(pause, self._continue_func)
 end
 
-function ReadAloud:_getLocationKey()
+function Text2Speech:_getLocationKey()
     -- Best-effort location key to detect end-of-document loops.
     if self.ui.rolling and self.ui.rolling.xpointer then
         return tostring(self.ui.rolling.xpointer)
@@ -293,7 +289,7 @@ function ReadAloud:_getLocationKey()
     end
 end
 
-function ReadAloud:_continueAfterTurn()
+function Text2Speech:_continueAfterTurn()
     if not self.playing then
         return
     end
@@ -323,7 +319,7 @@ function ReadAloud:_continueAfterTurn()
     self:_schedulePoll()
 end
 
-function ReadAloud:_restartFromCurrentView()
+function Text2Speech:_restartFromCurrentView()
     if not self.playing then
         return
     end
@@ -335,7 +331,7 @@ function ReadAloud:_restartFromCurrentView()
     UIManager:scheduleIn(0.05, self._continue_func)
 end
 
-function ReadAloud:start()
+function Text2Speech:start()
     if self.playing then
         return
     end
@@ -359,7 +355,7 @@ function ReadAloud:start()
     self:_schedulePoll()
 end
 
-function ReadAloud:stop()
+function Text2Speech:stop()
     if not self.playing then
         return
     end
@@ -375,7 +371,7 @@ function ReadAloud:stop()
     PluginShare.pause_auto_suspend = false
 end
 
-function ReadAloud:_showRateDialog(menu)
+function Text2Speech:_showRateDialog(menu)
     local dialog = SpinWidget:new{
         title_text = _("Speech rate"),
         value = self.settings.rate_percent,
@@ -396,7 +392,7 @@ function ReadAloud:_showRateDialog(menu)
     UIManager:show(dialog)
 end
 
-function ReadAloud:_showPitchDialog(menu)
+function Text2Speech:_showPitchDialog(menu)
     local dialog = SpinWidget:new{
         title_text = _("Speech pitch"),
         value = self.settings.pitch_percent,
@@ -417,7 +413,7 @@ function ReadAloud:_showPitchDialog(menu)
     UIManager:show(dialog)
 end
 
-function ReadAloud:_showPauseDialog(menu)
+function Text2Speech:_showPauseDialog(menu)
     local dialog = SpinWidget:new{
         title_text = _("Pause between pages"),
         value = math.floor((self.settings.pause_seconds or DEFAULT_SETTINGS.pause_seconds) * 1000),
@@ -436,13 +432,13 @@ function ReadAloud:_showPauseDialog(menu)
     UIManager:show(dialog)
 end
 
-function ReadAloud:_toggleAutoAdvance(menu)
+function Text2Speech:_toggleAutoAdvance(menu)
     self.settings.auto_advance = not self.settings.auto_advance
     self:_saveSettings()
     if menu then menu:updateItems() end
 end
 
-function ReadAloud:_showControlDialog(menu)
+function Text2Speech:_showControlDialog(menu)
     local dialog
     local startStopText = self.playing and _("Stop") or _("Start")
     local autoAdvanceText = self.settings.auto_advance and _("Auto-advance: on") or _("Auto-advance: off")
@@ -524,7 +520,7 @@ function ReadAloud:_showControlDialog(menu)
     UIManager:show(dialog)
 end
 
-function ReadAloud:addToMainMenu(menu_items)
+function Text2Speech:addToMainMenu(menu_items)
     menu_items.text_to_speech = {
         sorting_hint = "navi",
         text_func = function()
@@ -542,23 +538,23 @@ function ReadAloud:addToMainMenu(menu_items)
     }
 end
 
-function ReadAloud:onCloseWidget()
+function Text2Speech:onCloseWidget()
     self:stop()
 end
 
-function ReadAloud:onCloseDocument()
+function Text2Speech:onCloseDocument()
     self:stop()
 end
 
-function ReadAloud:onSuspend()
+function Text2Speech:onSuspend()
     self:stop()
 end
 
-function ReadAloud:onPageUpdate()
+function Text2Speech:onPageUpdate()
     if not self.playing then return end
     -- Debounce restarts on manual page turns.
     UIManager:unschedule(self._pageupdate_func)
     UIManager:scheduleIn(0.05, self._pageupdate_func)
 end
 
-return ReadAloud
+return Text2Speech
