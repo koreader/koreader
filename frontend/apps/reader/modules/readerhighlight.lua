@@ -1919,12 +1919,6 @@ function ReaderHighlight:onHoldPan(_, ges)
 
     local old_text = self.selected_text and self.selected_text.text
     self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.holdpan_pos)
-    if self.selected_text and self.selected_text.sboxes and #self.selected_text.sboxes == 0 then
-        -- abort highlighting if crengine doesn't provide sboxes for current positions
-        -- may happen in TXT files with disabled txt_preformatted
-        self:clear()
-        return true
-    end
     self.is_word_selection = false
 
     if self.selected_text and self.selected_text.pos0 then
@@ -2522,7 +2516,7 @@ function ReaderHighlight:extendSelection()
         -- pos0 and pos1 are in order within highlights
         new_pos0 = self.ui.document:compareXPointers(item1.pos0, item2_pos0) == 1 and item1.pos0 or item2_pos0
         new_pos1 = self.ui.document:compareXPointers(item1.pos1, item2_pos1) == 1 and item2_pos1 or item1.pos1
-        new_pboxes = self.document:getScreenBoxesFromPositions(new_pos0, new_pos1)
+        new_pboxes = self.document:getScreenBoxesFromPositions(new_pos0, new_pos1, true)
         -- true to draw
         new_text = self.ui.document:getTextFromXPointers(new_pos0, new_pos1, true)
     end
