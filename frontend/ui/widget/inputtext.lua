@@ -6,6 +6,9 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local IconButton = require("ui/widget/iconbutton")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Notification = require("ui/widget/notification")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
@@ -30,6 +33,11 @@ local InputText = InputContainer:extend{
     cursor_at_end = true, -- starts with cursor at end of text, ready for appending
     scroll = false, -- whether to allow scrolling (will be set to true if no height provided)
     focused = true,
+    auto_show_keyboard = true, -- show VK on focus/tap (touch & dpad)
+    show_keyboard_button = true, -- show a small VK button on the right
+    keyboard_button_icon = "edit",
+    keyboard_button_padding = Size.padding.small,
+    keyboard_button_spacing = 0,
     parent = nil, -- parent dialog that will be set dirty
     edit_callback = nil, -- called with true when text modified, false on init or text re-set
     scroll_callback = nil, -- called with (low, high) when view is scrolled (c.f., ScrollTextWidget)
@@ -142,7 +150,8 @@ local function initTouchEvents()
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
             else
-                if not ((Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled")) then
+                if self.auto_show_keyboard
+                        and not ((Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled")) then
                     self:onShowKeyboard()
                 end
                 Device:startTextInput()
@@ -212,7 +221,7 @@ local function initDPadEvents()
             elseif (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
                 do end -- luacheck: ignore 541
             else
-                if not self:isKeyboardVisible() then
+                if self.auto_show_keyboard and not self:isKeyboardVisible() then
                     self:onShowKeyboard()
                 end
             end
@@ -493,22 +502,51 @@ function InputText:initTextBox(text, char_added)
         self._password_toggle = nil
     end
 
+    local show_keyboard_button = self:shouldShowKeyboardButton()
+    local keyboard_button_width = 0
+    local keyboard_button_spacing = self.keyboard_button_spacing or 0
+    if show_keyboard_button then
+        self._keyboard_button = self._keyboard_button or IconButton:new{
+            icon = self.keyboard_button_icon,
+            padding = self.keyboard_button_padding,
+            callback = function()
+                self:onShowKeyboard()
+            end,
+            show_parent = self.parent or self,
+        }
+        self._frame_keyboard_button = FrameContainer:new{
+            bordersize = self.bordersize,
+            padding = self.padding,
+            margin = self.margin,
+            color = self.focused and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
+            self._keyboard_button,
+        }
+        keyboard_button_width = self._frame_keyboard_button:getSize().w + keyboard_button_spacing
+    else
+        self._frame_keyboard_button = nil
+    end
+
+    local text_width = self.width
+    if text_width and show_keyboard_button then
+        text_width = math.max(0, text_width - keyboard_button_width)
+    end
+
     if not self.height then
         -- If no height provided, measure the text widget height
         -- we would start with, and use a ScrollTextWidget with that
         -- height, so widget does not overflow container if we extend
         -- the text and increase the number of lines.
-        local text_width = self.width
+        local text_width_tmp = text_width
         if text_width then
             -- Account for the scrollbar that will be used
             local scroll_bar_width = ScrollTextWidget.scroll_bar_width + ScrollTextWidget.text_scroll_span
-            text_width = text_width - scroll_bar_width
+            text_width_tmp = text_width_tmp - scroll_bar_width
         end
         local text_widget = TextBoxWidget:new{
             text = show_text,
             charlist = show_charlist,
             face = self.face,
-            width = text_width,
+            width = text_width_tmp,
             lang = self.lang, -- these might influence height
             para_direction_rtl = self.para_direction_rtl,
             auto_para_direction = self.auto_para_direction,
@@ -534,7 +572,7 @@ function InputText:initTextBox(text, char_added)
             para_direction_rtl = self.para_direction_rtl,
             auto_para_direction = self.auto_para_direction,
             alignment_strict = self.alignment_strict,
-            width = self.width,
+            width = text_width,
             height = self.height,
             dialog = self.parent,
             scroll_callback = self.scroll_callback,
@@ -557,7 +595,7 @@ function InputText:initTextBox(text, char_added)
             para_direction_rtl = self.para_direction_rtl,
             auto_para_direction = self.auto_para_direction,
             alignment_strict = self.alignment_strict,
-            width = self.width,
+            width = text_width,
             height = self.height,
             dialog = self.parent,
             for_measurement_only = self.for_measurement_only,
@@ -573,9 +611,20 @@ function InputText:initTextBox(text, char_added)
         color = self.focused and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
         self.text_widget,
     }
+    local input_row
+    if show_keyboard_button then
+        input_row = HorizontalGroup:new{
+            align = "center",
+            self._frame_textwidget,
+            HorizontalSpan:new{ width = keyboard_button_spacing },
+            self._frame_keyboard_button,
+        }
+    else
+        input_row = self._frame_textwidget
+    end
     self._verticalgroup = VerticalGroup:new{
         align = "left",
-        self._frame_textwidget,
+        input_row,
         self._password_toggle,
     }
     self._frame = FrameContainer:new{
@@ -608,16 +657,46 @@ end
 
 function InputText:unfocus()
     self.focused = false
+    self:updateKeyboardButtonVisibility()
     self.text_widget:unfocus()
     self._frame_textwidget.color = Blitbuffer.COLOR_DARK_GRAY
+    if self._frame_keyboard_button then
+        self._frame_keyboard_button.color = Blitbuffer.COLOR_DARK_GRAY
+    end
     Device:stopTextInput()
 end
 
 function InputText:focus()
     self.focused = true
+    self:updateKeyboardButtonVisibility()
     self.text_widget:focus()
     self._frame_textwidget.color = Blitbuffer.COLOR_BLACK
+    if self._frame_keyboard_button then
+        self._frame_keyboard_button.color = Blitbuffer.COLOR_BLACK
+    end
     Device:startTextInput()
+end
+
+function InputText:shouldShowKeyboardButton()
+    if not self.show_keyboard_button or self.readonly or not self.focused then
+        return false
+    end
+    if (Device:hasKeyboard() or Device:hasScreenKB())
+            and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+        return false
+    end
+    return Device:isTouchDevice() or Device:hasDPad()
+end
+
+function InputText:updateKeyboardButtonVisibility()
+    if not self.show_keyboard_button then
+        return
+    end
+    local want_button = self:shouldShowKeyboardButton()
+    local has_button = self._frame_keyboard_button ~= nil
+    if want_button ~= has_button then
+        self:initTextBox(self.text)
+    end
 end
 
 -- NOTE: This key_map can be used for keyboards without numeric keys, such as on Kindles with keyboards. It is loosely 'inspired' by the symbol layer on the virtual keyboard but,
