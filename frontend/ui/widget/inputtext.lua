@@ -737,9 +737,23 @@ function InputText:onKeyPress(key)
                 self:delNextChar()
             end
         elseif key["Left"] then
+            if #self.charlist == 0 then
+                return false -- let FocusManager move focus left
+            end
+            local old_charpos, old_top = self.charpos, self.top_line_num
             self:leftChar()
+            if self.charpos == old_charpos and self.top_line_num == old_top then
+                return false -- let FocusManager move focus left
+            end
         elseif key["Right"] then
+            if #self.charlist == 0 then
+                return false -- let FocusManager move focus right
+            end
+            local old_charpos, old_top = self.charpos, self.top_line_num
             self:rightChar()
+            if self.charpos == old_charpos and self.top_line_num == old_top then
+                return false -- let FocusManager move focus right
+            end
         -- NOTE: The VirtualKeyboard has focus when shown, and handles up/down/left/right.
         elseif key["Up"] then
             if #self.charlist == 0 then
