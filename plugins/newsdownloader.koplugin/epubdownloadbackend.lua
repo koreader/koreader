@@ -218,7 +218,9 @@ local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra
     local parsed_url = socket_url.parse(url)
     local path = parsed_url.path
     if path then
-        parsed_url.path = util.urlEncode(path)
+        -- Encode invalid path chars (e.g., spaces) while preserving "/" and "%".
+        -- We preserve '%' intentionally to avoid double-encoding existing escapes.
+        parsed_url.path = util.urlEncode(path, "/%%")
         url = socket_url.build(parsed_url)
     end
 
