@@ -117,6 +117,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
 local T = require("ffi/util").template
+local dbg = require("dbg")
 local util = require("util")
 local _ = require("gettext")
 
@@ -643,9 +644,7 @@ function InputDialog:isKeyboardVisible()
 end
 
 function InputDialog:onInputTextKeyboardButtonVisibilityChanged(input_widget, visible)
-    if not self.layout or not input_widget then
-        return
-    end
+    dbg.dassert(input_widget, "input_widget required")
 
     local x, y = self:getFocusableWidgetXY(input_widget)
     if not x or not y then
