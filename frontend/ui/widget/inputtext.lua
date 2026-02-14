@@ -778,7 +778,14 @@ function InputText:onKeyPress(key)
         elseif key["Home"] then
             self:goToHome()
         elseif key["Press"] then
-            self:addChars("\n")
+            -- Only insert newline when the text area itself has focus.
+            -- If focus is on an internal control (e.g. the VK button), let
+            -- that control handle the Press/Enter event.
+            if self.text_widget and self.text_widget.focused then
+                self:addChars("\n")
+            else
+                return false
+            end
         elseif key["Tab"] then
             self:addChars("    ")
         elseif key["Back"] then
