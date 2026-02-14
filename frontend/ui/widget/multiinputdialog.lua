@@ -162,6 +162,7 @@ function MultiInputDialog:init()
         --          and a "Press" on the checkbox will actually focus the password field and *not* check the box.
         -- addWidget may have added stuff below us, so make sure we insert above that...
         table.insert(self.layout, i, { input_field_tmp })
+        self:onInputTextKeyboardButtonVisibilityChanged(input_field_tmp, input_field_tmp:shouldShowKeyboardButton())
         if field.description then
             input_description[i] = FrameContainer:new{
                 padding = self.description_padding,

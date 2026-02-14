@@ -702,6 +702,9 @@ function InputText:updateKeyboardButtonVisibility()
     if want_button ~= has_button then
         self:initTextBox(self.text)
     end
+    if self.parent and self.parent.onInputTextKeyboardButtonVisibilityChanged then
+        self.parent:onInputTextKeyboardButtonVisibilityChanged(self, want_button)
+    end
 end
 
 -- NOTE: This key_map can be used for keyboards without numeric keys, such as on Kindles with keyboards. It is loosely 'inspired' by the symbol layer on the virtual keyboard but,

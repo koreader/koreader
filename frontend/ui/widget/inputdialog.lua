@@ -393,6 +393,7 @@ function InputDialog:init()
         charpos = self._charpos,
     }
     table.insert(self.layout[1], self._input_widget)
+    self:onInputTextKeyboardButtonVisibilityChanged(self._input_widget, self._input_widget:shouldShowKeyboardButton())
     self:mergeLayoutInVertical(self.button_table)
     -- NOTE: Never send a Focus event, as, on hasDPad device, InputText's onFocus *will* call onShowKeyboard,
     --       and that will wreak havoc on toggleKeyboard...
@@ -639,6 +640,80 @@ end
 
 function InputDialog:isKeyboardVisible()
     return self._input_widget:isKeyboardVisible()
+end
+
+function InputDialog:onInputTextKeyboardButtonVisibilityChanged(input_widget, visible)
+    if not self.layout or not input_widget then
+        return
+    end
+
+    local x, y = self:getFocusableWidgetXY(input_widget)
+    if not x or not y then
+        return
+    end
+
+    local row = self.layout[y]
+    if not row then
+        return
+    end
+
+    local selected_widget = nil
+    local selected_x_before = nil
+    if self.selected and self.selected.y == y then
+        selected_x_before = self.selected.x
+        selected_widget = row[self.selected.x]
+    end
+
+    local keyboard_button = input_widget._keyboard_button
+    if visible and keyboard_button then
+        local button_x
+        for idx, widget in ipairs(row) do
+            if widget == keyboard_button then
+                button_x = idx
+                break
+            end
+        end
+        if not button_x then
+            table.insert(row, x + 1, keyboard_button)
+        elseif button_x ~= x + 1 then
+            table.remove(row, button_x)
+            table.insert(row, x + 1, keyboard_button)
+        end
+    elseif keyboard_button then
+        for idx, widget in ipairs(row) do
+            if widget == keyboard_button then
+                table.remove(row, idx)
+                break
+            end
+        end
+    end
+
+    if self.selected and self.selected.y == y then
+        local selected_x = nil
+        for idx, widget in ipairs(row) do
+            if widget == selected_widget then
+                selected_x = idx
+                break
+            end
+        end
+
+        -- If the selected widget disappeared (e.g., keyboard button got hidden),
+        -- keep focus on the input widget row anchor.
+        if not selected_x then
+            selected_x = x
+        end
+
+        if not row[selected_x] then
+            selected_x = math.min(selected_x or selected_x_before or 1, #row)
+            if selected_x < 1 then
+                selected_x = 1
+            end
+        end
+
+        if row[selected_x] then
+            self:moveFocusTo(selected_x, y, FocusManager.NOT_UNFOCUS + FocusManager.NOT_FOCUS)
+        end
+    end
 end
 
 function InputDialog:lockKeyboard(toggle)
