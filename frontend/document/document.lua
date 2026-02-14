@@ -594,6 +594,10 @@ function Document:updateHighlightContents(pageno, item, contents)
     return nil
 end
 
+function Document:getLanguageSupportCallbacks()
+    return nil
+end
+
 --[[
 helper functions
 --]]
