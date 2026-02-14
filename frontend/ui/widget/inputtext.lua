@@ -36,7 +36,10 @@ local InputText = InputContainer:extend{
     auto_show_keyboard = true, -- show VK on focus/tap (touch & dpad)
     show_keyboard_button = true, -- show a small VK button on the right
     keyboard_button_icon = "edit",
+    keyboard_button_size = Size.item.height_default,
     keyboard_button_padding = Size.padding.small,
+    keyboard_button_frame_padding = Size.padding.small,
+    keyboard_button_frame_margin = Size.margin.small,
     keyboard_button_spacing = 0,
     parent = nil, -- parent dialog that will be set dirty
     edit_callback = nil, -- called with true when text modified, false on init or text re-set
@@ -508,16 +511,18 @@ function InputText:initTextBox(text, char_added)
     if show_keyboard_button then
         self._keyboard_button = self._keyboard_button or IconButton:new{
             icon = self.keyboard_button_icon,
+            width = self.keyboard_button_size,
+            height = self.keyboard_button_size,
             padding = self.keyboard_button_padding,
             callback = function()
-                self:onShowKeyboard()
+                self:onShowKeyboard(nil, "frame_keyboard_button")
             end,
             show_parent = self.parent or self,
         }
         self._frame_keyboard_button = FrameContainer:new{
             bordersize = self.bordersize,
-            padding = self.padding,
-            margin = self.margin,
+            padding = self.keyboard_button_frame_padding,
+            margin = self.keyboard_button_frame_margin,
             color = self.focused and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
             self._keyboard_button,
         }
@@ -879,7 +884,10 @@ dbg:guard(InputText, "onTextInput",
             "Wrong text type (expected string)")
     end)
 
-function InputText:onShowKeyboard(ignore_first_hold_release)
+function InputText:onShowKeyboard(ignore_first_hold_release, request_source)
+    if Device:hasKeyboard() and request_source ~= "frame_keyboard_button" then
+        return false
+    end
     if self.keyboard then
         self.keyboard:showKeyboard(ignore_first_hold_release)
     end
