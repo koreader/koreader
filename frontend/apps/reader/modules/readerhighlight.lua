@@ -281,9 +281,7 @@ function ReaderHighlight:registerKeyEvents()
         self.key_events.QuickLeftHighlightIndicator  = { { modifier, "Left" },  event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICATOR_MOVE} }
         self.key_events.QuickRightHighlightIndicator = { { modifier, "Right" }, event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICATOR_MOVE} }
         self.key_events.HighlightModifierPress       = { { modifier, "Press" } }
-        if Device:hasKeyboard() then
-            self.key_events.StartHighlightIndicator  = { { "H" } }
-        end
+        -- onStartHighlightIndicator (H) is handled by hotkeys.koplugin
     end
 end
 

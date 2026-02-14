@@ -21,7 +21,6 @@ local _ = require("gettext")
 local ReaderThumbnail = InputContainer:extend{}
 
 function ReaderThumbnail:init()
-    self:registerKeyEvents()
     if not Device:isTouchDevice() and not Device:useDPadAsActionKeys() then
         -- The BookMap and PageBrowser widgets depend too much on gestures,
         -- making them work with not enough keys on Non-Touch would be hard and very limited, so
@@ -64,15 +63,10 @@ function ReaderThumbnail:init()
     end
 end
 
-function ReaderThumbnail:registerKeyEvents()
-    if Device:hasDPad() and Device:useDPadAsActionKeys() then
-        if Device:hasKeyboard() then
-            self.key_events.ShowBookMap = { { "Shift", "Down" } }
-        else
-            self.key_events.ShowBookMap = { { "ScreenKB", "Down" } }
-        end
-    end
-end
+-- function ReaderThumbnail:registerKeyEvents()
+    -- Now handled by hotkeys.koplugin:
+    -- onShowBookMap = { { "Shift", "Down" } }
+-- end
 
 function ReaderThumbnail:addToMainMenu(menu_items)
     menu_items.book_map = {
