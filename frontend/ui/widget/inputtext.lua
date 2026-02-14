@@ -523,7 +523,6 @@ function InputText:initTextBox(text, char_added)
             bordersize = self.bordersize,
             padding = self.keyboard_button_frame_padding,
             margin = self.keyboard_button_frame_margin,
-            color = self.focused and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
             self._keyboard_button,
         }
         keyboard_button_width = self._frame_keyboard_button:getSize().w + keyboard_button_spacing
@@ -665,9 +664,6 @@ function InputText:unfocus()
     self:updateKeyboardButtonVisibility()
     self.text_widget:unfocus()
     self._frame_textwidget.color = Blitbuffer.COLOR_DARK_GRAY
-    if self._frame_keyboard_button then
-        self._frame_keyboard_button.color = Blitbuffer.COLOR_DARK_GRAY
-    end
     Device:stopTextInput()
 end
 
@@ -676,9 +672,6 @@ function InputText:focus()
     self:updateKeyboardButtonVisibility()
     self.text_widget:focus()
     self._frame_textwidget.color = Blitbuffer.COLOR_BLACK
-    if self._frame_keyboard_button then
-        self._frame_keyboard_button.color = Blitbuffer.COLOR_BLACK
-    end
     Device:startTextInput()
 end
 
