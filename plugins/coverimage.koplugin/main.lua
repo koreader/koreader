@@ -139,7 +139,12 @@ function CoverImage:createCoverImage(doc_settings)
         return
     end
 
-    local s_w, s_h = Screen:getWidth(), Screen:getHeight()
+    local s_w, s_h
+    if Device.isPocketBook() then
+        s_w, s_h = Screen:getScreenWidth(), Screen:getScreenHeight()
+    else
+        s_w, s_h = Screen:getWidth(), Screen:getHeight()
+    end
     local i_w, i_h = cover_image:getWidth(), cover_image:getHeight()
     local scale_factor = math.min(s_w / i_w, s_h / i_h)
 
