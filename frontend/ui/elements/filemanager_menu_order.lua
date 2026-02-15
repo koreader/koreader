@@ -48,6 +48,7 @@ local order = {
         "keyboard_layout",
         "external_keyboard",
         "font_ui_fallbacks",
+        "ui_fonts",
         "----------------------------",
         "time",
         "units",
