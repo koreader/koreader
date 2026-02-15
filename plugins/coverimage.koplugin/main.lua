@@ -107,6 +107,16 @@ function CoverImage:cleanUpImage()
         os.remove(self.cover_image_path)
     elseif isFileOk(self.cover_image_path) then
         ffiutil.copyFile(self.cover_image_fallback_path, self.cover_image_path)
+        self:updatePocketBookBootLogo()
+    end
+end
+
+function CoverImage:updatePocketBookBootLogo()
+    if Device.isPocketBook() then
+        logger.dbg("CoverImage: updating PocketBook boot logo from", self.cover_image_path)
+        os.execute("sync")
+        -- iv2sh is run in background because it can be very slow and would block KOReader.
+        os.execute("iv2sh WriteStartupLogo " .. util.shell_escape({self.cover_image_path}) .. " &")
     end
 end
 
@@ -125,6 +135,7 @@ function CoverImage:createCoverImage(doc_settings)
         logger.dbg("CoverImage: cache file already exists")
         ffiutil.copyFile(cache_file, self.cover_image_path)
         lfs.touch(cache_file) -- update date
+        self:updatePocketBookBootLogo()
         return
     end
 
@@ -151,6 +162,7 @@ function CoverImage:createCoverImage(doc_settings)
         end
         cover_image:free()
         ffiutil.copyFile(self.cover_image_path, cache_file)
+        self:updatePocketBookBootLogo()
         self:cleanCache()
         return
     end
@@ -199,6 +211,7 @@ function CoverImage:createCoverImage(doc_settings)
     logger.dbg("CoverImage: image written to " .. self.cover_image_path)
 
     ffiutil.copyFile(self.cover_image_path, cache_file)
+    self:updatePocketBookBootLogo()
     self:cleanCache()
 end
 
