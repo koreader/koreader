@@ -139,6 +139,9 @@ function CoverImage:createCoverImage(doc_settings)
         return
     end
 
+    -- On PocketBook, Screen:getWidth/getHeight returns dimensions that iv2sh
+    -- will not accept. Use Screen:getScreenWidth/getScreenHeight instead so
+    -- the generated boot logo has the correct size.
     local s_w, s_h
     if Device.isPocketBook() then
         s_w, s_h = Screen:getScreenWidth(), Screen:getScreenHeight()
