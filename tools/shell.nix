@@ -19,7 +19,7 @@ pkgs.mkShell {
     ninja
     perl
     pkg-config
-    SDL2
+    sdl3
     unzip
     wget
     # optional
