@@ -363,10 +363,15 @@ function PocketBook:initNetworkManager(NetworkMgr)
         UIManager:unschedule(keepWifiAlive)
 
         if NetworkMgr:isWifiOn() then
-            logger.dbg("ping wifi keep alive and reschedule")
+            -- check if NetMgrPing is available on the device and skip keepalive if not
+            if pcall(function() return inkview.NetMgrPing and true end) then
+                logger.dbg("ping wifi keep alive and reschedule")
 
-            inkview.NetMgrPing()
-            UIManager:scheduleIn(30, keepWifiAlive)
+                inkview.NetMgrPing()
+                UIManager:scheduleIn(30, keepWifiAlive)
+            else
+                logger.info("device does not support NetMgrPing(), no wifi keepalive")
+            end
         else
             logger.dbg("wifi is disabled do not reschedule")
         end
