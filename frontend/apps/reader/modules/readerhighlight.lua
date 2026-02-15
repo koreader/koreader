@@ -2780,7 +2780,6 @@ function ReaderHighlight:onHighlightPress(skip_tap_check)
             pos.y + pos.h / 2 - self._current_indicator_pos.h / 2
         )
     end
-    UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
     return true
 end
 
@@ -2819,6 +2818,7 @@ function ReaderHighlight:onStartHighlightIndicator()
 end
 
 function ReaderHighlight:onStopHighlightIndicator(need_clear_selection)
+    if not self._current_indicator_pos then return false end
     -- If we're in select mode and user presses back, end the selection
     if self.select_mode and self.highlight_idx then
         self.select_mode = false
@@ -2829,19 +2829,17 @@ function ReaderHighlight:onStopHighlightIndicator(need_clear_selection)
         end
         self.highlight_idx = nil
     end
-    if self._current_indicator_pos then
-        local rect = self._current_indicator_pos
-        self._previous_indicator_pos = rect
-        self._start_indicator_highlight = false
-        self._current_indicator_pos = nil
-        self.view.highlight.indicator = nil
-        UIManager:setDirty(self.dialog, "ui", rect)
-        if need_clear_selection then
-            self:clear()
-        end
-        return true
+
+    local rect = self._current_indicator_pos
+    self._previous_indicator_pos = rect
+    self._start_indicator_highlight = false
+    self._current_indicator_pos = nil
+    self.view.highlight.indicator = nil
+    UIManager:setDirty(self.dialog, "ui", rect)
+    if need_clear_selection then
+        self:clear()
     end
-    return false
+    return true
 end
 
 function ReaderHighlight:onMoveHighlightIndicator(args)
