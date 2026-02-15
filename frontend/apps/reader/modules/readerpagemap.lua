@@ -385,6 +385,16 @@ function ReaderPageMap:onDocumentRerendered()
     self.page_labels_cache = nil
 end
 
+function ReaderPageMap:onCloseDocument()
+    if self.use_page_labels then
+        self.ui.doc_settings:saveSetting("pagemap_last_page_label", self:getLastPageLabel(true))
+        self.ui.doc_settings:saveSetting("pagemap_current_page_label", select(1, self:getCurrentPageLabel(true)))
+    else
+        self.ui.doc_settings:delSetting("pagemap_last_page_label")
+        self.ui.doc_settings:delSetting("pagemap_current_page_label")
+    end
+end
+
 function ReaderPageMap:showDocumentProvidedInfo(get_text)
     local t = _([[
 Publisher page numbers available.
