@@ -197,12 +197,8 @@ function CoverImage:createCoverImage(doc_settings)
         elseif self.cover_image_background == "gray" then
             image:fill(Blitbuffer.COLOR_GRAY)
         end
-        -- copy scaled image to buffer
-        if s_w > scaled_w then -- move right
-            image:blitFrom(cover_image, math.floor((s_w - scaled_w) / 2), 0, 0, 0, scaled_w, scaled_h)
-        else -- move down
-            image:blitFrom(cover_image, 0, math.floor((s_h - scaled_h) / 2), 0, 0, scaled_w, scaled_h)
-        end
+        -- center scaled image on both axes
+        image:blitFrom(cover_image, math.floor((s_w - scaled_w) / 2), math.floor((s_h - scaled_h) / 2), 0, 0, scaled_w, scaled_h)
     end
 
     cover_image:free()
