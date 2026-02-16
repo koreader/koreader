@@ -8,6 +8,8 @@ local http = require("socket.http")
 local https = require("ssl.https")
 local ltn12 = require("ltn12")
 local socket = require("socket")
+local ffiUtil = require("ffi/util")
+local T = ffiUtil.template
 
 local socketutil = {
     -- Init to the default LuaSocket/LuaSec values
@@ -17,16 +19,8 @@ local socketutil = {
 
 --- Builds a sensible UserAgent that fits Wikipedia's UA policy <https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy>
 local socket_ua = http.USERAGENT
-socketutil.USER_AGENT = "KOReader/"
-    .. Version:getShortVersion()
-    .. " ("
-    .. Device.model
-    .. "; "
-    .. jit.os
-    .. "; "
-    .. jit.arch
-    .. "; +https://github.com/koreader/koreader) "
-    .. socket_ua:gsub(" ", "/")
+socketutil.USER_AGENT = T("KOReader/%1 (%2; %3; %4; +https://github.com/koreader/koreader) %5",
+    Version:getShortVersion(), Device.model, jit.os, jit.arch, socket_ua:gsub(" ", "/"))
 -- Monkey-patch it in LuaSocket, as it already takes care of inserting the appropriate header to its requests.
 http.USERAGENT = socketutil.USER_AGENT
 
