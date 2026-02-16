@@ -1380,27 +1380,20 @@ function ReaderFooter:addToMainMenu(menu_items)
                 keep_menu_open = true,
             },
             {
-                text_func = function()
-                    return T(_("Fixed width"), self.settings.progress_bar_min_width_pct)
-                end,
+                text = _("Lock width at minimum"),
                 help_text = _("Anchors the width of the progress bar at the selected minimum."),
                 enabled_func = function()
                     return self.settings.progress_bar_position == "alongside" and not self.settings.disable_progress_bar
                         and self.settings.all_at_once
                 end,
                 checked_func = function()
-                    return self.settings.progress_bar_fixed_width
+                    return self.settings.progress_bar_lock_width
                 end,
                 callback = function()
-                    if self.settings.progress_bar_fixed_width then
-                        self.settings.progress_bar_fixed_width = nil
-                    else
-                        self.settings.progress_bar_fixed_width = true
-                    end
+                    self.settings.progress_bar_lock_width = not self.settings.progress_bar_lock_width or nil
                     self:refreshFooter(true, true)
                 end,
-                keep_menu_open = true,
-                separator = true
+                separator = true,
             },
             {
                 text = _("Show initial-position marker"),
@@ -2291,9 +2284,10 @@ function ReaderFooter:_updateFooterText(force_repaint, full_repaint)
             self.text_width = 0
             self.footer_text.height = 0
         else
-            if self.settings.progress_bar_fixed_width then -- Alongside text items, with fixed width setting.
-                self.footer_text:setMaxWidth(math.floor(self._saved_screen_width - (1/100 * self.settings.progress_bar_min_width_pct * self._saved_screen_width)))
-                self.text_width = self._saved_screen_width - (1/100 * self.settings.progress_bar_min_width_pct * self._saved_screen_width) + self.horizontal_margin
+            if self.settings.progress_bar_lock_width then -- Alongside text items, with fixed width setting.
+                local bar_width = (1/100 * self.settings.progress_bar_min_width_pct * self._saved_screen_width)
+                self.footer_text:setMaxWidth(math.floor(self._saved_screen_width - bar_width))
+                self.text_width = self._saved_screen_width - bar_width + self.horizontal_margin
             else
                 -- Alongside text items (progress bar uses remaining space).
                 local text_max_available_ratio = (100 - self.settings.progress_bar_min_width_pct) * (1/100)
