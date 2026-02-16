@@ -344,7 +344,7 @@ function Calibre:getWirelessMenuTable()
                                             local fields = url_dialog:getFields()
                                             if fields[1] ~= "" then
                                                 local port = tonumber(fields[2])
-                                                if not port or port < 1 or port > 65355 then
+                                                if not port or port < 1 or port > 65535 then
                                                     --default port
                                                      port = 9090
                                                 end
