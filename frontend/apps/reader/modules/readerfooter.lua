@@ -167,7 +167,8 @@ footerTextGeneratorMap = {
         if powerd:isFrontlightOn() then
             local warmth = powerd:frontlightWarmth()
             if warmth then
-                return (prefix .. " %d%%"):format(warmth)
+                local warmth_native = powerd:toNativeWarmth(warmth)
+                return (prefix .. " %d"):format(warmth_native)
             end
         else
             if footer.settings.all_at_once and footer.settings.hide_empty_generators then
