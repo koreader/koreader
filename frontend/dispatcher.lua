@@ -291,11 +291,11 @@ local settingsList = {
     kopt_hw_dithering = {category="string", paging=true},
     kopt_sw_dithering = {category="string", paging=true},
     kopt_quality = {category="configurable", paging=true},
-    kopt_nightmode_document = {category="configurable", paging=true},
     kopt_doc_language = {category="string", paging=true},
     kopt_forced_ocr = {category="configurable", paging=true},
     kopt_writing_direction = {category="configurable", paging=true},
     kopt_defect_size = {category="string", paging=true}, -- not shown in the bottom menu
+    kopt_nightmode_document = {category="configurable", paging=true},
     kopt_max_columns = {category="configurable", paging=true},
     kopt_auto_straighten = {category="absolutenumber", paging=true},
 
@@ -539,11 +539,11 @@ local dispatcher_menu_order = {
     "kopt_hw_dithering",
     "kopt_sw_dithering",
     "kopt_quality",
-    "kopt_nightmode_document",
     "kopt_doc_language",
     "kopt_forced_ocr",
     "kopt_writing_direction",
     "kopt_defect_size",
+    "kopt_nightmode_document",
     "kopt_max_columns",
     "kopt_auto_straighten",
 }
