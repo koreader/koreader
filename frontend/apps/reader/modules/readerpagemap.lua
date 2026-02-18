@@ -21,7 +21,7 @@ local N_ = _.ngettext
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local ReaderPageMap = WidgetContainer:extend({
+local ReaderPageMap = WidgetContainer:extend{
     label_font_face = "ffont",
     label_default_font_size = 14,
     -- Black so it's readable (and non-gray-flashing on GloHD)
@@ -31,14 +31,15 @@ local ReaderPageMap = WidgetContainer:extend({
     page_labels_cache = nil, -- hash table
     chars_per_synthetic_page_default = 1500, -- see https://github.com/koreader/koreader/issues/9020#issuecomment-2046025613
     chars_per_synthetic_page = nil, -- not nil means the synthetic pagemap has been created
-})
+}
 
 function ReaderPageMap:init()
     self.has_pagemap = false
     self.container = nil
     self.max_left_label_width = 0
     self.max_right_label_width = 0
-    self.label_font_size = G_reader_settings:readSetting("pagemap_label_font_size") or self.label_default_font_size
+    self.label_font_size = G_reader_settings:readSetting("pagemap_label_font_size")
+                                or self.label_default_font_size
     self.use_textbox_widget = nil
     self.initialized = false
     self.ui:registerPostInitCallback(function()
@@ -61,10 +62,9 @@ function ReaderPageMap:_postInit()
     else
         if self.ui.document.is_new then
             chars_per_synthetic_page = G_reader_settings:readSetting("pagemap_chars_per_synthetic_page")
-            if
-                chars_per_synthetic_page
-                and (not self.has_pagemap_document_provided or G_reader_settings:isTrue("pagemap_synthetic_overrides"))
-            then
+            if chars_per_synthetic_page and
+                    (not self.has_pagemap_document_provided
+                      or G_reader_settings:isTrue("pagemap_synthetic_overrides")) then
                 self.chars_per_synthetic_page = chars_per_synthetic_page
                 self.ui.doc_settings:saveSetting("pagemap_chars_per_synthetic_page", chars_per_synthetic_page)
                 self.ui.document:buildSyntheticPageMap(chars_per_synthetic_page)
@@ -82,15 +82,12 @@ function ReaderPageMap:_postInit()
         self:resetLayout()
         self.view:registerViewModule("pagemap", self)
         self.ui.doc_settings:saveSetting("pagemap_doc_pages", select(3, self:getCurrentPageLabel()))
-        if
-            self.ui.document.is_new
-            and self.has_pagemap_document_provided
-            and G_reader_settings:isTrue("pagemap_notify_document_provided")
-        then
+        if self.ui.document.is_new and self.has_pagemap_document_provided
+                and G_reader_settings:isTrue("pagemap_notify_document_provided") then
             if self.use_page_labels or self.show_page_labels then
                 self:showDocumentProvidedInfo()
             else
-                UIManager:show(ConfirmBox:new({
+                UIManager:show(ConfirmBox:new{
                     text = self:showDocumentProvidedInfo(true) .. "\n\n" .. _("Do you want to use them?"),
                     ok_callback = function()
                         if not self.use_page_labels then
@@ -107,7 +104,7 @@ function ReaderPageMap:_postInit()
                         end
                         UIManager:setDirty(self.view.dialog, "partial")
                     end,
-                }))
+                })
             end
         end
     else -- no pagemap
@@ -127,20 +124,20 @@ function ReaderPageMap:resetLayout()
     if not self.show_page_labels then
         return
     end
-    self.container = OverlapGroup:new({
+    self.container = OverlapGroup:new{
         dimen = Screen:getSize(),
         -- Pages in 2-page mode are not mirrored, so we'll
         -- have to handle any mirroring tweak ourselves
         allow_mirroring = false,
-    })
+    }
     self[1] = self.container
 
     -- Get some metric for label min width
     self.label_face = Font:getFace(self.label_font_face, self.label_font_size)
-    local textw = TextWidget:new({
+    local textw = TextWidget:new{
         text = " ",
         face = self.label_face,
-    })
+    }
     self.space_width = textw:getWidth()
     textw:setText("8")
     self.number_width = textw:getWidth()
@@ -180,7 +177,7 @@ function ReaderPageMap:cleanPageLabel(label)
     -- Cleanup page label, that may contain some noise (as they
     -- were meant to be shown in a list, like a TOC)
     if label then
-        label = label:gsub("[Pp][Aa][Gg][Ee]%s*", "") -- remove leading "Page " from "Page 123"
+    	label = label:gsub("[Pp][Aa][Gg][Ee]%s*", "") -- remove leading "Page " from "Page 123"
     end
     return label
 end
@@ -198,8 +195,7 @@ function ReaderPageMap:updateVisibleLabels()
     end
     self.container:clear()
     local page_labels = self.ui.document:getPageMapVisiblePageLabels()
-    local footer_height = ((self.view.footer_visible and not self.view.footer.settings.reclaim_height) and 1 or 0)
-        * self.view.footer:getHeight()
+    local footer_height = ((self.view.footer_visible and not self.view.footer.settings.reclaim_height) and 1 or 0) * self.view.footer:getHeight()
     local max_y = Screen:getHeight() - footer_height
     local last_label_bottom_y = 0
     local on_second_page = false
@@ -220,7 +216,7 @@ function ReaderPageMap:updateVisibleLabels()
         end
         local label_width = max_label_width - 2 * self.space_width -- one space to screen edge, one to content
         local text = self:cleanPageLabel(page.label)
-        local label_widget = TextBoxWidget:new({
+        local label_widget = TextBoxWidget:new{
             text = text,
             width = label_width,
             face = self.label_face,
@@ -228,16 +224,16 @@ function ReaderPageMap:updateVisibleLabels()
             fgcolor = self.label_color,
             alignment = not in_left_margin and "right",
             alignment_strict = true,
-        })
+        }
         local label_height = label_widget:getTextHeight()
-        local frame = FrameContainer:new({
+        local frame = FrameContainer:new{
             bordersize = 0,
             padding = 0,
             padding_left = in_left_margin and self.space_width,
             padding_right = not in_left_margin and self.space_width,
             label_widget,
             allow_mirroring = false,
-        })
+        }
         local offset_x = in_left_margin and 0 or Screen:getWidth() - frame:getSize().w
         local offset_y = page.screen_y
         if offset_y < last_label_bottom_y then
@@ -249,7 +245,7 @@ function ReaderPageMap:updateVisibleLabels()
             offset_y = max_y - label_height
         end
         last_label_bottom_y = offset_y + label_height
-        frame.overlap_offset = { offset_x, offset_y }
+        frame.overlap_offset = {offset_x, offset_y}
         table.insert(self.container, frame)
     end
 end
@@ -283,7 +279,7 @@ function ReaderPageMap:onShowPageList()
     local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
     local items_with_dots = G_reader_settings:nilOrTrue("toc_items_with_dots")
 
-    local pl_menu = Menu:new({
+    local pl_menu = Menu:new{
         title = _("Stable page number list"),
         item_table = page_list,
         is_borderless = true,
@@ -295,24 +291,23 @@ function ReaderPageMap:onShowPageList()
         align_baselines = true,
         with_dots = items_with_dots,
         on_close_ges = {
-            GestureRange:new({
+            GestureRange:new{
                 ges = "two_finger_swipe",
-                range = Geom:new({
-                    x = 0,
-                    y = 0,
+                range = Geom:new{
+                    x = 0, y = 0,
                     w = Screen:getWidth(),
                     h = Screen:getHeight(),
-                }),
-                direction = BD.flipDirectionIfMirroredUILayout("east"),
-            }),
-        },
-    })
+                },
+                direction = BD.flipDirectionIfMirroredUILayout("east")
+            }
+        }
+    }
 
-    self.pagelist_menu = CenterContainer:new({
+    self.pagelist_menu = CenterContainer:new{
         dimen = Screen:getSize(),
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         pl_menu,
-    })
+    }
 
     -- build up menu widget method as closure
     local pagemap = self
@@ -416,7 +411,7 @@ Source (print edition):
     if get_text then
         return text
     end
-    UIManager:show(InfoMessage:new({ text = text }))
+    UIManager:show(InfoMessage:new{ text = text })
 end
 
 function ReaderPageMap:addToMainMenu(menu_items)
@@ -428,10 +423,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                 local text
                 if self.chars_per_synthetic_page then
                     -- @translators characters per page
-                    text = T(
-                        N_("1 char per page", "%1 chars per page", self.chars_per_synthetic_page),
-                        self.chars_per_synthetic_page
-                    )
+                    text = T(N_("1 char per page", "%1 chars per page", self.chars_per_synthetic_page), self.chars_per_synthetic_page)
                     if self.has_pagemap_document_provided then
                         text = "℗ / " .. text
                     end
@@ -450,9 +442,8 @@ function ReaderPageMap:addToMainMenu(menu_items)
                 text = _("About stable page numbers"),
                 keep_menu_open = true,
                 callback = function()
-                    UIManager:show(InfoMessage:new({
-                        text = _(
-                            [[
+                    UIManager:show(InfoMessage:new{
+                        text = _([[
 By default, one screen equals one page. Any change in the book's formatting will therefore result in renumbering: new total pages, different chapter lengths, new locations in TOC and bookmarks, etc.
 
 Select stable page numbers if you prefer page numbers that are independent of layout settings and consistent across devices:
@@ -461,10 +452,9 @@ Select stable page numbers if you prefer page numbers that are independent of la
 
 Since stable page numbers can start anywhere on the screen, you can choose to display them in the margin, regardless of other settings.
 
-'Stable page number list' shows a table of all stable page numbers and their corresponding screen page numbers.]]
-                        ),
+'Stable page number list' shows a table of all stable page numbers and their corresponding screen page numbers.]]),
                         width = Screen:getWidth() * 0.8,
-                    }))
+                    })
                 end,
                 separator = true,
             },
@@ -474,7 +464,7 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
-                    UIManager:show(SpinWidget:new({
+                    UIManager:show(SpinWidget:new{
                         title_text = _("Characters per page"),
                         value = self.chars_per_synthetic_page or self.chars_per_synthetic_page_default,
                         value_min = 500,
@@ -500,11 +490,10 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                             UIManager:broadcastEvent(Event:new("UsePageLabelsUpdated"))
                             touchmenu_instance:updateItems()
                         end,
-                        extra_text = self.has_pagemap_document_provided and self.chars_per_synthetic_page and _(
-                            "Use publisher page numbers"
-                        ),
+                        extra_text = self.has_pagemap_document_provided and self.chars_per_synthetic_page
+                            and _("Use publisher page numbers"),
                         extra_callback = function(spin)
-                            UIManager:show(ConfirmBox:new({
+                            UIManager:show(ConfirmBox:new{
                                 text = _("Use publisher page numbers?\nThe document will be reloaded."),
                                 ok_callback = function()
                                     spin:onClose()
@@ -515,9 +504,9 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                                     end
                                     self.ui:reloadDocument(nil, nil, after_open_callback)
                                 end,
-                            }))
+                            })
                         end,
-                    }))
+                    })
                 end,
             },
             {
@@ -584,7 +573,7 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
-                            UIManager:show(SpinWidget:new({
+                            UIManager:show(SpinWidget:new{
                                 title_text = _("Characters per page"),
                                 value = G_reader_settings:readSetting("pagemap_chars_per_synthetic_page")
                                     or self.chars_per_synthetic_page_default,
@@ -602,7 +591,7 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                                     G_reader_settings:delSetting("pagemap_chars_per_synthetic_page")
                                     touchmenu_instance:updateItems()
                                 end,
-                            }))
+                            })
                         end,
                     },
                     {
@@ -652,7 +641,7 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
-                            UIManager:show(SpinWidget:new({
+                            UIManager:show(SpinWidget:new{
                                 title_text = _("Page numbers font size"),
                                 value = self.label_font_size,
                                 value_min = 8,
@@ -667,7 +656,7 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                                     self:updateVisibleLabels()
                                     UIManager:setDirty(self.view.dialog, "partial")
                                 end,
-                            }))
+                            })
                         end,
                     },
                 },
