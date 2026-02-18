@@ -177,7 +177,7 @@ function ReaderPageMap:cleanPageLabel(label)
     -- Cleanup page label, that may contain some noise (as they
     -- were meant to be shown in a list, like a TOC)
     if label then
-    	label = label:gsub("[Pp][Aa][Gg][Ee]%s*", "") -- remove leading "Page " from "Page 123"
+        label = label:gsub("[Pp][Aa][Gg][Ee]%s*", "") -- remove leading "Page " from "Page 123"
     end
     return label
 end
