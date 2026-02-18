@@ -54,6 +54,7 @@ local DictQuickLookup = InputContainer:extend{
     dict_index = 1,
     width = nil,
     height = nil,
+    in_definition_search = false, -- search on an entry's definition
     nt_text_selector_indicator = nil, -- crosshairs for text selection on non-touch devices
     -- sboxes containing highlighted text, quick lookup window tries to not hide the word
     word_boxes = nil,
@@ -792,7 +793,7 @@ function DictQuickLookup:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.ReadPrevResult = { { Input.group.PgBack } }
         self.key_events.ReadNextResult = { { Input.group.PgFwd } }
-        self.key_events.Close = { { Input.group.Back } }
+        self.key_events.CloseWithButton = { { Input.group.Back } }
         self.key_events.MenuKeyPress = { { "Menu" } }
         if Device:hasScreenKB() or Device:hasKeyboard() then
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
@@ -802,8 +803,8 @@ function DictQuickLookup:registerKeyEvents()
             self.key_events.TextSelectorModifierPress = { { modifier, "Press" } }
             self.key_events.StartOrUpTextSelectorIndicator   = { { modifier, "Up" },   event = "StartOrMoveTextSelectorIndicator", args = { 0, -1, true } }
             self.key_events.StartOrDownTextSelectorIndicator = { { modifier, "Down" }, event = "StartOrMoveTextSelectorIndicator", args = { 0,  1, true } }
-            self.key_events.FastLeftTextSelectorIndicator  = { { modifier, "Left" },  event = "MoveTextSelectorIndicator", args = { -1, 0, true } }
-            self.key_events.FastRightTextSelectorIndicator = { { modifier, "Right" }, event = "MoveTextSelectorIndicator", args = { 1,  0, true } }
+            self.key_events.FastLeftTextSelectorIndicator  = { { modifier, "Left" },  event = "FindInDefiOrMoveTextIndicator", args = { -1, 0, true } }
+            self.key_events.FastRightTextSelectorIndicator = { { modifier, "Right" }, event = "FindInDefiOrMoveTextIndicator", args = { 1,  0, true } }
             if Device:hasKeyboard() then
                 self.key_events.LookupInputWordClear = { { Input.group.Alphabet }, event = "LookupInputWord" }
                 -- We need to concat here so that the 'del' event press, which propagates to inputText (desirable for previous key_event,
@@ -1161,6 +1162,12 @@ function DictQuickLookup:changeDictionary(index, skip_update)
         -- when we're done.
         self.images_cleanup_needed = true
     end
+    if self.in_definition_search then
+        local _, inner_widget = self:_getScrollAndInnerWidget()
+        if inner_widget and inner_widget.clearSearch then
+            inner_widget:clearSearch() -- self.in_definition_search gets set false here
+        end
+    end
     if self.is_wiki_fullpage then
         self.displayword = self.lookupword
         self.displaynb = nil
@@ -1270,10 +1277,20 @@ function DictQuickLookup:onTap(arg, ges_ev)
         -- Allow for changing dict with tap (tap event will be first
         -- processed for scrolling definition by ScrollTextWidget, which
         -- will pop it up for us here when it can't scroll anymore).
-        -- This allow for continuous reading of results' definitions with tap.
+        -- This allows for continuous reading of results' definitions with a tap.
+        -- Note: During in_definition_search, ScrollWidget returns false, allowing
+        --       to use tap to navigate between matches in the current definition.
         if BD.flipIfMirroredUILayout(ges_ev.pos.x < Screen:getWidth()/2) then
+            if self.in_definition_search then
+                self:findInDefinitionNextOrPreviousPage(-1)
+                return true
+            end
             self:onReadPrevResult()
         else
+            if self.in_definition_search then
+                self:findInDefinitionNextOrPreviousPage(1)
+                return true
+            end
             self:onReadNextResult()
         end
     end
@@ -1281,11 +1298,6 @@ function DictQuickLookup:onTap(arg, ges_ev)
 end
 
 function DictQuickLookup:onClose(no_clear)
-    if self.allow_key_text_selection and self.nt_text_selector_indicator then
-        -- If we're in text selection mode, stop it
-        self:onStopTextSelectorIndicator(true)
-        return true
-    end
     for menu, _ in pairs(self.menu_opened) do
         UIManager:close(menu)
     end
@@ -1315,6 +1327,23 @@ function DictQuickLookup:onClose(no_clear)
         self.dict_close_callback()
     end
 
+    return true
+end
+
+function DictQuickLookup:onCloseWithButton(no_clear)
+    if self.in_definition_search then
+        local _, inner_widget = self:_getScrollAndInnerWidget()
+        if inner_widget and inner_widget.clearSearch then
+            inner_widget:clearSearch(true)
+        end
+        return true
+    end
+    if self.allow_key_text_selection and self.nt_text_selector_indicator then
+        -- If we're in text selection mode, stop it
+        self:onStopTextSelectorIndicator(true)
+        return true
+    end
+    self:onClose(no_clear)
     return true
 end
 
@@ -1413,7 +1442,55 @@ function DictQuickLookup:onForwardingPanRelease(arg, ges)
     return self.movable:onMovablePanRelease(arg, ges)
 end
 
+function DictQuickLookup:findInDefinitionNextOrPreviousPage(direction)
+    if not self.in_definition_search then return false end
+    local scroll_widget, inner_widget = self:_getScrollAndInnerWidget()
+    if inner_widget and inner_widget.findTextNextPage then
+        inner_widget:findTextNextPage(direction)
+        if self.is_html then
+            scroll_widget:_updateScrollBar()
+            UIManager:setDirty(scroll_widget, function() return "partial", scroll_widget.dimen end)
+        else
+            scroll_widget:updateScrollBar()
+        end
+        return true
+    end
+    return false
+end
+
+function DictQuickLookup:searchInDefinition(text)
+    if not text then return end
+
+    local scroll_widget, inner_widget = self:_getScrollAndInnerWidget()
+    local found = inner_widget:findText(text)
+    if found then
+        self.in_definition_search = true
+        if self.is_html then
+            scroll_widget:_updateScrollBar()
+            UIManager:setDirty(scroll_widget, function() return "partial", scroll_widget.dimen end)
+        else
+            scroll_widget:updateScrollBar()
+        end
+    else
+        local InfoMessage = require("ui/widget/infomessage")
+        UIManager:show(InfoMessage:new{
+            text = T(_("No matches for '%1' were found."), text),
+            timeout = 2,
+        })
+        if self.in_definition_search then
+            inner_widget:clearSearch(true)
+        end
+    end
+end
+
 function DictQuickLookup:onLookupInputWord(hint)
+    if self.allow_key_text_selection and self.nt_text_selector_indicator then
+        self:onStopTextSelectorIndicator(true)
+    end
+    self:lookupInputWord(hint)
+end
+
+function DictQuickLookup:lookupInputWord(hint)
     local buttons = {
         {
             {
@@ -1441,6 +1518,22 @@ function DictQuickLookup:onLookupInputWord(hint)
         },
         {
             {
+                text = _("Find in definition"),
+                enabled_func = function()
+                    return self.is_html and self.shw_widget
+                end,
+                callback = function()
+                    local text = self.input_dialog:getInputText()
+                    if text ~= "" and not text:match("^%s*$") then
+                        UIManager:close(self.input_dialog)
+                        self:searchInDefinition(text)
+                    end
+                end,
+            },
+            -- 'Search with preset' will be inserted here
+        },
+        {
+            {
                 text = _("Cancel"),
                 id = "close",
                 callback = function()
@@ -1463,41 +1556,39 @@ function DictQuickLookup:onLookupInputWord(hint)
     }
     local preset_names = Presets.getPresets(self.ui.dictionary.preset_obj)
     if preset_names and #preset_names > 0 then
-        table.insert(buttons, 2, {
-            {
-                text = _("Search with preset"),
-                callback = function()
-                    local text = self.input_dialog:getInputText()
-                    if text == "" or text:match("^%s*$") then return end
-                    local current_dict_state = self.ui.dictionary:buildPreset()
-                    local button_dialog, dialog_buttons = nil, {} -- CI won't like it if we call it buttons :( so dialog_buttons
-                    for _, preset_name in ipairs(preset_names) do
-                        table.insert(dialog_buttons, {
-                            {
-                                align = "left",
-                                text = preset_name,
-                                callback = function()
-                                    self.ui.dictionary:loadPreset(self.ui.dictionary.preset_obj.presets[preset_name], true)
-                                    UIManager:close(button_dialog)
-                                    UIManager:close(self.input_dialog)
-                                    self.ui:handleEvent(Event:new("LookupWord", text, true, nil, nil, nil,
-                                        function()
-                                            -- Restore original preset _after_ lookup is complete
-                                            self.ui.dictionary:loadPreset(current_dict_state, true)
-                                        end
-                                    ))
-                                end
-                            }
-                        })
-                    end
-                    button_dialog = ButtonDialog:new{
-                        buttons = dialog_buttons,
-                        shrink_unneeded_width = true,
-                    }
-                    self.input_dialog:onCloseKeyboard()
-                    UIManager:show(button_dialog)
-                end,
-            }
+        table.insert(buttons[2], {
+            text = _("Search with preset"),
+            callback = function()
+                local text = self.input_dialog:getInputText()
+                if text == "" or text:match("^%s*$") then return end
+                local current_dict_state = self.ui.dictionary:buildPreset()
+                local button_dialog, dialog_buttons = nil, {} -- CI won't like it if we call it buttons :( so dialog_buttons
+                for _, preset_name in ipairs(preset_names) do
+                    table.insert(dialog_buttons, {
+                        {
+                            align = "left",
+                            text = preset_name,
+                            callback = function()
+                                self.ui.dictionary:loadPreset(self.ui.dictionary.preset_obj.presets[preset_name], true)
+                                UIManager:close(button_dialog)
+                                UIManager:close(self.input_dialog)
+                                self.ui:handleEvent(Event:new("LookupWord", text, true, nil, nil, nil,
+                                    function()
+                                        -- Restore original preset _after_ lookup is complete
+                                        self.ui.dictionary:loadPreset(current_dict_state, true)
+                                    end
+                                ))
+                            end
+                        }
+                    })
+                end
+                button_dialog = ButtonDialog:new{
+                    buttons = dialog_buttons,
+                    shrink_unneeded_width = true,
+                }
+                self.input_dialog:onCloseKeyboard()
+                UIManager:show(button_dialog)
+            end,
         })
     end
     self.input_dialog = InputDialog:new{
@@ -1952,7 +2043,7 @@ function DictQuickLookup:onMoveTextSelectorIndicator(args)
     -- Update widget state
     self.nt_text_selector_indicator = rect
     if self._text_selection_started then
-        local selection_widget = self:_getSelectionWidget(self)
+        local _, selection_widget = self:_getScrollAndInnerWidget()
         if selection_widget then
             selection_widget:onHoldPanText(nil, self:_createTextSelectionGesture("hold_pan"))
         end
@@ -1971,7 +2062,7 @@ end
 ]]
 function DictQuickLookup:onTextSelectorPress()
     if not self.nt_text_selector_indicator then return false end
-    local selection_widget = self:_getSelectionWidget(self)
+    local _, selection_widget = self:_getScrollAndInnerWidget()
     if not selection_widget then self:onStopTextSelectorIndicator() return end
     if not self._text_selection_started then
         -- start text selection on first press
@@ -2001,7 +2092,7 @@ end
 
 function DictQuickLookup:onTextSelectorModifierPress()
     if not self.nt_text_selector_indicator then return false end
-    local selection_widget = self:_getSelectionWidget(self)
+    local _, selection_widget = self:_getScrollAndInnerWidget()
     if not selection_widget then return false end
     -- If we have an active text selection (started via onTextSelectorPress), Mod+Press switches domain (Dict <-> Wiki)
     if self._text_selection_started then
@@ -2027,6 +2118,20 @@ end
 function DictQuickLookup:onStartOrMoveTextSelectorIndicator(args)
     if not self.nt_text_selector_indicator then
         self:onStartTextSelectorIndicator()
+        if self.in_definition_search then
+            local _, inner_widget = self:_getScrollAndInnerWidget()
+            inner_widget:clearSearch(true)
+        end
+    else
+        self:onMoveTextSelectorIndicator(args)
+    end
+    return true
+end
+
+function DictQuickLookup:onFindInDefiOrMoveTextIndicator(args)
+    if self.in_definition_search then
+        local direction = unpack(args)
+        self:findInDefinitionNextOrPreviousPage(direction)
     else
         self:onMoveTextSelectorIndicator(args)
     end
@@ -2046,9 +2151,12 @@ function DictQuickLookup:lookupDictionaryOrWikipedia(selected_text, switch_domai
     return true
 end
 
--- helper function to get the actual widget that handles text selection
-function DictQuickLookup:_getSelectionWidget(instance)
-    return instance.is_html and instance.text_widget.htmlbox_widget or instance.text_widget.text_widget
+-- helper function to get scroll widget and inner widget (htmlbox or text) based on current dictionary type
+function DictQuickLookup:_getScrollAndInnerWidget()
+    local scroll_widget = self.is_html and self.shw_widget or self.stw_widget
+    if not scroll_widget then return nil, nil end
+    local inner_widget = scroll_widget.htmlbox_widget or scroll_widget.text_widget
+    return scroll_widget, inner_widget
 end
 
 function DictQuickLookup:_createTextSelectionGesture(gesture)
