@@ -386,7 +386,7 @@ function ReaderPageMap:onDocumentRerendered()
 end
 
 function ReaderPageMap:onCloseDocument()
-    if self.use_page_labels then
+    if self.has_pagemap and self.use_page_labels then
         self.ui.doc_settings:saveSetting("pagemap_last_page_label", self:getLastPageLabel(true))
         self.ui.doc_settings:saveSetting("pagemap_current_page_label", select(1, self:getCurrentPageLabel(true)))
     else
