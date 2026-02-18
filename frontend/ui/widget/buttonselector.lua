@@ -4,7 +4,7 @@ local util = require("util")
 local _ = require("gettext")
 
 local ButtonSelector = ButtonDialog:extend{
-    multi_choice = nil, 
+    multi_choice = nil,
     current_value = nil, -- value; or for multi_choice: hash table { value_key = true }
     values = nil, -- array { { value_text, value_key } } - buttons in order
     bg_colors = nil, -- array { color }, corresponding to values
