@@ -908,6 +908,11 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
         return true
     end
 
+    -- Check for local WikiReader links
+    if link_url:find("^kolocalwiki://") ~= nil then
+        self.ui:handleEvent(Event:new("OpenLocalWikiPage", link_url)) -- Parsing of the URL handled in the plugin
+        return true
+    end
     -- Not supported
     UIManager:show(InfoMessage:new{
         text = T(_("Invalid or external link:\n%1"), BD.url(link_url)),
