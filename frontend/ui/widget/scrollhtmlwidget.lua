@@ -187,6 +187,7 @@ function ScrollHtmlWidget:onScrollText(arg, ges)
 end
 
 function ScrollHtmlWidget:onTapScrollText(arg, ges)
+    if self.dialog and self.dialog.in_definition_search then return false end
     if BD.flipIfMirroredUILayout(ges.pos.x < Screen:getWidth()/2) then
         return self:onScrollUp()
     else
