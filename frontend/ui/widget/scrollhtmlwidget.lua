@@ -187,11 +187,16 @@ function ScrollHtmlWidget:onScrollText(arg, ges)
 end
 
 function ScrollHtmlWidget:onTapScrollText(arg, ges)
+    if self:disableTapScrollText() then return false end
     if BD.flipIfMirroredUILayout(ges.pos.x < Screen:getWidth()/2) then
         return self:onScrollUp()
     else
         return self:onScrollDown()
     end
+end
+
+function ScrollHtmlWidget:disableTapScrollText()
+    return self.ignore_taps
 end
 
 function ScrollHtmlWidget:onScrollUp()
