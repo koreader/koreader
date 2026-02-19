@@ -809,7 +809,7 @@ function DictQuickLookup:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.ReadPrevResult = { { Input.group.PgBack } }
         self.key_events.ReadNextResult = { { Input.group.PgFwd } }
-        self.key_events.CloseWithButton = { { Input.group.Back } }
+        self.key_events.CloseWithKeys = { { Input.group.Back } }
         self.key_events.MenuKeyPress = { { "Menu" } }
         if Device:hasScreenKB() or Device:hasKeyboard() then
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
@@ -819,8 +819,8 @@ function DictQuickLookup:registerKeyEvents()
             self.key_events.TextSelectorModifierPress = { { modifier, "Press" } }
             self.key_events.StartOrUpTextSelectorIndicator   = { { modifier, "Up" },   event = "StartOrMoveTextSelectorIndicator", args = { 0, -1, true } }
             self.key_events.StartOrDownTextSelectorIndicator = { { modifier, "Down" }, event = "StartOrMoveTextSelectorIndicator", args = { 0,  1, true } }
-            self.key_events.FastLeftTextSelectorIndicator  = { { modifier, "Left" },  event = "FindInDefiOrMoveTextIndicator", args = { -1, 0, true } }
-            self.key_events.FastRightTextSelectorIndicator = { { modifier, "Right" }, event = "FindInDefiOrMoveTextIndicator", args = { 1,  0, true } }
+            self.key_events.FastLeftTextSelectorIndicator  = { { modifier, "Left" },  event = "FindInTextOrMoveSelectorIndicator", args = { -1, 0, true } }
+            self.key_events.FastRightTextSelectorIndicator = { { modifier, "Right" }, event = "FindInTextOrMoveSelectorIndicator", args = { 1,  0, true } }
             if Device:hasKeyboard() then
                 self.key_events.LookupInputWordClear = { { Input.group.Alphabet }, event = "LookupInputWord" }
                 -- We need to concat here so that the 'del' event press, which propagates to inputText (desirable for previous key_event,
@@ -1179,9 +1179,10 @@ function DictQuickLookup:changeDictionary(index, skip_update)
         self.images_cleanup_needed = true
     end
     if self.in_definition_search then
-        local _, inner_widget = self:_getScrollAndInnerWidget()
-        if inner_widget and inner_widget.clearSearch then
-            inner_widget:clearSearch() -- self.in_definition_search gets set false here
+        local scroll_widget, content_widget = self:_getScrollAndContentWidgets()
+        if content_widget and content_widget.clearSearch then
+            content_widget:clearSearch() -- self.in_definition_search gets set false here
+            scroll_widget.ignore_taps = false -- re-enable taps to normal scroll
         end
     end
     if self.is_wiki_fullpage then
@@ -1346,11 +1347,12 @@ function DictQuickLookup:onClose(no_clear)
     return true
 end
 
-function DictQuickLookup:onCloseWithButton(no_clear)
+function DictQuickLookup:onCloseWithKeys(no_clear)
     if self.in_definition_search then
-        local _, inner_widget = self:_getScrollAndInnerWidget()
-        if inner_widget and inner_widget.clearSearch then
-            inner_widget:clearSearch(true)
+        local scroll_widget, content_widget = self:_getScrollAndContentWidgets()
+        if content_widget and content_widget.clearSearch then
+            content_widget:clearSearch(true)
+            scroll_widget.ignore_taps = false -- re-enable taps to navigate between results
         end
         return true
     end
@@ -1460,9 +1462,9 @@ end
 
 function DictQuickLookup:findInDefinitionNextOrPreviousPage(direction)
     if not self.in_definition_search then return false end
-    local scroll_widget, inner_widget = self:_getScrollAndInnerWidget()
-    if inner_widget and inner_widget.findTextNextPage then
-        inner_widget:findTextNextPage(direction)
+    local scroll_widget, content_widget = self:_getScrollAndContentWidgets()
+    if content_widget and content_widget.findTextNextPage then
+        content_widget:findTextNextPage(direction)
         if self.is_html then
             scroll_widget:_updateScrollBar()
             UIManager:setDirty(scroll_widget, function() return "partial", scroll_widget.dimen end)
@@ -1477,11 +1479,12 @@ end
 function DictQuickLookup:searchInDefinition(text)
     if not text then return end
 
-    local scroll_widget, inner_widget = self:_getScrollAndInnerWidget()
-    local found = inner_widget:findText(text)
+    local scroll_widget, content_widget = self:_getScrollAndContentWidgets()
+    local found = content_widget:findText(text)
     if found then
         self.in_definition_search = true
         if self.is_html then
+            scroll_widget.ignore_taps = true
             scroll_widget:_updateScrollBar()
             UIManager:setDirty(scroll_widget, function() return "partial", scroll_widget.dimen end)
         else
@@ -1494,7 +1497,8 @@ function DictQuickLookup:searchInDefinition(text)
             timeout = 2,
         })
         if self.in_definition_search then
-            inner_widget:clearSearch(true)
+            content_widget:clearSearch(true)
+            scroll_widget.ignore_taps = false
         end
     end
 end
@@ -2059,7 +2063,7 @@ function DictQuickLookup:onMoveTextSelectorIndicator(args)
     -- Update widget state
     self.nt_text_selector_indicator = rect
     if self._text_selection_started then
-        local _, selection_widget = self:_getScrollAndInnerWidget()
+        local _, selection_widget = self:_getScrollAndContentWidgets()
         if selection_widget then
             selection_widget:onHoldPanText(nil, self:_createTextSelectionGesture("hold_pan"))
         end
@@ -2078,7 +2082,7 @@ end
 ]]
 function DictQuickLookup:onTextSelectorPress()
     if not self.nt_text_selector_indicator then return false end
-    local _, selection_widget = self:_getScrollAndInnerWidget()
+    local _, selection_widget = self:_getScrollAndContentWidgets()
     if not selection_widget then self:onStopTextSelectorIndicator() return end
     if not self._text_selection_started then
         -- start text selection on first press
@@ -2104,7 +2108,7 @@ end
 
 function DictQuickLookup:onTextSelectorModifierPress()
     if not self.nt_text_selector_indicator then return false end
-    local _, selection_widget = self:_getScrollAndInnerWidget()
+    local _, selection_widget = self:_getScrollAndContentWidgets()
     if not selection_widget then return false end
     -- If we have an active text selection (started via onTextSelectorPress), Mod+Press switches domain (Dict <-> Wiki)
     if self._text_selection_started then
@@ -2126,8 +2130,9 @@ function DictQuickLookup:onStartOrMoveTextSelectorIndicator(args)
     if not self.nt_text_selector_indicator then
         self:onStartTextSelectorIndicator()
         if self.in_definition_search then
-            local _, inner_widget = self:_getScrollAndInnerWidget()
-            inner_widget:clearSearch(true)
+            local scroll_widget, content_widget = self:_getScrollAndContentWidgets()
+            content_widget:clearSearch(true)
+            scroll_widget.ignore_taps = false -- re-enable taps to navigate between results
         end
     else
         self:onMoveTextSelectorIndicator(args)
@@ -2135,7 +2140,7 @@ function DictQuickLookup:onStartOrMoveTextSelectorIndicator(args)
     return true
 end
 
-function DictQuickLookup:onFindInDefiOrMoveTextIndicator(args)
+function DictQuickLookup:onFindInTextOrMoveSelectorIndicator(args)
     if self.in_definition_search then
         local direction = unpack(args)
         self:findInDefinitionNextOrPreviousPage(direction)
@@ -2171,11 +2176,11 @@ function DictQuickLookup:_performLookupOnSelection(selection_widget, switch_doma
 end
 
 -- helper function to get scroll widget and inner widget (htmlbox or text) based on current dictionary type
-function DictQuickLookup:_getScrollAndInnerWidget()
+function DictQuickLookup:_getScrollAndContentWidgets()
     local scroll_widget = self.is_html and self.shw_widget or self.stw_widget
     if not scroll_widget then return nil, nil end
-    local inner_widget = scroll_widget.htmlbox_widget or scroll_widget.text_widget
-    return scroll_widget, inner_widget
+    local content_widget = scroll_widget.htmlbox_widget or scroll_widget.text_widget
+    return scroll_widget, content_widget
 end
 
 function DictQuickLookup:_createTextSelectionGesture(gesture)
