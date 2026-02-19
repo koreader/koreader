@@ -89,7 +89,7 @@ end
 function HotKeys:onHotkeyAction(hotkey)
     -- Note: we could have started text selection and then trigger a reflow through hotkeys (e.g., increase
     --       font-size) which will cause pandemonium to ensue (invalid coordinates).
-    if self.ui.highlight then self.ui.highlight:stopHighlightIndicator(true) end
+    if self.ui.highlight then self.ui.highlight:onStopHighlightIndicator(true) end
     local hotkey_action_list = self.hotkeys[hotkey]
     local context = self.is_docless and "FileManager" or "Reader"
     if hotkey_action_list == nil then
