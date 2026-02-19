@@ -195,8 +195,12 @@ function ScrollHtmlWidget:onTapScrollText(arg, ges)
     end
 end
 
-function ScrollHtmlWidget:disableTapScrollText()
-    return self.ignore_taps
+function ScrollHtmlWidget:disableTapScrollText(force_block)
+    -- If an argument is provided, update the external block state
+    if force_block ~= nil then
+        self._blocked_by_parent = force_block
+    end
+    return self._blocked_by_parent or false
 end
 
 function ScrollHtmlWidget:onScrollUp()
