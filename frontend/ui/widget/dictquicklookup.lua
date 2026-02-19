@@ -1182,7 +1182,7 @@ function DictQuickLookup:changeDictionary(index, skip_update)
         local scroll_widget, content_widget = self:_getScrollAndContentWidgets()
         if content_widget and content_widget.clearSearch then
             content_widget:clearSearch() -- self.in_definition_search gets set false here
-            scroll_widget.ignore_taps = false -- re-enable taps to normal scroll
+            scroll_widget:enableTapScrollText(true) -- re-enable taps to normal scroll
         end
     end
     if self.is_wiki_fullpage then
@@ -1352,7 +1352,7 @@ function DictQuickLookup:onCloseWithKeys(no_clear)
         local scroll_widget, content_widget = self:_getScrollAndContentWidgets()
         if content_widget and content_widget.clearSearch then
             content_widget:clearSearch(true)
-            scroll_widget.ignore_taps = false -- re-enable taps to navigate between results
+            scroll_widget:enableTapScrollText(true) -- re-enable taps to navigate between results
         end
         return true
     end
@@ -1484,7 +1484,7 @@ function DictQuickLookup:searchInDefinition(text)
     if found then
         self.in_definition_search = true
         if self.is_html then
-            scroll_widget.ignore_taps = true
+            scroll_widget:enableTapScrollText(false)
             scroll_widget:_updateScrollBar()
             UIManager:setDirty(scroll_widget, function() return "partial", scroll_widget.dimen end)
         else
@@ -1498,7 +1498,7 @@ function DictQuickLookup:searchInDefinition(text)
         })
         if self.in_definition_search then
             content_widget:clearSearch(true)
-            scroll_widget.ignore_taps = false
+            scroll_widget:enableTapScrollText(true)
         end
     end
 end
@@ -2132,7 +2132,7 @@ function DictQuickLookup:onStartOrMoveTextSelectorIndicator(args)
         if self.in_definition_search then
             local scroll_widget, content_widget = self:_getScrollAndContentWidgets()
             content_widget:clearSearch(true)
-            scroll_widget.ignore_taps = false -- re-enable taps to navigate between results
+            scroll_widget:enableTapScrollText(true) -- re-enable taps to navigate between results
         end
     else
         self:onMoveTextSelectorIndicator(args)
