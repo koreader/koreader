@@ -317,6 +317,11 @@ function InputDialog:init()
                                     - vspan_after_input_text:getSize().h
                                     - buttons_container:getSize().h
                                     - keyboard_height
+        if self._added_widgets then
+            for _, widget in ipairs(self._added_widgets) do
+                available_height = available_height - widget:getSize().h
+            end
+        end
         if self.fullscreen or self.use_available_height or text_height > available_height then
             -- Don't leave unusable space in the text widget, as the user could think
             -- it's an empty line: move that space in pads after and below (for centering)
@@ -516,9 +521,15 @@ function InputDialog:addWidget(widget, re_init)
             self._added_widgets = {}
         end
         table.insert(self._added_widgets, widget)
+        if self.use_available_height then
+            self.text_height = nil
+            self:init()
+        end
     end
     -- insert widget before the bottom buttons and their previous vspan
-    table.insert(self.vgroup, #self.vgroup-1, widget)
+    if re_init or not self.use_available_height then
+        table.insert(self.vgroup, #self.vgroup-1, widget)
+    end
 end
 
 function InputDialog:getAddedWidgetAvailableWidth()
