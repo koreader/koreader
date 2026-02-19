@@ -194,6 +194,8 @@ local HtmlBoxWidget = InputContainer:extend{
     highlight_rects = nil,
     highlight_text = nil,
     highlight_clear_and_redraw_action = nil,
+
+    search_term = nil, -- string (from InputText) to search within the HTML dictionary content.
 }
 
 function HtmlBoxWidget:init()
@@ -376,6 +378,7 @@ function HtmlBoxWidget:onHoldStartText(_, ges)
     self.hold_end_pos = self.hold_start_pos
     self.highlight_rects = nil
     self.highlight_text = nil
+    self:clearSearch()
 
     if not self.hold_start_pos then
         return false -- let event be processed by other widgets
@@ -469,12 +472,14 @@ function HtmlBoxWidget:onTapText(arg, ges)
 end
 
 function HtmlBoxWidget:setPageNumber(page_number)
-    if page_number == self.page_number then
-        return
+    if page_number ~= self.page_number then
+        self.page_number = page_number
+        self.page_boxes = nil
+        self:clearHighlight()
     end
-    self.page_number = page_number
-    self.page_boxes = nil
-    self:clearHighlight()
+    if self.search_term then
+        self:_highlightSearchOnCurrentPage()
+    end
 end
 
 -- Returns true if the highlight has changed.
@@ -559,6 +564,129 @@ function HtmlBoxWidget:unscheduleClearHighlightAndRedraw()
     if self.highlight_clear_and_redraw_action then
         UIManager:unschedule(self.highlight_clear_and_redraw_action)
         self.highlight_clear_and_redraw_action = nil
+    end
+end
+
+function HtmlBoxWidget:findText(text)
+    if not self.document or not text then return false end
+
+    self.search_term = text
+    local start_page = self.page_number
+    local num_pages = self.page_count
+
+    self._search_index = {}
+    local first_match_page = nil
+
+    -- Search from current page onwards, wrapping around
+    for i = 0, num_pages - 1 do
+        local page_idx = start_page + i
+        if page_idx > num_pages then
+            page_idx = page_idx - num_pages
+        end
+
+        local match_rects = self:_findMatchesOnPage(page_idx, text)
+        if match_rects then
+            self._search_index[page_idx] = match_rects
+            if not first_match_page then
+                first_match_page = page_idx
+            end
+        end
+    end
+    -- Build sorted list from index keys for navigation
+    self._match_page_list = {}
+    for page_num in pairs(self._search_index) do
+        table.insert(self._match_page_list, page_num)
+    end
+    table.sort(self._match_page_list)
+
+    if first_match_page then
+        self:setPageNumber(first_match_page)
+        return true
+    end
+    return false
+end
+
+function HtmlBoxWidget:_findMatchesOnPage(page_idx, search_text)
+    local page = self.document:openPage(page_idx)
+    if not page then return nil end
+
+    local quads = page:searchPageText(search_text)
+    page:close()
+
+    if not quads or #quads == 0 then return nil end
+
+    local match_rects = {}
+    for _, quad in ipairs(quads) do
+        -- Compute bounding box from the 4 quad corners
+        local x0 = math.min(quad.ul_x, quad.ll_x)
+        local y0 = math.min(quad.ul_y, quad.ur_y)
+        local x1 = math.max(quad.ur_x, quad.lr_x)
+        local y1 = math.max(quad.ll_y, quad.lr_y)
+        local rect = Geom:new{
+            x = x0,
+            y = y0,
+            w = x1 - x0,
+            h = y1 - y0,
+        }
+        table.insert(match_rects, rect)
+    end
+    return match_rects
+end
+
+-- Navigate to next/previous page with search matches
+function HtmlBoxWidget:findTextNextPage(direction)
+    if not self._match_page_list or #self._match_page_list == 0 then
+        return false
+    end
+    local current_page = self.page_number
+    local target_page
+
+    if direction > 0 then  -- Next
+        for _, p in ipairs(self._match_page_list) do
+            if p > current_page then
+                target_page = p
+                break
+            end
+        end
+        target_page = target_page or self._match_page_list[1]  -- Wrap to first
+    else  -- Previous
+        for i = #self._match_page_list, 1, -1 do
+            if self._match_page_list[i] < current_page then
+                target_page = self._match_page_list[i]
+                break
+            end
+        end
+        target_page = target_page or self._match_page_list[#self._match_page_list]  -- Wrap to last
+    end
+
+    self:setPageNumber(target_page)
+    return true
+end
+
+function HtmlBoxWidget:_highlightSearchOnCurrentPage()
+    if not self.document or not self.search_term then return false end
+    -- Use cached search index for instant lookup
+    if self._search_index and self._search_index[self.page_number] then
+        self.highlight_rects = self._search_index[self.page_number]
+        self:freeBb()
+        UIManager:setDirty(self.dialog, function()
+            return "partial", self.dimen
+        end)
+        return true
+    end
+    return false
+end
+
+function HtmlBoxWidget:clearSearch(redraw)
+    self.search_term = nil
+    self._search_index = nil
+    self._match_page_list = nil
+    if self.dialog and self.dialog.in_definition_search then
+        self.dialog.in_definition_search = false
+    end
+    -- Clear the visual aspect too
+    if redraw and self:clearHighlight() then
+        self:redrawHighlight()
     end
 end
 
