@@ -1226,21 +1226,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 separator = true,
             },
             {
-                text = _("Lock width at minimum"),
-                help_text = _("Anchors the width of the progress bar at the selected minimum."),
-                enabled_func = function()
-                    return self.settings.progress_bar_position == "alongside" and not self.settings.disable_progress_bar
-                        and self.settings.all_at_once
-                end,
-                checked_func = function()
-                    return self.settings.progress_bar_lock_width
-                end,
-                callback = function()
-                    self.settings.progress_bar_lock_width = not self.settings.progress_bar_lock_width or nil
-                    self:refreshFooter(true, true)
-                end,
-            },
-            {
                 text_func = function()
                     if self.settings.progress_style_thin then
                         return _("Thickness and height: thin")
@@ -1393,6 +1378,21 @@ function ReaderFooter:addToMainMenu(menu_items)
                     UIManager:show(items)
                 end,
                 keep_menu_open = true,
+            },
+            {
+                text = _("Lock width at minimum"),
+                help_text = _("Anchors the width of the progress bar at the selected minimum."),
+                enabled_func = function()
+                    return self.settings.progress_bar_position == "alongside" and not self.settings.disable_progress_bar
+                        and self.settings.all_at_once
+                end,
+                checked_func = function()
+                    return self.settings.progress_bar_lock_width
+                end,
+                callback = function()
+                    self.settings.progress_bar_lock_width = not self.settings.progress_bar_lock_width or nil
+                    self:refreshFooter(true, true)
+                end,
                 separator = true,
             },
             {
