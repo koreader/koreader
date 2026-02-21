@@ -70,7 +70,6 @@ local ReaderLink = InputContainer:extend{
 }
 
 function ReaderLink:init()
-    self:registerKeyEvents()
     if Device:isTouchDevice() then
         self.ui:registerTouchZones({
             {
@@ -240,37 +239,14 @@ end
 
 function ReaderLink:onGesture() end
 
-function ReaderLink:registerKeyEvents()
-    if Device:hasScreenKB() or Device:hasSymKey() then
-        self.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
-        if Device:hasKeyboard() then
-            self.key_events.AddCurrentLocationToStackNonTouch = { { "Shift", "Press" } }
-            self.key_events.SelectNextPageLink = { { "Shift", "LPgFwd" }, event = "SelectNextPageLink" }
-            self.key_events.SelectPrevPageLink = { { "Shift", "LPgBack" }, event = "SelectPrevPageLink" }
-        else
-            self.key_events.AddCurrentLocationToStackNonTouch = { { "ScreenKB", "Press" } }
-            self.key_events.SelectNextPageLink = { { "ScreenKB", "LPgFwd" }, event = "SelectNextPageLink" }
-            self.key_events.SelectPrevPageLink = { { "ScreenKB", "LPgBack" }, event = "SelectPrevPageLink" }
-        end
-    elseif Device:hasKeys() then
-        self.key_events = {
-            SelectNextPageLink = {
-                { "Tab" },
-                event = "SelectNextPageLink",
-            },
-            SelectPrevPageLink = {
-                { "Shift", "Tab" },
-                event = "SelectPrevPageLink",
-            },
-            GotoSelectedPageLink = {
-                { "Press" },
-                event = "GotoSelectedPageLink",
-            },
-            -- "Back" is handled by ReaderBack, which will call our onGoBackLink()
-            -- when G_reader_settings:readSetting("back_in_reader") == "previous_location"
-        }
-    end
-end
+-- function ReaderLink:registerKeyEvents()
+    -- handled by hotkeys.koplugin:
+    -- SelectNextPageLink = { { "Tab" } },
+    -- SelectPrevPageLink = { { "Shift", "Tab" } },
+    -- GotoSelectedPageLink = { { "Press" } },
+    -- "Back" is handled by ReaderBack, which will call our onGoBackLink()
+    -- when G_reader_settings:readSetting("back_in_reader") == "previous_location"
+-- end
 
 ReaderLink.onPhysicalKeyboardConnected = ReaderLink.registerKeyEvents
 

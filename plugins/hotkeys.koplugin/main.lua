@@ -52,9 +52,14 @@ if Device:hasKeyboard() then
     for key, label in pairs(base_keys) do
         hotkeys_list_haskeyboard["alt_plus_" .. key] = _(modifier_two .. label)
     end
-    -- Alt/Ctrl + alphabet keys
+
+    local type_to_search = LuaSettings:open(hotkeys_path).data["type_to_search"]
+    -- Alt/Ctrl + alphabet keys and (no modifier) + alphabet keys
     for dummy, char in ipairs(Device.input.group.Alphabet) do
         hotkeys_list_haskeyboard["alt_plus_" .. char:lower()] = _(modifier_two .. char)
+        if not type_to_search then
+            hotkeys_list_haskeyboard[char:lower()] = char
+        end
     end
     util.tableMerge(hotkeys_list, hotkeys_list_haskeyboard)
 end
@@ -173,6 +178,12 @@ function HotKeys:registerKeyEvents()
             addKeyEvents(second_modifier, top_row_keys, "HotkeyAction", "alt_plus_")
         end
         addKeyEvents(second_modifier, remaining_keys, "HotkeyAction", "alt_plus_")
+
+        if not self.type_to_search then
+            for _, key in ipairs(Device.input.group.Alphabet) do
+                self.key_events[key] = { { key }, event = "HotkeyAction", args = key:lower() }
+            end
+        end
     end -- if hasKeyboard()
 
     local key_event_count = util.tableSize(self.key_events)
@@ -398,129 +409,70 @@ function HotKeys:addToMainMenu(menu_items)
                 "alt_plus_s", "alt_plus_t", "alt_plus_u", "alt_plus_v", "alt_plus_w", "alt_plus_x", "alt_plus_y", "alt_plus_z",
             }),
         })
+        if not self.type_to_search then
+            table.insert(menu_items.hotkeys.sub_item_table, {
+                text = _("Alphabet keys (single key)"),
+                enabled_func = function()
+                    return self.hotkey_mode == "hotkeys_reader"
+                end,
+                sub_item_table = self:genSubItemTable({
+                    "a", "b", "c", "d", "e", "f", "g", "h", "i",
+                    "j", "k", "l", "m", "n", "o", "p", "q", "r",
+                    "s", "t", "u", "v", "w", "x", "y", "z",
+                }),
+            })
+        end
     end
 end
 
 --[[
     Description:
     This function resets existing key_event tables in various modules to resolve conflicts and customize key event handling
-    Details:
-    - Resets and overrides key events for the following modules:
-        - ReaderBookmark
-        - ReaderConfig
-        - ReaderLink
-        - ReaderSearch; also adds a type to search feature.
-        - ReaderToc
-        - ReaderThumbnail
-        - ReaderUI
-        - ReaderDictionary
-        - ReaderWikipedia
-        - FileSearcher
-        - FileManagerMenu (if in docless mode)
     - Logs debug messages indicating which key events have been overridden.
 ]]
 function HotKeys:overrideConflictingKeyEvents()
     if not self.is_docless then
-        self.ui.bookmark.key_events = {} -- reset it.
-        logger.dbg("Hotkey ReaderBookmark:registerKeyEvents() overridden.")
-
-        if self.ui.font then -- readerfont is not available for pdf/djvu files.
-            self.ui.font.key_events = {} -- reset it.
-            logger.dbg("Hotkey ReaderFont:registerKeyEvents() overridden.")
-        end
-
         if Device:hasScreenKB() or Device:hasSymKey() then
-            local readerconfig = self.ui.config
-            readerconfig.key_events = {} -- reset it, then add our own
             if self.settings_data.data["press_key_does_hotkeys"] then
+                local readerconfig = self.ui.config
+                readerconfig.key_events = {} -- reset it, then add our own
                 readerconfig.key_events.ShowConfigMenu = { { "AA" }, event = "ShowConfigMenu" }
-            else
-                readerconfig.key_events.ShowConfigMenu = { { { "Press", "AA" } }, event = "ShowConfigMenu" }
+                logger.dbg("Hotkey ReaderConfig:registerKeyEvents() overridden. press_key_does_hotkeys = true")
             end
-            logger.dbg("Hotkey ReaderConfig:registerKeyEvents() overridden.")
         end
-
         local readerlink = self.ui.link
-        readerlink.key_events = {} -- reset it.
         if Device:hasScreenKB() or Device:hasSymKey() then
             readerlink.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
         elseif Device:hasKeyboard() then
             readerlink.key_events = {
-                SelectNextPageLink = {
-                    { "Tab" },
-                    event = "SelectNextPageLink",
-                },
-                SelectPrevPageLink = {
-                    { "Shift", "Tab" },
-                    event = "SelectPrevPageLink",
-                },
-                GotoSelectedPageLink = {
-                    { "Press" },
-                    event = "GotoSelectedPageLink",
-                },
+                SelectNextPageLink = { { "Tab" }, event = "SelectNextPageLink" },
+                SelectPrevPageLink = { { "Shift", "Tab" }, event = "SelectPrevPageLink" },
+                GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" },
             }
         end
-        logger.dbg("Hotkey ReaderLink:registerKeyEvents() overridden.")
-
         if Device:hasKeyboard() then
             local readersearch = self.ui.search
-            readersearch.key_events = {} -- reset it.
             readersearch.key_events.ShowFulltextSearchInputBlank = {
                 { "Alt", "Shift", "S" }, { "Ctrl", "Shift", "S" },
                 event = "ShowFulltextSearchInput",
                 args = ""
             }
             if self.type_to_search then
-                self.ui.highlight.key_events.StartHighlightIndicator = nil -- remove 'H' shortcut used for highlight indicator
                 readersearch.key_events.Alphabet = {
                     { Device.input.group.Alphabet }, { "Shift", Device.input.group.Alphabet },
                     event = "ShowFulltextSearchInput",
                     args = ""
                 }
             end
-            logger.dbg("Hotkey ReaderSearch:registerKeyEvents() overridden.")
         end
-
-        self.ui.toc.key_events = {} -- reset it.
-        logger.dbg("Hotkey ReaderToc:registerKeyEvents() overridden.")
-
-        self.ui.thumbnail.key_events = {} -- reset it.
-        logger.dbg("Hotkey ReaderThumbnail:registerKeyEvents() overridden.")
-
-        local readerui = self.ui
-        readerui.key_events = {} -- reset it, then add our own
-        readerui.key_events.Home = { { "Home" } }
-        readerui.key_events.Back = { { Device.input.group.Back } }
-        if Device:hasDPad() and Device:useDPadAsActionKeys() then
-            readerui.key_events.KeyContentSelection = { { { "Up", "Down" } }, event = "StartHighlightIndicator" }
-        elseif Device:hasKeyboard() then
-            readerui.key_events.Reload = { { "F5" } }
-        end
-        logger.dbg("Hotkey ReaderUI:registerKeyEvents() overridden.")
     end
-
     if Device:hasKeyboard() then
-        self.ui.dictionary.key_events = {} -- reset it.
-        logger.dbg("Hotkey ReaderDictionary:registerKeyEvents() overridden.")
-
-        self.ui.wikipedia.key_events = {} -- reset it.
-        logger.dbg("Hotkey ReaderWikipedia:registerKeyEvents() overridden.")
-
         local filesearcher = self.ui.filesearcher
-        filesearcher.key_events = {} -- reset it.
         filesearcher.key_events.ShowFileSearchBlank = {
             { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" },
             event = "ShowFileSearch",
             args = ""
         }
-        logger.dbg("Hotkey FileSearcher:registerKeyEvents() overridden.")
-    end
-
-    if self.is_docless then
-        local filemanagermenu = self.ui.menu
-        filemanagermenu.key_events = {} -- reset it.
-        filemanagermenu.key_events.KeyPressShowMenu = { { "Menu" } }
-        logger.dbg("Hotkey FileManagerMenu:registerKeyEvents() overridden.")
     end
 end -- overrideConflictingKeyEvents()
 
