@@ -2048,11 +2048,13 @@ function DictQuickLookup:_performLookupOnSelection(selection_widget, switch_doma
         -- For HtmlBoxWidget, highlight_text should contain the complete text selection.
         selected_text = selection_widget.highlight_text
     else
-        -- For TextBoxWidget, extract the selected text using the indices.
-        selected_text = selection_widget.text:sub(
-            selection_widget.highlight_start_idx,
-            selection_widget.highlight_end_idx
-        )
+        -- TextBoxWidget highlight indices are character indices, not byte indices.
+        local start_idx = selection_widget.highlight_start_idx
+        local end_idx = selection_widget.highlight_end_idx
+        -- Convert char-index range -> byte-index range for UTF-8 safe extraction.
+        local start_byte = start_idx > 1 and (selection_widget:getSourceIndex(start_idx - 1) + 1) or 1
+        local end_byte = selection_widget:getSourceIndex(end_idx)
+        selected_text = selection_widget.text:sub(start_byte, end_byte)
     end
     if not selected_text then return false end
     local new_dict_close_callback = function() self:clearDictionaryHighlight() end
