@@ -2005,8 +2005,12 @@ function DictQuickLookup:onTextSelectorPress()
     end
     -- second press,
     -- process the hold release event which finalizes text selection
-    selection_widget:onHoldReleaseText(nil, self:_createTextSelectionGesture("hold_release"))
-    self:_performLookupOnSelection(selection_widget, false)
+    local selected_text
+    selection_widget:onHoldReleaseText(
+        function(text) selected_text = text end,
+        self:_createTextSelectionGesture("hold_release")
+    )
+    self:_performLookupOnSelection(selected_text, false)
     self:onStopTextSelectorIndicator()
     return true
 end
@@ -2017,7 +2021,12 @@ function DictQuickLookup:onTextSelectorModifierPress()
     if not selection_widget then return false end
     -- If we have an active text selection (started via onTextSelectorPress), Mod+Press switches domain (Dict <-> Wiki)
     if self._text_selection_started then
-        self:_performLookupOnSelection(selection_widget, true) -- switch domain
+        local selected_text
+        selection_widget:onHoldReleaseText(
+            function(text) selected_text = text end,
+            self:_createTextSelectionGesture("hold_release")
+        )
+        self:_performLookupOnSelection(selected_text, true) -- switch_domain, "i'm master of my domain" ¯\_(ツ)_/¯
         self:onStopTextSelectorIndicator()
         return true
     end
@@ -2040,22 +2049,7 @@ function DictQuickLookup:onStartOrMoveTextSelectorIndicator(args)
     return true
 end
 
-function DictQuickLookup:_performLookupOnSelection(selection_widget, switch_domain)
-    if not selection_widget then return false end
-    local selected_text
-    -- both text_widget and htmlbox_widget handle text parsing a bit differently, ¯\_(ツ)_/¯
-    if self.is_html then
-        -- For HtmlBoxWidget, highlight_text should contain the complete text selection.
-        selected_text = selection_widget.highlight_text
-    else
-        -- TextBoxWidget highlight indices are character indices, not byte indices.
-        local start_idx = selection_widget.highlight_start_idx
-        local end_idx = selection_widget.highlight_end_idx
-        -- Convert char-index range -> byte-index range for UTF-8 safe extraction.
-        local start_byte = start_idx > 1 and (selection_widget:getSourceIndex(start_idx - 1) + 1) or 1
-        local end_byte = selection_widget:getSourceIndex(end_idx)
-        selected_text = selection_widget.text:sub(start_byte, end_byte)
-    end
+function DictQuickLookup:_performLookupOnSelection(selected_text, switch_domain)
     if not selected_text then return false end
     local new_dict_close_callback = function() self:clearDictionaryHighlight() end
     local use_wiki = switch_domain and not self.is_wiki or not switch_domain and self.is_wiki
