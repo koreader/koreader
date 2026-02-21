@@ -67,6 +67,7 @@ function ButtonTable:init()
                 text = btn_entry.text,
                 text_func = btn_entry.text_func,
                 checked_func = btn_entry.checked_func,
+                no_refresh_checkmark = btn_entry.no_refresh_checkmark,
                 lang = btn_entry.lang,
                 icon = btn_entry.icon,
                 icon_width = btn_entry.icon_width,
