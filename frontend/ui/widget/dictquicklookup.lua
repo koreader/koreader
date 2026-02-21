@@ -2036,7 +2036,8 @@ end
 function DictQuickLookup:searchDictionaryOrWikipedia(selected_text, switch_domain)
     if not selected_text then return false end
     local new_dict_close_callback = function() self:clearDictionaryHighlight() end
-    local use_wiki = switch_domain and not self.is_wiki or not switch_domain and self.is_wiki
+    local use_wiki = self.is_wiki
+    if switch_domain then use_wiki = not use_wiki end
     if use_wiki then
         self:lookupWikipedia(false, selected_text, nil, nil, new_dict_close_callback)
     else
