@@ -252,7 +252,7 @@ function BookmarkBrowser:doesBookmarkMatch(a, a_type)
     if self.filter_table.style and self.filter_table.style ~= a.drawer then return end
     if self.filter_table.color and self.filter_table.color ~= a.color then return end
     if self.filter_table.search_string then
-        local text = a.text
+        local text = a.text or ""
         if a.note then
             text = text .. "\u{FFFF}" .. a.note
         end
