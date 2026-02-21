@@ -178,24 +178,8 @@ function DictQuickLookup:init()
                 },
                 -- callback function when HoldReleaseText is handled as args
                 args = function(text, hold_duration)
-                    -- do this lookup in the same domain (dict/wikipedia)
-                    local lookup_wikipedia = self.is_wiki
-                    if hold_duration >= time.s(3) then
-                        -- but allow switching domain with a long hold
-                        lookup_wikipedia = not lookup_wikipedia
-                    end
-
-                    local new_dict_close_callback = function()
-                        self:clearDictionaryHighlight()
-                    end
-
-                    -- We don't pass self.highlight to subsequent lookup, we want the
-                    -- first to be the only one to unhighlight selection when closed
-                    if lookup_wikipedia then
-                        self:lookupWikipedia(false, text, nil, nil, new_dict_close_callback)
-                    else
-                        self.ui:handleEvent(Event:new("LookupWord", text, nil, nil, nil, nil, new_dict_close_callback))
-                    end
+                    -- short hold: same domain; long hold (>=3s): switch domain
+                    self:searchDictionaryOrWikipedia(text, hold_duration >= time.s(3))
                 end
             },
             SetTemporaryLargeWindowMode = {
@@ -2010,7 +1994,7 @@ function DictQuickLookup:onTextSelectorPress()
         function(text) selected_text = text end,
         self:_createTextSelectionGesture("hold_release")
     )
-    self:_performLookupOnSelection(selected_text, false)
+    self:searchDictionaryOrWikipedia(selected_text, false)
     self:onStopTextSelectorIndicator()
     return true
 end
@@ -2026,7 +2010,7 @@ function DictQuickLookup:onTextSelectorModifierPress()
             function(text) selected_text = text end,
             self:_createTextSelectionGesture("hold_release")
         )
-        self:_performLookupOnSelection(selected_text, true) -- switch_domain, "i'm master of my domain" ¯\_(ツ)_/¯
+        self:searchDictionaryOrWikipedia(selected_text, true) -- switch_domain, "i'm master of my domain" ¯\_(ツ)_/¯
         self:onStopTextSelectorIndicator()
         return true
     end
@@ -2049,7 +2033,7 @@ function DictQuickLookup:onStartOrMoveTextSelectorIndicator(args)
     return true
 end
 
-function DictQuickLookup:_performLookupOnSelection(selected_text, switch_domain)
+function DictQuickLookup:searchDictionaryOrWikipedia(selected_text, switch_domain)
     if not selected_text then return false end
     local new_dict_close_callback = function() self:clearDictionaryHighlight() end
     local use_wiki = switch_domain and not self.is_wiki or not switch_domain and self.is_wiki
