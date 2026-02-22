@@ -11,7 +11,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
-local Utf8Proc = require("ffi/utf8proc")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
@@ -180,9 +179,6 @@ function FileSearcher:getList()
     }
     local search_string = FileSearcher.search_string
     if search_string ~= "*" then -- one * to show all files
-        if not self.case_sensitive then
-            search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
-        end
         -- replace '.' with '%.'
         search_string = search_string:gsub("%.","%%%.")
         -- replace '*' with '.*'
@@ -236,10 +232,7 @@ function FileSearcher:isFileMatch(filename, fullpath, search_string, is_file)
     if search_string == "*" then
         return true
     end
-    if not self.case_sensitive then
-        filename = Utf8Proc.lowercase(util.fixUtf8(filename, "?"))
-    end
-    if string.find(filename, search_string) then
+    if util.stringSearch(filename, search_string, self.case_sensitive) ~= 0 then
         return true
     end
     if self.include_metadata and is_file and DocumentRegistry:hasProvider(fullpath) then
@@ -345,9 +338,7 @@ function FileSearcher:onMenuSelect(item)
     else
         if item.is_file then
             if DocumentRegistry:hasProvider(item.path, nil, true) then
-                self.close_callback()
-                local FileManager = require("apps/filemanager/filemanager")
-                FileManager.openFile(self.ui, item.path)
+                filemanagerutil.openFile(self.ui, item.path, self.close_callback)
             end
         else
             self._manager.update_files = nil
