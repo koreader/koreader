@@ -189,7 +189,7 @@ function ScrollHtmlWidget:onScrollText(arg, ges)
 end
 
 function ScrollHtmlWidget:onTapScrollText(arg, ges)
-    if not self:enableTapScrollText() then return false end
+    if self.ignore_taps then return false end
     if BD.flipIfMirroredUILayout(ges.pos.x < Screen:getWidth()/2) then
         return self:onScrollUp()
     else
@@ -197,12 +197,8 @@ function ScrollHtmlWidget:onTapScrollText(arg, ges)
     end
 end
 
-function ScrollHtmlWidget:enableTapScrollText(enabled)
-    -- If an argument is provided, update the external block state
-    if enabled ~= nil then
-        self.ignore_taps = not enabled
-    end
-    return not self.ignore_taps
+function ScrollHtmlWidget:setTapScrollEnabled(enabled)
+    self.ignore_taps = not enabled
 end
 
 function ScrollHtmlWidget:onScrollUp()
