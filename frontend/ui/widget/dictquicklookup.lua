@@ -918,7 +918,7 @@ function DictQuickLookup:_instantiateScrollWidget()
             end,
             on_clear_search = function()
                 self.in_definition_search = false
-                self.shw_widget:enableTapScrollText(true)
+                self.shw_widget:setTapScrollEnabled(true)
             end,
             -- We need to override the widget's paintTo method to draw our indicator
             paintTo = self.allow_key_text_selection and function(widget, bb, x, y)
@@ -950,7 +950,7 @@ function DictQuickLookup:_instantiateScrollWidget()
             highlight_text_selection = true,
             on_clear_search = function()
                 self.in_definition_search = false
-                self.stw_widget:enableTapScrollText(true)
+                self.stw_widget:setTapScrollEnabled(true)
             end,
             -- We need to override the widget's paintTo method to draw our indicator
             paintTo = self.allow_key_text_selection and function(widget, bb, x, y)
@@ -1489,7 +1489,7 @@ function DictQuickLookup:searchInDefinition(text)
     local found = content_widget:findText(text)
     if found then
         self.in_definition_search = true
-        scroll_widget:enableTapScrollText(false)
+        scroll_widget:setTapScrollEnabled(false)
         if self.is_html then
             scroll_widget:_updateScrollBar()
             UIManager:setDirty(scroll_widget, function() return "partial", scroll_widget.dimen end)
