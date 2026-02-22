@@ -30,6 +30,7 @@ local ScrollHtmlWidget = InputContainer:extend{
     height = 0,
     scroll_bar_width = Screen:scaleBySize(6),
     text_scroll_span = Screen:scaleBySize(12),
+    on_clear_search = nil,
 }
 
 function ScrollHtmlWidget:init()
@@ -41,6 +42,7 @@ function ScrollHtmlWidget:init()
         dialog = self.dialog,
         highlight_text_selection = self.highlight_text_selection,
         html_link_tapped_callback = self.html_link_tapped_callback,
+        on_clear_search = self.on_clear_search,
     }
 
     self.htmlbox_widget:setContent(self.html_body, self.css, self.default_font_size, self.is_xhtml, nil, self.html_resource_directory)
