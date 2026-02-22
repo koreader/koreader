@@ -1318,6 +1318,26 @@ Time is in hours and minutes.]]),
                 separator = true,
             },
             {
+                text = _("All books"),
+                keep_menu_open = true,
+                callback = function()
+                    local kv = self.kv
+                    UIManager:close(self.kv)
+                    local total_msg, kv_pairs = self:getTotalStats()
+                    self.kv = KeyValuePage:new{
+                        title = total_msg,
+                        value_align = "right",
+                        kv_pairs = kv_pairs,
+                        callback_return = function()
+                            UIManager:show(kv)
+                            self.kv = kv
+                        end,
+                        close_callback = function() self.kv = nil end, -- clean stack
+                    }
+                    UIManager:show(self.kv)
+                end,
+            },
+            {
                 text = _("Current book"),
                 keep_menu_open = true,
                 callback = function()
