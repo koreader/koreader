@@ -62,7 +62,7 @@ function FileManagerHistory:onShowHist(search_info)
         name = "history",
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showHistDialog() end,
-        onMenuChoice = self.onMenuChoice,
+        onMenuSelect = self.onMenuSelect,
         onMenuHold = self.onMenuHold,
         ui = self.ui,
         _manager = self,
@@ -166,14 +166,8 @@ function FileManagerHistory:onSetDimensions(dimen)
     self.dimen = dimen
 end
 
-function FileManagerHistory:onMenuChoice(item)
-    if self.ui.document then
-        if self.ui.document.file ~= item.file then
-            self.ui:switchDocument(item.file)
-        end
-    else
-        self.ui:openFile(item.file)
-    end
+function FileManagerHistory:onMenuSelect(item)
+    filemanagerutil.openFile(self.ui, item.file, self.close_callback)
 end
 
 function FileManagerHistory:onMenuHold(item)
