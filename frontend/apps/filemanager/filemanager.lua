@@ -165,7 +165,7 @@ function FileManager:setupLayout()
             file_manager.selected_files[item.path] = item.dim
             self:updateItems(1, true)
         else
-            file_manager:openFile(item.path)
+            filemanagerutil.openFile(file_manager, item.path)
         end
         return true
     end
@@ -1421,7 +1421,7 @@ function FileManager:showOpenWithDialog(file)
         return {{
             -- @translators %1 is the provider name, such as Cool Reader Engine or MuPDF.
             text = is_unsupported and T(_("%1 ~Unsupported"), provider.provider_name) or provider.provider_name,
-            checked = provider.provider == file_provider_key,
+            checked = not is_unsupported and provider.provider == file_provider_key,
             provider = provider,
         }}
     end
@@ -1432,8 +1432,8 @@ function FileManager:showOpenWithDialog(file)
             table.insert(radio_buttons, genRadioButton(provider.provider))
         end
     else
-        local provider = DocumentRegistry:getFallbackProvider()
-        table.insert(radio_buttons, genRadioButton(provider, true))
+        table.insert(radio_buttons, genRadioButton(DocumentRegistry.known_providers["mupdf"], true))
+        table.insert(radio_buttons, genRadioButton(DocumentRegistry.known_providers["crengine"], true))
     end
     for _, provider in ipairs(DocumentRegistry:getAuxProviders()) do -- auxiliary providers
         local is_filetype_supported
