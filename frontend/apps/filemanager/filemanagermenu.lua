@@ -384,6 +384,15 @@ To:
                 separator = true,
             },
             {
+                text = _("Ask to open file"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("file_ask_to_open")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("file_ask_to_open")
+                end,
+            },
+            {
                 text = _("Show collection mark"),
                 checked_func = function()
                     return G_reader_settings:hasNot("collection_show_mark")
