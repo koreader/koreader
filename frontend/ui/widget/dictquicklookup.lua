@@ -900,6 +900,10 @@ function DictQuickLookup:_instantiateScrollWidget()
             html_link_tapped_callback = function(link)
                 self.html_dictionary_link_tapped_callback(self.dictionary, link)
             end,
+            on_clear_search = function()
+                self.in_definition_search = false
+                self.shw_widget:enableTapScrollText(true)
+            end,
             -- We need to override the widget's paintTo method to draw our indicator
             paintTo = self.allow_key_text_selection and function(widget, bb, x, y)
                 -- Call original paintTo from ScrollHtmlWidget
@@ -928,6 +932,10 @@ function DictQuickLookup:_instantiateScrollWidget()
             image_alt_face = self.image_alt_face,
             images = self.images,
             highlight_text_selection = true,
+            on_clear_search = function()
+                self.in_definition_search = false
+                self.stw_widget:enableTapScrollText(true)
+            end,
             -- We need to override the widget's paintTo method to draw our indicator
             paintTo = self.allow_key_text_selection and function(widget, bb, x, y)
                 -- Call original paintTo from ScrollTextWidget
@@ -1163,10 +1171,9 @@ function DictQuickLookup:changeDictionary(index, skip_update)
         self.images_cleanup_needed = true
     end
     if self.in_definition_search then
-        local scroll_widget, content_widget = self:_getScrollAndContentWidgets()
+        local _, content_widget = self:_getScrollAndContentWidgets()
         if content_widget and content_widget.clearSearch then
             content_widget:clearSearch() -- self.in_definition_search gets set false here
-            scroll_widget:enableTapScrollText(true) -- re-enable taps to normal scroll
         end
     end
     if self.is_wiki_fullpage then
@@ -1333,10 +1340,9 @@ end
 
 function DictQuickLookup:onCloseWithKeys(no_clear)
     if self.in_definition_search then
-        local scroll_widget, content_widget = self:_getScrollAndContentWidgets()
+        local _, content_widget = self:_getScrollAndContentWidgets()
         if content_widget and content_widget.clearSearch then
             content_widget:clearSearch(true)
-            scroll_widget:enableTapScrollText(true) -- re-enable taps to navigate between results
         end
         return true
     end
@@ -1467,8 +1473,8 @@ function DictQuickLookup:searchInDefinition(text)
     local found = content_widget:findText(text)
     if found then
         self.in_definition_search = true
+        scroll_widget:enableTapScrollText(false)
         if self.is_html then
-            scroll_widget:enableTapScrollText(false)
             scroll_widget:_updateScrollBar()
             UIManager:setDirty(scroll_widget, function() return "partial", scroll_widget.dimen end)
         else
@@ -1482,7 +1488,6 @@ function DictQuickLookup:searchInDefinition(text)
         })
         if self.in_definition_search then
             content_widget:clearSearch(true)
-            scroll_widget:enableTapScrollText(true)
         end
     end
 end
@@ -2123,9 +2128,8 @@ function DictQuickLookup:onStartOrMoveTextSelectorIndicator(args)
     if not self.nt_text_selector_indicator then
         self:onStartTextSelectorIndicator()
         if self.in_definition_search then
-            local scroll_widget, content_widget = self:_getScrollAndContentWidgets()
+            local _, content_widget = self:_getScrollAndContentWidgets()
             content_widget:clearSearch(true)
-            scroll_widget:enableTapScrollText(true) -- re-enable taps to navigate between results
         end
     else
         self:onMoveTextSelectorIndicator(args)

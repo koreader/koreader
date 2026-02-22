@@ -196,6 +196,7 @@ local HtmlBoxWidget = InputContainer:extend{
     highlight_clear_and_redraw_action = nil,
 
     search_term = nil, -- string (from InputText) to search within the HTML dictionary content.
+    on_clear_search = nil, -- callback, set by parent if needed
 }
 
 function HtmlBoxWidget:init()
@@ -681,8 +682,8 @@ function HtmlBoxWidget:clearSearch(redraw)
     self.search_term = nil
     self._search_index = nil
     self._match_page_list = nil
-    if self.dialog and self.dialog.in_definition_search then
-        self.dialog.in_definition_search = false
+    if self.on_clear_search then
+        self.on_clear_search()
     end
     -- Clear the visual aspect too
     if redraw and self:clearHighlight() then
