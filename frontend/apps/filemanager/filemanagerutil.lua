@@ -439,7 +439,7 @@ function filemanagerutil.openFile(ui, file, caller_pre_callback, no_dialog)
 
     if not no_dialog and G_reader_settings:isTrue("file_ask_to_open") then
         UIManager:show(ConfirmBox:new{
-            text = _("Open file?") .. "\n\n" .. BD.filename(file:match("([^/]+)$")),
+            text = _("Open this file?") .. "\n\n" .. BD.filename(file:match("([^/]+)$")),
             ok_text = _("Open"),
             ok_callback = openFile,
         })
