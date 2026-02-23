@@ -384,7 +384,7 @@ To:
                 separator = true,
             },
             {
-                text = _("Ask to open file"),
+                text = _("Ask to open files"),
                 checked_func = function()
                     return G_reader_settings:isTrue("file_ask_to_open")
                 end,
