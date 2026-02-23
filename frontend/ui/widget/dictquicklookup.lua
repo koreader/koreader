@@ -932,10 +932,10 @@ function DictQuickLookup:_instantiateScrollWidget()
             image_alt_face = self.image_alt_face,
             images = self.images,
             highlight_text_selection = true,
-            on_clear_search = function()
-                self.in_definition_search = false
-                self.stw_widget:setTapScrollEnabled(true)
-            end,
+            -- on_clear_search = function()
+            --     self.in_definition_search = false
+            --     self.stw_widget:setTapScrollEnabled(true)
+            -- end,
             -- We need to override the widget's paintTo method to draw our indicator
             paintTo = self.allow_key_text_selection and function(widget, bb, x, y)
                 -- Call original paintTo from ScrollTextWidget

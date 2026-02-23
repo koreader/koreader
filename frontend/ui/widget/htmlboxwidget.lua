@@ -476,6 +476,9 @@ function HtmlBoxWidget:setPageNumber(page_number)
     if page_number ~= self.page_number then
         self.page_number = page_number
         self.page_boxes = nil
+        if not self._search_navigating then
+            self._match_page_index = nil -- resync index on next navigation
+        end
         self:clearHighlight()
     end
     if self.search_term then
@@ -636,31 +639,36 @@ end
 
 -- Navigate to next/previous page with search matches
 function HtmlBoxWidget:findTextNextPage(direction)
-    if not self._match_page_list or #self._match_page_list == 0 then
-        return false
-    end
-    local current_page = self.page_number
-    local target_page
-
-    if direction > 0 then  -- Next
-        for _, p in ipairs(self._match_page_list) do
-            if p > current_page then
-                target_page = p
-                break
+    local list = self._match_page_list
+    local count = list and #list or 0
+    if count == 0 then return false end
+    -- Resolve index if missing or desynced
+    if not self._match_page_index then
+        if not self._match_page_index then
+            if direction > 0 then
+                local idx = util.bsearch_right(list, self.page_number) - 1
+                if idx < 1 then idx = count end
+                self._match_page_index = idx
+            else
+                local idx = util.bsearch_left(list, self.page_number)
+                if idx > count then idx = 1 end
+                self._match_page_index = idx
             end
         end
-        target_page = target_page or self._match_page_list[1]  -- Wrap to first
-    else  -- Previous
-        for i = #self._match_page_list, 1, -1 do
-            if self._match_page_list[i] < current_page then
-                target_page = self._match_page_list[i]
-                break
-            end
-        end
-        target_page = target_page or self._match_page_list[#self._match_page_list]  -- Wrap to last
+        if not self._match_page_index then return false end
     end
-
-    self:setPageNumber(target_page)
+    local idx = self._match_page_index
+    if direction > 0 then -- Next (wrap around)
+        idx = idx + 1
+        if idx > count then idx = 1 end
+    else -- Previous (wrap around)
+        idx = idx - 1
+        if idx < 1 then idx = count end
+    end
+    self._match_page_index = idx
+    self._search_navigating = true
+    self:setPageNumber(list[idx])
+    self._search_navigating = nil
     return true
 end
 
@@ -682,6 +690,7 @@ function HtmlBoxWidget:clearSearch(redraw)
     self.search_term = nil
     self._search_index = nil
     self._match_page_list = nil
+    self._match_page_index = nil
     if self.on_clear_search then
         self.on_clear_search()
     end
