@@ -102,7 +102,7 @@ local CreOptions = {
             {   -- ReaderRolling
                 name = "visible_pages",
                 name_text = _("Two Columns"),
-                toggle = {_("off"), _("on")},
+                toggle = {C_("Two columns", "off"), C_("Two columns", "on")},
                 values = {1, 2},
                 default_value = 1,
                 args = {1, 2},
@@ -178,7 +178,7 @@ This is disabled in scroll mode. Switching from page mode with two columns to sc
             {   -- ReaderTypeset
                 name = "sync_t_b_page_margins",
                 name_text = _("Sync T/B Margins"),
-                toggle = {_("off"), _("on")},
+                toggle = {C_("Sync T/B margins", "off"), C_("Sync T/B margins", "on")},
                 values = {0, 1},
                 default_value = 0,
                 event = "SyncPageTopBottomMargins",
@@ -304,7 +304,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
             {   -- ReaderView
                 name = "view_mode",
                 name_text = _("View Mode"),
-                toggle = {_("page"), _("continuous")},
+                toggle = {C_("View mode", "page"), C_("View mode", "continuous")},
                 values = {0, 1},
                 default_value = G_defaults:readSetting("DCREREADER_VIEW_MODE") == "page" and 0 or 1,
                 args = {"page", "scroll"},
@@ -316,7 +316,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
             {   -- ReaderTypeset
                 name = "block_rendering_mode",
                 name_text = _("Render Mode"),
-                toggle = {_("legacy"), _("flat"), _("book"), _("web")},
+                toggle = {C_("Render mode", "legacy"), C_("Render mode", "flat"), C_("Render mode", "book"), C_("Render mode", "web")},
                 values = {0, 1, 2, 3},
                 default_value = 2,
                 args = {0, 1, 2, 3},
@@ -336,7 +336,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                     value_hold_step = 20,
                     unit = C_("Resolution", "dpi"),
                 },
-                toggle = {_("off"), "48", "96¹’¹", "167", "212", "300"},
+                toggle = {C_("Zoom dpi", "off"), "48", "96¹’¹", "167", "212", "300"},
                 values = {0, 48, 96, 167, 212, 300},
                 default_value = 96,
                 args = {0, 48, 96, 167, 212, 300},
@@ -427,8 +427,8 @@ Note that your selected font size is not affected by this setting.]]),
             {   -- ReaderFont
                 name = "font_fine_tune",
                 name_text = _("Font Size"),
-                toggle = Device:isTouchDevice() and {_("decrease"), _("increase")} or nil,
-                item_text = not Device:isTouchDevice() and {_("decrease"), _("increase")} or nil,
+                toggle = Device:isTouchDevice() and {C_("Font size", "decrease"), C_("Font size", "increase")} or nil,
+                item_text = not Device:isTouchDevice() and {C_("Font size", "decrease"), C_("Font size", "increase")} or nil,
                 more_options = true,
                 more_options_param = {
                     value_min = 12,
@@ -644,7 +644,7 @@ If a font variation is not available, as well as for fractional adjustments, it 
             {   -- ReaderFont
                 name = "font_kerning",
                 name_text = _("Font Kerning"),
-                toggle = {_("off"), _("fast"), _("good"), _("best")},
+                toggle = {C_("Font kerning", "off"), C_("Font kerning", "fast"), C_("Font kerning", "good"), C_("Font kerning", "best")},
                 values = {0, 1, 2, 3},
                 default_value = 3,
                 args = {0, 1, 2, 3},
@@ -667,7 +667,7 @@ If a font variation is not available, as well as for fractional adjustments, it 
             {   -- ReaderRolling
                 name = "status_line",
                 name_text = _("Alt Status Bar"),
-                toggle = {_("off"), _("on")},
+                toggle = {C_("Alt status bar", "off"), C_("Alt status bar", "on")},
                 values = {1, 0}, -- Note that 0 means crengine header status line enabled, and 1 means disabled
                 default_value = 1,
                 args = {1, 0},
@@ -680,7 +680,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
             {   -- ReaderTypeset
                 name = "embedded_css",
                 name_text = _("Embedded Style"),
-                toggle = {_("off"), _("on")},
+                toggle = {C_("Embedded style", "off"), C_("Embedded style", "on")},
                 values = {0, 1},
                 default_value = 1,
                 args = {false, true},
@@ -692,7 +692,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
             {   -- ReaderTypeset
                 name = "embedded_fonts",
                 name_text = _("Embedded Fonts"),
-                toggle = {_("off"), _("on")},
+                toggle = {C_("Embedded fonts", "off"), C_("Embedded fonts", "on")},
                 values = {0, 1},
                 default_value = 1,
                 args = {false, true},
@@ -719,7 +719,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
             {   -- ReaderTypeset
                 name = "smooth_scaling",
                 name_text = _("Image Scaling"),
-                toggle = {_("fast"), _("best")},
+                toggle = {C_("Image scaling", "fast"), C_("Image scaling", "best")},
                 values = {0, 1},
                 default_value = 0,
                 args = {false, true},
@@ -731,7 +731,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
             {   -- ReaderTypeset
                 name = "nightmode_images",
                 name_text = _("Invert Images"),
-                toggle = {_("on"), _("off")},
+                toggle = {C_("Invert images", "on"), C_("Invert images", "off")},
                 values = {1, 0},
                 default_value = 1,
                 args = {true, false},
