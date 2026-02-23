@@ -311,9 +311,9 @@ function CoverImage:cleanCache()
     -- delete the oldest files first
     table.sort(files, function(a, b) return a.mod < b.mod end)
     local index = 1
-    while ((cache_count > self.cover_image_cache_maxfiles and self.cover_image_cache_maxfiles ~= 0)
-        or (cache_size > self.cover_image_cache_maxsize * 1000 * 1000 and self.cover_image_cache_maxsize ~= 0))
-        and index <= #files do
+    while index <= #files
+        and ((cache_count > self.cover_image_cache_maxfiles and self.cover_image_cache_maxfiles ~= 0)
+        or (cache_size > self.cover_image_cache_maxsize * 1000 * 1000 and self.cover_image_cache_maxsize ~= 0)) do
         os.remove(files[index].name)
         cache_count = cache_count - 1
         cache_size = cache_size - files[index].size
