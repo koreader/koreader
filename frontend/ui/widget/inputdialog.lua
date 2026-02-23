@@ -507,10 +507,10 @@ function InputDialog:reinit()
     UIManager:setDirty("all", "flashui")
 end
 
-function InputDialog:addWidget(widget, _re_init)
+function InputDialog:addWidget(widget, re_init)
     local is_text_height_adjustable = self.fullscreen or self.use_available_height
     table.insert(self.layout, #self.layout, {widget})
-    if not _re_init then -- backup widget for re-init
+    if not re_init then -- backup widget for re-init
         widget = CenterContainer:new{
             dimen = Geom:new{
                 w = self.width,
@@ -528,7 +528,7 @@ function InputDialog:addWidget(widget, _re_init)
         end
     end
     -- insert widget before the bottom buttons and their previous vspan
-    if _re_init or not is_text_height_adjustable then
+    if re_init or not is_text_height_adjustable then
         table.insert(self.vgroup, #self.vgroup-1, widget)
     end
 end
