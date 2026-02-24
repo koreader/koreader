@@ -508,6 +508,7 @@ function InputDialog:reinit()
 end
 
 function InputDialog:addWidget(widget, re_init)
+    local is_text_height_adjustable = self.fullscreen or self.use_available_height
     table.insert(self.layout, #self.layout, {widget})
     if not re_init then -- backup widget for re-init
         widget = CenterContainer:new{
@@ -521,13 +522,13 @@ function InputDialog:addWidget(widget, re_init)
             self._added_widgets = {}
         end
         table.insert(self._added_widgets, widget)
-        if self.use_available_height then
+        if is_text_height_adjustable then
             self.text_height = nil
             self:init()
         end
     end
     -- insert widget before the bottom buttons and their previous vspan
-    if re_init or not self.use_available_height then
+    if re_init or not is_text_height_adjustable then
         table.insert(self.vgroup, #self.vgroup-1, widget)
     end
 end
