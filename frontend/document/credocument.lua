@@ -77,6 +77,15 @@ local CreDocument = Document:extend{
     last_linear_page = nil,
 }
 
+function CreDocument:getLanguageSupportCallbacks()
+    return {
+        get_prev_char_pos = function(pos) return self:getPrevVisibleChar(pos) end,
+        get_next_char_pos = function(pos) return self:getNextVisibleChar(pos) end,
+        get_text_in_range = function(pos0, pos1) return self:getTextFromXPointers(pos0, pos1) end,
+        get_selection_sboxes = function(pos0, pos1) return self:getScreenBoxesFromPositions(pos0, pos1, true) end,
+    }
+end
+
 function CreDocument.cacheInit()
     -- remove legacy cr3cache directory
     if lfs.attributes("./cr3cache", "mode") == "directory" then

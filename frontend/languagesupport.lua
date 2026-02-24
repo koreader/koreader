@@ -151,82 +151,59 @@ function LanguageSupport:_findAndCallPlugin(language_code, handler_name, ...)
     end
 end
 
-local function createDocumentCallbacks(document)
-    if not document or document.info.has_pages then
-        -- We need document:get{Prev,Next}VisibleChar at a minimum and there
-        -- isn't an alternative for PDFs at the moment (not to mention for
-        -- quite a few CJK PDFs, MuPDF seems to be unable to create selections
-        -- at a character level even using hold-and-pan).
-        logger.dbg("language support currently cannot expand document selections in non-EPUB formats")
-        return
-    end
-    return {
-        get_prev_char_pos = function(pos) return document:getPrevVisibleChar(pos) end,
-        get_next_char_pos = function(pos) return document:getNextVisibleChar(pos) end,
-        get_text_in_range = function(pos0, pos1) return document:getTextFromXPointers(pos0, pos1) end,
-    }
-end
-
 --- Called from ReaderHighlight:onHold after the document-specific handler has
--- successfully grabbed a "word" from the document. If the selection is to
--- updated, improveWordSelection will also update the document's internal
--- selection state (for crengine) to correctly display the right selection.
+-- successfully grabbed a "word" from the document (or widget). If the selection is to
+-- updated, improveWordSelection will return the new selection data.
 -- @param selection Text selection table to improve if possible.
+-- @param object (Optional) The object (Document or Widget) containing the text. Defaults to self.document.
+-- @param language_code (Optional) The language code to use. Defaults to document language.
 -- @return New updated selected_text table which should be used (or nil).
-function LanguageSupport:improveWordSelection(selection)
-    if not self:hasActiveLanguagePlugins() then return end -- nothing to do
+function LanguageSupport:improveWordSelection(selection, object, language_code)
+    if not self:hasActiveLanguagePlugins() then return end
 
-    if not self.document then
-        logger.dbg("language support: cannot improve word selection outside document")
+    object = object or self.document
+    if not object then
+        logger.dbg("language support: cannot improve word selection without object")
         return
     end
 
-    local language_code = self.ui.doc_props.language or "unknown"
-    logger.dbg("language support: improving", language_code, "selection", selection)
-
-    -- Rather than requiring each language plugin to use document: methods
-    -- correctly, return a set of callbacks that are document-agnostic (and
-    -- have the document handle as an upvalue of the closure) and could be used
-    -- for non-EPUB formats in the future.
-    local callbacks = createDocumentCallbacks(self.document)
+    local callbacks = object:getLanguageSupportCallbacks()
     if not callbacks then
+        logger.dbg("language support: object does not support language plugins")
         return
     end
+
+    language_code = language_code or self.ui.doc_props.language or "unknown"
+    logger.dbg("language support: improving", language_code, "selection", selection)
 
     local new_pos0, new_pos1 = unpack(self:_findAndCallPlugin(
         language_code, "WordSelection",
         { text = selection.text, pos0 = selection.pos0, pos1 = selection.pos1, callbacks = callbacks }
     ) or {})
-    -- If no plugin could update the selection (or after "expansion" the
-    -- selection is the same) then we can safely skip all of the subsequent
-    -- re-selection work.
+
     if not new_pos0 or not new_pos1 or
         (new_pos0 == selection.pos0 and new_pos1 == selection.pos1) then
-        logger.dbg("language support: no plugin could improve the selection")
         return
     end
     logger.dbg("language support: updating selection\nfrom",
         selection.pos0, ":", selection.pos1, "\nto", new_pos0, ":", new_pos1)
 
-    -- We want to use native crengine text selection here, but we cannot use
-    -- getTextFromPositions because the conversion to and from screen
-    -- coordinates leads to issues with text selection of <ruby> text. In
-    -- addition, using getTextFromXPointers means we can select text not on the
-    -- screen. But this means we need to manually create the text selection
-    -- object returned by getTextFromPositions (though this is not a big deal
-    -- because we'd have to generate the sboxes anyway).
-    local new_text = self.document:getTextFromXPointers(new_pos0, new_pos1, true)
+    local new_text = callbacks.get_text_in_range(new_pos0, new_pos1)
     if not new_text then
-        -- This really shouldn't happen since we started with some text.
         logger.warn("language support: no text found in selection", new_pos0, ":", new_pos1)
         return
+    end
+
+    local sboxes
+    if callbacks.get_selection_sboxes then
+        sboxes = callbacks.get_selection_sboxes(new_pos0, new_pos1)
     end
 
     return {
         text = util.cleanupSelectedText(new_text),
         pos0 = new_pos0,
         pos1 = new_pos1,
-        sboxes = self.document:getScreenBoxesFromPositions(new_pos0, new_pos1, true),
+        sboxes = sboxes,
     }
 end
 
