@@ -179,6 +179,9 @@ function FileSearcher:getList()
     }
     local search_string = FileSearcher.search_string
     if search_string ~= "*" then -- one * to show all files
+        if not self.case_sensitive then
+            search_string = util.stringLower(search_string)
+        end
         -- replace '.' with '%.'
         search_string = search_string:gsub("%.","%%%.")
         -- replace '*' with '.*'
@@ -232,7 +235,10 @@ function FileSearcher:isFileMatch(filename, fullpath, search_string, is_file)
     if search_string == "*" then
         return true
     end
-    if util.stringSearch(filename, search_string, self.case_sensitive) ~= 0 then
+    if not self.case_sensitive then
+        filename = util.stringLower(filename)
+    end
+    if string.find(filename, search_string) then
         return true
     end
     if self.include_metadata and is_file and DocumentRegistry:hasProvider(fullpath) then
