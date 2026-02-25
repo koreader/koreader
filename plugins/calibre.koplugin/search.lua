@@ -316,7 +316,7 @@ function CalibreSearch:bookCatalog(t, option)
     end
     if series and not subseries then
         for index, entry in ipairs(catalog) do
-            catalog[index].text = entry.text:gsub(".00", "", 1)
+            catalog[index].text = entry.text:gsub("%.00", "", 1)
         end
     end
     return catalog
