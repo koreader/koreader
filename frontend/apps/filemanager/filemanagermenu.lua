@@ -450,6 +450,14 @@ To:
                     }
                     UIManager:show(widget)
                 end,
+                separator = true,
+            },
+            {
+                text = _("Settings backup"),
+                sub_item_table_func = function()
+                    local FileManagerBackup = require("apps/filemanager/filemanagerbackup")
+                    return FileManagerBackup:genBackupMenu(self.ui)
+                end,
             },
         },
     }

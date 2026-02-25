@@ -321,6 +321,35 @@ function BookInfoManager:toggleSetting(key)
     return value
 end
 
+function BookInfoManager:getConfigSet()
+    self:openDbConnection()
+    local config_set = {}
+    local res = self.db_conn:exec("SELECT key, value FROM config;")
+    if res then
+        for i, v in ipairs(res[1]) do
+            config_set[v] = tonumber(res[2][i]) or res[2][i]
+        end
+    end
+    return config_set
+end
+
+function BookInfoManager:saveConfigSet(config_set)
+    self:openDbConnection()
+    local diff = {}
+    local res = self.db_conn:exec("SELECT key FROM config;")
+    if res then
+        for _, v in ipairs(res[1]) do
+            diff[v] = false
+        end
+    end
+    for k, v in pairs(config_set) do
+        diff[k] = v
+    end
+    for k, v in pairs(diff) do
+        self:saveSetting(k, v, nil, true)
+    end
+end
+
 -- Bookinfo management
 function BookInfoManager:getBookInfo(filepath, get_cover)
     local directory, filename = util.splitFilePathName(filepath)
