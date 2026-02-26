@@ -995,6 +995,19 @@ function ReaderBookmark:onShowBookmark()
                 },
             })
             table.insert(buttons, {}) -- separator
+            if bookmark.document.is_pdf then
+                table.insert(buttons, {
+                    {
+                        text = _("Import embedded highlights"),
+                        enabled = bookmark.document.configurable.text_wrap == 0,
+                        callback = function()
+                            UIManager:close(bm_dialog)
+                            bookmark:importEmbeddedHighlights()
+                        end,
+                    },
+                })
+            end
+            table.insert(buttons, {}) -- separator
             table.insert(buttons, {
                 {
                     text = _("Current page"),
@@ -1624,6 +1637,18 @@ function ReaderBookmark:filterByHighlightColor()
         self:updateBookmarkList(item_table)
     end
     self.ui.highlight:showHighlightColorDialog(filter_by_color_callback)
+end
+
+function ReaderBookmark:importEmbeddedHighlights()
+    local boxes = self.document:getEmbeddedAnnotationsBoxes()
+    if boxes then
+        local count = self.ui.highlight:saveHighlightsFromBoxes(boxes)
+        self.bookmark_menu[1].close_callback()
+        self:onShowBookmark()
+        UIManager:show(InfoMessage:new{ text = T(N_("1 highlight added", "%1 highlights added", count), count) })
+    else
+        UIManager:show(InfoMessage:new{ text = _("No embedded highlights found") })
+    end
 end
 
 function ReaderBookmark:doesBookmarkMatchTable(item)
