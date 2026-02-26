@@ -293,6 +293,16 @@ function PdfDocument:updateHighlightContents(pageno, item, contents)
     page:close()
 end
 
+function PdfDocument:getEmbeddedAnnotationsBoxes()
+    local boxes = {}
+    for pageno = 1, self.info.number_of_pages do
+        local page = self._document:openPage(pageno)
+        boxes[pageno] = page:getMarkupAnnotationBoxesFromPage()
+        page:close()
+    end
+    return next(boxes) and boxes
+end
+
 function PdfDocument:writeDocument()
     logger.info("writing document to", self.file)
     self._document:writeDocument(self.file)
