@@ -575,7 +575,12 @@ function ReaderUI:showFileManager(file, selected_files)
         last_dir, last_file = self:getLastDirFile(true)
     end
     local FileManager = require("apps/filemanager/filemanager")
-    FileManager:showFiles(last_dir, last_file, selected_files)
+    if FileManager.instance then
+        FileManager.instance.file_chooser:changeToPath(last_dir, last_file)
+        FileManager.instance.selected_files = selected_files
+    else
+        FileManager:showFiles(last_dir, last_file, selected_files)
+    end
 end
 
 function ReaderUI:onShowingReader()

@@ -428,11 +428,22 @@ function filemanagerutil.openFile(ui, file, caller_pre_callback, no_dialog)
         if caller_pre_callback then
             caller_pre_callback()
         end
-        if ui.document then
+        if ui.document then -- Reader
             if ui.document.file ~= file then
-                ui:switchDocument(file)
+                local DocumentRegistry = require("document/documentregistry")
+                local provider = DocumentRegistry:getProvider(file, true) -- include auxiliary
+                if provider and provider.order then -- auxiliary
+                    -- keep the currently opened document, open the file over Reader
+                    if provider.callback then -- module
+                        provider.callback(file)
+                    else -- plugin
+                        ui[provider.provider]:openFile(file)
+                    end
+                else -- document
+                    ui:switchDocument(file)
+                end
             end
-        else
+        else -- FM
             ui:openFile(file)
         end
     end
