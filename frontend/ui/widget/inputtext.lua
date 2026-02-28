@@ -701,7 +701,7 @@ function InputText:shouldShowKeyboardButton()
         return false
     end
     if not self.focused then
-        -- FocusManager updates selected *before* sending the Unfocus event,
+        -- FocusManager updates the `selected` property *before* sending the Unfocus event,
         -- so when InputText is being unfocused because focus is moving TO the
         -- keyboard button, we can detect that here and keep the button visible.
         local keyboard_button_is_selected = false
