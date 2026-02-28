@@ -266,7 +266,7 @@ function FocusManager:onFocusMove(args)
         or not self.layout[self.selected.y][self.selected.x].is_inactive then
             -- we found a different object to focus
             current_item:handleEvent(Event:new("Unfocus"))
-            self.layout[self.selected.y][self.selected.x]:handleEvent(Event:new("Focus"))
+            self.layout[self.selected.y][self.selected.x]:handleEvent(Event:new("Focus", dx, dy))
             -- Trigger a fast repaint, this does not count toward a flashing eink refresh
             -- NOTE: Ideally, we'd only have to repaint the specific subwidget we're highlighting,
             --       but we may not know its exact coordinates, so, redraw the parent widget instead.

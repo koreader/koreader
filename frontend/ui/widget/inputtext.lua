@@ -217,9 +217,16 @@ end
 
 local function initDPadEvents()
     if Device:hasDPad() then
-        function InputText:onFocus()
+        function InputText:onFocus(dx, dy)
             -- Event sent by focusmanager
-            if self.parent.onSwitchFocus then
+            if self.parent and self.parent.onSwitchFocus then
+                -- Focus moving left, move cursor to the end.
+                if dx == -1 then
+                    self:goToEnd()
+                -- Focus moving right, move cursor to the start.
+                elseif dx == 1 then
+                    self:goToHome()
+                end
                 self.parent:onSwitchFocus(self)
             elseif (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
                 do end -- luacheck: ignore 541
