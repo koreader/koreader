@@ -521,10 +521,24 @@ function InputText:initTextBox(text, char_added)
         }
         self._frame_keyboard_button = FrameContainer:new{
             bordersize = self.bordersize,
+            color = Blitbuffer.COLOR_DARK_GRAY,
             padding = self.keyboard_button_frame_padding,
             margin = self.keyboard_button_frame_margin,
             self._keyboard_button,
         }
+        -- Override focus highlighting so it independently tracks frame color
+        self._keyboard_button.onFocus = function(this)
+            if self._frame_keyboard_button then
+                self._frame_keyboard_button.color = Blitbuffer.COLOR_BLACK
+            end
+            -- return Button.onFocus(this)
+        end
+        self._keyboard_button.onUnfocus = function(this)
+            if self._frame_keyboard_button then
+                self._frame_keyboard_button.color = Blitbuffer.COLOR_DARK_GRAY
+            end
+            -- return Button.onUnfocus(this)
+        end
         keyboard_button_width = self._frame_keyboard_button:getSize().w + keyboard_button_spacing
     else
         self._frame_keyboard_button = nil
@@ -676,8 +690,22 @@ function InputText:focus()
 end
 
 function InputText:shouldShowKeyboardButton()
-    if not self.show_keyboard_button or self.readonly or not self.focused then
+    if not self.show_keyboard_button or self.readonly then
         return false
+    end
+    if not self.focused then
+        -- FocusManager updates selected *before* sending the Unfocus event,
+        -- so when InputText is being unfocused because focus is moving TO the
+        -- keyboard button, we can detect that here and keep the button visible.
+        local keyboard_button_is_selected = false
+        if self.parent and self.parent.selected and self._keyboard_button then
+            local x, y = self.parent:getFocusableWidgetXY(self._keyboard_button)
+            keyboard_button_is_selected = x ~= nil and y ~= nil
+                and self.parent.selected.x == x and self.parent.selected.y == y
+        end
+        if not keyboard_button_is_selected then
+            return false
+        end
     end
     if (Device:hasKeyboard() or Device:hasScreenKB())
             and G_reader_settings:isFalse("virtual_keyboard_enabled") then
