@@ -740,6 +740,11 @@ common_settings.keyboard_layout = {
 
 common_settings.font_ui_fallbacks = dofile("frontend/ui/elements/font_ui_fallbacks.lua")
 
+common_settings.ui_fonts = {
+    text = _("UI fonts"),
+    sub_item_table = require("ui/elements/ui_fonts"):getSettingsMenuTable(),
+}
+
 common_settings.units = {
     text_func = function()
         local unit = G_reader_settings:readSetting("dimension_units", "mm")
