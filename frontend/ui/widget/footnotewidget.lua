@@ -308,6 +308,11 @@ function FootnoteWidget:init()
     local padding_top = Size.padding.large
     local padding_bottom = Size.padding.large
     local htmlwidget_height = self.height - padding_top - padding_bottom
+    if G_reader_settings:isTrue("footnote_popup_add_bottom_padding") then
+        local padding_bottom_extra =  Screen:scaleBySize(G_reader_settings:readSetting("footnote_popup_bottom_padding_size"))
+        padding_bottom = padding_bottom + padding_bottom_extra
+        htmlwidget_height = self.height - padding_top - padding_bottom + padding_bottom_extra
+    end
 
     -- We always get balanced XHTML from crengine for HTML snippets, so we
     -- pass is_xhtml=true to avoid side effects from MuPDF's HTML5 parser.
