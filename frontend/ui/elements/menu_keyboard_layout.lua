@@ -233,10 +233,13 @@ if Device:hasKeyboard() or Device:hasScreenKB() then
         text = _("Show virtual keyboard"),
         help_text = _("Enable this setting to always display the virtual keyboard within a text input field. When a field is selected (in focus), you can temporarily toggle the keyboard on/off by pressing 'Shift' (or 'ScreenKB') + 'Home'."),
         checked_func = function()
-            return G_reader_settings:nilOrTrue("virtual_keyboard_enabled")
+            return G_reader_settings:isTrue("virtual_keyboard_enabled")
         end,
         callback = function()
-            G_reader_settings:flipNilOrTrue("virtual_keyboard_enabled")
+            -- Note: G_sett("virtual_keyboard_enabled") must be either true or false.
+            --       It is nil only on devices with neither hasKeyboard nor hasScreenKB.
+            local vk = not G_reader_settings:isTrue("virtual_keyboard_enabled")
+            G_reader_settings:saveSetting("virtual_keyboard_enabled", vk)
             if G_reader_settings:isFalse("virtual_keyboard_enabled") then
                 local keyboard_infomessage
                 if Device:hasScreenKB() then
