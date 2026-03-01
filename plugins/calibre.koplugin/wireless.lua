@@ -666,6 +666,35 @@ function CalibreWireless:sendBook(arg)
                 logger.dbg("complete writing file", filename)
                 -- add book to local database/table
                 CalibreMetadata:addBook(arg.metadata)
+                -- Create collections from Calibre tags
+                if G_reader_settings:isTrue("calibre_collections_from_tags") then
+                    local tags = arg.metadata.tags
+                    if tags and #tags > 0 then
+                        local ReadCollection = require("readcollection")
+                        local file_path = inbox_dir .. "/" .. arg.metadata.lpath
+                        local updated_collections = {}
+                        -- Sort tags alphabetically before creating collections
+                        local sorted_tags = {}
+                        for _, tag in ipairs(tags) do
+                            table.insert(sorted_tags, tag)
+                        end
+                        table.sort(sorted_tags, function(a, b)
+                            return FFIUtil.strcoll(a, b)
+                        end)
+                        for _, tag in ipairs(sorted_tags) do
+                            if not ReadCollection.coll[tag] then
+                                ReadCollection:addCollection(tag)
+                            end
+                            if not ReadCollection:isFileInCollection(file_path, tag) then
+                                ReadCollection:addItem(file_path, tag)
+                                updated_collections[tag] = true
+                            end
+                        end
+                        if next(updated_collections) then
+                            ReadCollection:write(updated_collections)
+                        end
+                    end
+                end
                 UIManager:show(InfoMessage:new{
                     text = T(_("Received file %1/%2: %3"),
                         arg.thisBook + 1, arg.totalBooks, BD.filepath(filename)),
@@ -734,6 +763,12 @@ function CalibreWireless:deleteBook(arg)
             titles = titles .. "\n" .. CalibreMetadata.books[index].title
             util.removeFile(inbox_dir.."/"..v)
             CalibreMetadata:removeBook(v)
+            -- Remove from collections
+            if G_reader_settings:isTrue("calibre_collections_from_tags") then
+                local ReadCollection = require("readcollection")
+                local file_path = inbox_dir .. "/" .. v
+                ReadCollection:removeItem(file_path) -- removes from all collections
+            end
         end
         self:sendJsonData('OK', { uuid = book_uuid })
         -- do things once at the end of the batch
@@ -753,6 +788,74 @@ function CalibreWireless:deleteBook(arg)
             updateDir(inbox_dir)
         end
     end
+end
+
+function CalibreWireless:syncCollectionsFromTags()
+    local inbox_dir = G_reader_settings:readSetting("inbox_dir")
+    if not inbox_dir then
+        UIManager:show(InfoMessage:new{
+            text = _("Please set an inbox folder first."),
+        })
+        return
+    end
+
+    CalibreMetadata:init(inbox_dir)
+    local ReadCollection = require("readcollection")
+    local count = 0
+    local updated_collections = {}
+
+    -- First pass: gather all unique tags and sort them alphabetically
+    local all_tags = {}
+    local seen_tags = {}
+    for _, book in ipairs(CalibreMetadata.books) do
+        local tags = book.tags
+        if tags then
+            for _, tag in ipairs(tags) do
+                if not seen_tags[tag] then
+                    seen_tags[tag] = true
+                    table.insert(all_tags, tag)
+                end
+            end
+        end
+    end
+    table.sort(all_tags, function(a, b)
+        return FFIUtil.strcoll(a, b)
+    end)
+
+    -- Create collections in alphabetical order
+    for _, tag in ipairs(all_tags) do
+        if not ReadCollection.coll[tag] then
+            ReadCollection:addCollection(tag)
+        end
+    end
+
+    -- Second pass: add books to collections
+    for _, book in ipairs(CalibreMetadata.books) do
+        local tags = book.tags
+        if tags and #tags > 0 then
+            local file_path = inbox_dir .. "/" .. book.lpath
+            -- Only process if file exists
+            if lfs.attributes(file_path, "mode") == "file" then
+                for _, tag in ipairs(tags) do
+                    if not ReadCollection:isFileInCollection(file_path, tag) then
+                        ReadCollection:addItem(file_path, tag)
+                        updated_collections[tag] = true
+                        count = count + 1
+                    end
+                end
+            end
+        end
+    end
+
+    if next(updated_collections) then
+        ReadCollection:write(updated_collections)
+    end
+
+    UIManager:show(InfoMessage:new{
+        text = count > 0
+            and T(_("Added %1 book(s) to collections."), count)
+            or _("No new books to add to collections."),
+    })
 end
 
 function CalibreWireless:serverFeedback(arg)
