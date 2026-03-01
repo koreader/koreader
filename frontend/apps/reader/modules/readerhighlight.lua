@@ -1365,7 +1365,7 @@ function ReaderHighlight:showHighlightNoteOrDialog(index)
                             annotation.note = nil
                             self.ui:handleEvent(Event:new("AnnotationsModified",
                                     { annotation, nb_highlights_added = 1, nb_notes_added = -1 }))
-                            self:writePdfAnnotation("content", annotation, nil)
+                            self:writePdfAnnotation("content", annotation, "")
                             if self.view.highlight.note_mark then -- refresh note marker
                                 UIManager:setDirty(self.dialog, "ui")
                             end
@@ -2626,6 +2626,50 @@ function ReaderHighlight:getSavedExtendedHighlightPage(highlight, page, index)
     item.pos1.zoom     = highlight.pos0.zoom
     item.pos1.rotation = highlight.pos0.rotation
     return item
+end
+
+-- Saves PDF embedded highlights as KOReader annotations
+-- (For pdf documents only, reflow mode must be off)
+function ReaderHighlight:saveHighlightsFromBoxes(boxes)
+    local highlight_write_into_pdf = self.highlight_write_into_pdf
+    self.highlight_write_into_pdf = nil -- prevent writing into PDF once more
+    local rotation = Screen:getRotationMode()
+    local zoom = self.ui.zooming:getZoom(1)
+    local note = _("embedded highlight")
+    local count = 0
+    for page, page_pboxes in pairs(boxes) do
+        for _, hl_pboxes in ipairs(page_pboxes) do
+            local first_box = hl_pboxes[1]
+            local pos0 = {
+                page = page,
+                rotation = rotation,
+                zoom = zoom,
+                x = first_box.x + 1, -- inside the box
+                y = first_box.y + 1, -- ditto
+            }
+            local last_box = hl_pboxes[#hl_pboxes]
+            local pos1 = {
+                page = page,
+                rotation = rotation,
+                zoom = zoom,
+                x = last_box.x + last_box.w - 2, -- ditto
+                y = last_box.y + last_box.h - 2, -- ditto
+            }
+            local text = self.document:getTextFromPositions(pos0, pos1)
+            self.selected_text = {
+                pos0 = pos0,
+                pos1 = pos1,
+                pboxes = hl_pboxes,
+                text = text and text.text or "",
+                note = note,
+            }
+            self:saveHighlight()
+            count = count + 1
+        end
+    end
+    self.highlight_write_into_pdf = highlight_write_into_pdf
+    self.selected_text = nil
+    return count
 end
 
 function ReaderHighlight:onReadSettings(config)
