@@ -183,6 +183,14 @@ local UIManager = require("ui/uimanager")
 -- Apply developer patches
 userpatch.applyPatches(userpatch.late)
 
+-- Quietly disable virtual keyboard on devices with physical ones.
+-- On hasScreenKB we still want a specific intruction from the user.
+if Device:hasScreenKB() and G_reader_settings:hasNot("virtual_keyboard_enabled") then
+    G_reader_settings:makeTrue("virtual_keyboard_enabled")
+elseif Device:hasKeyboard() and G_reader_settings:hasNot("virtual_keyboard_enabled") then
+    G_reader_settings:makeFalse("virtual_keyboard_enabled")
+end
+
 -- Inform once about color rendering on newly supported devices
 -- (there are some android devices that may not have a color screen,
 -- and we are not (yet?) able to guess that fact)
