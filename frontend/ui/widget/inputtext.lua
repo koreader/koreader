@@ -142,14 +142,24 @@ local function initTouchEvents()
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
             else
-                if self.keyboard then
-                    self.keyboard:showKeyboard()
+                if not ((Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled")) then
+                    self:onShowKeyboard()
                 end
+                Device:startTextInput()
                 -- Make sure we're flagged as in focus again.
                 -- NOTE: self:focus() does a full free/reinit cycle, which is completely unnecessary to begin with,
                 --       *and* resets cursor position, which is problematic when tapping on an already in-focus field (#12444).
                 --       So, just flip our own focused flag, that's the only thing we need ;).
                 self.focused = true
+            end
+            -- We might have an incorrect visual focus if we used a DPad, so we need to remove it.
+            if Device:hasDPad() then
+                local x, y = self.parent:getFocusableWidgetXY(self)
+                if x and y then
+                    -- Use FORCED_FOCUS to guarantee visual updates (Unfocus old, Focus new)
+                    -- even on touch devices where this is usually suppressed.
+                    self.parent:moveFocusTo(x, y, FocusManager.FORCED_FOCUS)
+                end
             end
             if self._frame_textwidget.dimen ~= nil -- zh keyboard with candidates shown here has _frame_textwidget.dimen = nil
                     and #self.charlist > 0 then -- do not move cursor within a hint
@@ -163,117 +173,8 @@ local function initTouchEvents()
         end
 
         function InputText:onHoldTextBox(arg, ges)
-            if self.parent.onSwitchFocus then
-                self.parent:onSwitchFocus(self)
-            end
-            -- clipboard dialog
-            self._hold_handled = nil
-            if Device:hasClipboard() then
-                if self.do_select then -- select mode on
-                    if self.selection_start_pos then -- select end
-                        local selection_end_pos = self.charpos - 1
-                        if self.selection_start_pos > selection_end_pos then
-                            self.selection_start_pos, selection_end_pos = selection_end_pos + 1, self.selection_start_pos - 1
-                        end
-                        local txt = table.concat(self.charlist, "", self.selection_start_pos, selection_end_pos)
-                        Device.input.setClipboardText(txt)
-                        UIManager:show(Notification:new{
-                            text = _("Selection copied to clipboard."),
-                        })
-                        self.selection_start_pos = nil
-                        self.do_select = false
-                        self:initTextBox()
-                    else -- select start
-                        self.selection_start_pos = self.charpos
-                        UIManager:show(Notification:new{
-                            text = _("Set cursor to end of selection, then long-press in text box."),
-                        })
-                    end
-                    self._hold_handled = true
-                    return true
-                end
-                local clipboard_value = Device.input.getClipboardText()
-                local is_clipboard_empty = clipboard_value == ""
-                local clipboard_dialog
-                clipboard_dialog = require("ui/widget/textviewer"):new{
-                    title = _("Clipboard"),
-                    show_menu = false,
-                    text = is_clipboard_empty and _("(empty)") or clipboard_value,
-                    fgcolor = is_clipboard_empty and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK,
-                    width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8),
-                    height = math.floor(math.max(Screen:getWidth(), Screen:getHeight()) * 0.4),
-                    justified = false,
-                    modal = true,
-                    stop_events_propagation = true,
-                    buttons_table = {
-                        {
-                            {
-                                text = _("Copy all"),
-                                callback = function()
-                                    UIManager:close(clipboard_dialog)
-                                    Device.input.setClipboardText(table.concat(self.charlist))
-                                    UIManager:show(Notification:new{
-                                        text = _("All text copied to clipboard."),
-                                    })
-                                end,
-                            },
-                            {
-                                text = _("Copy line"),
-                                callback = function()
-                                    UIManager:close(clipboard_dialog)
-                                    local txt = table.concat(self.charlist, "", self:getStringPos())
-                                    Device.input.setClipboardText(txt)
-                                    UIManager:show(Notification:new{
-                                        text = _("Line copied to clipboard."),
-                                    })
-                                end,
-                            },
-                            {
-                                text = _("Copy word"),
-                                callback = function()
-                                    UIManager:close(clipboard_dialog)
-                                    local txt = table.concat(self.charlist, "", self:getStringPos(true))
-                                    Device.input.setClipboardText(txt)
-                                    UIManager:show(Notification:new{
-                                        text = _("Word copied to clipboard."),
-                                    })
-                                end,
-                            },
-                        },
-                        {
-                            {
-                                text = _("Delete all"),
-                                enabled = #self.charlist > 0,
-                                callback = function()
-                                    UIManager:close(clipboard_dialog)
-                                    self:delAll()
-                                end,
-                            },
-                            {
-                                text = _("Select"),
-                                callback = function()
-                                    UIManager:close(clipboard_dialog)
-                                    UIManager:show(Notification:new{
-                                        text = _("Set cursor to start of selection, then long-press in text box."),
-                                    })
-                                    self.do_select = true
-                                    self:initTextBox()
-                                end,
-                            },
-                            {
-                                text = _("Paste"),
-                                enabled = not is_clipboard_empty,
-                                callback = function()
-                                    UIManager:close(clipboard_dialog)
-                                    self:addChars(clipboard_value)
-                                end,
-                            },
-                        },
-                    },
-                }
-                UIManager:show(clipboard_dialog)
-            end
-            self._hold_handled = true
+            -- Logic moved below as it is also used when not isTouchDevice
+            self:holdTextBox(arg, ges)
             return true
         end
 
@@ -342,6 +243,121 @@ end
 
 InputText.initInputEvents()
 
+function InputText:holdTextBox(arg, ges)
+    if self.parent.onSwitchFocus then
+        self.parent:onSwitchFocus(self)
+    end
+    -- clipboard dialog
+    self._hold_handled = nil
+    if Device:hasClipboard() then
+        if self.do_select then -- select mode on
+            if self.selection_start_pos then -- select end
+                local selection_end_pos = self.charpos - 1
+                if self.selection_start_pos > selection_end_pos then
+                    self.selection_start_pos, selection_end_pos = selection_end_pos + 1, self.selection_start_pos - 1
+                end
+                local txt = table.concat(self.charlist, "", self.selection_start_pos, selection_end_pos)
+                Device.input.setClipboardText(txt)
+                UIManager:show(Notification:new{
+                    text = _("Selection copied to clipboard."),
+                })
+                self.selection_start_pos = nil
+                self.do_select = false
+                self:initTextBox()
+            else -- select start
+                self.selection_start_pos = self.charpos
+                UIManager:show(Notification:new{
+                    text = _("Set cursor to end of selection, then long-press in text box."),
+                })
+            end
+            self._hold_handled = true
+            return true
+        end
+        local clipboard_value = Device.input.getClipboardText()
+        local is_clipboard_empty = clipboard_value == ""
+        local clipboard_dialog
+        clipboard_dialog = require("ui/widget/textviewer"):new{
+            title = _("Clipboard"),
+            show_menu = false,
+            text = is_clipboard_empty and _("(empty)") or clipboard_value,
+            fgcolor = is_clipboard_empty and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK,
+            width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8),
+            height = math.floor(math.max(Screen:getWidth(), Screen:getHeight()) * 0.4),
+            justified = false,
+            modal = true,
+            stop_events_propagation = true,
+            buttons_table = {
+                {
+                    {
+                        text = _("Copy all"),
+                        callback = function()
+                            UIManager:close(clipboard_dialog)
+                            Device.input.setClipboardText(table.concat(self.charlist))
+                            UIManager:show(Notification:new{
+                                text = _("All text copied to clipboard."),
+                            })
+                        end,
+                    },
+                    {
+                        text = _("Copy line"),
+                        callback = function()
+                            UIManager:close(clipboard_dialog)
+                            local txt = table.concat(self.charlist, "", self:getStringPos())
+                            Device.input.setClipboardText(txt)
+                            UIManager:show(Notification:new{
+                                text = _("Line copied to clipboard."),
+                            })
+                        end,
+                    },
+                    {
+                        text = _("Copy word"),
+                        callback = function()
+                            UIManager:close(clipboard_dialog)
+                            local txt = table.concat(self.charlist, "", self:getStringPos(true))
+                            Device.input.setClipboardText(txt)
+                            UIManager:show(Notification:new{
+                                text = _("Word copied to clipboard."),
+                            })
+                        end,
+                    },
+                },
+                {
+                    {
+                        text = _("Delete all"),
+                        enabled = #self.charlist > 0,
+                        callback = function()
+                            UIManager:close(clipboard_dialog)
+                            self:delAll()
+                        end,
+                    },
+                    {
+                        text = _("Select"),
+                        callback = function()
+                            UIManager:close(clipboard_dialog)
+                            UIManager:show(Notification:new{
+                                text = _("Set cursor to start of selection, then long-press in text box."),
+                            })
+                            self.do_select = true
+                            self:initTextBox()
+                        end,
+                    },
+                    {
+                        text = _("Paste"),
+                        enabled = not is_clipboard_empty,
+                        callback = function()
+                            UIManager:close(clipboard_dialog)
+                            self:addChars(clipboard_value)
+                        end,
+                    },
+                },
+            },
+        }
+        UIManager:show(clipboard_dialog)
+    end
+    self._hold_handled = true
+    return true
+end
+
 function InputText:checkTextEditability()
     -- The split of the 'text' string to a table of utf8 chars may not be
     -- reversible to the same string, if 'text' comes from a binary file
@@ -402,6 +418,12 @@ function InputText:init()
     if self.readonly ~= true then
         self:initKeyboard()
         self:initEventListener()
+    end
+    --- @todo In MultiInputDialogs, this will fire multiple times as that widget both inherits
+    -- inputtexts from InputDialog and also creates its own.
+    -- See <https://github.com/koreader/koreader/pull/14901#issuecomment-3837678877>.
+    if self.focused and not self.for_measurement_only then
+        Device:startTextInput()
     end
 end
 
@@ -588,12 +610,14 @@ function InputText:unfocus()
     self.focused = false
     self.text_widget:unfocus()
     self._frame_textwidget.color = Blitbuffer.COLOR_DARK_GRAY
+    Device:stopTextInput()
 end
 
 function InputText:focus()
     self.focused = true
     self.text_widget:focus()
     self._frame_textwidget.color = Blitbuffer.COLOR_BLACK
+    Device:startTextInput()
 end
 
 -- NOTE: This key_map can be used for keyboards without numeric keys, such as on Kindles with keyboards. It is loosely 'inspired' by the symbol layer on the virtual keyboard but,
@@ -632,12 +656,25 @@ function InputText:onKeyPress(key)
             self:leftChar()
         elseif key["Right"] then
             self:rightChar()
-        -- NOTE: When we are not showing the virtual keyboard, let focusmanger handle up/down keys, as they  are used to directly move around the widget
-        --       seamlessly in and out of text fields and onto virtual buttons like `[cancel] [search dict]`, no need to unfocus first.
-        elseif key["Up"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
+        -- NOTE: The VirtualKeyboard has focus when shown, and handles up/down/left/right.
+        elseif key["Up"] then
+            if #self.charlist == 0 then
+                return false -- let FocusManager move focus up
+            end
+            local old_charpos, old_top = self.charpos, self.top_line_num
             self:upLine()
-        elseif key["Down"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
+            if self.charpos == old_charpos and self.top_line_num == old_top then
+                return false -- let FocusManager move focus up
+            end
+        elseif key["Down"] then
+            if #self.charlist == 0 then
+                return false -- let FocusManager move focus down
+            end
+            local old_charpos, old_top = self.charpos, self.top_line_num
             self:downLine()
+            if self.charpos == old_charpos and self.top_line_num == old_top then
+                return false -- let FocusManager move focus down
+            end
         elseif key["End"] then
             self:goToEnd()
         elseif key["Home"] then
@@ -646,10 +683,11 @@ function InputText:onKeyPress(key)
             self:addChars("\n")
         elseif key["Tab"] then
             self:addChars("    ")
-        -- as stated before, we also don't need to unfocus when there is no keyboard, one less key press to exit widgets, yay!
-        elseif key["Back"] and G_reader_settings:nilOrTrue("virtual_keyboard_enabled") then
-            if self.focused then
-                self:unfocus()
+        elseif key["Back"] then
+            if self.parent.onCloseDialog then
+                self.parent:onCloseDialog()
+            else
+                UIManager:close(self.parent)
             end
         else
             handled = false
@@ -683,6 +721,8 @@ function InputText:onKeyPress(key)
             self:upLine()
         elseif key["Down"] then
             self:downLine()
+        elseif key["Press"] then
+            self:holdTextBox()
         elseif key["Home"] then
             if self.keyboard:isVisible() then
                 self:onCloseKeyboard()
@@ -791,6 +831,7 @@ function InputText:onCloseWidget()
     if self.keyboard then
         self.keyboard:free()
     end
+    Device:stopTextInput()
     self:free()
 end
 

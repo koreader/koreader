@@ -63,6 +63,10 @@ local PocketBook = Generic:extend{
     -- That historically wasn't the case, hence this defaulting to false.
     inkview_translates_buttons = false,
 
+    -- Some Pocketbook devices need special handling after resume to restore the correct orientation.
+    -- See https://github.com/koreader/koreader/issues/11033 for details.
+    needs_orientation_sync_after_resume = false,
+
     -- Will be set appropriately at init
     isB288SoC = no,
 
@@ -359,10 +363,15 @@ function PocketBook:initNetworkManager(NetworkMgr)
         UIManager:unschedule(keepWifiAlive)
 
         if NetworkMgr:isWifiOn() then
-            logger.dbg("ping wifi keep alive and reschedule")
+            -- check if NetMgrPing is available on the device and skip keepalive if not
+            if pcall(function() return inkview.NetMgrPing and true end) then
+                logger.dbg("ping wifi keep alive and reschedule")
 
-            inkview.NetMgrPing()
-            UIManager:scheduleIn(30, keepWifiAlive)
+                inkview.NetMgrPing()
+                UIManager:scheduleIn(30, keepWifiAlive)
+            else
+                logger.info("device does not support NetMgrPing(), no wifi keepalive")
+            end
         else
             logger.dbg("wifi is disabled do not reschedule")
         end
@@ -416,7 +425,7 @@ end
 function PocketBook:isStartupScriptUpToDate()
     local md5 = require("ffi/MD5")
     -- Compare the hash of the *active* script to the *potential* one.
-    return md5.sumFile("/tmp/koreader.app") == md5.sumFile(os.getenv("KOREADER_DIR") .. "/koreader.app")
+    return md5.sumFile("/tmp/koreader.app") == md5.sumFile("../koreader.app")
 end
 
 function PocketBook:UIManagerReady(uimgr)
@@ -699,6 +708,7 @@ local PocketBook700 = PocketBook:extend{
     hasNaturalLight = yes,
     -- c.f., https://github.com/koreader/koreader/issues/9556
     inkview_translates_buttons = true,
+    needs_orientation_sync_after_resume = true,
 }
 
 -- PocketBook Era Color (PB700K3)
@@ -712,6 +722,7 @@ local PocketBook700K3 = PocketBook:extend{
     hasNaturalLight = yes,
     -- c.f., https://github.com/koreader/koreader/issues/9556
     inkview_translates_buttons = true,
+    needs_orientation_sync_after_resume = true,
 }
 
 function PocketBook700K3._fb_init(fb, finfo, vinfo)

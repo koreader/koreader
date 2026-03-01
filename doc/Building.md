@@ -19,7 +19,7 @@ To get and compile the source you must have:
 - `gettext`
 - `git`
 - `make`: version >= 4.1 (recommended: >= 4.4 for transparent `-j` / `-l` handling)
-- `meson`: version >= 1.2.0
+- `meson`: version >= 1.2.0 on Linux, >= 1.8.3 on macOS
 - `nasm`
 - `ninja` (recommended: >= 1.13.2 for make job server support)
 - `patch`
@@ -28,13 +28,11 @@ To get and compile the source you must have:
 - `unzip`
 - `wget`
 
-For running the emulator / tests:
-- `SDL2`
-
 Optional:
 - `7z`: for packing releases and the Android build assets
 - `ccache`: recommended for faster recompilation times
 - `luacheck`, `shellcheck` and `shfmt`: for linting the codebase with `./kodev check`
+- `SDL3`: for running the emulator / tests (if not installed, a version will automatically be built)
 
 ### Alpine Linux
 
@@ -43,7 +41,7 @@ Install the prerequisites using apk:
 ```
 sudo apk add autoconf automake bash cmake coreutils curl diffutils \
     findutils g++ gcc gettext-dev git grep gzip libtool linux-headers \
-    make meson nasm ninja-build patch perl pkgconf procps-ng sdl2 tar \
+    make meson nasm ninja-build patch perl pkgconf procps-ng sdl3 tar \
     unzip wget
 ```
 
@@ -61,7 +59,7 @@ Install the prerequisites using pacman:
 
 ```
 run0 pacman -S base-devel ca-certificates cmake gcc-libs git \
-    meson nasm ninja perl sdl2 unzip wget
+    meson nasm ninja perl sdl3 unzip wget
 ```
 
 Optional:
@@ -75,8 +73,21 @@ Install the prerequisites using APT:
 
 ```
 sudo apt install autoconf automake build-essential ca-certificates cmake \
-    gcc-multilib gettext git libsdl2-2.0-0 libtool libtool-bin meson nasm \
+    gcc-multilib gettext git libtool libtool-bin meson nasm \
     ninja-build patch perl pkg-config unzip wget
+```
+
+To install SDL3, on recent enough distributions:
+```
+sudo apt install libsdl3-0
+```
+
+For building SDL3 on distributions that don't provide it:
+```
+# Minimal Wayland support.
+sudo apt install libegl-dev libwayland-dev
+# Minimal X11 support.
+sudo apt install libx11-dev libxext-dev
 ```
 
 **Note:** Debian distributions might need `meson` to be installed from `bookworm-backports`
@@ -98,16 +109,16 @@ Install the prerequisites using DNF:
 
 ```
 sudo dnf install autoconf automake cmake gcc gcc-c++ gettext git libtool meson \
-    nasm ninja-build patch perl-FindBin procps-ng SDL2 unzip wget
+    nasm ninja-build patch perl-FindBin procps-ng SDL3 unzip wget
 ```
 
 Optional:
 ```
-sudo dnf install ccache p7zip
+sudo dnf install ccache p7zip shellcheck shfmt
 ```
 And for luacheck:
 ```
-sudo dnf install lua-argparse lua-filesystem luarocks shellcheck shfmt
+sudo dnf install lua-argparse lua-filesystem luarocks
 luarocks install luacheck
 ```
 
@@ -117,8 +128,7 @@ Install the prerequisites using [Homebrew](https://brew.sh/):
 
 ```
 brew install autoconf automake bash binutils cmake coreutils findutils \
-    gettext gnu-getopt libtool make meson nasm ninja pkg-config sdl2 \
-    util-linux
+    gettext gnu-getopt libtool make meson nasm ninja pkg-config util-linux
 ```
 
 You will also have to ensure Homebrew's findutils, gnu-getopt, make & util-linux are in your path, e.g., via

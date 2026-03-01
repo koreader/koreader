@@ -107,6 +107,16 @@ function CoverImage:cleanUpImage()
         os.remove(self.cover_image_path)
     elseif isFileOk(self.cover_image_path) then
         ffiutil.copyFile(self.cover_image_fallback_path, self.cover_image_path)
+        self:updatePocketBookBootLogo()
+    end
+end
+
+function CoverImage:updatePocketBookBootLogo()
+    if Device.isPocketBook() then
+        logger.dbg("CoverImage: updating PocketBook boot logo from", self.cover_image_path)
+        os.execute("sync")
+        -- iv2sh is run in background because it can be very slow and would block KOReader.
+        os.execute("iv2sh WriteStartupLogo " .. util.shell_escape({self.cover_image_path}) .. " &")
     end
 end
 
@@ -125,10 +135,19 @@ function CoverImage:createCoverImage(doc_settings)
         logger.dbg("CoverImage: cache file already exists")
         ffiutil.copyFile(cache_file, self.cover_image_path)
         lfs.touch(cache_file) -- update date
+        self:updatePocketBookBootLogo()
         return
     end
 
-    local s_w, s_h = Screen:getWidth(), Screen:getHeight()
+    -- On PocketBook, Screen:getWidth/getHeight returns dimensions that iv2sh
+    -- will not accept. Use Screen:getScreenWidth/getScreenHeight instead so
+    -- the generated boot logo has the correct size.
+    local s_w, s_h
+    if Device.isPocketBook() then
+        s_w, s_h = Screen:getScreenWidth(), Screen:getScreenHeight()
+    else
+        s_w, s_h = Screen:getWidth(), Screen:getHeight()
+    end
     local i_w, i_h = cover_image:getWidth(), cover_image:getHeight()
     local scale_factor = math.min(s_w / i_w, s_h / i_h)
 
@@ -151,6 +170,7 @@ function CoverImage:createCoverImage(doc_settings)
         end
         cover_image:free()
         ffiutil.copyFile(self.cover_image_path, cache_file)
+        self:updatePocketBookBootLogo()
         self:cleanCache()
         return
     end
@@ -177,12 +197,8 @@ function CoverImage:createCoverImage(doc_settings)
         elseif self.cover_image_background == "gray" then
             image:fill(Blitbuffer.COLOR_GRAY)
         end
-        -- copy scaled image to buffer
-        if s_w > scaled_w then -- move right
-            image:blitFrom(cover_image, math.floor((s_w - scaled_w) / 2), 0, 0, 0, scaled_w, scaled_h)
-        else -- move down
-            image:blitFrom(cover_image, 0, math.floor((s_h - scaled_h) / 2), 0, 0, scaled_w, scaled_h)
-        end
+        -- center scaled image on both axes
+        image:blitFrom(cover_image, math.floor((s_w - scaled_w) / 2), math.floor((s_h - scaled_h) / 2), 0, 0, scaled_w, scaled_h)
     end
 
     cover_image:free()
@@ -199,6 +215,7 @@ function CoverImage:createCoverImage(doc_settings)
     logger.dbg("CoverImage: image written to " .. self.cover_image_path)
 
     ffiutil.copyFile(self.cover_image_path, cache_file)
+    self:updatePocketBookBootLogo()
     self:cleanCache()
 end
 
@@ -262,10 +279,10 @@ end
 function CoverImage:getCacheFiles(cache_path, cache_prefix)
     local cache_size = 0
     local files = {}
-    for entry in lfs.dir(self.cover_image_cache_path) do
+    for entry in lfs.dir(cache_path) do
         if entry ~= "." and entry ~= ".." then
             local file = cache_path .. entry
-            if entry:sub(1, self.cover_image_cache_prefix:len()) == cache_prefix
+            if entry:sub(1, cache_prefix:len()) == cache_prefix
                 and lfs.attributes(file, "mode") == "file" then
                 local blocksize = lfs.attributes(file).blksize or 4096
                 local size = math.floor(((lfs.attributes(file).size) + blocksize - 1) / blocksize) * blocksize
@@ -294,9 +311,9 @@ function CoverImage:cleanCache()
     -- delete the oldest files first
     table.sort(files, function(a, b) return a.mod < b.mod end)
     local index = 1
-    while (cache_count > self.cover_image_cache_maxfiles and self.cover_image_cache_maxfiles ~= 0)
-        or (cache_size > self.cover_image_cache_maxsize * 1000 * 1000 and self.cover_image_cache_maxsize ~= 0)
-        and index <= #files do
+    while index <= #files
+        and ((cache_count > self.cover_image_cache_maxfiles and self.cover_image_cache_maxfiles ~= 0)
+        or (cache_size > self.cover_image_cache_maxsize * 1000 * 1000 and self.cover_image_cache_maxsize ~= 0)) do
         os.remove(files[index].name)
         cache_count = cache_count - 1
         cache_size = cache_size - files[index].size

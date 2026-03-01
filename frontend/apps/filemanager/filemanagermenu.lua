@@ -384,6 +384,15 @@ To:
                 separator = true,
             },
             {
+                text = _("Ask to open files"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("file_ask_to_open")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("file_ask_to_open")
+                end,
+            },
+            {
                 text = _("Show collection mark"),
                 checked_func = function()
                     return G_reader_settings:hasNot("collection_show_mark")
@@ -999,18 +1008,6 @@ function FileManagerMenu:getStartWithMenuTable()
 end
 
 function FileManagerMenu:exitOrRestart(callback, force)
-    -- Only restart sets a callback, which suits us just fine for this check ;)
-    if callback and not force and not Device:isStartupScriptUpToDate() then
-        UIManager:show(ConfirmBox:new{
-            text = _("KOReader's startup script has been updated. You'll need to completely exit KOReader to finalize the update."),
-            ok_text = _("Restart anyway"),
-            ok_callback = function()
-                self:exitOrRestart(callback, true)
-            end,
-        })
-        return
-    end
-
     UIManager:close(self.menu_container)
     self.ui:onClose()
     if callback then

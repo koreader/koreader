@@ -205,6 +205,9 @@ function Gestures:isGestureAlwaysActive(ges, multiswipe_directions)
         end
     end
 
+    if ges == "rolling_swipe" or ges == "paging_swipe" then
+        return G_reader_settings:isTrue("page_turns_swipe_always_active")
+    end
     local gest = self.gestures[ges]
     return gest and (gest.toggle_touch_input or gest.touch_input_on or (gest.settings and gest.settings.always_active))
 end
@@ -605,6 +608,13 @@ function Gestures:onShowGestureOverview()
                                 text = table.concat(text, "\n"),
                                 show_icon = false,
                             })
+                        end
+                    end
+                    if gest.settings then
+                        if gest.settings.show_as_quickmenu then
+                            value = value .. " \u{F0CA}"
+                        elseif gest.settings.execute_one_by_one then
+                            value = value .. " \u{F051}"
                         end
                     end
                     table.insert(kv_pairs, { key, value, callback = callback, key_bold = false })

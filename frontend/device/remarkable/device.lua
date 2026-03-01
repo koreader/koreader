@@ -429,7 +429,7 @@ end
 function Remarkable:isStartupScriptUpToDate()
     local md5 = require("ffi/MD5")
     -- Compare the hash of the *active* script to the *potential* one.
-    return md5.sumFile("/tmp/koreader.sh") == md5.sumFile(os.getenv("KOREADER_DIR") .. "/koreader.sh")
+    return md5.sumFile("/tmp/koreader.sh") == md5.sumFile("koreader.sh")
 end
 
 function Remarkable:setEventHandlers(UIManager)

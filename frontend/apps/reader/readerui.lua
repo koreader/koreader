@@ -178,7 +178,8 @@ function ReaderUI:init()
     self:registerModule("bookmark", ReaderBookmark:new{
         dialog = self.dialog,
         view = self.view,
-        ui = self
+        ui = self,
+        document = self.document,
     })
     self:registerModule("annotation", ReaderAnnotation:new{
         dialog = self.dialog,
@@ -574,7 +575,12 @@ function ReaderUI:showFileManager(file, selected_files)
         last_dir, last_file = self:getLastDirFile(true)
     end
     local FileManager = require("apps/filemanager/filemanager")
-    FileManager:showFiles(last_dir, last_file, selected_files)
+    if FileManager.instance then
+        FileManager.instance.file_chooser:changeToPath(last_dir, last_file)
+        FileManager.instance.selected_files = selected_files
+    else
+        FileManager:showFiles(last_dir, last_file, selected_files)
+    end
 end
 
 function ReaderUI:onShowingReader()
@@ -595,7 +601,7 @@ end
 --- @note: Will sanely close existing FileManager/ReaderUI instance for you!
 ---        This is the *only* safe way to instantiate a new ReaderUI instance!
 ---        (i.e., don't look at the testsuite, which resorts to all kinds of nasty hacks).
-function ReaderUI:showReader(file, provider, seamless, is_provider_forced)
+function ReaderUI:showReader(file, provider, seamless, is_provider_forced, after_open_callback)
     logger.dbg("show reader ui")
 
     if lfs.attributes(file, "mode") ~= "file" then
@@ -612,6 +618,7 @@ function ReaderUI:showReader(file, provider, seamless, is_provider_forced)
         provider = self:extendProvider(file, provider, is_provider_forced)
     end
     if provider and provider.provider then
+        self.after_open_callback = after_open_callback
         -- We can now signal the existing ReaderUI/FileManager instances that it's time to go bye-bye...
         UIManager:broadcastEvent(Event:new("ShowingReader"))
         self:showReaderCoroutine(file, provider, seamless)
@@ -905,8 +912,7 @@ function ReaderUI:reloadDocument(after_close_callback, seamless, after_open_call
     end
 
     self.reloading = true
-    self.after_open_callback = after_open_callback
-    self:showReader(file, provider, seamless)
+    self:showReader(file, provider, seamless, nil, after_open_callback)
 end
 
 function ReaderUI:switchDocument(new_file, seamless, after_open_callback)
@@ -921,8 +927,7 @@ function ReaderUI:switchDocument(new_file, seamless, after_open_callback)
     self.highlight:onClose() -- close highlight dialog if any
     self:onClose(false)
 
-    self.after_open_callback = after_open_callback
-    self:showReader(new_file, nil, seamless)
+    self:showReader(new_file, nil, seamless, nil, after_open_callback)
 end
 
 function ReaderUI:onOpenLastDoc()

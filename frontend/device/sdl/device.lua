@@ -2,7 +2,7 @@ local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local Generic = require("device/generic/device")
 local UIManager
-local SDL = require("ffi/SDL2_0")
+local SDL = require("ffi/SDL3")
 local ffi = require("ffi")
 local logger = require("logger")
 local time = require("ui/time")
@@ -177,7 +177,7 @@ function Device:init()
     end
 
     self.hasClipboard = yes
-    self.screen = require("ffi/framebuffer_SDL2_0"):new{
+    self.screen = require("ffi/framebuffer_SDL3"):new{
         device = self,
         debug = logger.dbg,
         w = self.window.width,
@@ -199,21 +199,9 @@ function Device:init()
         event_map = dofile("frontend/device/sdl/event_map_sdl2.lua"),
         handleSdlEv = function(device_input, ev)
 
-
-            -- SDL events can remain cdata but are almost completely transparent
-            local SDL_TEXTINPUT = 771
-            local SDL_MOUSEWHEEL = 1027
-            local SDL_MULTIGESTURE = 2050
-            local SDL_DROPFILE = 4096
-            local SDL_WINDOWEVENT_MOVED = 4
-            local SDL_WINDOWEVENT_RESIZED = 5
-
-            if ev.code == SDL_MOUSEWHEEL then
+            if ev.code == SDL.SDL.SDL_EVENT_MOUSE_WHEEL then
                 local scrolled_x = ev.value.x
                 local scrolled_y = ev.value.y
-
-                local up = 1
-                local down = -1
 
                 local pos = Geom:new{
                     x = 0,
@@ -231,6 +219,7 @@ function Device:init()
                     pos = pos,
                     time = time.timeval(ev.time),
                     mousewheel_direction = scrolled_y,
+                    direction = scrolled_y > 0 and "south" or "north"
                 }
                 local fake_ges_release = {
                     ges = "pan_release",
@@ -242,25 +231,15 @@ function Device:init()
                 }
                 local fake_pan_ev = Event:new("Pan", nil, fake_ges)
                 local fake_release_ev = Event:new("Gesture", fake_ges_release)
-                if scrolled_y == down then
-                    fake_ges.direction = "north"
-                    UIManager:sendEvent(fake_pan_ev)
-                    UIManager:sendEvent(fake_release_ev)
-                elseif scrolled_y == up then
-                    fake_ges.direction = "south"
-                    UIManager:sendEvent(fake_pan_ev)
-                    UIManager:sendEvent(fake_release_ev)
-                end
-            elseif ev.code == SDL_MULTIGESTURE then
-                -- no-op for now
-                do end -- luacheck: ignore 541
-            elseif ev.code == SDL_DROPFILE then
+                UIManager:sendEvent(fake_pan_ev)
+                UIManager:sendEvent(fake_release_ev)
+            elseif ev.code == SDL.SDL.SDL_EVENT_DROP_FILE then
                 local dropped_file_path = ev.value
                 if dropped_file_path and dropped_file_path ~= "" then
                     local ReaderUI = require("apps/reader/readerui")
                     ReaderUI:doShowReader(dropped_file_path)
                 end
-            elseif ev.code == SDL_WINDOWEVENT_RESIZED then
+            elseif ev.code == SDL.SDL.SDL_EVENT_WINDOW_RESIZED then
                 device_input.device.screen.resize(device_input.device.screen, ev.value.data1, ev.value.data2)
                 self.window.width = ev.value.data1
                 self.window.height = ev.value.data2
@@ -289,10 +268,10 @@ function Device:init()
 
                 -- make sure dialogs are displayed
                 UIManager:setDirty("all", "ui")
-            elseif ev.code == SDL_WINDOWEVENT_MOVED then
+            elseif ev.code == SDL.SDL.SDL_EVENT_WINDOW_MOVED then
                 self.window.left = ev.value.data1
                 self.window.top = ev.value.data2
-            elseif ev.code == SDL_TEXTINPUT then
+            elseif ev.code == SDL.SDL.SDL_EVENT_TEXT_INPUT then
                 UIManager:sendEvent(Event:new("TextInput", tostring(ev.value)))
             end
         end,

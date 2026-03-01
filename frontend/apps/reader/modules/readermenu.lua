@@ -402,18 +402,6 @@ function ReaderMenu:saveDocumentSettingsAsDefault()
 end
 
 function ReaderMenu:exitOrRestart(callback, force)
-    -- Only restart sets a callback, which suits us just fine for this check ;)
-    if callback and not force and not Device:isStartupScriptUpToDate() then
-        UIManager:show(ConfirmBox:new{
-            text = _("KOReader's startup script has been updated. You'll need to completely exit KOReader to finalize the update."),
-            ok_text = _("Restart anyway"),
-            ok_callback = function()
-                self:exitOrRestart(callback, true)
-            end,
-        })
-        return
-    end
-
     self:onTapCloseMenu()
     UIManager:nextTick(function()
         self.ui:onClose()
@@ -424,6 +412,7 @@ function ReaderMenu:exitOrRestart(callback, force)
 end
 
 function ReaderMenu:onShowMenu(tab_index, do_not_show)
+    self.ui.highlight:onStopHighlightIndicator(true) -- stop any text selection in progress, if applicable
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
     end

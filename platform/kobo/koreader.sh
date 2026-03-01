@@ -1,4 +1,5 @@
 #!/bin/sh
+
 export LC_ALL="en_US.UTF-8"
 
 # Compute our working directory in an extremely defensive manner

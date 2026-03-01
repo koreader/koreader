@@ -13,6 +13,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local Persist = require("persist")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
+local Utf8Proc = require("ffi/utf8proc")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -59,7 +60,7 @@ end
 -- check if a string matches a query
 local function match(str, query, case_insensitive)
     if query and case_insensitive then
-        return string.find(string.upper(str), string.upper(query))
+        return string.find(Utf8Proc.lowercase(util.fixUtf8(str, "?")), Utf8Proc.lowercase(util.fixUtf8(query, "?")))
     elseif query then
         return string.find(str, query)
     else
@@ -315,7 +316,7 @@ function CalibreSearch:bookCatalog(t, option)
     end
     if series and not subseries then
         for index, entry in ipairs(catalog) do
-            catalog[index].text = entry.text:gsub(".00", "", 1)
+            catalog[index].text = entry.text:gsub("%.00", "", 1)
         end
     end
     return catalog
@@ -371,7 +372,7 @@ function CalibreSearch:findBooks(query)
     local function bookMatch(s, p)
         if not s or not p then return false end
         if self.case_insensitive then
-            return string.match(string.upper(s), string.upper(p))
+            return string.find(Utf8Proc.lowercase(util.fixUtf8(s, "?")), Utf8Proc.lowercase(util.fixUtf8(p, "?")))
         else
             return string.match(s, p)
         end

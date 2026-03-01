@@ -688,7 +688,7 @@ function CreDocument:getTextFromPositions(pos0, pos1, do_not_draw_selection)
         drawSelection, drawSegmentedSelection)
     logger.dbg("CreDocument: get text range", text_range)
     if text_range then
-        local line_boxes = self:getScreenBoxesFromPositions(text_range.pos0, text_range.pos1)
+        local line_boxes = self:getScreenBoxesFromPositions(text_range.pos0, text_range.pos1, true)
         return {
             text = text_range.text,
             pos0 = text_range.pos0,

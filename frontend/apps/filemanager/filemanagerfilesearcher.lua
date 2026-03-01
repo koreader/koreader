@@ -11,7 +11,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
-local Utf8Proc = require("ffi/utf8proc")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
@@ -181,7 +180,7 @@ function FileSearcher:getList()
     local search_string = FileSearcher.search_string
     if search_string ~= "*" then -- one * to show all files
         if not self.case_sensitive then
-            search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
+            search_string = util.stringLower(search_string)
         end
         -- replace '.' with '%.'
         search_string = search_string:gsub("%.","%%%.")
@@ -237,7 +236,7 @@ function FileSearcher:isFileMatch(filename, fullpath, search_string, is_file)
         return true
     end
     if not self.case_sensitive then
-        filename = Utf8Proc.lowercase(util.fixUtf8(filename, "?"))
+        filename = util.stringLower(filename)
     end
     if string.find(filename, search_string) then
         return true
@@ -340,14 +339,12 @@ function FileSearcher:onMenuSelect(item)
         if item.is_file then
             item.dim = not item.dim and true or nil
             self._manager.selected_files[item.path] = item.dim
-            self._manager:updateItemTable()
+            self:updateItems(1, true)
         end
     else
         if item.is_file then
             if DocumentRegistry:hasProvider(item.path, nil, true) then
-                self.close_callback()
-                local FileManager = require("apps/filemanager/filemanager")
-                FileManager.openFile(self.ui, item.path)
+                filemanagerutil.openFile(self.ui, item.path, self.close_callback)
             end
         else
             self._manager.update_files = nil
@@ -449,6 +446,15 @@ function FileSearcher:onMenuHold(item)
                 end,
             },
         })
+        if been_opened then
+            local annotations = doc_settings_or_file:readSetting("annotations")
+            if annotations and #annotations > 0 then
+                table.insert(buttons, {
+                    self._manager.ui.collections:genExportHighlightsButton({ [file] = true }, close_dialog_callback),
+                    self._manager.ui.collections:genBookmarkBrowserButton({ [file] = true }, close_dialog_callback),
+                })
+            end
+        end
         table.insert(buttons, {
             filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback),
             filemanagerutil.genBookInformationButton(doc_settings_or_file, book_props, close_dialog_callback),
@@ -517,7 +523,7 @@ function FileSearcher:showSelectModeDialog()
                     for _, item in ipairs(item_table) do
                         item.dim = nil
                     end
-                    self:updateItemTable()
+                    self.booklist_menu:updateItems(1, true)
                 end,
             },
             {
@@ -530,7 +536,7 @@ function FileSearcher:showSelectModeDialog()
                             self.selected_files[item.path] = true
                         end
                     end
-                    self:updateItemTable()
+                    self.booklist_menu:updateItems(1, true)
                 end,
             },
         },
@@ -546,7 +552,7 @@ function FileSearcher:showSelectModeDialog()
                             item.dim = nil
                         end
                     end
-                    self:updateItemTable()
+                    self.booklist_menu:updateItems(1, true)
                 end,
             },
             {

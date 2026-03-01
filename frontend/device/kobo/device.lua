@@ -1612,7 +1612,7 @@ end
 function Kobo:isStartupScriptUpToDate()
     local md5 = require("ffi/MD5")
     -- Compare the hash of the *active* script to the *potential* one.
-    return md5.sumFile("/tmp/koreader.sh") == md5.sumFile(os.getenv("KOREADER_DIR") .. "/koreader.sh")
+    return md5.sumFile("/tmp/koreader.sh") == md5.sumFile("koreader.sh")
 end
 
 function Kobo:UIManagerReady(uimgr)
@@ -1778,7 +1778,7 @@ elseif codename == "goldfinch" then
     return KoboGoldfinch
 elseif codename == "condor" then
     return KoboCondor
-elseif codename == "monza" or codename == "monzaTolino" then
+elseif codename == "monza" or codename == "monzaKobo" or codename == "monzaTolino" then
     return KoboMonza
 elseif codename == "spaBW" or codename == "spaTolinoBW" or codename == "spaBWTPV" then
     return KoboSpaBW

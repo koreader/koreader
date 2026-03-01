@@ -1646,6 +1646,20 @@ Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSe
                     callback = function()
                         local myfields = self.settings_dialog:getFields()
                         self.server_url    = myfields[1]:gsub("/*$", "") -- remove all trailing slashes
+                        if not self.server_url:match("^https?://") then
+                            UIManager:show(MultiConfirmBox:new{
+                                text = _("The server URL should start with http:// or http://."),
+                                choice1_text = _("http://"),
+                                choice1_callback = function()
+                                    self.settings_dialog.input_fields[1]:setText("http://" .. self.server_url)
+                                end,
+                                choice2_text = _("https://"),
+                                choice2_callback = function()
+                                    self.settings_dialog.input_fields[1]:setText("https://" .. self.server_url)
+                                end,
+                            })
+                            return
+                        end
                         self.client_id     = myfields[2]
                         self.client_secret = myfields[3]
                         self.username      = myfields[4]

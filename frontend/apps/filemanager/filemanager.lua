@@ -165,7 +165,7 @@ function FileManager:setupLayout()
             file_manager.selected_files[item.path] = item.dim
             self:updateItems(1, true)
         else
-            file_manager:openFile(item.path)
+            filemanagerutil.openFile(file_manager, item.path)
         end
         return true
     end
@@ -285,6 +285,15 @@ function FileManager:setupLayout()
                 table.insert(buttons, {
                     FileManagerConverter:genConvertButton(file, close_dialog_callback, refresh_callback)
                 })
+            end
+            if been_opened then
+                local annotations = doc_settings_or_file:readSetting("annotations")
+                if annotations and #annotations > 0 then
+                    table.insert(buttons, {
+                        file_manager.collections:genExportHighlightsButton({ [file] = true }, close_dialog_callback),
+                        file_manager.collections:genBookmarkBrowserButton({ [file] = true }, close_dialog_callback),
+                    })
+                end
             end
             table.insert(buttons, {
                 {
@@ -577,13 +586,8 @@ function FileManager:getPlusDialogButtons()
                     close_dialog_callback, toggle_select_mode_callback, not actions_enabled),
             },
             {
-                {
-                    text = _("Export highlights"),
-                    enabled = (actions_enabled and self.exporter) and true or false,
-                    callback = function()
-                        self.exporter:exportFilesNotes(self.selected_files)
-                    end,
-                },
+                self.collections:genExportHighlightsButton(self.selected_files, close_dialog_callback, not actions_enabled),
+                self.collections:genBookmarkBrowserButton(self.selected_files, close_dialog_callback, not actions_enabled),
             },
             {}, -- separator
             {
@@ -1417,7 +1421,7 @@ function FileManager:showOpenWithDialog(file)
         return {{
             -- @translators %1 is the provider name, such as Cool Reader Engine or MuPDF.
             text = is_unsupported and T(_("%1 ~Unsupported"), provider.provider_name) or provider.provider_name,
-            checked = provider.provider == file_provider_key,
+            checked = not is_unsupported and provider.provider == file_provider_key,
             provider = provider,
         }}
     end
@@ -1428,8 +1432,8 @@ function FileManager:showOpenWithDialog(file)
             table.insert(radio_buttons, genRadioButton(provider.provider))
         end
     else
-        local provider = DocumentRegistry:getFallbackProvider()
-        table.insert(radio_buttons, genRadioButton(provider, true))
+        table.insert(radio_buttons, genRadioButton(DocumentRegistry.known_providers["mupdf"], true))
+        table.insert(radio_buttons, genRadioButton(DocumentRegistry.known_providers["crengine"], true))
     end
     for _, provider in ipairs(DocumentRegistry:getAuxProviders()) do -- auxiliary providers
         local is_filetype_supported
@@ -1517,7 +1521,7 @@ function FileManager:showOpenWithDialog(file)
                         ok_text = _("Always"),
                         ok_callback = function()
                             DocumentRegistry:setProvider(file, provider, false)
-                            self:openFile(file, provider)
+                            FileManager.openFile(self, file, provider)
                             UIManager:close(dialog)
                         end,
                     })
@@ -1527,12 +1531,12 @@ function FileManager:showOpenWithDialog(file)
                         ok_text = _("Always"),
                         ok_callback = function()
                             DocumentRegistry:setProvider(file, provider, true)
-                            self:openFile(file, provider)
+                            FileManager.openFile(self, file, provider)
                             UIManager:close(dialog)
                         end,
                     })
                 else -- open just once
-                    self:openFile(file, provider)
+                    FileManager.openFile(self, file, provider)
                     UIManager:close(dialog)
                 end
             end,
@@ -1548,7 +1552,7 @@ function FileManager:showOpenWithDialog(file)
     UIManager:show(dialog)
 end
 
-function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_callback)
+function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_callback, after_open_callback)
     local is_provider_forced = provider ~= nil
     provider = provider or DocumentRegistry:getProvider(file, true) -- include auxiliary
     if provider and provider.order then -- auxiliary
@@ -1565,7 +1569,7 @@ function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_ca
             doc_caller_callback()
         end
         local ReaderUI = require("apps/reader/readerui")
-        ReaderUI:showReader(file, provider, nil, is_provider_forced)
+        ReaderUI:showReader(file, provider, nil, is_provider_forced, after_open_callback)
     end
 end
 

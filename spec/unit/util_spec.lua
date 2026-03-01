@@ -474,8 +474,8 @@ describe("util module", function()
         it("should encode string", function()
             assert.is_equal("Secret_Password123", util.urlEncode("Secret_Password123"))
             assert.is_equal("Secret%20Password123", util.urlEncode("Secret Password123"))
-            assert.is_equal("S*cret%3DP%40%24%24word*!%23%3F", util.urlEncode("S*cret=P@$$word*!#?"))
-            assert.is_equal("~%5E-_%5C%25!*'()%3B%3A%40%26%3D%2B%24%2C%2F%3F%23%5B%5D",
+            assert.is_equal("S%2Acret%3DP%40%24%24word%2A%21%23%3F", util.urlEncode("S*cret=P@$$word*!#?"))
+            assert.is_equal("~%5E-_%5C%25%21%2A%27%28%29%3B%3A%40%26%3D%2B%24%2C%2F%3F%23%5B%5D",
                 util.urlEncode("~^-_\\%!*'();:@&=+$,/?#[]"))
         end)
         it("should decode string", function()
