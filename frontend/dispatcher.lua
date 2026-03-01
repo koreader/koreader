@@ -216,6 +216,7 @@ local settingsList = {
     toggle_handmade_toc = {category="none", event="ToggleHandmadeToc", title=_("Toggle custom TOC"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
     toggle_handmade_flows = {category="none", event="ToggleHandmadeFlows", title=_("Toggle custom hidden flows"), reader=true, separator=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
     ----
+    text_selection = {category="none", event="StartHighlightIndicator", title=_("Toggle text selection mode"), reader=true, condition=Device:hasKeyboard()},
     set_highlight_action = {category="string", event="SetHighlightAction", title=_("Set highlight action"), args_func=ReaderHighlight.getHighlightActions, reader=true},
     cycle_highlight_action = {category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), reader=true},
     cycle_highlight_style = {category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), reader=true, separator=true},
@@ -471,6 +472,7 @@ local dispatcher_menu_order = {
     "toggle_handmade_toc",
     "toggle_handmade_flows",
     ----
+    "text_selection",
     "set_highlight_action",
     "cycle_highlight_action",
     "cycle_highlight_style",

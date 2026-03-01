@@ -25,18 +25,18 @@ local FileSearcher = InputContainer:extend{
 }
 
 function FileSearcher:init()
-    self:registerKeyEvents()
     if not self.ui.document then
         self.ui.menu:registerToMainMenu(self)
     end
 end
 
-function FileSearcher:registerKeyEvents()
-    if Device:hasKeyboard() then
-        self.key_events.ShowFileSearch = { { "Alt", "F" }, { "Ctrl", "F" } }
-        self.key_events.ShowFileSearchBlank = { { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" }, event = "ShowFileSearch", args = "" }
-    end
-end
+-- function FileSearcher:registerKeyEvents()
+    -- now handled by hotkeys.koplugin:
+    -- onShowFileSearch = { { "Alt", "F" }, { "Ctrl", "F" } }
+    -- if Device:hasKeyboard() then
+        -- onShowFileSearchBlank = { { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" } }
+    -- end
+-- end
 
 function FileSearcher:addToMainMenu(menu_items)
     menu_items.file_search = {

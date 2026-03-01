@@ -1,6 +1,5 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
-local Device = require("device")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -29,7 +28,6 @@ local ReaderWikipedia = ReaderDictionary:extend{
 }
 
 function ReaderWikipedia:init()
-    self:registerKeyEvents()
     self.wiki_languages = {}
     -- Read this from G_reader_settings for when used in FileBrowser
     -- (:onReadSettings() may replace it from the one saved in doc_settings)
@@ -40,14 +38,10 @@ function ReaderWikipedia:init()
     end
 end
 
-function ReaderWikipedia:registerKeyEvents()
-    if Device:hasKeyboard() then
-        self.key_events.ShowWikipediaLookup = { { "Alt", "W" }, { "Ctrl", "W" } }
-        if Device.k3_alt_plus_key_kernel_translated then
-            self.key_events.ShowWikipediaLookup = { { Device.k3_alt_plus_key_kernel_translated["W"] } }
-        end
-    end
-end
+-- function ReaderWikipedia:registerKeyEvents()
+    -- Now handled by hotkeys.koplugin:
+    -- onShowWikipediaLookup = { { "Alt", "W" }, { "Ctrl", "W" } }
+-- end
 
 function ReaderWikipedia:lookupInput()
     self.input_dialog = InputDialog:new{

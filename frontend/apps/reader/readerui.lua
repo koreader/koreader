@@ -529,15 +529,6 @@ function ReaderUI:registerKeyEvents()
         if Device:hasDPad() and Device:useDPadAsActionKeys() then
             self.key_events.StartHighlightIndicator = { { { "Up", "Down" } } }
         end
-        if Device:hasScreenKB() or Device:hasSymKey() then
-            if Device:hasKeyboard() then
-                self.key_events.ToggleWifi = { { "Shift", "Home" } }
-                self.key_events.OpenLastDoc = { { "Shift", "Back" } }
-            else -- Currently exclusively targets Kindle 4.
-                self.key_events.ToggleWifi = { { "ScreenKB", "Home" } }
-                self.key_events.OpenLastDoc = { { "ScreenKB", "Back" } }
-            end
-        end
     end
 end
 
