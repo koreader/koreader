@@ -31,6 +31,8 @@ local ReaderPageMap = WidgetContainer:extend{
     page_labels_cache = nil, -- hash table
     chars_per_synthetic_page_default = 1500, -- see https://github.com/koreader/koreader/issues/9020#issuecomment-2046025613
     chars_per_synthetic_page = nil, -- not nil means the synthetic pagemap has been created
+    target_pagecount_default = 200,
+    target_pagecount = nil,
 }
 
 function ReaderPageMap:init()
@@ -77,6 +79,7 @@ function ReaderPageMap:_postInit()
             end
         end
     end
+    self.target_pagecount = self.ui.doc_settings:readSetting("pagemap_doc_pages") or nil
     if self.ui.document:hasPageMap() then
         self.has_pagemap = true
         self:resetLayout()
@@ -421,7 +424,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                 local text
                 if self.chars_per_synthetic_page then
                     -- @translators characters per page
-                    text = T(N_("1 char per page", "%1 chars per page", self.chars_per_synthetic_page), self.chars_per_synthetic_page)
+                    text = T(N_("1 char per page", "%1 chars per page", math.floor(self.chars_per_synthetic_page)), self.chars_per_synthetic_page)
                     if self.has_pagemap_document_provided then
                         text = "℗ / " .. text
                     end
@@ -458,7 +461,63 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
             },
             {
                 text_func = function()
-                    return T(_("Characters per page: %1"), self.chars_per_synthetic_page or _("disabled"))
+                    return T(_("Set number of pages"))
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    UIManager:show(SpinWidget:new{
+                        title_text = T(_("Pages in book %1"), self.target_pagecount or _("unavailable")),
+                        value = self.target_pagecount or self.target_pagecount_default,
+                        value_min = 1,
+                        value_max = 5000,
+                        value_hold_step = 10,
+                        default_value = self.target_pagecount or self.target_pagecount_default,
+                        ok_always_enabled = true,
+                        keep_shown_on_apply = true,
+                        callback = function(spin)
+                            spin:onClose()
+                            if not self.has_pagemap then
+                                self.has_pagemap = true
+                                self:resetLayout()
+                                self.view:registerViewModule("pagemap", self)
+                            end
+                            self.target_pagecount = spin.value
+                            local chars_in_book
+                            local pages_starting = G_reader_settings:readSetting("pagemap_doc_pages") or nil
+                            self.chars_per_synthetic_page = G_reader_settings:readSetting(
+                                "pagemap_chars_per_synthetic_page") or 1500
+                            if self.chars_per_synthetic_page and not pages_starting then
+                                self.page_labels_cache = nil
+                                self.ui.document:buildSyntheticPageMap(self.chars_per_synthetic_page)
+                                self:updateVisibleLabels()
+                                UIManager:setDirty(self.view.dialog, "partial")
+                                pages_starting = select(3, self:getCurrentPageLabel())
+                            end
+                            chars_in_book = pages_starting * self.chars_per_synthetic_page
+                            self.chars_per_synthetic_page = chars_in_book / self.target_pagecount
+                            self.page_labels_cache = nil
+                            self.ui.document:buildSyntheticPageMap(self.chars_per_synthetic_page)
+                            self:updateVisibleLabels()
+                            UIManager:setDirty(self.view.dialog, "partial")
+                            self.ui.doc_settings:saveSetting("pagemap_chars_per_synthetic_page",
+                                self.chars_per_synthetic_page)
+                            self.ui.doc_settings:saveSetting("pagemap_doc_pages", select(3, self:getCurrentPageLabel()))
+                            UIManager:broadcastEvent(Event:new("UsePageLabelsUpdated"))
+                            touchmenu_instance:updateItems()
+                        end,
+                    })
+                end,
+            },
+            {
+                text_func = function()
+                    local char_txt
+                    if self.chars_per_synthetic_page and self.chars_per_synthetic_page > 0 then
+                        char_txt = math.floor(self.chars_per_synthetic_page)
+                    else
+                        char_txt = "disabled"
+                    end
+
+                    return T(_("Characters per page: %1"), char_txt)
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
@@ -466,7 +525,7 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                         title_text = _("Characters per page"),
                         value = self.chars_per_synthetic_page or self.chars_per_synthetic_page_default,
                         value_min = 500,
-                        value_max = 3000,
+                        value_max = 6000,
                         value_hold_step = 20,
                         default_value = self.chars_per_synthetic_page_default,
                         ok_always_enabled = true,
@@ -485,6 +544,7 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                             UIManager:setDirty(self.view.dialog, "partial")
                             self.ui.doc_settings:saveSetting("pagemap_chars_per_synthetic_page", spin.value)
                             self.ui.doc_settings:saveSetting("pagemap_doc_pages", select(3, self:getCurrentPageLabel()))
+                            self.target_pagecount = select(3, self:getCurrentPageLabel()) --- Puts pagecount into memory in case menu is reused before sdr saved
                             UIManager:broadcastEvent(Event:new("UsePageLabelsUpdated"))
                             touchmenu_instance:updateItems()
                         end,
@@ -576,7 +636,7 @@ Since stable page numbers can start anywhere on the screen, you can choose to di
                                 value = G_reader_settings:readSetting("pagemap_chars_per_synthetic_page")
                                     or self.chars_per_synthetic_page_default,
                                 value_min = 500,
-                                value_max = 3000,
+                                value_max = 6000,
                                 value_hold_step = 20,
                                 default_value = self.chars_per_synthetic_page_default,
                                 ok_always_enabled = true,
