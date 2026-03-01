@@ -642,6 +642,7 @@ function HtmlBoxWidget:findTextNextPage(direction)
     local list = self._match_page_list
     local count = list and #list or 0
     if count == 0 then return false end
+    if count == 1 and self.page_number == list[1] then return true end
     -- Resolve index if missing or desynced
     if not self._match_page_index then
         if not self._match_page_index then
