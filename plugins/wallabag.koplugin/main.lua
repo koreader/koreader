@@ -1428,14 +1428,30 @@ function Wallabag:archiveArticle(path)
             end
         else
             local body = { archive = 1 }
+            local tags = {}
+
+            local headers = {
+                ["Content-type"] = "application/json",
+                ["Accept"] = "application/json, */*",
+                ["Authorization"] = "Bearer " .. self.access_token,
+            }
 
             if self.sync_star_status then
                 local doc_settings = DocSettings:open(path)
                 local summary = doc_settings:readSetting("summary")
                 if summary and summary.rating then
                     if summary.rating > 0 and self.sync_star_rating_as_tag == true then
-                        local tag = {summary.rating.."-star"}
-                        body.tags = tag
+                        local ok, result, code = self:callAPI("GET", "/api/entries/"..id, headers)
+                        if ok and result and result.tags then
+                            local current_tags = result.tags
+                            for _, t in ipairs(current_tags) do
+                                table.insert(tags, t.label)
+                            end
+                        else
+                            logger.warn("Wallabag:archiveArticle:", id, "failed to get existing tags")
+                        end
+                        table.insert(tags, summary.rating .. "-star")
+                        body.tags = table.concat(tags,",")
                     end
                     if summary.rating >= self.remote_star_threshold then
                         body.starred = 1
@@ -1444,7 +1460,7 @@ function Wallabag:archiveArticle(path)
             end
 
             local bodyJSON = JSON.encode(body)
-            local headers = {
+            headers = {
                 ["Content-type"] = "application/json",
                 ["Accept"] = "application/json, */*",
                 ["Content-Length"] = tostring(#bodyJSON),
