@@ -12,7 +12,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputDialog = require("ui/widget/inputdialog")
-local InputText = require("ui/widget/inputtext")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local ProgressWidget = require("ui/widget/progresswidget")
@@ -45,6 +45,8 @@ local BookStatusWidget = FocusManager:extend{
     padding = Size.padding.fullscreen,
     star = nil, -- Button
     summary = nil, -- hash
+    note_frame = nil, -- FrameContainer wrapping the review text
+    note_widget = nil, -- TextBoxWidget showing the review text
 }
 
 function BookStatusWidget:init()
@@ -438,27 +440,41 @@ function BookStatusWidget:genSummaryGroup(width)
         height = Screen:scaleBySize(160)
     end
 
-    local text_padding = Size.padding.default
-    self.input_note = InputText:new{
-        text = self.summary.note,
-        face = self.medium_font_face,
-        width = width - self.padding * 3,
-        height = math.floor(height * 0.75),
-        scroll = true,
-        bordersize = Size.border.default,
-        focused = false,
-        padding = text_padding,
-        parent = self,
+    self.note_widget = TextBoxWidget:new{
+        text     = (self.summary.note and #self.summary.note > 0)
+                    and self.summary.note
+                    or (not self.readonly and _("A few words about the book") or ""),
+        face     = self.medium_font_face,
+        width    = width - self.padding * 3,
+        height   = math.floor(height * 0.75),
+        scroll   = true,
         readonly = self.readonly,
-        hint = not self.readonly and _("A few words about the book"),
+        parent   = self,
     }
-    table.insert(self.layout, {self.input_note})
+
+    self.note_frame = FrameContainer:new{
+        bordersize = Size.border.thin,
+        padding = Size.padding.large,
+        focusable = true,
+        focus_border_size = Size.border.thick,
+        focus_inner_border = true,
+        enabled   = not self.readonly,
+        parent    = self,
+        self.note_widget,
+    }
+    self.note_frame.onGesture = function(frame, ev)
+        if ev and ev.ges == "tap" then
+            return self:openReviewDialog()
+        end
+    end
+
+    table.insert(self.layout, {self.note_frame})
 
     return VerticalGroup:new{
         VerticalSpan:new{ width = Size.span.vertical_large },
         CenterContainer:new{
             dimen = Geom:new{ w = width, h = height },
-            self.input_note
+            self.note_frame
         }
     }
 end
@@ -539,10 +555,10 @@ function BookStatusWidget:onClose()
     return true
 end
 
-function BookStatusWidget:onSwitchFocus(inputbox)
+function BookStatusWidget:openReviewDialog()
     self.note_dialog = InputDialog:new{
         title = _("Review"),
-        input = self.input_note:getText(),
+        input = self.summary.note or "",
         scroll = true,
         allow_newline = true,
         text_height = Screen:scaleBySize(150),
@@ -560,8 +576,10 @@ function BookStatusWidget:onSwitchFocus(inputbox)
                     is_enter_default = true,
                     callback = function()
                         local note = self.note_dialog:getInputText()
-                        self.input_note:setText(note)
                         self.summary.note = note
+                        if self.note_widget then
+                            self.note_widget:setText(note ~= "" and note or _("A few words about the book"))
+                        end
                         self.updated = true
                         self:closeInputDialog()
                     end,
@@ -571,11 +589,13 @@ function BookStatusWidget:onSwitchFocus(inputbox)
     }
     UIManager:show(self.note_dialog)
     self.note_dialog:onShowKeyboard()
+    return true
 end
 
 function BookStatusWidget:closeInputDialog()
     UIManager:close(self.note_dialog)
-    self.input_note:onUnfocus()
+    self.note_dialog = nil
+    return true
 end
 
 return BookStatusWidget
