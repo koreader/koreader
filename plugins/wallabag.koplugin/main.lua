@@ -1793,7 +1793,7 @@ function Wallabag:saveSettings()
         send_review_as_tags           = self.send_review_as_tags,
         sync_star_status              = self.sync_star_status,
         remote_star_threshold         = self.remote_star_threshold,
-        sync_star_rating_as_tag              = self.sync_star_rating_as_tag,
+        sync_star_rating_as_tag       = self.sync_star_rating_as_tag,
         remove_finished_from_history  = self.remove_finished_from_history,
         remove_read_from_history      = self.remove_read_from_history,
         remove_abandoned_from_history = self.remove_abandoned_from_history,
