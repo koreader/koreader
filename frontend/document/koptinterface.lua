@@ -12,6 +12,7 @@ local FFIUtil = require("ffi/util")
 local Geom = require("ui/geometry")
 local KOPTContext = require("ffi/koptcontext")
 local Persist = require("persist")
+local Screen = require("device").screen
 local TileCacheItem = require("document/tilecacheitem")
 local Utf8Proc = require("ffi/utf8proc")
 local logger = require("logger")
@@ -534,10 +535,13 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, hint
 end
 
 function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
+    local nightmode_invert = doc.configurable.nightmode_document == 1 and Screen.night_mode
     if doc.configurable.text_wrap == 1 then
-        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
+        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
-        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
+        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
+    elseif nightmode_invert then
+        Document.drawPageInverted(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
     else
         Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
     end
@@ -548,13 +552,31 @@ Draw cached tile pixels into target blitbuffer.
 
 Inherited from common document interface.
 --]]
-function KoptInterface:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
+function KoptInterface:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
     local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 1.0)
-    target:blitFrom(tile.bb,
-        x, y,
-        rect.x - tile.excerpt.x,
-        rect.y - tile.excerpt.y,
-        rect.w, rect.h)
+    local offs_x = rect.x - tile.excerpt.x
+    local offs_y = rect.y - tile.excerpt.y
+    if nightmode_invert then
+        if doc.configurable.page_opt == 1 then
+            -- Dewatermark enabled: draw tile, then invert the drawn area
+            target:blitFrom(tile.bb,
+                x, y,
+                offs_x, offs_y,
+                rect.w, rect.h)
+            target:invertRect(x, y, rect.w, rect.h)
+        else
+            -- Dewatermark disabled: invert tile directly
+            target:invertblitFrom(tile.bb,
+                x, y,
+                offs_x, offs_y,
+                rect.w, rect.h)
+        end
+    else
+        target:blitFrom(tile.bb,
+            x, y,
+            offs_x, offs_y,
+            rect.w, rect.h)
+    end
 end
 
 --[[
