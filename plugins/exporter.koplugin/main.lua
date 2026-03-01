@@ -25,6 +25,7 @@ The parser looks to bookmarks._.text field for edited notes. bookmarks._.notes i
 @module koplugin.exporter
 --]]--
 
+local ButtonSelector = require("ui/widget/buttonselector")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
@@ -113,7 +114,10 @@ local Exporter = WidgetContainer:extend{
 
 function Exporter:init()
     self.settings = G_reader_settings:readSetting("exporter", {})
-    self.parser = MyClipping:new{ ui = self.ui }
+    self.parser = MyClipping:new{
+        ui = self.ui,
+        settings = self.settings,
+    }
     self.targets = genExportersTable(self.path)
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
@@ -269,7 +273,7 @@ end
 
 function Exporter:addToMainMenu(menu_items)
     self.targets = genExportersTable(self.path)
-    local formats_submenu, share_submenu, styles_submenu = {}, {}, {}
+    local formats_submenu, share_submenu = {}, {}
     for k, v in pairs(self.targets) do
         formats_submenu[#formats_submenu + 1] = v:getMenuTable()
         if v.shareable then
@@ -291,27 +295,8 @@ function Exporter:addToMainMenu(menu_items)
     table.sort(formats_submenu, function(v1, v2)
         return v1.text < v2.text
     end)
+
     local settings = self.settings
-    for i, v in ipairs(ReaderHighlight.getHighlightStyles()) do
-        local style = v[2]
-        styles_submenu[i] = {
-            text = v[1],
-            checked_func = function() -- all styles checked by default
-                return not (settings.highlight_styles and settings.highlight_styles[style] == false)
-            end,
-            callback = function()
-                if settings.highlight_styles and settings.highlight_styles[style] == false then
-                    settings.highlight_styles[style] = nil
-                    if next(settings.highlight_styles) == nil then
-                        settings.highlight_styles = nil
-                    end
-                else
-                    settings.highlight_styles = settings.highlight_styles or {}
-                    settings.highlight_styles[style] = false
-                end
-            end,
-        }
-    end
     local menu = {
         text = _("Export highlights"),
         sub_item_table = {
@@ -339,8 +324,57 @@ function Exporter:addToMainMenu(menu_items)
                 sub_item_table = formats_submenu,
             },
             {
-                text = _("Choose highlight styles"),
-                sub_item_table = styles_submenu,
+                text = _("Filter by highlight style"),
+                checked_func = function()
+                    return util.tableGetValue(settings, "filter", "style") and true or false
+                end,
+                check_callback_updates_menu = true,
+                callback = function(touchmenu_instance)
+                    UIManager:show(ButtonSelector:new{
+                        current_value = util.tableGetValue(settings, "filter", "style"),
+                        values = ReaderHighlight.getHighlightStyles(),
+                        multi_choice = true,
+                        callback = function(value)
+                            if value then
+                                util.tableSetValue(settings, value, "filter", "style")
+                            else
+                                util.tableRemoveValue(settings, "filter", "style")
+                            end
+                            touchmenu_instance:updateItems()
+                        end,
+                    })
+                end,
+                hold_callback = function(touchmenu_instance)
+                    util.tableRemoveValue(settings, "filter", "style")
+                    touchmenu_instance:updateItems()
+                end,
+            },
+            {
+                text = _("Filter by highlight color"),
+                checked_func = function()
+                    return util.tableGetValue(settings, "filter", "color") and true or false
+                end,
+                check_callback_updates_menu = true,
+                callback = function(touchmenu_instance)
+                    UIManager:show(ButtonSelector:new{
+                        current_value = util.tableGetValue(settings, "filter", "color"),
+                        values = ReaderHighlight.highlight_colors,
+                        bg_colors = ReaderHighlight:getHighlightColorList(),
+                        multi_choice = true,
+                        callback = function(value)
+                            if value then
+                                util.tableSetValue(settings, value, "filter", "color")
+                            else
+                                util.tableRemoveValue(settings, "filter", "color")
+                            end
+                            touchmenu_instance:updateItems()
+                        end,
+                    })
+                end,
+                hold_callback = function(touchmenu_instance)
+                    util.tableRemoveValue(settings, "filter", "color")
+                    touchmenu_instance:updateItems()
+                end,
                 separator = true,
             },
             {

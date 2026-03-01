@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
+local ButtonSelector = require("ui/widget/buttonselector")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -18,7 +19,6 @@ local Size = require("ui/size")
 local SpinWidget = require("ui/widget/spinwidget")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
-local Utf8Proc = require("ffi/utf8proc")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("util")
 local _ = require("gettext")
@@ -1521,15 +1521,8 @@ function ReaderBookmark:onSearchBookmark()
                     is_enter_default = true,
                     callback = function()
                         local search_str = input_dialog:getInputText()
-                        if search_str == "" then
-                            search_str = nil
-                        else
-                            if not check_button_case.checked then
-                                search_str = Utf8Proc.lowercase(util.fixUtf8(search_str, "?"))
-                            end
-                        end
                         self.match_table = {
-                            search_str = search_str,
+                            search_str = search_str ~= "" and search_str or nil,
                             bookmark = check_button_bookmark.checked,
                             highlight = check_button_highlight.checked,
                             note = check_button_note.checked,
@@ -1599,8 +1592,7 @@ function ReaderBookmark:onSearchBookmark()
 end
 
 function ReaderBookmark:filterByEditedText()
-    local bm_menu = self.bookmark_menu[1]
-    local item_table = bm_menu.item_table
+    local item_table = self.bookmark_menu[1].item_table
     for i = #item_table, 1, -1 do
         if not item_table[i].text_edited then
             table.remove(item_table, i)
@@ -1611,33 +1603,38 @@ function ReaderBookmark:filterByEditedText()
 end
 
 function ReaderBookmark:filterByHighlightStyle()
-    local filter_by_drawer_callback = function(drawer)
-        local bm_menu = self.bookmark_menu[1]
-        local item_table = bm_menu.item_table
-        for i = #item_table, 1, -1 do
-            if item_table[i].drawer ~= drawer then
-                table.remove(item_table, i)
+    UIManager:show(ButtonSelector:new{
+        current_value = self.show_drawer_only,
+        values = self.ui.highlight:getHighlightStyles(),
+        callback = function(value)
+            local item_table = self.bookmark_menu[1].item_table
+            for i = #item_table, 1, -1 do
+                if item_table[i].drawer ~= value then
+                    table.remove(item_table, i)
+                end
             end
-        end
-        self.show_drawer_only = drawer
-        self:updateBookmarkList(item_table)
-    end
-    self.ui.highlight:showHighlightStyleDialog(filter_by_drawer_callback)
+            self.show_drawer_only = value
+            self:updateBookmarkList(item_table)
+        end,
+    })
 end
 
 function ReaderBookmark:filterByHighlightColor()
-    local filter_by_color_callback = function(color)
-        local bm_menu = self.bookmark_menu[1]
-        local item_table = bm_menu.item_table
-        for i = #item_table, 1, -1 do
-            if item_table[i].color ~= color then
-                table.remove(item_table, i)
+    UIManager:show(ButtonSelector:new{
+        current_value = self.show_color_only,
+        values = self.ui.highlight.highlight_colors,
+        bg_colors = self.ui.highlight:getHighlightColorList(),
+        callback = function(value)
+            local item_table = self.bookmark_menu[1].item_table
+            for i = #item_table, 1, -1 do
+                if item_table[i].color ~= value then
+                    table.remove(item_table, i)
+                end
             end
-        end
-        self.show_color_only = color
-        self:updateBookmarkList(item_table)
-    end
-    self.ui.highlight:showHighlightColorDialog(filter_by_color_callback)
+            self.show_color_only = value
+            self:updateBookmarkList(item_table)
+        end,
+    })
 end
 
 function ReaderBookmark:importEmbeddedHighlights()
@@ -1659,10 +1656,7 @@ function ReaderBookmark:doesBookmarkMatchTable(item)
             if item.note then -- search in the highlighted text and in the note
                 text = text .. "\u{FFFF}" .. item.note
             end
-            if not self.match_table.case_sensitive then
-                text = Utf8Proc.lowercase(util.fixUtf8(text, "?"))
-            end
-            return text:find(self.match_table.search_str)
+            return util.stringSearch(text, self.match_table.search_str, self.match_table.case_sensitive) > 0
         end
         return true
     end
