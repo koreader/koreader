@@ -4,8 +4,8 @@ This is a debug plugin to test Plugin functionality.
 @module koplugin.HelloWorld
 --]]--
 
--- This is a debug plugin, remove the following if block to enable it
-if true then
+-- This is a debug plugin, set one of these env variables to whatever to enable it.
+if not os.getenv("KODEV_INCOMPATIBLE_PLUGIN") and not os.getenv("KODEV_ENABLE_HELLO_PLUGIN") then
     return { disabled = true, }
 end
 
