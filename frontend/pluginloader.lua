@@ -11,6 +11,8 @@ Plugins are controlled by the following settings.
 - plugins_disabled
 - extra_plugin_paths
 ]]
+local PluginCompatibility = require("plugincompatibility")
+local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -124,6 +126,7 @@ local PluginLoader = {
     disabled_plugins = nil,
     loaded_plugins = nil,
     all_plugins = nil,
+    compatibility = PluginCompatibility:new(),
 }
 
 function PluginLoader:_discover()
@@ -168,7 +171,6 @@ function PluginLoader:_discover()
                 local metafile = plugin_root.."/_meta.lua"
                 local disabled = false
                 if plugins_disabled and plugins_disabled[entry:sub(1, -10)] then
-                    mainfile = metafile
                     disabled = true
                 end
                 local __, name = util.splitFilePathName(plugin_root)
@@ -192,39 +194,60 @@ function PluginLoader:_load(t)
     local package_cpath = package.cpath
 
     local mainfile, metafile, plugin_root, disabled
-    for _, v in ipairs(t) do
+    self.compatibility:reset()
+
+    for __, v in ipairs(t) do -- luacheck: ignore
         mainfile = v.main
         metafile = v.meta
         plugin_root = v.path
         disabled = v.disabled
         package.path = string.format("%s/?.lua;%s", plugin_root, package_path)
         package.cpath = string.format("%s/lib/?.so;%s", plugin_root, package_cpath)
-        local ok, plugin_module = pcall(dofile, mainfile)
-        if not ok or not plugin_module then
-            logger.warn("Error when loading", mainfile, plugin_module)
-        elseif type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
-            plugin_module.path = plugin_root
-            plugin_module.name = plugin_module.name or plugin_root:match("/(.-)%.koplugin")
-            if disabled then
-                table.insert(self.disabled_plugins, plugin_module)
+        -- First load the metadata to check compatibility
+        local ok_meta, plugin_metamodule = pcall(dofile, metafile)
+        local plugin_meta = ok_meta and plugin_metamodule or {}
+        local plugin_name = plugin_root:match("/(.-)%.koplugin")
+        if not ok_meta or not plugin_meta.name or plugin_meta.name == "" then
+            plugin_meta.name = plugin_name
+        end
+        if not ok_meta or not plugin_meta.version or plugin_meta.version == "" then
+            plugin_meta.version = "unknown"
+        end
+        plugin_meta.path = plugin_root
+        if disabled then
+            table.insert(self.disabled_plugins, plugin_meta)
+        else
+            -- Check compatibility before loading the main plugin file
+            local should_load = self.compatibility:shouldLoadPlugin(plugin_meta)
+            if not should_load then
+                -- Plugin is incompatible and should not be loaded
+                logger.dbg("Plugin", plugin_name, "is incompatible:", plugin_meta.incompatibility_reason)
+                table.insert(self.disabled_plugins, plugin_meta)
             else
-                local ok_meta, plugin_metamodule = pcall(dofile, metafile)
-                if ok_meta and plugin_metamodule then
-                    for k, module in pairs(plugin_metamodule) do
-                        plugin_module[k] = module
+                -- Load the plugin normally
+                local ok, plugin_module = pcall(dofile, mainfile)
+                if not ok or not plugin_module then
+                    logger.warn("Error when loading", mainfile, plugin_module)
+                elseif type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
+                    plugin_module.name = plugin_module.name or plugin_name
+                    -- Merge metadata into plugin module
+                    if plugin_meta then
+                        for k, module in pairs(plugin_meta) do
+                            plugin_module[k] = module
+                        end
                     end
+                    sandboxPluginEventHandlers(plugin_module)
+                    table.insert(self.enabled_plugins, plugin_module)
+                    logger.dbg("Plugin loaded", plugin_module.name)
                 end
-                sandboxPluginEventHandlers(plugin_module)
-                table.insert(self.enabled_plugins, plugin_module)
-                logger.dbg("Plugin loaded", plugin_module.name)
             end
         end
     end
     package.path = package_path
     package.cpath = package_cpath
-
+    -- Save settings and prompt user re incompatible plugins if needed
+    self.compatibility:finalize()
 end
-
 
 function PluginLoader:loadPlugins()
     if self.enabled_plugins then return self.enabled_plugins, self.disabled_plugins end
@@ -255,12 +278,14 @@ function PluginLoader:genPluginManagerSubItem()
         for _, plugin in ipairs(enabled_plugins) do
             local element = getMenuTable(plugin)
             element.enable = true
+            element.plugin_ref = plugin
             table.insert(self.all_plugins, element)
         end
 
         for _, plugin in ipairs(disabled_plugins) do
             local element = getMenuTable(plugin)
             element.enable = false
+            element.plugin_ref = plugin
             table.insert(self.all_plugins, element)
         end
 
@@ -269,40 +294,41 @@ function PluginLoader:genPluginManagerSubItem()
 
     local plugin_table = {}
     for __, plugin in ipairs(self.all_plugins) do
-        table.insert(plugin_table, {
+        local menu_item = {
             text = plugin.fullname,
             checked_func = function()
                 return plugin.enable
             end,
-            callback = function()
-                local UIManager = require("ui/uimanager")
-                local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
-                plugin.enable = not plugin.enable
-                if plugin.enable then
-                    plugins_disabled[plugin.name] = nil
-                else
-                    plugins_disabled[plugin.name] = true
-                    local instance = self:getPluginInstance(plugin.name)
-                    local stopPluginFn = instance and instance.stopPlugin
-                    if type(stopPluginFn) == "function" then
-                        local ok, err = self:stopPluginInstance(instance)
+            help_text = plugin.description,
+        }
+        menu_item.callback = function()
+            local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+            plugin.enable = not plugin.enable
+            if plugin.enable then
+                plugins_disabled[plugin.name] = nil
+            else
+                plugins_disabled[plugin.name] = true
+                local instance = self:getPluginInstance(plugin.name)
+                local stopPluginFn = instance and instance.stopPlugin
+                if type(stopPluginFn) == "function" then
+                    local ok, err = self:stopPluginInstance(instance)
+                    if not ok then
+                        logger.err("PluginLoader: Failed to stop plugin instance", plugin.name, err)
+                        ok, err = self:stopPluginInstance(instance, true)
                         if not ok then
-                            logger.err("PluginLoader: Failed to stop plugin instance", plugin.name, err)
-                            ok, err = self:stopPluginInstance(instance, true)
-                            if not ok then
-                                logger.err("PluginLoader: Failed to force-stop plugin instance", plugin.name, err)
-                            end
+                            logger.err("PluginLoader: Failed to force-stop plugin instance", plugin.name, err)
                         end
                     end
                 end
-                G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
-                if self.show_info then
-                    self.show_info = false
-                    UIManager:askForRestart()
-                end
-            end,
-            help_text = plugin.description,
-        })
+            end
+            G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
+            if self.show_info then
+                self.show_info = false
+                UIManager:askForRestart()
+            end
+        end
+        self.compatibility:tweakMenuItemIfIncompatible(menu_item, plugin)
+        table.insert(plugin_table, menu_item)
     end
     return plugin_table
 end
