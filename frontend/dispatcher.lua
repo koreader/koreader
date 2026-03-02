@@ -54,7 +54,7 @@ local Dispatcher = {
 -- See above for description.
 local settingsList = {
     -- General
-    gesture_overview = {category="none", event="ShowGestureOverview", title=_("Gesture overview"), general=true},
+    gesture_overview = {category="none", event="ShowGestureOverview", title=_("Gesture overview"), general=true, condition=Device:isTouchDevice()},
     filemanager = {category="none", event="Home", title=_("File browser"), general=true},
     open_previous_document = {category="none", event="OpenLastDoc", title=_("Open previous document"), general=true},
     history = {category="none", event="ShowHist", title=_("History"), general=true},
