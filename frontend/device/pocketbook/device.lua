@@ -484,6 +484,16 @@ local PocketBook515 = PocketBook:extend{
     hasFewKeys = yes,
 }
 
+-- PocketBook Pro (602)
+local PocketBook602 = PocketBook:extend{
+    model = "PB602",
+    display_dpi = 167,
+    isTouchDevice = no,
+    hasFrontlight = no,
+    hasDPad = yes,
+    hasFewKeys = yes,
+}
+
 -- PocketBook Basic 4 (606)
 local PocketBook606 = PocketBook:extend{
     model = "PB606",
@@ -873,6 +883,8 @@ codename = codename:match("^PB(.+)$") or codename
 
 if codename == "515" then
     return PocketBook515
+elseif codename == "602" then
+    return PocketBook602
 elseif codename == "606" then
     return PocketBook606
 elseif codename == "611" then
