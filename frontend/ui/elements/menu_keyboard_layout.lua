@@ -164,7 +164,7 @@ local sub_item_table = {
         text = _("Keyboard appearance settings"),
         keep_menu_open = true,
         enabled_func = function()
-            return G_reader_settings:nilOrTrue("virtual_keyboard_enabled")
+            return G_reader_settings:isTrue("virtual_keyboard_enabled") or (Device:isTouchDevice() and not Device:hasKeyboard())
         end,
         callback = function(touchmenu_instance)
             local InputDialog = require("ui/widget/inputdialog")
@@ -236,11 +236,8 @@ if Device:hasKeyboard() or Device:hasScreenKB() then
             return G_reader_settings:isTrue("virtual_keyboard_enabled")
         end,
         callback = function()
-            -- Note: G_sett("virtual_keyboard_enabled") must be either true or false.
-            --       It is nil only on devices with neither hasKeyboard nor hasScreenKB.
-            local vk = not G_reader_settings:isTrue("virtual_keyboard_enabled")
-            G_reader_settings:saveSetting("virtual_keyboard_enabled", vk)
-            if G_reader_settings:isFalse("virtual_keyboard_enabled") then
+            G_reader_settings:flipNilOrFalse("virtual_keyboard_enabled")
+            if G_reader_settings:nilOrFalse("virtual_keyboard_enabled") then
                 local keyboard_infomessage
                 if Device:hasScreenKB() then
                     keyboard_infomessage = _("When a text field is selected (in focus), you can temporarily bring up the virtual keyboard by pressing 'ScreenKB' + 'Home'.")
