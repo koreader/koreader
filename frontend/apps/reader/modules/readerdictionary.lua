@@ -102,6 +102,72 @@ local function getDictionaryFixHtmlFunc(path)
     end
 end
 
+local function calculateStringSimilarity(str1, str2, prefix_weight, threshold)
+    str1, str2 = str1:lower(), str2:lower()
+    if str1 == str2 then
+        return 1.0
+    end
+
+    local len1, len2 = #str1, #str2
+    local str1_matches, str2_matches = {}, {}
+
+    local match_distance = math.floor(math.max(len1, len2) / 2) - 1
+    local matches = 0
+
+    -- Count the number of matching characters
+    for i = 1, len1 do
+        local start = math.max(1, i - match_distance)
+        local ends = math.min(i + match_distance, len2)
+
+        for j = start, ends do
+            if str2:sub(j,j) == str1:sub(i,i) and not str2_matches[j] then
+                str1_matches[i] = true
+                str2_matches[j] = true
+                matches = matches + 1
+                break
+            end
+        end
+    end
+
+    -- Count how many characters needed to change str1 into str2
+    local k = 1
+    local transpositions = 0
+    for i = 1, len1 do
+        if str1_matches[i] then
+            while not str2_matches[k] do
+                k = k + 1
+            end
+            if str1:sub(i,i) ~= str2:sub(k,k) then
+                transpositions = transpositions + 1
+            end
+            k = k + 1
+        end
+    end
+
+    -- With those two numbers, calculate the similary
+    -- score with Jaro string comparison formula
+    local distance = (
+        matches / len1 +
+        matches / len2 +
+        (matches - transpositions/2) / matches
+    ) / 3
+
+   if distance < (threshold - (prefix_weight * 4 * (1 - distance))) then
+            return distance  -- return early if the score will never reach the threshold
+    end
+    -- Set up for adjusting the score by prefix weight
+    local prefix_length = 0
+    for i = 1, math.min(4, math.min(len1, len2)) do
+        if str1:sub(i,i) == str2:sub(i,i) then
+            prefix_length = prefix_length + 1
+        else
+            break
+        end
+    end
+
+    return distance + (prefix_length * prefix_weight * (1 - distance))
+end
+
 function ReaderDictionary:init()
     self:registerKeyEvents()
 
@@ -109,6 +175,13 @@ function ReaderDictionary:init()
     self.dicts_order = G_reader_settings:readSetting("dicts_order", {})
     self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})
     self.disable_fuzzy_search_fm = G_reader_settings:isTrue("disable_fuzzy_search")
+    -- Set a threshold to filter out low quality fuzzy results
+    -- 0.7 = loose, 0.8 = medium, 0.9 = strict
+    self.fuzzy_threshold = 0.8
+    -- Adjust this to weight the characters at the beginning of the
+    -- word more heavily when ranking results (good for dictionaries)
+    -- 0.05 = loose, 0.1 = medium, 0.2 = strict
+    self.prefix_weight = 0.1
 
     if self.ui then
         self.ui.menu:registerToMainMenu(self)
@@ -1140,8 +1213,17 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
             for _, r in ipairs(term_results) do
                 h = r.dict .. r.word .. r.definition
                 if seen_results[h] == nil then
-                    table.insert(flat_results, r)
-                    seen_results[h] = true
+                    if fuzzy_search then
+                        r.similarity = calculateStringSimilarity(word, r.word, self.prefix_weight, self.threshold)
+                        if r.similarity > self.fuzzy_threshold then
+                            r.preferred_order = #flat_results
+                            table.insert(flat_results, r)
+                            seen_results[h] = true
+                        end
+                    else
+                        table.insert(flat_results, r)
+                        seen_results[h] = true
+                    end
                 end
             end
         end
@@ -1164,6 +1246,18 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
         -- we may get results from the 1st lookup, and have interrupted the 2nd.
         results.lookup_cancelled = true
     end
+
+    -- Sort results by similarity first, then by user's preferred order if words match
+    if fuzzy_search then
+        table.sort(results, function(a, b)
+            if a.similarity ~= b.similarity then
+                return a.similarity > b.similarity
+            else
+                return a.preferred_order < b.preferred_order
+            end
+        end)
+    end
+
     return results
 end
 
