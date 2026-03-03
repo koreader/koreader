@@ -290,6 +290,38 @@ local facet_sample = [[
 </feed>
 ]]
 
+-- https://archive2.cbeta.org/opds (single-quoted attributes)
+local single_quote_sample = [[
+<?xml version='1.0' encoding='UTF-8' ?>
+<feed xmlns="https://www.w3.org/2005/Atom">
+<id>https://www.cbeta.org/opds/index.php</id>
+<link rel="self"
+    href="https://www.cbeta.org/opds/index.php"
+    type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+<link rel="start"
+    href="https://www.cbeta.org/opds/index.php"
+    type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+<title>CBETA ePub OPDS Catalog</title>
+<updated>2023-11-13T00:00:00Z</updated>
+<entry>
+    <title>Entry One</title>
+    <link rel='subsection'
+        href='https://www.cbeta.org/opds/index.php?vol=T'
+        type='application/atom+xml;profile=opds-catalog;kind=navigation'/>
+    <updated>2023-11-13T10:03:10Z</updated>
+    <id>https://www.cbeta.org/opds/index.php?vol=T</id>
+</entry>
+<entry>
+    <title>Entry Two</title>
+    <link rel='subsection'
+        href='https://www.cbeta.org/opds/index.php?vol=X'
+        type='application/atom+xml;profile=opds-catalog;kind=navigation'/>
+    <updated>2023-11-13T10:03:10Z</updated>
+    <id>https://www.cbeta.org/opds/index.php?vol=X</id>
+</entry>
+</feed>
+]]
+
 local pdf_query_sample = [[
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/terms/" xmlns:os="http://a9.com/-/spec/opensearch/1.1/" xmlns:opds="http://opds-spec.org/2010/catalog">
@@ -426,6 +458,17 @@ describe("OPDS module", function()
                 assert.are.same(item_table[1].url, "https://catalog.feedbooks.com/publicdomain/browse/top.atom?lang=en")
                 assert.are.same(item_table[2].title, "Recently added")
                 assert.are.same(item_table[2].url, "https://catalog.feedbooks.com/publicdomain/browse/recent.atom?lang=en")
+            end)
+            it("should parse single-quoted attributes", function()
+                local catalog = OPDSParser:parse(single_quote_sample)
+                local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "https://www.cbeta.org/opds/index.php")
+
+                assert.truthy(item_table)
+                assert.are.same(2, #item_table)
+                assert.are.same("Entry One", item_table[1].title)
+                assert.are.same("https://www.cbeta.org/opds/index.php?vol=T", item_table[1].url)
+                assert.are.same("Entry Two", item_table[2].title)
+                assert.are.same("https://www.cbeta.org/opds/index.php?vol=X", item_table[2].url)
             end)
             it("should use the main URL for faceted links as long as faceted links aren't properly supported #internet", function()
                 local catalog = OPDSParser:parse(facet_sample)
