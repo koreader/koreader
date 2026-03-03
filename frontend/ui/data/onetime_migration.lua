@@ -950,7 +950,8 @@ end
 if last_migration_date < 20260302 then
     logger.info("Performing one-time migration for 20260302")
 
-   if Device:hasScreenKB() and G_reader_settings:hasNot("virtual_keyboard_enabled") then
+    local Device = require("device")
+    if Device:hasScreenKB() and G_reader_settings:hasNot("virtual_keyboard_enabled") then
         G_reader_settings:makeTrue("virtual_keyboard_enabled")
     end
 end
