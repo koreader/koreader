@@ -411,7 +411,7 @@ function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, un
     -- Check if we have a cached response first
     local cache = DownloadBackend:getCache()
     local cached_response = cache:check(url)
-    local ok, error, response
+    local ok, error, content_type, response
 
     local cookies = nil
     local extra_headers = nil
@@ -494,7 +494,7 @@ function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, un
     end
 
     if not response then
-        ok, response = pcall(function()
+        ok, content_type, response = pcall(function()
             return DownloadBackend:getResponseAsString(url, cookies, true, extra_headers)
         end)
     end
@@ -505,6 +505,7 @@ function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, un
         feeds, err = self:deserializeXMLString(response)
         if not feeds then
             logger.err("NewsDownloader: Error during feed deserialization:", err)
+            logger.dbg("NewsDownloader: Content-Type of response was:", content_type)
             logger.dbg("NewsDownloader: Response was:", response)
         end
     end
@@ -771,8 +772,8 @@ function NewsDownloader:downloadFeed(feed, cookies, http_auth, feed_output_dir, 
         if http_auth and http_auth.username and http_auth.password then
             extra_headers = { ["Authorization"] = "Basic " .. mime.b64((http_auth.username or "") .. ":" .. (http_auth.password or "")) }
         end
-        local html = DownloadBackend:loadPage(link, cookies, extra_headers)
-        DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message, enable_filter, filter_element, block_element)
+        local _, content = DownloadBackend:loadPage(link, cookies, extra_headers)
+        DownloadBackend:createEpub(news_file_path, content, link, include_images, article_message, enable_filter, filter_element, block_element)
     end
 end
 
