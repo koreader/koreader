@@ -450,10 +450,10 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hi
         kc:optimizePage()
         local fullwidth, fullheight = kc:getPageDim()
         -- prepare cache item with contained blitbuffer
-        local tile = TileCacheItem:new {
+        local tile = TileCacheItem:new{
             persistent = persistent,
             doc_path = doc.file,
-            excerpt = Geom:new {
+            excerpt = Geom:new{
                 x = 0, y = 0,
                 w = fullwidth,
                 h = fullheight,
