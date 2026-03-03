@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
+local DocumentRegistry = require("document/documentregistry")
 local DownloadBackend = require("epubdownloadbackend")
 local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
@@ -771,8 +772,20 @@ function NewsDownloader:downloadFeed(feed, cookies, http_auth, feed_output_dir, 
         if http_auth and http_auth.username and http_auth.password then
             extra_headers = { ["Authorization"] = "Basic " .. mime.b64((http_auth.username or "") .. ":" .. (http_auth.password or "")) }
         end
-        local _, content = DownloadBackend:loadPage(link, cookies, extra_headers)
-        DownloadBackend:createEpub(news_file_path, content, link, include_images, article_message, enable_filter, filter_element, block_element)
+        local content_type, content = DownloadBackend:loadPage(link, cookies, extra_headers)
+        if not content_type then
+            logger.err("NewsDownloader: No content type, not saving", link)
+            return
+        elseif content_type == "text/html" or content_type == "application/xhtml+xml" then
+            DownloadBackend:createEpub(news_file_path, content, link, include_images, article_message, enable_filter, filter_element, block_element)
+        elseif DocumentRegistry:hasProvider(nil, content_type) then
+            local file = io.open(news_file_path, "w")
+            file:write(content)
+            file:close()
+        else
+            logger.err("NewsDownloader: Unsupported feed Content-Type:", content_type)
+            return
+        end
     end
 end
 
