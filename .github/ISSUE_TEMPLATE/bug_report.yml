@@ -72,9 +72,9 @@ body:
       label: Regression
       description: Did this issue start happening after a recent update?
       options:
-        - Yes
-        - No
-        - Not sure
+        - "Yes"
+        - "No"
+        - "Not sure"
     validations:
       required: true
 
