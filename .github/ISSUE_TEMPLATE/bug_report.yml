@@ -6,9 +6,17 @@ body:
       value: |
         Thanks for taking the time to fill out this bug report!
 
-        * If you use external plugins or user-patches, first try to reproduce your issue with all of them disabled.
-        * Before reporting, try [the latest nightly build](https://github.com/koreader/koreader/issues/11068) to see if the issue has already been fixed.
-        * Seach existing issues to see if your problem has already been reported.
+  - type: checkboxes
+    id: preflight-checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: Reproduced the issue with external plugins and user-patches disabled.
+          required: true
+        - label: Tested on the latest nightly build ([more information](https://github.com/koreader/koreader/issues/11068)).
+          required: true
+        - label: Searched existing issues for similar reports.
+          required: true
 
   - type: dropdown
     id: device-type
@@ -35,7 +43,7 @@ body:
     id: koreader-version
     attributes:
       label: KOReader version
-      description: What version of KOReader are you running? Before reporting, try [the latest nightly build](https://github.com/koreader/koreader/issues/11068) to see if the issue has already been fixed.
+      description: What version of KOReader are you running? (Please test the latest nightly first.)
       placeholder: e.g., 2026.03, 2025.10-164-gf12ff96ad_2026-03-03
     validations:
       required: true
@@ -62,10 +70,11 @@ body:
     id: regression
     attributes:
       label: Regression
-      description: Did this issue start happening after a recent update? If you recently updated KOReader and the issue started happening, please select "Yes". If you haven't updated recently or aren't sure, select "No".
+      description: Did this issue start happening after a recent update?
       options:
         - Yes
         - No
+        - Not sure
     validations:
       required: true
 
@@ -73,7 +82,7 @@ body:
     id: last-working-version
     attributes:
       label: Last working version
-      description: If this issue is a regression, please specify the last version of KOReader where the issue did not occur. Before reporting, try [the latest nightly build](https://github.com/koreader/koreader/issues/11068) to see if the issue has already been fixed.
+      description: If this issue is a regression, please specify the last version of KOReader where the issue did not occur.
       placeholder: e.g., 2026.03, 2025.10-164-gf12ff96ad_2026-03-03
     validations:
       required: false
