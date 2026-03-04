@@ -4,7 +4,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!
+        Thanks for taking the time to fill out this bug report! If you use external plugins or user-patches, first try to reproduce your issue with all of them disabled.
 
   - type: dropdown
     id: device-type
@@ -32,7 +32,7 @@ body:
     attributes:
       label: KOReader version
       description: What version of KOReader are you running? Before reporting, try [the latest nightly build](https://github.com/koreader/koreader/issues/11068) to see if the issue has already been fixed.
-      placeholder: e.g., 2026.03
+      placeholder: e.g., 2026.03, 2025.10-164-gf12ff96ad_2026-03-03
     validations:
       required: true
 
