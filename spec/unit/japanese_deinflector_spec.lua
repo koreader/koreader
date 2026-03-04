@@ -7,8 +7,6 @@ describe("Japanese deinflector", function()
         Deinflector = require("deinflector"):new()
     end)
 
-    -- Check that deinflecting `source` produces `term` somewhere in the results.
-    -- Uses deinflectVerbatim (no kana conversion) for precise rule testing.
     local function deinflectsTo(source, term)
         local results = Deinflector:deinflectVerbatim(source)
         for _, r in ipairs(results) do
@@ -19,7 +17,6 @@ describe("Japanese deinflector", function()
         return false
     end
 
-    -- Check that deinflecting `source` with full text conversions produces `term`.
     local function deinflectsFull(source, term)
         local results = Deinflector:deinflect(source)
         for _, r in ipairs(results) do
@@ -30,700 +27,289 @@ describe("Japanese deinflector", function()
         return false
     end
 
-    -- ================================================================
-    -- i-adjectives (adj-i)
-    -- ================================================================
-    describe("i-adjectives", function()
-        -- 高い (takai, expensive/tall)
-        it("should handle identity", function()
-            assert.is_true(deinflectsTo("高い", "高い"))
-        end)
-        it("should deinflect negative: 高くない → 高い", function()
-            assert.is_true(deinflectsTo("高くない", "高い"))
-        end)
-        it("should deinflect past: 高かった → 高い", function()
-            assert.is_true(deinflectsTo("高かった", "高い"))
-        end)
-        it("should deinflect te-form: 高くて → 高い", function()
-            assert.is_true(deinflectsTo("高くて", "高い"))
-        end)
-        it("should deinflect adverbial: 高く → 高い", function()
-            assert.is_true(deinflectsTo("高く", "高い"))
-        end)
-        it("should deinflect conditional: 高ければ → 高い", function()
-            assert.is_true(deinflectsTo("高ければ", "高い"))
-        end)
-        it("should deinflect noun form: 高さ → 高い", function()
-            assert.is_true(deinflectsTo("高さ", "高い"))
-        end)
-        it("should deinflect -sou: 高そう → 高い", function()
-            assert.is_true(deinflectsTo("高そう", "高い"))
-        end)
-        it("should deinflect -sugiru: 高すぎる → 高い", function()
-            assert.is_true(deinflectsTo("高すぎる", "高い"))
-        end)
-        it("should deinflect -tara: 高かったら → 高い", function()
-            assert.is_true(deinflectsTo("高かったら", "高い"))
-        end)
-        it("should deinflect -tari: 高かったり → 高い", function()
-            assert.is_true(deinflectsTo("高かったり", "高い"))
-        end)
-        it("should deinflect polite negative: 高くありません → 高い", function()
-            assert.is_true(deinflectsTo("高くありません", "高い"))
-        end)
-        it("should deinflect -ki (archaic): 高き → 高い", function()
-            assert.is_true(deinflectsTo("高き", "高い"))
-        end)
+    -- Each entry: { inflected, dictionary_form, group }
+    -- Groups are used to organize tests into describe() blocks.
+    local deinflection_tests = {
+        -- i-adjectives (adj-i): 高い (takai, expensive/tall)
+        { "高い",           "高い",   "i-adjectives" },           -- identity
+        { "高くない",       "高い",   "i-adjectives" },           -- negative
+        { "高かった",       "高い",   "i-adjectives" },           -- past
+        { "高くて",         "高い",   "i-adjectives" },           -- te-form
+        { "高く",           "高い",   "i-adjectives" },           -- adverbial
+        { "高ければ",       "高い",   "i-adjectives" },           -- conditional
+        { "高さ",           "高い",   "i-adjectives" },           -- noun form
+        { "高そう",         "高い",   "i-adjectives" },           -- -sou
+        { "高すぎる",       "高い",   "i-adjectives" },           -- -sugiru
+        { "高かったら",     "高い",   "i-adjectives" },           -- -tara
+        { "高かったり",     "高い",   "i-adjectives" },           -- -tari
+        { "高くありません", "高い",   "i-adjectives" },           -- polite negative
+        { "高き",           "高い",   "i-adjectives" },           -- archaic -ki
+        -- i-adjectives: 美しい (utsukushii, beautiful) — multi-kana stems
+        { "美しくない",     "美しい", "i-adjectives" },           -- negative
+        { "美しかった",     "美しい", "i-adjectives" },           -- past
+        { "美しげ",         "美しい", "i-adjectives" },           -- -ge
 
-        -- 美しい (utsukushii, beautiful) - tests multi-kana stems
-        it("should deinflect negative: 美しくない → 美しい", function()
-            assert.is_true(deinflectsTo("美しくない", "美しい"))
-        end)
-        it("should deinflect past: 美しかった → 美しい", function()
-            assert.is_true(deinflectsTo("美しかった", "美しい"))
-        end)
-        it("should deinflect -ge: 美しげ → 美しい", function()
-            assert.is_true(deinflectsTo("美しげ", "美しい"))
-        end)
-    end)
+        -- Ichidan verbs (v1, "ru-verbs"): 食べる (taberu, eat)
+        { "食べる",           "食べる", "ichidan verbs" },         -- identity
+        { "食べない",         "食べる", "ichidan verbs" },         -- negative
+        { "食べた",           "食べる", "ichidan verbs" },         -- past
+        { "食べて",           "食べる", "ichidan verbs" },         -- te-form
+        { "食べます",         "食べる", "ichidan verbs" },         -- polite
+        { "食べません",       "食べる", "ichidan verbs" },         -- polite negative
+        { "食べました",       "食べる", "ichidan verbs" },         -- polite past
+        { "食べませんでした", "食べる", "ichidan verbs" },         -- polite past negative
+        { "食べましょう",     "食べる", "ichidan verbs" },         -- polite volitional
+        { "食べれば",         "食べる", "ichidan verbs" },         -- conditional
+        { "食べよう",         "食べる", "ichidan verbs" },         -- volitional
+        { "食べろ",           "食べる", "ichidan verbs" },         -- imperative
+        { "食べよ",           "食べる", "ichidan verbs" },         -- imperative (yo)
+        { "食べさせる",       "食べる", "ichidan verbs" },         -- causative
+        { "食べられる",       "食べる", "ichidan verbs" },         -- passive/potential
+        { "食べたい",         "食べる", "ichidan verbs" },         -- -tai
+        { "食べなさい",       "食べる", "ichidan verbs" },         -- -nasai
+        { "食べそう",         "食べる", "ichidan verbs" },         -- -sou
+        { "食べすぎる",       "食べる", "ichidan verbs" },         -- -sugiru
+        { "食べたら",         "食べる", "ichidan verbs" },         -- -tara
+        { "食べたり",         "食べる", "ichidan verbs" },         -- -tari
+        { "食べず",           "食べる", "ichidan verbs" },         -- -zu
+        { "食べぬ",           "食べる", "ichidan verbs" },         -- -nu
+        { "食べるな",         "食べる", "ichidan verbs" },         -- imperative negative
+        { "食べちゃう",       "食べる", "ichidan verbs" },         -- -chau
+        { "食べちまう",       "食べる", "ichidan verbs" },         -- -chimau
+        -- Ichidan: 見る (miru, see) — short stem
+        { "見ない",           "見る",   "ichidan verbs" },         -- negative
+        { "見て",             "見る",   "ichidan verbs" },         -- te-form
+        { "見た",             "見る",   "ichidan verbs" },         -- past
 
-    -- ================================================================
-    -- Ichidan verbs (v1) — "ru-verbs"
-    -- ================================================================
-    describe("ichidan verbs", function()
-        -- 食べる (taberu, eat)
-        it("should handle identity", function()
-            assert.is_true(deinflectsTo("食べる", "食べる"))
-        end)
-        it("should deinflect negative: 食べない → 食べる", function()
-            assert.is_true(deinflectsTo("食べない", "食べる"))
-        end)
-        it("should deinflect past: 食べた → 食べる", function()
-            assert.is_true(deinflectsTo("食べた", "食べる"))
-        end)
-        it("should deinflect te-form: 食べて → 食べる", function()
-            assert.is_true(deinflectsTo("食べて", "食べる"))
-        end)
-        it("should deinflect polite: 食べます → 食べる", function()
-            assert.is_true(deinflectsTo("食べます", "食べる"))
-        end)
-        it("should deinflect polite negative: 食べません → 食べる", function()
-            assert.is_true(deinflectsTo("食べません", "食べる"))
-        end)
-        it("should deinflect polite past: 食べました → 食べる", function()
-            assert.is_true(deinflectsTo("食べました", "食べる"))
-        end)
-        it("should deinflect polite past negative: 食べませんでした → 食べる", function()
-            assert.is_true(deinflectsTo("食べませんでした", "食べる"))
-        end)
-        it("should deinflect polite volitional: 食べましょう → 食べる", function()
-            assert.is_true(deinflectsTo("食べましょう", "食べる"))
-        end)
-        it("should deinflect conditional: 食べれば → 食べる", function()
-            assert.is_true(deinflectsTo("食べれば", "食べる"))
-        end)
-        it("should deinflect volitional: 食べよう → 食べる", function()
-            assert.is_true(deinflectsTo("食べよう", "食べる"))
-        end)
-        it("should deinflect imperative: 食べろ → 食べる", function()
-            assert.is_true(deinflectsTo("食べろ", "食べる"))
-        end)
-        it("should deinflect imperative (yo): 食べよ → 食べる", function()
-            assert.is_true(deinflectsTo("食べよ", "食べる"))
-        end)
-        it("should deinflect causative: 食べさせる → 食べる", function()
-            assert.is_true(deinflectsTo("食べさせる", "食べる"))
-        end)
-        it("should deinflect passive/potential: 食べられる → 食べる", function()
-            assert.is_true(deinflectsTo("食べられる", "食べる"))
-        end)
-        it("should deinflect -tai: 食べたい → 食べる", function()
-            assert.is_true(deinflectsTo("食べたい", "食べる"))
-        end)
-        it("should deinflect -nasai: 食べなさい → 食べる", function()
-            assert.is_true(deinflectsTo("食べなさい", "食べる"))
-        end)
-        it("should deinflect -sou: 食べそう → 食べる", function()
-            assert.is_true(deinflectsTo("食べそう", "食べる"))
-        end)
-        it("should deinflect -sugiru: 食べすぎる → 食べる", function()
-            assert.is_true(deinflectsTo("食べすぎる", "食べる"))
-        end)
-        it("should deinflect -tara: 食べたら → 食べる", function()
-            assert.is_true(deinflectsTo("食べたら", "食べる"))
-        end)
-        it("should deinflect -tari: 食べたり → 食べる", function()
-            assert.is_true(deinflectsTo("食べたり", "食べる"))
-        end)
-        it("should deinflect -zu: 食べず → 食べる", function()
-            assert.is_true(deinflectsTo("食べず", "食べる"))
-        end)
-        it("should deinflect -nu: 食べぬ → 食べる", function()
-            assert.is_true(deinflectsTo("食べぬ", "食べる"))
-        end)
-        it("should deinflect imperative negative: 食べるな → 食べる", function()
-            assert.is_true(deinflectsTo("食べるな", "食べる"))
-        end)
-        it("should deinflect -chau: 食べちゃう → 食べる", function()
-            assert.is_true(deinflectsTo("食べちゃう", "食べる"))
-        end)
-        it("should deinflect -chimau: 食べちまう → 食べる", function()
-            assert.is_true(deinflectsTo("食べちまう", "食べる"))
-        end)
-
-        -- 見る (miru, see) — short ichidan stem
-        it("should deinflect negative: 見ない → 見る", function()
-            assert.is_true(deinflectsTo("見ない", "見る"))
-        end)
-        it("should deinflect te-form: 見て → 見る", function()
-            assert.is_true(deinflectsTo("見て", "見る"))
-        end)
-        it("should deinflect past: 見た → 見る", function()
-            assert.is_true(deinflectsTo("見た", "見る"))
-        end)
-    end)
-
-    -- ================================================================
-    -- Godan verbs (v5) — "u-verbs", all kana endings
-    -- ================================================================
-    describe("godan verbs", function()
-        -- 書く (kaku, write) — ku ending
-        describe("ku-ending: 書く", function()
-            it("should deinflect negative: 書かない → 書く", function()
-                assert.is_true(deinflectsTo("書かない", "書く"))
-            end)
-            it("should deinflect past: 書いた → 書く", function()
-                assert.is_true(deinflectsTo("書いた", "書く"))
-            end)
-            it("should deinflect te-form: 書いて → 書く", function()
-                assert.is_true(deinflectsTo("書いて", "書く"))
-            end)
-            it("should deinflect polite: 書きます → 書く", function()
-                assert.is_true(deinflectsTo("書きます", "書く"))
-            end)
-            it("should deinflect conditional: 書けば → 書く", function()
-                assert.is_true(deinflectsTo("書けば", "書く"))
-            end)
-            it("should deinflect volitional: 書こう → 書く", function()
-                assert.is_true(deinflectsTo("書こう", "書く"))
-            end)
-            it("should deinflect imperative: 書け → 書く", function()
-                assert.is_true(deinflectsTo("書け", "書く"))
-            end)
-            it("should deinflect potential: 書ける → 書く", function()
-                assert.is_true(deinflectsTo("書ける", "書く"))
-            end)
-            it("should deinflect passive: 書かれる → 書く", function()
-                assert.is_true(deinflectsTo("書かれる", "書く"))
-            end)
-            it("should deinflect causative: 書かせる → 書く", function()
-                assert.is_true(deinflectsTo("書かせる", "書く"))
-            end)
-            it("should deinflect -tai: 書きたい → 書く", function()
-                assert.is_true(deinflectsTo("書きたい", "書く"))
-            end)
-            it("should deinflect -zu: 書かず → 書く", function()
-                assert.is_true(deinflectsTo("書かず", "書く"))
-            end)
-            it("should deinflect -tara: 書いたら → 書く", function()
-                assert.is_true(deinflectsTo("書いたら", "書く"))
-            end)
-            it("should deinflect -tari: 書いたり → 書く", function()
-                assert.is_true(deinflectsTo("書いたり", "書く"))
-            end)
-            it("should deinflect masu stem: 書き → 書く", function()
-                assert.is_true(deinflectsTo("書き", "書く"))
-            end)
-        end)
-
+        -- Godan verbs (v5, "u-verbs"): 書く (kaku, write) — ku ending
+        { "書かない", "書く", "godan verbs: ku-ending 書く" },     -- negative
+        { "書いた",   "書く", "godan verbs: ku-ending 書く" },     -- past
+        { "書いて",   "書く", "godan verbs: ku-ending 書く" },     -- te-form
+        { "書きます", "書く", "godan verbs: ku-ending 書く" },     -- polite
+        { "書けば",   "書く", "godan verbs: ku-ending 書く" },     -- conditional
+        { "書こう",   "書く", "godan verbs: ku-ending 書く" },     -- volitional
+        { "書け",     "書く", "godan verbs: ku-ending 書く" },     -- imperative
+        { "書ける",   "書く", "godan verbs: ku-ending 書く" },     -- potential
+        { "書かれる", "書く", "godan verbs: ku-ending 書く" },     -- passive
+        { "書かせる", "書く", "godan verbs: ku-ending 書く" },     -- causative
+        { "書きたい", "書く", "godan verbs: ku-ending 書く" },     -- -tai
+        { "書かず",   "書く", "godan verbs: ku-ending 書く" },     -- -zu
+        { "書いたら", "書く", "godan verbs: ku-ending 書く" },     -- -tara
+        { "書いたり", "書く", "godan verbs: ku-ending 書く" },     -- -tari
+        { "書き",     "書く", "godan verbs: ku-ending 書く" },     -- masu stem
         -- 泳ぐ (oyogu, swim) — gu ending
-        describe("gu-ending: 泳ぐ", function()
-            it("should deinflect negative: 泳がない → 泳ぐ", function()
-                assert.is_true(deinflectsTo("泳がない", "泳ぐ"))
-            end)
-            it("should deinflect past: 泳いだ → 泳ぐ", function()
-                assert.is_true(deinflectsTo("泳いだ", "泳ぐ"))
-            end)
-            it("should deinflect te-form: 泳いで → 泳ぐ", function()
-                assert.is_true(deinflectsTo("泳いで", "泳ぐ"))
-            end)
-            it("should deinflect polite: 泳ぎます → 泳ぐ", function()
-                assert.is_true(deinflectsTo("泳ぎます", "泳ぐ"))
-            end)
-            it("should deinflect conditional: 泳げば → 泳ぐ", function()
-                assert.is_true(deinflectsTo("泳げば", "泳ぐ"))
-            end)
-            it("should deinflect potential: 泳げる → 泳ぐ", function()
-                assert.is_true(deinflectsTo("泳げる", "泳ぐ"))
-            end)
-            it("should deinflect causative: 泳がせる → 泳ぐ", function()
-                assert.is_true(deinflectsTo("泳がせる", "泳ぐ"))
-            end)
-        end)
-
+        { "泳がない", "泳ぐ", "godan verbs: gu-ending 泳ぐ" },   -- negative
+        { "泳いだ",   "泳ぐ", "godan verbs: gu-ending 泳ぐ" },   -- past
+        { "泳いで",   "泳ぐ", "godan verbs: gu-ending 泳ぐ" },   -- te-form
+        { "泳ぎます", "泳ぐ", "godan verbs: gu-ending 泳ぐ" },   -- polite
+        { "泳げば",   "泳ぐ", "godan verbs: gu-ending 泳ぐ" },   -- conditional
+        { "泳げる",   "泳ぐ", "godan verbs: gu-ending 泳ぐ" },   -- potential
+        { "泳がせる", "泳ぐ", "godan verbs: gu-ending 泳ぐ" },   -- causative
         -- 話す (hanasu, speak) — su ending
-        describe("su-ending: 話す", function()
-            it("should deinflect negative: 話さない → 話す", function()
-                assert.is_true(deinflectsTo("話さない", "話す"))
-            end)
-            it("should deinflect past: 話した → 話す", function()
-                assert.is_true(deinflectsTo("話した", "話す"))
-            end)
-            it("should deinflect te-form: 話して → 話す", function()
-                assert.is_true(deinflectsTo("話して", "話す"))
-            end)
-            it("should deinflect polite: 話します → 話す", function()
-                assert.is_true(deinflectsTo("話します", "話す"))
-            end)
-            it("should deinflect conditional: 話せば → 話す", function()
-                assert.is_true(deinflectsTo("話せば", "話す"))
-            end)
-            it("should deinflect potential: 話せる → 話す", function()
-                assert.is_true(deinflectsTo("話せる", "話す"))
-            end)
-        end)
-
+        { "話さない", "話す", "godan verbs: su-ending 話す" },     -- negative
+        { "話した",   "話す", "godan verbs: su-ending 話す" },     -- past
+        { "話して",   "話す", "godan verbs: su-ending 話す" },     -- te-form
+        { "話します", "話す", "godan verbs: su-ending 話す" },     -- polite
+        { "話せば",   "話す", "godan verbs: su-ending 話す" },     -- conditional
+        { "話せる",   "話す", "godan verbs: su-ending 話す" },     -- potential
         -- 待つ (matsu, wait) — tsu ending
-        describe("tsu-ending: 待つ", function()
-            it("should deinflect negative: 待たない → 待つ", function()
-                assert.is_true(deinflectsTo("待たない", "待つ"))
-            end)
-            it("should deinflect past: 待った → 待つ", function()
-                assert.is_true(deinflectsTo("待った", "待つ"))
-            end)
-            it("should deinflect te-form: 待って → 待つ", function()
-                assert.is_true(deinflectsTo("待って", "待つ"))
-            end)
-            it("should deinflect polite: 待ちます → 待つ", function()
-                assert.is_true(deinflectsTo("待ちます", "待つ"))
-            end)
-            it("should deinflect conditional: 待てば → 待つ", function()
-                assert.is_true(deinflectsTo("待てば", "待つ"))
-            end)
-        end)
-
+        { "待たない", "待つ", "godan verbs: tsu-ending 待つ" },   -- negative
+        { "待った",   "待つ", "godan verbs: tsu-ending 待つ" },   -- past
+        { "待って",   "待つ", "godan verbs: tsu-ending 待つ" },   -- te-form
+        { "待ちます", "待つ", "godan verbs: tsu-ending 待つ" },   -- polite
+        { "待てば",   "待つ", "godan verbs: tsu-ending 待つ" },   -- conditional
         -- 死ぬ (shinu, die) — nu ending
-        describe("nu-ending: 死ぬ", function()
-            it("should deinflect negative: 死なない → 死ぬ", function()
-                assert.is_true(deinflectsTo("死なない", "死ぬ"))
-            end)
-            it("should deinflect past: 死んだ → 死ぬ", function()
-                assert.is_true(deinflectsTo("死んだ", "死ぬ"))
-            end)
-            it("should deinflect te-form: 死んで → 死ぬ", function()
-                assert.is_true(deinflectsTo("死んで", "死ぬ"))
-            end)
-            it("should deinflect polite: 死にます → 死ぬ", function()
-                assert.is_true(deinflectsTo("死にます", "死ぬ"))
-            end)
-            it("should deinflect conditional: 死ねば → 死ぬ", function()
-                assert.is_true(deinflectsTo("死ねば", "死ぬ"))
-            end)
-        end)
-
+        { "死なない", "死ぬ", "godan verbs: nu-ending 死ぬ" },   -- negative
+        { "死んだ",   "死ぬ", "godan verbs: nu-ending 死ぬ" },   -- past
+        { "死んで",   "死ぬ", "godan verbs: nu-ending 死ぬ" },   -- te-form
+        { "死にます", "死ぬ", "godan verbs: nu-ending 死ぬ" },   -- polite
+        { "死ねば",   "死ぬ", "godan verbs: nu-ending 死ぬ" },   -- conditional
         -- 遊ぶ (asobu, play) — bu ending
-        describe("bu-ending: 遊ぶ", function()
-            it("should deinflect negative: 遊ばない → 遊ぶ", function()
-                assert.is_true(deinflectsTo("遊ばない", "遊ぶ"))
-            end)
-            it("should deinflect past: 遊んだ → 遊ぶ", function()
-                assert.is_true(deinflectsTo("遊んだ", "遊ぶ"))
-            end)
-            it("should deinflect te-form: 遊んで → 遊ぶ", function()
-                assert.is_true(deinflectsTo("遊んで", "遊ぶ"))
-            end)
-            it("should deinflect polite: 遊びます → 遊ぶ", function()
-                assert.is_true(deinflectsTo("遊びます", "遊ぶ"))
-            end)
-            it("should deinflect conditional: 遊べば → 遊ぶ", function()
-                assert.is_true(deinflectsTo("遊べば", "遊ぶ"))
-            end)
-        end)
-
+        { "遊ばない", "遊ぶ", "godan verbs: bu-ending 遊ぶ" },   -- negative
+        { "遊んだ",   "遊ぶ", "godan verbs: bu-ending 遊ぶ" },   -- past
+        { "遊んで",   "遊ぶ", "godan verbs: bu-ending 遊ぶ" },   -- te-form
+        { "遊びます", "遊ぶ", "godan verbs: bu-ending 遊ぶ" },   -- polite
+        { "遊べば",   "遊ぶ", "godan verbs: bu-ending 遊ぶ" },   -- conditional
         -- 読む (yomu, read) — mu ending
-        describe("mu-ending: 読む", function()
-            it("should deinflect negative: 読まない → 読む", function()
-                assert.is_true(deinflectsTo("読まない", "読む"))
-            end)
-            it("should deinflect past: 読んだ → 読む", function()
-                assert.is_true(deinflectsTo("読んだ", "読む"))
-            end)
-            it("should deinflect te-form: 読んで → 読む", function()
-                assert.is_true(deinflectsTo("読んで", "読む"))
-            end)
-            it("should deinflect polite: 読みます → 読む", function()
-                assert.is_true(deinflectsTo("読みます", "読む"))
-            end)
-            it("should deinflect conditional: 読めば → 読む", function()
-                assert.is_true(deinflectsTo("読めば", "読む"))
-            end)
-        end)
-
+        { "読まない", "読む", "godan verbs: mu-ending 読む" },   -- negative
+        { "読んだ",   "読む", "godan verbs: mu-ending 読む" },   -- past
+        { "読んで",   "読む", "godan verbs: mu-ending 読む" },   -- te-form
+        { "読みます", "読む", "godan verbs: mu-ending 読む" },   -- polite
+        { "読めば",   "読む", "godan verbs: mu-ending 読む" },   -- conditional
         -- 取る (toru, take) — ru ending (godan, not ichidan)
-        describe("ru-ending: 取る", function()
-            it("should deinflect negative: 取らない → 取る", function()
-                assert.is_true(deinflectsTo("取らない", "取る"))
-            end)
-            it("should deinflect past: 取った → 取る", function()
-                assert.is_true(deinflectsTo("取った", "取る"))
-            end)
-            it("should deinflect te-form: 取って → 取る", function()
-                assert.is_true(deinflectsTo("取って", "取る"))
-            end)
-            it("should deinflect polite: 取ります → 取る", function()
-                assert.is_true(deinflectsTo("取ります", "取る"))
-            end)
-            it("should deinflect conditional: 取れば → 取る", function()
-                assert.is_true(deinflectsTo("取れば", "取る"))
-            end)
-        end)
-
+        { "取らない", "取る", "godan verbs: ru-ending 取る" },   -- negative
+        { "取った",   "取る", "godan verbs: ru-ending 取る" },   -- past
+        { "取って",   "取る", "godan verbs: ru-ending 取る" },   -- te-form
+        { "取ります", "取る", "godan verbs: ru-ending 取る" },   -- polite
+        { "取れば",   "取る", "godan verbs: ru-ending 取る" },   -- conditional
         -- 買う (kau, buy) — u ending
-        describe("u-ending: 買う", function()
-            it("should deinflect negative: 買わない → 買う", function()
-                assert.is_true(deinflectsTo("買わない", "買う"))
-            end)
-            it("should deinflect past: 買った → 買う", function()
-                assert.is_true(deinflectsTo("買った", "買う"))
-            end)
-            it("should deinflect te-form: 買って → 買う", function()
-                assert.is_true(deinflectsTo("買って", "買う"))
-            end)
-            it("should deinflect polite: 買います → 買う", function()
-                assert.is_true(deinflectsTo("買います", "買う"))
-            end)
-            it("should deinflect conditional: 買えば → 買う", function()
-                assert.is_true(deinflectsTo("買えば", "買う"))
-            end)
-            it("should deinflect volitional: 買おう → 買う", function()
-                assert.is_true(deinflectsTo("買おう", "買う"))
-            end)
-            it("should deinflect potential: 買える → 買う", function()
-                assert.is_true(deinflectsTo("買える", "買う"))
-            end)
-        end)
-
+        { "買わない", "買う", "godan verbs: u-ending 買う" },     -- negative
+        { "買った",   "買う", "godan verbs: u-ending 買う" },     -- past
+        { "買って",   "買う", "godan verbs: u-ending 買う" },     -- te-form
+        { "買います", "買う", "godan verbs: u-ending 買う" },     -- polite
+        { "買えば",   "買う", "godan verbs: u-ending 買う" },     -- conditional
+        { "買おう",   "買う", "godan verbs: u-ending 買う" },     -- volitional
+        { "買える",   "買う", "godan verbs: u-ending 買う" },     -- potential
         -- 行く (iku, go) — irregular te/past forms
-        describe("irregular: 行く", function()
-            it("should deinflect past: 行った → 行く", function()
-                assert.is_true(deinflectsTo("行った", "行く"))
-            end)
-            it("should deinflect te-form: 行って → 行く", function()
-                assert.is_true(deinflectsTo("行って", "行く"))
-            end)
-            it("should deinflect -tara: 行ったら → 行く", function()
-                assert.is_true(deinflectsTo("行ったら", "行く"))
-            end)
-        end)
-    end)
+        { "行った",   "行く", "godan verbs: irregular 行く" },   -- past
+        { "行って",   "行く", "godan verbs: irregular 行く" },   -- te-form
+        { "行ったら", "行く", "godan verbs: irregular 行く" },   -- -tara
 
-    -- ================================================================
-    -- Suru verbs (vs)
-    -- ================================================================
-    describe("suru verbs", function()
-        it("should deinflect negative: しない → する", function()
-            assert.is_true(deinflectsTo("しない", "する"))
-        end)
-        it("should deinflect past: した → する", function()
-            assert.is_true(deinflectsTo("した", "する"))
-        end)
-        it("should deinflect te-form: して → する", function()
-            assert.is_true(deinflectsTo("して", "する"))
-        end)
-        it("should deinflect polite: します → する", function()
-            assert.is_true(deinflectsTo("します", "する"))
-        end)
-        it("should deinflect polite negative: しません → する", function()
-            assert.is_true(deinflectsTo("しません", "する"))
-        end)
-        it("should deinflect polite past: しました → する", function()
-            assert.is_true(deinflectsTo("しました", "する"))
-        end)
-        it("should deinflect polite past negative: しませんでした → する", function()
-            assert.is_true(deinflectsTo("しませんでした", "する"))
-        end)
-        it("should deinflect polite volitional: しましょう → する", function()
-            assert.is_true(deinflectsTo("しましょう", "する"))
-        end)
-        it("should deinflect conditional: すれば → する", function()
-            assert.is_true(deinflectsTo("すれば", "する"))
-        end)
-        it("should deinflect volitional: しよう → する", function()
-            assert.is_true(deinflectsTo("しよう", "する"))
-        end)
-        it("should deinflect imperative: しろ → する", function()
-            assert.is_true(deinflectsTo("しろ", "する"))
-        end)
-        it("should deinflect imperative (seyo): せよ → する", function()
-            assert.is_true(deinflectsTo("せよ", "する"))
-        end)
-        it("should deinflect causative: させる → する", function()
-            assert.is_true(deinflectsTo("させる", "する"))
-        end)
-        it("should deinflect passive: される → する", function()
-            assert.is_true(deinflectsTo("される", "する"))
-        end)
-        it("should deinflect -tai: したい → する", function()
-            assert.is_true(deinflectsTo("したい", "する"))
-        end)
-        it("should deinflect -nasai: しなさい → する", function()
-            assert.is_true(deinflectsTo("しなさい", "する"))
-        end)
-        it("should deinflect -sou: しそう → する", function()
-            assert.is_true(deinflectsTo("しそう", "する"))
-        end)
-        it("should deinflect -sugiru: しすぎる → する", function()
-            assert.is_true(deinflectsTo("しすぎる", "する"))
-        end)
-        it("should deinflect -zu: せず → する", function()
-            assert.is_true(deinflectsTo("せず", "する"))
-        end)
-        it("should deinflect -nu: せぬ → する", function()
-            assert.is_true(deinflectsTo("せぬ", "する"))
-        end)
-        it("should deinflect -toku: しとく → する", function()
-            assert.is_true(deinflectsTo("しとく", "する"))
-        end)
-        it("should deinflect -chau: しちゃう → する", function()
-            assert.is_true(deinflectsTo("しちゃう", "する"))
-        end)
+        -- Suru verbs (vs)
+        { "しない",         "する", "suru verbs" },               -- negative
+        { "した",           "する", "suru verbs" },               -- past
+        { "して",           "する", "suru verbs" },               -- te-form
+        { "します",         "する", "suru verbs" },               -- polite
+        { "しません",       "する", "suru verbs" },               -- polite negative
+        { "しました",       "する", "suru verbs" },               -- polite past
+        { "しませんでした", "する", "suru verbs" },               -- polite past negative
+        { "しましょう",     "する", "suru verbs" },               -- polite volitional
+        { "すれば",         "する", "suru verbs" },               -- conditional
+        { "しよう",         "する", "suru verbs" },               -- volitional
+        { "しろ",           "する", "suru verbs" },               -- imperative
+        { "せよ",           "する", "suru verbs" },               -- imperative (seyo)
+        { "させる",         "する", "suru verbs" },               -- causative
+        { "される",         "する", "suru verbs" },               -- passive
+        { "したい",         "する", "suru verbs" },               -- -tai
+        { "しなさい",       "する", "suru verbs" },               -- -nasai
+        { "しそう",         "する", "suru verbs" },               -- -sou
+        { "しすぎる",       "する", "suru verbs" },               -- -sugiru
+        { "せず",           "する", "suru verbs" },               -- -zu
+        { "せぬ",           "する", "suru verbs" },               -- -nu
+        { "しとく",         "する", "suru verbs" },               -- -toku
+        { "しちゃう",       "する", "suru verbs" },               -- -chau
+        { "為ろ",           "為る", "suru verbs" },               -- imperative (kanji)
 
-        -- 為る kanji variant
-        it("should deinflect imperative (kanji): 為ろ → 為る", function()
-            assert.is_true(deinflectsTo("為ろ", "為る"))
-        end)
-    end)
-
-    -- ================================================================
-    -- Kuru verbs (vk)
-    -- ================================================================
-    describe("kuru verbs", function()
-        -- くる (hiragana)
-        it("should deinflect negative: こない → くる", function()
-            assert.is_true(deinflectsTo("こない", "くる"))
-        end)
-        it("should deinflect past: きた → くる", function()
-            assert.is_true(deinflectsTo("きた", "くる"))
-        end)
-        it("should deinflect te-form: きて → くる", function()
-            assert.is_true(deinflectsTo("きて", "くる"))
-        end)
-        it("should deinflect polite: きます → くる", function()
-            assert.is_true(deinflectsTo("きます", "くる"))
-        end)
-        it("should deinflect polite negative: きません → くる", function()
-            assert.is_true(deinflectsTo("きません", "くる"))
-        end)
-        it("should deinflect polite past: きました → くる", function()
-            assert.is_true(deinflectsTo("きました", "くる"))
-        end)
-        it("should deinflect conditional: くれば → くる", function()
-            assert.is_true(deinflectsTo("くれば", "くる"))
-        end)
-        it("should deinflect volitional: こよう → くる", function()
-            assert.is_true(deinflectsTo("こよう", "くる"))
-        end)
-        it("should deinflect imperative: こい → くる", function()
-            assert.is_true(deinflectsTo("こい", "くる"))
-        end)
-        it("should deinflect causative: こさせる → くる", function()
-            assert.is_true(deinflectsTo("こさせる", "くる"))
-        end)
-        it("should deinflect passive: こられる → くる", function()
-            assert.is_true(deinflectsTo("こられる", "くる"))
-        end)
-        it("should deinflect potential: これる → くる", function()
-            assert.is_true(deinflectsTo("これる", "くる"))
-        end)
-        it("should deinflect -zu: こず → くる", function()
-            assert.is_true(deinflectsTo("こず", "くる"))
-        end)
-        it("should deinflect -toku: きとく → くる", function()
-            assert.is_true(deinflectsTo("きとく", "くる"))
-        end)
-        it("should deinflect masu stem: き → くる", function()
-            assert.is_true(deinflectsTo("き", "くる"))
-        end)
-
+        -- Kuru verbs (vk): くる (hiragana)
+        { "こない",     "くる", "kuru verbs" },                   -- negative
+        { "きた",       "くる", "kuru verbs" },                   -- past
+        { "きて",       "くる", "kuru verbs" },                   -- te-form
+        { "きます",     "くる", "kuru verbs" },                   -- polite
+        { "きません",   "くる", "kuru verbs" },                   -- polite negative
+        { "きました",   "くる", "kuru verbs" },                   -- polite past
+        { "くれば",     "くる", "kuru verbs" },                   -- conditional
+        { "こよう",     "くる", "kuru verbs" },                   -- volitional
+        { "こい",       "くる", "kuru verbs" },                   -- imperative
+        { "こさせる",   "くる", "kuru verbs" },                   -- causative
+        { "こられる",   "くる", "kuru verbs" },                   -- passive
+        { "これる",     "くる", "kuru verbs" },                   -- potential
+        { "こず",       "くる", "kuru verbs" },                   -- -zu
+        { "きとく",     "くる", "kuru verbs" },                   -- -toku
+        { "き",         "くる", "kuru verbs" },                   -- masu stem
         -- 来る (kanji)
-        it("should deinflect past (kanji): 来た → 来る", function()
-            assert.is_true(deinflectsTo("来た", "来る"))
+        { "来た",       "来る", "kuru verbs" },                   -- past (kanji)
+        { "来て",       "来る", "kuru verbs" },                   -- te-form (kanji)
+        { "来ない",     "来る", "kuru verbs" },                   -- negative (kanji)
+        { "来ます",     "来る", "kuru verbs" },                   -- polite (kanji)
+        { "来い",       "来る", "kuru verbs" },                   -- imperative (kanji)
+
+        -- Zuru verbs (vz): 感ずる (kanzuru, to feel)
+        { "感じない",         "感ずる", "zuru verbs" },           -- negative
+        { "感じた",           "感ずる", "zuru verbs" },           -- past
+        { "感じて",           "感ずる", "zuru verbs" },           -- te-form
+        { "感じます",         "感ずる", "zuru verbs" },           -- polite
+        { "感じません",       "感ずる", "zuru verbs" },           -- polite negative
+        { "感じました",       "感ずる", "zuru verbs" },           -- polite past
+        { "感じませんでした", "感ずる", "zuru verbs" },           -- polite past negative
+        { "感じましょう",     "感ずる", "zuru verbs" },           -- polite volitional
+        { "感ずれば",         "感ずる", "zuru verbs" },           -- conditional
+        { "感じよう",         "感ずる", "zuru verbs" },           -- volitional
+        { "感じろ",           "感ずる", "zuru verbs" },           -- imperative
+        { "感ぜよ",           "感ずる", "zuru verbs" },           -- imperative (zeyo)
+        { "感じさせる",       "感ずる", "zuru verbs" },           -- causative
+        { "感ぜさせる",       "感ずる", "zuru verbs" },           -- causative (ze-)
+        { "感じされる",       "感ずる", "zuru verbs" },           -- passive
+        { "感ざれる",         "感ずる", "zuru verbs" },           -- potential/passive
+        { "感ぜられる",       "感ずる", "zuru verbs" },           -- potential/passive (ze-)
+        { "感じたい",         "感ずる", "zuru verbs" },           -- -tai
+        { "感じなさい",       "感ずる", "zuru verbs" },           -- -nasai
+        { "感じそう",         "感ずる", "zuru verbs" },           -- -sou
+        { "感じすぎる",       "感ずる", "zuru verbs" },           -- -sugiru
+        { "感じたら",         "感ずる", "zuru verbs" },           -- -tara
+        { "感じたり",         "感ずる", "zuru verbs" },           -- -tari
+        { "感ぜず",           "感ずる", "zuru verbs" },           -- -zu
+        { "感ぜぬ",           "感ずる", "zuru verbs" },           -- -nu
+        { "感じとく",         "感ずる", "zuru verbs" },           -- -toku
+        { "感じちゃう",       "感ずる", "zuru verbs" },           -- -chau
+        { "感じちまう",       "感ずる", "zuru verbs" },           -- -chimau
+
+        -- Heavily inflected forms (multi-step deinflection chains)
+        { "食べている",       "食べる", "heavily inflected" },     -- progressive
+        { "食べてる",         "食べる", "heavily inflected" },     -- progressive (contracted)
+        { "食べておる",       "食べる", "heavily inflected" },     -- progressive (おる)
+        { "食べとる",         "食べる", "heavily inflected" },     -- progressive (contracted おる)
+        { "書いている",       "書く",   "heavily inflected" },     -- godan progressive
+        { "書いてる",         "書く",   "heavily inflected" },     -- godan progressive (contracted)
+        { "感じている",       "感ずる", "heavily inflected" },     -- zuru progressive
+        { "感じてる",         "感ずる", "heavily inflected" },     -- zuru progressive (contracted)
+        { "食べてしまう",     "食べる", "heavily inflected" },     -- -te shimau
+        { "食べなかった",     "食べる", "heavily inflected" },     -- negative past
+        { "食べませんでした", "食べる", "heavily inflected" },     -- polite negative past
+        { "書かされる",       "書く",   "heavily inflected" },     -- causative-passive
+        { "食べちゃった",     "食べる", "heavily inflected" },     -- -chau past
+        { "食べられない",     "食べる", "heavily inflected" },     -- potential negative
+        { "食べさせない",     "食べる", "heavily inflected" },     -- causative negative
+        { "食べさせます",     "食べる", "heavily inflected" },     -- causative polite
+        { "食べられなければ", "食べる", "heavily inflected" },     -- potential negative conditional
+        { "食べたかった",     "食べる", "heavily inflected" },     -- -tai past
+        { "食べたくない",     "食べる", "heavily inflected" },     -- -tai negative
+        { "食べています",     "食べる", "heavily inflected" },     -- progressive polite
+    }
+
+    -- Strings that should NOT be deinflected to the given dictionary form.
+    -- These contain grammatical particles or sentence-final elements that are
+    -- not inflectional suffixes.
+    local no_deinflection_tests = {
+        { "食べたんです",       "食べる", "should not deinflect" }, -- explanatory んです
+        { "食べたのです",       "食べる", "should not deinflect" }, -- explanatory のです
+        { "食べたんだ",         "食べる", "should not deinflect" }, -- explanatory んだ
+        { "食べるだろう",       "食べる", "should not deinflect" }, -- conjecture だろう
+        { "食べたよ",           "食べる", "should not deinflect" }, -- sentence-final よ
+        { "食べたね",           "食べる", "should not deinflect" }, -- sentence-final ね
+        { "食べるかもしれない", "食べる", "should not deinflect" }, -- かもしれない (might)
+    }
+
+    -- Text conversion tests use deinflect() (with kana conversions enabled).
+    local text_conversion_tests = {
+        { "タベナイ", "たべない", "text conversions" },           -- katakana → hiragana
+        { "タベナイ", "たべる",   "text conversions" },           -- katakana → hiragana + deinflect
+        { "ﾀﾍﾞﾙ",   "タベル",    "text conversions" },           -- halfwidth → fullwidth
+    }
+
+    -- Group tests by their group field and generate describe/it blocks.
+    local grouped = {}
+    local group_order = {}
+    for _, case in ipairs(deinflection_tests) do
+        local group = case[3]
+        if not grouped[group] then
+            grouped[group] = {}
+            table.insert(group_order, group)
+        end
+        table.insert(grouped[group], case)
+    end
+    for _, group in ipairs(group_order) do
+        describe(group, function()
+            for _, case in ipairs(grouped[group]) do
+                it(case[1] .. " → " .. case[2], function()
+                    assert.is_true(deinflectsTo(case[1], case[2]))
+                end)
+            end
         end)
-        it("should deinflect te-form (kanji): 来て → 来る", function()
-            assert.is_true(deinflectsTo("来て", "来る"))
-        end)
-        it("should deinflect negative (kanji): 来ない → 来る", function()
-            assert.is_true(deinflectsTo("来ない", "来る"))
-        end)
-        it("should deinflect polite (kanji): 来ます → 来る", function()
-            assert.is_true(deinflectsTo("来ます", "来る"))
-        end)
-        it("should deinflect imperative (kanji): 来い → 来る", function()
-            assert.is_true(deinflectsTo("来い", "来る"))
-        end)
+    end
+
+    describe("should not deinflect", function()
+        for _, case in ipairs(no_deinflection_tests) do
+            it(case[1] .. " should not → " .. case[2], function()
+                assert.is_false(deinflectsTo(case[1], case[2]))
+            end)
+        end
     end)
 
-    -- ================================================================
-    -- Zuru verbs (vz)
-    -- ================================================================
-    describe("zuru verbs", function()
-        -- 感ずる (kanzuru, to feel)
-        it("should deinflect negative: 感じない → 感ずる", function()
-            assert.is_true(deinflectsTo("感じない", "感ずる"))
-        end)
-        it("should deinflect past: 感じた → 感ずる", function()
-            assert.is_true(deinflectsTo("感じた", "感ずる"))
-        end)
-        it("should deinflect te-form: 感じて → 感ずる", function()
-            assert.is_true(deinflectsTo("感じて", "感ずる"))
-        end)
-        it("should deinflect polite: 感じます → 感ずる", function()
-            assert.is_true(deinflectsTo("感じます", "感ずる"))
-        end)
-        it("should deinflect polite negative: 感じません → 感ずる", function()
-            assert.is_true(deinflectsTo("感じません", "感ずる"))
-        end)
-        it("should deinflect polite past: 感じました → 感ずる", function()
-            assert.is_true(deinflectsTo("感じました", "感ずる"))
-        end)
-        it("should deinflect polite past negative: 感じませんでした → 感ずる", function()
-            assert.is_true(deinflectsTo("感じませんでした", "感ずる"))
-        end)
-        it("should deinflect polite volitional: 感じましょう → 感ずる", function()
-            assert.is_true(deinflectsTo("感じましょう", "感ずる"))
-        end)
-        it("should deinflect conditional: 感ずれば → 感ずる", function()
-            assert.is_true(deinflectsTo("感ずれば", "感ずる"))
-        end)
-        it("should deinflect volitional: 感じよう → 感ずる", function()
-            assert.is_true(deinflectsTo("感じよう", "感ずる"))
-        end)
-        it("should deinflect imperative: 感じろ → 感ずる", function()
-            assert.is_true(deinflectsTo("感じろ", "感ずる"))
-        end)
-        it("should deinflect imperative (zeyo): 感ぜよ → 感ずる", function()
-            assert.is_true(deinflectsTo("感ぜよ", "感ずる"))
-        end)
-        it("should deinflect causative: 感じさせる → 感ずる", function()
-            assert.is_true(deinflectsTo("感じさせる", "感ずる"))
-        end)
-        it("should deinflect causative (ze-): 感ぜさせる → 感ずる", function()
-            assert.is_true(deinflectsTo("感ぜさせる", "感ずる"))
-        end)
-        it("should deinflect passive: 感じされる → 感ずる", function()
-            assert.is_true(deinflectsTo("感じされる", "感ずる"))
-        end)
-        it("should deinflect potential/passive: 感ざれる → 感ずる", function()
-            assert.is_true(deinflectsTo("感ざれる", "感ずる"))
-        end)
-        it("should deinflect potential/passive (ze-): 感ぜられる → 感ずる", function()
-            assert.is_true(deinflectsTo("感ぜられる", "感ずる"))
-        end)
-        it("should deinflect -tai: 感じたい → 感ずる", function()
-            assert.is_true(deinflectsTo("感じたい", "感ずる"))
-        end)
-        it("should deinflect -nasai: 感じなさい → 感ずる", function()
-            assert.is_true(deinflectsTo("感じなさい", "感ずる"))
-        end)
-        it("should deinflect -sou: 感じそう → 感ずる", function()
-            assert.is_true(deinflectsTo("感じそう", "感ずる"))
-        end)
-        it("should deinflect -sugiru: 感じすぎる → 感ずる", function()
-            assert.is_true(deinflectsTo("感じすぎる", "感ずる"))
-        end)
-        it("should deinflect -tara: 感じたら → 感ずる", function()
-            assert.is_true(deinflectsTo("感じたら", "感ずる"))
-        end)
-        it("should deinflect -tari: 感じたり → 感ずる", function()
-            assert.is_true(deinflectsTo("感じたり", "感ずる"))
-        end)
-        it("should deinflect -zu: 感ぜず → 感ずる", function()
-            assert.is_true(deinflectsTo("感ぜず", "感ずる"))
-        end)
-        it("should deinflect -nu: 感ぜぬ → 感ずる", function()
-            assert.is_true(deinflectsTo("感ぜぬ", "感ずる"))
-        end)
-        it("should deinflect -toku: 感じとく → 感ずる", function()
-            assert.is_true(deinflectsTo("感じとく", "感ずる"))
-        end)
-        it("should deinflect -chau: 感じちゃう → 感ずる", function()
-            assert.is_true(deinflectsTo("感じちゃう", "感ずる"))
-        end)
-        it("should deinflect -chimau: 感じちまう → 感ずる", function()
-            assert.is_true(deinflectsTo("感じちまう", "感ずる"))
-        end)
-    end)
-
-    -- ================================================================
-    -- Multi-step deinflection chains
-    -- ================================================================
-    describe("multi-step chains", function()
-        -- te-form + progressive: 食べている → 食べる
-        it("should deinflect progressive: 食べている → 食べる", function()
-            assert.is_true(deinflectsTo("食べている", "食べる"))
-        end)
-        it("should deinflect progressive (contracted): 食べてる → 食べる", function()
-            assert.is_true(deinflectsTo("食べてる", "食べる"))
-        end)
-        it("should deinflect progressive (おる): 食べておる → 食べる", function()
-            assert.is_true(deinflectsTo("食べておる", "食べる"))
-        end)
-        it("should deinflect progressive (contracted おる): 食べとる → 食べる", function()
-            assert.is_true(deinflectsTo("食べとる", "食べる"))
-        end)
-        -- te-form + shimau
-        it("should deinflect -te + shimau: 食べてしまう → 食べる", function()
-            assert.is_true(deinflectsTo("食べてしまう", "食べる"))
-        end)
-        -- negative + past (already single-step, but verifies chaining)
-        it("should deinflect negative past: 食べなかった → 食べる", function()
-            assert.is_true(deinflectsTo("食べなかった", "食べる"))
-        end)
-        -- polite negative past
-        it("should deinflect polite negative past: 食べませんでした → 食べる", function()
-            assert.is_true(deinflectsTo("食べませんでした", "食べる"))
-        end)
-        -- causative + passive
-        it("should deinflect causative passive: 書かされる → 書く", function()
-            assert.is_true(deinflectsTo("書かされる", "書く"))
-        end)
-        -- -chau + past (colloquial past completion)
-        it("should deinflect -chau + past: 食べちゃった → 食べる", function()
-            assert.is_true(deinflectsTo("食べちゃった", "食べる"))
-        end)
-
-        -- godan te-form + progressive
-        it("should deinflect godan progressive: 書いている → 書く", function()
-            assert.is_true(deinflectsTo("書いている", "書く"))
-        end)
-        it("should deinflect godan progressive (contracted): 書いてる → 書く", function()
-            assert.is_true(deinflectsTo("書いてる", "書く"))
-        end)
-
-        -- zuru progressive
-        it("should deinflect zuru progressive: 感じている → 感ずる", function()
-            assert.is_true(deinflectsTo("感じている", "感ずる"))
-        end)
-        it("should deinflect zuru progressive (contracted): 感じてる → 感ずる", function()
-            assert.is_true(deinflectsTo("感じてる", "感ずる"))
-        end)
-    end)
-
-    -- ================================================================
-    -- Text conversions (katakana, halfwidth, etc.)
-    -- ================================================================
     describe("text conversions", function()
-        -- Katakana to hiragana conversion (enabled by default)
-        it("should deinflect katakana input: タベル → 食べる candidate via たべる", function()
-            assert.is_true(deinflectsFull("タベナイ", "たべない"))
-        end)
-        it("should deinflect katakana negative: タベナイ deinflects to たべる", function()
-            assert.is_true(deinflectsFull("タベナイ", "たべる"))
-        end)
-
-        -- Halfwidth katakana (enabled by default)
-        it("should deinflect halfwidth katakana: ﾀﾍﾞﾙ converts to fullwidth", function()
-            assert.is_true(deinflectsFull("ﾀﾍﾞﾙ", "タベル"))
-        end)
+        for _, case in ipairs(text_conversion_tests) do
+            it(case[1] .. " → " .. case[2], function()
+                assert.is_true(deinflectsFull(case[1], case[2]))
+            end)
+        end
     end)
 end)
