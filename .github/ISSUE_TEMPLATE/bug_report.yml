@@ -72,7 +72,7 @@ body:
       label: Regression
       description: Did this issue start happening after a recent update?
       options:
-        - "Yes"
+        - "Yes" # Yes and no are booleans that must be quoted.
         - "No"
         - "Not sure"
     validations:
