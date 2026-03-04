@@ -31,8 +31,8 @@ body:
     id: koreader-version
     attributes:
       label: KOReader version
-      description: What version of KOReader are you running?
-      placeholder: e.g., 2025.04
+      description: What version of KOReader are you running? Before reporting, try [the latest nightly build](https://github.com/koreader/koreader/issues/11068) to see if the issue has already been fixed.
+      placeholder: e.g., 2026.03
     validations:
       required: true
 
