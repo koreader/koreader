@@ -137,6 +137,10 @@ if [ -e "/etc/init.d/z-nickel-hardware-status" ]; then
     # on v5 use the existing startup scripts
     # Clear LD_LIBRARY_PATH as it gets prepended by start script
     export LD_LIBRARY_PATH=
+    # since sometime after 5.2, pulseaudio is started in rc.local. Detect and kill:
+    if grep "pulseaudio" "/etc/rc.local"; then
+      killall pulseaudio
+    fi
     /etc/init.d/z-nickel-hardware-status
     sync
     /etc/rc.local
