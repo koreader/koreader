@@ -224,7 +224,7 @@ function InputDialog:init()
         self.deny_keyboard_hiding = true
     end
 
-    -- @todo This logic belongs in a proper input/device abstraction layer, not here.
+    --- @todo This logic belongs in a proper input/device abstraction layer, not here.
     -- The correct behaviour is to track the *last active input source*:
     -- physical keyboard → suppress virtual keyboard; gamepad/pen/touch → show it.
     -- Devices with only a hardware KB should simply return false from that abstraction.
