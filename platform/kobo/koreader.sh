@@ -231,7 +231,6 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     done
     # Remove Nickel's FIFO to avoid udev & udhcpc scripts hanging on open() on it...
     rm -f /tmp/nickel-hardware-status
-    rm -f /var/volatile/tmp/nickel-hardware-status
 
     # We don't need to grab input devices (unless MiniClock is running, in which case that neatly inhibits it while we run).
     if [ ! -d "/tmp/MiniClock" ]; then
