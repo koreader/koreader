@@ -5,7 +5,6 @@ local Event = require("ui/event")
 local Font = require("ui/font")
 local FontList = require("fontlist")
 local InfoMessage = require("ui/widget/infomessage")
-local Input = Device.input
 local InputContainer = require("ui/widget/container/inputcontainer")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
@@ -30,7 +29,6 @@ local ReaderFont = InputContainer:extend{
 local newly_added_fonts = nil -- not yet filled
 
 function ReaderFont:init()
-    self:registerKeyEvents()
     self.ui.menu:registerToMainMenu(self)
     -- NOP our own gesture handling
     self.ges_events = nil
@@ -150,25 +148,11 @@ end
 
 function ReaderFont:onGesture() end
 
-function ReaderFont:registerKeyEvents()
-    if Device:hasKeyboard() then
-        if not (Device:hasScreenKB() or Device:hasSymKey()) then
-            -- add shortcut for keyboard
-            self.key_events.IncreaseSize = {
-                { "Shift", Input.group.PgFwd },
-                event = "ChangeSize",
-                args = 0.5
-            }
-            self.key_events.DecreaseSize = {
-                { "Shift", Input.group.PgBack },
-                event = "ChangeSize",
-                args = -0.5
-            }
-        end
-    end
-end
-
-ReaderFont.onPhysicalKeyboardConnected = ReaderFont.registerKeyEvents
+-- function ReaderFont:registerKeyEvents()
+    -- Now handled by hotkeys.koplugin:
+    -- Technically speaking, there are no default key_event replacements
+    -- for font size changes, but users can assign hotkeys to these actions.
+-- end
 
 function ReaderFont:onSetDimensions(dimen)
     self.dimen = dimen
