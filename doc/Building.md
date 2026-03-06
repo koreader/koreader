@@ -32,7 +32,7 @@ Optional:
 - `7z`: for packing releases and the Android build assets
 - `ccache`: recommended for faster recompilation times
 - `luacheck`, `shellcheck` and `shfmt`: for linting the codebase with `./kodev check`
-- `SDL3`: for running the emulator / tests (if not installed, a version will automatically be built)
+- `SDL3`: version >= 3.2.12, for running the emulator / tests (if the library is not found, a version will automatically be built)
 
 ### Alpine Linux
 
@@ -82,7 +82,7 @@ To install SDL3, on recent enough distributions:
 sudo apt install libsdl3-0
 ```
 
-For building SDL3 on distributions that don't provide it:
+For building SDL3 on distributions that don't provide a recent enough version:
 ```
 # Minimal Wayland support.
 sudo apt install libegl-dev libwayland-dev
