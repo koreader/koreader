@@ -945,7 +945,7 @@ if last_migration_date < 20250929 then
     end
 end
 
--- 20260306, Screensaver message position refactor: top/middle/bottom -> banner/box with custom positioning
+-- 20260306, Enable virtual keyboard on kindle 4
 -- https://github.com/koreader/koreader/pull/15057
 if last_migration_date < 20260306 then
     logger.info("Performing one-time migration for 20260306")
