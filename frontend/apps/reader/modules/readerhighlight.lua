@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
+local ButtonSelector = require("ui/widget/buttonselector")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DoubleSpinWidget = require("ui/widget/doublespinwidget")
@@ -47,6 +48,14 @@ function ReaderHighlight:getHighlightColorString(color_name)
         end
     end
     return color_name -- unknown
+end
+
+function ReaderHighlight:getHighlightColorList()
+    local color_list = {}
+    for i, color in ipairs(self.highlight_colors) do
+        color_list[i] = self:getHighlightColor(color[2])
+    end
+    return color_list
 end
 
 function ReaderHighlight:getHighlightColor(color_name)
@@ -469,11 +478,15 @@ function ReaderHighlight:addToMainMenu(menu_items)
         end,
         keep_menu_open = true,
         callback = function(touchmenu_instance) -- set color for new highlights in this book
-            local function apply_color(color)
-                self.view.highlight.saved_color = color
-                touchmenu_instance:updateItems()
-            end
-            self:showHighlightColorDialog(apply_color, self.view.highlight.saved_color)
+            UIManager:show(ButtonSelector:new{
+                current_value = self.view.highlight.saved_color,
+                values = self.highlight_colors,
+                bg_colors = self:getHighlightColorList(),
+                callback = function(value)
+                    self.view.highlight.saved_color = value
+                    touchmenu_instance:updateItems()
+                end,
+            })
         end,
         hold_callback = function(touchmenu_instance) -- set color for new highlights in new books
             G_reader_settings:saveSetting("highlight_color", self.view.highlight.saved_color)
@@ -548,7 +561,17 @@ function ReaderHighlight:addToMainMenu(menu_items)
             end
         end,
         callback = function()
-            self:showNoteMarkerDialog()
+            UIManager:show(ButtonSelector:new{
+                current_value = self.view.highlight.note_mark or "none",
+                values = note_mark,
+                keep_open_on_apply = true,
+                callback = function(value)
+                    self.view.highlight.note_mark = value ~= "none" and value or nil
+                    G_reader_settings:saveSetting("highlight_note_marker", self.view.highlight.note_mark)
+                    self.view:setupNoteMarkPosition()
+                    UIManager:setDirty(self.dialog, "ui")
+                end,
+            })
         end,
         separator = true,
     })
@@ -2348,113 +2371,43 @@ end
 
 function ReaderHighlight:editHighlightStyle(index)
     local item = self.ui.annotation.annotations[index]
-    local apply_drawer = function(drawer)
-        self:writePdfAnnotation("delete", item)
-        item.drawer = drawer
-        if self.ui.paging then
-            self:writePdfAnnotation("save", item)
-            if item.note then
-                self:writePdfAnnotation("content", item, item.note)
+    UIManager:show(ButtonSelector:new{
+        current_value = item.drawer,
+        values = highlight_style,
+        callback = function(value)
+            self:writePdfAnnotation("delete", item)
+            item.drawer = value
+            if self.ui.paging then
+                self:writePdfAnnotation("save", item)
+                if item.note then
+                    self:writePdfAnnotation("content", item, item.note)
+                end
             end
-        end
-        UIManager:setDirty(self.dialog, "ui")
-        self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
-    end
-    self:showHighlightStyleDialog(apply_drawer, item.drawer)
+            UIManager:setDirty(self.dialog, "ui")
+            self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
+        end,
+    })
 end
 
 function ReaderHighlight:editHighlightColor(index)
     local item = self.ui.annotation.annotations[index]
-    local apply_color = function(color)
-        self:writePdfAnnotation("delete", item)
-        item.color = color
-        if self.ui.paging then
-            self:writePdfAnnotation("save", item)
-            if item.note then
-                self:writePdfAnnotation("content", item, item.note)
+    UIManager:show(ButtonSelector:new{
+        current_value = item.color,
+        values = self.highlight_colors,
+        bg_colors = self:getHighlightColorList(),
+        callback = function(value)
+            self:writePdfAnnotation("delete", item)
+            item.color = value
+            if self.ui.paging then
+                self:writePdfAnnotation("save", item)
+                if item.note then
+                    self:writePdfAnnotation("content", item, item.note)
+                end
             end
-        end
-        UIManager:setDirty(self.dialog, "ui")
-        self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
-    end
-    self:showHighlightColorDialog(apply_color, item.color)
-end
-
-function ReaderHighlight:showHighlightStyleDialog(caller_callback, curr_style)
-    local dialog
-    local buttons = {}
-    for i, v in ipairs(highlight_style) do
-        local style_name, style = unpack(v)
-        buttons[i] = {{
-            text = style ~= curr_style and style_name or style_name .. "  ✓",
-            menu_style = true,
-            callback = function()
-                if style ~= curr_style then
-                    caller_callback(style)
-                end
-                UIManager:close(dialog)
-            end,
-        }}
-    end
-    dialog = ButtonDialog:new{
-        width_factor = 0.4,
-        buttons = buttons,
-    }
-    UIManager:show(dialog)
-end
-
-function ReaderHighlight:showHighlightColorDialog(caller_callback, curr_color)
-    local dialog
-    local buttons = {}
-    for i, v in ipairs(self.highlight_colors) do
-        local color_name, color = unpack(v)
-        buttons[i] = {{
-            text = color ~= curr_color and color_name or color_name .. "  ✓",
-            menu_style = true,
-            background = self:getHighlightColor(color),
-            callback = function()
-                if color ~= curr_color then
-                    caller_callback(color)
-                end
-                UIManager:close(dialog)
-            end,
-        }}
-    end
-    dialog = ButtonDialog:new{
-        buttons = buttons,
-        width_factor = 0.4,
-        colorful = true,
-        dithered = true,
-    }
-    UIManager:show(dialog)
-end
-
-function ReaderHighlight:showNoteMarkerDialog()
-    local curr_marker = self.view.highlight.note_mark or "none"
-    local dialog
-    local buttons = {}
-    for i, v in ipairs(note_mark) do
-        local marker_name, marker = unpack(v)
-        buttons[i] = {{
-            text = marker ~= curr_marker and marker_name or marker_name .. "  ✓",
-            menu_style = true,
-            callback = function()
-                if marker ~= curr_marker then
-                    self.view.highlight.note_mark = marker ~= "none" and marker or nil
-                    G_reader_settings:saveSetting("highlight_note_marker", self.view.highlight.note_mark)
-                    self.view:setupNoteMarkPosition()
-                    UIManager:setDirty(self.dialog, "ui")
-                    UIManager:close(dialog)
-                    self:showNoteMarkerDialog()
-                end
-            end,
-        }}
-    end
-    dialog = ButtonDialog:new{
-        width_factor = 0.4,
-        buttons = buttons,
-    }
-    UIManager:show(dialog)
+            UIManager:setDirty(self.dialog, "ui")
+            self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
+        end,
+    })
 end
 
 function ReaderHighlight:startSelection(index)
