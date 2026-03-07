@@ -13,10 +13,10 @@ body:
       options:
         - label: Reproduced the issue with external plugins and user-patches disabled.
           required: true
-        - label: Tested on the latest nightly build ([more information](https://github.com/koreader/koreader/issues/11068)).
-          required: true
         - label: Searched existing issues for similar reports.
           required: true
+        - label: Tested on the latest nightly build ([more information](/koreader/koreader/issues/11068)).
+          required: false
 
   - type: dropdown
     id: device-type
