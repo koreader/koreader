@@ -547,6 +547,15 @@ function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma)
     end
 end
 
+function Document:drawPageInverted(target, x, y, rect, pageno, zoom, rotation, gamma)
+    local tile = self:renderPage(pageno, rect, zoom, rotation, gamma)
+    target:invertblitFrom(tile.bb,
+        x, y,
+        rect.x - tile.excerpt.x,
+        rect.y - tile.excerpt.y,
+        rect.w, rect.h)
+end
+
 function Document:getDrawnImagesStatistics()
     -- For now, only set by CreDocument in CreDocument:drawCurrentView()
     -- Returns 0, 0 (as per Document:init) otherwise.
