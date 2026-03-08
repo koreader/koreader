@@ -45,7 +45,7 @@ local function slim(book, is_search)
         elseif k == "tags" or k == "authors" then
             slim_book[k] = book[k] or rapidjson.array({})
         else
-            slim_book[k] = book[k]
+            slim_book[k] = book[k] or rapidjson.null
         end
     end
     return slim_book
