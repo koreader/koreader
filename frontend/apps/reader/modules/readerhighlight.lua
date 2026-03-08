@@ -2628,48 +2628,97 @@ function ReaderHighlight:getSavedExtendedHighlightPage(highlight, page, index)
     return item
 end
 
--- Saves PDF embedded highlights as KOReader annotations
--- (For pdf documents only, reflow mode must be off)
-function ReaderHighlight:saveHighlightsFromBoxes(boxes)
-    local highlight_write_into_pdf = self.highlight_write_into_pdf
-    self.highlight_write_into_pdf = nil -- prevent writing into PDF once more
-    local rotation = Screen:getRotationMode()
-    local zoom = self.ui.zooming:getZoom(1)
-    local note = _("embedded highlight")
-    local count = 0
-    for page, page_pboxes in pairs(boxes) do
-        for _, hl_pboxes in ipairs(page_pboxes) do
-            local first_box = hl_pboxes[1]
-            local pos0 = {
-                page = page,
-                rotation = rotation,
-                zoom = zoom,
-                x = first_box.x + 1, -- inside the box
-                y = first_box.y + 1, -- ditto
-            }
-            local last_box = hl_pboxes[#hl_pboxes]
-            local pos1 = {
-                page = page,
-                rotation = rotation,
-                zoom = zoom,
-                x = last_box.x + last_box.w - 2, -- ditto
-                y = last_box.y + last_box.h - 2, -- ditto
-            }
-            local text = self.document:getTextFromPositions(pos0, pos1)
-            self.selected_text = {
-                pos0 = pos0,
-                pos1 = pos1,
-                pboxes = hl_pboxes,
-                text = text and text.text or "",
-                note = note,
-            }
-            self:saveHighlight()
-            count = count + 1
+-- PDF annotation type to KOReader drawer mapping
+local ANNOT_TYPE_DRAWER = {
+    [8]  = "lighten",    -- PDF_ANNOT_HIGHLIGHT
+    [9]  = "underscore", -- PDF_ANNOT_UNDERLINE
+    [10] = "underscore", -- PDF_ANNOT_SQUIGGLY (closest equivalent)
+    [11] = "strikeout",  -- PDF_ANNOT_STRIKE_OUT
+}
+
+function ReaderHighlight:_isDuplicateAnnotation(page, pboxes)
+    for _, item in ipairs(self.ui.annotation.annotations) do
+        if item.page == page and item.pboxes and #item.pboxes == #pboxes then
+            local match = true
+            for i, box in ipairs(pboxes) do
+                local existing = item.pboxes[i]
+                if math.abs(box.x - existing.x) > 1
+                or math.abs(box.y - existing.y) > 1
+                or math.abs(box.w - existing.w) > 1
+                or math.abs(box.h - existing.h) > 1 then
+                    match = false
+                    break
+                end
+            end
+            if match then return true end
         end
     end
-    self.highlight_write_into_pdf = highlight_write_into_pdf
+    return false
+end
+
+-- Imports PDF embedded markup annotations as KOReader annotations.
+-- Two-phase approach: delete originals from PDF first, then import.
+-- avoids ambiguity when write-into-pdf re-creates the annotations.
+-- (For pdf documents only, reflow mode must be off)
+function ReaderHighlight:importEmbeddedAnnotations(annotations)
+    local rotation = Screen:getRotationMode()
+    local zoom = self.ui.zooming:getZoom(1)
+    local count = 0
+    local skipped = 0
+
+    -- Phase 1: Identify annotations to import and delete originals from PDF
+    local to_import = {}
+    for page, page_annots in pairs(annotations) do
+        for _, annot in ipairs(page_annots) do
+            if self:_isDuplicateAnnotation(page, annot.boxes) then
+                skipped = skipped + 1
+            else
+                table.insert(to_import, { page = page, annot = annot })
+                self.document:deleteHighlight(page, { pboxes = annot.boxes })
+            end
+        end
+    end
+
+    -- Phase 2: Import collected annotations
+    for _, entry in ipairs(to_import) do
+        local annot = entry.annot
+        local page = entry.page
+        local hl_pboxes = annot.boxes
+        local first_box = hl_pboxes[1]
+        local pos0 = {
+            page = page,
+            rotation = rotation,
+            zoom = zoom,
+            x = first_box.x + 1, -- inside the box
+            y = first_box.y + 1, -- ditto
+        }
+        local last_box = hl_pboxes[#hl_pboxes]
+        local pos1 = {
+            page = page,
+            rotation = rotation,
+            zoom = zoom,
+            x = last_box.x + last_box.w - 2, -- ditto
+            y = last_box.y + last_box.h - 2, -- ditto
+        }
+        local text = self.document:getTextFromPositions(pos0, pos1)
+        local contents = annot.contents
+        if contents == "" then
+            contents = nil
+        end
+        self.selected_text = {
+            pos0 = pos0,
+            pos1 = pos1,
+            pboxes = hl_pboxes,
+            text = text and text.text or "",
+            note = contents,
+            drawer = ANNOT_TYPE_DRAWER[annot.type],
+        }
+        self:saveHighlight()
+        count = count + 1
+    end
+
     self.selected_text = nil
-    return count
+    return count, skipped
 end
 
 function ReaderHighlight:onReadSettings(config)

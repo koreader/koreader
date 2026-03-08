@@ -999,11 +999,11 @@ function ReaderBookmark:onShowBookmark()
             if bookmark.document.is_pdf then
                 table.insert(buttons, {
                     {
-                        text = _("Import embedded highlights"),
+                        text = _("Import embedded annotations"),
                         enabled = bookmark.document.configurable.text_wrap == 0,
                         callback = function()
                             UIManager:close(bm_dialog)
-                            bookmark:importEmbeddedHighlights()
+                            bookmark:importEmbeddedAnnotations()
                         end,
                     },
                 })
@@ -1640,15 +1640,23 @@ function ReaderBookmark:filterByHighlightColor()
     self.ui.highlight:showHighlightColorDialog(filter_by_color_callback)
 end
 
-function ReaderBookmark:importEmbeddedHighlights()
-    local boxes = self.document:getEmbeddedAnnotationsBoxes()
-    if boxes then
-        local count = self.ui.highlight:saveHighlightsFromBoxes(boxes)
-        self.bookmark_menu[1].close_callback()
-        self:onShowBookmark()
-        UIManager:show(InfoMessage:new{ text = T(N_("1 highlight added", "%1 highlights added", count), count) })
+function ReaderBookmark:importEmbeddedAnnotations()
+    local annotations = self.document:getEmbeddedAnnotations()
+    if annotations then
+        local count, skipped = self.ui.highlight:importEmbeddedAnnotations(annotations)
+        if count > 0 then
+            self.bookmark_menu[1].close_callback()
+            self:onShowBookmark()
+            local msg = T(N_("1 annotation imported.", "%1 annotations imported.", count), count)
+            if skipped > 0 then
+                msg = msg .. "\n" .. T(N_("1 duplicate skipped.", "%1 duplicates skipped.", skipped), skipped)
+            end
+            UIManager:show(InfoMessage:new{ text = msg })
+        else
+            UIManager:show(InfoMessage:new{ text = _("All embedded annotations are already imported.") })
+        end
     else
-        UIManager:show(InfoMessage:new{ text = _("No embedded highlights found") })
+        UIManager:show(InfoMessage:new{ text = _("No embedded annotations found.") })
     end
 end
 
