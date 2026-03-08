@@ -1,11 +1,10 @@
 describe("Dispatcher runtime actions", function()
-    local Dispatcher, util
+    local Dispatcher
     local settingsList
 
     setup(function()
         require("commonrequire")
         Dispatcher = require("frontend/dispatcher")
-        util = require("util")
         -- grab private settingsList from upvalue of registerAction
         local i = 1
         while true do
