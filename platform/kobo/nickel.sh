@@ -18,8 +18,12 @@ unset LC_ALL STARDICT_DATA_DIR EXT_FONT_DIR
 unset KO_DONT_GRAB_INPUT
 unset FBINK_FORCE_ROTA
 
+# kobo v5 animation is originally done in display-init, we copy the neccessary parts here.
 if [ -e "/etc/init.d/display-init.sh" ]; then
-    /etc/init.d/display-init.sh
+    export PATH=/sbin:/usr/sbin:/bin:/usr/bin
+    export PRODUCT=$(hwdetect.sh)
+    echo "Starting boot animation..."
+    animator.sh /etc/images/${PRODUCT}-on-*.raw.gz &
 fi
 
 if [ -e "/etc/init.d/on-animator.sh" ]; then
