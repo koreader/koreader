@@ -20,10 +20,10 @@ unset FBINK_FORCE_ROTA
 
 # kobo v5 animation is originally done in display-init, we copy the neccessary parts here.
 if [ -e "/etc/init.d/display-init.sh" ]; then
-    export PATH=/sbin:/usr/sbin:/bin:/usr/bin
-    export PRODUCT=$(hwdetect.sh)
+    PRODUCT=$(hwdetect.sh)
+    export PRODUCT
     echo "Starting boot animation..."
-    animator.sh /etc/images/${PRODUCT}-on-*.raw.gz &
+    animator.sh /etc/images/"${PRODUCT}"-on-*.raw.gz &
 fi
 
 if [ -e "/etc/init.d/on-animator.sh" ]; then
