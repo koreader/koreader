@@ -1389,11 +1389,11 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note, ca
                     is_enter_default = true,
                     callback = function()
                         local value = input_dialog:getInputText()
+                        self.ui.highlight:writePdfAnnotation("content", annotation, value)
                         if value == "" then -- blank input deletes note
                             value = nil
                         end
                         annotation.note = value
-                        self.ui.highlight:writePdfAnnotation("content", annotation, value)
                         local type_after = self.getBookmarkType(annotation)
                         if type_before ~= type_after then
                             if type_before == "highlight" then
