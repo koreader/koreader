@@ -174,6 +174,7 @@ local settingsList = {
     skim = {category="none", event="ShowSkimtoDialog", title=_("Skim document"), reader=true},
     pin_current_page = {category="none", event="PinPage", title=_("Pin current page"), reader=true},
     go_to_pinned_page = {category="none", event="GoToPinnedPage", title=_("Go to pinned page"), reader=true, separator=true},
+    go_to_furthest_read = {category="none", event="GoToFurthestReadPage", title=_("Go to furthest read position"), reader=true},
     ----
     prev_bookmark = {category="none", event="GotoPreviousBookmarkFromPage", title=_("Previous bookmark"), reader=true},
     next_bookmark = {category="none", event="GotoNextBookmarkFromPage", title=_("Next bookmark"), reader=true},
@@ -429,6 +430,7 @@ local dispatcher_menu_order = {
     "skim",
     "pin_current_page",
     "go_to_pinned_page",
+    "go_to_furthest_read",
     ----
     "prev_bookmark",
     "next_bookmark",

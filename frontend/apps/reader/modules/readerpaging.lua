@@ -149,14 +149,24 @@ end
 function ReaderPaging:onReadSettings(config)
     self.page_positions = config:readSetting("page_positions") or {}
     self:_gotoPage(config:readSetting("last_page") or 1)
+    self.furthest_page = config:readSetting("furthest_page")
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
+end
+
+function ReaderPaging:_updateFurthestPage()
+    if not self.furthest_page or self.current_page > self.furthest_page then
+        self.furthest_page = self.current_page
+    end
 end
 
 function ReaderPaging:onSaveSettings()
     --- @todo only save current_page page position
     self.ui.doc_settings:saveSetting("page_positions", self.page_positions)
     self.ui.doc_settings:saveSetting("last_page", self:getTopPage())
+
+    self:_updateFurthestPage()
+    self.ui.doc_settings:saveSetting("furthest_page", self.furthest_page)
     self.ui.doc_settings:saveSetting("percent_finished", self.view.footer.percent_finished)
     self.ui.doc_settings:saveSetting("flipping_zoom_mode", self.flipping_zoom_mode)
     self.ui.doc_settings:saveSetting("flipping_scroll_mode", self.flipping_scroll_mode)
@@ -1148,6 +1158,7 @@ function ReaderPaging:onGotoPage(number, pos)
         -- gotoPage emits this event only if the page changes
         self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
     end
+    self:_updateFurthestPage()
     return true
 end
 
