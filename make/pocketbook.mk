@@ -6,7 +6,7 @@ define UPDATE_PATH_EXCLUDES +=
 tools
 endef
 
-update: all
+update-prepare: all
 	# ensure that the binaries were built for ARM
 	file --dereference $(INSTALL_DIR)/koreader/luajit | grep ARM
 	# Pocketbook launching scripts
@@ -17,6 +17,11 @@ update: all
 	$(SYMLINK) $(POCKETBOOK_DIR)/system_koreader.app $(INSTALL_DIR)/system/bin/koreader.app
 	$(SYMLINK) $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader/
 	$(SYMLINK) $(INSTALL_DIR)/koreader $(INSTALL_DIR)/applications/
-	# Create packages.
+
+update-zip: update-prepare
 	$(strip $(call mkupdate,--manifest-transform=/^system/d;s/^/..\// $(PB_PACKAGE),applications/koreader)) applications system
+
+update-tgz: update-prepare
 	$(strip $(call mkupdate,--manifest-transform=s/^/..\// $(PB_PACKAGE_OTA),applications/koreader)) applications
+
+update: update-zip update-tgz
