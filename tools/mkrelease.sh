@@ -12,6 +12,7 @@ OPTIONS:
     -e EPOCH, --epoch EPOCH      set contents timestamp to EPOCH
     -m ENTRY, --manifest ENTRY   add a manifest ENTRY to the release
     --manifest-transform SCRIPT  transform manifest using sed SCRIPT
+    --no-dereference             keep links
     -o OPTS, --options OPTS      forward options to compressor
 "
 
@@ -35,7 +36,7 @@ else
     declare -r TAR=tar
 fi
 
-if ! opt=$(getopt -o '+de:hj:m:o:' --long 'debug,epoch:,help,jobs:,manifest:,manifest-transform:,options:' --name "$0" -- "$@"); then
+if ! opt=$(getopt -o '+de:hj:m:o:' --long 'debug,epoch:,help,jobs:,manifest:,manifest-transform:,no-dereference,options:' --name "$0" -- "$@"); then
     echo "${USAGE}"
     exit 1
 fi
@@ -47,6 +48,7 @@ epoch=''
 jobs=''
 manifest=''
 manifest_transform=''
+dereference=1
 options=()
 
 eval set -- "${opt}"
@@ -74,6 +76,9 @@ while [[ $# -gt 0 ]]; do
         --manifest-transform)
             manifest_transform="$2"
             shift
+            ;;
+        --no-dereference)
+            dereference=''
             ;;
         -o | --options)
             declare -a a="($2)"
@@ -255,7 +260,8 @@ fi
 
 # Make a copy of everything so we can later patch timestamps and
 # fix permissions to ensure reproducibility.
-"${TAR}" --create --dereference --hard-dereference --no-recursion \
+"${TAR}" --create --no-recursion \
+    ${dereference:+--dereference --hard-dereference} \
     --verbatim-files-from --files-from="${tmpdir}/paths" |
     "${TAR}" --extract --directory="${tmpdir}/contents"
 
