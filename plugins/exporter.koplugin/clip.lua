@@ -248,10 +248,18 @@ function MyClipping:getImage(image)
     end
 end
 
+function MyClipping:doesHighlightMatch(item)
+    local filter = self.settings.filter
+    if filter then
+        if filter.style and not filter.style[item.drawer] then return end
+        if filter.color and not filter.color[item.color] then return end
+    end
+    return true
+end
+
 function MyClipping:parseAnnotations(annotations, book)
-    local settings = G_reader_settings:readSetting("exporter")
     for _, item in ipairs(annotations) do
-        if item.drawer and not (settings.highlight_styles and settings.highlight_styles[item.drawer] == false) then
+        if self:doesHighlightMatch(item) then
             local clipping = {
                 sort    = "highlight",
                 page    = item.pageref or item.pageno,
@@ -280,10 +288,9 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
                                "%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d") .. "$"
 
     local orphan_highlights = {}
-    local settings = G_reader_settings:readSetting("exporter")
     for page, items in pairs(highlights) do
         for _, item in ipairs(items) do
-            if not (settings.highlight_styles and settings.highlight_styles[item.drawer] == false) then
+            if self:doesHighlightMatch(item) then
                 local clipping = {
                     sort    = "highlight",
                     page    = page,
@@ -399,18 +406,12 @@ end
 
 function MyClipping:parseCurrentDoc()
     local title, author = self:getTitleAuthor(self.ui.document.file, self.ui.doc_props)
-    local number_of_pages
-    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
-        number_of_pages = select(3, self.ui.pagemap:getCurrentPageLabel())
-    else
-        number_of_pages = self.ui.view.footer.pages
-    end
     local clippings = {
         [title] = {
             file = self.ui.document.file,
             title = title,
             author = author,
-            number_of_pages = number_of_pages,
+            number_of_pages = BookList.getBookInfo(self.ui.document.file).pages,
         },
     }
     self:parseAnnotations(self.ui.annotation.annotations, clippings[title])
