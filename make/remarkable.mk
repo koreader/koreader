@@ -7,7 +7,7 @@ plugins/SSH.koplugin
 tools
 endef
 
-update: all
+update-prepare: all
 	# ensure that the binaries were built for ARM
 	file --dereference $(INSTALL_DIR)/koreader/luajit | grep ARM
 	# Remarkable scripts
@@ -25,6 +25,11 @@ endif
 ifeq (remarkable-aarch64,$(TARGET))
 	$(SYMLINK) $(REMARKABLE_DIR)/README_aarch64.md $(INSTALL_DIR)/koreader/README_remarkable.md
 endif
-	# Create packages.
+
+update-zip: update-prepare
 	$(strip $(call mkupdate,$(REMARKABLE_PACKAGE)))
+
+update-tgz: update-prepare
 	$(strip $(call mkupdate,$(REMARKABLE_PACKAGE_OTA)))
+
+update: update-zip update-tgz
