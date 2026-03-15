@@ -7,11 +7,16 @@ plugins/SSH.koplugin
 tools
 endef
 
-update: all
+update-prepare: all
 	# ensure that the binaries were built for ARM
 	file --dereference $(INSTALL_DIR)/koreader/luajit | grep ARM
 	# Sony PRSTUX launching scripts
 	$(SYMLINK) $(SONY_PRSTUX_DIR)/*.sh $(INSTALL_DIR)/koreader
-	# Create packages.
+
+update-zip: update-prepare
 	$(strip $(call mkupdate,$(SONY_PRSTUX_PACKAGE)))
+
+update-tgz: update-prepare
 	$(strip $(call mkupdate,$(SONY_PRSTUX_PACKAGE_OTA)))
+
+update: update-zip update-tgz
