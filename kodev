@@ -133,7 +133,6 @@ TARGET:
     android-arm64
     android-x86
     android-x86_64
-    appimage
     cervantes
     emulator                  Default if no TARGET is given
     kindle                    Compatible with all Kindle models >= Kindle4
@@ -167,7 +166,7 @@ function setup_target() {
             fi
             TARGET=''
             ;;
-        appimage | linux) is_system Linux ;;
+        linux) is_system Linux ;;
         macos) is_system macOS ;;
         win32) is_system Windows ;;
         # Devices.
