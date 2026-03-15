@@ -306,8 +306,13 @@ case "${format}" in
         ;;
     tar.xz)
         echo "Creating archive: ${output}"
+        # NOTE: override xz default block size, as otherwise with the size of our
+        # uncompressed data (< 100 MiB), we never benefit from multi-threading:
+        # level 9 → 64 MiB dictionary → ×3 default block size = 192 MiB.
+        # With a block size of 32 MiB, compression with 4 threads is ~2.7 times faster,
+        # for a final output size increase of just 200 KiB (less than 1%).
         "${tar_compress_cmd[@]}" |
-            xz -9 ${jobs:+--threads=${jobs}} "${options[@]}" |
+            xz -9 --block-size=32M ${jobs:+--threads=${jobs}} "${options[@]}" |
             write_to_file "${output}"
         ;;
     tar.zst)
