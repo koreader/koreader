@@ -1,4 +1,4 @@
-PHONY = all android-ndk android-sdk base clean distclean doc fetchthirdparty re static-check update
+PHONY = all android-ndk android-sdk base clean distclean doc fetchthirdparty re static-check update update-%
 SOUND = $(INSTALL_DIR)/%
 
 # koreader-base directory
@@ -9,21 +9,11 @@ include $(KOR_BASE)/Makefile.defs
 RELEASE_DATE := $(shell git show -s --format=format:"%cd" --date=short HEAD)
 # We want VERSION to carry the version of the KOReader main repo, not that of koreader-base
 VERSION := $(shell git describe HEAD)
+RELEASE_EPOCH := $(shell git log -1 --format='%cs' $(word 1,$(subst -, ,$(VERSION))))
 # Only append date if we're not on a whole version, like v2018.11
 ifneq (,$(findstring -,$(VERSION)))
 	VERSION := $(VERSION)_$(RELEASE_DATE)
 endif
-
-LINUX_ARCH?=native
-ifeq ($(LINUX_ARCH), native)
-	LINUX_ARCH_NAME:=$(shell uname -m)
-else ifeq ($(LINUX_ARCH), arm64)
-	LINUX_ARCH_NAME:=aarch64
-else ifeq ($(LINUX_ARCH), arm)
-	LINUX_ARCH_NAME:=armv7l
-endif
-LINUX_ARCH_NAME?=$(LINUX_ARCH)
-
 
 MACHINE=$(TARGET_MACHINE)
 ifdef KODEBUG
@@ -130,7 +120,7 @@ release_excludes = $(strip $(UPDATE_PATH_EXCLUDES:%='-x!$1%') $(UPDATE_GLOBAL_EX
 define mkupdate
 cd $(INSTALL_DIR) &&
 '$(abspath tools/mkrelease.sh)'
---epoch="$$(git log -1 --format='%cs' "$$(git describe --tags | cut -d- -f1)")"
+--epoch=$(RELEASE_EPOCH)
 $(if $(PARALLEL_JOBS),--jobs $(PARALLEL_JOBS))
 --manifest=$(or $2,koreader)/ota/package.index
 $(foreach a,$1,'$(if $(filter --%,$a),$a,$(abspath $a))') $(or $2,koreader)
@@ -149,6 +139,8 @@ ifneq (,$(EMULATE_READER))
 	@echo "[*] Install front spec only for the emulator"
 	$(SYMLINK) spec $(INSTALL_DIR)/koreader/spec/front
 	$(SYMLINK) test $(INSTALL_DIR)/koreader/spec/front/unit/data
+	@echo "[*] Install launcher for the emulator"
+	cp $(COMMON_DIR)/koreader.sh $(INSTALL_DIR)/koreader/
 endif
 	$(SYMLINK) $(INSTALL_FILES) $(INSTALL_DIR)/koreader/
 ifdef ANDROID
