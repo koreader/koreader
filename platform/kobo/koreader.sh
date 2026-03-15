@@ -14,7 +14,7 @@ cd "${KOREADER_DIR:-/dev/null}" || exit
 # To make USBMS behave, relocalize ourselves outside of onboard. Additionally,
 # this is used by KOReader to detect if the original script has changed after
 # an update (requiring a complete restart from the parent launcher).
-if [ "${SCRIPT_DIR}" != "/tmp" ]; then
+if [ "${SCRIPT_DIR}" != "/tmp" ] && [ "${SCRIPT_DIR}" != "/var/volatile/tmp" ]; then
     cp -pf "${0}" "/tmp/koreader.sh"
     chmod 777 "/tmp/koreader.sh"
     exec "/tmp/koreader.sh" "$@"
@@ -217,7 +217,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     #       as we want to be able to use our own per-if processes w/ custom args later on.
     #       A SIGTERM does not break anything, it'll just prevent automatic lease renewal until the time
     #       KOReader actually sets the if up itself (i.e., it'll do)...
-    killall -q -TERM nickel hindenburg sickel fickel strickel fontickel adobehost foxitpdf iink dhcpcd-dbus dhcpcd bluealsa bluetoothd fmon nanoclock.lua
+    killall -q -TERM nickel hindenburg sickel fickel strickel fontickel adobehost foxitpdf iink dhcpcd-dbus dhcpcd bluealsa bluetoothd fmon nanoclock.lua memorylogger QtWebEngineProcess
 
     # Wait for Nickel to die... (oh, procps with killall -w, how I miss you...)
     kill_timeout=0
@@ -246,6 +246,11 @@ fi
 
 if [ -z "${PRODUCT}" ]; then
     PRODUCT="$(/bin/kobo_config.sh 2>/dev/null)"
+    export PRODUCT
+fi
+
+if [ -z "${PRODUCT}" ]; then
+    PRODUCT="$(/usr/bin/hwdetect.sh 2>/dev/null)"
     export PRODUCT
 fi
 
