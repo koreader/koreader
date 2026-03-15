@@ -18,5 +18,3 @@ update: all
 	# Create packages.
 	$(strip $(call mkupdate,$(CERVANTES_PACKAGE)))
 	$(strip $(call mkupdate,$(CERVANTES_PACKAGE_OTA)))
-
-PHONY += update

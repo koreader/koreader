@@ -1,4 +1,4 @@
-PHONY = all android-ndk android-sdk base clean distclean doc fetchthirdparty re static-check
+PHONY = all android-ndk android-sdk base clean distclean doc fetchthirdparty re static-check update
 SOUND = $(INSTALL_DIR)/%
 
 # koreader-base directory

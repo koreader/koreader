@@ -26,5 +26,3 @@ update: all
 	# Create packages.
 	$(strip $(call mkupdate,$(KINDLE_PACKAGE))) extensions $(KINDLE_LEGACY_LAUNCHER)
 	$(strip $(call mkupdate,$(KINDLE_PACKAGE_OTA))) extensions $(KINDLE_LEGACY_LAUNCHER)
-
-PHONY += update

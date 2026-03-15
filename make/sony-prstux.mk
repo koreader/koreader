@@ -15,5 +15,3 @@ update: all
 	# Create packages.
 	$(strip $(call mkupdate,$(SONY_PRSTUX_PACKAGE)))
 	$(strip $(call mkupdate,$(SONY_PRSTUX_PACKAGE_OTA)))
-
-PHONY += update

@@ -32,5 +32,3 @@ update: all
 		$(if $(PARALLEL_JOBS),--jobs $(PARALLEL_JOBS)) \
 		--options=-$(LINUX_PACKAGE_COMPRESSION_LEVEL) \
 		'$(abspath $(LINUX_PACKAGE))' . $(call release_excludes,lib/koreader/)
-
-PHONY += update
