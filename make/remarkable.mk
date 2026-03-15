@@ -28,5 +28,3 @@ endif
 	# Create packages.
 	$(strip $(call mkupdate,$(REMARKABLE_PACKAGE)))
 	$(strip $(call mkupdate,$(REMARKABLE_PACKAGE_OTA)))
-
-PHONY += update

@@ -20,5 +20,3 @@ update: all
 	# Create packages.
 	$(strip $(call mkupdate,--manifest-transform=/^system/d;s/^/..\// $(PB_PACKAGE),applications/koreader)) applications system
 	$(strip $(call mkupdate,--manifest-transform=s/^/..\// $(PB_PACKAGE_OTA),applications/koreader)) applications
-
-PHONY += update

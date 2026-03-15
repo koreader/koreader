@@ -58,5 +58,5 @@ endif
 	# Generate AppImage.
 	ARCH='$(APPIMAGE_ARCH)' VERSION='$(VERSION)' ./$(MKAPPIMAGE) --appimage-extract-and-run $(APPDIR) $(KOREADER_APPIMAGE)
 
-PHONY += mkappimage update
+PHONY += mkappimage
 SOUND += $(MKAPPIMAGE)

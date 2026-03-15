@@ -16,5 +16,3 @@ update: all
 	# Create packages.
 	$(strip $(call mkupdate,--manifest-transform=/^koreader\.png$$/d $(KOBO_PACKAGE))) koreader.png
 	$(strip $(call mkupdate,$(KOBO_PACKAGE_OTA)))
-
-PHONY += update
