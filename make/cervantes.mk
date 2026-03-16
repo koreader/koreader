@@ -6,7 +6,7 @@ define UPDATE_PATH_EXCLUDES +=
 tools
 endef
 
-update: all
+update-prepare: all
 	# ensure that the binaries were built for ARM
 	file --dereference $(INSTALL_DIR)/koreader/luajit | grep ARM
 	# remove old package if any
@@ -15,6 +15,11 @@ update: all
 	$(SYMLINK) $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader/spinning_zsync.sh
 	$(SYMLINK) $(CERVANTES_DIR)/*.sh $(INSTALL_DIR)/koreader
 	$(SYMLINK) $(CERVANTES_DIR)/spinning_zsync $(INSTALL_DIR)/koreader
-	# Create packages.
+
+update-zip: update-prepare
 	$(strip $(call mkupdate,$(CERVANTES_PACKAGE)))
+
+update-tgz: update-prepare
 	$(strip $(call mkupdate,$(CERVANTES_PACKAGE_OTA)))
+
+update: update-zip update-tgz
