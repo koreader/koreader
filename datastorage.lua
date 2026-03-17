@@ -49,7 +49,7 @@ function DataStorage:getDataDir()
     return data_dir
 end
 
---- (Deprecated) Gets the path of where legacy/obsolete sidecar files are stored.
+--- (Deprecated) Gets the path where legacy/obsolete sidecar files are stored.
 -- @treturn string Directory path
 function DataStorage:getHistoryDir()
     return self:getDataDir() .. "/history"
@@ -61,14 +61,14 @@ function DataStorage:getSettingsDir()
     return self:getDataDir() .. "/settings"
 end
 
---- Gets the path of where @{docsettings}
+--- Gets the path where @{docsettings}
 -- (sidecar files) should be stored although this directory isn't guaranteed to exist.
 -- @treturn string Directory path
 function DataStorage:getDocSettingsDir()
     return self:getDataDir() .. "/docsettings"
 end
 
---- Gets the path of where @{docsettings}
+--- Gets the path where @{docsettings}
 -- (sidecar files) should be stored although this directory isn't guaranteed to exist.
 -- This is used instead of `DataStorage:getDocSettingsDir` when hashing is enabled.
 -- @treturn string Directory path
@@ -77,7 +77,7 @@ function DataStorage:getDocSettingsHashDir()
 end
 
 --- Gets the full configuration/data path.
--- @treturn string Directory path (e.g /mnt/onboard/.adds/koreader)
+-- @treturn string Directory path (e.g., /mnt/onboard/.adds/koreader)
 function DataStorage:getFullDataDir()
     if full_data_dir then return full_data_dir end
 
