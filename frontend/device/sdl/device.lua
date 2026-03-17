@@ -109,18 +109,24 @@ local Device = Generic:extend{
     window = G_reader_settings:readSetting("sdl_window", {}),
 }
 
-function Device:otaModel()
-    if self.ota_model then
-        return self.ota_model, "link"
-    end
-end
-
 local AppImage = Device:extend{
     model = "AppImage",
-    ota_model = "appimage",
     hasOTAUpdates = yes,
     isDesktop = yes,
 }
+
+function AppImage:otaModel()
+    local arch = jit.arch
+    local model
+    if arch == "arm64" then
+        model = "appimage-aarch64"
+    elseif arch == "arm" then
+        model = "appimage-armhf"
+    elseif arch == "x64" then
+        model = "appimage-x86_64"
+    end
+    return model, "link"
+end
 
 local Desktop = Device:extend{
     model = SDL.getPlatform(),
