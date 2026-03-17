@@ -61,14 +61,14 @@ function DataStorage:getSettingsDir()
     return self:getDataDir() .. "/settings"
 end
 
---- Gets the path of where [document settings](DataStore.md.html#DocSettings)
+--- Gets the path of where @{docsettings}
 -- (sidecar files) should be stored although this directory isn't guaranteed to exist.
 -- @treturn string Directory path
 function DataStorage:getDocSettingsDir()
     return self:getDataDir() .. "/docsettings"
 end
 
---- Gets the path of where [document settings](DataStore.md.html#DocSettings)
+--- Gets the path of where @{docsettings}
 -- (sidecar files) should be stored although this directory isn't guaranteed to exist.
 -- This is used instead of `DataStorage:getDocSettingsDir` when hashing is enabled.
 -- @treturn string Directory path
