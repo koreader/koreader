@@ -999,7 +999,7 @@ function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url)
     filename = filename and filename .. "." .. filetype:lower() or self:getServerFileName(remote_url, filetype)
     filename = util.getSafeFilename(filename, download_dir)
     filename = (download_dir ~= "/" and download_dir or "") .. '/' .. filename
-    return util.fixUtf8(filename, "_")
+    return filename
 end
 
 -- Downloads a book (with "File already exists" dialog)
