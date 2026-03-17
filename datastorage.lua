@@ -55,9 +55,7 @@ function DataStorage:getHistoryDir() -- Deprecated
     return self:getDataDir() .. "/history"
 end
 
---- Gets the path of where
--- [Lua settings](DataStore.md.html#LuaSettings)
---  should be stored.
+--- Gets the path where @{luasettings} should be stored.
 -- @treturn string Directory path
 function DataStorage:getSettingsDir()
     return self:getDataDir() .. "/settings"
