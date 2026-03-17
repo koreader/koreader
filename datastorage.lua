@@ -51,7 +51,7 @@ end
 
 --- Gets the path of where legacy/obsolete sidecar files are stored.
 -- @treturn string Directory path
-function DataStorage:getHistoryDir()
+function DataStorage:getHistoryDir() -- Deprecated
     return self:getDataDir() .. "/history"
 end
 
