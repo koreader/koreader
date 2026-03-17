@@ -597,28 +597,13 @@ Inherited from common document interface.
 --]]
 function KoptInterface:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
     local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 1.0)
-    local offs_x = rect.x - tile.excerpt.x
-    local offs_y = rect.y - tile.excerpt.y
+    target:blitFrom(tile.bb,
+        x, y,
+        rect.x - tile.excerpt.x,
+        rect.y - tile.excerpt.y,
+        rect.w, rect.h)
     if nightmode_invert then
-        if doc.configurable.page_opt == 1 then
-            -- Dewatermark enabled: draw tile, then invert the drawn area
-            target:blitFrom(tile.bb,
-                x, y,
-                offs_x, offs_y,
-                rect.w, rect.h)
-            target:invertRect(x, y, rect.w, rect.h)
-        else
-            -- Dewatermark disabled: invert tile directly
-            target:invertblitFrom(tile.bb,
-                x, y,
-                offs_x, offs_y,
-                rect.w, rect.h)
-        end
-    else
-        target:blitFrom(tile.bb,
-            x, y,
-            offs_x, offs_y,
-            rect.w, rect.h)
+        target:invertRect(x, y, rect.w, rect.h)
     end
 end
 
