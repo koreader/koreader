@@ -2,7 +2,7 @@ LINUX_DIR = $(PLATFORM_DIR)/linux
 LINUX_PACKAGE = koreader-linux-$(LINUX_ARCH)$(KODEDUG_SUFFIX)-$(VERSION).tar.xz
 
 DIST_DIR = $(INSTALL_DIR)/dist
-DIST_APPID = rocks.koreader.koreader
+DIST_APPID = rocks.koreader.KOReader
 
 GLIBC_VERSION = $(shell ldd --version | sed -n '1s/.* \([0-9.]\+\)$$/\1/p')
 
@@ -17,16 +17,16 @@ define mkupdate_linux
 	# Setup launcher to use ~/.config/koreader for writable storage.
 	sed -i -e 's/^# export @KOREADER_FLAVOR@$$/export KO_MULTIUSER=1/' $1/usr/lib/koreader/koreader.sh
 	# AppStream metadata.
-	install -D -m644 $(LINUX_DIR)/koreader.metainfo.xml $1/usr/share/metainfo/$(DIST_APPID).appdata.xml
-	sed -i -e 's/%%VERSION%%/$(VERSION)/' -e 's/%%DATE%%/$(RELEASE_DATE)/' $1/usr/share/metainfo/$(DIST_APPID).appdata.xml
+	install -D -m644 $(LINUX_DIR)/koreader.metainfo.xml $1/usr/share/metainfo/$(DIST_APPID).metainfo.xml
+	sed -i -e 's/%%VERSION%%/$(VERSION)/' -e 's/%%DATE%%/$(RELEASE_DATE)/' $1/usr/share/metainfo/$(DIST_APPID).metainfo.xml
 	# Copyright & license information.
 	install -D -m644 COPYING $(LINUX_DIR)/copyright -t $1/usr/share/doc/koreader/
 	# Desktop entry.
 	install -D -m644 $(LINUX_DIR)/koreader.desktop $1/usr/share/applications/$(DIST_APPID).desktop
 	# Icons.
-	install -D -m644 $(LINUX_DIR)/icons/256x256/koreader.png -t $1/usr/share/icons/hicolor/256x256/apps/
-	install -D -m644 $(LINUX_DIR)/icons/512x512/koreader.png -t $1/usr/share/icons/hicolor/512x512/apps/
-	install -D -m644 resources/koreader.svg -t $1/usr/share/icons/hicolor/scalable/apps/
+	install -D -m644 $(LINUX_DIR)/icons/256x256/koreader.png $1/usr/share/icons/hicolor/256x256/apps/$(DIST_APPID).png
+	install -D -m644 $(LINUX_DIR)/icons/512x512/koreader.png $1/usr/share/icons/hicolor/512x512/apps/$(DIST_APPID).png
+	install -D -m644 resources/koreader.svg $1/usr/share/icons/hicolor/scalable/apps/$(DIST_APPID).svg
 	# Man page.
 	install -D -m644 $(LINUX_DIR)/koreader.1 -t $1/usr/share/man/man1/
 	gzip -9 $1/usr/share/man/man1/koreader.1
