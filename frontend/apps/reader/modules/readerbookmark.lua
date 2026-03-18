@@ -10,6 +10,7 @@ local DocSettings = require("docsettings")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LineWidget = require("ui/widget/linewidget")
@@ -995,6 +996,19 @@ function ReaderBookmark:onShowBookmark()
                 },
             })
             table.insert(buttons, {}) -- separator
+            if bookmark.document.is_pdf then
+                table.insert(buttons, {
+                    {
+                        text = _("Import embedded annotations"),
+                        enabled = bookmark.document.configurable.text_wrap == 0,
+                        callback = function()
+                            UIManager:close(bm_dialog)
+                            bookmark:importEmbeddedAnnotations()
+                        end,
+                    },
+                })
+            end
+            table.insert(buttons, {}) -- separator
             table.insert(buttons, {
                 {
                     text = _("Current page"),
@@ -1621,6 +1635,26 @@ function ReaderBookmark:filterByHighlightColor()
             self:updateBookmarkList(item_table)
         end,
     })
+end
+
+function ReaderBookmark:importEmbeddedAnnotations()
+    local annotations = self.document:getEmbeddedAnnotations()
+    if annotations then
+        local count, skipped = self.ui.highlight:importEmbeddedAnnotations(annotations)
+        if count > 0 then
+            self.bookmark_menu[1].close_callback()
+            self:onShowBookmark()
+            local msg = T(N_("1 annotation imported.", "%1 annotations imported.", count), count)
+            if skipped > 0 then
+                msg = msg .. "\n" .. T(N_("1 duplicate skipped.", "%1 duplicates skipped.", skipped), skipped)
+            end
+            UIManager:show(InfoMessage:new{ text = msg })
+        else
+            UIManager:show(InfoMessage:new{ text = _("All embedded annotations are already imported.") })
+        end
+    else
+        UIManager:show(InfoMessage:new{ text = _("No embedded annotations found.") })
+    end
 end
 
 function ReaderBookmark:doesBookmarkMatchTable(item)

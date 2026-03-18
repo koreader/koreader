@@ -200,14 +200,7 @@ function FileManagerCollection:onMenuSelect(item)
         self._manager.selected_files[item.file] = item.dim
         self:updateItems(1, true)
     else
-        self.close_callback()
-        if self.ui.document then
-            if self.ui.document.file ~= item.file then
-                self.ui:switchDocument(item.file)
-            end
-        else
-            self.ui:openFile(item.file)
-        end
+        filemanagerutil.openFile(self.ui, item.file, self.close_callback)
     end
 end
 

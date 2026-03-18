@@ -70,7 +70,7 @@ local metadata = {
 
     -- appstream metadata that needs no translation
     component = [[
-  <id>rocks.koreader.koreader</id>
+  <id>rocks.koreader.KOReader</id>
 
   <name>KOReader</name>
   <developer id="rocks.koreader">
@@ -150,7 +150,7 @@ local metadata = {
     <mediatype>text/plain</mediatype>
   </provides>
 
-  <launchable type="desktop-id">rocks.koreader.koreader.desktop</launchable>
+  <launchable type="desktop-id">rocks.koreader.KOReader.desktop</launchable>
 
   <categories>
     <category>Office</category>

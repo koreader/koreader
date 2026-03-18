@@ -223,7 +223,7 @@ function InputDialog:init()
     if self.fullscreen or self.add_nav_bar then
         self.deny_keyboard_hiding = true
     end
-    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:nilOrFalse("virtual_keyboard_enabled") then
         self.keyboard_visible = false
         self.skip_first_show_keyboard = true
     end
@@ -317,6 +317,11 @@ function InputDialog:init()
                                     - vspan_after_input_text:getSize().h
                                     - buttons_container:getSize().h
                                     - keyboard_height
+        if self._added_widgets then
+            for _, widget in ipairs(self._added_widgets) do
+                available_height = available_height - widget:getSize().h
+            end
+        end
         if self.fullscreen or self.use_available_height or text_height > available_height then
             -- Don't leave unusable space in the text widget, as the user could think
             -- it's an empty line: move that space in pads after and below (for centering)
@@ -503,6 +508,7 @@ function InputDialog:reinit()
 end
 
 function InputDialog:addWidget(widget, re_init)
+    local is_text_height_adjustable = self.fullscreen or self.use_available_height
     table.insert(self.layout, #self.layout, {widget})
     if not re_init then -- backup widget for re-init
         widget = CenterContainer:new{
@@ -516,9 +522,15 @@ function InputDialog:addWidget(widget, re_init)
             self._added_widgets = {}
         end
         table.insert(self._added_widgets, widget)
+        if is_text_height_adjustable then
+            self.text_height = nil
+            self:init()
+        end
     end
     -- insert widget before the bottom buttons and their previous vspan
-    table.insert(self.vgroup, #self.vgroup-1, widget)
+    if re_init or not is_text_height_adjustable then
+        table.insert(self.vgroup, #self.vgroup-1, widget)
+    end
 end
 
 function InputDialog:getAddedWidgetAvailableWidth()
@@ -630,7 +642,7 @@ function InputDialog:isKeyboardVisible()
 end
 
 function InputDialog:lockKeyboard(toggle)
-    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:nilOrFalse("virtual_keyboard_enabled") then
         -- do not lock the virtual keyboard when user is hiding it, we still *might* want to activate it via shortcuts ("Shift" + "Home") when in need of special characters or symbols
         return
     end
