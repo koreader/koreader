@@ -230,7 +230,7 @@ local function tag(element, lang, str, pad)
 end
 
 local function genAppstream()
-    local metadata_file = "platform/common/koreader.metainfo.xml"
+    local metadata_file = "platform/linux/koreader.metainfo.xml"
     print("Building appstream metadata, this might take a while...")
     local t = {}
     local desc = metadata.desc
