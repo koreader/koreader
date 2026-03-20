@@ -24,6 +24,7 @@ pkgs.mkShell {
     wget
     # optional
     ccache
+    luajit
     luajitPackages.luacheck
     p7zip
     shellcheck
