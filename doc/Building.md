@@ -32,6 +32,8 @@ Optional:
 - `7z`: for packing releases and the Android build assets
 - `ccache`: recommended for faster recompilation times
 - `luacheck`, `shellcheck` and `shfmt`: for linting the codebase with `./kodev check`
+- `luajit` (Linux only): to update Linux packages' metadata
+- `luajit` development files and `gcc` plugin support (Linux only): to generate FFI cdecls
 - `SDL3`: version >= 3.2.12, for running the emulator / tests (if the library is not found, a version will automatically be built)
 
 ### Alpine Linux
@@ -50,7 +52,7 @@ so the real ninja is used (and not the binary provided by samurai).
 
 Optional:
 ```
-sudo apk add 7zip ccache luacheck shellcheck shfmt
+sudo apk add 7zip ccache luacheck luajit shellcheck shfmt
 ```
 
 ### Arch Linux
@@ -64,7 +66,7 @@ run0 pacman -S base-devel ca-certificates cmake gcc-libs git \
 
 Optional:
 ```
-run0 pacman -S 7zip ccache luacheck shellcheck shfmt
+run0 pacman -S 7zip ccache luacheck luajit shellcheck shfmt
 ```
 
 ### Debian/Ubuntu
@@ -100,7 +102,11 @@ Otherwise, follow full up-to-date instructions from here: https://wiki.debian.or
 
 Optional:
 ```
-sudo apt install ccache lua-check p7zip-full shellcheck shfmt
+sudo apt install ccache libluajit-5.1-dev lua-check luajit p7zip-full shellcheck shfmt
+```
+And to install GCC plugin support for your installed GCC version, e.g. for `gcc-11`:
+```
+sudo apt install gcc-11-plugin-dev
 ```
 
 ### Fedora/Red Hat
@@ -114,7 +120,7 @@ sudo dnf install autoconf automake cmake gcc gcc-c++ gettext git libtool meson \
 
 Optional:
 ```
-sudo dnf install ccache p7zip shellcheck shfmt
+sudo dnf install ccache gcc-plugin-devel luajit-devel p7zip shellcheck shfmt
 ```
 And for luacheck:
 ```
