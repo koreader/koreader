@@ -31,6 +31,6 @@ pkgs.mkShell {
   ];
 
   shellHook = ''
-    export LD_LIBRARY_PATH=${pkgs.SDL2}/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=${pkgs.sdl3}/lib:$LD_LIBRARY_PATH
   '';
 }
