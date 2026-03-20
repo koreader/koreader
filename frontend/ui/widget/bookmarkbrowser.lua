@@ -2,6 +2,7 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
+local ButtonSelector = require("ui/widget/buttonselector")
 local CheckButton = require("ui/widget/checkbutton")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
@@ -425,6 +426,13 @@ function BookmarkBrowser:showBookmarkListMenu()
     local function close_dialog_callback()
         UIManager:close(bm_list_menu)
     end
+    local function reset_filter(filter)
+        if self.filter_table[filter] then
+            UIManager:close(bm_list_menu)
+            self.filter_table[filter] = nil
+            self:updateBookmarkList()
+        end
+    end
     local buttons = {
         {
             {
@@ -451,18 +459,17 @@ function BookmarkBrowser:showBookmarkListMenu()
                     and T(_("Style: %1"), ReaderHighlight:getHighlightStyleString(self.filter_table.style)) or _("Style"),
                 callback = function()
                     UIManager:close(bm_list_menu)
-                    local caller_callback = function(style)
-                        self.filter_table.style = style
-                        self:updateBookmarkList()
-                    end
-                    ReaderHighlight:showHighlightStyleDialog(caller_callback, self.filter_table.style)
+                    UIManager:show(ButtonSelector:new{
+                        current_value = self.filter_table.style,
+                        values = ReaderHighlight.getHighlightStyles(),
+                        callback = function(value)
+                            self.filter_table.style = value
+                            self:updateBookmarkList()
+                        end,
+                    })
                 end,
                 hold_callback = function()
-                    if self.filter_table.style then
-                        UIManager:close(bm_list_menu)
-                        self.filter_table.style = nil
-                        self:updateBookmarkList()
-                    end
+                    reset_filter("style")
                 end,
             },
         },
@@ -472,18 +479,21 @@ function BookmarkBrowser:showBookmarkListMenu()
                     and T(_("Type: %1"), self.display_type[self.filter_table.type]) or _("Type"),
                 callback = function()
                     UIManager:close(bm_list_menu)
-                    local caller_callback = function(bm_type)
-                        self.filter_table.type = bm_type
-                        self:updateBookmarkList()
-                    end
-                    self:showBookmarkTypeDialog(caller_callback, self.filter_table.type)
+                    UIManager:show(ButtonSelector:new{
+                        current_value = self.filter_table.type,
+                        values = {
+                            { self.display_type.highlight, "highlight" },
+                            { self.display_type.note, "note" },
+                            { self.display_type.bookmark, "bookmark" },
+                        },
+                        callback = function(value)
+                            self.filter_table.type = value
+                            self:updateBookmarkList()
+                        end,
+                    })
                 end,
                 hold_callback = function()
-                    if self.filter_table.type then
-                        UIManager:close(bm_list_menu)
-                        self.filter_table.type = nil
-                        self:updateBookmarkList()
-                    end
+                    reset_filter("type")
                 end,
             },
             {
@@ -491,18 +501,18 @@ function BookmarkBrowser:showBookmarkListMenu()
                     and T(_("Color: %1"), ReaderHighlight:getHighlightColorString(self.filter_table.color)) or _("Color"),
                 callback = function()
                     UIManager:close(bm_list_menu)
-                    local caller_callback = function(color)
-                        self.filter_table.color = color
-                        self:updateBookmarkList()
-                    end
-                    ReaderHighlight:showHighlightColorDialog(caller_callback, self.filter_table.color)
+                    UIManager:show(ButtonSelector:new{
+                        current_value = self.filter_table.color,
+                        values = ReaderHighlight.highlight_colors,
+                        bg_colors = ReaderHighlight:getHighlightColorList(),
+                        callback = function(value)
+                            self.filter_table.color = value
+                            self:updateBookmarkList()
+                        end,
+                    })
                 end,
                 hold_callback = function()
-                    if self.filter_table.color then
-                        UIManager:close(bm_list_menu)
-                        self.filter_table.color = nil
-                        self:updateBookmarkList()
-                    end
+                    reset_filter("color")
                 end,
             },
         },
@@ -551,30 +561,6 @@ function BookmarkBrowser:showBookmarkListMenu()
         buttons = buttons,
     }
     UIManager:show(bm_list_menu)
-end
-
-function BookmarkBrowser:showBookmarkTypeDialog(caller_callback, curr_type)
-    local types = { "highlight", "note", "bookmark" }
-    local type_dialog
-    local buttons = {}
-    for i, bm_type in ipairs(types) do
-        local type_name = self.display_type[bm_type]
-        buttons[i] = {{
-            text = bm_type ~= curr_type and type_name or type_name .. "  " .. self.checkmark,
-            menu_style = true,
-            callback = function()
-                if bm_type ~= curr_type then
-                    caller_callback(bm_type)
-                end
-                UIManager:close(type_dialog)
-            end,
-        }}
-    end
-    type_dialog = ButtonDialog:new{
-        width_factor = 0.4,
-        buttons = buttons,
-    }
-    UIManager:show(type_dialog)
 end
 
 function BookmarkBrowser:showBookList(multi_choice)
