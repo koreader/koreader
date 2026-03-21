@@ -4,14 +4,12 @@ local UIManager
 local logger = require("logger")
 local ffi = require("ffi")
 local C = ffi.C
-local inkview = ffi.load("inkview")
+local inkview = require("ffi/inkview")
 local band = require("bit").band
 local util = require("util")
 local _ = require("gettext")
 
-require("ffi/posix_h")
 require("ffi/linux_input_h")
-require("ffi/inkview_h")
 
 local function yes() return true end
 local function no() return false end
@@ -363,10 +361,8 @@ function PocketBook:initNetworkManager(NetworkMgr)
         UIManager:unschedule(keepWifiAlive)
 
         if NetworkMgr:isWifiOn() then
-            -- check if NetMgrPing is available on the device and skip keepalive if not
-            if pcall(function() return inkview.NetMgrPing and true end) then
+            if C.POCKETBOOK_VERSION >= 508 then
                 logger.dbg("ping wifi keep alive and reschedule")
-
                 inkview.NetMgrPing()
                 UIManager:scheduleIn(30, keepWifiAlive)
             else
