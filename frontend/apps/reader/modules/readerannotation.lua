@@ -4,7 +4,6 @@ local Notification = require("ui/widget/notification")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local random = require("random")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
