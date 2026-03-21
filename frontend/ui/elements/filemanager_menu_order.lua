@@ -124,6 +124,7 @@ local order = {
         "exporter",
         "statistics",
         "cloud_storage",
+        "cloud_storage_plus",
         "move_to_archive",
         "wallabag",
         "news_downloader",
