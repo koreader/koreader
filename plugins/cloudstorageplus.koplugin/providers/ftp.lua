@@ -8,7 +8,7 @@ local ftp = require("socket.ftp")
 local logger = require("logger")
 local ltn12 = require("ltn12")
 local socketutil = require("socketutil")
-local url = require("socket.url")
+local url_parse = require("socket.url").parse
 local util = require("util")
 local _ = require("gettext")
 
@@ -54,7 +54,7 @@ function FtpApi.generateUrl(address, user, pass)
 end
 
 function FtpApi.ftpGet(u, command, sink)
-    local p = url.parse(u)
+    local p = url_parse(u)
     p.user = util.urlDecode(p.user)
     p.password = util.urlDecode(p.password)
     p.command = command
@@ -118,7 +118,7 @@ function FtpApi.listFolder(address_path, folder_path, include_folders)
             local item = parse_func(line, address_path)
             if item then
                 if item.size then -- file
-                    if show_unsupported or DocumentRegistry:hasProvider(item_name) then
+                    if show_unsupported or DocumentRegistry:hasProvider(item.name) then
                         local filesize, suffix, mandatory
                         filesize = tonumber(item.size)
                         if include_folders then
@@ -151,7 +151,7 @@ function FtpApi.listFolder(address_path, folder_path, include_folders)
 end
 
 function FtpApi.getFeat(address_path)
-    local p = url.parse(address_path)
+    local p = url_parse(address_path)
     p.user = util.urlDecode(p.user)
     p.password = util.urlDecode(p.password)
     p.command = "feat"
@@ -161,7 +161,7 @@ function FtpApi.getFeat(address_path)
 end
 
 function FtpApi.getSize(address_path)
-    local p = url.parse(address_path)
+    local p = url_parse(address_path)
     p.user = util.urlDecode(p.user)
     p.password = util.urlDecode(p.password)
     p.argument = string.gsub(p.path, "^/", "")
@@ -173,7 +173,7 @@ end
 
 function FtpApi.uploadFile(address_path, username, password, file_path)
     local file_name = file_path:gsub(".*/", "")
-    local p = url.parse(address_path)
+    local p = url_parse(address_path)
     p.user = util.urlDecode(username)
     p.password = util.urlDecode(password)
     p.path = p.path == "/" and file_name or p.path .. "/" .. file_name
@@ -187,7 +187,7 @@ function FtpApi.uploadFile(address_path, username, password, file_path)
 end
 
 function FtpApi.deleteFile(address_path, username, password)
-    local p = url.parse(address_path)
+    local p = url_parse(address_path)
     p.user = util.urlDecode(username)
     p.password = util.urlDecode(password)
     p.argument = util.urlDecode(string.gsub(p.path, "^/", ""))
@@ -202,7 +202,7 @@ function FtpApi.deleteFile(address_path, username, password)
 end
 
 function FtpApi.createFolder(address_path, username, password, folder_name)
-    local p = url.parse(address_path)
+    local p = url_parse(address_path)
     p.user = util.urlDecode(username)
     p.password = util.urlDecode(password)
     p.argument = util.urlDecode(p.path == "/" and folder_name or string.gsub(p.path, "^/", "") .. "/" .. folder_name)
