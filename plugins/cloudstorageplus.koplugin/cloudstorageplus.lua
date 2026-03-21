@@ -769,7 +769,7 @@ function CloudStorage:syncDownload(server)
                 if not go_on then
                     break
                 end
-                local ok = self.provider.downloadFile(file.url, server.sync_dest_folder .. "/" .. file.text)
+                ok = self.provider.downloadFile(file.url, server.sync_dest_folder .. "/" .. file.text)
                 if ok then
                     success_files = success_files + 1
                 else
