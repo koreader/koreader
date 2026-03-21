@@ -39,7 +39,8 @@ local DataStorage = require("datastorage")
 G_reader_settings = require("luasettings"):open(
     DataStorage:getDataDir().."/settings.reader.lua")
 
-if G_reader_settings:hasNot("device_id") then
+local device_id = G_reader_settings:readSetting("device_id")
+if device_id == nil or device_id == "" then
     local random = require("random")
     G_reader_settings:saveSetting("device_id", random.uuid())
 end
