@@ -807,9 +807,11 @@ function DictQuickLookup:registerKeyEvents()
             self.key_events.FastRightTextSelectorIndicator = { { modifier, "Right" }, event = "FindInTextOrMoveSelectorIndicator", args = { 1,  0, true } }
             if Device:hasKeyboard() then
                 self.key_events.LookupInputWordClear = { { Input.group.Alphabet }, { "Shift", Input.group.Alphabet }, event = "LookupInputWord" }
-                -- We need to concat here so that the 'del' event press, which propagates to inputText (desirable for previous key_event,
-                -- i.e., LookupInputWordClear) does not remove the last char of self.word
-                self.key_events.LookupInputWord = { { Device:hasSymKey() and "Del" or "Backspace" }, args = self.word .." " }
+                if G_reader_settings:nilOrFalse("backspace_as_back") then
+                    -- We need to concat here so that the 'del' event press, which propagates to inputText (desirable for previous key_event,
+                    -- i.e., LookupInputWordClear) does not remove the last char of self.word
+                    self.key_events.LookupInputWord = { { Device:hasSymKey() and "Del" or "Backspace" }, args = self.word .." " }
+                end
             else
                 -- same case as hasKeyboard
                 self.key_events.LookupInputWord = { { "ScreenKB", "Back" }, args = self.word .." " }
@@ -1501,9 +1503,7 @@ function DictQuickLookup:onLookupInputWord(hint, ev)
         local k = tostring(ev.key)
         local is_shift = ev.modifiers and ev.modifiers.Shift
         local letter = is_shift and k or k:lower()
-
         self:lookupInputWord()
-
         UIManager:nextTick(function()
             if self.input_dialog then
                 UIManager:sendEvent(Event:new("TextInput", letter))
