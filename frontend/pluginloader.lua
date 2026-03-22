@@ -14,7 +14,6 @@ Plugins are controlled by the following settings.
 local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util = require("util")
 local _ = require("gettext")
 
 local DEFAULT_PLUGIN_PATH = "plugins"
@@ -166,19 +165,19 @@ function PluginLoader:_discover()
             if mode == "directory" and entry:sub(-9) == ".koplugin" then
                 local mainfile = plugin_root.."/main.lua"
                 local metafile = plugin_root.."/_meta.lua"
+                local plugin_name = entry:sub(1, -10)
                 local disabled = false
-                if plugins_disabled and plugins_disabled[entry:sub(1, -10)] then
+                if plugins_disabled and plugins_disabled[plugin_name] then
                     mainfile = metafile
                     disabled = true
                 end
-                local __, name = util.splitFilePathName(plugin_root)
 
                 table.insert(discovered, {
                     ["main"] = mainfile,
                     ["meta"] = metafile,
                     ["path"] = plugin_root,
                     ["disabled"] = disabled,
-                    ["name"] = name,
+                    ["name"] = plugin_name,
                 })
             end
         end
@@ -204,14 +203,18 @@ function PluginLoader:_load(t)
             logger.warn("Error when loading", mainfile, plugin_module)
         elseif type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
             plugin_module.path = plugin_root
-            plugin_module.name = plugin_module.name or plugin_root:match("/(.-)%.koplugin")
+            plugin_module.name = v.name
             if disabled then
                 table.insert(self.disabled_plugins, plugin_module)
             else
                 local ok_meta, plugin_metamodule = pcall(dofile, metafile)
                 if ok_meta and plugin_metamodule then
                     for k, module in pairs(plugin_metamodule) do
-                        plugin_module[k] = module
+                        if k ~= "name" then
+                            plugin_module[k] = module
+                        else
+                            logger.warn("PluginLoader:", plugin_module.name, "name in _meta.lua, is deprecated and will be ignored.")
+                        end
                     end
                 end
                 sandboxPluginEventHandlers(plugin_module)
