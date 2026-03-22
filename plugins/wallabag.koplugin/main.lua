@@ -1441,7 +1441,7 @@ function Wallabag:archiveArticle(path)
                 local summary = doc_settings:readSetting("summary")
                 if summary and summary.rating then
                     if summary.rating > 0 and self.sync_star_rating_as_tag == true then
-                        local ok, result, code = self:callAPI("GET", "/api/entries/"..id, headers)
+                        local ok, result = self:callAPI("GET", "/api/entries/"..id, headers)
                         if ok and result and result.tags then
                             local current_tags = result.tags
                             for _, t in ipairs(current_tags) do
