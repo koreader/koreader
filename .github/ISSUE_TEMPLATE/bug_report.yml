@@ -6,6 +6,18 @@ body:
       value: |
         Thanks for taking the time to fill out this bug report!
 
+  - type: checkboxes
+    id: preflight-checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: Reproduced the issue with external plugins and user-patches disabled.
+          required: true
+        - label: Searched existing issues for similar reports.
+          required: true
+        - label: Tested on the latest nightly build ([more information](/koreader/koreader/issues/11068)).
+          required: false
+
   - type: dropdown
     id: device-type
     attributes:
@@ -31,8 +43,8 @@ body:
     id: koreader-version
     attributes:
       label: KOReader version
-      description: What version of KOReader are you running?
-      placeholder: e.g., 2025.04
+      description: What version of KOReader are you running? (Please test the latest nightly first.)
+      placeholder: e.g., 2026.03, 2025.10-164-gf12ff96ad_2026-03-03
     validations:
       required: true
 
@@ -53,6 +65,27 @@ body:
       placeholder: What happened? What did you expect to happen?
     validations:
       required: true
+
+  - type: dropdown
+    id: regression
+    attributes:
+      label: Regression
+      description: Did this issue start happening after a recent update?
+      options:
+        - "Yes" # Yes and no are booleans that must be quoted.
+        - "No"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: input
+    id: last-working-version
+    attributes:
+      label: Last working version
+      description: If this issue is a regression, please specify the last version of KOReader where the issue did not occur.
+      placeholder: e.g., 2026.03, 2025.10-164-gf12ff96ad_2026-03-03
+    validations:
+      required: false
 
   - type: textarea
     id: reproduction-steps

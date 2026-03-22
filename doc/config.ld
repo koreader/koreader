@@ -23,6 +23,7 @@ file = {
     '../plugins',
     '../base/ffi',
     '../platform/android/luajit-launcher/assets',
+    '../datastorage.lua',
     exclude = {'../base/ffi/sha2.lua',
         '../base/ffi/qrencode.lua',
         '../plugins/exporter.koplugin/template/slt2.lua',

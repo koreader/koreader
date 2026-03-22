@@ -223,7 +223,7 @@ function InputDialog:init()
     if self.fullscreen or self.add_nav_bar then
         self.deny_keyboard_hiding = true
     end
-    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:nilOrFalse("virtual_keyboard_enabled") then
         self.keyboard_visible = false
         self.skip_first_show_keyboard = true
     end
@@ -642,7 +642,7 @@ function InputDialog:isKeyboardVisible()
 end
 
 function InputDialog:lockKeyboard(toggle)
-    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:nilOrFalse("virtual_keyboard_enabled") then
         -- do not lock the virtual keyboard when user is hiding it, we still *might* want to activate it via shortcuts ("Shift" + "Home") when in need of special characters or symbols
         return
     end

@@ -437,6 +437,21 @@ The recommended value is -2.]]),
                 help_text = _([[
 The footnote popup font adjusts to the font size you've set for the document.
 This allows you to specify how much smaller or larger it should be relative to the document font size.]]),
+                separator = true,
+            },
+            {
+                text = _("Justify text in popups"),
+                enabled_func = function()
+                    return isFootnoteLinkInPopupEnabled() and
+                        (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
+                end,
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("footnote_popup_justify")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("footnote_popup_justify")
+                end,
+                help_text = _([[Justify text in footnote popup.]]),
             },
         }
         return temp_menu_items

@@ -3,21 +3,17 @@
 set -eo pipefail
 # Script to generate debian packages for KOReader
 
+declare -r USAGE="
+USAGE:
+    $0 OUTPUT_DEB INPUT_DIR [EXTRA_DPKG-DEB_OPTION]…
+"
+
 command_exists() {
     type "$1" >/dev/null 2>/dev/null
 }
 
-uname_to_debian() {
-    case "$1" in
-        x86_64) echo "amd64" ;;
-        armv7l) echo "armhf" ;;
-        aarch64) echo "arm64" ;;
-        *) echo "$1" ;;
-    esac
-}
-
 write_changelog() {
-    CHANGELOG_PATH="${1}/share/doc/koreader/changelog.Debian.gz"
+    CHANGELOG_PATH="${1}/usr/share/doc/koreader/changelog.Debian.gz"
     CHANGELOG=$(
         cat <<END_HEREDOC
 koreader ($2) stable; urgency=low
@@ -44,14 +40,19 @@ END_HEREDOC
     chmod 644 "${CHANGELOG_PATH}"
 }
 
-if ! [ -r "${1}" ]; then
-    echo "${0}: can't find KOReader archive, please specify a path to a KOReader tar.gz" 1>&2
+if [[ $# -lt 2 ]]; then
+    echo "${USAGE}" 1>&2
     exit 1
 fi
 
+output_deb="$1"
+input_dir="$2"
+shift 2
+
 # Check for required tools.
 missing_tools=()
-for tool in dpkg-deb fakeroot; do
+# shellcheck disable=SC2043
+for tool in dpkg-deb; do
     if ! command_exists "${tool}"; then
         missing_tools+=("${tool}")
     fi
@@ -61,24 +62,18 @@ if [[ ${#missing_tools[@]} -ne 0 ]]; then
     exit 1
 fi
 
-mkdir -p tmp-debian/usr
-chmod 0755 tmp-debian/usr
-tar -xf "${1}" -C tmp-debian/usr
-rm -f tmp-debian/usr/README.md
-ARCH="$(echo "${1}" | cut -d '-' -f3)"
-VERSION="$(cut -f2 -dv "tmp-debian/usr/lib/koreader/git-rev" | cut -f1,2 -d-)"
-DEB_ARCH="$(uname_to_debian "${ARCH}")"
-BASE_DIR="tmp-debian"
+IFS=_ read -r _package version arch <<<"${output_deb##*/}"
+arch="${arch%.*}"
 
 # populate debian control file
-mkdir -p "${BASE_DIR}/DEBIAN"
-cat >"${BASE_DIR}/DEBIAN/control" <<EOF
+mkdir -p "${input_dir}/DEBIAN"
+cat >"${input_dir}/DEBIAN/control" <<EOF
 Section: graphics
 Priority: optional
-Depends: libsdl2-2.0-0, libc6 (>= 2.31)
-Architecture: ${DEB_ARCH}
-Version: ${VERSION}
-Installed-Size: $(du -ks "${BASE_DIR}/usr/" | cut -f 1)
+Depends: libc6 (>= 2.34), libdecor-0-0 (>= 0.1.0), libdrm2 (>= 2.4.46), libgbm1 (>= 8.1~0), libwayland-client0 (>= 1.20.0), libwayland-cursor0 (>= 1.0.2), libwayland-egl1 (>= 1.15.0), libx11-6 (>= 2:1.2.99.901), libxcursor1 (>> 1.1.2), libxext6, libxfixes3 (>= 1:5.0), libxi6 (>= 2:1.5.99.2), libxkbcommon0 (>= 0.5.0), libxrandr2 (>= 2:1.2.99.3), libxss1
+Architecture: ${arch}
+Version: ${version}
+Installed-Size: $(du -ks "${input_dir}/usr/" | cut -f 1)
 Package: koreader
 Maintainer: koreader <null@koreader.rocks>
 Homepage: https://koreader.rocks
@@ -110,16 +105,15 @@ Description: Ebook reader optimized for e-ink screens.
 EOF
 
 # use absolute path to luajit in reader.lua
-sed -i 's,./luajit,/usr/lib/koreader/luajit,' "${BASE_DIR}/usr/lib/koreader/reader.lua"
+sed -i 's,./luajit,/usr/lib/koreader/luajit,' "${input_dir}/usr/lib/koreader/reader.lua"
 
 # lintian complains if shared libraries have execute rights.
-find "${BASE_DIR}" -type f -perm /+x -name '*.so*' -print0 | xargs -0 chmod a-x
+find "${input_dir}" -type f -perm /+x -name '*.so*' -print0 | xargs -0 chmod a-x
 
 # remove misc files that are already summarized in usr/share/doc/koreader
-find "${BASE_DIR}" '(' -name "*.md" -o -name "LICENSE" ')' -type f -print0 | xargs -0 rm -rf
+find "${input_dir}" '(' -name "*.md" -o -name "LICENSE" ')' -type f -print0 | xargs -0 rm -rf
 
 # add debian changelog
-write_changelog "${BASE_DIR}/usr" "${VERSION}"
+write_changelog "${input_dir}" "${version}"
 
-fakeroot dpkg-deb -b "${BASE_DIR}" "koreader-${VERSION}-${DEB_ARCH}.deb"
-rm -rf tmp-debian
+dpkg-deb --build --root-owner-group "${@}" "${input_dir}" "${output_deb}"

@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
+local ButtonSelector = require("ui/widget/buttonselector")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -18,7 +19,6 @@ local Size = require("ui/size")
 local SpinWidget = require("ui/widget/spinwidget")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
-local Utf8Proc = require("ffi/utf8proc")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("util")
 local _ = require("gettext")
@@ -999,11 +999,11 @@ function ReaderBookmark:onShowBookmark()
             if bookmark.document.is_pdf then
                 table.insert(buttons, {
                     {
-                        text = _("Import embedded highlights"),
+                        text = _("Import embedded annotations"),
                         enabled = bookmark.document.configurable.text_wrap == 0,
                         callback = function()
                             UIManager:close(bm_dialog)
-                            bookmark:importEmbeddedHighlights()
+                            bookmark:importEmbeddedAnnotations()
                         end,
                     },
                 })
@@ -1403,11 +1403,11 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note, ca
                     is_enter_default = true,
                     callback = function()
                         local value = input_dialog:getInputText()
+                        self.ui.highlight:writePdfAnnotation("content", annotation, value)
                         if value == "" then -- blank input deletes note
                             value = nil
                         end
                         annotation.note = value
-                        self.ui.highlight:writePdfAnnotation("content", annotation, value)
                         local type_after = self.getBookmarkType(annotation)
                         if type_before ~= type_after then
                             if type_before == "highlight" then
@@ -1521,15 +1521,8 @@ function ReaderBookmark:onSearchBookmark()
                     is_enter_default = true,
                     callback = function()
                         local search_str = input_dialog:getInputText()
-                        if search_str == "" then
-                            search_str = nil
-                        else
-                            if not check_button_case.checked then
-                                search_str = Utf8Proc.lowercase(util.fixUtf8(search_str, "?"))
-                            end
-                        end
                         self.match_table = {
-                            search_str = search_str,
+                            search_str = search_str ~= "" and search_str or nil,
                             bookmark = check_button_bookmark.checked,
                             highlight = check_button_highlight.checked,
                             note = check_button_note.checked,
@@ -1599,8 +1592,7 @@ function ReaderBookmark:onSearchBookmark()
 end
 
 function ReaderBookmark:filterByEditedText()
-    local bm_menu = self.bookmark_menu[1]
-    local item_table = bm_menu.item_table
+    local item_table = self.bookmark_menu[1].item_table
     for i = #item_table, 1, -1 do
         if not item_table[i].text_edited then
             table.remove(item_table, i)
@@ -1611,44 +1603,57 @@ function ReaderBookmark:filterByEditedText()
 end
 
 function ReaderBookmark:filterByHighlightStyle()
-    local filter_by_drawer_callback = function(drawer)
-        local bm_menu = self.bookmark_menu[1]
-        local item_table = bm_menu.item_table
-        for i = #item_table, 1, -1 do
-            if item_table[i].drawer ~= drawer then
-                table.remove(item_table, i)
+    UIManager:show(ButtonSelector:new{
+        current_value = self.show_drawer_only,
+        values = self.ui.highlight:getHighlightStyles(),
+        callback = function(value)
+            local item_table = self.bookmark_menu[1].item_table
+            for i = #item_table, 1, -1 do
+                if item_table[i].drawer ~= value then
+                    table.remove(item_table, i)
+                end
             end
-        end
-        self.show_drawer_only = drawer
-        self:updateBookmarkList(item_table)
-    end
-    self.ui.highlight:showHighlightStyleDialog(filter_by_drawer_callback)
+            self.show_drawer_only = value
+            self:updateBookmarkList(item_table)
+        end,
+    })
 end
 
 function ReaderBookmark:filterByHighlightColor()
-    local filter_by_color_callback = function(color)
-        local bm_menu = self.bookmark_menu[1]
-        local item_table = bm_menu.item_table
-        for i = #item_table, 1, -1 do
-            if item_table[i].color ~= color then
-                table.remove(item_table, i)
+    UIManager:show(ButtonSelector:new{
+        current_value = self.show_color_only,
+        values = self.ui.highlight.highlight_colors,
+        bg_colors = self.ui.highlight:getHighlightColorList(),
+        callback = function(value)
+            local item_table = self.bookmark_menu[1].item_table
+            for i = #item_table, 1, -1 do
+                if item_table[i].color ~= value then
+                    table.remove(item_table, i)
+                end
             end
-        end
-        self.show_color_only = color
-        self:updateBookmarkList(item_table)
-    end
-    self.ui.highlight:showHighlightColorDialog(filter_by_color_callback)
+            self.show_color_only = value
+            self:updateBookmarkList(item_table)
+        end,
+    })
 end
 
-function ReaderBookmark:importEmbeddedHighlights()
-    local boxes = self.document:getEmbeddedAnnotationsBoxes()
-    if boxes then
-        local count = self.ui.highlight:saveHighlightsFromBoxes(boxes)
-        self.bookmark_menu[1].close_callback()
-        self:onShowBookmark()
-        UIManager:show(InfoMessage:new{ text = T(N_("1 highlight added", "%1 highlights added", count), count) })
+function ReaderBookmark:importEmbeddedAnnotations()
+    local annotations = self.document:getEmbeddedAnnotations()
+    if annotations then
+        local count, skipped = self.ui.highlight:importEmbeddedAnnotations(annotations)
+        if count > 0 then
+            self.bookmark_menu[1].close_callback()
+            self:onShowBookmark()
+            local msg = T(N_("1 annotation imported.", "%1 annotations imported.", count), count)
+            if skipped > 0 then
+                msg = msg .. "\n" .. T(N_("1 duplicate skipped.", "%1 duplicates skipped.", skipped), skipped)
+            end
+            UIManager:show(InfoMessage:new{ text = msg })
+        else
+            UIManager:show(InfoMessage:new{ text = _("All embedded annotations are already imported.") })
+        end
     else
-        UIManager:show(InfoMessage:new{ text = _("No embedded highlights found") })
+        UIManager:show(InfoMessage:new{ text = _("No embedded annotations found.") })
     end
 end
 
@@ -1659,10 +1664,7 @@ function ReaderBookmark:doesBookmarkMatchTable(item)
             if item.note then -- search in the highlighted text and in the note
                 text = text .. "\u{FFFF}" .. item.note
             end
-            if not self.match_table.case_sensitive then
-                text = Utf8Proc.lowercase(util.fixUtf8(text, "?"))
-            end
-            return text:find(self.match_table.search_str)
+            return util.stringSearch(text, self.match_table.search_str, self.match_table.case_sensitive) > 0
         end
         return true
     end

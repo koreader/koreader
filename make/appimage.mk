@@ -1,4 +1,7 @@
+APPIMAGE_ARCH_arm64 = aarch64
+APPIMAGE_ARCH = $(or $(APPIMAGE_ARCH_$(LINUX_ARCH)),$(LINUX_ARCH))
 APPIMAGE_DIR = $(PLATFORM_DIR)/appimage
+APPIMAGE_NAME = koreader-$(VERSION)-$(APPIMAGE_ARCH).AppImage
 
 MKAPPIMAGE = mkappimage-$(APPIMAGE_ARCH).AppImage
 define MKAPPIMAGE_URL
@@ -9,13 +12,6 @@ $(WGET) -O - https://api.github.com/repos/probonopd/go-appimage/releases | jq -r
  | .browser_download_url
 '
 endef
-
-APPID = rocks.koreader.koreader
-APPDIR = $(INSTALL_DIR)/appimage
-DESKTOP = usr/share/applications/$(APPID).desktop
-METAINFO = usr/share/metainfo/$(APPID).appdata.xml
-
-KOREADER_APPIMAGE = koreader-$(DIST)-$(APPIMAGE_ARCH)-$(VERSION).AppImage
 
 UBUNTU_LIBBSD = /lib/$(TARGET_MACHINE)/libbsd.so.0
 
@@ -35,28 +31,24 @@ mkappimage $(MKAPPIMAGE):
 	chmod +x ./$(MKAPPIMAGE).part
 	mv $(MKAPPIMAGE).part $(MKAPPIMAGE)
 
-update: all $(MKAPPIMAGE)
-	cd $(INSTALL_DIR)/koreader && '$(abspath tools/mkrelease.sh)' $(abspath $(APPDIR))/ . $(release_excludes)
-	# Launcher.
-	install -D $(APPIMAGE_DIR)/AppRun $(APPDIR)/
-	# Icon.
-	install -D resources/koreader.png $(APPDIR)/
-	ln -s koreader.png $(APPDIR)/.DirIcon
-	# Desktop entry.
-	install -D $(APPIMAGE_DIR)/koreader.desktop $(APPDIR)/$(DESKTOP)
-	ln -s $(DESKTOP) $(APPDIR)/$(notdir $(DESKTOP))
-	# AppStream metadata.
-	install -D $(PLATFORM_DIR)/common/koreader.metainfo.xml $(APPDIR)/$(METAINFO)
-	sed -i -e 's/%%VERSION%%/$(VERSION)/' -e 's/%%DATE%%/$(RELEASE_DATE)/' $(APPDIR)/$(METAINFO)
-	# Also copy libbsd.so.0 (cf. https://github.com/koreader/koreader/issues/4627).
+update-appimage: all $(MKAPPIMAGE)
+	$(call mkupdate_linux,$(INSTALL_DIR)/appimage)
+	# Setup AppDir.
+	ln -s usr/bin/koreader $(INSTALL_DIR)/appimage/AppRun
+	ln -s usr/share/applications/$(DIST_APPID).desktop $(INSTALL_DIR)/appimage/
 ifeq (,$(wildcard $(UBUNTU_LIBBSD)))
 	# Only warn if it's missing (e.g. when testing on a non-Ubuntu distribution).
 	echo 'WARNING: not bundling missing $(UBUNTU_LIBBSD)' 1>&2
 else
-	install $(UBUNTU_LIBBSD) $(APPDIR)/libs/
+	install $(UBUNTU_LIBBSD) -t $(INSTALL_DIR)/appimage/usr/lib/koreader/libs/
 endif
 	# Generate AppImage.
-	ARCH='$(APPIMAGE_ARCH)' VERSION='$(VERSION)' ./$(MKAPPIMAGE) --appimage-extract-and-run $(APPDIR) $(KOREADER_APPIMAGE)
+	echo 'Creating appimage: $(LINUX_PACKAGE)'
+	ARCH='$(APPIMAGE_ARCH)' VERSION='$(VERSION)' ./$(MKAPPIMAGE) --appimage-extract-and-run $(INSTALL_DIR)/appimage $(APPIMAGE_NAME)
+	# Cleanup.
+	rm -rf $(INSTALL_DIR)/appimage
 
-PHONY += mkappimage update
+update: update-appimage
+
+PHONY += mkappimage
 SOUND += $(MKAPPIMAGE)
