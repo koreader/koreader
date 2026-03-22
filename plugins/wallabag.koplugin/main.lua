@@ -21,7 +21,17 @@ local FFIUtil = require("ffi/util")
 local FileManager = require("apps/filemanager/filemanager")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
-local ButtonDialog= require("ui/widget/buttondialog")
+local BD = require("ui/bidi")
+local ButtonDialog = require("ui/widget/buttondialog")
+local DataStorage = require("datastorage")
+local Dispatcher = require("dispatcher")
+local DocSettings = require("docsettings")
+local DocumentRegistry = require("document/documentregistry")
+local Event = require("ui/event")
+local FFIUtil = require("ffi/util")
+local FileManager = require("apps/filemanager/filemanager")
+local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
 local JSON = require("json")
 local LuaSettings = require("luasettings")
 local Math = require("optmath")
@@ -125,7 +135,7 @@ function Wallabag:init()
     end
 
     self.sync_star_status = self.wb_settings.data.wallabag.sync_star_status or false
-    self.remote_star_threshold= self.wb_settings.data.wallabag.remote_star_threshold or 5
+    self.remote_star_threshold = self.wb_settings.data.wallabag.remote_star_threshold or 5
     self.sync_star_rating_as_tag = self.wb_settings.data.wallabag.sync_star_rating_as_tag or false
 
     -- workaround for dateparser only available if newsdownloader is active
@@ -513,13 +523,13 @@ function Wallabag:addToMainMenu(menu_items)
                                         {
                         text_func = function()
                             local stars = {}
-                            stars[0] = ": disabled"
+                            stars[0] = ": " .. _("disabled")
                             for i = 1, 5 do
                                 stars[i] = " if ⩾ "..string.rep("★", i)..""
                             end
                             return T(_("Star entries in Wallabag%1"), stars[self.remote_star_threshold])
                         end,
-                        help_text = _("Mark entries as starred/favourited/liked on the server upon sync, if they're rated above your chosen star threshold in the book status page."),
+                        help_text = _("Favorite articles on the server when syncing if they have at least this rating."),
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
                             self.buttondlg = ButtonDialog:new{
