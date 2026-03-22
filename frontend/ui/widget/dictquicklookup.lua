@@ -806,7 +806,7 @@ function DictQuickLookup:registerKeyEvents()
             self.key_events.FastLeftTextSelectorIndicator  = { { modifier, "Left" },  event = "FindInTextOrMoveSelectorIndicator", args = { -1, 0, true } }
             self.key_events.FastRightTextSelectorIndicator = { { modifier, "Right" }, event = "FindInTextOrMoveSelectorIndicator", args = { 1,  0, true } }
             if Device:hasKeyboard() then
-                self.key_events.LookupInputWordClear = { { Input.group.Alphabet }, { "Shift", Input.group.Alphabet }, event = "LookupInputWord" }
+                self.key_events.LookupInputWordClear = { { Input.group.AlphaNumeric }, { "Shift", Input.group.AlphaNumeric }, event = "LookupInputWord" }
                 if G_reader_settings:nilOrFalse("backspace_as_back") then
                     -- We need to concat here so that the 'del' event press, which propagates to inputText (desirable for previous key_event,
                     -- i.e., LookupInputWordClear) does not remove the last char of self.word
