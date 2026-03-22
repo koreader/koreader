@@ -138,7 +138,7 @@ function ReaderConfig:onShowConfigMenu()
     self.ui.highlight:onStopHighlightIndicator(true) -- stop any text selection in progress, if applicable
     self.ui:handleEvent(Event:new("DisableHinting"))
     -- show last used panel when opening config dialog
-    self.config_dialog:onShowConfigPanel(self.last_panel_index)
+    self.config_dialog:onShowConfigPanel(self.last_panel_index, true)
     UIManager:show(self.config_dialog)
     self.ui:handleEvent(Event:new("HandledAsSwipe")) -- cancel any pan scroll made
 
