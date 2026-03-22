@@ -826,7 +826,7 @@ This is just an example, that will need to be adapted into a user style tweak.]]
             },
             {
                 id = "no_pseudo_element_first_line",
-                title = _("Disable first-ilne pseudo elements"),
+                title = _("Disable first-line pseudo elements"),
                 description = _([[Disable first line styling from ::first-line pseudo elements.]]),
                 css = [[*::first-line { display: none !important; }]],
                 separator = true,
