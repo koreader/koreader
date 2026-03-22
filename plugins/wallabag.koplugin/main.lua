@@ -509,7 +509,7 @@ function Wallabag:addToMainMenu(menu_items)
                         end,
                         separator = true,
                     },
-                                        {
+                    {
                         text_func = function()
                             local stars = {}
                             stars[0] = ": " .. _("disabled")
@@ -528,7 +528,7 @@ function Wallabag:addToMainMenu(menu_items)
                                 width_factor = 0.33,
                                 buttons = {
                                        { {
-                                            text = _("★★★★★"),
+                                            text = "★★★★★",
                                             align = "left",
                                             callback = function()
                                                 self.sync_star_status = true
@@ -539,7 +539,7 @@ function Wallabag:addToMainMenu(menu_items)
                                             end,
                                         }},
                                        { {
-                                            text = _("★★★★"),
+                                            text = "★★★★",
                                             align = "left",
                                             callback = function()
                                                 self.sync_star_status = true
@@ -550,7 +550,7 @@ function Wallabag:addToMainMenu(menu_items)
                                             end,
                                         }},
                                        { {
-                                            text = _("★★★"),
+                                            text = "★★★",
                                             align = "left",
                                             callback = function()
                                                 self.sync_star_status = true
@@ -561,7 +561,7 @@ function Wallabag:addToMainMenu(menu_items)
                                             end,
                                         }},
                                        { {
-                                            text = _("★★"),
+                                            text = "★★",
                                             align = "left",
                                             callback = function()
                                                 self.sync_star_status = true
@@ -573,7 +573,7 @@ function Wallabag:addToMainMenu(menu_items)
 
                                         }},
                                         {{
-                                            text = _("★"),
+                                            text = "★",
                                             align = "left",
                                             callback = function()
                                                 self.sync_star_status = true
