@@ -178,7 +178,7 @@ local order = {
         "exporter",
         "statistics",
         "progress_sync",
-        "cloud_storage_plus",
+        "cloudstorage",
         "move_to_archive",
         "wallabag",
         "news_downloader",
