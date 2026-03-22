@@ -1162,6 +1162,14 @@ local function getCodeName()
             std_out:close()
         end
     end
+    -- If that fails, run another script (since kobo v5 firmware)
+    if not codename then
+        local std_out = io.popen("/usr/bin/hwdetect.sh 2>/dev/null", "re")
+        if std_out then
+            codename = std_out:read("*line")
+            std_out:close()
+        end
+    end
     return codename
 end
 
