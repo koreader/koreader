@@ -100,7 +100,10 @@ local network_activity_noise_margin = 12 -- unscaled_size_check: ignore
 -- net sysfs entry allows us to get away with a Linux-only solution.
 function NetworkListener:_getTxPackets()
     -- read tx_packets stats from sysfs (for the right network if)
-    local file = io.open("/sys/class/net/" .. NetworkMgr:getNetworkInterfaceName() .. "/statistics/tx_packets", "rb")
+    local net_if = NetworkMgr:getNetworkInterfaceName()
+    -- nil on devices that don't implement getNetworkInterfaceName
+    if not net_if then return nil end
+    local file = io.open("/sys/class/net/" .. net_if .. "/statistics/tx_packets", "rb")
 
     -- file exists only when Wi-Fi module is loaded.
     if not file then return nil end

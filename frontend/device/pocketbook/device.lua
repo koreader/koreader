@@ -404,6 +404,21 @@ function PocketBook:initNetworkManager(NetworkMgr)
         -- use only. See https://sourceware.org/bugzilla/show_bug.cgi?id=984
         return NetworkMgr:hasDefaultRoute() and NetworkMgr:canResolveHostnames()
     end
+
+    -- Detect the WiFi network interface name from sysfs.
+    -- This is needed for the auto_disable_wifi feature (network activity monitoring via tx_packets).
+    local net_if
+    for _, if_name in ipairs({"wlan0", "eth0", "ra0", "mlan0"}) do
+        if util.pathExists("/sys/class/net/" .. if_name) then
+            net_if = if_name
+            break
+        end
+    end
+    if net_if then
+        function NetworkMgr:getNetworkInterfaceName()
+            return net_if
+        end
+    end
 end
 
 function PocketBook:getSoftwareVersion()
