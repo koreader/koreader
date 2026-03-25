@@ -1253,50 +1253,34 @@ function VocabItemWidget:onShowBookAssignment(title_changed_cb)
     UIManager:show(sort_widget)
 end
 
-function VocabItemWidget:onDictButtonsReady(dict_popup, buttons)
+function VocabItemWidget:onDictRegisterButtons(dict_popup, pool, default_layout, runtime_layout)
     if not self.item or self.item.word ~= dict_popup.word then
         return false
     end
     if self.item.due_time > os.time() then
-        return true
+        return
     end
-    local tweaked_button_count = 0
-    local early_break
-    for j = 1, #buttons do
-        for k = 1, #buttons[j] do
-            if buttons[j][k].id == "highlight" and not buttons[j][k].enabled then
-                buttons[j][k] = {
-                    id = "got_it",
-                    text = _("Got it"),
-                    callback = function()
-                        self.show_parent:gotItFromDict(self.item.word)
-                        dict_popup:onClose()
-                    end
-                }
-                if tweaked_button_count == 1 then
-                    early_break = true
-                    break
-                end
-                tweaked_button_count = tweaked_button_count + 1
-            elseif buttons[j][k].id == "search" and not buttons[j][k].enabled then
-                buttons[j][k] = {
-                    id = "forgot",
-                    text = _("Forgot"),
-                    callback = function()
-                        self.show_parent:forgotFromDict(self.item.word)
-                        dict_popup:onClose()
-                    end
-                }
-                if tweaked_button_count == 1 then
-                    early_break = true
-                    break
-                end
-                tweaked_button_count = tweaked_button_count + 1
-            end
+    -- Register the buttons in the pool
+    pool.forgot = {
+        id = "forgot",
+        text = _("Forgot"),
+        callback = function()
+            self.show_parent:forgotFromDict(self.item.word)
+            dict_popup:onClose()
         end
-        if early_break then break end
+    }
+    pool.got_it = {
+        id = "got_it",
+        text = _("Got it"),
+        callback = function()
+            self.show_parent:gotItFromDict(self.item.word)
+            dict_popup:onClose()
+        end
+    }
+    -- Safely append the new row to the UI generator
+    if runtime_layout then
+        table.insert(runtime_layout, { "forgot", "got_it" })
     end
-    return true -- we consume the event here!
 end
 
 
@@ -2045,19 +2029,57 @@ function VocabBuilder:addToMainMenu(menu_items)
     }
 end
 
-function VocabBuilder:onDictButtonsReady(dict_popup, buttons)
+function VocabBuilder:onDictRegisterButtonOptions(dict_popup, available_options, default_layout)
+    table.insert(available_options, 1, {
+        text = _("Vocabulary builder"), id = "vocabulary",
+    })
+    -- We must add the button to default_layout regardless of user config i.e., G__set("dict_button_config")
+    -- otherwise resetting to default won't account for our existence.
+    if default_layout then
+        table.insert(default_layout, 1, { "vocabulary" })
+    end
+end
+
+function VocabBuilder:onDictRegisterButtons(dict_popup, pool, default_layout, runtime_layout)
     if settings.enabled then
         -- words are added automatically, no need to add the button
         return
+    end
+    if self.widget and self.widget.current_lookup_word == dict_popup.word then
+        return false
     end
     if dict_popup.is_wiki_fullpage then
         return
     end
     local is_adding = true
-    table.insert(buttons, 1, {{
+    local config = G_reader_settings:readSetting("dict_button_config")
+    local layout = config and config.layout
+
+    local row_count = 1
+    if layout then
+        for _, row in ipairs(layout) do
+            for _, id in ipairs(row) do
+                if id == "vocabulary" then
+                    row_count = #row
+                    break
+                end
+            end
+        end
+    end
+
+    local vocabulary_width = nil
+    if row_count > 2 then
+        local table_width = dict_popup.width - 2 * Size.border.window - 2 * Size.padding.default
+        local separators = Size.line.medium * (row_count - 1)
+        local usable_width = table_width - separators
+        vocabulary_width = math.floor(usable_width * 0.7)
+    end
+
+    pool.vocabulary = {
         id = "vocabulary",
         text = _("Add to vocabulary builder"),
-        font_bold = false,
+        width = vocabulary_width,
+        font_bold = row_count > 1,
         callback = function()
             local button = dict_popup.button_table.button_by_id["vocabulary"]
             if not button then return end
@@ -2084,7 +2106,10 @@ function VocabBuilder:onDictButtonsReady(dict_popup, buttons)
                 })
             end
         end
-    }})
+    }
+    if default_layout then
+        table.insert(default_layout, 1, { "vocabulary" })
+    end
 end
 
 function VocabBuilder:onDispatcherRegisterActions()

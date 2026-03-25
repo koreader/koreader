@@ -413,6 +413,12 @@ function ReaderDictionary:addToMainMenu(menu_items)
             }
         }
     }
+    table.insert(menu_items.dictionary_settings.sub_item_table, {
+        text = _("Customize buttons"),
+        sub_item_table_func = function()
+            return self:_genCustomizeButtonsMenu()
+        end,
+    })
     if not is_docless then
         table.insert(menu_items.dictionary_settings.sub_item_table, 2, {
             keep_menu_open = true,
@@ -477,6 +483,212 @@ function ReaderDictionary:addToMainMenu(menu_items)
             separator = true,
         })
     end
+end
+
+function ReaderDictionary:_genCustomizeButtonsMenu()
+    local customize_buttons_menu = {}
+    local available_options = {
+        { text = _("Previous result"), id = "prev_dict" },
+        { text = _("Highlight"),       id = "highlight" },
+        { text = _("Next result"),     id = "next_dict" },
+        { text = _("Wikipedia"),       id = "wikipedia" },
+        { text = _("Search"),          id = "search" },
+        { text = _("Close"),           id = "close" },
+        { text = _("Translate"),       id = "translate" },
+    }
+    local default_layout = {
+        { "prev_dict", "highlight", "next_dict" },
+        { "wikipedia",    "search",     "close" },
+    }
+    if self.ui then
+        self.ui:handleEvent(Event:new("DictRegisterButtonOptions", self, available_options, default_layout))
+    end
+    if Device:hasDPad() then
+        table.insert(available_options, { text = _("Text selection"), id = "text_selection" })
+        if default_layout and Device:hasFewKeys() then
+            table.insert(default_layout, {"text_selection"})
+        end
+    end
+
+    local function getDictConfig()
+        local config = util.tableDeepCopy(G_reader_settings:readSetting("dict_button_config"))
+        if not config then
+            config = {
+                layout = default_layout,
+                order = {},
+                row_counts = {}
+            }
+            for i = 1, #default_layout do
+                config.row_counts[i] = #default_layout[i]
+            end
+        end
+
+        if #config.order == 0 then
+            for _, row in ipairs(default_layout) do
+                for _, id in ipairs(row) do
+                    table.insert(config.order, id)
+                end
+            end
+        end
+
+        local in_order = {}
+        for _, id in ipairs(config.order) do
+            in_order[id] = true
+        end
+        for _, opt in ipairs(available_options) do
+            if not in_order[opt.id] then
+                table.insert(config.order, opt.id)
+            end
+        end
+
+        return config
+    end
+
+    local function regenLayout(override_config, override_selected)
+        local config = override_config or getDictConfig()
+
+        local selected_ids = override_selected
+        if not selected_ids then
+            selected_ids = {}
+            for _, row in ipairs(config.layout) do
+                for _, id in ipairs(row) do
+                    selected_ids[id] = true
+                end
+            end
+        end
+
+        local new_layout = {}
+        local current_row = {}
+        local row_idx = 1
+        local max_in_row = config.row_counts[row_idx] or 3
+
+        for _, id in ipairs(config.order) do
+            if selected_ids[id] then
+                if #current_row >= max_in_row then
+                    table.insert(new_layout, current_row)
+                    current_row = {}
+                    row_idx = row_idx + 1
+                    max_in_row = config.row_counts[row_idx] or 3
+                end
+                table.insert(current_row, id)
+            end
+        end
+        if #current_row > 0 then
+            table.insert(new_layout, current_row)
+        end
+
+        local new_row_counts = {}
+        for i = 1, #new_layout do
+            new_row_counts[i] = config.row_counts[i] or 3
+        end
+        config.row_counts = new_row_counts
+
+        config.layout = new_layout
+        G_reader_settings:saveSetting("dict_button_config", config)
+    end
+
+    local function rebuildRowMenu() end
+    local function genRowMenu()
+        local config = getDictConfig()
+        local layout_rows = config.layout
+        for i = 1, #layout_rows do
+            table.insert(customize_buttons_menu, {
+                text_func = function()
+                    local row_counts = getDictConfig().row_counts
+                    return T(_("Max buttons in row %1: %2"), i, row_counts[i] or 3)
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local cfg = getDictConfig()
+                    UIManager:show(SpinWidget:new{
+                        value = cfg.row_counts[i] or 3,
+                        value_min = 1,
+                        value_max = 4,
+                        default_value = default_layout[i] and #default_layout[i] or 3,
+                        title_text = T(_("Max buttons in row %1"), i),
+                        callback = function(spin)
+                            cfg.row_counts[i] = spin.value
+                            regenLayout(cfg)
+                            rebuildRowMenu()
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                    })
+                end,
+            })
+        end
+    end
+    local row_menu_start_idx = #customize_buttons_menu + 1
+    function rebuildRowMenu()
+        while #customize_buttons_menu >= row_menu_start_idx do
+            table.remove(customize_buttons_menu)
+        end
+        genRowMenu()
+    end
+
+    table.insert(customize_buttons_menu, {
+        text = _("Sort and toggle buttons"),
+        keep_menu_open = true,
+        separator = true,
+        callback = function(touchmenu_instance)
+            local config = getDictConfig()
+            local selected_ids = {}
+            for _, row in ipairs(config.layout) do
+                for _, id in ipairs(row) do
+                    selected_ids[id] = true
+                end
+            end
+
+            local sort_items = {}
+            local local_selected = util.tableDeepCopy(selected_ids)
+
+            for _, id in ipairs(config.order) do
+                for _, opt in ipairs(available_options) do
+                    if opt.id == id then
+                        table.insert(sort_items, {
+                            text = opt.text,
+                            id = opt.id,
+                            checked_func = function() return local_selected[opt.id] end,
+                            callback = function() local_selected[opt.id] = not local_selected[opt.id] end,
+                        })
+                        break
+                    end
+                end
+            end
+
+            UIManager:show(SortWidget:new{
+                title = _("Sort and toggle buttons"),
+                item_table = sort_items,
+                callback = function()
+                    local cfg = getDictConfig()
+                    local new_order = {}
+
+                    for _, item in ipairs(sort_items) do
+                        table.insert(new_order, item.id)
+                    end
+
+                    cfg.order = new_order
+                    regenLayout(cfg, local_selected)
+                    rebuildRowMenu()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end
+            })
+        end,
+        hold_callback = function(touchmenu_instance)
+             UIManager:show(ConfirmBox:new{
+                text = _("Would you like to reset the button layout?"),
+                ok_text = _("Reset"),
+                ok_callback = function()
+                    G_reader_settings:delSetting("dict_button_config")
+                    rebuildRowMenu()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+             })
+        end,
+    })
+    row_menu_start_idx = #customize_buttons_menu + 1
+    genRowMenu()
+    return customize_buttons_menu
 end
 
 function ReaderDictionary:showPreferredDictsDialog(touchmenu_instance)

@@ -1,3 +1,40 @@
+--[[--
+This module renders the dictionary popup. It emits an event during initialization
+to allow plugins to dynamically register their own buttons into the dictionary UI.
+
+### Integration Hooks:
+Plugins can handle the `DictRegisterButtons` event by implementing `onDictRegisterButtons`.
+
+@usage
+-- Example from a plugin:
+function MyPlugin:onDictRegisterButtons(dict_popup, pool, default_layout, extra_layout)
+    -- 1. Create a custom button in the shared button pool
+    pool.my_custom_action = IconButton:new{
+        id = "my_custom_action",
+        icon = "my_icon",
+        callback = function() -- Do something end
+    }
+
+    -- 2. Add an extra row (a table containing string IDs matching the pool keys)
+    --    You can either to default_layout or extra_layout, but keep in mind users
+    --    have the final say on the default_layout.
+    table.insert(extra_layout, { "my_custom_action" })
+end
+
+-- 3. If your button is not transient, you must also register it to the top menu
+--    through the event `onDictRegisterButtonOptions`.
+
+function MyPlugin:onDictRegisterButtonOptions(dict_popup, available_options, default_layout)
+    -- 1. Register the display text and string ID of the custom button
+    -- so the menu knows it exists.
+    table.insert(available_options, { "my_custom_action", _("My Custom Action") })
+
+    -- 2. If it is meant to appear by default before the user configures their layout,
+    -- add the ID into the nested default_layout table alongside the standard buttons
+    table.insert(default_layout, "my_custom_action")
+end
+]]
+
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
@@ -350,241 +387,7 @@ function DictQuickLookup:init()
     }
 
     -- Different sets of buttons whether fullpage or not
-    local buttons
-    if self.is_wiki_fullpage then
-        -- A save and a close button
-        buttons = {
-            {
-                {
-                    id = "save",
-                    text = _("Save as EPUB"),
-                    callback = function()
-                        local InfoMessage = require("ui/widget/infomessage")
-                        local ConfirmBox = require("ui/widget/confirmbox")
-                        -- We should have a self.lang set, but let's have a fallback
-                        local lang = self.lang or self.wiki_languages[1]
-                        -- Find a directory to save file into
-                        local dir
-                        if G_reader_settings:isTrue("wikipedia_save_in_book_dir") and not self:isDocless() then
-                            local last_file = G_reader_settings:readSetting("lastfile")
-                            dir = last_file and last_file:match("(.*)/")
-                        end
-                        dir = dir or G_reader_settings:readSetting("wikipedia_save_dir") or DictQuickLookup.getWikiSaveEpubDefaultDir()
-                        if not util.pathExists(dir) then
-                            lfs.mkdir(dir)
-                        end
-                        -- Just to be safe (none of the invalid chars, except ':' for uninteresting
-                        -- Portal: or File: wikipedia pages, should be in lookupword)
-                        local filename = self.lookupword .. "."..string.upper(lang)..".epub"
-                        filename = util.getSafeFilename(filename, dir):gsub("_", " ")
-                        local epub_path = dir .. "/" .. filename
-                        UIManager:show(ConfirmBox:new{
-                            text = T(_("Save as %1?"), BD.filename(filename)),
-                            ok_callback = function()
-                                UIManager:scheduleIn(0.1, function()
-                                    local Wikipedia = require("ui/wikipedia")
-                                    Wikipedia:createEpubWithUI(epub_path, self.lookupword, lang, function(success)
-                                        if success then
-                                            UIManager:show(ConfirmBox:new{
-                                                text = T(_("Article saved to:\n%1\n\nWould you like to read the downloaded article now?"), BD.filepath(epub_path)),
-                                                ok_callback = function()
-                                                    -- close all dict/wiki windows, without scheduleIn(highlight.clear())
-                                                    self:onHoldClose(true)
-                                                    -- close current ReaderUI in 1 sec, and create a new one
-                                                    UIManager:scheduleIn(1.0, function()
-                                                        UIManager:broadcastEvent(Event:new("SetupShowReader"))
-
-                                                        if self.ui then
-                                                            -- close Highlight menu if any still shown
-                                                            if self.ui.highlight and self.ui.highlight.highlight_dialog then
-                                                                self.ui.highlight:onClose()
-                                                            end
-                                                            self.ui:onClose()
-                                                        end
-
-                                                        local ReaderUI = require("apps/reader/readerui")
-                                                        ReaderUI:showReader(epub_path)
-                                                    end)
-                                                end,
-                                            })
-                                        else
-                                            UIManager:show(InfoMessage:new{
-                                                text = _("Saving Wikipedia article failed or interrupted."),
-                                            })
-                                        end
-                                    end)
-                                end)
-                            end
-                        })
-                    end,
-                },
-                {
-                    id = "close",
-                    text = _("Close"),
-                    callback = function()
-                        self:onClose()
-                    end,
-                    hold_callback = function()
-                        self:onHoldClose()
-                    end,
-                },
-            },
-        }
-    else
-        local prev_dict_text = "◁◁"
-        local next_dict_text = "▷▷"
-        if BD.mirroredUILayout() then
-            prev_dict_text, next_dict_text = next_dict_text, prev_dict_text
-        end
-        buttons = {
-            {
-                {
-                    id = "prev_dict",
-                    text = prev_dict_text,
-                    vsync = true,
-                    enabled = self:isPrevDictAvaiable(),
-                    callback = function()
-                        self:onChangeToPrevDict()
-                    end,
-                    hold_callback = function()
-                        self:changeToFirstDict()
-                    end,
-                },
-                {
-                    id = "highlight",
-                    text = _("Highlight"),
-                    enabled = not self:isDocless() and self.highlight ~= nil,
-                    callback = function()
-                        self.save_highlight = not self.save_highlight
-                        -- Just update, repaint and refresh *this* button
-                        local this = self.button_table:getButtonById("highlight")
-                        this:setText(self.save_highlight and _("Unhighlight") or _("Highlight"), this.width)
-                        this:refresh()
-                    end,
-                },
-                {
-                    id = "next_dict",
-                    text = next_dict_text,
-                    vsync = true,
-                    enabled = self:isNextDictAvaiable(),
-                    callback = function()
-                        self:onChangeToNextDict()
-                    end,
-                    hold_callback = function()
-                        self:changeToLastDict()
-                    end,
-                },
-            },
-            {
-                {
-                    id = "wikipedia",
-                    -- if dictionary result, do the same search on wikipedia
-                    -- if already wiki, get the full page for the current result
-                    text_func = function()
-                        if self.is_wiki then
-                            -- @translators Full Wikipedia article.
-                            return C_("Wikipedia", "Full article")
-                        else
-                            return _("Wikipedia")
-                        end
-                    end,
-                    callback = function()
-                        UIManager:scheduleIn(0.1, function()
-                            self:lookupWikipedia(self.is_wiki) -- will get_fullpage if is_wiki
-                        end)
-                    end,
-                },
-                -- Allow selecting a different wikipedia language, or Search in book if dict window
-                {
-                    id = "search",
-                    text = self.is_wiki and C_("Wikipedia", "Language").." \u{2261}" or _("Search"),
-                    enabled = self:canSearch(),
-                    callback = function()
-                        if self.is_wiki then
-                            local button_dialog
-                            local lang_buttons = {}
-                            for idx, lang in ipairs(self.wiki_languages) do
-                                local bold = lang == self.lang -- bold the language currently shown
-                                local row = {
-                                    {
-                                        text = lang,
-                                        font_bold = bold,
-                                        align = "left",
-                                        callback = function()
-                                            self.ui.wikipedia:setLastSelectedLanguage(lang)
-                                            self:lookupWikipedia(false, nil, nil, lang)
-                                            self:onClose(true)
-                                        end,
-                                    },
-                                }
-                                -- Show them in reverse, so first/prefered ones are at the bottom near the button where the user tap'ed
-                                table.insert(lang_buttons, 1, row)
-                            end
-                            local search_btn = self.button_table:getButtonById("search")
-                            button_dialog = ButtonDialog:new{
-                                buttons = lang_buttons,
-                                width = search_btn.dimen.w,
-                                anchor = function()
-                                    return Geom:new{
-                                        x = search_btn.dimen.x,
-                                        -- We want its bottom border overlapping the whole DictQuickLookup window bottom border
-                                        y = self.dict_frame.dimen.y + self.dict_frame.dimen.h,
-                                    }
-                                end,
-                                tap_close_callback = function()
-                                    self.menu_opened[button_dialog] = nil
-                                end
-                            }
-                            self.menu_opened[button_dialog] = true
-                            UIManager:show(button_dialog)
-                        else
-                            self.ui:handleEvent(Event:new("HighlightSearch"))
-                            self:onClose(true) -- don't unhighlight (or we might erase a search hit)
-                        end
-                    end,
-                },
-                {
-                    id = "close",
-                    text = _("Close"),
-                    callback = function()
-                        self:onClose()
-                    end,
-                    hold_callback = function()
-                        self:onHoldClose()
-                    end,
-                },
-            },
-        }
-        if self.allow_key_text_selection and Device:hasFewKeys() then
-            table.insert(buttons, 1, {
-                {
-                    id = "text_selection",
-                    text = _("Text selection"),
-                    callback = function()
-                        self:onStartTextSelectorIndicator()
-                    end,
-                }
-            })
-        end
-        if not self.is_wiki and self.selected_link ~= nil then
-            -- If highlighting some word part of a link (which should be rare),
-            -- add a new first row with a single button to follow this link.
-            table.insert(buttons, 1, {
-                {
-                    id = "link",
-                    text = _("Follow Link"),
-                    callback = function()
-                        local link = self.selected_link.link or self.selected_link
-                        self.ui.link:onGotoLink(link)
-                        self:onClose()
-                    end,
-                },
-            })
-        end
-    end
-    if self.ui then
-        self.ui:handleEvent(Event:new("DictButtonsReady", self, buttons))
-    end
+    local buttons = self:buildButtonLayout()
     -- Bottom buttons get a bit less padding so their line separators
     -- reach out from the content to the borders a bit more
     local buttons_padding = Size.padding.default
@@ -834,6 +637,309 @@ function DictQuickLookup:isDocless()
     return self.ui == nil or self.ui.highlight == nil
 end
 
+function DictQuickLookup:_getButtonPool()
+    local prev_dict_text = BD.mirroredUILayout() and "▷▷" or "◁◁"
+    local next_dict_text = BD.mirroredUILayout() and "◁◁" or "▷▷"
+
+    local pool = {
+        save = {
+            id = "save",
+            text = _("Save as EPUB"),
+            callback = function()
+                local InfoMessage = require("ui/widget/infomessage")
+                local ConfirmBox = require("ui/widget/confirmbox")
+                -- We should have a self.lang set, but let's have a fallback
+                local lang = self.lang or self.wiki_languages[1]
+                -- Find a directory to save file into
+                local dir
+                if G_reader_settings:isTrue("wikipedia_save_in_book_dir") and not self:isDocless() then
+                    local last_file = G_reader_settings:readSetting("lastfile")
+                    dir = last_file and last_file:match("(.*)/")
+                end
+                dir = dir or G_reader_settings:readSetting("wikipedia_save_dir") or DictQuickLookup.getWikiSaveEpubDefaultDir()
+                if not util.pathExists(dir) then
+                    lfs.mkdir(dir)
+                end
+                -- Just to be safe (none of the invalid chars, except ':' for uninteresting
+                -- Portal: or File: wikipedia pages, should be in lookupword)
+                local filename = self.lookupword .. "."..string.upper(lang)..".epub"
+                filename = util.getSafeFilename(filename, dir):gsub("_", " ")
+                local epub_path = dir .. "/" .. filename
+                UIManager:show(ConfirmBox:new{
+                    text = T(_("Save as %1?"), BD.filename(filename)),
+                    ok_callback = function()
+                        UIManager:scheduleIn(0.1, function()
+                            local Wikipedia = require("ui/wikipedia")
+                            Wikipedia:createEpubWithUI(epub_path, self.lookupword, lang, function(success)
+                                if success then
+                                    UIManager:show(ConfirmBox:new{
+                                        text = T(_("Article saved to:\n%1\n\nWould you like to read the downloaded article now?"), BD.filepath(epub_path)),
+                                        ok_callback = function()
+                                            -- close all dict/wiki windows, without scheduleIn(highlight.clear())
+                                            self:onHoldClose(true)
+                                            -- close current ReaderUI in 1 sec, and create a new one
+                                            UIManager:scheduleIn(1.0, function()
+                                                UIManager:broadcastEvent(Event:new("SetupShowReader"))
+
+                                                if self.ui then
+                                                    -- close Highlight menu if any still shown
+                                                    if self.ui.highlight and self.ui.highlight.highlight_dialog then
+                                                        self.ui.highlight:onClose()
+                                                    end
+                                                    self.ui:onClose()
+                                                end
+
+                                                local ReaderUI = require("apps/reader/readerui")
+                                                ReaderUI:showReader(epub_path)
+                                            end)
+                                        end,
+                                    })
+                                else
+                                    UIManager:show(InfoMessage:new{
+                                        text = _("Saving Wikipedia article failed or interrupted."),
+                                    })
+                                end
+                            end)
+                        end)
+                    end
+                })
+            end,
+        },
+        close = {
+            id = "close",
+            text = _("Close"),
+            callback = function()
+                self:onClose()
+            end,
+            hold_callback = function()
+                self:onHoldClose()
+            end,
+        },
+        prev_dict = {
+            id = "prev_dict",
+            text = prev_dict_text,
+            vsync = true,
+            enabled = self:isPrevDictAvaiable(),
+            callback = function()
+                self:onChangeToPrevDict()
+            end,
+            hold_callback = function()
+                self:changeToFirstDict()
+            end,
+        },
+        highlight = {
+            id = "highlight",
+            text = _("Highlight"),
+            enabled = not self:isDocless() and self.highlight ~= nil,
+            callback = function()
+                self.save_highlight = not self.save_highlight
+                -- Just update, repaint and refresh *this* button
+                local this = self.button_table:getButtonById("highlight")
+                this:setText(self.save_highlight and _("Unhighlight") or _("Highlight"), this.width)
+                this:refresh()
+            end,
+        },
+        next_dict = {
+            id = "next_dict",
+            text = next_dict_text,
+            vsync = true,
+            enabled = self:isNextDictAvaiable(),
+            callback = function()
+                self:onChangeToNextDict()
+            end,
+            hold_callback = function()
+                self:changeToLastDict()
+            end,
+        },
+        wikipedia = {
+            id = "wikipedia",
+            -- if dictionary result, do the same search on wikipedia
+            -- if already wiki, get the full page for the current result
+            text_func = function()
+                if self.is_wiki then
+                    -- @translators Full Wikipedia article.
+                    return C_("Wikipedia", "Full article")
+                else
+                    return _("Wikipedia")
+                end
+            end,
+            callback = function()
+                UIManager:scheduleIn(0.1, function()
+                    self:lookupWikipedia(self.is_wiki) -- will get_fullpage if is_wiki
+                end)
+            end,
+        },
+        translate = {
+            id = "translate",
+            text = _("Translate"),
+            enabled = not self:isDocless(),
+            callback = function()
+                Translator:showTranslation(self.lookupword, true)
+            end,
+        },
+        -- Allow selecting a different wikipedia language, or Search in book if dict window
+        search = {
+            id = "search",
+            text = self.is_wiki and C_("Wikipedia", "Language").." \u{2261}" or _("Search"),
+            enabled = self:canSearch(),
+            callback = function()
+                if self.is_wiki then
+                    local button_dialog
+                    local lang_buttons = {}
+                    for idx, lang in ipairs(self.wiki_languages) do
+                        local bold = lang == self.lang -- bold the language currently shown
+                        local row = {
+                            {
+                                text = lang,
+                                font_bold = bold,
+                                align = "left",
+                                callback = function()
+                                    self.ui.wikipedia:setLastSelectedLanguage(lang)
+                                    self:lookupWikipedia(false, nil, nil, lang)
+                                    self:onClose(true)
+                                end,
+                            },
+                        }
+                        -- Show them in reverse, so first/prefered ones are at the bottom near the button where the user tap'ed
+                        table.insert(lang_buttons, 1, row)
+                    end
+                    local search_btn = self.button_table:getButtonById("search")
+                    button_dialog = ButtonDialog:new{
+                        buttons = lang_buttons,
+                        width = search_btn.dimen.w,
+                        anchor = function()
+                            return Geom:new{
+                                x = search_btn.dimen.x,
+                                -- We want its bottom border overlapping the whole DictQuickLookup window bottom border
+                                y = self.dict_frame.dimen.y + self.dict_frame.dimen.h,
+                            }
+                        end,
+                        tap_close_callback = function()
+                            self.menu_opened[button_dialog] = nil
+                        end
+                    }
+                    self.menu_opened[button_dialog] = true
+                    UIManager:show(button_dialog)
+                else
+                    self.ui:handleEvent(Event:new("HighlightSearch"))
+                    self:onClose(true) -- don't unhighlight (or we might erase a search hit)
+                end
+            end,
+        },
+        text_selection = {
+            id = "text_selection",
+            text = _("Text selection"),
+            callback = function()
+                self:onStartTextSelectorIndicator()
+            end,
+        },
+        link = {
+            id = "link",
+            text = _("Follow Link"),
+            callback = function()
+                local link = self.selected_link.link or self.selected_link
+                self.ui.link:onGotoLink(link)
+                self:onClose()
+            end
+        },
+    }
+    return pool
+end
+
+function DictQuickLookup:buildButtonLayout()
+    local pool = self:_getButtonPool()
+    local buttons = {}
+    local default_layout = nil
+    if G_reader_settings:hasNot("dict_button_config") or self.is_wiki then
+        default_layout = {
+            { "prev_dict", "highlight", "next_dict" },
+            { "wikipedia",    "search",     "close" },
+        }
+    end
+    local extra_layout = {} -- transient buttons.
+    -- Let plugins register their own buttons into the pool
+    if self.ui then
+        self.ui:handleEvent(Event:new("DictRegisterButtons", self, pool, default_layout, extra_layout))
+    end
+    if default_layout and self.allow_key_text_selection and Device:hasFewKeys() then
+        table.insert(default_layout, { "text_selection" })
+    end
+    if not self.is_wiki and self.selected_link ~= nil then
+        -- If highlighting a word, which is part of a link (should be rare),
+        -- append a new row with a single button to follow this link.
+        table.insert(extra_layout, { "link" })
+    end
+
+    if self.is_wiki_fullpage then
+        -- Wiki fullpage has a fixed, non-configurable layout
+        buttons = { { pool.save, pool.close } }
+    else
+        local button_layout
+        -- Wiki has a fixed, non-configurable layout (yet!)
+        if self.is_wiki then
+            button_layout = default_layout
+        else
+            -- We must do util.tableDeepCopy here so we don't accidentally save
+            -- transient buttons into user settings!
+            local config = G_reader_settings:readSetting("dict_button_config")
+            button_layout = config and util.tableDeepCopy(config.layout) or default_layout
+        end
+
+        for _, extra_row in ipairs(extra_layout) do
+            table.insert(button_layout, extra_row)
+        end
+        local has_dict_nav = false
+        for _, row_ids in ipairs(button_layout) do
+            local new_row = {}
+            for _, btn_id in ipairs(row_ids) do
+                if btn_id == "prev_dict" or btn_id == "next_dict" then
+                    has_dict_nav = true
+                end
+                if pool[btn_id] then
+                    table.insert(new_row, pool[btn_id])
+                end
+            end
+            if #new_row > 0 then
+                table.insert(buttons, new_row)
+            end
+        end
+
+        if has_dict_nav then
+            -- Make prev/next_dict smaller when they share a 4-button row
+            local frame_bordersize = Size.border.window
+            local inner_width = self.width - 2 * frame_bordersize
+            local buttons_width = inner_width - 2 * Size.padding.default
+            local fifteen_percent = math.floor(buttons_width * 0.15)
+            for _, row in ipairs(buttons) do
+                local has_prev, has_next = false, false
+                local has_custom_width = false
+                for _, btn in ipairs(row) do
+                    if btn.id == "prev_dict" then
+                        has_prev = true
+                    elseif btn.id == "next_dict" then
+                        has_next = true
+                    elseif btn.width then
+                        has_custom_width = true
+                    end
+                end
+
+                -- Both buttons are placed together, so finding either means this is the target row
+                if has_prev or has_next then
+                    if has_prev and has_next and #row == 4 and not has_custom_width then
+                        for _, btn in ipairs(row) do
+                            if btn.id == "prev_dict" or btn.id == "next_dict" then
+                                btn.width = fifteen_percent
+                            end
+                        end
+                    end
+                    break -- We found a navigation button, no need to check other rows
+                end
+            end -- for loop
+        end -- has dict nav
+    end -- if/else fullpage wiki
+    return buttons
+end
+
 function DictQuickLookup:getHtmlDictionaryCss()
     -- Using Noto Sans because Nimbus doesn't contain the IPA symbols.
     -- 'line-height: 1.3' to have it similar to textboxwidget,
@@ -956,10 +1062,13 @@ function DictQuickLookup:_instantiateScrollWidget()
 end
 
 function DictQuickLookup:update()
-    -- self[1] is a WidgetContainer, its free method will call free on each of its child widget with a free method.
-    -- Here, that's the definitions' TextBoxWidget & HtmlBoxWidget,
-    -- to release their bb, MuPDF instance, and scheduled image_update_action.
-    self[1]:free()
+    -- Only free the core definition widgets to release their MuPDF instances,
+    -- scheduled image updates, and heavy layout arrays.
+    -- Do NOT arbitrarily free self[1] as this cascades down to the bottom
+    -- buttons, permanently and irrecoverebly blanking out long-text buttons.
+    if self.text_widget and self.text_widget.free then
+        self.text_widget:free()
+    end
 
     -- Update TextWidgets
     self.dict_title:setTitle(self.displaydictname)
