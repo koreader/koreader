@@ -118,7 +118,7 @@ fi
 
 # }}}
 
-if command -v pv >/dev/null; then
+if type -P pv >/dev/null; then
     write_to_file() {
         pv --interval=0.25 --bytes --timer --rate --output="$1"
     }
@@ -134,7 +134,7 @@ export LC_ALL=C
 # We need to use the full path to the executable to avoid
 # a weird issue when using the p7zip project pre-built
 # binary (`Can't load './7z.dll' (7z.so)...`).
-if ! sevenzip="$(which 7z)"; then
+if ! sevenzip="$(type -P 7z)"; then
     echo "ERROR: 7z executable not found!" 1>&2
     exit 2
 fi
@@ -155,7 +155,7 @@ fi
 rm -f "${tmpdir}/symlink"
 
 # Prefer `pigz` over `gzip` (faster).
-gzip="$(command -v pigz || command -v gzip)"
+gzip="$(type -P pigz || type -P gzip)"
 gzip_cmd=("${gzip}")
 
 # Jobs.
