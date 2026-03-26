@@ -58,6 +58,7 @@ function WebDavApi.listFolder(address, user, pass, folder_path, include_folders)
     if webdav_url:sub(-1) ~= "/" then
         webdav_url = webdav_url .. "/"
     end
+    local webdav_url_path = WebDavApi.trim_slashes(util.urlDecode(webdav_url:match("^https?://[^/]*(.*)$") or webdav_url))
 
     local sink = {}
     local data = [[<?xml version="1.0"?><a:propfind xmlns:a="DAV:"><a:prop><a:resourcetype/><a:getcontentlength/><a:getlastmodified/></a:prop></a:propfind>]]
@@ -122,7 +123,7 @@ function WebDavApi.listFolder(address, user, pass, folder_path, include_folders)
             end
         elseif item:find("<[^:]*:collection[^<]*/>") then
             if include_folders then
-                local is_not_current_dir = WebDavApi.trim_slashes(item_fullpath) ~= path
+                local is_not_current_dir = WebDavApi.trim_slashes(item_fullpath) ~= webdav_url_path
                 if is_not_current_dir then
                     table.insert(item_list, {
                         is_folder = true,
