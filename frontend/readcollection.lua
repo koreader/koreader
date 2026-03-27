@@ -372,6 +372,9 @@ function ReadCollection:renameCollection(coll_name, new_name)
     self.coll[new_name] = self.coll[coll_name]
     self.coll_settings[coll_name] = nil
     self.coll[coll_name] = nil
+    if self.coll_default == coll_name then
+        self.coll_default = new_name
+    end
 end
 
 function ReadCollection:removeCollection(coll_name)
