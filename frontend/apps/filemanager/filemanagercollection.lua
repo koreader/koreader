@@ -659,9 +659,9 @@ function FileManagerCollection:showPropValueList(prop)
         else -- "authors", "keywords"
             doc_prop = util.splitToArray(doc_prop, "\n")
         end
-        for _, prop in ipairs(doc_prop) do
-            prop_values[prop] = prop_values[prop] or {}
-            table.insert(prop_values[prop], idx)
+        for _, prop_value in ipairs(doc_prop) do
+            prop_values[prop_value] = prop_values[prop_value] or {}
+            table.insert(prop_values[prop_value], idx)
         end
     end
 
