@@ -1,0 +1,41 @@
+{
+    "base_url" : "https://ksync.api.tokisaki.top/",
+    "name" : "koreader-statistics-sync-api",
+    "methods" : {
+        "register" : {
+            "path" : "/users",
+            "method" : "POST",
+            "required_params" : [
+                "username",
+                "password"
+            ],
+            "payload" : [
+                "username",
+                "password"
+            ],
+            "expected_status" : [201]
+        },
+        "authorize" : {
+            "path" : "/users/auth",
+            "method" : "GET",
+            "expected_status" : [200]
+        },
+        "sync_statistics" : {
+            "path" : "/syncs/statistics",
+            "method" : "PUT",
+            "required_params" : [
+                "schema_version",
+                "device",
+                "device_id",
+                "snapshot"
+            ],
+            "payload" : [
+                "schema_version",
+                "device",
+                "device_id",
+                "snapshot"
+            ],
+            "expected_status" : [200, 202, 401]
+        }
+    }
+}

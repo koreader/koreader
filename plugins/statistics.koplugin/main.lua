@@ -20,6 +20,10 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
+local JSON = require("json")
+local NetworkMgr = require("ui/network/manager")
+local md5 = require("ffi/sha2").md5
+local MultiInputDialog = require("ui/widget/multiinputdialog")
 local C_ = _.pgettext
 local N_ = _.ngettext
 local T = ffiUtil.template
@@ -31,6 +35,36 @@ local DEFAULT_MIN_READ_SEC = 5
 local DEFAULT_MAX_READ_SEC = 120
 local DEFAULT_CALENDAR_START_DAY_OF_WEEK = 2 -- Monday
 local DEFAULT_CALENDAR_NB_BOOK_SPANS = 3
+local DEFAULT_ACCOUNT_SYNC_URL = "https://ksync.api.tokisaki.top"
+local STATISTICS_PLUGIN_DIR = "/plugins/statistics.koplugin"
+
+-- This to validate user
+local function validate(entry)
+    if not entry then return false end
+    if type(entry) == "string" then
+        if entry == "" or not entry:match("%S") then return false end
+    end
+    return true
+end
+
+local function validateUser(user, pass)
+    local error_message = nil
+    local user_ok = validate(user)
+    local pass_ok = validate(pass)
+    if not user_ok and not pass_ok then
+        error_message = _("invalid username and password")
+    elseif not user_ok then
+        error_message = _("invalid username")
+    elseif not pass_ok then
+        error_message = _("invalid password")
+    end
+
+    if not error_message then
+        return user_ok and pass_ok
+    else
+        return user_ok and pass_ok, error_message
+    end
+end
 
 -- Current DB schema version
 local DB_SCHEMA_VERSION = 20221111
@@ -89,6 +123,9 @@ ReaderStatistics.default_settings = {
     calendar_show_histogram = true,
     calendar_browse_future_months = false,
     color = false,
+    accountsync_custom_server = nil,
+    accountsync_username = nil,
+    accountsync_userkey = nil,
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
@@ -146,6 +183,9 @@ function ReaderStatistics:init()
     self:resetVolatileStats()
 
     self.settings = G_reader_settings:readSetting("statistics", self.default_settings)
+    if not self.path then
+        self.path = DataStorage:getDataDir() .. STATISTICS_PLUGIN_DIR
+    end
 
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
@@ -1231,73 +1271,112 @@ Time is in hours and minutes.]]),
                     },
                     {
                         text = _("Cloud sync"),
-                        callback = function(touchmenu_instance)
-                            local server = self.settings.sync_server
-                            local edit_cb = function()
-                                local sync_settings = SyncService:new{}
-                                sync_settings.onClose = function(this)
-                                    UIManager:close(this)
-                                end
-                                sync_settings.onConfirm = function(sv)
-                                    if server and (server.type ~= sv.type
-                                        or server.url ~= sv.url
-                                        or server.address ~= sv.address) then
-                                            SyncService.removeLastSyncDB(db_location)
-                                    end
-                                    self.settings.sync_server = sv
-                                    touchmenu_instance:updateItems()
-                                end
-                                UIManager:show(sync_settings)
-                            end
-                            if not server then
-                                edit_cb()
-                                return
-                            end
-                            local dialogue
-                            local delete_button = {
-                                text = _("Delete"),
-                                callback = function()
-                                    UIManager:close(dialogue)
-                                    UIManager:show(ConfirmBox:new{
-                                        text = _("Delete server info?"),
-                                        cancel_text = _("Cancel"),
-                                        cancel_callback = function()
-                                            return
-                                        end,
-                                        ok_text = _("Delete"),
-                                        ok_callback = function()
-                                            self.settings.sync_server = nil
-                                            SyncService.removeLastSyncDB(db_location)
-                                            touchmenu_instance:updateItems()
-                                        end,
-                                    })
-                                end,
-                            }
-                            local edit_button = {
-                                text = _("Edit"),
-                                callback = function()
-                                    UIManager:close(dialogue)
-                                    edit_cb()
-                                end
-                            }
-                            local close_button = {
-                                text = _("Close"),
-                                callback = function()
-                                    UIManager:close(dialogue)
-                                end
-                            }
-                            local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
-                            dialogue = ButtonDialog:new{
-                                title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nSet up the same cloud folder on each device to sync across your devices."),
-                                             server.name.." "..type, SyncService.getReadablePath(server)),
-                                buttons = {
-                                    {delete_button, edit_button, close_button}
-                                },
-                            }
-                            UIManager:show(dialogue)
-                        end,
                         enabled_func = function() return self.settings.is_enabled end,
                         keep_menu_open = true,
+                        sub_item_table = {
+                            {
+                                text = _("WebDAV / DropBox sync"),
+                                callback = function(touchmenu_instance)
+                                    local server = self.settings.sync_server
+                                    local edit_cb = function()
+                                        local sync_settings = SyncService:new{}
+                                        sync_settings.onClose = function(this)
+                                            UIManager:close(this)
+                                        end
+                                        sync_settings.onConfirm = function(sv)
+                                            if server and (server.type ~= sv.type
+                                                or server.url ~= sv.url
+                                                or server.address ~= sv.address) then
+                                                    SyncService.removeLastSyncDB(db_location)
+                                            end
+                                            self.settings.sync_server = sv
+                                            touchmenu_instance:updateItems()
+                                        end
+                                        UIManager:show(sync_settings)
+                                    end
+                                    if not server then
+                                        edit_cb()
+                                        return
+                                    end
+                                    local dialogue
+                                    local delete_button = {
+                                        text = _("Delete"),
+                                        callback = function()
+                                            UIManager:close(dialogue)
+                                            UIManager:show(ConfirmBox:new{
+                                                text = _("Delete server info?"),
+                                                cancel_text = _("Cancel"),
+                                                cancel_callback = function() return end,
+                                                ok_text = _("Delete"),
+                                                ok_callback = function()
+                                                    self.settings.sync_server = nil
+                                                    SyncService.removeLastSyncDB(db_location)
+                                                    touchmenu_instance:updateItems()
+                                                end,
+                                            })
+                                        end,
+                                    }
+                                    local edit_button = {
+                                        text = _("Edit"),
+                                        callback = function()
+                                            UIManager:close(dialogue)
+                                            edit_cb()
+                                        end
+                                    }
+                                    local close_button = {
+                                        text = _("Close"),
+                                        callback = function()
+                                            UIManager:close(dialogue)
+                                        end
+                                    }
+                                    local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
+                                    dialogue = ButtonDialog:new{
+                                        title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nSet up the same cloud folder on each device to sync across your devices."),
+                                                     server.name.." "..type, SyncService.getReadablePath(server)),
+                                        buttons = {
+                                            {delete_button, edit_button, close_button}
+                                        },
+                                    }
+                                    UIManager:show(dialogue)
+                                end,
+                            },
+                            {
+                                text = _("Account Sync"),
+                                sub_item_table = {
+                                    {
+                                        text = _("Custom sync server"),
+                                        keep_menu_open = true,
+                                        tap_input_func = function()
+                                            return {
+                                                title = _("Custom stats sync server address"),
+                                                input = self.settings.accountsync_custom_server or DEFAULT_ACCOUNT_SYNC_URL,
+                                                callback = function(input)
+                                                    self.settings.accountsync_custom_server = input ~= "" and input or nil
+                                                end,
+                                            }
+                                        end,
+                                    },
+                                    {
+                                        text_func = function()
+                                            return self.settings.accountsync_userkey and (_("Logout"))
+                                                or _("Register") .. " / " .. _("Login")
+                                        end,
+                                        keep_menu_open = true,
+                                        callback_func = function()
+                                            if self.settings.accountsync_userkey then
+                                                return function(menu)
+                                                    self:logout(menu)
+                                                end
+                                            else
+                                                return function(menu)
+                                                    self:login(menu)
+                                                end
+                                            end
+                                        end,
+                                    },
+                                }
+                            },
+                        },
                     },
                 },
             },
@@ -3089,8 +3168,385 @@ function ReaderStatistics:getTimeForPages(pages)
     end
 end
 
+function ReaderStatistics:login(menu)
+    if NetworkMgr:willRerunWhenOnline(function() self:login(menu) end) then
+        return
+    end
+
+    local dialog
+    dialog = MultiInputDialog:new{
+        title = _("Register/login to Stats server"),
+        fields = {
+            {
+                text = self.settings.accountsync_username,
+                hint = "username",
+            },
+            {
+                hint = "password",
+                text_type = "password",
+            },
+        },
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function() UIManager:close(dialog) end,
+                },
+                {
+                    text = _("Login"),
+                    callback = function()
+                        local username, password = unpack(dialog:getFields())
+                        username = util.trim(username)
+                        local ok, err = validateUser(username, password)
+                        if not ok then
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Cannot login: %1"), err),
+                                timeout = 2,
+                            })
+                        else
+                            UIManager:close(dialog)
+                            UIManager:scheduleIn(0.5, function()
+                                self:doLogin(username, password, menu)
+                            end)
+                            UIManager:show(InfoMessage:new{
+                                text = _("Logging in. Please wait…"),
+                                timeout = 1,
+                            })
+                        end
+                    end,
+                },
+                {
+                    text = _("Register"),
+                    callback = function()
+                        local username, password = unpack(dialog:getFields())
+                        username = util.trim(username)
+                        local ok, err = validateUser(username, password)
+                        if not ok then
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Cannot register: %1"), err),
+                                timeout = 2,
+                            })
+                        else
+                            UIManager:close(dialog)
+                            UIManager:scheduleIn(0.5, function()
+                                self:doRegister(username, password, menu)
+                            end)
+                            UIManager:show(InfoMessage:new{
+                                text = _("Registering. Please wait…"),
+                                timeout = 1,
+                            })
+                        end
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(dialog)
+    dialog:onShowKeyboard()
+end
+
+function ReaderStatistics:doRegister(username, password, menu)
+    local StatisticsAccountSyncClient = require("StatisticsAccountSyncClient")
+    local client = StatisticsAccountSyncClient:new{
+        custom_url = self.settings.accountsync_custom_server or DEFAULT_ACCOUNT_SYNC_URL,
+        service_spec = self.path .. "/accountsync_api.json"
+    }
+    Device:setIgnoreInput(true)
+    local userkey = md5(password)
+    local ok, status, body = pcall(client.register, client, username, userkey)
+    if not ok then
+        if status then
+            UIManager:show(InfoMessage:new{ text = _("An error occurred while registering:\n") .. status })
+        else
+            UIManager:show(InfoMessage:new{ text = _("An unknown error occurred while registering.") })
+        end
+    elseif status then
+        self.settings.accountsync_username = username
+        self.settings.accountsync_userkey = userkey
+        if menu then menu:updateItems() end
+        UIManager:show(InfoMessage:new{ text = _("Registered to AccountSync server.") })
+    else
+        UIManager:show(InfoMessage:new{ text = body and body.message or _("Unknown server error") })
+    end
+    Device:setIgnoreInput(false)
+end
+
+function ReaderStatistics:doLogin(username, password, menu)
+    local StatisticsAccountSyncClient = require("StatisticsAccountSyncClient")
+    local client = StatisticsAccountSyncClient:new{
+        custom_url = self.settings.accountsync_custom_server or DEFAULT_ACCOUNT_SYNC_URL,
+        service_spec = self.path .. "/accountsync_api.json"
+    }
+    Device:setIgnoreInput(true)
+    local userkey = md5(password)
+    local ok, status, body = pcall(client.authorize, client, username, userkey)
+    if not ok then
+        if status then
+            UIManager:show(InfoMessage:new{ text = _("An error occurred while logging in:\n") .. status })
+        else
+            UIManager:show(InfoMessage:new{ text = _("An unknown error occurred while logging in.") })
+        end
+    elseif status then
+        self.settings.accountsync_username = username
+        self.settings.accountsync_userkey = userkey
+        if menu then menu:updateItems() end
+        UIManager:show(InfoMessage:new{ text = _("Logged in to AccountSync server.") })
+    else
+        UIManager:show(InfoMessage:new{ text = body and body.message or _("Unknown server error") })
+    end
+    Device:setIgnoreInput(false)
+end
+
+function ReaderStatistics:logout(menu)
+    self.settings.accountsync_userkey = nil
+    if menu then
+        menu:updateItems()
+    end
+end
+
+function ReaderStatistics:isValidServerSyncConfig(server)
+    return server and type(server.url) == "string" and server.url ~= ""
+        and type(server.username) == "string" and server.username ~= ""
+        and type(server.userkey) == "string" and server.userkey ~= ""
+end
+
+function ReaderStatistics:getAccountSyncSyncSnapshot()
+    local conn = SQ3.open(db_location)
+    local books_stmt = conn:prepare([[
+        SELECT id, title, authors, notes, last_open, highlights, pages, series, language, md5, total_read_time, total_read_pages
+        FROM book;
+    ]])
+    local books = {}
+    local books_by_id = {}
+    local result = books_stmt:step()
+    while result do
+        local book_md5 = result[10]
+        if book_md5 and book_md5 ~= "" then
+            local book = {
+                title = result[2],
+                authors = result[3],
+                notes = tonumber(result[4]) or 0,
+                last_open = tonumber(result[5]) or 0,
+                highlights = tonumber(result[6]) or 0,
+                pages = tonumber(result[7]) or 0,
+                series = result[8],
+                language = result[9],
+                md5 = book_md5,
+                total_read_time = tonumber(result[11]) or 0,
+                total_read_pages = tonumber(result[12]) or 0,
+                page_stat_data = {},
+            }
+            books[#books + 1] = book
+            books_by_id[tonumber(result[1])] = book
+        end
+        result = books_stmt:step()
+    end
+    books_stmt:close()
+
+    local stat_stmt = conn:prepare([[
+        SELECT id_book, page, start_time, duration, total_pages
+        FROM page_stat_data;
+    ]])
+    result = stat_stmt:step()
+    while result do
+        local book = books_by_id[tonumber(result[1])]
+        if book then
+            book.page_stat_data[#book.page_stat_data + 1] = {
+                page = tonumber(result[2]),
+                start_time = tonumber(result[3]) or 0,
+                duration = tonumber(result[4]) or 0,
+                total_pages = tonumber(result[5]) or 0,
+            }
+        end
+        result = stat_stmt:step()
+    end
+    stat_stmt:close()
+    conn:close()
+
+    return {
+        books = books,
+    }
+end
+
+function ReaderStatistics:applyAccountSyncSyncSnapshot(snapshot)
+    if type(snapshot) ~= "table" then return false end
+    local books = snapshot.books
+    if type(books) ~= "table" then return false end
+
+    local incoming_nonempty = false
+    for _, row in ipairs(books) do
+        local book_md5 = row and row.md5
+        if book_md5 and book_md5 ~= "" then
+            incoming_nonempty = true
+            break
+        end
+    end
+    local conn = SQ3.open(db_location)
+    local local_book_count = tonumber(conn:rowexec("SELECT count(*) FROM book;")) or 0
+    if local_book_count > 0 and not incoming_nonempty then
+        conn:close()
+        logger.warn("ReaderStatistics: refusing to replace non-empty local stats with an empty server snapshot")
+        return false
+    end
+
+    conn:exec("BEGIN;")
+    local ok, err = pcall(function()
+        conn:exec("DELETE FROM page_stat_data;")
+        conn:exec("DELETE FROM book;")
+        local stmt_book = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);")
+        local stmt_stats = conn:prepare("INSERT INTO page_stat_data VALUES(?, ?, ?, ?, ?);")
+        local seen_md5 = {}
+        for _, row in ipairs(books) do
+            local book_md5 = row.md5
+            if book_md5 and book_md5 ~= "" and not seen_md5[book_md5] then
+                seen_md5[book_md5] = true
+                stmt_book:reset():bind(
+                    row.title,
+                    row.authors,
+                    tonumber(row.notes) or 0,
+                    tonumber(row.last_open) or 0,
+                    tonumber(row.highlights) or 0,
+                    tonumber(row.pages) or 0,
+                    row.series,
+                    row.language,
+                    book_md5,
+                    tonumber(row.total_read_time) or 0,
+                    tonumber(row.total_read_pages) or 0
+                ):step()
+                local id_book = tonumber(conn:rowexec("SELECT last_insert_rowid();"))
+                local page_stat_data = type(row.page_stat_data) == "table" and row.page_stat_data or {}
+                for _, stat in ipairs(page_stat_data) do
+                    stmt_stats:reset():bind(
+                        id_book,
+                        tonumber(stat.page) or 0,
+                        tonumber(stat.start_time) or 0,
+                        tonumber(stat.duration) or 0,
+                        tonumber(stat.total_pages) or 0
+                    ):step()
+                end
+            end
+        end
+        stmt_book:close()
+        stmt_stats:close()
+
+        conn:exec([[
+            UPDATE book SET (total_read_pages, total_read_time) =
+            (SELECT count(DISTINCT page), sum(duration) FROM page_stat WHERE id_book = book.id);
+        ]])
+    end)
+
+    if not ok then
+        pcall(conn.exec, conn, "ROLLBACK;")
+        conn:close()
+        logger.warn("ReaderStatistics: failed to apply accountsync snapshot:", err)
+        return false
+    end
+    conn:exec("COMMIT;")
+    conn:close()
+
+    if self.document and self.is_doc then
+        self:initData()
+    end
+
+    return true
+end
+
+function ReaderStatistics:syncBookStatsAccountSync()
+    local server = self:getAccountSyncSyncServer()
+    if not server then
+        return
+    end
+
+    if not self.path then
+        UIManager:show(InfoMessage:new{
+            text = _("Cannot find plugin path for accountsync sync."),
+            timeout = 3,
+        })
+        return
+    end
+
+    self:insertDB()
+    local StatisticsAccountSyncClient = require("StatisticsAccountSyncClient")
+    local client = StatisticsAccountSyncClient:new{
+        custom_url = server.url,
+        service_spec = self.path .. "/accountsync_api.json"
+    }
+    local snapshot = self:getAccountSyncSyncSnapshot()
+    local payload = {
+        schema_version = DB_SCHEMA_VERSION,
+        device = Device.model,
+        device_id = G_reader_settings:readSetting("device_id") or "",
+        snapshot = snapshot,
+    }
+    local ok, err = pcall(client.sync_statistics,
+        client,
+        server.username,
+        server.userkey,
+        payload,
+        function(cb_ok, body, status)
+            if status == 404 then
+                UIManager:show(InfoMessage:new{
+                    text = _("Current server does not support statistics sync."),
+                    timeout = 4,
+                })
+                return
+            end
+            if cb_ok and body and body.snapshot then
+                local server_snapshot = body.snapshot
+                if type(server_snapshot) == "string" then
+                    local decode_ok, decoded = pcall(JSON.decode, server_snapshot)
+                    if decode_ok then
+                        server_snapshot = decoded
+                    else
+                        server_snapshot = nil
+                    end
+                end
+                if type(server_snapshot) == "table" and self:applyAccountSyncSyncSnapshot(server_snapshot) then
+                    UIManager:show(InfoMessage:new{
+                        text = _("Successfully synchronized."),
+                        timeout = 2,
+                    })
+                else
+                    UIManager:show(InfoMessage:new{
+                        text = _("Invalid statistics snapshot received from server."),
+                        timeout = 3,
+                    })
+                end
+            elseif cb_ok then
+                UIManager:show(InfoMessage:new{
+                    text = _("Successfully synchronized."),
+                    timeout = 2,
+                })
+            else
+                UIManager:show(InfoMessage:new{
+                    text = body and body.message or _("Something went wrong when syncing, please check your network connection and try again later."),
+                    timeout = 3,
+                })
+            end
+        end)
+    if not ok and err then
+        logger.warn("statistics accountsync sync failed:", err)
+        UIManager:show(InfoMessage:new{
+            text = _("Sync failed. Please try again later."),
+            timeout = 3,
+        })
+    end
+end
+
+function ReaderStatistics:getAccountSyncSyncServer()
+    return {
+        url = self.settings.accountsync_custom_server or DEFAULT_ACCOUNT_SYNC_URL,
+        username = self.settings.accountsync_username,
+        userkey = self.settings.accountsync_userkey,
+    }
+end
+
 function ReaderStatistics:canSync()
-    return self.settings.sync_server ~= nil and self.settings.is_enabled
+    if not self.settings.is_enabled then return false end
+    local can_accountsync = self:isValidServerSyncConfig(self:getAccountSyncSyncServer())
+    local can_webdav = self.settings.sync_server ~= nil
+    return can_accountsync or can_webdav
 end
 
 function ReaderStatistics:onSyncBookStats()
@@ -3102,7 +3558,12 @@ function ReaderStatistics:onSyncBookStats()
     })
 
     UIManager:nextTick(function()
-        SyncService.sync(self.settings.sync_server, db_location, self.onSync)
+        if self.settings.sync_server then
+            SyncService.sync(self.settings.sync_server, db_location, self.onSync)
+        end
+        if self:isValidServerSyncConfig(self:getAccountSyncSyncServer()) then
+            self:syncBookStatsAccountSync()
+        end
     end)
 end
 
