@@ -515,24 +515,7 @@ function FileManagerCollection:showCollDialog()
                     util.tableRemoveValue(self, "match_table", "props", button_prop)
                     self:updateItemTable()
                 else
-                    local prop_values = {}
-                    for idx, item in ipairs(self.booklist_menu.item_table) do
-                        local doc_prop = self.ui.bookinfo:getDocProps(item.file, nil, true)[button_prop]
-                        if doc_prop == nil then
-                            doc_prop = { self.empty_prop }
-                        elseif button_prop == "series" then
-                            doc_prop = { doc_prop }
-                        elseif button_prop == "language" then
-                            doc_prop = { doc_prop:lower() }
-                        else -- "authors", "keywords"
-                            doc_prop = util.splitToArray(doc_prop, "\n")
-                        end
-                        for _, prop in ipairs(doc_prop) do
-                            prop_values[prop] = prop_values[prop] or {}
-                            table.insert(prop_values[prop], idx)
-                        end
-                    end
-                    self:showPropValueList(button_prop, prop_values)
+                    self:showPropValueList(button_prop)
                 end
             end,
         }
@@ -663,7 +646,25 @@ function FileManagerCollection:showCollDialog()
     UIManager:show(coll_dialog)
 end
 
-function FileManagerCollection:showPropValueList(prop, prop_values)
+function FileManagerCollection:showPropValueList(prop)
+    local prop_values = {}
+    for idx, item in ipairs(self.booklist_menu.item_table) do
+        local doc_prop = self.ui.bookinfo:getDocProps(item.file, nil, true)[prop]
+        if doc_prop == nil then
+            doc_prop = { self.empty_prop }
+        elseif prop == "series" then
+            doc_prop = { doc_prop }
+        elseif prop == "language" then
+            doc_prop = { doc_prop:lower() }
+        else -- "authors", "keywords"
+            doc_prop = util.splitToArray(doc_prop, "\n")
+        end
+        for _, prop in ipairs(doc_prop) do
+            prop_values[prop] = prop_values[prop] or {}
+            table.insert(prop_values[prop], idx)
+        end
+    end
+
     local prop_menu
     local prop_item_table = {}
     for value, item_idxs in pairs(prop_values) do
