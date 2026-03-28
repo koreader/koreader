@@ -503,16 +503,15 @@ function FileManagerCollection:showCollDialog()
             end,
         }
     end
-    local function genFilterByMetadataButton(button_text, button_prop)
+    local function genFilterByMetadataButton(button_prop)
         local is_checked = util.tableGetValue(self, "match_table", "props", button_prop)
         return {
-            text = button_text .. (is_checked and self.space_checkmark or ""),
-            enabled = coll_not_empty or is_checked and true or false,
+            text = self.ui.bookinfo.prop_text[button_prop]:gsub(":", "") .. (is_checked and self.space_checkmark or ""),
             callback = function()
                 UIManager:close(coll_dialog)
                 if is_checked then
-                    self.updated_collections[collection_name] = true
                     util.tableRemoveValue(self, "match_table", "props", button_prop)
+                    self.updated_collections[collection_name] = true
                     self:updateItemTable()
                 else
                     self:showPropValueList(button_prop)
@@ -539,20 +538,20 @@ function FileManagerCollection:showCollDialog()
             genFilterByStatusButton("complete"),
         },
         {
-            genFilterByMetadataButton(_("Filter by authors"), "authors"),
-            genFilterByMetadataButton(_("Filter by series"), "series"),
+            genFilterByMetadataButton("authors"),
+            genFilterByMetadataButton("series"),
         },
         {
-            genFilterByMetadataButton(_("Filter by language"), "language"),
-            genFilterByMetadataButton(_("Filter by keywords"), "keywords"),
+            genFilterByMetadataButton("language"),
+            genFilterByMetadataButton("keywords"),
         },
         {{
             text = _("Reset all filters"),
             enabled = self.match_table ~= nil,
             callback = function()
                 UIManager:close(coll_dialog)
-                self.updated_collections[collection_name] = true
                 self.match_table = nil
+                self.updated_collections[collection_name] = true
                 self:updateItemTable()
             end,
         }},
@@ -687,7 +686,7 @@ function FileManagerCollection:showPropValueList(prop)
         table.sort(prop_item_table, function(a, b) return ffiUtil.strcoll(a.text, b.text) end)
     end
     prop_menu = Menu:new{
-        title = T("%1 (%2)", self.ui.bookinfo.prop_text[prop]:sub(1, -2), #prop_item_table),
+        title = T("%1 (%2)", self.ui.bookinfo.prop_text[prop]:gsub(":", ""), #prop_item_table),
         item_table = prop_item_table,
         covers_fullscreen = true,
         is_borderless = true,
