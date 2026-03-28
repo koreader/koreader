@@ -102,6 +102,8 @@ local settingsList = {
     temp_gsensor_on = {category="none", event="TempGSensorOn", title=_("Enable accelerometer for 5 seconds"), device=true, condition=Device:hasGSensor()},
     lock_gsensor = {category="none", event="LockGSensor", title=_("Toggle lock auto rotation to current orientation"), device=true, condition=Device:hasGSensor()},
     set_lock_gsensor = {category="string", event="SetLockGSensor", title=_("Set lock auto rotation to current orientation"), device=true, condition=Device:hasGSensor(), args = {true, false}, toggle = { _("true"), _("false")}},
+    portrait_only_gsensor = {category="none", event="PortraitOnlyGSensor", title=_("Toggle portrait-only auto rotation"), device=true, condition=Device:hasGSensor()},
+    set_portrait_only_gsensor = {category="string", event="SetPortraitOnlyGSensor", title=_("Set portrait-only auto rotation"), device=true, condition=Device:hasGSensor(), args = {true, false}, toggle = { _("true"), _("false")}},
     rotation_mode = {category="string", device=true}, -- title=_("Rotation"), parsed from CreOptions
     toggle_rotation = {category="none", event="SwapRotation", title=_("Toggle orientation"), device=true},
     invert_rotation = {category="none", event="InvertRotation", title=_("Invert rotation"), device=true},

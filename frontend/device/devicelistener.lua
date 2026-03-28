@@ -247,6 +247,31 @@ if Device:hasGSensor() then
         end
         Notification:notify(new_text)
     end
+
+    function DeviceListener:onPortraitOnlyGSensor()
+        G_reader_settings:flipNilOrFalse("input_gsensor_portrait_only")
+        self:setPortraitOnlyGsensor(G_reader_settings:isTrue("input_gsensor_portrait_only"))
+        return true
+    end
+
+    -- @param flag bool on/off
+    function DeviceListener:onSetPortraitOnlyGSensor(flag)
+        self:setPortraitOnlyGsensor(flag)
+        return true
+    end
+
+    -- @param flag bool on/off
+    function DeviceListener:setPortraitOnlyGsensor(flag)
+        G_reader_settings:saveSetting("input_gsensor_portrait_only", flag)
+        Device:portraitOnlyGSensor(flag)
+        local new_text
+        if G_reader_settings:isTrue("input_gsensor_portrait_only") then
+            new_text = _("Auto rotation limited to portrait only.")
+        else
+            new_text = _("Auto rotation unrestricted.")
+        end
+        Notification:notify(new_text)
+    end
 end
 
 if not Device:isAlwaysFullscreen() then

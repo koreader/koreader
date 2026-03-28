@@ -76,6 +76,7 @@ local Device = {
     canShareText = no,
     hasGSensor = no,
     isGSensorLocked = no,
+    isGSensorPortraitOnly = no,
     canToggleMassStorage = no,
     canToggleChargingLED = no,
     _updateChargingLED = nil,
@@ -275,6 +276,11 @@ function Device:init()
         -- Honor the gyro lock
         if G_reader_settings:isTrue("input_lock_gsensor") then
             self:lockGSensor(true)
+        end
+
+        -- Honor the portrait-only gyro setting
+        if G_reader_settings:isTrue("input_gsensor_portrait_only") then
+            self:portraitOnlyGSensor(true)
         end
     end
 
@@ -564,6 +570,25 @@ function Device:lockGSensor(toggle)
             self.isGSensorLocked = no
         else
             self.isGSensorLocked = yes
+        end
+    end
+end
+
+-- Whether or not the GSensor should only honor portrait rotations (i.e., discard landscape events)
+function Device:portraitOnlyGSensor(toggle)
+    if not self:hasGSensor() then
+        return
+    end
+
+    if toggle == true then
+        self.isGSensorPortraitOnly = yes
+    elseif toggle == false then
+        self.isGSensorPortraitOnly = no
+    else
+        if self:isGSensorPortraitOnly() then
+            self.isGSensorPortraitOnly = no
+        else
+            self.isGSensorPortraitOnly = yes
         end
     end
 end

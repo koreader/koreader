@@ -1212,6 +1212,11 @@ function Input:handleMiscGyroEv(ev)
         return
     end
 
+    -- If portrait-only mode is enabled, discard landscape rotation events
+    if self.device:isGSensorPortraitOnly() and bit.band(rotation, 1) == 1 then
+        return
+    end
+
     local old_rotation = self.device.screen:getRotationMode()
     if self.device:isGSensorLocked() then
         local matching_orientation = bit.band(rotation, 1) == bit.band(old_rotation, 1)

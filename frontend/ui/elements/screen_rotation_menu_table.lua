@@ -60,6 +60,24 @@ If you need to do so, you'll have to use the UI toggles.]]),
                     UIManager:broadcastEvent(Event:new("LockGSensor"))
                 end,
             })
+
+            table.insert(rotation_table, {
+                text = _("Auto rotate only in portrait"),
+                help_text = _([[
+When checked, the gyro will only honor portrait rotations (Upright and Inverted Portrait).
+Landscape rotation events will be silently discarded.
+This is useful if you only read in portrait mode and want to prevent accidental landscape rotations.
+Note: if orientation is also locked, both constraints apply — e.g., if locked while in landscape, no gyro rotation will occur at all.]]),
+                enabled_func = function()
+                    return G_reader_settings:nilOrFalse("input_ignore_gsensor")
+                end,
+                checked_func = function()
+                    return G_reader_settings:isTrue("input_gsensor_portrait_only")
+                end,
+                callback = function()
+                    UIManager:broadcastEvent(Event:new("PortraitOnlyGSensor"))
+                end,
+            })
         end
 
         table.insert(rotation_table, {
