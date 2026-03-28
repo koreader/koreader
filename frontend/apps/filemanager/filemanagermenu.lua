@@ -477,7 +477,7 @@ To:
         text = _("Folders and files mixed"),
         enabled_func = function()
             local collate = FileChooser:getCollate()
-            return collate.can_collate_mixed
+            return collate.can_collate_mixed or false
         end,
         checked_func = function()
             local collate = FileChooser:getCollate()
