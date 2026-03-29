@@ -58,6 +58,8 @@ function WebDavApi.listFolder(address, user, pass, folder_path, include_folders)
     if webdav_url:sub(-1) ~= "/" then
         webdav_url = webdav_url .. "/"
     end
+    -- Used to detect the "current folder" item.
+    -- The server can store the full url or the relative path in it.
     local webdav_url_path = WebDavApi.trim_slashes(util.urlDecode(webdav_url:match("^https?://[^/]*(.*)$") or webdav_url))
 
     local sink = {}
@@ -173,11 +175,12 @@ function WebDavApi.uploadFile(file_url, user, pass, local_path, etag)
         },
     })
     socketutil:reset_timeout()
-    local ok = type(code) == "number" and code >= 200 and code <= 299
-    if not ok then
+    if type(code) == "number" and code >= 200 and code <= 299 then
+        code = 200
+    else
         logger.warn("WebDavApi: cannot upload file:", status or code)
     end
-    return ok
+    return code
 end
 
 function WebDavApi.deleteFile(file_url, user, pass)
@@ -189,11 +192,10 @@ function WebDavApi.deleteFile(file_url, user, pass)
         password = pass,
     })
     socketutil:reset_timeout()
-    local ok = type(code) == "number" and code >= 200 and code <= 299
-    if not ok then
-        logger.warn("WebDavApi: cannot delete file:", status or code)
+    if type(code) == "number" and code >= 200 and code <= 299 then
+        return true
     end
-    return ok
+    logger.warn("WebDavApi: cannot delete file:", status or code)
 end
 
 function WebDavApi.createFolder(folder_url, user, pass)
@@ -205,40 +207,46 @@ function WebDavApi.createFolder(folder_url, user, pass)
         password = pass,
     })
     socketutil:reset_timeout()
-    local ok = type(code) == "number" and code >= 200 and code <= 299
-    if not ok then
-        logger.warn("WebDavApi: cannot create folder:", status or code)
+    if type(code) == "number" and code >= 200 and code <= 299 then
+        return true
     end
-    return ok
+    logger.warn("WebDavApi: cannot create folder:", status or code)
 end
 
 -- WebDav
 
-function WebDav.run(url, run_callback, include_folders)
-    local base = WebDav.base
-    if NetworkMgr:willRerunWhenConnected(function() WebDav.run(url, run_callback, include_folders) end) then
+function WebDav.run(caller_callback)
+    if NetworkMgr:willRerunWhenConnected(function() WebDav.run(caller_callback) end) then
         return
     end
-    return run_callback(WebDavApi.listFolder(base.address, base.username, base.password, url, include_folders))
+    return caller_callback()
+end
+
+function WebDav.listFolder(url, include_folders)
+    local base = WebDav.base
+    -- list or nil
+    return WebDavApi.listFolder(base.address, base.username, base.password, url, include_folders)
 end
 
 function WebDav.downloadFile(url, local_path, progress_callback)
     local base = WebDav.base
     local path = WebDavApi.getJoinedPath(base.address, url)
-    local code = WebDavApi.downloadFile(path, base.username, base.password, local_path, progress_callback)
-    return code == 200
+    -- code, etag
+    return WebDavApi.downloadFile(path, base.username, base.password, local_path, progress_callback)
 end
 
-function WebDav.uploadFile(url, local_path)
+function WebDav.uploadFile(url, local_path, etag)
     local base = WebDav.base
     local path = WebDavApi.getJoinedPath(base.address, url)
     path = WebDavApi.getJoinedPath(path, ffiUtil.basename(local_path))
-    return WebDavApi.uploadFile(path, base.username, base.password, local_path)
+    -- code
+    return WebDavApi.uploadFile(path, base.username, base.password, local_path, etag)
 end
 
 function WebDav.deleteFile(url)
     local base = WebDav.base
     local path = WebDavApi.getJoinedPath(base.address, url)
+    -- ok
     return WebDavApi.deleteFile(path, base.username, base.password)
 end
 
@@ -246,6 +254,7 @@ function WebDav.createFolder(url, folder_name)
     local base = WebDav.base
     local path = WebDavApi.getJoinedPath(base.address, url)
     path = WebDavApi.getJoinedPath(path, folder_name)
+    -- ok
     return WebDavApi.createFolder(path, base.username, base.password)
 end
 
