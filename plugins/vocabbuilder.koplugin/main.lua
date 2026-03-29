@@ -37,7 +37,6 @@ local OverlapGroup = require("ui/widget/overlapgroup")
 local Screen = Device.screen
 local Size = require("ui/size")
 local SortWidget = require("ui/widget/sortwidget")
-local SyncService = require("frontend/apps/cloudstorage/syncservice")
 local TextWidget = require("ui/widget/textwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TitleBar = require("ui/widget/titlebar")
@@ -209,72 +208,53 @@ function MenuDialog:setupPluginMenu()
         end,
     }
 
+    local cs = self.vocabbuilder and self.vocabbuilder.ui.cloudstorage -- Cloud storage plugin required
     local show_sync_settings = function()
-        if not settings.server then
-            local sync_settings = SyncService:new{}
-            sync_settings.onClose = function(this)
-                UIManager:close(this)
-            end
-            sync_settings.onConfirm = function(server)
-                settings.server = server
-                saveSettings()
-                DB:batchUpdateItems(self.vocabbuilder.item_table)
-                SyncService.sync(server, DB.path, DB.onSync, false)
-                self.vocabbuilder:reloadItems()
-            end
-            UIManager:close(self.sync_dialogue)
-            UIManager:close(self)
-            UIManager:show(sync_settings)
-            return
-        end
         local server = settings.server
         local buttons = {
             {
                 {
                     text = _("Delete"),
+                    enabled = server and true or false,
                     callback = function()
                         settings.server = nil
-                        SyncService.removeLastSyncDB(DB.path)
+                        os.remove(DB.path .. ".sync")
                         UIManager:close(self.sync_dialogue)
-                    end
+                    end,
                 },
                 {
                     text = _("Edit"),
                     callback = function()
                         UIManager:close(self.sync_dialogue)
                         UIManager:close(self)
-                        local sync_settings = SyncService:new{}
-                        sync_settings.onClose = function(this)
-                            UIManager:close(this)
-                        end
-
-                        sync_settings.onConfirm = function(chosen_server)
-                            if settings.server.type ~= chosen_server.type
-                                or settings.server.url ~= chosen_server.url
-                                or settings.server.address ~= chosen_server.address then
-                                    SyncService.removeLastSyncDB(DB.path)
+                        cs:onShowCloudStorageList(function(sv)
+                            settings.server = sv
+                            if server and (server.type ~= sv.type or server.url ~= sv.url or server.address ~= sv.address) then
+                                os.remove(DB.path .. ".sync")
                             end
-                            settings.server = chosen_server
-                        end
-                        UIManager:show(sync_settings)
-                    end
+                        end)
+                    end,
                 },
                 {
-                    text = _("Synchronize now"),
+                    text = _("Sync now"),
+                    enabled = server and true or false,
                     callback = function()
                         UIManager:close(self.sync_dialogue)
                         UIManager:close(self)
                         DB:batchUpdateItems(self.vocabbuilder.item_table)
-                        SyncService.sync(server, DB.path, DB.onSync, false)
+                        cs:sync(server, DB.path, DB.onSync, false)
                         self.vocabbuilder:reloadItems()
-                    end
-                }
-            }
+                    end,
+                },
+            },
         }
-        local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
+        local text = cs:getServerNameType(server) or _("not set")
+        if server then
+            text = text .. "\n\n" .. T(_("Folder path:\n%1"), cs.getReadablePath(server))
+                        .. "\n\n" .. _("Set up the same cloud folder on each device to sync across your devices.")
+        end
         self.sync_dialogue = ButtonDialog:new{
-            title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nSet up the same cloud folder on each device to sync across your devices."),
-                         server.name.." "..type, SyncService.getReadablePath(server)),
+            title = T(_("Cloud storage: %1"), text),
             info_face = Font:getFace("smallinfofont"),
             buttons = buttons,
         }
@@ -282,6 +262,7 @@ function MenuDialog:setupPluginMenu()
     end
     local sync_button = {
         text = _("Cloud sync"),
+        enabled = cs and true or false,
         callback = function()
             show_sync_settings()
         end
@@ -1502,26 +1483,10 @@ function VocabularyBuilderWidget:refreshFooter()
         margin = 0,
         show_parent = self,
         callback = function()
-            if not settings.server then
-                local sync_settings = SyncService:new{}
-                sync_settings.onClose = function(this)
-                    UIManager:close(this)
-                end
-                sync_settings.onConfirm = function(server)
-                    settings.server = server
-                    saveSettings()
-                    DB:batchUpdateItems(self.item_table)
-                    SyncService.sync(server, DB.path, DB.onSync, false)
-                    self:reloadItems()
-                end
-                UIManager:show(sync_settings)
-            else
-                -- manual sync
+            if settings.server and self.ui.cloudstorage then
                 DB:batchUpdateItems(self.item_table)
-                UIManager:nextTick(function()
-                    SyncService.sync(settings.server, DB.path, DB.onSync, false)
-                    self:reloadItems()
-                end)
+                self.ui.cloudstorage:sync(settings.server, DB.path, DB.onSync, false)
+                self:reloadItems()
             end
         end
     }
