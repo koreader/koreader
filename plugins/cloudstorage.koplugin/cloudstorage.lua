@@ -129,26 +129,27 @@ function CloudStorage:sortItemTable(tbl, url)
 end
 
 function CloudStorage:openCloudServer(url)
+    if self.caller_choose_folder_callback then
+        self.choose_folder_callback = true
+    end
     local server = self:initServer(self.server_idx)
     url = url or server.url
-    local run_callback = function(tbl, err)
+    self.provider.run(function()
+        local tbl = self.provider.listFolder(url, true) -- including folders
         if tbl then
             self.onLeftButtonTap = function()
                 self:showPlusCloudDialog(url)
             end
             self:sortItemTable(tbl, url)
             self:switchItemTable(server.name, tbl, nil, nil, url == "" and "/" or url)
-            return true
         else
             UIManager:show(InfoMessage:new{
                 text = _("Cannot fetch list of folder contents\nPlease check your configuration or network connection."),
             })
             table.remove(self.paths)
             self.choose_folder_callback = nil
-            return false
         end
-    end
-    return self.provider.run(url, run_callback, true)
+    end)
 end
 
 function CloudStorage:onReturn()
@@ -224,8 +225,21 @@ function CloudStorage:showFolderChooseDialog(item)
                     text = _("Choose"),
                     callback = function()
                         UIManager:close(folder_dialog)
-                        self.choose_folder_callback(item.url)
-                        self:init(true)
+                        if self.caller_choose_folder_callback then
+                            self:onClose()
+                            local server = self.servers[self.server_idx]
+                            self.caller_choose_folder_callback({
+                                name     = server.name,
+                                type     = server.type,
+                                address  = server.address,
+                                username = server.username,
+                                password = server.password,
+                                url      = item.url,
+                            })
+                        else
+                            self.choose_folder_callback(item.url)
+                            self:init(true)
+                        end
                     end,
                 },
             },
@@ -286,7 +300,7 @@ function CloudStorage:showServerDialog(item)
             },
         },
     }
-    if provider.downloadFile then
+    if provider.downloadFile and not self.caller_choose_folder_callback then
         local server = self.servers[item.server_idx]
         table.insert(buttons, {}) -- separator
         table.insert(buttons, {
@@ -460,9 +474,9 @@ function CloudStorage:showFileDownloadDialog(item)
             local progress_callback = function(progress)
                 progressbar_dialog:reportProgress(progress)
             end
-            local ok = self.provider.downloadFile(unit_item.url, local_path, progress_callback)
+            local code = self.provider.downloadFile(unit_item.url, local_path, progress_callback)
             progressbar_dialog:close()
-            if ok then
+            if code == 200 then
                 local text = T(_("File saved to:\n%1"), BD.filepath(local_path))
                 if DocumentRegistry:hasProvider(local_path) then
                     UIManager:show(ConfirmBox:new{
@@ -601,8 +615,8 @@ function CloudStorage:showFileUploadDialog(url)
                 end)
                 UIManager:tickAfterNext(function()
                     local url_base = url ~= "/" and url or ""
-                    local ok = self.provider.uploadFile(url_base, file_path)
-                    if ok then
+                    local code = self.provider.uploadFile(url_base, file_path)
+                    if code == 200 then
                         self:openCloudServer(url)
                         UIManager:show(InfoMessage:new{ text = T(_("File uploaded:\n%1"), BD.filepath(file_path)) })
                     else
@@ -711,82 +725,76 @@ end
 
 function CloudStorage:syncCloud(item)
     local server = self:initServer(item.server_idx)
-    local Trapper = require("ui/trapper")
-    Trapper:wrap(function()
+    self.provider.run(function()
+        local Trapper = require("ui/trapper")
         Trapper:setPausedText("Download paused.\nDo you want to continue or abort downloading files?")
-        self:syncDownload(server)
+        Trapper:wrap(function()
+            Trapper:info(_("Retrieving files…"))
+            local url = server.sync_source_folder == "/" and "" or server.sync_source_folder
+            local remote_files = self.provider.listFolder(url) -- excluding folders
+            if not remote_files then
+                Trapper:clear()
+                UIManager:show(InfoMessage:new{
+                    text = _("Cannot fetch list of folder contents\nPlease check your configuration or network connection."),
+                })
+                return
+            end
+
+            local local_files = {}
+            local path = server.sync_dest_folder
+            local ok, iter, dir_obj = pcall(lfs.dir, path)
+            if ok then
+                for f in iter, dir_obj do
+                    local filename = path .."/" .. f
+                    local attributes = lfs.attributes(filename)
+                    if attributes.mode == "file" then
+                        local_files[f] = attributes.size
+                    end
+                end
+            end
+
+            local files_to_download = 0
+            for i, file in ipairs(remote_files) do
+                if not local_files[file.text] or local_files[file.text] ~= file.filesize then
+                    files_to_download = files_to_download + 1
+                    remote_files[i].download = true
+                end
+            end
+            if files_to_download == 0 then
+                Trapper:clear()
+                UIManager:show(InfoMessage:new{ text = _("No files to download.") })
+                return
+            end
+
+            local go_on
+            local proccessed_files = 0
+            local success_files = 0
+            local unsuccess_files = 0
+            for _, file in ipairs(remote_files) do
+                if file.download then
+                    proccessed_files = proccessed_files + 1
+                    local text = string.format("Downloading file (%d/%d):\n%s", proccessed_files, files_to_download, file.text)
+                    go_on = Trapper:info(text)
+                    if not go_on then
+                        break
+                    end
+                    local code = self.provider.downloadFile(file.url, server.sync_dest_folder .. "/" .. file.text)
+                    if code == 200 then
+                        success_files = success_files + 1
+                    else
+                        unsuccess_files = unsuccess_files + 1
+                    end
+                end
+            end
+            Trapper:clear()
+            local text = T(N_("Downloaded 1 file.", "Downloaded %1 files.", success_files), success_files)
+            if unsuccess_files > 0 then
+                text = text .. "\n" ..
+                    T(N_("Could not download 1 file.", "Could not download %1 files.", unsuccess_files), unsuccess_files)
+            end
+            UIManager:show(InfoMessage:new{ text = text })
+        end)
     end)
-end
-
-function CloudStorage:syncDownload(server)
-    local Trapper = require("ui/trapper")
-    Trapper:info(_("Retrieving files…"))
-
-    local sync_callback = function(remote_files)
-        if not remote_files then
-            Trapper:clear()
-            UIManager:show(InfoMessage:new{
-                text = _("Cannot fetch list of folder contents\nPlease check your configuration or network connection."),
-            })
-            return
-        end
-
-        local local_files = {}
-        local path = server.sync_dest_folder
-        local ok, iter, dir_obj = pcall(lfs.dir, path)
-        if ok then
-            for f in iter, dir_obj do
-                local filename = path .."/" .. f
-                local attributes = lfs.attributes(filename)
-                if attributes.mode == "file" then
-                    local_files[f] = attributes.size
-                end
-            end
-        end
-
-        local files_to_download = 0
-        for i, file in ipairs(remote_files) do
-            if not local_files[file.text] or local_files[file.text] ~= file.filesize then
-                files_to_download = files_to_download + 1
-                remote_files[i].download = true
-            end
-        end
-        if files_to_download == 0 then
-            Trapper:clear()
-            UIManager:show(InfoMessage:new{ text = _("No files to download.") })
-            return
-        end
-
-        local go_on
-        local proccessed_files = 0
-        local success_files = 0
-        local unsuccess_files = 0
-        for _, file in ipairs(remote_files) do
-            if file.download then
-                proccessed_files = proccessed_files + 1
-                local text = string.format("Downloading file (%d/%d):\n%s", proccessed_files, files_to_download, file.text)
-                go_on = Trapper:info(text)
-                if not go_on then
-                    break
-                end
-                ok = self.provider.downloadFile(file.url, server.sync_dest_folder .. "/" .. file.text)
-                if ok then
-                    success_files = success_files + 1
-                else
-                    unsuccess_files = unsuccess_files + 1
-                end
-            end
-        end
-        Trapper:clear()
-        local text = T(N_("Downloaded 1 file.", "Downloaded %1 files.", success_files), success_files)
-        if unsuccess_files > 0 then
-            text = text .. "\n" ..
-                T(N_("Could not download 1 file.", "Could not download %1 files.", unsuccess_files), unsuccess_files)
-        end
-        UIManager:show(InfoMessage:new{ text = text })
-    end
-
-    self.provider.run(server.sync_source_folder == "/" and "" or server.sync_source_folder, sync_callback)
 end
 
 return CloudStorage
