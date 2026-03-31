@@ -339,7 +339,7 @@ function ReaderCoptListener:removeAdditionalHeaderContent(content_func)
             if #self.additional_header_content == 0 then
                 self.document._document:setIntProperty("window.status.pos.page.number", self.page_number)
             end
-            return true
+            return
         end
     end
 end
