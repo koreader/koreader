@@ -2090,6 +2090,7 @@ function ReaderFooter:removeAdditionalFooterContent(content_func)
             if #self.additional_footer_content == 0 then
                 self.settings.additional_content = nil
             end
+            return
         end
     end
 end
