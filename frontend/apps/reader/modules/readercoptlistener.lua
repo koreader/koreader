@@ -195,7 +195,7 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
     end
 
     if not self.page_info_override and additional_content ~= "" then
-        -- force showing additional content when other overrided items are disabled
+        -- force showing additional content when other overridden items are disabled
         self.document._document:setIntProperty("window.status.pos.page.number", 1)
     else
         self.document._document:setIntProperty("window.status.pos.page.number", self.page_number)
