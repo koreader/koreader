@@ -399,7 +399,7 @@ function Button:_doFeedbackHighlight()
     if self.text then
         -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
         -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
-        if (self[1].radius == nil or self.background) and self[1].background then
+        if self[1].radius == nil or self.background then
             self[1].radius = Size.radius.button
             -- And here, it's easier to just invert the bg/fg colors ourselves,
             -- so as to preserve the rounded corners in one step.
@@ -422,7 +422,7 @@ end
 
 function Button:_undoFeedbackHighlight(is_translucent)
     if self.text then
-        if self[1].radius == Size.radius.button and self[1].background then
+        if self[1].radius == Size.radius.button then
             self[1].radius = nil
             self[1].background = self[1].background:invert()
             self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
@@ -450,7 +450,7 @@ end
 function Button:onTapSelectButton()
     if self.enabled or self.allow_tap_when_disabled then
         if self.callback then
-            if G_reader_settings:isFalse("flash_ui") then
+            if G_reader_settings:isFalse("flash_ui") or self.hidden then
                 self.callback()
             else
                 -- NOTE: We have a few tricks up our sleeve in case our parent is inside a translucent MovableContainer...
