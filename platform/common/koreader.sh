@@ -7,22 +7,29 @@ KOREADER_DIR="$(dirname "$(realpath "$0")")"
 
 # export @KOREADER_FLAVOR@
 
-# FIXME: handle multiple arguments.
-if [ $# -eq 1 ] && [ -e "$(pwd)/$1" ]; then
-    ARGS="$(pwd)/$1"
-else
-    ARGS="$*"
-fi
+unset _args_cleared
+for arg; do
+    # clear positional args in the first iteration so we can append afterwards
+    if [ -z "${_args_cleared}" ]; then
+        set --; _args_cleared=:
+    fi
+
+    if [ -e "${PWD}/${arg}" ]; then
+        set -- "$@" "${PWD}/${arg}"
+    else
+        set -- "$@" "${arg}"
+    fi
+done
 
 # We're always starting from our working directory.
 cd "${KOREADER_DIR}" || exit
 
 RETURN_VALUE=85
 while [ ${RETURN_VALUE} -eq 85 ]; do
-    ./reader.lua "${ARGS}"
+    ./reader.lua "$@"
     RETURN_VALUE=$?
     # Do not restart with saved arguments.
-    ARGS="${HOME}"
+    set -- "${HOME}"
 done
 
 exit ${RETURN_VALUE}
