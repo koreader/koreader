@@ -15,6 +15,7 @@ local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
+local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 
 local DEFAULT_PLUGIN_PATH = "plugins"
@@ -60,6 +61,7 @@ end
 local function getMenuTable(plugin)
     local t = {}
     t.name = plugin.name
+    t.path = plugin.path
     t.fullname = string.format("%s%s", plugin.fullname or plugin.name,
         plugin.deprecated and " (" .. _("outdated") .. ")" or "")
 
@@ -247,6 +249,24 @@ function PluginLoader:loadPlugins()
     return self.enabled_plugins, self.disabled_plugins
 end
 
+local function removeDir(path)
+    local attr = lfs.attributes(path, "mode")
+    if attr ~= "directory" then
+        return os.remove(path)
+    end
+    for f in lfs.dir(path) do
+        if f ~= "." and f ~= ".." then
+            local fullpath = path .. "/" .. f
+            if lfs.attributes(fullpath, "mode") == "directory" then
+                removeDir(fullpath)
+            else
+                os.remove(fullpath)
+            end
+        end
+    end
+    return lfs.rmdir(path)
+end
+
 function PluginLoader:genPluginManagerSubItem()
     if not self.all_plugins then
         local enabled_plugins, disabled_plugins = self:loadPlugins()
@@ -275,7 +295,6 @@ function PluginLoader:genPluginManagerSubItem()
                 return plugin.enable
             end,
             callback = function()
-                local UIManager = require("ui/uimanager")
                 local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
                 plugin.enable = not plugin.enable
                 if plugin.enable then
@@ -301,7 +320,41 @@ function PluginLoader:genPluginManagerSubItem()
                     UIManager:askForRestart()
                 end
             end,
-            help_text = plugin.description,
+            hold_callback = function(touchmenu_instance)
+                local ConfirmBox = require("ui/widget/confirmbox")
+                UIManager:show(ConfirmBox:new{
+                    text = plugin.description .. "\n\n" .. string.format(_("Are you sure you want to delete the plugin '%s'?"), plugin.fullname),
+                    ok_callback = function()
+                        local instance = self:getPluginInstance(plugin.name)
+                        local stopPluginFn = instance and instance.stopPlugin
+                        if type(stopPluginFn) == "function" then
+                            local ok, err = self:stopPluginInstance(instance)
+                            if not ok then
+                                logger.err("PluginLoader: Failed to stop plugin instance", plugin.name, err)
+                                ok, err = self:stopPluginInstance(instance, true)
+                                if not ok then
+                                    logger.err("PluginLoader: Failed to force-stop plugin instance", plugin.name, err)
+                                end
+                            end
+                        end
+                        local success, err = removeDir(plugin.path)
+                        if success then
+                            local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+                            if plugins_disabled[plugin.name] then
+                                plugins_disabled[plugin.name] = nil
+                                G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
+                            end
+                            self.all_plugins = nil
+                            UIManager:askForRestart()
+                        else
+                            local InfoMessage = require("ui/widget/infomessage")
+                            UIManager:show(InfoMessage:new{
+                                text = string.format(_("Failed to delete plugin:\n%s"), tostring(err)),
+                            })
+                        end
+                    end,
+                })
+            end,
         })
     end
     return plugin_table
