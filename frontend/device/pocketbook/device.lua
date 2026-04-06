@@ -436,16 +436,19 @@ function PocketBook:initNetworkManager(NetworkMgr)
         local res = orig_init(self)
 
         if is_link_up and not self.is_connected then
-            local function waitForRoute()
+            local function waitForRoute(iter)
+                iter = iter or 0
                 if not self:isWifiOn() then return end
                 if self:isConnected() then
                     self.is_connected = true
                     UIManager:broadcastEvent(require("ui/event"):new("NetworkConnected"))
+                elseif iter < 120 then
+                    UIManager:scheduleIn(0.5, function() waitForRoute(iter + 1) end)
                 else
-                    UIManager:scheduleIn(0.5, waitForRoute)
+                    logger.warn("NetworkMgr: Network route not established after 60s, giving up.")
                 end
             end
-            UIManager:scheduleIn(0.5, waitForRoute)
+            UIManager:scheduleIn(0.5, function() waitForRoute(0) end)
         end
         return res
     end
