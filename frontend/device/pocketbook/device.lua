@@ -11,6 +11,11 @@ local _ = require("gettext")
 
 require("ffi/linux_input_h")
 
+ffi.cdef[[
+    int res_init(void);
+    int __res_init(void);
+]]
+
 local function yes() return true end
 local function no() return false end
 
@@ -392,17 +397,57 @@ function PocketBook:initNetworkManager(NetworkMgr)
         end
     end
 
-    function NetworkMgr:isConnected()
+    function NetworkMgr:isWifiOn()
         return band(inkview.QueryNetwork(), C.NET_CONNECTED) ~= 0
     end
-    NetworkMgr.isWifiOn = NetworkMgr.isConnected
+
+    local route_seen = false
+    function NetworkMgr:isConnected()
+        if not self:isWifiOn() then
+            route_seen = false
+            return false
+        end
+        if self:hasDefaultRoute() then
+            if not route_seen then
+                -- Workaround for glibc bug where /etc/resolv.conf is parsed
+                -- only once. We force a reload when the route first appears.
+                local ok = pcall(function() ffi.C.res_init() end)
+                if not ok then pcall(function() ffi.C.__res_init() end) end
+                route_seen = true
+            end
+            return true
+        end
+        return false
+    end
 
     function NetworkMgr:isOnline()
         -- Fail early if we don't even have a default route, otherwise we're
         -- unlikely to be online and canResolveHostnames would never succeed
         -- again because PocketBook's glibc parses /etc/resolv.conf on first
         -- use only. See https://sourceware.org/bugzilla/show_bug.cgi?id=984
-        return NetworkMgr:hasDefaultRoute() and NetworkMgr:canResolveHostnames()
+        return self:isConnected() and self:canResolveHostnames()
+    end
+
+    -- Ensure NetworkConnected is eventually broadcasted if KOReader boots
+    -- while the system network stack is still coming up.
+    local orig_init = NetworkMgr.init
+    function NetworkMgr:init()
+        local is_link_up = self:isWifiOn()
+        local res = orig_init(self)
+
+        if is_link_up and not self.is_connected then
+            local function waitForRoute()
+                if not self:isWifiOn() then return end
+                if self:isConnected() then
+                    self.is_connected = true
+                    UIManager:broadcastEvent(require("ui/event"):new("NetworkConnected"))
+                else
+                    UIManager:scheduleIn(0.5, waitForRoute)
+                end
+            end
+            UIManager:scheduleIn(0.5, waitForRoute)
+        end
+        return res
     end
 end
 
