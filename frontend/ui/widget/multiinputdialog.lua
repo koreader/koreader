@@ -159,12 +159,6 @@ function MultiInputDialog:init()
             enter_callback = self.enter_callback,
         }
         table.insert(self.input_fields, input_field_tmp)
-        local focus_widgets = input_field_tmp:getFocusableWidgets()
-        for _, focus_widget in ipairs(focus_widgets) do
-            -- addWidget may have added stuff below us, so make sure we insert above that...
-            table.insert(self.layout, layout_insert_idx, { focus_widget })
-            layout_insert_idx = layout_insert_idx + 1
-        end
         if field.description then
             input_description[i] = FrameContainer:new{
                 padding = self.description_padding,
@@ -184,7 +178,10 @@ function MultiInputDialog:init()
                 input_description[i],
             })
         end
+        local focus_widgets = input_field_tmp:getFocusableWidgets()
         for _, focus_widget in ipairs(focus_widgets) do
+            table.insert(self.layout, layout_insert_idx, { focus_widget })
+            layout_insert_idx = layout_insert_idx + 1
             table.insert(VerticalGroupData, CenterContainer:new{
                 dimen = Geom:new{
                     w = self.title_bar:getSize().w,

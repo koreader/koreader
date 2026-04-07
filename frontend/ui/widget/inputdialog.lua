@@ -443,14 +443,7 @@ function InputDialog:init()
             self._password_toggle_widget,
         }
         -- Keep password toggle between input field and the post-input spacer.
-        local insert_idx = #self.vgroup + 1
-        for i, widget in ipairs(self.vgroup) do
-            if widget == vspan_after_input_text then
-                insert_idx = i
-                break
-            end
-        end
-        table.insert(self.vgroup, insert_idx, toggle_row)
+        table.insert(self.vgroup, 4, toggle_row)
     end
 
     -- Final widget
