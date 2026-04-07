@@ -443,10 +443,7 @@ function InputText:getPasswordToggleWidget()
 end
 
 function InputText:getFocusableWidgets()
-    if self._password_toggle then
-        return { self, self._password_toggle }
-    end
-    return { self }
+    return { self, self._password_toggle }
 end
 
 -- This will be called when we add or del chars, as we need to recreate
