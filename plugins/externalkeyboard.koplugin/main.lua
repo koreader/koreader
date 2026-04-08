@@ -85,6 +85,7 @@ end
 -- (e.g., kindle-hid-passthrough keyboards), so the plugin can work without
 -- OTG role management.
 local has_otg_role = false
+-- The mount point probably doesn't exist on kernels built w/o CONFIG_DEBUG_FS
 if lfs.attributes("/sys/kernel/debug", "mode") == "directory" then
     setupDebugFS()
     if lfs.attributes(OTG_CHIPIDEA_ROLE_PATH, "mode") == "file" or
