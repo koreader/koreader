@@ -266,11 +266,7 @@ function ReaderSearch:searchCallback(reverse, text)
 end
 
 function ReaderSearch:onShowFulltextSearchInput(search_string)
-    local backward_text = "◁"
-    local forward_text = "▷"
-    if BD.mirroredUILayout() then
-        backward_text, forward_text = forward_text, backward_text
-    end
+    local backward_text, forward_text = BD.getArrowLabels()
     self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
         width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.9),
@@ -456,15 +452,6 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
             end
         end
     end
-    local from_start_text = "▕◁"
-    local backward_text = "◁"
-    local forward_text = "▷"
-    local from_end_text = "▷▏"
-    if BD.mirroredUILayout() then
-        backward_text, forward_text = forward_text, backward_text
-        -- Keep the LTR order of |< and >|:
-        from_start_text, from_end_text = BD.ltr(from_end_text), BD.ltr(from_start_text)
-    end
     self.wait_button = ButtonDialog:new{
         buttons = {{{ text = "⌛" }}},
     }
@@ -483,6 +470,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
             return do_search(func, pattern, param)
         end
     end
+    local backward_text, forward_text, from_start_text, from_end_text = BD.getArrowLabels()
     self.search_dialog = ButtonDialog:new{
         -- alpha = 0.7,
         buttons = {
