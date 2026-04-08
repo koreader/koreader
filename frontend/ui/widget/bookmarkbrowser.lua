@@ -11,7 +11,6 @@ local Menu = require("ui/widget/menu")
 local PathChooser = require("ui/widget/pathchooser")
 local ReaderBookmark = require("apps/reader/modules/readerbookmark")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
-local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -25,7 +24,7 @@ local T = ffiUtil.template
 local BookmarkBrowser = WidgetContainer:extend{
     display_prefix = ReaderBookmark.display_prefix,
     display_type = ReaderBookmark.display_type,
-    separator = " • ",
+    separator = ReaderBookmark.separator,
     checkmark = "\u{2713}",
 }
 
@@ -216,11 +215,13 @@ end
 
 function BookmarkBrowser:show(files, ui)
     self.ui = ui or self.ui
+    self.ui.highlight = self.ui.highlight or ReaderHighlight -- for ReaderBookmark methods
 
     self.items_per_page = G_reader_settings:readSetting("bookmarks_items_per_page")
         or G_reader_settings:readSetting("items_per_page") or Menu.items_per_page_default
     self.items_font_size = G_reader_settings:readSetting("bookmarks_items_font_size")
         or G_reader_settings:readSetting("items_font_size") or Menu.getItemFontSize(self.items_per_page)
+    self.items_text = G_reader_settings:readSetting("bookmarks_items_text_type") or "note"
     self.items_max_lines = G_reader_settings:readSetting("bookmarks_items_max_lines")
     self.multilines_show_more_text = G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
     self.line_color = G_reader_settings:isTrue("bookmarks_items_show_separator")
@@ -495,25 +496,6 @@ function BookmarkBrowser:showBookmarkDetails(item)
     local items_nb = #item_table
     local book = item_table[item.book_idx]
 
-    local bm_info = {
-        BD.ltr(item.datetime),
-        T(_("Page %1"), item.mandatory),
-        item.drawer and ReaderHighlight:getHighlightStyleString(item.drawer),
-        item.color and ReaderHighlight:getHighlightColorString(item.color),
-    }
-    local bm_text_prefix = item.type == "bookmark" and self.display_prefix["bookmark"] or self.display_prefix["highlight"]
-    local text = {
-        T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Title")..TextBoxWidget.PTF_BOLD_END, book.doc_props.display_title),
-        T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Author(s)")..TextBoxWidget.PTF_BOLD_END, book.authors),
-        T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Chapter")..TextBoxWidget.PTF_BOLD_END, item.chapter or ""),
-        "",
-        table.concat(bm_info, self.separator),
-        "",
-        bm_text_prefix .. (item.text_orig or item.text),
-        "",
-        item.note and self.display_prefix["note"] .. item.note,
-    }
-
     local textviewer
     local function _showBookmarkDetails(idx)
         UIManager:close(textviewer)
@@ -521,12 +503,7 @@ function BookmarkBrowser:showBookmarkDetails(item)
         self:showBookmarkDetails(item_table[idx])
     end
 
-    local label_first, label_last = "▕◁", "▷▏"
-    local label_prev, label_next = "◁", "▷"
-    if BD.mirroredUILayout() then
-        label_first, label_last = BD.ltr(label_last), BD.ltr(label_first)
-        label_prev, label_next = label_next, label_prev
-    end
+    local label_prev, label_next, label_first, label_last = BD.getArrowLabels()
     local buttons_table = {
         {
             {
@@ -598,7 +575,7 @@ function BookmarkBrowser:showBookmarkDetails(item)
 
     textviewer = TextViewer:new{
         title = T(_("%1 / %2"), item.bookmark_idx, book.bookmarks_nb),
-        text = TextBoxWidget.PTF_HEADER .. table.concat(text, "\n"),
+        text = ReaderBookmark.getBookmarkDetailsText(self, item, book),
         text_type = "bookmark",
         buttons_table = buttons_table,
     }
