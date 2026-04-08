@@ -1187,7 +1187,8 @@ function ReaderBookmark:_getDialogHeader(bookmark, full)
 end
 
 function ReaderBookmark:getBookmarkDetailsText(bookmark, book)
-    local bm_text_prefix = bookmark.type == "bookmark" and self.display_prefix["bookmark"] or self.display_prefix["highlight"]
+    local bookmark_type = bookmark.type or ReaderBookmark.getBookmarkType(bookmark)
+    local bm_text_prefix = bookmark_type == "bookmark" and self.display_prefix["bookmark"] or self.display_prefix["highlight"]
     local t = {
         T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Chapter")..TextBoxWidget.PTF_BOLD_END, bookmark.chapter or ""),
         "",
@@ -1207,18 +1208,16 @@ function ReaderBookmark:getBookmarkDetailsText(bookmark, book)
 end
 
 function ReaderBookmark:showBookmarkDetails(item_or_index)
-    local item_table, item, item_idx, item_type
+    local item_table, item, item_idx
     local bm_menu = self.bookmark_menu and self.bookmark_menu[1]
     if bm_menu then -- called from Bookmark list, got item
         item_table = bm_menu.item_table
         item = item_or_index
         item_idx = item.idx
-        item_type = item.type
     else -- called from Reader, got index
         item_table = self.ui.annotation.annotations
         item_idx = item_or_index
         item = item_table[item_idx]
-        item_type = self.getBookmarkType(item)
     end
     local items_nb = #item_table
     local not_select_mode = not (bm_menu and bm_menu.select_count) and not self.ui.highlight.select_mode
