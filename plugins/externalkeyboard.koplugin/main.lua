@@ -87,6 +87,8 @@ end
 local has_otg_role = false
 -- The mount point probably doesn't exist on kernels built w/o CONFIG_DEBUG_FS
 if lfs.attributes("/sys/kernel/debug", "mode") == "directory" then
+    -- This should be in init() but the check must come first. So this part
+    -- of initialization is here. It is quick and harmless enough for a check.
     setupDebugFS()
     if lfs.attributes(OTG_CHIPIDEA_ROLE_PATH, "mode") == "file" or
        lfs.attributes(OTG_SUNXI_ROLE_PATH,    "mode") == "file" then
