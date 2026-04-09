@@ -12,7 +12,6 @@ local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
-local VerticalGroup = require("ui/widget/verticalgroup")
 local dbg = require("dbg")
 local util = require("util")
 local _ = require("gettext")
@@ -61,7 +60,6 @@ local InputText = InputContainer:extend{
     charlist = nil, -- table of individual chars from input string
     charpos = nil, -- position of the cursor, where a new char would be inserted
     top_line_num = nil, -- virtual_line_num of the text_widget (index of the displayed top line)
-    is_password_type = false, -- set to true if original text_type == "password"
     is_text_editable = true, -- whether text is utf8 reversible and editing won't mess content
     is_text_edited = false, -- whether text has been updated
     for_measurement_only = nil, -- When the widget is a one-off used to compute text height
@@ -70,6 +68,7 @@ local InputText = InputContainer:extend{
     undo_charlist = nil, -- array of chars for 'undoing'
     undo_startpos = nil, -- position to insert 'undoing'
     undo_charpos = nil, -- position to put the cursor after 'undoing'
+    _password_toggle = nil,
 }
 
 -- These may be (internally) overloaded as needed, depending on Device capabilities.
@@ -438,17 +437,6 @@ function InputText:isTextEdited()
 end
 
 function InputText:init()
-    if Device:isTouchDevice() then
-        if self.text_type == "password" then
-            -- text_type changes from "password" to "text" when we toggle password
-            self.is_password_type = true
-        end
-    else
-        -- focus move does not work with textbox and show password checkbox
-        -- force show password for non-touch device
-        self.text_type = "text"
-        self.is_password_type = false
-    end
     -- Beware other cases where implicit conversion to text may be done
     -- at some point, but checkTextEditability() would say "not editable".
     if self.input_type == "number" then
@@ -461,7 +449,9 @@ function InputText:init()
         end
     end
     self.charlist = util.splitToChars(self.text)
+    self.is_password_type = self.text_type == "password"
     self:initTextBox(self.text)
+    self:initPasswordToggle()
     self:checkTextEditability()
     if self.readonly ~= true then
         self:initKeyboard()
@@ -475,8 +465,37 @@ function InputText:init()
     end
 end
 
+function InputText:initPasswordToggle()
+    if not self.is_password_type or self.show_password_toggle == false then
+        self._password_toggle = nil
+        return
+    end
+    local toggle_width = self.width
+    if not toggle_width and self.parent and self.parent.getAddedWidgetAvailableWidth then
+        toggle_width = self.parent:getAddedWidgetAvailableWidth()
+    end
+    self._password_toggle = CheckButton:new{
+        text = _("Show password"),
+        parent = self.parent,
+        width = toggle_width,
+        checked = self.text_type ~= "password",
+        callback = function()
+            self.text_type = self._password_toggle.checked and "text" or "password"
+            self:setText(self:getText(), true)
+        end,
+    }
+end
+
+function InputText:getPasswordToggleWidget()
+    return self._password_toggle
+end
+
+function InputText:getFocusableWidgets()
+    return { self, self._password_toggle }
+end
+
 -- This will be called when we add or del chars, as we need to recreate
--- the text widget to have the new text splittted into possibly different
+-- the text widget to have the new text split into possibly different
 -- lines than before
 function InputText:initTextBox(text, char_added)
     if self.text_widget then
@@ -517,28 +536,6 @@ function InputText:initTextBox(text, char_added)
                 self.charpos = 1
             end
         end
-    end
-
-    if self.is_password_type and self.show_password_toggle then
-        self._check_button = self._check_button or CheckButton:new{
-            text = _("Show password"),
-            parent = self,
-            width = self.width,
-            callback = function()
-                self.text_type = self._check_button.checked and "text" or "password"
-                self:setText(self:getText(), true)
-            end,
-        }
-        self._password_toggle = FrameContainer:new{
-            bordersize = 0,
-            padding = self.padding,
-            padding_top = 0,
-            padding_bottom = 0,
-            margin = self.margin + self.bordersize,
-            self._check_button,
-        }
-    else
-        self._password_toggle = nil
     end
 
     if not self.height then
@@ -621,16 +618,11 @@ function InputText:initTextBox(text, char_added)
         color = self.focused and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
         self.text_widget,
     }
-    self._verticalgroup = VerticalGroup:new{
-        align = "left",
-        self._frame_textwidget,
-        self._password_toggle,
-    }
     self._frame = FrameContainer:new{
         bordersize = 0,
         margin = 0,
         padding = 0,
-        self._verticalgroup,
+        self._frame_textwidget,
     }
     self[1] = self._frame
     self.dimen = self._frame:getSize()

@@ -272,11 +272,11 @@ Username and password are optional.]])
     local item = server_idx and Ftp.base.servers[server_idx] or { type = Ftp.type }
     local settings_dialog
     settings_dialog = MultiInputDialog:new{
-        title = _("FTP cloud storage"),
+        title = _("FTP server settings"),
         fields = {
             {
                 text = item.name,
-                hint = _("Cloud storage displayed name"),
+                hint = _("Name"),
             },
             {
                 text = item.address,

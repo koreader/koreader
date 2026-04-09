@@ -393,6 +393,10 @@ function InputDialog:init()
         charpos = self._charpos,
     }
     table.insert(self.layout[1], self._input_widget)
+    self._password_toggle_widget = self._input_widget:getPasswordToggleWidget()
+    if self._password_toggle_widget then
+        table.insert(self.layout, { self._password_toggle_widget })
+    end
     self:mergeLayoutInVertical(self.button_table)
     -- NOTE: Never send a Focus event, as, on hasDPad device, InputText's onFocus *will* call onShowKeyboard,
     --       and that will wreak havoc on toggleKeyboard...
@@ -430,6 +434,17 @@ function InputDialog:init()
         vspan_after_input_text,
         buttons_container,
     }
+    if self._password_toggle_widget then
+        local toggle_row = CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width,
+                h = self._password_toggle_widget:getSize().h,
+            },
+            self._password_toggle_widget,
+        }
+        -- Keep password toggle between input field and the post-input spacer.
+        table.insert(self.vgroup, 4, toggle_row)
+    end
 
     -- Final widget
     self.dialog_frame = FrameContainer:new{

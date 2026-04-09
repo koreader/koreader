@@ -265,11 +265,11 @@ The start folder is appended to the server path.]])
     local item = server_idx and WebDav.base.servers[server_idx] or { type = WebDav.type }
     local settings_dialog
     settings_dialog = MultiInputDialog:new{
-        title = _("WebDAV cloud storage"),
+        title = _("WebDAV server settings"),
         fields = {
             {
                 text = item.name,
-                hint = _("Cloud storage displayed name"),
+                hint = _("Name"),
             },
             {
                 text = item.address,

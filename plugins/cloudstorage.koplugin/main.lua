@@ -89,7 +89,7 @@ function Cloud:onShowCloudStorageList(caller_choose_folder_callback)
     for _, provider in pairs(self.providers) do
         provider.base = base
     end
-    UIManager:show(base)
+    base:show()
 end
 
 function Cloud:onFlushSettings()

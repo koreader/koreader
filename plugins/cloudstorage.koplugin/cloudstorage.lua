@@ -81,9 +81,13 @@ end
 
 function CloudStorage:genItemFromServer(idx)
     local server = self.servers[idx]
+    local mandatory = self.providers[server.type].name
+    if idx == self.settings:readSetting("default_server") then
+        mandatory = "★ " .. mandatory
+    end
     return {
         text = server.name,
-        mandatory = self.providers[server.type].name,
+        mandatory = mandatory,
         server_idx = idx,
         type = server.type,
         url = server.url,
@@ -128,7 +132,19 @@ function CloudStorage:sortItemTable(tbl, url)
     end
 end
 
-function CloudStorage:openCloudServer(url)
+function CloudStorage:show()
+    local default_server_idx = self.settings:readSetting("default_server")
+    if default_server_idx then -- open default server
+        self.server_idx = default_server_idx
+        local url = self.servers[default_server_idx].url
+        table.insert(self.paths, { url = url })
+        self:openCloudServer(url, true)
+    else -- show root list of servers
+        UIManager:show(self)
+    end
+end
+
+function CloudStorage:openCloudServer(url, do_show)
     if self.caller_choose_folder_callback then
         self.choose_folder_callback = true
     end
@@ -142,12 +158,21 @@ function CloudStorage:openCloudServer(url)
             end
             self:sortItemTable(tbl, url)
             self:switchItemTable(server.name, tbl, nil, nil, url == "" and "/" or url)
+            if do_show then
+                UIManager:show(self)
+            end
         else
-            UIManager:show(InfoMessage:new{
-                text = _("Cannot fetch list of folder contents\nPlease check your configuration or network connection."),
-            })
             table.remove(self.paths)
             self.choose_folder_callback = nil
+            if do_show then
+                -- could not show the server content; show the root list of servers
+                -- "flashui" is needed when called with wi-fi off (NetworkMgr:willRerunWhenConnected())
+                UIManager:show(self, "flashui")
+            end
+            UIManager:show(InfoMessage:new{
+                text = T(_("Server: %1"), server.name) .. "\n" ..
+                    _("Could not fetch server's content.\nPlease check your configuration or network connection."),
+            })
         end
     end)
 end
@@ -267,19 +292,40 @@ function CloudStorage:showFileDeleteDialog(item)
 end
 
 function CloudStorage:showServerDialog(item)
+    local is_not_default_server = item.server_idx ~= self.settings:readSetting("default_server")
     local provider = self.providers[item.type]
     local server_dialog
     local buttons = {
         {
             {
-                text = _("Remove storage"),
+                text = is_not_default_server and _("Set default") or _("Reset default"),
+                callback = function()
+                    UIManager:close(server_dialog)
+                    local idx = is_not_default_server and item.server_idx or nil
+                    self.settings:saveSetting("default_server", idx)
+                    self._manager.updated = true
+                    self:init(true)
+                end,
+            },
+        },
+        {
+            {
+                text = _("Remove server"),
                 callback = function()
                     UIManager:show(ConfirmBox:new{
-                        text = _("Remove this storage?") .. "\n\n" .. item.text,
+                        text = _("Remove this server?") .. "\n\n" .. item.text,
                         ok_text = _("Remove"),
                         ok_callback = function()
                             UIManager:close(server_dialog)
                             table.remove(self.servers, item.server_idx)
+                            local default_server_idx = self.settings:readSetting("default_server")
+                            if default_server_idx then
+                                if default_server_idx == item.server_idx then
+                                    self.settings:delSetting("default_server")
+                                elseif default_server_idx > item.server_idx then
+                                    self.settings:saveSetting("default_server", default_server_idx - 1)
+                                end
+                            end
                             self._manager.updated = true
                             self:init(true)
                         end,
@@ -287,7 +333,7 @@ function CloudStorage:showServerDialog(item)
                 end,
             },
             {
-                text = _("Storage settings"),
+                text = _("Server settings"),
                 callback = function()
                     UIManager:close(server_dialog)
                     local update_callback = function()
@@ -363,13 +409,13 @@ function CloudStorage:showPlusRootDialog()
     table.insert(buttons, {}) -- separator
     table.insert(buttons, {
         {
-            text = _("Arrange storages"),
+            text = _("Arrange servers"),
             enabled = #self.item_table > 1,
             callback = function()
                 UIManager:close(plus_root_dialog)
                 local sort_widget
                 sort_widget = SortWidget:new{
-                    title = _("Arrange storages"),
+                    title = _("Arrange servers"),
                     item_table = self.item_table,
                     callback = function()
                         self._manager.updated = true
@@ -384,7 +430,7 @@ function CloudStorage:showPlusRootDialog()
         },
     })
     plus_root_dialog = ButtonDialog:new{
-        title = _("Add new cloud storage"),
+        title = _("Add new server"),
         title_align = "center",
         buttons = buttons,
     }
@@ -402,6 +448,17 @@ function CloudStorage:showPlusCloudDialog(url)
                     callback = function()
                         UIManager:close(plus_cloud_dialog)
                         self:showFolderCreateDialog(url)
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("Upload selected files"),
+                    enabled = self.provider.uploadFile and not self.choose_folder_callback
+                        and self._manager.ui.selected_files ~= nil,
+                    callback = function()
+                        UIManager:close(plus_cloud_dialog)
+                        self:showSelectedFilesUploadDialog(url)
                     end,
                 },
                 {
@@ -450,7 +507,7 @@ function CloudStorage:showPlusCloudDialog(url)
             },
             {
                 {
-                    text = _("Return to cloud storage list"),
+                    text = _("Return to server list"),
                     callback = function()
                         UIManager:close(plus_cloud_dialog)
                         self:init(true)
@@ -628,6 +685,50 @@ function CloudStorage:showFileUploadDialog(url)
     })
 end
 
+function CloudStorage:showSelectedFilesUploadDialog(url)
+    local files = self._manager.ui.selected_files
+    local files_nb = util.tableSize(files)
+    UIManager:show(ConfirmBox:new{
+        text = T(N_("Upload 1 file?", "Upload %1 files?", files_nb), files_nb),
+        ok_text = _("Upload"),
+        ok_callback = function()
+            local url_base = url ~= "/" and url or ""
+            local Trapper = require("ui/trapper")
+            Trapper:wrap(function()
+                Trapper:setPausedText("Upload paused.\nDo you want to continue or abort uploading files?")
+                local proccessed_files, success_files, unsuccess_files = 0, 0, 0
+                for file in pairs(files) do
+                    proccessed_files = proccessed_files + 1
+                    local text = string.format("Uploading file (%d/%d):\n%s", proccessed_files, files_nb, file:gsub(".*/", ""))
+                    if not Trapper:info(text) then
+                        break
+                    end
+                    local code = self.provider.uploadFile(url_base, file)
+                    if code == 200 then
+                        files[file] = nil
+                        success_files = success_files + 1
+                    else
+                        unsuccess_files = unsuccess_files + 1
+                    end
+                end
+                Trapper:clear()
+                if success_files > 0 then
+                    self:openCloudServer(url)
+                end
+                local text = T(N_("Uploaded 1 file.", "Uploaded %1 files.", success_files), success_files)
+                if unsuccess_files > 0 then
+                    text = text .. "\n" ..
+                        T(N_("Could not upload 1 file.", "Could not upload %1 files.", unsuccess_files), unsuccess_files)
+                end
+                UIManager:show(InfoMessage:new{ text = text })
+                if not next(files) then
+                    self._manager.ui:onToggleSelectMode()
+                end
+            end)
+        end,
+    })
+end
+
 function CloudStorage:showFolderCreateDialog(url)
     local input_dialog, check_button_enter_folder
     input_dialog = InputDialog:new{
@@ -727,15 +828,16 @@ function CloudStorage:syncCloud(item)
     local server = self:initServer(item.server_idx)
     self.provider.run(function()
         local Trapper = require("ui/trapper")
-        Trapper:setPausedText("Download paused.\nDo you want to continue or abort downloading files?")
         Trapper:wrap(function()
+            Trapper:setPausedText("Download paused.\nDo you want to continue or abort downloading files?")
             Trapper:info(_("Retrieving files…"))
             local url = server.sync_source_folder == "/" and "" or server.sync_source_folder
             local remote_files = self.provider.listFolder(url) -- excluding folders
             if not remote_files then
                 Trapper:clear()
                 UIManager:show(InfoMessage:new{
-                    text = _("Cannot fetch list of folder contents\nPlease check your configuration or network connection."),
+                    text = T(_("Server: %1"), server.name) .. "\n" ..
+                        _("Could not fetch server's content.\nPlease check your configuration or network connection."),
                 })
                 return
             end
@@ -766,16 +868,12 @@ function CloudStorage:syncCloud(item)
                 return
             end
 
-            local go_on
-            local proccessed_files = 0
-            local success_files = 0
-            local unsuccess_files = 0
+            local proccessed_files, success_files, unsuccess_files = 0, 0, 0
             for _, file in ipairs(remote_files) do
                 if file.download then
                     proccessed_files = proccessed_files + 1
                     local text = string.format("Downloading file (%d/%d):\n%s", proccessed_files, files_to_download, file.text)
-                    go_on = Trapper:info(text)
-                    if not go_on then
+                    if not Trapper:info(text) then
                         break
                     end
                     local code = self.provider.downloadFile(file.url, server.sync_dest_folder .. "/" .. file.text)

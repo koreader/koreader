@@ -381,11 +381,11 @@ Some of the previously generated long-lived tokens are still valid.]])
     local item = server_idx and DropBox.base.servers[server_idx] or { type = DropBox.type }
     local settings_dialog
     settings_dialog = MultiInputDialog:new{
-        title = _("Dropbox cloud storage"),
+        title = _("Dropbox server settings"),
         fields = {
             {
                 text = item.name,
-                hint = _("Cloud storage displayed name"),
+                hint = _("Name"),
             },
             {
                 text = item.password,
