@@ -411,6 +411,7 @@ function PocketBook:initNetworkManager(NetworkMgr)
             if not route_seen then
                 -- Workaround for glibc bug where /etc/resolv.conf is parsed
                 -- only once. We force a reload when the route first appears.
+                -- See https://sourceware.org/bugzilla/show_bug.cgi?id=984
                 local ok = pcall(function() ffi.C.res_init() end)
                 if not ok then pcall(function() ffi.C.__res_init() end) end
                 route_seen = true
@@ -421,10 +422,8 @@ function PocketBook:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:isOnline()
-        -- Fail early if we don't even have a default route, otherwise we're
-        -- unlikely to be online and canResolveHostnames would never succeed
-        -- again because PocketBook's glibc parses /etc/resolv.conf on first
-        -- use only. See https://sourceware.org/bugzilla/show_bug.cgi?id=984
+        -- Override to call isConnected before canResolveHostnames
+        -- to work around glibc bug. See https://sourceware.org/bugzilla/show_bug.cgi?id=984
         return self:isConnected() and self:canResolveHostnames()
     end
 
