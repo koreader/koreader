@@ -462,6 +462,7 @@ function DocSettings.updateLocation(doc_path, new_doc_path, copy)
         end
     else -- delete
         if has_sidecar_file then
+            DocSettings.saveOrphan(doc_settings)
             local cache_file_path = doc_settings:readSetting("cache_file_path")
             if cache_file_path then
                 os.remove(cache_file_path)
@@ -602,6 +603,30 @@ function DocSettings.findSidecarFilesInHashLocation()
     end
     util.findFiles(DOCSETTINGS_HASH_DIR, callback)
     return res
+end
+
+function DocSettings.saveOrphan(doc_settings)
+    if G_reader_settings:isTrue("annotations_orphans_enabled") then
+        local folder = G_reader_settings:readSetting("annotations_orphans_folder")
+        if folder then
+            local md5_checksum = doc_settings:readSetting("partial_md5_checksum")
+            if md5_checksum then
+                local o_settings = LuaSettings:open(folder .. "/" .. md5_checksum .. ".lua")
+                local settings_to_keep = {
+                    "annotations",
+                    "doc_path",
+                    "doc_props",
+                    "partial_md5_checksum",
+                    "summary",
+                }
+                for _, setting in ipairs(settings_to_keep) do
+                    o_settings:saveSetting(setting, doc_settings:readSetting(setting))
+                end
+                o_settings:saveSetting("deleted", os.date("%Y-%m-%d %H:%M:%S"))
+                o_settings:flush()
+            end
+        end
+    end
 end
 
 return DocSettings
