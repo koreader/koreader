@@ -401,24 +401,26 @@ function PocketBook:initNetworkManager(NetworkMgr)
         return band(inkview.QueryNetwork(), C.NET_CONNECTED) ~= 0
     end
 
-    local route_seen = false
+    local res_init_done = false
     function NetworkMgr:isConnected()
-        if not self:isWifiOn() then
-            route_seen = false
-            return false
-        end
-        if self:hasDefaultRoute() then
-            if not route_seen then
+        local is_connected = self:isWifiOn() and self:hasDefaultRoute()
+
+        if is_connected then
+            if not res_init_done then
+                -- Re-init resolver once connected
                 -- Workaround for glibc bug where /etc/resolv.conf is parsed
                 -- only once. We force a reload when the route first appears.
                 -- See https://sourceware.org/bugzilla/show_bug.cgi?id=984
                 local ok = pcall(function() ffi.C.res_init() end)
                 if not ok then pcall(function() ffi.C.__res_init() end) end
-                route_seen = true
+                res_init_done = true
             end
-            return true
+        else
+            -- Connection lost; reset flag to trigger re-init on next success
+            res_init_done = false
         end
-        return false
+
+        return is_connected
     end
 
     function NetworkMgr:isOnline()
