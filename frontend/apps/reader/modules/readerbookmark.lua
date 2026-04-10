@@ -306,6 +306,36 @@ function ReaderBookmark:addToMainMenu(menu_items)
                     end
                     filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path)
                 end,
+                separator = true,
+            },
+            {
+                text_func = function()
+                    return T(_("Orphan annotations folder: %1"),
+                        G_reader_settings:readSetting("annotations_orphans_folder") or _("not set"))
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local title_header = _("Orphan annotations folder:")
+                    local current_path = G_reader_settings:readSetting("annotations_orphans_folder")
+                    local caller_callback = function(path)
+                        local ok = true
+                        if current_path then
+                            local FileManager = require("apps/filemanager/filemanager")
+                            util.findFiles(current_path, function(fullpath, filename)
+                                if filename:match("%.lua$") then
+                                    ok = FileManager:moveFile(fullpath, path .. "/" .. filename)
+                                elseif filename:match("%.old$") then
+                                    os.remove(fullpath)
+                                end
+                            end, false)
+                        end
+                        if ok then
+                            G_reader_settings:saveSetting("annotations_orphans_folder", path)
+                            touchmenu_instance:updateItems()
+                        end
+                    end
+                    filemanagerutil.showChooseDialog(title_header, caller_callback, current_path)
+                end,
             },
         },
     }
