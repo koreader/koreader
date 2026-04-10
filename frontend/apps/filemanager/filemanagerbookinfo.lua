@@ -87,16 +87,21 @@ function BookInfo:show(doc_settings_or_file, book_props)
         has_sidecar = true
     end
     local folder, filename = util.splitFilePathName(file)
-    local __, filetype = filemanagerutil.splitFileNameType(filename)
     local attr = lfs.attributes(file)
-    local file_size = attr.size or 0
-    local size_f = util.getFriendlySize(file_size)
-    local size_b = util.getFormattedSize(file_size)
+    local is_file = attr and true or nil
     table.insert(kv_pairs, { _("Filename:"), BD.filename(filename) })
-    table.insert(kv_pairs, { _("Format:"), filetype:upper() })
-    table.insert(kv_pairs, { _("Size:"), string.format("%s (%s bytes)", size_f, size_b) })
-    table.insert(kv_pairs, { _("File date:"), os.date("%Y-%m-%d %H:%M:%S", attr.modification) })
-    table.insert(kv_pairs, { _("Folder:"), BD.dirpath(filemanagerutil.abbreviate(folder)), separator = true })
+    if is_file then -- show doc_settings info only for deleted books
+        local __, filetype = filemanagerutil.splitFileNameType(filename)
+        local file_size = attr.size or 0
+        local size_f = util.getFriendlySize(file_size)
+        local size_b = util.getFormattedSize(file_size)
+        table.insert(kv_pairs, { _("Format:"), filetype:upper() })
+        table.insert(kv_pairs, { _("Size:"), string.format("%s (%s bytes)", size_f, size_b) })
+        table.insert(kv_pairs, { _("File date:"), os.date("%Y-%m-%d %H:%M:%S", attr.modification) })
+        table.insert(kv_pairs, { _("Folder:"), BD.dirpath(filemanagerutil.abbreviate(folder)), separator = true })
+    else
+        table.insert(kv_pairs, { _("Deleted:"), doc_settings_or_file:readSetting("deleted"), separator = true })
+    end
 
     -- Book section
     -- book_props may be provided if caller already has them available
@@ -104,24 +109,26 @@ function BookInfo:show(doc_settings_or_file, book_props)
     book_props = book_props or self:getDocProps(file, book_props)
     book_props.pages = book_props.pages or BookList.getBookInfo(file).pages
     -- cover image
-    self.custom_book_cover = DocSettings:findCustomCoverFile(file)
-    local key_text = self.prop_text["cover"]
-    if self.custom_book_cover then
-        key_text = "\u{F040} " .. key_text
+    if is_file then
+        self.custom_book_cover = DocSettings:findCustomCoverFile(file)
+        local key_text = self.prop_text["cover"]
+        if self.custom_book_cover then
+            key_text = "\u{F040} " .. key_text
+        end
+        table.insert(kv_pairs, { key_text, _("Tap to display"),
+            callback = function()
+                self:onShowBookCover(file)
+            end,
+            hold_callback = function()
+                self:showCustomDialog(file, book_props)
+            end,
+            separator = true,
+        })
     end
-    table.insert(kv_pairs, { key_text, _("Tap to display"),
-        callback = function()
-            self:onShowBookCover(file)
-        end,
-        hold_callback = function()
-            self:showCustomDialog(file, book_props)
-        end,
-        separator = true,
-    })
     -- metadata
     local n_a = _("N/A")
     local custom_props
-    local custom_metadata_file = DocSettings:findCustomMetadataFile(file)
+    local custom_metadata_file = is_file and DocSettings:findCustomMetadataFile(file)
     if custom_metadata_file then
         self.custom_doc_settings = DocSettings.openSettingsFile(custom_metadata_file)
         custom_props = self.custom_doc_settings:readSetting("custom_props")
@@ -154,13 +161,13 @@ function BookInfo:show(doc_settings_or_file, book_props)
                 self:showBookProp("description", prop)
             end
         end
-        key_text = self.prop_text[prop_key]
+        local key_text = self.prop_text[prop_key]
         if custom_props and custom_props[prop_key] then -- customized
             key_text = "\u{F040} " .. key_text
         end
         table.insert(kv_pairs, { key_text, prop,
             callback = callback,
-            hold_callback = function()
+            hold_callback = is_file and function()
                 self:showCustomDialog(file, book_props, prop_key)
             end,
         })
@@ -240,7 +247,7 @@ Source (print edition):
     -- Summary section
     local summary = has_sidecar and doc_settings_or_file:readSetting("summary") or {}
     local rating = summary.rating or 0
-    local summary_hold_callback = function()
+    local summary_hold_callback = is_file and function()
         self:editSummary(doc_settings_or_file, book_props)
     end
     table.insert(kv_pairs, { _("Rating:"), ("★"):rep(rating) .. ("☆"):rep(self.rating_max - rating),
@@ -249,12 +256,14 @@ Source (print edition):
         hold_callback = summary_hold_callback, separator = true })
 
     -- Notebook file
-    local notebook_file = self:getNotebookFile(doc_settings_or_file)
-    local notebook_file_callback = function()
-        self:showNotebookFileDialog(notebook_file, doc_settings_or_file, book_props)
+    if is_file then
+        local notebook_file = self:getNotebookFile(doc_settings_or_file)
+        local notebook_file_callback = function()
+            self:showNotebookFileDialog(notebook_file, doc_settings_or_file, book_props)
+        end
+        table.insert(kv_pairs, { _("Notebook file:"), notebook_file:gsub(".*/", ""),
+            callback = notebook_file_callback })
     end
-    table.insert(kv_pairs, { _("Notebook file:"), notebook_file:gsub(".*/", ""),
-        callback = notebook_file_callback })
 
     local KeyValuePage = require("ui/widget/keyvaluepage")
     self.kvp_widget = KeyValuePage:new{
