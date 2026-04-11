@@ -309,6 +309,15 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 separator = true,
             },
             {
+                text = _("Save orphan annotations on book closing"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("annotations_orphans_on_closing")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("annotations_orphans_on_closing")
+                end,
+            },
+            {
                 text_func = function()
                     return T(_("Orphan annotations folder: %1"),
                         G_reader_settings:readSetting("annotations_orphans_folder") or _("not set"))
