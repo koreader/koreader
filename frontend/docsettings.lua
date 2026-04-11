@@ -628,7 +628,7 @@ function DocSettings.saveOrphanSettings(doc_settings, custom_metadata_file, on_c
         custom_metadata_file = DocSettings:findCustomMetadataFile(doc_settings:readSetting("doc_path"))
     else -- on deletion
         if G_reader_settings:hasNot("annotations_orphans_on_deletion") then
-            if isFile(orphan_file) then
+            if orphan_file and isFile(orphan_file) then
                 os.remove(orphan_file)
                 os.remove(orphan_file .. ".old")
             end
