@@ -90,7 +90,7 @@ function BookInfo:show(doc_settings_or_file, book_props)
     local attr = lfs.attributes(file)
     local is_file = attr and true or nil
     table.insert(kv_pairs, { _("Filename:"), BD.filename(filename) })
-    if is_file then -- show doc_settings info only for deleted books
+    if is_file then
         local __, filetype = filemanagerutil.splitFileNameType(filename)
         local file_size = attr.size or 0
         local size_f = util.getFriendlySize(file_size)
@@ -99,8 +99,8 @@ function BookInfo:show(doc_settings_or_file, book_props)
         table.insert(kv_pairs, { _("Size:"), string.format("%s (%s bytes)", size_f, size_b) })
         table.insert(kv_pairs, { _("File date:"), os.date("%Y-%m-%d %H:%M:%S", attr.modification) })
         table.insert(kv_pairs, { _("Folder:"), BD.dirpath(filemanagerutil.abbreviate(folder)), separator = true })
-    else
-        table.insert(kv_pairs, { _("Deleted:"), doc_settings_or_file:readSetting("deleted"), separator = true })
+    else -- for deleted books show orphan doc_settings info only
+        table.insert(kv_pairs, { _("Deleted:"), doc_settings_or_file:readSetting("orphan_datetime"), separator = true })
     end
 
     -- Book section
@@ -128,10 +128,14 @@ function BookInfo:show(doc_settings_or_file, book_props)
     -- metadata
     local n_a = _("N/A")
     local custom_props
-    local custom_metadata_file = is_file and DocSettings:findCustomMetadataFile(file)
-    if custom_metadata_file then
-        self.custom_doc_settings = DocSettings.openSettingsFile(custom_metadata_file)
-        custom_props = self.custom_doc_settings:readSetting("custom_props")
+    if is_file then
+        local custom_metadata_file = DocSettings:findCustomMetadataFile(file)
+        if custom_metadata_file then
+            self.custom_doc_settings = DocSettings.openSettingsFile(custom_metadata_file)
+            custom_props = self.custom_doc_settings:readSetting("custom_props")
+        end
+    else
+        custom_props = doc_settings_or_file:readSetting("custom_props")
     end
     local values_lang, callback
     for _i, prop_key in ipairs(self.props) do
