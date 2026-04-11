@@ -462,7 +462,7 @@ function DocSettings.updateLocation(doc_path, new_doc_path, copy)
         end
     else -- delete
         if has_sidecar_file then
-            DocSettings.saveOrphan(doc_settings)
+            DocSettings.saveOrphanSettings(doc_settings, custom_metadata_file)
             local cache_file_path = doc_settings:readSetting("cache_file_path")
             if cache_file_path then
                 os.remove(cache_file_path)
@@ -605,28 +605,54 @@ function DocSettings.findSidecarFilesInHashLocation()
     return res
 end
 
-function DocSettings.saveOrphan(doc_settings)
-    if G_reader_settings:isTrue("annotations_orphans_enabled") then
-        local folder = G_reader_settings:readSetting("annotations_orphans_folder")
-        if folder then
-            local md5_checksum = doc_settings:readSetting("partial_md5_checksum")
-            if md5_checksum then
-                local o_settings = LuaSettings:open(folder .. "/" .. md5_checksum .. ".lua")
-                local settings_to_keep = {
-                    "annotations",
-                    "doc_path",
-                    "doc_props",
-                    "partial_md5_checksum",
-                    "summary",
-                }
-                for _, setting in ipairs(settings_to_keep) do
-                    o_settings:saveSetting(setting, doc_settings:readSetting(setting))
-                end
-                o_settings:saveSetting("deleted", os.date("%Y-%m-%d %H:%M:%S"))
-                o_settings:flush()
+function DocSettings.getOrphanSettingsFilename(doc_settings, does_exist)
+    local folder = G_reader_settings:readSetting("annotations_orphans_folder")
+    if folder then
+        local md5_checksum = doc_settings:readSetting("partial_md5_checksum")
+        if md5_checksum then
+            local file = folder .. "/" .. md5_checksum .. ".lua"
+            if does_exist then
+                return file and isFile(file) and file
             end
+            return file
         end
     end
+end
+
+function DocSettings.saveOrphanSettings(doc_settings, custom_metadata_file, on_closing)
+    local orphan_file = DocSettings.getOrphanSettingsFilename(doc_settings)
+    if on_closing then
+        if G_reader_settings:hasNot("annotations_orphans_on_closing") then
+            return
+        end
+        custom_metadata_file = DocSettings:findCustomMetadataFile(doc_settings:readSetting("doc_path"))
+    else -- on deletion
+        if G_reader_settings:hasNot("annotations_orphans_on_deletion") then
+            if isFile(orphan_file) then
+                os.remove(orphan_file)
+                os.remove(orphan_file .. ".old")
+            end
+            return
+        end
+    end
+
+    local o_settings = LuaSettings:open(orphan_file)
+    local settings_to_keep = {
+        "annotations",
+        "doc_path",
+        "doc_props",
+        "partial_md5_checksum",
+        "summary",
+    }
+    for _, setting in ipairs(settings_to_keep) do
+        o_settings:saveSetting(setting, doc_settings:readSetting(setting))
+    end
+    if custom_metadata_file then
+        local custom_settings = DocSettings.openSettingsFile(custom_metadata_file)
+        o_settings:saveSetting("custom_props", custom_settings:readSetting("custom_props"))
+    end
+    o_settings:saveSetting("orphan_datetime", os.date("%Y-%m-%d %H:%M:%S"))
+    o_settings:flush()
 end
 
 return DocSettings
