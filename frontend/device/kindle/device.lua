@@ -2207,7 +2207,7 @@ else
     elseif ks3_set[kindle_devcode_v2] then
         return KindleScribe3
     elseif kscs_set[kindle_devcode_v2] then
-	return KindleScribeColorSoft
+        return KindleScribeColorSoft
     end
 end
 
