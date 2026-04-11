@@ -1147,10 +1147,10 @@ function FileManager.addOrphanCheckButton(confirmbox)
     confirmbox:addWidget(CheckButton:new{
         text = _("keep book annotations"),
         enabled = enabled,
-        checked = enabled and G_reader_settings:isTrue("annotations_orphans_enabled"),
+        checked = enabled and G_reader_settings:isTrue("annotations_orphans_on_deletion"),
         parent = confirmbox,
         callback = function()
-            G_reader_settings:flipNilOrFalse("annotations_orphans_enabled")
+            G_reader_settings:flipNilOrFalse("annotations_orphans_on_deletion")
         end,
     })
 end
