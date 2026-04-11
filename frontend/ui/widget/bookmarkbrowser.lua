@@ -4,6 +4,7 @@ local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonSelector = require("ui/widget/buttonselector")
 local CheckButton = require("ui/widget/checkbutton")
+local ConfirmBox = require("ui/widget/confirmbox")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
@@ -17,6 +18,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
+local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
@@ -335,6 +337,9 @@ function BookmarkBrowser:getBookList(files)
             is_deleted = file:match("%.lua$")
             if is_deleted then
                 doc_settings = DocSettings.openSettingsFile(file)
+                if lfs.attributes(doc_settings:readSetting("doc_path"), "mode") == "file" then
+                    doc_settings = nil -- the book is not deleted yet
+                end
             else
                 doc_settings = BookList.hasBookBeenOpened(file) and BookList.getDocSettings(file)
             end
@@ -389,7 +394,7 @@ function BookmarkBrowser:getItemTable()
     local no_filter = self.filters_nb == 0
     self.visible_books_nb = 0 -- may differ from the enabled books number due to bookmarks filtering
     local item_table = {}
-    for __, book in ipairs(self.books) do
+    for self_books_idx, book in ipairs(self.books) do
         if book.enabled then
             local book_item_table_idx = #item_table + 1
             local bookmark_idx = 0
@@ -438,6 +443,7 @@ function BookmarkBrowser:getItemTable()
                     text = T(_("%1 • %2"), book.authors, book.doc_props.display_title),
                     bold = true,
                     mandatory = "(" .. annotations_nb .. ")",
+                    self_books_idx = self_books_idx,
                     file = book.file,
                     is_current_file = book.is_current_file,
                     is_deleted = book.is_deleted,
@@ -481,9 +487,21 @@ function BookmarkBrowser:showBookDialog(item)
     local buttons = {
         {
             {
-                text = _("Open"),
-                enabled = not item.is_deleted,
-                callback = function()
+                text = item.is_deleted and _("Delete orphan") or _("Open"),
+                callback = item.is_deleted and function()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Delete orphan annotations?"),
+                        ok_text = _("Delete"),
+                        ok_callback = function()
+                            UIManager:close(book_dialog)
+                            local orphan_file = DocSettings.getOrphanSettingsFilename(item.doc_settings)
+                            os.remove(orphan_file)
+                            os.remove(orphan_file .. ".old")
+                            table.remove(self.books, item.self_books_idx)
+                            self:updateBookmarkList()
+                        end,
+                    })
+                end or function()
                     UIManager:close(book_dialog)
                     self.bm_list:onClose()
                     if self.ui.document then
