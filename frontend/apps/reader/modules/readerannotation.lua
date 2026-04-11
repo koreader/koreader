@@ -249,6 +249,7 @@ function ReaderAnnotation:onSaveSettings()
     self:updatePageNumbers()
     self.ui.doc_settings:saveSetting("annotations", self.annotations)
     self:onExportAnnotations(true)
+    DocSettings.saveOrphanSettings(self.ui.doc_settings, nil, true)
 end
 
 function ReaderAnnotation:getExportAnnotationsFilepath()
