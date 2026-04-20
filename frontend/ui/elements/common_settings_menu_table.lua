@@ -718,7 +718,7 @@ common_settings.document_metadata_arc = {
                 local current_path = G_reader_settings:readSetting("document_metadata_arc_folder")
                 local caller_callback = function(path)
                     local ok = true
-                    if current_path then
+                    if path and path ~= current_path then
                         local FileManager = require("apps/filemanager/filemanager")
                         util.findFiles(current_path, function(fullpath, filename)
                             if filename:match("%.lua$") then
@@ -733,7 +733,7 @@ common_settings.document_metadata_arc = {
                         touchmenu_instance:updateItems()
                     end
                 end
-                filemanagerutil.showChooseDialog(title_header, caller_callback, current_path)
+                filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, nil, nil, true)
             end,
         },
         {
