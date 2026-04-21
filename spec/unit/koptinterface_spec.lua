@@ -170,3 +170,49 @@ describe("Koptinterface module", function()
     end)
 
 end)
+
+describe("Koptinterface ordering", function()
+    local Koptinterface
+
+    setup(function()
+        require("commonrequire")
+        Koptinterface = require("document/koptinterface")
+    end)
+
+    it("should preserve reading-order spacing when line geometry goes backwards", function()
+        local boxes = {
+            {
+                { word = "Strategie", x0 = 50, y0 = 10, x1 = 90, y1 = 20 },
+                { word = "del", x0 = 10, y0 = 10, x1 = 30, y1 = 20 },
+                { word = "terrore", x0 = 100, y0 = 10, x1 = 150, y1 = 20 },
+                x0 = 10, y0 = 10, x1 = 150, y1 = 20,
+            },
+        }
+
+        local selection = Koptinterface:getTextFromBoxes(boxes, { x = 55, y = 15 }, { x = 120, y = 15 })
+
+        assert.is_same("Strategie del terrore", selection.text)
+    end)
+
+    it("should compare same-line positions by reading order instead of x coordinates", function()
+        local boxes = {
+            {
+                { word = "Strategie", x0 = 50, y0 = 10, x1 = 90, y1 = 20 },
+                { word = "del", x0 = 10, y0 = 10, x1 = 30, y1 = 20 },
+                { word = "terrore", x0 = 100, y0 = 10, x1 = 150, y1 = 20 },
+                x0 = 10, y0 = 10, x1 = 150, y1 = 20,
+            },
+        }
+        local doc = {
+            configurable = { text_wrap = 0 },
+        }
+        local fake_kopt = {
+            getTextBoxes = function()
+                return boxes
+            end,
+        }
+
+        assert.is_same(1, Koptinterface.comparePositions(fake_kopt, doc, { page = 1, x = 55, y = 15 }, { page = 1, x = 15, y = 15 }))
+        assert.is_same(-1, Koptinterface.comparePositions(fake_kopt, doc, { page = 1, x = 15, y = 15 }, { page = 1, x = 55, y = 15 }))
+    end)
+end)
