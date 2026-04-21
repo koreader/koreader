@@ -553,6 +553,15 @@ function WordInfoDialog:init()
             UIManager:close(self)
         end
     }
+
+    local forgot_button = {
+        text = _("Forgot"),
+        callback = function()
+            self.forgot_callback()
+            UIManager:close(self)
+        end
+    }
+
     local update_button = {
         text = _("Overwrite"),
         callback = function()
@@ -561,7 +570,7 @@ function WordInfoDialog:init()
         end
     }
 
-    local buttons = self.update_callback and {{cancel_button, update_button}} or {{reset_button, remove_button}}
+    local buttons = self.update_callback and {{cancel_button, forgot_button, update_button}} or {{reset_button, remove_button}}
     if self.vocabbuilder and self.vocabbuilder.item.last_due_time then
         table.insert(buttons, {{
             text = _("Undo study status"),
@@ -2102,6 +2111,10 @@ function VocabBuilder:onWordLookedUp(word, title, is_manual)
             prev_context = item.prev_context,
             next_context = item.next_context,
             update_callback = update,
+            forgot_callback = function()
+                DB:gotOrForgot(item, false)
+                DB:batchUpdateItems({ item })
+            end,
         }
         UIManager:show(dialog)
     else
