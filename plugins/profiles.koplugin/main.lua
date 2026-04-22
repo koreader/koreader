@@ -397,8 +397,8 @@ For example, with a trigger "on document closing" the profile will be executed b
                             touchmenu_instance:updateItems()
                             table.remove(touchmenu_instance.item_table_stack)
                             UIManager:show(InfoMessage:new{
-                                                text = T(_("Profile '%1' was updated with current settings."), curr_profile_name),
-                                                timeout = 2,
+                                text = T(_("Profile '%1' was updated with current settings."), curr_profile_name),
+                                timeout = 2,
                             })
                         end,
                     })
