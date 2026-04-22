@@ -390,7 +390,7 @@ For example, with a trigger "on document closing" the profile will be executed b
                     UIManager:show(ConfirmBox:new{
                         text = T(_("Are you sure you want to overwrite profile '%1' with current settings?"), curr_profile_name),
                         ok_text = _("Update"),
-                        ok_callback = function()								
+                        ok_callback = function()
                             self.data[curr_profile_name] = self:getProfileFromCurrentBookSettings(curr_profile_name)
                             self.updated = true
                             touchmenu_instance.item_table = self:getSubMenuItems()
