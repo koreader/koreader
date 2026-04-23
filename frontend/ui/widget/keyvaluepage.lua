@@ -321,6 +321,7 @@ function KeyValuePage:init()
         self.key_events.PrevPage = { { Input.group.PgBack } }
         if Device:hasScreenKB() or Device:hasKeyboard() then
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            self.key_events.HoldNonTouch = { { modifier, "Press" } }
             self.key_events.FirstPage = { { modifier, Input.group.PgFwd }, event = "GoToPage", args = 1 }
             self.key_events.LastPage = { { modifier, Input.group.PgBack }, event = "GoToPage", args = self.pages}
         end
@@ -859,6 +860,15 @@ function KeyValuePage:onReturn()
         UIManager:close(self)
         UIManager:setDirty(nil, "ui")
     end
+end
+
+function KeyValuePage:onHoldNonTouch()
+    -- Handle keyboard-triggered hold events by acting on the focused item directly
+    local focused_item = self:getFocusItem()
+    if not focused_item then
+        return true
+    end
+    return focused_item:onHold()
 end
 
 return KeyValuePage
