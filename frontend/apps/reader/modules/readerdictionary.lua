@@ -178,8 +178,8 @@ function ReaderDictionary:init()
 end
 
 -- function ReaderDictionary:registerKeyEvents()
-    -- Now handled by hotkeys.koplugin:
-    -- onShowDictionaryLookup = { { "Alt", "D" }, { "Ctrl", "D" } }
+--     Now handled by hotkeys.koplugin:
+--     onShowDictionaryLookup = { { "Alt", "D" }, { "Ctrl", "D" } }
 -- end
 
 function ReaderDictionary:sortAvailableIfos()

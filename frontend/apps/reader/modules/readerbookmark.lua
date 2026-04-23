@@ -66,9 +66,9 @@ end
 function ReaderBookmark:onGesture() end
 
 -- function ReaderBookmark:registerKeyEvents()
-    -- Now handled by hotkeys.koplugin:
-    -- onShowBookmark (B, Shift-Left)
-    -- onToggleBookmark (Shift-Right)
+--     Now handled by hotkeys.koplugin:
+--     onShowBookmark (B, Shift-Left)
+--     onToggleBookmark (Shift-Right)
 -- end
 
 function ReaderBookmark:addToMainMenu(menu_items)

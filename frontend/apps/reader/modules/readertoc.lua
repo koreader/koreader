@@ -60,8 +60,8 @@ end
 function ReaderToc:onGesture() end
 
 -- function ReaderToc:registerKeyEvents()
---     -- Now handled by hotkeys.koplugin:
---     -- onShowToc = { { "T" }, { "Shift", "Up" } }
+--     Now handled by hotkeys.koplugin:
+--     onShowToc = { { "T" }, { "Shift", "Up" } }
 -- end
 
 function ReaderToc:getTitle()

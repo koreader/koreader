@@ -149,9 +149,9 @@ end
 function ReaderFont:onGesture() end
 
 -- function ReaderFont:registerKeyEvents()
-    -- Now handled by hotkeys.koplugin:
-    -- Technically speaking, there are no default key_event replacements
-    -- for font size changes, but users can assign hotkeys to these actions.
+--     Now handled by hotkeys.koplugin:
+--     Technically speaking, there are no default key_event replacements
+--     for font size changes, but users can assign hotkeys to these actions.
 -- end
 
 function ReaderFont:onSetDimensions(dimen)

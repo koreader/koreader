@@ -240,12 +240,12 @@ end
 function ReaderLink:onGesture() end
 
 -- function ReaderLink:registerKeyEvents()
-    -- handled by hotkeys.koplugin:
-    -- SelectNextPageLink = { { "Tab" } },
-    -- SelectPrevPageLink = { { "Shift", "Tab" } },
-    -- GotoSelectedPageLink = { { "Press" } },
-    -- "Back" is handled by ReaderBack, which will call our onGoBackLink()
-    -- when G_reader_settings:readSetting("back_in_reader") == "previous_location"
+--     handled by hotkeys.koplugin:
+--     SelectNextPageLink = { { "Tab" } },
+--     SelectPrevPageLink = { { "Shift", "Tab" } },
+--     GotoSelectedPageLink = { { "Press" } },
+--     "Back" is handled by ReaderBack, which will call our onGoBackLink()
+--     when G_reader_settings:readSetting("back_in_reader") == "previous_location"
 -- end
 
 ReaderLink.onPhysicalKeyboardConnected = ReaderLink.registerKeyEvents

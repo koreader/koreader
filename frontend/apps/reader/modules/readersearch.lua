@@ -82,7 +82,7 @@ SRELL_ERROR_CODES[111] = _("Expression too complex, some hits will not be shown.
 SRELL_ERROR_CODES[666] = _("Expression may lead to an extremely long search time.")
 
 -- function ReaderSearch:registerKeyEvents()
-    -- handled by hotkeys.koplugin:
+--     handled by hotkeys.koplugin:
 --     if Device:hasKeyboard() then
 --         onShowFulltextSearchInputBlank = { { "Alt", "Shift", "S" }, { "Ctrl", "Shift", "S" } }
 --     end

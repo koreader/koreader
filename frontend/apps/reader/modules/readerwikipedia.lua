@@ -39,8 +39,8 @@ function ReaderWikipedia:init()
 end
 
 -- function ReaderWikipedia:registerKeyEvents()
-    -- Now handled by hotkeys.koplugin:
-    -- onShowWikipediaLookup = { { "Alt", "W" }, { "Ctrl", "W" } }
+--     Now handled by hotkeys.koplugin:
+--     onShowWikipediaLookup = { { "Alt", "W" }, { "Ctrl", "W" } }
 -- end
 
 function ReaderWikipedia:lookupInput()

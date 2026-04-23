@@ -31,11 +31,11 @@ function FileSearcher:init()
 end
 
 -- function FileSearcher:registerKeyEvents()
-    -- now handled by hotkeys.koplugin:
-    -- onShowFileSearch = { { "Alt", "F" }, { "Ctrl", "F" } }
-    -- if Device:hasKeyboard() then
-        -- onShowFileSearchBlank = { { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" } }
-    -- end
+--     now handled by hotkeys.koplugin:
+--     onShowFileSearch = { { "Alt", "F" }, { "Ctrl", "F" } }
+--     if Device:hasKeyboard() then
+--         onShowFileSearchBlank = { { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" } }
+--     end
 -- end
 
 function FileSearcher:addToMainMenu(menu_items)
