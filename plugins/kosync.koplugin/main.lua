@@ -59,6 +59,7 @@ KOSync.default_settings = {
     sync_forward = SYNC_STRATEGY.PROMPT,
     sync_backward = SYNC_STRATEGY.DISABLE,
     checksum_method = CHECKSUM_METHOD.BINARY,
+    send_metadata = false,
 }
 
 function KOSync:init()
@@ -412,6 +413,14 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                     },
                 }
             },
+            {
+                text = _("Send document metadata"),
+                checked_func = function() return self.settings.send_metadata end,
+                help_text = _([[When enabled, document metadata (filename, title, and authors) will be sent along with progress sync requests. This data is ignored by the official sync server but may be used by custom sync servers.]]),
+                callback = function()
+                    self.settings.send_metadata = not self.settings.send_metadata
+                end,
+            },
         }
     }
 end
@@ -631,13 +640,30 @@ function KOSync:getFileDigest()
 end
 
 function KOSync:getFileNameDigest()
+    local file_name = self:getFileName()
+    if not file_name then return end
+    return md5(file_name)
+end
+
+function KOSync:getFileName()
     local file = self.ui.document.file
     if not file then return end
 
     local file_path, file_name = util.splitFilePathName(file) -- luacheck: no unused
     if not file_name then return end
 
-    return md5(file_name)
+    return file_name
+end
+
+function KOSync:getMetadata()
+    if not self.settings.send_metadata then return end
+
+    local props = self.ui.doc_props
+    return {
+        filename = self:getFileName(),
+        title = props.display_title,
+        authors = props.authors,
+    }
 end
 
 function KOSync:syncToProgress(progress)
@@ -673,6 +699,7 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
         service_spec = self.path .. "/api.json"
     }
     local doc_digest = self:getDocumentDigest()
+    local metadata = self:getMetadata()
     local progress = self:getLastProgress()
     local percentage = self:getLastPercent()
     local chosen_device_name = self.settings.kosync_hostname or Device.model
@@ -681,6 +708,7 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
         self.settings.username,
         self.settings.userkey,
         doc_digest,
+        metadata,
         progress,
         percentage,
         chosen_device_name,
