@@ -218,7 +218,9 @@ local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra
     local parsed_url = socket_url.parse(url)
     local path = parsed_url.path
     if path then
-        parsed_url.path = util.urlEncode(path)
+        -- Encode invalid path chars (e.g., spaces) while preserving "/" and "%".
+        -- We preserve '%' intentionally to avoid double-encoding existing escapes.
+        parsed_url.path = util.urlEncode(path, "/%%")
         url = socket_url.build(parsed_url)
     end
 
@@ -260,21 +262,21 @@ local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra
        code == socketutil.SINK_TIMEOUT_CODE
     then
         logger.warn("request interrupted:", status or code)
-        return false, code
+        return false, nil, code
     end
     if code >= 400 and code < 500 then
         logger.warn("HTTP error:", status or code)
-        return false, status or code
+        return false, nil, status or code
     end
     if headers == nil then
         logger.warn("No HTTP headers:", status or code or "network unreachable")
-        return false, "Network or remote server unavailable"
+        return false, nil, "Network or remote server unavailable"
     end
     if headers and headers["content-length"] then
         -- Check we really got the announced content size
         local content_length = tonumber(headers["content-length"])
         if #content ~= content_length then
-            return false, "Incomplete content received"
+            return false, nil, "Incomplete content received"
         end
     end
 
@@ -286,8 +288,15 @@ local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra
         })
     end
 
+    local content_type = nil
+    if headers and headers["content-type"] then
+        content_type = headers["content-type"]
+    else
+        logger.warn("NewsDownloader: Request didn't return a Content-Type header")
+    end
+
     logger.dbg("Returning content ok")
-    return true, content
+    return true, content_type, content
 end
 
 function EpubDownloadBackend:getCache()
@@ -330,9 +339,9 @@ end
 
 function EpubDownloadBackend:getResponseAsString(url, cookies, add_to_cache, extra_headers)
     logger.dbg("EpubDownloadBackend:getResponseAsString(", url, ")")
-    local success, content = getUrlContent(url, cookies, nil, nil, add_to_cache, extra_headers)
+    local success, content_type, content = getUrlContent(url, cookies, nil, nil, add_to_cache, extra_headers)
     if (success) then
-        return content
+        return content_type, content
     else
         error("Failed to download content for url:", url)
     end
@@ -347,7 +356,7 @@ function EpubDownloadBackend:resetTrapWidget()
 end
 
 function EpubDownloadBackend:loadPage(url, cookies, extra_headers)
-    local completed, success, content
+    local completed, success, content_type, content
     if self.trap_widget then -- if previously set with EpubDownloadBackend:setTrapWidget()
         local Trapper = require("ui/trapper")
         local timeout, maxtime = 30, 60
@@ -360,13 +369,13 @@ function EpubDownloadBackend:loadPage(url, cookies, extra_headers)
         end
     else
         local timeout, maxtime = 10, 60
-        success, content = getUrlContent(url, cookies, timeout, maxtime, nil, extra_headers)
+        success, content_type, content = getUrlContent(url, cookies, timeout, maxtime, nil, extra_headers)
     end
     logger.dbg("success:", success, "type(content):", type(content), "content:", type(content) == "string" and content:sub(1, 500), "...")
     if not success then
         error(content)
     else
-        return content
+        return content_type, content
     end
 end
 
@@ -679,8 +688,8 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 src = img.src2x
             end
             logger.dbg("Getting img ", src)
-            local success, content = getUrlContent(src)
-            -- success, content = getUrlContent(src..".unexistant") -- to simulate failure
+            local success, _, content = getUrlContent(src)
+            -- success, _, content = getUrlContent(src..".unexistant") -- to simulate failure
             if success then
                 logger.dbg("success, size:", #content)
             else

@@ -43,7 +43,7 @@ local function probeDevice()
     --     return require("device/newport/device")
     -- end
 
-    if util.loadSDL2() then
+    if util.loadSDL3() then
         return require("device/sdl/device")
     end
 

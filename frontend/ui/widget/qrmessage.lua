@@ -113,6 +113,7 @@ end
 
 function QRMessage:onTapClose()
     UIManager:close(self)
+    return true
 end
 QRMessage.onAnyKeyPressed = QRMessage.onTapClose
 

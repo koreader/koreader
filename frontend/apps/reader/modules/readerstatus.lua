@@ -1,3 +1,4 @@
+local BookList = require("ui/widget/booklist")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
@@ -211,8 +212,7 @@ function ReaderStatus:markBook(mark_read)
     local summary = self.ui.doc_settings:readSetting("summary")
     summary.status = (not mark_read and summary.status == "complete") and "reading" or "complete"
     summary.modified = os.date("%Y-%m-%d", os.time())
-    -- If History is called over Reader, it will read the file to get the book status, so flush
-    self.ui.doc_settings:flush()
+    BookList.setBookInfoCacheProperty(self.document.file, "status", summary.status)
 end
 
 return ReaderStatus

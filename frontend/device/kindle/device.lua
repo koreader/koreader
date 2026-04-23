@@ -541,8 +541,8 @@ function Kindle:openInputDevices()
         FBInkInput = { fbink_input_scan = function() end }
     end
     local dev_count = ffi.new("size_t[1]")
-    -- We care about: the touchscreen, a properly scaled stylus, pagination buttons, a home button, a fiveway; and the fancy "tap on frame" stuff.
-    local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_SCALED_TABLET, C.INPUT_PAGINATION_BUTTONS, C.INPUT_HOME_BUTTON, C.INPUT_DPAD, C.INPUT_KINDLE_FRAME_TAP)
+    -- We care about: the touchscreen, the raw WacomDigitizer tablet, a properly scaled stylus, pagination buttons, a home button, a fiveway; and the fancy "tap on frame" stuff.
+    local match_mask = bit.bor(C.INPUT_TOUCHSCREEN, C.INPUT_TABLET, C.INPUT_SCALED_TABLET, C.INPUT_PAGINATION_BUTTONS, C.INPUT_HOME_BUTTON, C.INPUT_DPAD, C.INPUT_KINDLE_FRAME_TAP)
     local devices = FBInkInput.fbink_input_scan(match_mask, 0, 0, dev_count)
     if devices ~= nil then
         for i = 0, tonumber(dev_count[0]) - 1 do

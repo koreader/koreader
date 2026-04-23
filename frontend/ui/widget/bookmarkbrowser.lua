@@ -2,6 +2,7 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
+local ButtonSelector = require("ui/widget/buttonselector")
 local CheckButton = require("ui/widget/checkbutton")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
@@ -10,7 +11,6 @@ local Menu = require("ui/widget/menu")
 local PathChooser = require("ui/widget/pathchooser")
 local ReaderBookmark = require("apps/reader/modules/readerbookmark")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
-local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -24,22 +24,208 @@ local T = ffiUtil.template
 local BookmarkBrowser = WidgetContainer:extend{
     display_prefix = ReaderBookmark.display_prefix,
     display_type = ReaderBookmark.display_type,
-    separator = " • ",
+    separator = ReaderBookmark.separator,
     checkmark = "\u{2713}",
 }
 
+function BookmarkBrowser:showSourceDialog(ui, force_show_dialog)
+    self.ui = ui
+    local home_dir = G_reader_settings:readSetting("home_dir")
+    local default_source = G_reader_settings:readSetting("bookmarks_browser_source")
+    local source_dialog
+
+    local function fetch_and_show_bookmarks(self_source_key, fetch_func_or_folder, subfolders)
+        UIManager:close(source_dialog)
+        UIManager:show(InfoMessage:new{
+            text = _("Fetching bookmarks…"),
+            timeout = 0.1,
+        })
+        UIManager:nextTick(function()
+            local books = {}
+            if type(fetch_func_or_folder) == "function" then
+                fetch_func_or_folder(books)
+            else
+                util.findFiles(fetch_func_or_folder, function(file)
+                    books[file] = DocumentRegistry:hasProvider(file) or nil
+                end, subfolders)
+            end
+            if self.bm_list then
+                self.bm_list:onClose()
+            end
+            self.source_key = self_source_key
+            self:show(books)
+        end)
+    end
+
+    local sources = {
+        history = {
+            text = _("History"),
+            enabled = true,
+            callback = function()
+                fetch_and_show_bookmarks("history", function(books)
+                    for _, v in ipairs(require("readhistory").hist) do
+                        books[v.file] = v.select_enabled or nil
+                    end
+                end)
+            end,
+        },
+        collections = {
+            text = _("Collections"),
+            enabled = true,
+            callback = function(saved_collections)
+                local caller_callback = function(selected_collections)
+                    if default_source and default_source.collections then
+                        default_source.collections = selected_collections
+                    end
+                    fetch_and_show_bookmarks("collections", function(books)
+                        for coll_name in pairs(selected_collections) do
+                            for file in pairs(require("readcollection").coll[coll_name]) do
+                                books[file] = true
+                            end
+                        end
+                    end)
+                end
+                if saved_collections and saved_collections ~= true then
+                    caller_callback(saved_collections)
+                else
+                    self.ui.collections:onShowCollList({}, caller_callback, true)
+                end
+            end,
+        },
+        selected_files = {
+            text = _("Selected files"),
+            enabled = ui.selected_files ~= nil,
+            callback = function()
+                fetch_and_show_bookmarks("selected_files", function(books)
+                    for file in pairs(ui.selected_files) do
+                        books[file] = true
+                    end
+                end)
+            end,
+        },
+        home_folder = {
+            text = _("Home folder"),
+            enabled = home_dir ~= nil,
+            callback = function()
+                fetch_and_show_bookmarks("home_folder", home_dir, false)
+            end,
+        },
+        home_folder_subfolders = {
+            text = _("Home folder with subfolders"),
+            enabled = home_dir ~= nil,
+            callback = function()
+                fetch_and_show_bookmarks("home_folder_subfolders", home_dir, true)
+            end,
+        },
+        folder = {
+            text = _("Folder"),
+            enabled = true,
+            callback = function(saved_folder)
+                if saved_folder and saved_folder ~= true then
+                    fetch_and_show_bookmarks("folder", saved_folder, false)
+                else
+                    UIManager:show(PathChooser:new{
+                        select_file = false,
+                        path = home_dir,
+                        onConfirm = function(path)
+                            if default_source and default_source.folder then
+                                default_source.folder = path
+                            end
+                            fetch_and_show_bookmarks("folder", path, false)
+                        end,
+                    })
+                end
+            end,
+        },
+        folder_subfolders = {
+            text = _("Folder with subfolders"),
+            enabled = true,
+            callback = function(saved_folder)
+                if saved_folder and saved_folder ~= true then
+                    fetch_and_show_bookmarks("folder_subfolders", saved_folder, true)
+                else
+                    UIManager:show(PathChooser:new{
+                        select_file = false,
+                        path = home_dir,
+                        onConfirm = function(path)
+                            if default_source and default_source.folder_subfolders then
+                                default_source.folder_subfolders = path
+                            end
+                            fetch_and_show_bookmarks("folder_subfolders", path, true)
+                        end,
+                    })
+                end
+            end,
+        },
+    }
+
+    if not force_show_dialog and default_source then
+        local default_source_key, default_source_value = next(default_source)
+        if sources[default_source_key].enabled then
+             -- show bookmarks immediately, without source dialog
+            sources[default_source_key].callback(default_source_value)
+            return
+        end
+    end
+
+    -- show source dialog
+    local function gen_source_button(source_key)
+        local text = sources[source_key].text
+        if source_key == self.source_key then
+            text = text .. "   " .. self.checkmark
+        end
+        local is_default_source_key = default_source and default_source[source_key]
+        if is_default_source_key then
+            text = text .. "   ★"
+        end
+        return {{
+            text = text,
+            enabled = sources[source_key].enabled,
+            callback = function() -- fetch and show bookmark list
+                sources[source_key].callback()
+            end,
+            hold_callback = function() -- toggle default source
+                if is_default_source_key then
+                    G_reader_settings:delSetting("bookmarks_browser_source")
+                else
+                    -- for selected_collections/folder: the callback will choose and save it instead of "true"
+                    G_reader_settings:saveSetting("bookmarks_browser_source", { [source_key] = true })
+                end
+                UIManager:close(source_dialog)
+                self:showSourceDialog(ui, true)
+            end,
+        }}
+    end
+    source_dialog = ButtonDialog:new{
+        title = _("Book source"),
+        title_align = "center",
+        width_factor = 0.8,
+        buttons = {
+            gen_source_button("history"),
+            gen_source_button("collections"),
+            gen_source_button("selected_files"),
+            gen_source_button("home_folder"),
+            gen_source_button("home_folder_subfolders"),
+            gen_source_button("folder"),
+            gen_source_button("folder_subfolders"),
+        },
+    }
+    UIManager:show(source_dialog)
+end
+
 function BookmarkBrowser:show(files, ui)
     self.ui = ui or self.ui
+    self.ui.highlight = self.ui.highlight or ReaderHighlight -- for ReaderBookmark methods
 
     self.items_per_page = G_reader_settings:readSetting("bookmarks_items_per_page")
         or G_reader_settings:readSetting("items_per_page") or Menu.items_per_page_default
     self.items_font_size = G_reader_settings:readSetting("bookmarks_items_font_size")
-        or G_reader_settings:readSetting("items_font_size") or Menu.getItemFontSize(self.bookmarks_items_per_page)
+        or G_reader_settings:readSetting("items_font_size") or Menu.getItemFontSize(self.items_per_page)
+    self.items_text = G_reader_settings:readSetting("bookmarks_items_text_type") or "note"
     self.items_max_lines = G_reader_settings:readSetting("bookmarks_items_max_lines")
     self.multilines_show_more_text = G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
     self.line_color = G_reader_settings:isTrue("bookmarks_items_show_separator")
         and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE
-    self.items_text = G_reader_settings:readSetting("bookmarks_items_text_type") or "note"
     self.sorting_mode = G_reader_settings:readSetting("bookmarks_items_sorting") or "page"
     self.is_reverse_sorting = G_reader_settings:isTrue("bookmarks_items_reverse_sorting")
     self.highlight_color_default = G_reader_settings:readSetting("highlight_color")
@@ -75,6 +261,7 @@ function BookmarkBrowser:show(files, ui)
             self:showSearchDialog(search_string)
         end,
         close_callback = function()
+            self.source_key = nil
             self.books = nil
             self.filter_table = nil
             self.bm_list = nil
@@ -252,7 +439,7 @@ function BookmarkBrowser:doesBookmarkMatch(a, a_type)
     if self.filter_table.style and self.filter_table.style ~= a.drawer then return end
     if self.filter_table.color and self.filter_table.color ~= a.color then return end
     if self.filter_table.search_string then
-        local text = a.text
+        local text = a.text or ""
         if a.note then
             text = text .. "\u{FFFF}" .. a.note
         end
@@ -309,25 +496,6 @@ function BookmarkBrowser:showBookmarkDetails(item)
     local items_nb = #item_table
     local book = item_table[item.book_idx]
 
-    local bm_info = {
-        BD.ltr(item.datetime),
-        T(_("Page %1"), item.mandatory),
-        item.drawer and ReaderHighlight:getHighlightStyleString(item.drawer),
-        item.color and ReaderHighlight:getHighlightColorString(item.color),
-    }
-    local bm_text_prefix = item.type == "bookmark" and self.display_prefix["bookmark"] or self.display_prefix["highlight"]
-    local text = {
-        T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Title")..TextBoxWidget.PTF_BOLD_END, book.doc_props.display_title),
-        T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Author(s)")..TextBoxWidget.PTF_BOLD_END, book.authors),
-        T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Chapter")..TextBoxWidget.PTF_BOLD_END, item.chapter or ""),
-        "",
-        table.concat(bm_info, self.separator),
-        "",
-        bm_text_prefix .. (item.text_orig or item.text),
-        "",
-        item.note and self.display_prefix["note"] .. item.note,
-    }
-
     local textviewer
     local function _showBookmarkDetails(idx)
         UIManager:close(textviewer)
@@ -335,12 +503,7 @@ function BookmarkBrowser:showBookmarkDetails(item)
         self:showBookmarkDetails(item_table[idx])
     end
 
-    local label_first, label_last = "▕◁", "▷▏"
-    local label_prev, label_next = "◁", "▷"
-    if BD.mirroredUILayout() then
-        label_first, label_last = BD.ltr(label_last), BD.ltr(label_first)
-        label_prev, label_next = label_next, label_prev
-    end
+    local label_prev, label_next, label_first, label_last = BD.getArrowLabels()
     local buttons_table = {
         {
             {
@@ -412,7 +575,7 @@ function BookmarkBrowser:showBookmarkDetails(item)
 
     textviewer = TextViewer:new{
         title = T(_("%1 / %2"), item.bookmark_idx, book.bookmarks_nb),
-        text = TextBoxWidget.PTF_HEADER .. table.concat(text, "\n"),
+        text = ReaderBookmark.getBookmarkDetailsText(self, item, book),
         text_type = "bookmark",
         buttons_table = buttons_table,
     }
@@ -424,6 +587,13 @@ function BookmarkBrowser:showBookmarkListMenu()
     local bm_list_menu
     local function close_dialog_callback()
         UIManager:close(bm_list_menu)
+    end
+    local function reset_filter(filter)
+        if self.filter_table[filter] then
+            UIManager:close(bm_list_menu)
+            self.filter_table[filter] = nil
+            self:updateBookmarkList()
+        end
     end
     local buttons = {
         {
@@ -451,18 +621,17 @@ function BookmarkBrowser:showBookmarkListMenu()
                     and T(_("Style: %1"), ReaderHighlight:getHighlightStyleString(self.filter_table.style)) or _("Style"),
                 callback = function()
                     UIManager:close(bm_list_menu)
-                    local caller_callback = function(style)
-                        self.filter_table.style = style
-                        self:updateBookmarkList()
-                    end
-                    ReaderHighlight:showHighlightStyleDialog(caller_callback, self.filter_table.style)
+                    UIManager:show(ButtonSelector:new{
+                        current_value = self.filter_table.style,
+                        values = ReaderHighlight.getHighlightStyles(),
+                        callback = function(value)
+                            self.filter_table.style = value
+                            self:updateBookmarkList()
+                        end,
+                    })
                 end,
                 hold_callback = function()
-                    if self.filter_table.style then
-                        UIManager:close(bm_list_menu)
-                        self.filter_table.style = nil
-                        self:updateBookmarkList()
-                    end
+                    reset_filter("style")
                 end,
             },
         },
@@ -472,18 +641,21 @@ function BookmarkBrowser:showBookmarkListMenu()
                     and T(_("Type: %1"), self.display_type[self.filter_table.type]) or _("Type"),
                 callback = function()
                     UIManager:close(bm_list_menu)
-                    local caller_callback = function(bm_type)
-                        self.filter_table.type = bm_type
-                        self:updateBookmarkList()
-                    end
-                    self:showBookmarkTypeDialog(caller_callback, self.filter_table.type)
+                    UIManager:show(ButtonSelector:new{
+                        current_value = self.filter_table.type,
+                        values = {
+                            { self.display_type.highlight, "highlight" },
+                            { self.display_type.note, "note" },
+                            { self.display_type.bookmark, "bookmark" },
+                        },
+                        callback = function(value)
+                            self.filter_table.type = value
+                            self:updateBookmarkList()
+                        end,
+                    })
                 end,
                 hold_callback = function()
-                    if self.filter_table.type then
-                        UIManager:close(bm_list_menu)
-                        self.filter_table.type = nil
-                        self:updateBookmarkList()
-                    end
+                    reset_filter("type")
                 end,
             },
             {
@@ -491,18 +663,18 @@ function BookmarkBrowser:showBookmarkListMenu()
                     and T(_("Color: %1"), ReaderHighlight:getHighlightColorString(self.filter_table.color)) or _("Color"),
                 callback = function()
                     UIManager:close(bm_list_menu)
-                    local caller_callback = function(color)
-                        self.filter_table.color = color
-                        self:updateBookmarkList()
-                    end
-                    ReaderHighlight:showHighlightColorDialog(caller_callback, self.filter_table.color)
+                    UIManager:show(ButtonSelector:new{
+                        current_value = self.filter_table.color,
+                        values = ReaderHighlight.highlight_colors,
+                        bg_colors = ReaderHighlight:getHighlightColorList(),
+                        callback = function(value)
+                            self.filter_table.color = value
+                            self:updateBookmarkList()
+                        end,
+                    })
                 end,
                 hold_callback = function()
-                    if self.filter_table.color then
-                        UIManager:close(bm_list_menu)
-                        self.filter_table.color = nil
-                        self:updateBookmarkList()
-                    end
+                    reset_filter("color")
                 end,
             },
         },
@@ -544,6 +716,15 @@ function BookmarkBrowser:showBookmarkListMenu()
         {
             self:genShowBookListButton(close_dialog_callback),
         },
+        {
+            {
+                text = _("Book source"),
+                callback = function()
+                    UIManager:close(bm_list_menu)
+                    self:showSourceDialog(self.ui, true)
+                end,
+            },
+        },
     }
     bm_list_menu = ButtonDialog:new{
         title = _("Filters"),
@@ -551,30 +732,6 @@ function BookmarkBrowser:showBookmarkListMenu()
         buttons = buttons,
     }
     UIManager:show(bm_list_menu)
-end
-
-function BookmarkBrowser:showBookmarkTypeDialog(caller_callback, curr_type)
-    local types = { "highlight", "note", "bookmark" }
-    local type_dialog
-    local buttons = {}
-    for i, bm_type in ipairs(types) do
-        local type_name = self.display_type[bm_type]
-        buttons[i] = {{
-            text = bm_type ~= curr_type and type_name or type_name .. "  " .. self.checkmark,
-            menu_style = true,
-            callback = function()
-                if bm_type ~= curr_type then
-                    caller_callback(bm_type)
-                end
-                UIManager:close(type_dialog)
-            end,
-        }}
-    end
-    type_dialog = ButtonDialog:new{
-        width_factor = 0.4,
-        buttons = buttons,
-    }
-    UIManager:show(type_dialog)
 end
 
 function BookmarkBrowser:showBookList(multi_choice)
@@ -631,10 +788,6 @@ function BookmarkBrowser:showBookList(multi_choice)
         title = T(_("Books: %1"), #item_table),
         subtitle = subtitle,
         item_table = item_table,
-        items_per_page = self.items_per_page,
-        items_font_size = self.items_font_size,
-        multilines_show_more_text = self.multilines_show_more_text,
-        line_color = self.line_color,
         title_bar_left_icon = title_bar_left_icon,
         onLeftButtonTap = onLeftButtonTap,
         onMenuSelect = onMenuSelect,
@@ -822,114 +975,6 @@ function BookmarkBrowser:showSearchDialog(search_string)
     search_dialog:addWidget(check_button_case)
     UIManager:show(search_dialog)
     search_dialog:onShowKeyboard()
-end
-
-function BookmarkBrowser:showSourceDialog(ui)
-    self.ui = ui
-    local home_dir = G_reader_settings:readSetting("home_dir")
-    local source_dialog
-    local function fetch_and_show_bookmarks(fetch_func_or_folder, subfolders)
-        UIManager:close(source_dialog)
-        UIManager:show(InfoMessage:new{
-            text = _("Fetching bookmarks…"),
-            timeout = 0.1,
-        })
-        UIManager:nextTick(function()
-            local books = {}
-            if type(fetch_func_or_folder) == "function" then
-                fetch_func_or_folder(books)
-            else
-                util.findFiles(fetch_func_or_folder, function(file)
-                    books[file] = DocumentRegistry:hasProvider(file) or nil
-                end, subfolders)
-            end
-            self:show(books)
-        end)
-    end
-    local buttons = {
-        {{
-            text = _("History"),
-            callback = function()
-                fetch_and_show_bookmarks(function(books)
-                    for _, v in ipairs(require("readhistory").hist) do
-                        books[v.file] = v.select_enabled or nil
-                    end
-                end)
-            end,
-        }},
-        {{
-            text = _("Collections"),
-            callback = function()
-                local caller_callback = function(selected_collections)
-                    fetch_and_show_bookmarks(function(books)
-                        for coll_name in pairs(selected_collections) do
-                            for file in pairs(require("readcollection").coll[coll_name]) do
-                                books[file] = true
-                            end
-                        end
-                    end)
-                end
-                local FileManagerCollection = require("apps/filemanager/filemanagercollection")
-                FileManagerCollection:onShowCollList({}, caller_callback, true)
-            end,
-        }},
-        {{
-            text = _("Selected files"),
-            enabled = ui.selected_files ~= nil,
-            callback = function()
-                fetch_and_show_bookmarks(function(books)
-                    for file in pairs(ui.selected_files) do
-                        books[file] = true
-                    end
-                end)
-            end,
-        }},
-        {{
-            text = _("Home folder"),
-            enabled = home_dir ~= nil,
-            callback = function()
-                fetch_and_show_bookmarks(home_dir, false)
-            end,
-        }},
-        {{
-            text = _("Home folder with subfolders"),
-            enabled = home_dir ~= nil,
-            callback = function()
-                fetch_and_show_bookmarks(home_dir, true)
-            end,
-        }},
-        {{
-            text = _("Folder"),
-            callback = function()
-                UIManager:show(PathChooser:new{
-                    select_file = false,
-                    path = home_dir,
-                    onConfirm = function(path)
-                        fetch_and_show_bookmarks(path, false)
-                    end,
-                })
-            end,
-        }},
-        {{
-            text = _("Folder with subfolders"),
-            callback = function()
-                UIManager:show(PathChooser:new{
-                    select_file = false,
-                    path = home_dir,
-                    onConfirm = function(path)
-                        fetch_and_show_bookmarks(path, true)
-                    end,
-                })
-            end,
-        }},
-    }
-    source_dialog = ButtonDialog:new{
-        title = _("Book source"),
-        title_align = "center",
-        width_factor = 0.8,
-        buttons = buttons,
-    }
-    UIManager:show(source_dialog)
 end
 
 return BookmarkBrowser

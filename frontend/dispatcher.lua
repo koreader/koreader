@@ -54,7 +54,7 @@ local Dispatcher = {
 -- See above for description.
 local settingsList = {
     -- General
-    gesture_overview = {category="none", event="ShowGestureOverview", title=_("Gesture overview"), general=true},
+    gesture_overview = {category="none", event="ShowGestureOverview", title=_("Gesture overview"), general=true, condition=Device:isTouchDevice()},
     filemanager = {category="none", event="Home", title=_("File browser"), general=true},
     open_previous_document = {category="none", event="OpenLastDoc", title=_("Open previous document"), general=true},
     history = {category="none", event="ShowHist", title=_("History"), general=true},
@@ -121,7 +121,7 @@ local settingsList = {
     set_frontlight = {category="absolutenumber", event="SetFlIntensity", min=0, max=Device:getPowerDevice().fl_max, title=_("Set frontlight brightness"), screen=true, condition=Device:hasFrontlight()},
     increase_frontlight = {category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Increase frontlight brightness"), screen=true, condition=Device:hasFrontlight()},
     decrease_frontlight = {category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Decrease frontlight brightness"), screen=true, condition=Device:hasFrontlight()},
-    set_frontlight_warmth = {category="absolutenumber", event="SetFlWarmth", min=0, max=100, title=_("Set frontlight warmth"), screen=true, condition=Device:hasNaturalLight()},
+    set_frontlight_warmth = {category="absolutenumber", event="SetFlWarmth", min=1, max=Device:getPowerDevice().fl_max, title=_("Set frontlight warmth"), screen=true, condition=Device:hasNaturalLight()},
     increase_frontlight_warmth = {category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Increase frontlight warmth"), screen=true, condition=Device:hasNaturalLight()},
     decrease_frontlight_warmth = {category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth"), screen=true, condition=Device:hasNaturalLight(), separator=true},
     night_mode = {category="none", event="ToggleNightMode", title=_("Toggle night mode"), screen=true},
@@ -226,10 +226,15 @@ local settingsList = {
     export_annotations = {category="none", event="ExportAnnotations", title=_("Export annotations"), reader=true},
 
     -- Reflowable documents
-    set_typography_lang = {category="string", event="SetTypographyLanguage", title=_("Set typography language"), args_func=ReaderTypography.getLangTags, rolling=true, separator=true},
+    set_typography_lang = {category="string", event="SetTypographyLanguage", title=_("Set typography language"), args_func=ReaderTypography.getLangTags, rolling=true},
+    toggle_hanging_punctuation = {category="none", event="ToggleFloatingPunctuation", title=_("Toggle hanging punctuation"), rolling=true, separator=true},
     set_font = {category="string", event="SetFont", title=_("Font"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
     increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size"), rolling=true},
     decrease_font = {category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size"), rolling=true},
+    ----
+    toggle_style_tweaks = {category="none", event="ToggleStyleTweaks", title=_("Toggle style tweaks"), rolling=true},
+    edit_book_tweak = {category="none", event="EditBookTweak", title=_("Edit book-specific style tweak"), rolling=true},
+    toggle_book_tweak = {category="none", event="ToggleBookTweak", title=_("Toggle book-specific style tweak"), rolling=true},
 
     -- Fixed layout documents
     toggle_page_flipping = {category="none", event="TogglePageFlipping", title=_("Toggle page flipping"), paging=true},
@@ -296,6 +301,7 @@ local settingsList = {
     kopt_forced_ocr = {category="configurable", paging=true},
     kopt_writing_direction = {category="configurable", paging=true},
     kopt_defect_size = {category="string", paging=true}, -- not shown in the bottom menu
+    kopt_nightmode_document = {category="configurable", paging=true},
     kopt_max_columns = {category="configurable", paging=true},
     kopt_auto_straighten = {category="absolutenumber", paging=true},
 
@@ -479,6 +485,7 @@ local dispatcher_menu_order = {
 
     -- Reflowable documents
     "set_typography_lang",
+    "toggle_hanging_punctuation",
     ----
     "set_font",
     "increase_font",
@@ -508,6 +515,11 @@ local dispatcher_menu_order = {
     "embedded_fonts",
     "smooth_scaling",
     "nightmode_images",
+    ----
+    "toggle_style_tweaks",
+    "edit_book_tweak",
+    "toggle_book_tweak",
+    -- Individual tweaks will be inserted here when "show in action list"
 
     -- Fixed layout documents
     "toggle_page_flipping",
@@ -544,6 +556,7 @@ local dispatcher_menu_order = {
     "kopt_forced_ocr",
     "kopt_writing_direction",
     "kopt_defect_size",
+    "kopt_nightmode_document",
     "kopt_max_columns",
     "kopt_auto_straighten",
 }

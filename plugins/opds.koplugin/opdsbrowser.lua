@@ -999,7 +999,7 @@ function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url)
     filename = filename and filename .. "." .. filetype:lower() or self:getServerFileName(remote_url, filetype)
     filename = util.getSafeFilename(filename, download_dir)
     filename = (download_dir ~= "/" and download_dir or "") .. '/' .. filename
-    return util.fixUtf8(filename, "_")
+    return filename
 end
 
 -- Downloads a book (with "File already exists" dialog)
@@ -1570,7 +1570,7 @@ function OPDSBrowser:fillPendingSyncs(server)
             end
             if #sub_table > 0 then
                 -- The first element seems to be most compatible. Second element has most options
-                item = sub_table[2]
+                item = sub_table[2] or sub_table[1]
             else
                 item = entry
             end
@@ -1624,7 +1624,7 @@ function OPDSBrowser:getSyncDownloadList(url_arg)
         local acquisitions_empty = false
         -- For project gutenberg
         while #sub_table[count].acquisitions == 0 do
-            if util.stringEndsWith(sub_table[count].url, ".opds") then
+            if sub_table[count].url and util.stringEndsWith(sub_table[count].url, ".opds") then
                 acquisitions_empty = true
                 break
             end

@@ -29,6 +29,7 @@ local SSH = WidgetContainer:extend{
 function SSH:init()
     self.SSH_port = G_reader_settings:readSetting("SSH_port") or "2222"
     self.allow_no_password = G_reader_settings:isTrue("SSH_allow_no_password")
+    self.key_only_auth = G_reader_settings:isTrue("SSH_key_only_auth")
     self.autostart = G_reader_settings:isTrue("SSH_autostart")
 
     if self.autostart then
@@ -51,7 +52,10 @@ function SSH:start()
         "-R",
         "-p", self.SSH_port,
         "-P /tmp/dropbear_koreader.pid")
-     if self.allow_no_password then
+    -- prevent login without public key (discourage allow_no_password option)
+    if self.key_only_auth then
+        cmd = string.format("%s %s", cmd, "-s")
+    elseif self.allow_no_password then
         cmd = string.format("%s %s", cmd, "-n")
     end
 
@@ -267,11 +271,30 @@ function SSH:addToMainMenu(menu_items)
                 end,
             },
             {
+                text_func = function()
+                    return _("Login with key only (SECURE, public key required)")
+                end,
+                checked_func = function() return self.key_only_auth end,
+                enabled_func = function() return not self:isRunning() end,
+                callback = function()
+                    self.key_only_auth = not self.key_only_auth
+                    if self.key_only_auth and self.allow_no_password then
+                        self.allow_no_password = false
+                        G_reader_settings:flipNilOrFalse("SSH_allow_no_password")
+                    end
+                    G_reader_settings:flipNilOrFalse("SSH_key_only_auth")
+                end,
+            },
+            {
                 text = _("Login without password (DANGEROUS)"),
                 checked_func = function() return self.allow_no_password end,
                 enabled_func = function() return not self:isRunning() end,
                 callback = function()
                     self.allow_no_password = not self.allow_no_password
+                    if self.allow_no_password and self.key_only_auth then
+                        self.key_only_auth = false
+                        G_reader_settings:flipNilOrFalse("SSH_key_only_auth")
+                    end
                     G_reader_settings:flipNilOrFalse("SSH_allow_no_password")
                 end,
             },

@@ -711,6 +711,7 @@ function TextViewer:setTextBold(start_pos, len)
 end
 
 function TextViewer:onShowMenu()
+    if not self.show_menu then return end -- Menu could be triggered with a key event.
     local dialog
     local buttons = {
         {{

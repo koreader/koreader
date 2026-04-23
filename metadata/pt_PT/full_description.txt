@@ -1,11 +1,11 @@
 <p>O KOReader é um leitor de livros digitais otimizado para ecrãs de tinta eletrónica. Pode abrir vários formatos e fornece ajustes de texto avançados.</p>
 <p>Veja abaixo uma seleção das suas várias funcionalidades:</p>
 <ul>
-  <li>Suporta tanto a formatos de página fixa (PDF, DjVu, CBT, CBZ) quanto a formatos refluíveis de livro eletrônico (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Documentos digitalizados em formato PDF&#47;DjVu podem ser refluídos. Direções de fluxo especiais para leitura de PDFs com duas colunas e mangás.</li>
-  <li>Interface de utilizador multilíngue otimizada para ecrã de tinta eletrônica. Leitor altamente personalizável com opções completas de tipografia. Dicionários de hifenização multilíngue já estão incluídos.</li>
+  <li>Suporta formatos de página fixa (PDF, DjVu, CBT, CBZ) bem como formatos refluíveis de livros digitais (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Documentos digitalizados em formato PDF&#47;DjVu podem ser refluídos. Suporta ainda direções de fluxo especiais para leitura de PDF com duas colunas e manga.</li>
+  <li>Interface de utilizador multilingue otimizada para ecrãs de tinta eletrónica. Leitor altamente personalizável com opções completas de tipografia. Inclui dicionários de hifenização multilingue.</li>
   <li>Suporte para livros com escrita não latina, incluindo as línguas hebraica, árabe, persa, russa, chinesa, japonesa e coreana.</li>
-  <li>Recursos únicos de Mapa do Livro e no Navegador de Páginas para navegar pelo seu livro.</li>
-  <li>Modo especial de destaque de múltiplas páginas com várias opções para exportar localmente e online.</li>
-  <li>Sincroniza o seu progresso de leitura através de todos os seus dispositivos com KOReader.</li>
+  <li>Recursos especiais de mapa de livro e navegador de páginas para navegar pelo seu livro.</li>
+  <li>Modo especial de realce de páginas múltiplas com diversas opções para exportar localmente e online.</li>
+  <li>Sincroniza o seu progresso de leitura em todos os seus dispositivos com KOReader.</li>
   <li>Integração com Calibre, Wallabag, Wikipedia, Google Translate e outros fornecedores de conteúdo.</li>
 </ul>

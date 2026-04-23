@@ -346,11 +346,11 @@ end
 
 function OTAManager:zsync(full_dl)
     if full_dl or self:_buildLocalPackage() == 0 then
-        local zsync_wrapper = "zsync2"
+        local zsync_wrapper = "./zsync2"
         local use_pipefail = true
         -- With visual feedback if supported...
         if self.can_pretty_print then
-            zsync_wrapper = "spinning_zsync"
+            zsync_wrapper = "./spinning_zsync"
             -- And because everything is terrible, we can't check for pipefail's usability in spinning_zsync,
             -- because older ash versions abort on set -o failures...
             -- c.f., ko/#5844
@@ -358,29 +358,26 @@ function OTAManager:zsync(full_dl)
             -- (remember, os.execute is essentially system(), it goes through sh)
             use_pipefail = (os.execute("set -o pipefail 2>/dev/null") == 0)
         end
-        -- If that's a full-download fallback, drop the input tarball
-        if full_dl then
-            return os.execute(
-            ("env WITH_PIPEFAIL='%s' ./%s -o '%s' -u '%s' '%s%s'"):format(
-                use_pipefail,
-                zsync_wrapper,
-                self.updated_package,
-                self:getOTAServer(),
-                ota_dir,
-                self:getZsyncFilename())
-            )
-        else
-            return os.execute(
-            ("env WITH_PIPEFAIL='%s' ./%s -i '%s' -o '%s' -u '%s' '%s%s'"):format(
-                use_pipefail,
-                zsync_wrapper,
-                self.installed_package,
-                self.updated_package,
-                self:getOTAServer(),
-                ota_dir,
-                self:getZsyncFilename())
-            )
+        local zsync_cmd = {
+            'env',
+            string.format('WITH_PIPEFAIL=%s', use_pipefail),
+        }
+        -- Honor HTTP proxy setting.
+        local http_proxy = G_reader_settings:readSetting("http_proxy")
+        if http_proxy then
+            table.insert(zsync_cmd, string.format("http_proxy=%s", http_proxy))
         end
+        table.insert(zsync_cmd, zsync_wrapper)
+        -- Only add input tarball when not doing a full download.
+        if not full_dl then
+            util.arrayAppend(zsync_cmd, {"-i", self.installed_package})
+        end
+        util.arrayAppend(zsync_cmd, {
+            "-o", self.updated_package,
+            "-u", self:getOTAServer(),
+            ota_dir .. self:getZsyncFilename(),
+        })
+        return os.execute(util.shell_escape(zsync_cmd))
     end
 end
 

@@ -688,7 +688,7 @@ function CreDocument:getTextFromPositions(pos0, pos1, do_not_draw_selection)
         drawSelection, drawSegmentedSelection)
     logger.dbg("CreDocument: get text range", text_range)
     if text_range then
-        local line_boxes = self:getScreenBoxesFromPositions(text_range.pos0, text_range.pos1)
+        local line_boxes = self:getScreenBoxesFromPositions(text_range.pos0, text_range.pos1, true)
         return {
             text = text_range.text,
             pos0 = text_range.pos0,
@@ -1562,6 +1562,7 @@ function CreDocument:register(registry)
     registry:addProvider("epub", "application/epub", self, 100) -- Alternative mimetype for OPDS.
     registry:addProvider("epub3", "application/epub+zip", self, 100)
     registry:addProvider("fb2", "application/fb2", self, 90)
+    registry:addProvider("fb2", "application/x-fictionbook+xml", self, 90) -- Alternative mimetype for OPDS.
     registry:addProvider("fb2", "text/fb2+xml", self, 90) -- Alternative mimetype for OPDS.
     registry:addProvider("fb2.zip", "application/zip", self, 90)
     registry:addProvider("fb2.zip", "application/fb2+zip", self, 90) -- Alternative mimetype for OPDS.

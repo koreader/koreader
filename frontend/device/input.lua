@@ -215,7 +215,7 @@ function Input:init()
     if self.input then -- luacheck: ignore 542
         -- Already setup (e.g. stubbed by the testsuite).
     elseif self.device:isSDL() then
-        self.input = require("ffi/input_SDL2_0")
+        self.input = require("ffi/input_SDL3")
         self.hasClipboardText = function()
             return self.input.hasClipboardText()
         end
@@ -939,7 +939,7 @@ function Input:handleTouchEv(ev)
         --       * PocketBook, because of our InkView EVT_POINTERMOVE translation
         --         (c.f., translateEvent @ ffi/input_pocketbook.lua).
         --       * SDL, because of our SDL_MOUSEMOTION/SDL_FINGERMOTION translation
-        --         (c.f., waitForEvent @ ffi/SDL2_0.lua).
+        --         (c.f., waitForEvent @ ffi/SDL3.lua).
         if ev.code == C.ABS_MT_SLOT then
             self:setupSlotData(ev.value)
         elseif ev.code == C.ABS_MT_TRACKING_ID then
@@ -1028,7 +1028,7 @@ function Input:handleTouchEvSnow(ev)
         --       * PocketBook, because of our InkView EVT_POINTERMOVE translation
         --         (c.f., translateEvent @ ffi/input_pocketbook.lua).
         --       * SDL, because of our SDL_MOUSEMOTION/SDL_FINGERMOTION translation
-        --         (c.f., waitForEvent @ ffi/SDL2_0.lua).
+        --         (c.f., waitForEvent @ ffi/SDL3.lua).
         if ev.code == C.ABS_MT_SLOT then
             self:setupSlotData(ev.value)
         elseif ev.code == C.ABS_MT_TRACKING_ID then

@@ -105,6 +105,19 @@ local PageTurns = {
             end,
         },
         {
+            text = _("Swipes always active"),
+            enabled_func = function()
+                return G_reader_settings:nilOrFalse("page_turns_disable_swipe")
+            end,
+            checked_func = function()
+                return G_reader_settings:nilOrFalse("page_turns_disable_swipe")
+                    and G_reader_settings:isTrue("page_turns_swipe_always_active")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("page_turns_swipe_always_active")
+            end,
+        },
+        {
             text_func = function()
                 local tap_zones_type = G_reader_settings:readSetting("page_turns_tap_zones", "default")
                 return T(_("Tap zones: %1"), tap_zones[tap_zones_type]:lower())

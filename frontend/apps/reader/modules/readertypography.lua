@@ -558,8 +558,7 @@ These settings will apply to all books with any hyphenation dictionary.
         text = _("Hanging punctuation"),
         checked_func = function() return self.floating_punctuation == 1 end,
         callback = function()
-            self.floating_punctuation = self.floating_punctuation == 1 and 0 or 1
-            self:onToggleFloatingPunctuation(self.floating_punctuation)
+            self:onToggleFloatingPunctuation()
         end,
         hold_callback = function() self:makeDefaultFloatingPunctuation() end,
     })
@@ -603,14 +602,14 @@ function ReaderTypography.getLangTags() -- for Dispatcher
 end
 
 function ReaderTypography:onToggleFloatingPunctuation(toggle)
-    -- for some reason the toggle value read from history files may stay boolean
-    -- and there seems no more elegant way to convert boolean values to numbers
-    if toggle == true then
-        toggle = 1
-    elseif toggle == false then
-        toggle = 0
+    if toggle == nil then
+        self.floating_punctuation = self.floating_punctuation == 1 and 0 or 1
+    elseif toggle == 0 or toggle == false then
+        self.floating_punctuation = 0
+    else -- 1 or true (or anything else)
+        self.floating_punctuation = 1
     end
-    self.ui.document:setFloatingPunctuation(toggle)
+    self.ui.document:setFloatingPunctuation(self.floating_punctuation)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
@@ -764,11 +763,10 @@ function ReaderTypography:onReadSettings(config)
     -- (Stored as 0/1 in docsetting for historical reasons, but as true/false
     -- in global settings.)
     if config:has("floating_punctuation") then
-        self.floating_punctuation = config:readSetting("floating_punctuation")
+        self:onToggleFloatingPunctuation(config:readSetting("floating_punctuation"))
     else
-        self.floating_punctuation = G_reader_settings:isTrue("floating_punctuation") and 1 or 0
+        self:onToggleFloatingPunctuation(G_reader_settings:isTrue("floating_punctuation"))
     end
-    self:onToggleFloatingPunctuation(self.floating_punctuation)
 
     -- Decide and set the text main lang tag according to settings
     if config:has("text_lang") then

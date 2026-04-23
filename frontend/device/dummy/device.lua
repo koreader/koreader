@@ -15,7 +15,7 @@ local Device = Generic:extend{
 }
 
 function Device:init()
-    self.screen = require("ffi/framebuffer_SDL2_0"):new{
+    self.screen = require("ffi/framebuffer_SDL3"):new{
         dummy = true,
         device = self,
         debug = logger.dbg,

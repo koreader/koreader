@@ -381,6 +381,15 @@ To:
                 separator = true,
             },
             {
+                text = _("Ask to open files"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("file_ask_to_open")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("file_ask_to_open")
+                end,
+            },
+            {
                 text = _("Show collection mark"),
                 checked_func = function()
                     return G_reader_settings:hasNot("collection_show_mark")
@@ -465,7 +474,7 @@ To:
         text = _("Folders and files mixed"),
         enabled_func = function()
             local collate = FileChooser:getCollate()
-            return collate.can_collate_mixed
+            return collate.can_collate_mixed or false
         end,
         checked_func = function()
             local collate = FileChooser:getCollate()

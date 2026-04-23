@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20250929
+local CURRENT_MIGRATION_DATE = 20260306
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -942,6 +942,17 @@ if last_migration_date < 20250929 then
             end
             G_reader_settings:delSetting(old_position_key)
         end
+    end
+end
+
+-- 20260306, Enable virtual keyboard on kindle 4
+-- https://github.com/koreader/koreader/pull/15057
+if last_migration_date < 20260306 then
+    logger.info("Performing one-time migration for 20260306")
+
+    local Device = require("device")
+    if Device:hasScreenKB() and G_reader_settings:hasNot("virtual_keyboard_enabled") then
+        G_reader_settings:makeTrue("virtual_keyboard_enabled")
     end
 end
 

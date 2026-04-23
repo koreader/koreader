@@ -39,6 +39,12 @@ local DataStorage = require("datastorage")
 G_reader_settings = require("luasettings"):open(
     DataStorage:getDataDir().."/settings.reader.lua")
 
+local device_id = G_reader_settings:readSetting("device_id")
+if device_id == nil or device_id == "" then
+    local random = require("random")
+    G_reader_settings:saveSetting("device_id", random.uuid())
+end
+
 -- Apply the JIT opt tweaks ASAP when the C BB is disabled,
 -- because we want to avoid the jit.flush() from bb:enableCBB,
 -- which only makes the mcode allocation issues worse on Android...

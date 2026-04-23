@@ -241,7 +241,7 @@ function CalibreWireless:connect()
     end
 
     -- Ensure network is online.
-    if NetworkMgr:willRerunWhenConnected(self.re) then
+    if NetworkMgr:willRerunWhenConnected(re) then
         coroutine.yield()
         if not NetworkMgr:isConnected() then
             return

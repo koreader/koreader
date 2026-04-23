@@ -205,6 +205,9 @@ function Gestures:isGestureAlwaysActive(ges, multiswipe_directions)
         end
     end
 
+    if ges == "rolling_swipe" or ges == "paging_swipe" then
+        return G_reader_settings:isTrue("page_turns_swipe_always_active")
+    end
     local gest = self.gestures[ges]
     return gest and (gest.toggle_touch_input or gest.touch_input_on or (gest.settings and gest.settings.always_active))
 end

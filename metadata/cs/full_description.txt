@@ -1,0 +1,11 @@
+<p>KOReader je čtečka elektronických knih optimalizovaná pro obrazovky e-ink. Dokáže otevřít mnoho formátů a poskytuje pokročilé úpravy textu.</p>
+<p>Níže najdete výběr z mnoha jeho funkcí:</p>
+<ul>
+  <li>Podporuje formáty pevných stránek (PDF, DjVu, CBT, CBZ) i přetvářitelné formáty elektronických knih (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Naskenované dokumenty PDF&#47;DjVu lze přetvářet. Speciální streamy pro čtení dvousloupcových souborů PDF a mangy.</li>
+  <li>Vícejazyčné uživatelské rozhraní optimalizované pro obrazovky e-ink. Vysoce přizpůsobitelné zobrazení čtečky s kompletními možnostmi sazby. Součástí jsou vícejazyčné pomlčkové slovníky.</li>
+  <li>Podpora nelatinkových písem pro knihy, včetně hebrejštiny, arabštiny, perštiny, ruštiny, čínštiny, japonštiny a korejštiny.</li>
+  <li>Jedinečné funkce Mapa knihy a Prohlížeč stránek pro navigaci v knize.</li>
+  <li>Speciální režim zvýraznění více stránek s mnoha možnostmi místního a online exportu.</li>
+  <li>Může synchronizovat průběh čtení ve všech vašich zařízeních KOReader.</li>
+  <li>Integrace se službami Calibre, Wallabag, Wikipedia, Google Translate a dalšími poskytovateli obsahu.</li>
+</ul>

@@ -133,7 +133,6 @@ TARGET:
     android-arm64
     android-x86
     android-x86_64
-    appimage
     cervantes
     emulator                  Default if no TARGET is given
     kindle                    Compatible with all Kindle models >= Kindle4
@@ -167,7 +166,7 @@ function setup_target() {
             fi
             TARGET=''
             ;;
-        appimage | linux) is_system Linux ;;
+        linux) is_system Linux ;;
         macos) is_system macOS ;;
         win32) is_system Windows ;;
         # Devices.
@@ -364,7 +363,7 @@ ${TARGETS_HELP_MSG}
 
 function kodev-release() {
     HELP="
-USAGE: $0 ${CMD} <OPTIONS> <TARGET>
+USAGE: $0 ${CMD} <OPTIONS> <TARGET> [TYPES]…
 
 OPTIONS:
 
@@ -374,7 +373,7 @@ $(build_options_help_msg 'BUILD' 'create update from existing build' '' 'default
 
 ${RELEASE_TARGETS_HELP_MSG}
 "
-    parse_options "i${BUILD_GETOPT_SHORT}" "ignore-translation,${BUILD_GETOPT_LONG}" '1' "$@"
+    parse_options "i${BUILD_GETOPT_SHORT}" "ignore-translation,${BUILD_GETOPT_LONG}" '+' "$@"
     local ignore_translation=0
     for opt in "${OPTS[@]}"; do
         case "${opt}" in
@@ -391,7 +390,10 @@ ${RELEASE_TARGETS_HELP_MSG}
             exit 1
         fi
     fi
-    run_make ${NO_BUILD:+--assume-old=all} update
+    set -- "${ARGS[@]/#/update-}"
+    shift
+    [[ $# -gt 0 ]] || set -- update
+    run_make ${NO_BUILD:+--assume-old=all} "$@"
 }
 
 # }}}

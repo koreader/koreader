@@ -804,6 +804,9 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
             if srcset then
                 srcset = " "..srcset.. ", " -- for next pattern to possibly match 1st or last item
                 src2x = srcset:match([[ (%S+) 2x, ]])
+                if not src2x then -- if no 2x, we may have 1.5x
+                    src2x = srcset:match([[ (%S+) 1.5x, ]])
+                end
                 if src2x then
                     if src2x:sub(1,2) == "//" then
                         src2x = "https:" .. src2x

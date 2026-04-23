@@ -62,7 +62,7 @@ function FileManagerHistory:onShowHist(search_info)
         name = "history",
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showHistDialog() end,
-        onMenuChoice = self.onMenuChoice,
+        onMenuSelect = self.onMenuSelect,
         onMenuHold = self.onMenuHold,
         ui = self.ui,
         _manager = self,
@@ -166,14 +166,8 @@ function FileManagerHistory:onSetDimensions(dimen)
     self.dimen = dimen
 end
 
-function FileManagerHistory:onMenuChoice(item)
-    if self.ui.document then
-        if self.ui.document.file ~= item.file then
-            self.ui:switchDocument(item.file)
-        end
-    else
-        self.ui:openFile(item.file)
-    end
+function FileManagerHistory:onMenuSelect(item)
+    filemanagerutil.openFile(self.ui, item.file, self.close_callback)
 end
 
 function FileManagerHistory:onMenuHold(item)
@@ -256,11 +250,14 @@ function FileManagerHistory:onMenuHold(item)
             end,
         },
     })
-    if been_opened and #doc_settings_or_file:readSetting("annotations") > 0 then
-        table.insert(buttons, {
-            self._manager.ui.collections:genExportHighlightsButton({ [file] = true }, close_dialog_callback),
-            self._manager.ui.collections:genBookmarkBrowserButton({ [file] = true }, close_dialog_callback),
-        })
+    if been_opened then
+        local annotations = doc_settings_or_file:readSetting("annotations")
+        if annotations and #annotations > 0 then
+            table.insert(buttons, {
+                self._manager.ui.collections:genExportHighlightsButton({ [file] = true }, close_dialog_callback),
+                self._manager.ui.collections:genBookmarkBrowserButton({ [file] = true }, close_dialog_callback),
+            })
+        end
     end
     table.insert(buttons, {
         filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback, item.dim),

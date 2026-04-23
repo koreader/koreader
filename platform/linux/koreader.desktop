@@ -2,7 +2,7 @@
 Name=KOReader
 Comment=Ebook reader
 Exec=koreader %u
-Icon=koreader
+Icon=rocks.koreader.KOReader
 Terminal=false
 Type=Application
 Categories=Graphics;
