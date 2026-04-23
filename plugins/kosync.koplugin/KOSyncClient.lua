@@ -123,18 +123,15 @@ function KOSyncClient:update_progress(
     -- Set *very* tight timeouts to avoid blocking for too long...
     socketutil:set_timeout(PROGRESS_TIMEOUTS[1], PROGRESS_TIMEOUTS[2])
     local co = coroutine.create(function()
-        local params = {
-            document = document,
-            progress = tostring(progress),
-            percentage = percentage,
-            device = device,
-            device_id = device_id,
-        }
-        if metadata then
-            params.metadata = metadata
-        end
         local ok, res = pcall(function()
-            return self.client:update_progress(params)
+            return self.client:update_progress({
+                document = document,
+                metadata = metadata,
+                progress = tostring(progress),
+                percentage = percentage,
+                device = device,
+                device_id = device_id,
+            })
         end)
         if ok then
             callback(res.status == 200, res.body)
