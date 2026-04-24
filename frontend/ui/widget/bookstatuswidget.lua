@@ -462,9 +462,15 @@ function BookStatusWidget:genSummaryGroup(width)
         self.note_widget,
     }
     self.note_frame.onGesture = function(frame, ev)
-        if ev and ev.ges == "tap" then
+        if ev and ev.ges == "tap"
+            and ev.pos
+            and self.note_frame
+            and self.note_frame.dimen
+            and ev.pos:intersectWith(self.note_frame.dimen)
+        then
             return self:openReviewDialog()
         end
+        return false
     end
 
     table.insert(self.layout, {self.note_frame})
