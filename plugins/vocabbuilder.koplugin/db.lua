@@ -303,7 +303,7 @@ end
 
 function VocabularyBuilder:hasWord(word)
     local conn = SQ3.open(db_location)
-    local sql = [[SELECT title.name as book_title, create_time, due_time, prev_context, next_context, highlight
+    local sql = [[SELECT title.name as book_title, vocabulary.word, create_time, review_time, due_time, review_count, streak_count, prev_context, next_context, highlight
           FROM vocabulary INNER JOIN title ON title_id = title.id WHERE word = ?]]
     local stmt = conn:prepare(sql)
     stmt:bind(word)
@@ -312,11 +312,15 @@ function VocabularyBuilder:hasWord(word)
     if result then
         return {
             book_title = result[1],
-            create_time = tonumber(result[2]),
-            due_time = tonumber(result[3]),
-            prev_context = result[4],
-            next_context = result[5],
-            highlight = result[6],
+            word = result[2],
+            create_time = tonumber(result[3]),
+            review_time = tonumber(result[4]),
+            due_time = tonumber(result[5]),
+            review_count = tonumber(result[6]),
+            streak_count = tonumber(result[7]),
+            prev_context = result[8],
+            next_context = result[9],
+            highlight = result[10],
         }
     else
         return nil

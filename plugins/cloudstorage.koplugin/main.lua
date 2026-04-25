@@ -13,25 +13,21 @@ local _ = require("gettext")
 local Cloud = WidgetContainer:extend{
     name = "cloudstorage",
     title = _("Cloud storage+"),
+    settings_file = DataStorage:getSettingsDir() .. "/cloudstorage.lua",
     settings = nil,
-    servers = nil, -- user cloud storages (array)
+    servers = nil, -- user servers (array)
     providers = nil, -- cloud providers (hash table); must provide at least .config, .run, .listFolder
+    updated = nil,
 }
 
 function Cloud:init()
-    self.settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/cloudstorage.lua")
-    if next(self.settings.data) == nil then
-        self.updated = true -- first run, force flush
-    end
-    self.servers = self.settings:readSetting("cs_servers", {})
     self:getProviders()
-    self:onDispatcherRegisterActions()
+    self:onDispatcherRegisterActions() -- will call loadSettings()
     self.ui.menu:registerToMainMenu(self)
 end
 
 function Cloud:getProviders()
-    -- in the base class to keep across views
-    if Cloud.providers == nil then
+    if not Cloud.providers then
         Cloud.providers = {}
         util.findFiles(self.path .. "/providers", function(fullpath, filename)
             if filename:match("%.lua$") then
@@ -44,7 +40,25 @@ function Cloud:getProviders()
     end
 end
 
+function Cloud:loadSettings()
+    if not Cloud.settings then
+        Cloud.settings = LuaSettings:open(self.settings_file)
+        if not next(Cloud.settings.data) then
+            self.updated = true -- first run, force flush
+        end
+    end
+    self.servers = Cloud.settings:readSetting("cs_servers", {})
+end
+
+function Cloud:onFlushSettings()
+    if self.updated then
+        Cloud.settings:flush()
+        self.updated = nil
+    end
+end
+
 function Cloud:onDispatcherRegisterActions()
+    self:loadSettings()
     Dispatcher:registerAction("cloudstorage", { category="none", event="ShowCloudStorageList", title=self.title, general=true })
 end
 
@@ -90,13 +104,6 @@ function Cloud:onShowCloudStorageList(caller_choose_folder_callback)
         provider.base = base
     end
     base:show()
-end
-
-function Cloud:onFlushSettings()
-    if self.updated then
-        self.settings:flush()
-        self.updated = nil
-    end
 end
 
 function Cloud:stopPlugin()

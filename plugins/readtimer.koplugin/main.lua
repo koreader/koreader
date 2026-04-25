@@ -15,8 +15,12 @@ local T = require("ffi/util").template
 
 local ReadTimer = WidgetContainer:extend{
     name = "readtimer",
+    settings_key = "readtimer",
     time = 0,  -- The expected time of alarm if enabled, or 0.
     last_interval_time = 0,
+    timer_symbol = "\u{23F2}", -- ⏲ timer symbol
+    timer_letter = "T",
+    default_expiry_message_text = _("Time is up"),
 
     -- static for all plugin instances, to keep scheduled timer across views
     restore_scheduled_time = nil,
@@ -25,17 +29,19 @@ local ReadTimer = WidgetContainer:extend{
 
 function ReadTimer:onDispatcherRegisterActions()
     Dispatcher:registerAction("show_alarm",
-        {category="none", event="ShowAlarm", title=_("Set read timer alarm"), general=true})
+        {category="none", event="ShowAlarm", title=_("Read timer: set alarm"), general=true})
     Dispatcher:registerAction("show_timer",
-        {category="none", event="ShowTimer", title=_("Set read timer interval"), general=true})
+        {category="none", event="ShowTimer", title=_("Read timer: set interval"), general=true})
+    Dispatcher:registerAction("start_timer",
+        {category="none", event="StartTimer", title=_("Read timer: start"), general=true})
+    Dispatcher:registerAction("start_timer_not_running",
+        {category="none", event="StartTimer", arg=true, title=_("Read timer: start if not running"), general=true})
     Dispatcher:registerAction("stop_timer",
-        {category="none", event="StopTimer", title=_("Stop read timer"), general=true, separator=true})
+        {category="none", event="StopTimer", title=_("Read timer: stop"), general=true, separator=true})
 end
 
 function ReadTimer:init()
-    self.timer_symbol = "\u{23F2}"  -- ⏲ timer symbol
-    self.timer_letter = "T"
-    self.settings = G_reader_settings:readSetting("readtimer", {})
+    self.settings = G_reader_settings:readSetting(self.settings_key, {})
 
     self.alarm_callback = function()
         -- Don't do anything if we were unscheduled
@@ -54,7 +60,7 @@ function ReadTimer:init()
             maybeRescheduleInterval()
             return
         end
-        local tip_text = _("Time is up")
+        local tip_text = self.ui.bookinfo:expandString(self.settings.expiry_message_text) or self.default_expiry_message_text
         if self.settings.show_on_expiry == "notification" then
             UIManager:show(Notification:new{
                 text = tip_text,
@@ -83,9 +89,13 @@ function ReadTimer:init()
             UIManager:show(confirm_box)
         else
             logger.dbg("can`t_repeat, show infomessage")
-            UIManager:show(InfoMessage:new{
+            local top_wg = UIManager:getTopmostVisibleWidget()
+            if not (top_wg and top_wg.name == self.timer_symbol) then
+                UIManager:show(InfoMessage:new{
+                    name = self.timer_symbol,
                     text = tip_text,
-            })
+                })
+            end
             maybeRescheduleInterval()
         end
     end
@@ -368,6 +378,15 @@ function ReadTimer:addToMainMenu(menu_items)
                     },
                 },
             },
+            {
+                text_func = function()
+                    return T(_("Expiry message text: %1"), self.settings.expiry_message_text and _("custom") or _("default"))
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    self:setExpiryMessageText(touchmenu_instance)
+                end,
+            },
         },
     }
 end
@@ -454,22 +473,24 @@ function ReadTimer:onShowTimer(touchmenu_instance)
             if touchmenu_instance then
                 touchmenu_instance:closeMenu()
             end
-            self:setInterval(timer_time)
+            self.settings.remain_time_hours = timer_time.hour
+            self.settings.remain_time_minutes = timer_time.min
+            self:onStartTimer()
         end
     }
-
     self:addCheckboxes(time_widget, true)
     UIManager:show(time_widget)
     return true
 end
 
-function ReadTimer:setInterval(timer_time)
-    local seconds = timer_time.hour * 3600 + timer_time.min * 60
+function ReadTimer:onStartTimer(no_restart)
+    if not self.settings.remain_time_hours or not self.settings.remain_time_minutes
+        or (no_restart and self:scheduled()) then return true end
+    local seconds = self.settings.remain_time_hours * 3600 + self.settings.remain_time_minutes * 60
     if seconds > 0 then
         self:unschedule()
         self.last_interval_time = seconds
         self:rescheduleIn(seconds)
-
         local user_duration_format = G_reader_settings:readSetting("duration_format")
         UIManager:show(InfoMessage:new{
             -- @translators This is a duration
@@ -477,11 +498,8 @@ function ReadTimer:setInterval(timer_time)
                         datetime.secondsToClockDuration(user_duration_format, seconds, true)),
             timeout = 5,
         })
-
-        -- Save settings
-        self.settings.remain_time_hours = timer_time.hour
-        self.settings.remain_time_minutes = timer_time.min
     end
+    return true
 end
 
 function ReadTimer:onStopTimer(touchmenu_instance)
@@ -495,6 +513,52 @@ function ReadTimer:onStopTimer(touchmenu_instance)
         end
     end
     return true
+end
+
+function ReadTimer:setExpiryMessageText(touchmenu_instance)
+    local InputDialog = require("ui/widget/inputdialog")
+    local input_dialog
+    input_dialog = InputDialog:new{
+        title = _("Expiry message text"),
+        input = self.settings.expiry_message_text,
+        input_hint = self.default_expiry_message_text,
+        allow_newline = true,
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Info"),
+                    callback = self.ui.bookinfo.expandString,
+                },
+                {
+                    text = _("Show"),
+                    callback = function()
+                        local text = input_dialog:getInputText()
+                        UIManager:show(InfoMessage:new{
+                            text = text ~= "" and self.ui.bookinfo:expandString(text) or self.default_expiry_message_text,
+                        })
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    callback = function()
+                        local text = input_dialog:getInputText()
+                        self.settings.expiry_message_text = text ~= "" and text or nil
+                        UIManager:close(input_dialog)
+                        touchmenu_instance:updateItems()
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
 end
 
 function ReadTimer:onCloseWidget()

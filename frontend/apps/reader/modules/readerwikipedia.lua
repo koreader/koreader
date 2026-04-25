@@ -342,7 +342,7 @@ function ReaderWikipedia:initLanguages(word)
         local addLanguage = function(lang)
             if lang and lang ~= "" then
                 -- convert "zh-CN" and "zh-TW" to "zh"
-                lang = lang:match("(.*)-") or lang
+                lang = lang:match("([^_-]+)") or lang
                 if lang == "C" then lang="en" end
                 lang = lang:lower()
                 if not self.seen_lang[lang] then

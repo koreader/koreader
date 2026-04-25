@@ -226,7 +226,8 @@ local settingsList = {
     export_annotations = {category="none", event="ExportAnnotations", title=_("Export annotations"), reader=true},
 
     -- Reflowable documents
-    set_typography_lang = {category="string", event="SetTypographyLanguage", title=_("Set typography language"), args_func=ReaderTypography.getLangTags, rolling=true, separator=true},
+    set_typography_lang = {category="string", event="SetTypographyLanguage", title=_("Set typography language"), args_func=ReaderTypography.getLangTags, rolling=true},
+    toggle_hanging_punctuation = {category="none", event="ToggleFloatingPunctuation", title=_("Toggle hanging punctuation"), rolling=true, separator=true},
     set_font = {category="string", event="SetFont", title=_("Font"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
     increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size"), rolling=true},
     decrease_font = {category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size"), rolling=true},
@@ -484,6 +485,7 @@ local dispatcher_menu_order = {
 
     -- Reflowable documents
     "set_typography_lang",
+    "toggle_hanging_punctuation",
     ----
     "set_font",
     "increase_font",

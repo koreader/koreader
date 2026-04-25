@@ -716,6 +716,10 @@ function CreDocument:getScreenBoxesFromPositions(pos0, pos1, get_segments)
     return line_boxes
 end
 
+function CreDocument:getNearestWordFromPosition(pos, direction)
+    return self._document:getNearestWordFromPosition(pos.x, pos.y, direction)
+end
+
 function CreDocument:compareXPointers(xp1, xp2)
     -- Returns 1 if XPointers are ordered (if xp2 is after xp1), -1 if not, 0 if same
     -- Returns nil if any of XPointers are invalid
@@ -1894,6 +1898,7 @@ function CreDocument:setupCallCache()
             elseif name == "getPageLinks" then cache_by_tag = true
             elseif name == "getScreenBoxesFromPositions" then cache_by_tag = true
             elseif name == "getScreenPositionFromXPointer" then cache_by_tag = true
+            elseif name == "getNearestWordFromPosition" then cache_by_tag = true
             elseif name == "getXPointer" then cache_by_tag = true
             elseif name == "isXPointerInCurrentPage" then cache_by_tag = true
             elseif name == "getPageMapCurrentPageLabel" then cache_by_tag = true

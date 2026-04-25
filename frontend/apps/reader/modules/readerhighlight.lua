@@ -1812,6 +1812,13 @@ function ReaderHighlight:onHold(arg, ges)
         end
         return true
     end
+    -- It has happened it failed because the text range was detected on the
+    -- previous page and highlighted by crengine, but no word was returned
+    -- (because the boxes were not on the current page).
+    -- Be sure we clear any such selection
+    self.ui.document:clearSelection()
+    -- And that we don't get stuck in a hold state
+    self.hold_pos = nil
     return false
 end
 
