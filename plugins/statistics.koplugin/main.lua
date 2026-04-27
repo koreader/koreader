@@ -2994,7 +2994,7 @@ function ReaderStatistics:getCurrentBookReadPages()
         SELECT
           page,
           min(sum(duration), ?) AS durations,
-          strftime("%s", "now") - max(start_time) AS delay
+          strftime('%s', 'now') - max(start_time) AS delay
         FROM page_stat
         WHERE id_book = ?
         GROUP BY page
