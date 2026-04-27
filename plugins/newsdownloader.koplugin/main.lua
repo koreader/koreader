@@ -60,11 +60,11 @@ local function parseMaxAge(value)
         return nil, nil
     end
     if type(value) ~= "string" then
-        return nil, "max_age must be a string"
+        return nil, _("max_age must be a string")
     end
     local n, u = value:match("^(%d+)([smhdwMy])$")
     if not n then
-        return nil, "Invalid max_age format. Use e.g. 7d, 12h, 30m, 1M."
+        return nil, _("Invalid max_age format. Use e.g. 7d, 12h, 30m, 1M.")
     end
     return tonumber(n) * DURATION_UNITS[u], nil
 end
