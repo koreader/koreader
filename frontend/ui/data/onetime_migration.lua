@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20260423
+local CURRENT_MIGRATION_DATE = 20260428
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -956,10 +956,10 @@ if last_migration_date < 20260306 then
     end
 end
 
--- 20260423, Hotkeys plugin: add text_selection to hotkeys_reader defaults
+-- 20260428, Hotkeys plugin: add text_selection to hotkeys_reader defaults
 -- https://github.com/koreader/koreader/pull/14867
-if last_migration_date < 20260123 then
-    logger.info("Performing one-time migration for 20260423")
+if last_migration_date < 20260428 then
+    logger.info("Performing one-time migration for 20260428")
 
     local Device = require("device")
     if Device:hasKeyboard() then
