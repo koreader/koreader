@@ -69,6 +69,14 @@ local function parseMaxAge(value)
     return tonumber(n) * DURATION_UNITS[u], nil
 end
 
+-- Returns parsed unix timestamp (number) or nil if no parseable date field.
+local function getFeedItemTimestamp(feed)
+    local raw = feed.pubDate or feed.updated or feed.published
+    if not raw then return nil end
+    local ts = dateparser.parse(raw)
+    return type(ts) == "number" and ts or nil
+end
+
 -- If a title looks like <title>blabla</title> it'll just be feed.title.
 -- If a title looks like <title attr="alb">blabla</title> then we get a table
 -- where [1] is the title string and the attributes are also available.
@@ -772,12 +780,13 @@ end
 
 local function getTitleWithDate(feed)
     local title = util.getSafeFilename(NewsDownloader.getFeedTitle(feed.title))
-    if feed.updated then
-        title = parseDate(feed.updated) .. title
-    elseif feed.pubDate then
-        title = parseDate(feed.pubDate) .. title
-    elseif feed.published then
-        title = parseDate(feed.published) .. title
+    -- Field precedence (pubDate > updated > published) matches getFeedItemTimestamp.
+    -- Note: this is a deliberate change from the previous order (updated > pubDate >
+    -- published) so that both helpers agree on which date the item "has". For
+    -- well-formed feeds only one of these is set, so the visible filename is unchanged.
+    local raw = feed.pubDate or feed.updated or feed.published
+    if raw then
+        title = parseDate(raw) .. title
     end
     return title
 end
@@ -1384,5 +1393,6 @@ function NewsDownloader:onCloseDocument()
 end
 
 NewsDownloader._parseMaxAge = parseMaxAge
+NewsDownloader._getFeedItemTimestamp = getFeedItemTimestamp
 
 return NewsDownloader

@@ -322,4 +322,45 @@ describe("NewsDownloader module", function()
             assert.is_string(err)
         end)
     end)
+
+    describe("getFeedItemTimestamp", function()
+        local getFeedItemTimestamp
+
+        setup(function()
+            getFeedItemTimestamp = NewsDownloader._getFeedItemTimestamp
+            assert.is_function(getFeedItemTimestamp)
+        end)
+
+        it("parses RSS pubDate", function()
+            local ts = getFeedItemTimestamp({ pubDate = "Mon, 01 Jan 2024 00:00:00 GMT" })
+            assert.is_number(ts)
+        end)
+
+        it("parses Atom updated", function()
+            local ts = getFeedItemTimestamp({ updated = "2024-01-01T00:00:00Z" })
+            assert.is_number(ts)
+        end)
+
+        it("parses Atom published", function()
+            local ts = getFeedItemTimestamp({ published = "2024-01-01T00:00:00Z" })
+            assert.is_number(ts)
+        end)
+
+        it("returns nil when no date fields present", function()
+            assert.is_nil(getFeedItemTimestamp({ title = "no date here" }))
+        end)
+
+        it("returns nil for unparseable date string", function()
+            assert.is_nil(getFeedItemTimestamp({ pubDate = "not a date" }))
+        end)
+
+        it("prefers pubDate over updated and published", function()
+            local ts = getFeedItemTimestamp({
+                pubDate = "Mon, 01 Jan 2024 00:00:00 GMT",
+                updated = "garbage",
+                published = "garbage",
+            })
+            assert.is_number(ts)
+        end)
+    end)
 end)
