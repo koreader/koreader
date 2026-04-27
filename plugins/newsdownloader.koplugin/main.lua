@@ -42,6 +42,33 @@ local NewsDownloader = WidgetContainer:extend{
 local FEED_TYPE_RSS = "rss"
 local FEED_TYPE_ATOM = "atom"
 
+-- Single-unit duration shorthand parser used for the per-feed `max_age` option.
+-- Returns (seconds, nil) when enabled, (nil, nil) when disabled (nil/empty),
+-- (nil, error_string) when invalid.
+local DURATION_UNITS = {
+    s = 1,
+    m = 60,           -- minute (lowercase)
+    h = 3600,
+    d = 86400,
+    w = 604800,
+    M = 2592000,      -- month: 30 days (uppercase, distinct from minute)
+    y = 31536000,     -- year: 365 days
+}
+
+local function parseMaxAge(value)
+    if value == nil or value == "" then
+        return nil, nil
+    end
+    if type(value) ~= "string" then
+        return nil, "max_age must be a string"
+    end
+    local n, u = value:match("^(%d+)([smhdwMy])$")
+    if not n then
+        return nil, "Invalid max_age format. Use e.g. 7d, 12h, 30m, 1M."
+    end
+    return tonumber(n) * DURATION_UNITS[u], nil
+end
+
 -- If a title looks like <title>blabla</title> it'll just be feed.title.
 -- If a title looks like <title attr="alb">blabla</title> then we get a table
 -- where [1] is the title string and the attributes are also available.
@@ -1355,5 +1382,7 @@ function NewsDownloader:onCloseDocument()
         self.ui:setLastDirForFileBrowser(doc_dir)
     end
 end
+
+NewsDownloader._parseMaxAge = parseMaxAge
 
 return NewsDownloader
