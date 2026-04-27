@@ -697,6 +697,22 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit,
             feed_item = {feed_item}
         end
     end
+    -- Parse max_age (if set) and prepare the cutoff timestamp. Invalid format
+    -- and missing-date conditions raise sentinel errors that the caller's
+    -- pcall converts into user-facing messages.
+    local max_age_seconds, max_age_err = parseMaxAge(max_age_str)
+    if max_age_err then
+        error("__max_age_invalid__:" .. max_age_err)
+    end
+
+    local cutoff
+    if max_age_seconds and feed_item[1] then
+        local first_ts = getFeedItemTimestamp(feed_item[1])
+        if not first_ts then
+            error("__max_age_no_date__")
+        end
+        cutoff = os.time() - max_age_seconds
+    end
     -- Get the path to the output directory.
     local feed_output_dir = ("%s%s/"):format(
         self.download_dir,
@@ -710,6 +726,17 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit,
         -- If limit has been met, stop downloading feed.
         if limit ~= 0 and index - 1 == limit then
             break
+        end
+        if cutoff then
+            local ts = getFeedItemTimestamp(feed)
+            if ts and ts < cutoff then
+                -- Feeds are chronological newest-first; remaining items are
+                -- older too, so we can stop iterating.
+                break
+            end
+            -- ts == nil after the first-item probe succeeded means the
+            -- publisher omitted a date for this item. Process it normally
+            -- without an age check.
         end
         -- Create a message to display during processing.
         local article_message = T(
