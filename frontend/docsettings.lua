@@ -440,7 +440,8 @@ function DocSettings.updateLocation(doc_path, new_doc_path, copy)
     local do_purge
 
     if new_doc_path then -- copy/rename/move
-        if G_reader_settings:readSetting("document_metadata_folder") ~= "hash" then -- keep hash location unchanged
+        if doc_path == new_doc_path -- move book metadata
+                or G_reader_settings:readSetting("document_metadata_folder") ~= "hash" then -- keep hash location unchanged
             local new_sidecar_dir
             if has_sidecar_file then
                 local new_doc_settings = DocSettings:open(new_doc_path)
