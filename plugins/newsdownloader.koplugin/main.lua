@@ -355,6 +355,7 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
         local block_element = parseCommaSeparatedOption(feed.block_element)
         local credentials = feed.credentials
         local http_auth = feed.http_auth
+        local max_age_str = feed.max_age
         -- Check if the two required attributes are set.
         if url and limit then
             feed_message = T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, BD.url(url))
@@ -371,7 +372,8 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
                 feed_message,
                 enable_filter,
                 filter_element,
-                block_element)
+                block_element,
+                max_age_str)
         else
             logger.warn("NewsDownloader: invalid feed config entry.", feed)
         end
@@ -443,7 +445,7 @@ function NewsDownloader:loadConfigAndProcessFeedsWithUI(touchmenu_instance)
     end)
 end
 
-function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, unsupported_feeds_urls, download_full_article, include_images, message, enable_filter, filter_element, block_element)
+function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, unsupported_feeds_urls, download_full_article, include_images, message, enable_filter, filter_element, block_element, max_age_str)
     -- Check if we have a cached response first
     local cache = DownloadBackend:getCache()
     local cached_response = cache:check(url)
@@ -606,7 +608,8 @@ function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, un
                     message,
                     enable_filter,
                     filter_element,
-                    block_element
+                    block_element,
+                    max_age_str
                 )
         end)
     elseif is_rss then
@@ -622,7 +625,8 @@ function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, un
                     message,
                     enable_filter,
                     filter_element,
-                    block_element
+                    block_element,
+                    max_age_str
                 )
         end)
     end
@@ -667,7 +671,7 @@ function NewsDownloader:deserializeXMLString(xml_str)
     return xmlhandler.root
 end
 
-function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit, download_full_article, include_images, message, enable_filter, filter_element, block_element)
+function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit, download_full_article, include_images, message, enable_filter, filter_element, block_element, max_age_str)
     local feed_title
     local feed_item
     local total_items
