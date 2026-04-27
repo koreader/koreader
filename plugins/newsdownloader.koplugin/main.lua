@@ -1014,6 +1014,7 @@ function NewsDownloader:editFeedAttribute(id, key, value)
     -- attribute will need and displays the corresponding dialog.
     if key == FeedView.URL
         or key == FeedView.LIMIT
+        or key == FeedView.MAX_AGE
         or key == FeedView.FILTER_ELEMENT
         or key == FeedView.BLOCK_ELEMENT
         or key == FeedView.HTTP_AUTH_USERNAME
@@ -1030,6 +1031,12 @@ function NewsDownloader:editFeedAttribute(id, key, value)
             title = _("Edit feed limit")
             description = _("Set to 0 for no limit to how many items are downloaded")
             input_type = "number"
+        elseif key == FeedView.MAX_AGE then
+            title = _("Edit max age")
+            description = _("Skip items older than this. Format: <number><unit>. " ..
+                            "Units: s, m (minute), h, d, w, M (month=30d), y (year=365d). " ..
+                            "Examples: 30m, 12h, 7d, 1M. Leave empty to disable.")
+            input_type = "string"
         elseif key == FeedView.FILTER_ELEMENT then
             title = _("Edit filter element.")
             description = _("Filter based on the given CSS selector. E.g.: name_of_css.element.class")
@@ -1068,8 +1075,16 @@ function NewsDownloader:editFeedAttribute(id, key, value)
                         text = _("Save"),
                         is_enter_default = true,
                         callback = function()
+                            local new_value = input_dialog:getInputValue()
+                            if key == FeedView.MAX_AGE and new_value ~= "" then
+                                local _seconds, err = parseMaxAge(new_value)
+                                if err then
+                                    UIManager:show(InfoMessage:new{ text = err })
+                                    return
+                                end
+                            end
                             UIManager:close(input_dialog)
-                            self:updateFeedConfig(id, key, input_dialog:getInputValue())
+                            self:updateFeedConfig(id, key, new_value)
                         end,
                     },
                 }
