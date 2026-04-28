@@ -367,7 +367,7 @@ function filemanagerutil.executeScript(file, caller_callback)
     end)
 end
 
-function filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path, file_filter)
+function filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path, file_filter, disable_button)
     local is_file = file_filter and true or false
     local path = current_path or default_path
     local dialog
@@ -409,6 +409,18 @@ function filemanagerutil.showChooseDialog(title_header, caller_callback, current
                 callback = function()
                     UIManager:close(dialog)
                     caller_callback(default_path)
+                end,
+            },
+        })
+    end
+    if disable_button then
+        table.insert(buttons, {
+            {
+                text = _("Disable"),
+                enabled = current_path and true or false,
+                callback = function()
+                    UIManager:close(dialog)
+                    caller_callback()
                 end,
             },
         })
