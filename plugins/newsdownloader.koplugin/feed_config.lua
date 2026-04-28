@@ -31,6 +31,16 @@ return {--do NOT change this line
  -- 'block_element="name_of_css.element.class" - means to remove the chosen CSS element, it can be easily picked using a modern web browser
  -- The default value is empty. The default list of common annoyances is used as fallback if this value is set.
 
+ -- 'max_age = "7d"' - skip items older than this duration.
+ --   Format: <integer><unit>. Units: s (second), m (minute), h (hour),
+ --   d (day), w (week), M (month=30d), y (year=365d).
+ --   M and y are fixed-length approximations (not calendar months/leap years).
+ --   Examples: "30m", "12h", "7d", "1M".
+ --   Feed must provide <pubDate> (RSS) or <updated>/<published> (Atom).
+ --   If the feed lacks a date field, sync will error and ask you to remove
+ --   this option.
+ --   Default: not set (no age filter).
+
 -- Optional 'credentials' element is used to authenticate on subscription based articles.
 -- It is itself comprised of a 'url' strings, that is the url of the connexion form,
 -- and an 'auth' table that contains form data used for user authentication {form_key = value, …}.
