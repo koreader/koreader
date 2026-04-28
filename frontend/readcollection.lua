@@ -281,9 +281,9 @@ end
 
 function ReadCollection:updateItemsByPath(path, new_path) -- FM: rename folder, move folder
     local len = #path
-    local seen = {}
     local do_write
     for coll_name, coll in pairs(self.coll) do
+        local seen = {}
         for file_name in pairs(coll) do
             if not seen[file_name] and file_name:sub(1, len) == path then
                 local new_file_name = self:_updateItem(coll_name, file_name, new_path .. file_name:sub(len + 1))
