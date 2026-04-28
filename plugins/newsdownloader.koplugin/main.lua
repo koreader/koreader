@@ -1238,17 +1238,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                     )
                 end
             elseif key == FeedView.MAX_AGE then
-                if feed.max_age ~= nil then
-                    feed.max_age = value
-                else
-                    table.insert(
-                        feed,
-                        {
-                            "max_age",
-                            value
-                        }
-                    )
-                end
+                feed.max_age = value
             elseif key == FeedView.DOWNLOAD_FULL_ARTICLE then
                 if feed.download_full_article ~= nil then
                     feed.download_full_article = value
