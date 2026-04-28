@@ -363,4 +363,19 @@ describe("NewsDownloader module", function()
             assert.is_number(ts)
         end)
     end)
+
+    describe("getFeedItemTimestamp publisher quirk", function()
+        local getFeedItemTimestamp
+
+        setup(function()
+            getFeedItemTimestamp = NewsDownloader._getFeedItemTimestamp
+        end)
+
+        it("returns nil for an item missing all date fields, so the for-loop processes it without filtering", function()
+            -- The for-loop in processFeed treats `ts == nil` as "no age check"
+            -- once the first-item probe has succeeded. This test locks in the
+            -- nil contract that the loop relies on.
+            assert.is_nil(getFeedItemTimestamp({ title = "x", link = "y" }))
+        end)
+    end)
 end)
