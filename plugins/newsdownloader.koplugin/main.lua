@@ -636,8 +636,17 @@ function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, un
     if not ok or (not is_rss and not is_atom) then
         local error_message
         if not ok then
-            logger.err("NewsDownloader: Error processing feed", error)
-            error_message = _("(Reason: Failed to download content)")
+            if type(error) == "string"
+                    and error:find("__max_age_no_date__", 1, true) then
+                error_message = _("(Reason: max_age is set but feed has no <pubDate>/<updated>/<published>. Remove max_age from this feed in the config.)")
+            elseif type(error) == "string"
+                    and error:find("__max_age_invalid__:", 1, true) then
+                local msg = error:match("__max_age_invalid__:(.*)") or ""
+                error_message = T(_("(Reason: %1)"), msg)
+            else
+                logger.err("NewsDownloader: Error processing feed", error)
+                error_message = _("(Reason: Failed to download content)")
+            end
         elseif not is_rss then
             error_message = _("(Reason: Couldn't process RSS)")
         elseif not is_atom then
