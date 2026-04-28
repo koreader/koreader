@@ -1117,7 +1117,7 @@ function NewsDownloader:editFeedAttribute(id, key, value)
                         callback = function()
                             local new_value = input_dialog:getInputValue()
                             if key == FeedView.MAX_AGE and new_value ~= "" then
-                                local _seconds, err = parseMaxAge(new_value)
+                                local _, err = parseMaxAge(new_value)
                                 if err then
                                     UIManager:show(InfoMessage:new{ text = err })
                                     return
