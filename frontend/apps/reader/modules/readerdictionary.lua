@@ -103,9 +103,7 @@ local function getDictionaryFixHtmlFunc(path)
 end
 
 function ReaderDictionary:init()
-    self:registerKeyEvents()
     self._dict_buttons = {}
-
     self.disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history")
     self.dicts_order = G_reader_settings:readSetting("dicts_order", {})
     self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})
@@ -296,11 +294,10 @@ function ReaderDictionary:populateDictQuickButtons(dict_popup, pool, default_lay
     end
 end
 
-function ReaderDictionary:registerKeyEvents()
-    if Device:hasKeyboard() then
-        self.key_events.ShowDictionaryLookup = { { "Alt", "D" }, { "Ctrl", "D" } }
-    end
-end
+-- function ReaderDictionary:registerKeyEvents()
+--     Now handled by hotkeys.koplugin:
+--     onShowDictionaryLookup = { { "Alt", "D" }, { "Ctrl", "D" } }
+-- end
 
 function ReaderDictionary:sortAvailableIfos()
     table.sort(available_ifos, function(lifo, rifo)
@@ -937,6 +934,10 @@ function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link, di
     -- escape quotes and other funny characters in word
     word = self:cleanSelection(word, is_sane)
     logger.dbg("dict stripped word:", word)
+    -- (If word ends up empty, we still do the lookup, which will give us
+    -- a window with no result. This will ensure the normal cleanup of the
+    -- highlight when closing this "no result" window, which is easier than
+    -- trying to do it here if we were skipping the lookup.)
 
     self.highlight = highlight
     local disable_fuzzy_search
@@ -1516,10 +1517,6 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
 end
 
 function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link, dict_close_callback)
-    if word == "" then
-        return
-    end
-
     local book_title = self.ui.doc_props and self.ui.doc_props.display_title or _("Dictionary lookup")
 
     -- Event for plugin to catch lookup with book title
