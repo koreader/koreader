@@ -134,10 +134,10 @@ function KOSyncClient:update_progress(
             })
         end)
         if ok then
-            callback(res.status == 200, res.body)
+            callback(res.status == 200, res.body, res.status)
         else
             logger.dbg("KOSyncClient:update_progress failure:", res)
-            callback(false, res.body)
+            callback(false, nil, nil)
         end
     end)
     self.client:enable("AsyncHTTP", {thread = co})
