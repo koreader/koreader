@@ -3,7 +3,6 @@ local BookList = require("ui/widget/booklist")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
-local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local ffi = require("ffi")
@@ -300,7 +299,7 @@ function FileChooser:getMenuItemMandatory(item, collate)
         if #sub_dirs > 0 then
             text = T("%1 \u{F114} ", #sub_dirs) .. text
         end
-        if FileManagerShortcuts:hasFolderShortcut(item.path) then
+        if self.ui.folder_shortcuts:hasFolderShortcut(item.path, true) then
             text = "☆ " .. text
         end
     end
