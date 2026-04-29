@@ -106,10 +106,8 @@ function FileManager:onSetDimensions(dimen)
 end
 
 function FileManager:updateTitleBarPath(path)
-    local text = BD.directory(filemanagerutil.abbreviate(path))
-    if self.folder_shortcuts:hasFolderShortcut(path) then
-        text = "☆ " .. text
-    end
+    path = path or self.file_chooser.path
+    local text = self.folder_shortcuts:getShortcutFullName(path) or BD.directory(filemanagerutil.abbreviate(path))
     self.title_bar:setSubTitle(text)
 end
 
@@ -864,9 +862,11 @@ function FileManager:setHome(path)
         text = T(_("Set '%1' as HOME folder?"), BD.dirpath(path)),
         ok_text = _("Set as HOME"),
         ok_callback = function()
+            local path_refreshed = self.folder_shortcuts:updateShortcut("home_dir", path)
             G_reader_settings:saveSetting("home_dir", path)
-            if G_reader_settings:isTrue("lock_home_folder") then
-                self:onRefresh()
+            self:updateTitleBarPath()
+            if not path_refreshed and G_reader_settings:isTrue("lock_home_folder") then
+                self.file_chooser:refreshPath()
             end
         end,
     })
@@ -943,6 +943,7 @@ function FileManager:pasteFileFromClipboard(file)
                 else
                     ReadHistory:updateItemsByPath(orig_file, dest_file)
                     ReadCollection:updateItemsByPath(orig_file, dest_file)
+                    self.folder_shortcuts:updateItemsByPath(orig_file, dest_file) -- will update system folders in settings
                 end
             end
             self.clipboard = nil
@@ -981,13 +982,13 @@ function FileManager:pasteFileFromClipboard(file)
     end
 end
 
-function FileManager:showCopyMoveSelectedFilesDialog(close_callback)
+function FileManager:showCopyMoveSelectedFilesDialog(close_callback, folder)
     local text, ok_text
     if self.cutfile then
-        text = _("Move selected files to the current folder?")
+        text = folder and _("Move selected files?") or _("Move selected files to the current folder?")
         ok_text = _("Move")
     else
-        text = _("Copy selected files to the current folder?")
+        text = folder and _("Copy selected files?") or _("Copy selected files to the current folder?")
         ok_text = _("Copy")
     end
     local confirmbox, check_button_overwrite
@@ -996,7 +997,7 @@ function FileManager:showCopyMoveSelectedFilesDialog(close_callback)
         ok_text = ok_text,
         ok_callback = function()
             close_callback()
-            self:pasteSelectedFiles(check_button_overwrite.checked)
+            self:pasteSelectedFiles(check_button_overwrite.checked, folder)
         end,
     }
     check_button_overwrite = CheckButton:new{
@@ -1008,8 +1009,8 @@ function FileManager:showCopyMoveSelectedFilesDialog(close_callback)
     UIManager:show(confirmbox)
 end
 
-function FileManager:pasteSelectedFiles(overwrite)
-    local dest_path = ffiUtil.realpath(self.file_chooser.path)
+function FileManager:pasteSelectedFiles(overwrite, folder)
+    local dest_path = ffiUtil.realpath(folder or self.file_chooser.path)
     local ok_files = {}
     for orig_file in pairs(self.selected_files) do
         local orig_name = ffiUtil.basename(orig_file)
@@ -1146,6 +1147,7 @@ function FileManager:deleteFile(file, is_file)
         if ok then
             ReadHistory:folderDeleted(file) -- will delete sdr
             ReadCollection:removeItemsByPath(file)
+            self.folder_shortcuts:updateItemsByPath(nil, file) -- will delete system folders in settings
             return true
         end
     end
@@ -1227,6 +1229,7 @@ function FileManager:renameFile(file, basename, is_file)
             else
                 ReadHistory:updateItemsByPath(file, dest)
                 ReadCollection:updateItemsByPath(file, dest)
+                self.folder_shortcuts:updateItemsByPath(file, dest) -- will update system folders in settings
             end
             self:onRefresh()
         else
