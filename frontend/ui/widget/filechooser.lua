@@ -320,7 +320,8 @@ function FileChooser:refreshPath()
         itemmatch = {path = self.focused_path}
         self.focused_path = nil
     end
-    local subtitle = self.name ~= "filemanager" and BD.directory(filemanagerutil.abbreviate(self.path)) -- PathChooser
+    local subtitle = self.name ~= "filemanager" -- filemanager does it by itself
+        and (self.ui.folder_shortcuts:getShortcutFullName(self.path) or BD.directory(filemanagerutil.abbreviate(self.path)))
     self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path], itemmatch, subtitle)
 end
 
