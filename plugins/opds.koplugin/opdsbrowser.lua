@@ -900,6 +900,7 @@ function OPDSBrowser:showDownloads(item)
                 require("ui/downloadmgr"):new{
                     onConfirm = function(path)
                         logger.dbg("Download folder set to", path)
+                        self._manager.ui.folder_shortcuts:updateShortcut("download_dir", path)
                         G_reader_settings:saveSetting("download_dir", path)
                         self.download_dialog:setTitle(createTitle(path, filename))
                     end,
