@@ -262,7 +262,7 @@ function FileManagerShortcuts:updateItemTable()
     end
     if #item_table > 1 then
         table.sort(item_table, function(a, b)
-            if not a.provider ~= not b.provider then
+            if (not a.provider) ~= (not b.provider) then
                 return a.provider -- system shortcuts first
             end
             return ffiUtil.strcoll(a.text, b.text)
