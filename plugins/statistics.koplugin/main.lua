@@ -11,7 +11,6 @@ local Math = require("optmath")
 local ReaderProgress = require("readerprogress")
 local ReadHistory = require("readhistory")
 local SQ3 = require("lua-ljsqlite3/init")
-local SyncService = require("frontend/apps/cloudstorage/syncservice")
 local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
 local datetime = require("datetime")
@@ -1230,73 +1229,16 @@ Time is in hours and minutes.]]),
                         separator = true,
                     },
                     {
-                        text = _("Cloud sync"),
-                        callback = function(touchmenu_instance)
-                            local server = self.settings.sync_server
-                            local edit_cb = function()
-                                local sync_settings = SyncService:new{}
-                                sync_settings.onClose = function(this)
-                                    UIManager:close(this)
-                                end
-                                sync_settings.onConfirm = function(sv)
-                                    if server and (server.type ~= sv.type
-                                        or server.url ~= sv.url
-                                        or server.address ~= sv.address) then
-                                            SyncService.removeLastSyncDB(db_location)
-                                    end
-                                    self.settings.sync_server = sv
-                                    touchmenu_instance:updateItems()
-                                end
-                                UIManager:show(sync_settings)
-                            end
-                            if not server then
-                                edit_cb()
-                                return
-                            end
-                            local dialogue
-                            local delete_button = {
-                                text = _("Delete"),
-                                callback = function()
-                                    UIManager:close(dialogue)
-                                    UIManager:show(ConfirmBox:new{
-                                        text = _("Delete server info?"),
-                                        cancel_text = _("Cancel"),
-                                        cancel_callback = function()
-                                            return
-                                        end,
-                                        ok_text = _("Delete"),
-                                        ok_callback = function()
-                                            self.settings.sync_server = nil
-                                            SyncService.removeLastSyncDB(db_location)
-                                            touchmenu_instance:updateItems()
-                                        end,
-                                    })
-                                end,
-                            }
-                            local edit_button = {
-                                text = _("Edit"),
-                                callback = function()
-                                    UIManager:close(dialogue)
-                                    edit_cb()
-                                end
-                            }
-                            local close_button = {
-                                text = _("Close"),
-                                callback = function()
-                                    UIManager:close(dialogue)
-                                end
-                            }
-                            local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
-                            dialogue = ButtonDialog:new{
-                                title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nSet up the same cloud folder on each device to sync across your devices."),
-                                             server.name.." "..type, SyncService.getReadablePath(server)),
-                                buttons = {
-                                    {delete_button, edit_button, close_button}
-                                },
-                            }
-                            UIManager:show(dialogue)
+                        text_func = function()
+                            local text = self.ui.cloudstorage and self.ui.cloudstorage:getServerNameType(self.settings.sync_server)
+                            return T(_("Cloud sync: %1"), text or _("not set"))
                         end,
-                        enabled_func = function() return self.settings.is_enabled end,
+                        callback = function(touchmenu_instance)
+                            self:setSyncRemoteFolder(touchmenu_instance)
+                        end,
+                        enabled_func = function()
+                            return self:canSync(true)
+                        end,
                         keep_menu_open = true,
                     },
                 },
@@ -1307,7 +1249,7 @@ Time is in hours and minutes.]]),
                 separator = true,
             },
             {
-                text = _("Synchronize now"),
+                text = _("Sync now"),
                 callback = function()
                     self:onSyncBookStats()
                 end,
@@ -3052,7 +2994,7 @@ function ReaderStatistics:getCurrentBookReadPages()
         SELECT
           page,
           min(sum(duration), ?) AS durations,
-          strftime("%s", "now") - max(start_time) AS delay
+          strftime('%s', 'now') - max(start_time) AS delay
         FROM page_stat
         WHERE id_book = ?
         GROUP BY page
@@ -3089,21 +3031,79 @@ function ReaderStatistics:getTimeForPages(pages)
     end
 end
 
-function ReaderStatistics:canSync()
-    return self.settings.sync_server ~= nil and self.settings.is_enabled
+-- cloud sync (Cloud storage plugin required)
+
+function ReaderStatistics:canSync(no_server_check)
+    return self.settings.is_enabled and self.ui.cloudstorage ~= nil
+        and (no_server_check or self.settings.sync_server ~= nil)
+end
+
+function ReaderStatistics:setSyncRemoteFolder(touchmenu_instance)
+    local cs = self.ui.cloudstorage
+    local server = self.settings.sync_server
+    local dialogue
+    local buttons = {
+        {
+            {
+                text = _("Delete"),
+                enabled = server and true or false,
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Delete server info?"),
+                        ok_text = _("Delete"),
+                        ok_callback = function()
+                            UIManager:close(dialogue)
+                            self.settings.sync_server = nil
+                            os.remove(db_location .. ".sync")
+                            touchmenu_instance:updateItems()
+                        end,
+                    })
+                end,
+            },
+            {
+                text = _("Edit"),
+                callback = function()
+                    UIManager:close(dialogue)
+                    cs:onShowCloudStorageList(function(sv)
+                        self.settings.sync_server = sv
+                        if server and (server.type ~= sv.type or server.url ~= sv.url or server.address ~= sv.address) then
+                            os.remove(db_location .. ".sync")
+                        end
+                        touchmenu_instance:updateItems()
+                        self:setSyncRemoteFolder(touchmenu_instance) -- keep the dialog open
+                    end)
+                end,
+            },
+            {
+                text = _("Close"),
+                callback = function()
+                    UIManager:close(dialogue)
+                end,
+            },
+        },
+    }
+    local text = cs:getServerNameType(server) or _("not set")
+    if server then
+        text = text .. "\n\n" .. T(_("Folder path:\n%1"), cs.getReadablePath(server))
+                    .. "\n\n" .. _("Set up the same cloud folder on each device to sync across your devices.")
+    end
+    dialogue = ButtonDialog:new{
+        title = T(_("Cloud storage: %1"), text),
+        buttons = buttons,
+    }
+    UIManager:show(dialogue)
 end
 
 function ReaderStatistics:onSyncBookStats()
-    if not self:canSync() then return end
-
-    UIManager:show(InfoMessage:new {
-        text = _("Syncing book statistics. This may take a while."),
-        timeout = 1,
-    })
-
-    UIManager:nextTick(function()
-        SyncService.sync(self.settings.sync_server, db_location, self.onSync)
-    end)
+    if self:canSync() then
+        local caller_pre_callback = function()
+            UIManager:show(InfoMessage:new {
+                text = _("Syncing book statistics…"),
+                timeout = 1,
+            })
+        end
+        self.ui.cloudstorage:sync(self.settings.sync_server, db_location, self.onSync, nil, caller_pre_callback)
+    end
 end
 
 function ReaderStatistics.onSync(local_path, cached_path, income_path)

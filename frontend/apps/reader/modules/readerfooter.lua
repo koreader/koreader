@@ -2075,13 +2075,22 @@ end
 
 function ReaderFooter:addAdditionalFooterContent(content_func)
     table.insert(self.additional_footer_content, content_func)
+    if not self.settings.additional_content then
+        self.settings.additional_content = true
+        self:set_mode_index()
+        self:set_has_no_mode()
+        self:updateFooterTextGenerator()
+    end
 end
 
 function ReaderFooter:removeAdditionalFooterContent(content_func)
     for i, v in ipairs(self.additional_footer_content) do
         if v == content_func then
             table.remove(self.additional_footer_content, i)
-            return true
+            if #self.additional_footer_content == 0 then
+                self.settings.additional_content = nil
+            end
+            return
         end
     end
 end

@@ -776,7 +776,9 @@ function NewsDownloader:downloadFeed(feed, cookies, http_auth, feed_output_dir, 
         if not content_type then
             logger.err("NewsDownloader: No content type, not saving", link)
             return
-        elseif content_type == "text/html" or content_type == "application/xhtml+xml" then
+        end
+        content_type = util.trim(content_type:match("^[^;]*")) --- @todo Don't ignore encoding but use it for the EPUB.
+        if content_type == "text/html" or content_type == "application/xhtml+xml" then
             DownloadBackend:createEpub(news_file_path, content, link, include_images, article_message, enable_filter, filter_element, block_element)
         elseif DocumentRegistry:hasProvider(nil, content_type) then
             local file = io.open(news_file_path, "w")

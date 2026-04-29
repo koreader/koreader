@@ -17,6 +17,7 @@ local LineWidget = require("ui/widget/linewidget")
 local Menu = require("ui/widget/menu")
 local Size = require("ui/size")
 local SpinWidget = require("ui/widget/spinwidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
@@ -38,11 +39,10 @@ local ReaderBookmark = InputContainer:extend{
         note      = _("notes"),
         bookmark  = _("page bookmarks"),
     },
+    separator = " • ",
 }
 
 function ReaderBookmark:init()
-    self:registerKeyEvents()
-
     if G_reader_settings:hasNot("bookmarks_items_per_page") then
         -- The Bookmarks items per page and items' font size can now be
         -- configured. Previously, the ones set for the file browser
@@ -65,17 +65,11 @@ end
 
 function ReaderBookmark:onGesture() end
 
-function ReaderBookmark:registerKeyEvents()
-    if Device:hasKeyboard() then
-        self.key_events.ShowBookmark = { { "B" }, { "Shift", "Left" } }
-        self.key_events.ToggleBookmark = { { "Shift", "Right" } }
-    elseif Device:hasScreenKB() then
-        self.key_events.ShowBookmark = { { "ScreenKB", "Left" } }
-        self.key_events.ToggleBookmark = { { "ScreenKB", "Right" } }
-    end
-end
-
-ReaderBookmark.onPhysicalKeyboardConnected = ReaderBookmark.registerKeyEvents
+-- function ReaderBookmark:registerKeyEvents()
+--     Now handled by hotkeys.koplugin:
+--     onShowBookmark (B, Shift-Left)
+--     onToggleBookmark (Shift-Right)
+-- end
 
 function ReaderBookmark:addToMainMenu(menu_items)
     menu_items.bookmarks = {
@@ -1175,36 +1169,49 @@ function ReaderBookmark:getBookmarkItemText(item)
     return text
 end
 
-function ReaderBookmark:_getDialogHeader(bookmark)
-    local page_str = bookmark.mandatory or self:getBookmarkPageString(bookmark.page)
-    local text = T(_("Page: %1"), page_str) .. "     " .. T(_("Time: %1"), bookmark.datetime)
-    if bookmark.drawer and bookmark.color then
-        text = text .. "     " .. self.ui.highlight:getHighlightColorString(bookmark.color)
+function ReaderBookmark:_getDialogHeader(bookmark, full)
+    return table.concat({
+        BD.ltr(bookmark.datetime),
+        T(_("Page %1"), bookmark.mandatory or self:getBookmarkPageString(bookmark.page)),
+        full and bookmark.drawer and self.ui.highlight:getHighlightStyleString(bookmark.drawer),
+        full and bookmark.color and self.ui.highlight:getHighlightColorString(bookmark.color),
+    }, self.separator)
+end
+
+function ReaderBookmark:getBookmarkDetailsText(bookmark, book)
+    local bookmark_type = bookmark.type or ReaderBookmark.getBookmarkType(bookmark)
+    local bm_text_prefix = bookmark_type == "bookmark" and self.display_prefix["bookmark"] or self.display_prefix["highlight"]
+    local t = {
+        T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Chapter")..TextBoxWidget.PTF_BOLD_END, bookmark.chapter or ""),
+        "",
+        ReaderBookmark._getDialogHeader(self, bookmark, true),
+        "",
+        bm_text_prefix .. (bookmark.text_orig or bookmark.text),
+        "",
+        bookmark.note and self.display_prefix["note"] .. bookmark.note,
+    }
+    if book then
+        table.insert(t, 1,
+            T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Title")..TextBoxWidget.PTF_BOLD_END, book.doc_props.display_title))
+        table.insert(t, 2,
+            T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Author(s)")..TextBoxWidget.PTF_BOLD_END, book.authors))
     end
-    return text
+    return TextBoxWidget.PTF_HEADER .. table.concat(t, "\n")
 end
 
 function ReaderBookmark:showBookmarkDetails(item_or_index)
-    local item_table, item, item_idx, item_type
+    local item_table, item, item_idx
     local bm_menu = self.bookmark_menu and self.bookmark_menu[1]
     if bm_menu then -- called from Bookmark list, got item
         item_table = bm_menu.item_table
         item = item_or_index
         item_idx = item.idx
-        item_type = item.type
     else -- called from Reader, got index
         item_table = self.ui.annotation.annotations
         item_idx = item_or_index
         item = item_table[item_idx]
-        item_type = self.getBookmarkType(item)
     end
     local items_nb = #item_table
-    local text = self:_getDialogHeader(item) .. "\n\n"
-    local prefix = item_type == "bookmark" and self.display_prefix["bookmark"] or self.display_prefix["highlight"]
-    text = text .. prefix .. (item.text_orig or item.text)
-    if item.note then
-        text = text .. "\n\n" .. self.display_prefix["note"] .. item.note
-    end
     local not_select_mode = not (bm_menu and bm_menu.select_count) and not self.ui.highlight.select_mode
 
     local textviewer
@@ -1247,31 +1254,32 @@ function ReaderBookmark:showBookmarkDetails(item_or_index)
         end
     end
 
+    local label_prev, label_next, label_first, label_last = BD.getArrowLabels()
     local buttons_table = {
         {
             {
-                text = "▕◁",
+                text = label_first,
                 enabled = item_idx > 1,
                 callback = function()
                     _showBookmarkDetails(1)
                 end,
             },
             {
-                text = "◁",
+                text = label_prev,
                 enabled = item_idx > 1,
                 callback = function()
                     _showBookmarkDetails(item_idx - 1)
                 end,
             },
             {
-                text = "▷",
+                text = label_next,
                 enabled = item_idx < items_nb,
                 callback = function()
                     _showBookmarkDetails(item_idx + 1)
                 end,
             },
             {
-                text = "▷▏",
+                text = label_last,
                 enabled = item_idx < items_nb,
                 callback = function()
                     _showBookmarkDetails(items_nb)
@@ -1342,8 +1350,8 @@ function ReaderBookmark:showBookmarkDetails(item_or_index)
     }
 
     textviewer = TextViewer:new{
-        title = T(_("Bookmark details (%1/%2)"), item_idx, items_nb),
-        text = text,
+        title = T(_("%1 / %2"), item_idx, items_nb),
+        text = self:getBookmarkDetailsText(item),
         text_type = "bookmark",
         buttons_table = buttons_table,
         close_callback = close_callback,

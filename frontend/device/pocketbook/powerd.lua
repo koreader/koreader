@@ -104,7 +104,7 @@ function PocketBookPowerD:afterResume()
 
         -- Create a synthetic MSC_GYRO event and let the existing handler process it
         local synthetic_event = { value = gyro_value }
-        local Event = self.device.input:handleMiscGyroEv(synthetic_event)
+        local Event = self.device.input:handleGyroEv(synthetic_event)
 
         if Event then
             local UIManager = require("ui/uimanager")

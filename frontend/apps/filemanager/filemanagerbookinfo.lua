@@ -714,7 +714,7 @@ function BookInfo:editSummary(doc_settings_or_file, book_props)
                     UIManager:close(input_dialog)
                     local note = input_dialog:getInputText()
                     summary.note = note ~= "" and note or nil
-                    summary.rating = (i == 1 and summary.rating == 1) and 0 or i
+                    summary.rating = (i ~= 1 or summary.rating ~= 1) and i or nil
                     doc_settings_or_file = filemanagerutil.saveSummary(doc_settings_or_file, summary)
                     self.summary_updated = true
                     self.kvp_widget:onClose()

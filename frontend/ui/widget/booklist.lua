@@ -68,7 +68,6 @@ BookList.collates = {
     size = {
         text = _("size"),
         menu_order = 50,
-        can_collate_mixed = false,
         init_sort_func = function()
             return function(a, b)
                 return a.attr.size < b.attr.size
@@ -78,7 +77,6 @@ BookList.collates = {
     type = {
         text = _("type"),
         menu_order = 60,
-        can_collate_mixed = false,
         init_sort_func = function()
             return function(a, b)
                 if (a.suffix or b.suffix) and a.suffix ~= b.suffix then
@@ -94,7 +92,6 @@ BookList.collates = {
     percent_unopened_first = {
         text = _("percent - unopened first"),
         menu_order = 70,
-        can_collate_mixed = false,
         init_sort_func = function()
             return function(a, b)
                 if a.opened == b.opened then
@@ -119,7 +116,6 @@ BookList.collates = {
     percent_unopened_last = {
         text = _("percent - unopened last"),
         menu_order = 80,
-        can_collate_mixed = false,
         init_sort_func = function()
             return function(a, b)
                 if a.opened == b.opened then
@@ -145,7 +141,6 @@ BookList.collates = {
         -- sort 90% > 50% > 0% > on hold > unopened > 100% or finished
         text = _("percent – unopened – finished last"),
         menu_order = 90,
-        can_collate_mixed = false,
         init_sort_func = function(cache)
             local natsort
             natsort, cache = sort.natsort_cmp(cache)

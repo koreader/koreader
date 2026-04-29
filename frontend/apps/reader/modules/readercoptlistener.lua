@@ -143,7 +143,7 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
         end
     end
 
-    local page_info = additional_content
+    local page_info = ""
     if self.page_number == 1 or self.page_count == 1 then
         page_info = page_info .. page_pre
         if self.page_number == 1 then
@@ -194,7 +194,13 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
         end
     end
 
-    self.document:setPageInfoOverride(page_info)
+    if not self.page_info_override and additional_content ~= "" then
+        -- force showing additional content when other overridden items are disabled
+        self.document._document:setIntProperty("window.status.pos.page.number", 1)
+    else
+        self.document._document:setIntProperty("window.status.pos.page.number", self.page_number)
+    end
+    self.document:setPageInfoOverride(additional_content .. page_info)
 end
 
 function ReaderCoptListener:onPageUpdate(pageno)
@@ -330,7 +336,10 @@ function ReaderCoptListener:removeAdditionalHeaderContent(content_func)
     for i, v in ipairs(self.additional_header_content) do
         if v == content_func then
             table.remove(self.additional_header_content, i)
-            return true
+            if #self.additional_header_content == 0 then
+                self.document._document:setIntProperty("window.status.pos.page.number", self.page_number)
+            end
+            return
         end
     end
 end

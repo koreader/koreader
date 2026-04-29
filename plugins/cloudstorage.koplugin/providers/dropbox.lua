@@ -202,7 +202,7 @@ function DropBoxApi.downloadFile(path, token, local_path, progress_callback)
     if code ~= 200 then
         logger.warn("DropBoxApi: cannot download file:", status or code)
     end
-    return code, (headers or {}).etag
+    return code, headers and headers.etag
 end
 
 function DropBoxApi.uploadFile(path, token, file_path, etag, overwrite)
@@ -224,11 +224,10 @@ function DropBoxApi.uploadFile(path, token, file_path, etag, overwrite)
         source  = ltn12.source.file(io.open(file_path, "r")),
     })
     socketutil:reset_timeout()
-    local ok = code == 200
-    if not ok then
+    if code ~= 200 then
         logger.warn("DropBoxApi: cannot upload file:", status or code)
     end
-    return ok
+    return code
 end
 
 function DropBoxApi.deleteFile(path, token)
@@ -245,11 +244,10 @@ function DropBoxApi.deleteFile(path, token)
         source  = ltn12.source.string(data),
     })
     socketutil:reset_timeout()
-    local ok = code == 200
-    if not ok then
-        logger.warn("DropBoxApi: cannot delete file:", status or code)
+    if code == 200 then
+        return true
     end
-    return ok
+    logger.warn("DropBoxApi: cannot delete file:", status or code)
 end
 
 function DropBoxApi.createFolder(path, token, folder_name)
@@ -266,11 +264,10 @@ function DropBoxApi.createFolder(path, token, folder_name)
         source  = ltn12.source.string(data),
     })
     socketutil:reset_timeout()
-    local ok = code == 200
-    if not ok then
-        logger.warn("DropBoxApi: cannot create folder:", status or code)
+    if code == 200 then
+        return true
     end
-    return ok
+    logger.warn("DropBoxApi: cannot create folder:", status or code)
 end
 
 function DropBoxApi.fetchInfo(token, space_usage)
@@ -318,34 +315,42 @@ function DropBox.genAccessToken()
     end
 end
 
-function DropBox.run(url, run_callback, include_folders)
-    local base = DropBox.base
-    if NetworkMgr:willRerunWhenOnline(function() DropBox.run(url, run_callback, include_folders) end) then
+function DropBox.run(caller_callback)
+    if NetworkMgr:willRerunWhenOnline(function() DropBox.run(caller_callback) end) then
         return
     end
     if DropBox.genAccessToken() then
-        return run_callback(DropBoxApi.listFolder(url, base.password, include_folders))
+        return caller_callback()
     end
+end
+
+function DropBox.listFolder(url, include_folders)
+    local base = DropBox.base
+    -- list or nil
+    return DropBoxApi.listFolder(url, base.password, include_folders)
 end
 
 function DropBox.downloadFile(url, local_path, progress_callback)
     local base = DropBox.base
-    local code = DropBoxApi.downloadFile(url, base.password, local_path, progress_callback)
-    return code == 200
+    -- code, etag
+    return DropBoxApi.downloadFile(url, base.password, local_path, progress_callback)
 end
 
-function DropBox.uploadFile(url, local_path)
+function DropBox.uploadFile(url, local_path, etag, overwrite)
     local base = DropBox.base
-    return DropBoxApi.uploadFile(url, base.password, local_path)
+    -- code
+    return DropBoxApi.uploadFile(url, base.password, local_path, etag, overwrite)
 end
 
 function DropBox.deleteFile(url)
     local base = DropBox.base
+    -- ok
     return DropBoxApi.deleteFile(url, base.password)
 end
 
 function DropBox.createFolder(url, folder_name)
     local base = DropBox.base
+    -- ok
     return DropBoxApi.createFolder(url, base.password, folder_name)
 end
 
@@ -376,11 +381,11 @@ Some of the previously generated long-lived tokens are still valid.]])
     local item = server_idx and DropBox.base.servers[server_idx] or { type = DropBox.type }
     local settings_dialog
     settings_dialog = MultiInputDialog:new{
-        title = _("Dropbox cloud storage"),
+        title = _("Dropbox server settings"),
         fields = {
             {
                 text = item.name,
-                hint = _("Cloud storage displayed name"),
+                hint = _("Name"),
             },
             {
                 text = item.password,

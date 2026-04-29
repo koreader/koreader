@@ -12,7 +12,6 @@ local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
-local VerticalGroup = require("ui/widget/verticalgroup")
 local dbg = require("dbg")
 local util = require("util")
 local _ = require("gettext")
@@ -61,12 +60,15 @@ local InputText = InputContainer:extend{
     charlist = nil, -- table of individual chars from input string
     charpos = nil, -- position of the cursor, where a new char would be inserted
     top_line_num = nil, -- virtual_line_num of the text_widget (index of the displayed top line)
-    is_password_type = false, -- set to true if original text_type == "password"
     is_text_editable = true, -- whether text is utf8 reversible and editing won't mess content
     is_text_edited = false, -- whether text has been updated
     for_measurement_only = nil, -- When the widget is a one-off used to compute text height
     do_select = false, -- to start text selection
     selection_start_pos = nil, -- selection start position
+    undo_charlist = nil, -- array of chars for 'undoing'
+    undo_startpos = nil, -- position to insert 'undoing'
+    undo_charpos = nil, -- position to put the cursor after 'undoing'
+    _password_toggle = nil,
 }
 
 -- These may be (internally) overloaded as needed, depending on Device capabilities.
@@ -252,18 +254,7 @@ function InputText:holdTextBox(arg, ges)
     if Device:hasClipboard() then
         if self.do_select then -- select mode on
             if self.selection_start_pos then -- select end
-                local selection_end_pos = self.charpos - 1
-                if self.selection_start_pos > selection_end_pos then
-                    self.selection_start_pos, selection_end_pos = selection_end_pos + 1, self.selection_start_pos - 1
-                end
-                local txt = table.concat(self.charlist, "", self.selection_start_pos, selection_end_pos)
-                Device.input.setClipboardText(txt)
-                UIManager:show(Notification:new{
-                    text = _("Selection copied to clipboard."),
-                })
-                self.selection_start_pos = nil
-                self.do_select = false
-                self:initTextBox()
+                self:showSelectionDialog()
             else -- select start
                 self.selection_start_pos = self.charpos
                 UIManager:show(Notification:new{
@@ -350,12 +341,68 @@ function InputText:holdTextBox(arg, ges)
                         end,
                     },
                 },
+                {
+                    {
+                        text = _("Undo last deletion"),
+                        enabled = self.undo_charlist ~= nil,
+                        callback = function()
+                            UIManager:close(clipboard_dialog)
+                            self:undoLastDeletion()
+                        end,
+                    },
+                },
             },
         }
         UIManager:show(clipboard_dialog)
     end
     self._hold_handled = true
     return true
+end
+
+function InputText:showSelectionDialog()
+    local selection_start_pos = self.selection_start_pos
+    local selection_end_pos = self.charpos - 1
+    self.selection_start_pos = nil
+    self.do_select = false
+    self:initTextBox()
+
+    if selection_start_pos > selection_end_pos then
+        selection_start_pos, selection_end_pos = selection_end_pos + 1, selection_start_pos - 1
+    end
+    local txt = table.concat(self.charlist, "", selection_start_pos, selection_end_pos)
+    local selection_dialog
+    selection_dialog = require("ui/widget/textviewer"):new{
+        title = _("Selection"),
+        show_menu = false,
+        text = txt,
+        width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8),
+        height = math.floor(math.max(Screen:getWidth(), Screen:getHeight()) * 0.4),
+        justified = false,
+        modal = true,
+        stop_events_propagation = true,
+        buttons_table = {
+            {
+                {
+                    text = _("Delete"),
+                    callback = function()
+                        UIManager:close(selection_dialog)
+                        self:delSelection(selection_start_pos, selection_end_pos)
+                    end,
+                },
+                {
+                    text = _("Copy"),
+                    callback = function()
+                        UIManager:close(selection_dialog)
+                        Device.input.setClipboardText(txt)
+                        UIManager:show(Notification:new{
+                            text = _("Selection copied to clipboard."),
+                        })
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(selection_dialog)
 end
 
 function InputText:checkTextEditability()
@@ -390,17 +437,6 @@ function InputText:isTextEdited()
 end
 
 function InputText:init()
-    if Device:isTouchDevice() then
-        if self.text_type == "password" then
-            -- text_type changes from "password" to "text" when we toggle password
-            self.is_password_type = true
-        end
-    else
-        -- focus move does not work with textbox and show password checkbox
-        -- force show password for non-touch device
-        self.text_type = "text"
-        self.is_password_type = false
-    end
     -- Beware other cases where implicit conversion to text may be done
     -- at some point, but checkTextEditability() would say "not editable".
     if self.input_type == "number" then
@@ -413,7 +449,9 @@ function InputText:init()
         end
     end
     self.charlist = util.splitToChars(self.text)
+    self.is_password_type = self.text_type == "password"
     self:initTextBox(self.text)
+    self:initPasswordToggle()
     self:checkTextEditability()
     if self.readonly ~= true then
         self:initKeyboard()
@@ -427,8 +465,37 @@ function InputText:init()
     end
 end
 
+function InputText:initPasswordToggle()
+    if not self.is_password_type or self.show_password_toggle == false then
+        self._password_toggle = nil
+        return
+    end
+    local toggle_width = self.width
+    if not toggle_width and self.parent and self.parent.getAddedWidgetAvailableWidth then
+        toggle_width = self.parent:getAddedWidgetAvailableWidth()
+    end
+    self._password_toggle = CheckButton:new{
+        text = _("Show password"),
+        parent = self.parent,
+        width = toggle_width,
+        checked = self.text_type ~= "password",
+        callback = function()
+            self.text_type = self._password_toggle.checked and "text" or "password"
+            self:setText(self:getText(), true)
+        end,
+    }
+end
+
+function InputText:getPasswordToggleWidget()
+    return self._password_toggle
+end
+
+function InputText:getFocusableWidgets()
+    return { self, self._password_toggle }
+end
+
 -- This will be called when we add or del chars, as we need to recreate
--- the text widget to have the new text splittted into possibly different
+-- the text widget to have the new text split into possibly different
 -- lines than before
 function InputText:initTextBox(text, char_added)
     if self.text_widget then
@@ -469,28 +536,6 @@ function InputText:initTextBox(text, char_added)
                 self.charpos = 1
             end
         end
-    end
-
-    if self.is_password_type and self.show_password_toggle then
-        self._check_button = self._check_button or CheckButton:new{
-            text = _("Show password"),
-            parent = self,
-            width = self.width,
-            callback = function()
-                self.text_type = self._check_button.checked and "text" or "password"
-                self:setText(self:getText(), true)
-            end,
-        }
-        self._password_toggle = FrameContainer:new{
-            bordersize = 0,
-            padding = self.padding,
-            padding_top = 0,
-            padding_bottom = 0,
-            margin = self.margin + self.bordersize,
-            self._check_button,
-        }
-    else
-        self._password_toggle = nil
     end
 
     if not self.height then
@@ -573,16 +618,11 @@ function InputText:initTextBox(text, char_added)
         color = self.focused and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
         self.text_widget,
     }
-    self._verticalgroup = VerticalGroup:new{
-        align = "left",
-        self._frame_textwidget,
-        self._password_toggle,
-    }
     self._frame = FrameContainer:new{
         bordersize = 0,
         margin = 0,
         padding = 0,
-        self._verticalgroup,
+        self._frame_textwidget,
     }
     self[1] = self._frame
     self.dimen = self._frame:getSize()
@@ -926,18 +966,19 @@ function InputText:addChars(chars)
     if #self.charlist == 0 then -- widget text is empty or a hint text is displayed
         self.charpos = 1 -- move cursor to the first position
     end
-    local added_charlist = util.splitToChars(chars)
+    local added_charlist = type(chars) == "string" and util.splitToChars(chars) or chars
     for i = #added_charlist, 1, -1 do
         table.insert(self.charlist, self.charpos, added_charlist[i])
     end
     self.charpos = self.charpos + #added_charlist
+    self.undo_charlist = nil -- reset undo
     self.is_text_edited = true
     self:initTextBox(nil, true)
 end
 dbg:guard(InputText, "addChars",
     function(self, chars)
-        assert(type(chars) == "string",
-            "Wrong chars value type (expected string)!")
+        assert(type(chars) == "string" or type(chars) == "table",
+            "Wrong chars value type (expected string or table)!")
     end)
 
 function InputText:delChar()
@@ -945,8 +986,10 @@ function InputText:delChar()
         return
     end
     if self.charpos == 1 then return end
+    self.undo_charpos = self.charpos
     self.charpos = self.charpos - 1
-    table.remove(self.charlist, self.charpos)
+    self.undo_charlist = { table.remove(self.charlist, self.charpos) }
+    self.undo_startpos = self.charpos
     self.is_text_edited = true
     self:initTextBox()
 end
@@ -956,7 +999,9 @@ function InputText:delNextChar()
         return
     end
     if self.charpos > #self.charlist then return end
-    table.remove(self.charlist, self.charpos)
+    self.undo_charpos = self.charpos
+    self.undo_charlist = { table.remove(self.charlist, self.charpos) }
+    self.undo_startpos = self.charpos
     self.is_text_edited = true
     self:initTextBox()
 end
@@ -965,20 +1010,23 @@ function InputText:delWord(left_to_cursor)
     if self.readonly or not self:isTextEditable(true) then
         return
     end
+    self.undo_charpos = self.charpos
+    self.undo_charlist = {}
     local start_pos, end_pos = self:getStringPos(true, left_to_cursor)
     start_pos = math.min(start_pos, end_pos)
     for i = end_pos, start_pos, -1 do
-        table.remove(self.charlist, i)
+        self.undo_charlist[i - start_pos + 1] = table.remove(self.charlist, i)
     end
     if #self.charlist > 0 then
         local prev_pos = start_pos > 1 and start_pos - 1 or 1
         if not left_to_cursor and self.charlist[prev_pos]:find("[ \t]") then -- remove redundant space
-            table.remove(self.charlist, prev_pos)
+            table.insert(self.undo_charlist, 1, table.remove(self.charlist, prev_pos))
             self.charpos = prev_pos
         else
             self.charpos = start_pos
         end
     end
+    self.undo_startpos = self.charpos
     self.is_text_edited = true
     self:initTextBox()
 end
@@ -988,18 +1036,36 @@ function InputText:delToStartOfLine()
         return
     end
     if self.charpos == 1 then return end
+    self.undo_charpos = self.charpos
+    self.undo_charlist = {}
     -- self.charlist[self.charpos] is the char after the cursor
     if self.charlist[self.charpos-1] == "\n" then
         -- If at start of line, just remove the \n and join the previous line
         self.charpos = self.charpos - 1
-        table.remove(self.charlist, self.charpos)
+        self.undo_charlist[1] = table.remove(self.charlist, self.charpos)
     else
         -- If not, remove chars until first found \n (but keeping it)
         while self.charpos > 1 and self.charlist[self.charpos-1] ~= "\n" do
             self.charpos = self.charpos - 1
-            table.remove(self.charlist, self.charpos)
+            table.insert(self.undo_charlist, 1, table.remove(self.charlist, self.charpos))
         end
     end
+    self.undo_startpos = self.charpos
+    self.is_text_edited = true
+    self:initTextBox()
+end
+
+function InputText:delSelection(start_pos, end_pos)
+    if self.readonly or not self:isTextEditable(true) then
+        return
+    end
+    self.undo_charpos = self.charpos
+    self.undo_charlist = {}
+    for i = end_pos, start_pos, -1 do
+        self.undo_charlist[i - start_pos + 1] = table.remove(self.charlist, i)
+    end
+    self.charpos = start_pos
+    self.undo_startpos = start_pos
     self.is_text_edited = true
     self:initTextBox()
 end
@@ -1009,8 +1075,23 @@ function InputText:delAll()
         return
     end
     if #self.charlist == 0 then return end
+    self.undo_charpos = self.charpos
+    self.undo_charlist = self.charlist
     self.charlist = {}
     self.is_text_edited = true
+    self:initTextBox()
+end
+
+function InputText:undoLastDeletion()
+    if self.undo_charlist == nil then return end
+    if #self.charlist == 0 then
+        self.charlist = self.undo_charlist
+        self.undo_charlist = nil
+    else
+        self.charpos = self.undo_startpos
+        self:addChars(self.undo_charlist)
+    end
+    self.charpos = self.undo_charpos
     self:initTextBox()
 end
 
@@ -1091,6 +1172,7 @@ function InputText:getText()
 end
 
 function InputText:setText(text, keep_edited_state)
+    self.undo_charlist = nil -- reset undo
     -- Keep previous charpos and top_line_num
     self.charlist = util.splitToChars(text)
     self:initTextBox(text)

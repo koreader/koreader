@@ -2143,7 +2143,7 @@ function DictQuickLookup:showWikiFullOtherLangsMenu()
     local font_size = 18
     local button_dialog
     local buttons = {}
-    local lang_links = self.results[1].lang_links
+    local lang_links = self.results[1].lang_links or {}
     -- We'll show the articles in the wikipedia languages set by the user first (and in bold)
     local user_wiki_languages = {}
     for _, lang in ipairs(self.wiki_languages) do
@@ -2170,6 +2170,15 @@ function DictQuickLookup:showWikiFullOtherLangsMenu()
                 -- popup menu opened so we get to it when done to try another lang
                 self:lookupWikipedia(true, page, true, lang)
             end,
+        }}
+        table.insert(buttons, row)
+    end
+    if #lang_links == 0 then
+        local row = {{
+            text = C_("Wikipedia", "No article in any other language"),
+            font_size = font_size,
+            font_bold = false,
+            align = "left",
         }}
         table.insert(buttons, row)
     end

@@ -300,4 +300,15 @@ function Bidi._filepath_rtl(path)
     return Bidi.ltr(Bidi._path(dirpath) .. Bidi._filename_auto_ext_right(filename))
 end
 
+function Bidi.getArrowLabels()
+    local label_prev, label_next = "◁", "▷"
+    local label_first, label_last = "▕◁", "▷▏"
+    if Bidi._mirrored_ui_layout then
+        label_prev, label_next = label_next, label_prev
+        -- Keep the LTR order of |< and >|:
+        label_first, label_last = Bidi.ltr(label_last), Bidi.ltr(label_first)
+    end
+    return label_prev, label_next, label_first, label_last
+end
+
 return Bidi

@@ -60,11 +60,11 @@ function FtpApi.ftpGet(u, command, sink)
     p.command = command
     p.sink = sink
     p.type = "i"  -- binary
-    local r, e = ftp.get(p)
-    if r == nil then
-        logger.warn("Ftp get:", e)
+    local code, status = ftp.get(p)
+    if code == nil then
+        logger.warn("Ftp get:", status)
     end
-    return r, e
+    return code, status
 end
 
 function FtpApi.parseMlsdLine(line)
@@ -179,11 +179,10 @@ function FtpApi.uploadFile(address_path, username, password, file_path)
     p.path = p.path == "/" and file_name or p.path .. "/" .. file_name
     p.source = ltn12.source.file(io.open(file_path, "rb"))
     local code, status = ftp.put(p)
-    local ok = code ~= nil -- file size
-    if not ok then
+    if code == nil then
         logger.warn("Ftp upload file:", status)
     end
-    return ok
+    return code, status
 end
 
 function FtpApi.deleteFile(address_path, username, password)
@@ -194,11 +193,10 @@ function FtpApi.deleteFile(address_path, username, password)
     p.command = "dele"
     p.check = 250
     local code, status = ftp.command(p)
-    local ok = code == 1
-    if not ok then
-        logger.warn("Ftp delete file:", status)
+    if code == 1 then
+        return true
     end
-    return ok
+    logger.warn("Ftp delete file:", status)
 end
 
 function FtpApi.createFolder(address_path, username, password, folder_name)
@@ -208,22 +206,26 @@ function FtpApi.createFolder(address_path, username, password, folder_name)
     p.argument = util.urlDecode(p.path == "/" and folder_name or string.gsub(p.path, "^/", "") .. "/" .. folder_name)
     p.command = "mkd"
     local code, status = ftp.command(p)
-    local ok = code == 1
-    if not ok then
-        logger.warn("Ftp create folder:", status)
+    if code == 1 then
+        return true
     end
-    return ok
+    logger.warn("Ftp create folder:", status)
 end
 
 -- Ftp
 
-function Ftp.run(url, run_callback, include_folders)
-    local base = Ftp.base
-    if NetworkMgr:willRerunWhenConnected(function() Ftp.run(url, run_callback, include_folders) end) then
+function Ftp.run(caller_callback)
+    if NetworkMgr:willRerunWhenConnected(function() Ftp.run(caller_callback) end) then
         return
     end
+    return caller_callback()
+end
+
+function Ftp.listFolder(url, include_folders)
+    local base = Ftp.base
     local path = FtpApi.generateUrl(base.address, util.urlEncode(base.username), util.urlEncode(base.password)) .. url
-    return run_callback(FtpApi.listFolder(path, url, include_folders))
+    -- list or nil
+    return FtpApi.listFolder(path, url, include_folders)
 end
 
 function Ftp.downloadFile(url, local_path, progress_callback)
@@ -233,42 +235,48 @@ function Ftp.downloadFile(url, local_path, progress_callback)
     if progress_callback then
         handle = socketutil.chainSinkWithProgressCallback(handle, progress_callback)
     end
-    return FtpApi.ftpGet(path, "retr", handle)
+    local res, err = FtpApi.ftpGet(path, "retr", handle)
+    -- code
+    return res and 200 or tonumber(err:sub(1, 3)) -- mimic http code
 end
 
 function Ftp.uploadFile(url, local_path)
     local base = Ftp.base
     local path = FtpApi.getJoinedPath(base.address, url)
-    return FtpApi.uploadFile(path, base.username, base.password, local_path)
+    local res, err = FtpApi.uploadFile(path, base.username, base.password, local_path)
+    -- code
+    return res and 200 or tonumber(err:sub(1, 3)) -- mimic http code
 end
 
 function Ftp.deleteFile(url)
     local base = Ftp.base
     local path = FtpApi.getJoinedPath(base.address, url)
+    -- ok
     return FtpApi.deleteFile(path, base.username, base.password)
 end
 
 function Ftp.createFolder(url, folder_name)
     local base = Ftp.base
     local path = FtpApi.getJoinedPath(base.address, url)
+    -- ok
     return FtpApi.createFolder(path, base.username, base.password, folder_name)
 end
 
 function Ftp.config(server_idx, caller_callback)
     local text_info = _([[
 The FTP address must be in the following format:
-Ftp.//example.domain.com
+ftp://example.domain.com
 An IP address is also supported, for example:
-Ftp.//10.10.10.1
+ftp://10.10.10.1
 Username and password are optional.]])
     local item = server_idx and Ftp.base.servers[server_idx] or { type = Ftp.type }
     local settings_dialog
     settings_dialog = MultiInputDialog:new{
-        title = _("FTP cloud storage"),
+        title = _("FTP server settings"),
         fields = {
             {
                 text = item.name,
-                hint = _("Cloud storage displayed name"),
+                hint = _("Name"),
             },
             {
                 text = item.address,
