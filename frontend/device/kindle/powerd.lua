@@ -234,9 +234,7 @@ function KindlePowerD:onToggleHallSensor(toggle)
 end
 
 function KindlePowerD:_readFLIntensity()
-    for _, fl_intensity_file in ipairs(self.fl_intensity_files) do
-        return self:read_int_file(fl_intensity_file)
-    end
+    return self:read_int_file(self.fl_intensity_files[1])
 end
 
 function KindlePowerD:toggleSuspend()
