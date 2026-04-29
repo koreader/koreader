@@ -574,6 +574,7 @@ function CloudStorage:showFileDownloadDialog(item)
                         select_file = false,
                         path = download_dir,
                         onConfirm = function(path)
+                            self._manager.ui.folder_shortcuts:updateShortcut("cloudstorage", path)
                             self.settings:saveSetting("download_dir", path)
                             self._manager.updated = true
                             download_dir = path
