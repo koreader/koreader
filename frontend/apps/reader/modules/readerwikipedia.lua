@@ -205,6 +205,7 @@ You can choose an existing folder, or use a default folder named "Wikipedia" in 
                     local current_path = G_reader_settings:readSetting("wikipedia_save_dir")
                     local default_path = DictQuickLookup.getWikiSaveEpubDefaultDir()
                     local caller_callback = function(path)
+                        self.ui.folder_shortcuts:updateShortcut("wikipedia_save_dir", path)
                         G_reader_settings:saveSetting("wikipedia_save_dir", path)
                         if not util.pathExists(path) then
                             lfs.mkdir(path)
