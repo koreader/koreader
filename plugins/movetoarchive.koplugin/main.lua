@@ -24,6 +24,20 @@ local MoveToArchive = WidgetContainer:extend{
 function MoveToArchive:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
+    self.ui.folder_shortcuts.registerShortcuts({
+        {
+            provider = MoveToArchive.name,
+            name = _("Move to archive folder"),
+            get = function()
+                self:loadSettings()
+                return self.data.archive_dir_path
+            end,
+            set = function(path)
+                self.data.archive_dir_path = path
+                self.updated = true
+            end,
+        },
+    })
 end
 
 function MoveToArchive:loadSettings()
@@ -92,12 +106,17 @@ function MoveToArchive:getSubMenuItems()
             end,
             keep_menu_open = true,
             callback = function(touchmenu_instance)
+                local curr_path = self.data.archive_dir_path
                 local caller_callback = function(path)
-                    self.data.archive_dir_path = path .. "/"
-                    self.updated = true
-                    touchmenu_instance:updateItems()
+                    path = path .. "/" -- trailing slash on purpose
+                    if curr_path ~= path then
+                        self.ui.folder_shortcuts:updateShortcut(MoveToArchive.name, path)
+                        self.data.archive_dir_path = path
+                        self.updated = true
+                        touchmenu_instance:updateItems()
+                    end
                 end
-                filemanagerutil.showChooseDialog(_("Archive folder:"), caller_callback, self.data.archive_dir_path)
+                filemanagerutil.showChooseDialog(_("Archive folder:"), caller_callback, curr_path)
             end,
         },
     }
@@ -114,7 +133,7 @@ function MoveToArchive:onMoveToArchive(do_copy)
     local document_full_path = self.document.file
     local last_copied_from_dir, filename = util.splitFilePathName(document_full_path)
     if self.data.last_copied_from_dir ~= last_copied_from_dir then
-        self.data.last_copied_from_dir = last_copied_from_dir
+        self.data.last_copied_from_dir = last_copied_from_dir -- trailing slash on purpose
         self.updated = true
     end
     local dest_file = string.format("%s%s", archive_dir_path, filename)
