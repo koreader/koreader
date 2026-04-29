@@ -340,6 +340,7 @@ function FileManagerMenu:setUpdateItemTable()
                             local current_path = G_reader_settings:readSetting("home_dir")
                             local default_path = filemanagerutil.getDefaultDir()
                             local caller_callback = function(path)
+                                self.ui.folder_shortcuts:updateShortcut("home_dir", path)
                                 G_reader_settings:saveSetting("home_dir", path)
                                 self.ui:updateTitleBarPath()
                             end
