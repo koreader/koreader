@@ -463,6 +463,7 @@ function DocSettings.updateLocation(doc_path, new_doc_path, copy)
         end
     else -- delete
         if has_sidecar_file then
+            DocSettings.saveSettingsArcFile(doc_settings, custom_metadata_file)
             local cache_file_path = doc_settings:readSetting("cache_file_path")
             if cache_file_path then
                 os.remove(cache_file_path)
@@ -603,6 +604,47 @@ function DocSettings.findSidecarFilesInHashLocation()
     end
     util.findFiles(DOCSETTINGS_HASH_DIR, callback)
     return res
+end
+
+function DocSettings.getSettingsArcFile(md5_checksum, does_exist)
+    local folder = G_reader_settings:readSetting("document_metadata_arc_folder")
+    if folder and md5_checksum then
+        local file = folder .. "/" .. md5_checksum .. ".lua"
+        if does_exist then
+            return file and isFile(file) and file
+        end
+        return file
+    end
+end
+
+function DocSettings.saveSettingsArcFile(doc_settings, custom_metadata_file, on_closing)
+    if on_closing then
+        if G_reader_settings:hasNot("document_metadata_arc_on_closing") then
+            return
+        end
+        custom_metadata_file = DocSettings:findCustomMetadataFile(doc_settings:readSetting("doc_path"))
+    end
+    local arc_file = DocSettings.getSettingsArcFile(doc_settings:readSetting("partial_md5_checksum"))
+    if not on_closing then -- on deletion, called by DocSettings.updateLocation()
+        if G_reader_settings:hasNot("document_metadata_arc_on_deletion") then
+            if arc_file and isFile(arc_file) then
+                -- arc file has been saved previously, but the checkbox is unchecked in the deletion dialog
+                os.remove(arc_file)
+                os.remove(arc_file .. ".old")
+            end
+            return
+        end
+    end
+    doc_settings.data.metadata_arc = {
+        datetime = os.date("%Y-%m-%d %H:%M:%S"),
+        on_closing = on_closing,
+        custom_props = custom_metadata_file
+            and DocSettings.openSettingsFile(custom_metadata_file):readSetting("custom_props"),
+    }
+    local arc_settings = LuaSettings:open(arc_file)
+    arc_settings.data = doc_settings.data
+    arc_settings:flush()
+    doc_settings.data.metadata_arc = nil
 end
 
 return DocSettings

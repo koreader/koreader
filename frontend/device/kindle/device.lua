@@ -1183,6 +1183,24 @@ local KindleScribe = Kindle:extend{
     canDoSwipeAnimation = yes,
 }
 
+local KindleScribe3 = Kindle:extend{
+    model = "KindleScribe3",
+    isMTK = yes,
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    hasNaturalLight = yes,
+    -- NOTE: We *can* technically control both LEDs independently,
+    --       but the mix is device-specific, we don't have access to the LUT for the mix powerd is using,
+    --       and the widget is designed for the Kobo Aura One anyway, so, hahaha, nope.
+    hasNaturalLightMixer = yes,
+    hasLightSensor = yes,
+    hasGSensor = yes,
+    display_dpi = 300,
+    touch_dev = "/dev/input/touch",
+    canHWDither = yes,
+    canDoSwipeAnimation = yes,
+}
+
 local KindleColorSoft = Kindle:extend{
     model = "KindleColorSoft",
     isMTK = yes,
@@ -1192,6 +1210,25 @@ local KindleColorSoft = Kindle:extend{
     hasNaturalLightMixer = yes,
     hasLightSensor = yes,
     display_dpi = 300,
+    canHWDither = yes,
+    canDoSwipeAnimation = yes,
+    hasColorScreen = yes,
+}
+
+local KindleScribeColorSoft = Kindle:extend{
+    model = "KindleScribeColorSoft",
+    isMTK = yes,
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    hasNaturalLight = yes,
+    -- NOTE: We *can* technically control both LEDs independently,
+    --       but the mix is device-specific, we don't have access to the LUT for the mix powerd is using,
+    --       and the widget is designed for the Kobo Aura One anyway, so, hahaha, nope.
+    hasNaturalLightMixer = yes,
+    hasLightSensor = yes,
+    hasGSensor = yes,
+    display_dpi = 300,
+    touch_dev = "/dev/input/touch",
     canHWDither = yes,
     canDoSwipeAnimation = yes,
     hasColorScreen = yes,
@@ -1277,7 +1314,7 @@ function KindlePaperWhite:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity",
+        fl_intensity_files = { "/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity" },
         batt_capacity_file = "/sys/devices/system/yoshi_battery/yoshi_battery0/battery_capacity",
         is_charging_file = "/sys/devices/platform/aplite_charger.0/charging",
     }
@@ -1289,7 +1326,7 @@ function KindlePaperWhite2:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
+        fl_intensity_files = { "/sys/class/backlight/max77696-bl/brightness" },
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
         batt_status_file = "/sys/class/power_supply/max77696-battery/status",
@@ -1315,7 +1352,7 @@ function KindleVoyage:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
+        fl_intensity_files = { "/sys/class/backlight/max77696-bl/brightness" },
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
         hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
@@ -1371,7 +1408,7 @@ function KindlePaperWhite3:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
+        fl_intensity_files = { "/sys/class/backlight/max77696-bl/brightness" },
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
         hall_file = "/sys/devices/system/wario_hall/wario_hall0/hall_enable",
@@ -1429,7 +1466,7 @@ function KindleOasis:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
+        fl_intensity_files = { "/sys/class/backlight/max77696-bl/brightness" },
         -- NOTE: Points to the embedded battery. The one in the cover is codenamed "soda", see aux_batt_capacity_file below.
         batt_capacity_file = "/sys/devices/system/wario_battery/wario_battery0/battery_capacity",
         is_charging_file = "/sys/devices/system/wario_charger/wario_charger0/charging",
@@ -1533,7 +1570,7 @@ function KindleOasis2:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/max77796-bl/brightness",
+        fl_intensity_files = { "/sys/class/backlight/max77796-bl/brightness" },
         batt_capacity_file = "/sys/class/power_supply/max77796-battery/capacity",
         is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
         batt_status_file = "/sys/class/power_supply/max77796-charger/status",
@@ -1609,8 +1646,8 @@ function KindleOasis3:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/lm3697-bl1/brightness",
-        warmth_intensity_file = "/sys/class/backlight/lm3697-bl0/brightness",
+        fl_intensity_files = { "/sys/class/backlight/lm3697-bl1/brightness" },
+        warmth_intensity_files = { "/sys/class/backlight/lm3697-bl0/brightness" },
         batt_capacity_file = "/sys/class/power_supply/max77796-battery/capacity",
         is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
         batt_status_file = "/sys/class/power_supply/max77796-charger/status",
@@ -1685,7 +1722,7 @@ function KindlePaperWhite4:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/bl/brightness",
+        fl_intensity_files = { "/sys/class/backlight/bl/brightness" },
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
@@ -1699,7 +1736,7 @@ function KindleBasic3:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/bl/brightness",
+        fl_intensity_files = { "/sys/class/backlight/bl/brightness" },
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
@@ -1719,8 +1756,8 @@ function KindlePaperWhite5:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/fp9966-bl1/brightness",
-        warmth_intensity_file = "/sys/class/backlight/fp9966-bl0/brightness",
+        fl_intensity_files = { "/sys/class/backlight/fp9966-bl1/brightness" },
+        warmth_intensity_files = { "/sys/class/backlight/fp9966-bl0/brightness" },
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
@@ -1738,8 +1775,8 @@ function KindlePaperWhite6:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/fp9967-bl1/brightness",
-        warmth_intensity_file = "/sys/class/backlight/fp9967-bl0/brightness", --- guess based on colorsoft
+        fl_intensity_files = { "/sys/class/backlight/fp9967-bl1/brightness" },
+        warmth_intensity_files = { "/sys/class/backlight/fp9967-bl0/brightness" }, --- guess based on colorsoft
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
@@ -1756,8 +1793,8 @@ function KindleBasic4:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/fp9966-bl1/brightness",
-        warmth_intensity_file = "/sys/class/backlight/fp9966-bl0/brightness",
+        fl_intensity_files = { "/sys/class/backlight/fp9966-bl1/brightness" },
+        warmth_intensity_files = { "/sys/class/backlight/fp9966-bl0/brightness" },
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
@@ -1773,8 +1810,8 @@ function KindleBasic5:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/fp9967-bl1/brightness",
-        warmth_intensity_file = "/sys/class/backlight/fp9967-bl0/brightness", --- guess based on colorsoft
+        fl_intensity_files = { "/sys/class/backlight/fp9967-bl1/brightness" },
+        warmth_intensity_files = { "/sys/class/backlight/fp9967-bl0/brightness" }, --- guess based on colorsoft
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
@@ -1796,8 +1833,8 @@ function KindleScribe:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/fp9966-bl1/brightness",
-        warmth_intensity_file = "/sys/class/backlight/fp9966-bl0/brightness",
+        fl_intensity_files = { "/sys/class/backlight/fp9966-bl1/brightness" },
+        warmth_intensity_files = { "/sys/class/backlight/fp9966-bl0/brightness" },
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
@@ -1849,12 +1886,138 @@ function KindleScribe:init()
     self.input.wacom_protocol = true
 end
 
+function KindleScribe3:init()
+    -- temporarily wake up awesome
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -CONT awesome")
+    end
+
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_files = { "/sys/class/backlight/fp9967-bl0/brightness", "/sys/class/backlight/fp9967-bl3/brightness", },
+        warmth_intensity_files = { "/sys/class/backlight/fp9967-bl1/brightness", "/sys/class/backlight/fp9967-bl2/brightness", },
+        batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
+        is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
+        hall_file = "/sys/devices/platform/eink_hall/hall_enable",
+    }
+
+    -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
+    self.screen:_MTK_ToggleFastMode(true)
+
+    Kindle.init(self)
+
+    --- @note The same quirks as on the Oasis 2 and 3 apply ;).
+    --- @note This is an assumption carried over from the KS(2) -HD
+    local haslipc, lipc = pcall(require, "liblipclua")
+    if haslipc then
+        local lipc_handle = lipc.init("com.github.koreader.screen")
+        if lipc_handle then
+            local orientation_code = lipc_handle:get_string_property(
+                "com.lab126.winmgr", "accelerometer")
+            logger.dbg("orientation_code =", orientation_code)
+            local rotation_mode = 0
+            if orientation_code then
+                if orientation_code == "U" or orientation_code == "L" then
+                    rotation_mode = self.screen.DEVICE_ROTATED_UPRIGHT
+                elseif orientation_code == "D" or orientation_code == "R" then
+                    rotation_mode = self.screen.DEVICE_ROTATED_UPSIDE_DOWN
+                end
+            end
+            if rotation_mode > 0 then
+                self.screen.native_rotation_mode = rotation_mode
+            end
+            self.screen:setRotationMode(rotation_mode)
+            lipc_handle:close()
+        end
+    end
+    -- put awesome back to sleep
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -STOP awesome")
+    end
+
+    -- Setup accelerometer rotation input
+    self.input:registerEventAdjustHook(KindleGyroTransform)
+    self.input.handleMiscEv = function(this, ev)
+        if ev.code == C.MSC_GYRO then
+            return this:handleGyroEv(ev)
+        end
+    end
+
+    -- Setup pen input
+    self.input.wacom_protocol = true
+end
+
+function KindleScribeColorSoft:init()
+    -- temporarily wake up awesome
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -CONT awesome")
+    end
+
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_files = { "/sys/class/backlight/fp9967-bl0/brightness", "/sys/class/backlight/fp9967-bl3/brightness", },
+        warmth_intensity_files = { "/sys/class/backlight/fp9967-bl1/brightness", "/sys/class/backlight/fp9967-bl2/brightness", },
+        batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
+        is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
+        hall_file = "/sys/devices/platform/eink_hall/hall_enable",
+    }
+
+    -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
+    self.screen:_MTK_ToggleFastMode(true)
+
+    Kindle.init(self)
+
+    --- @note The same quirks as on the Oasis 2 and 3 apply ;).
+    --- @note This is an assumption carried over from the KS(2) -HD
+    local haslipc, lipc = pcall(require, "liblipclua")
+    if haslipc then
+        local lipc_handle = lipc.init("com.github.koreader.screen")
+        if lipc_handle then
+            local orientation_code = lipc_handle:get_string_property(
+                "com.lab126.winmgr", "accelerometer")
+            logger.dbg("orientation_code =", orientation_code)
+            local rotation_mode = 0
+            if orientation_code then
+                if orientation_code == "U" or orientation_code == "L" then
+                    rotation_mode = self.screen.DEVICE_ROTATED_UPRIGHT
+                elseif orientation_code == "D" or orientation_code == "R" then
+                    rotation_mode = self.screen.DEVICE_ROTATED_UPSIDE_DOWN
+                end
+            end
+            if rotation_mode > 0 then
+                self.screen.native_rotation_mode = rotation_mode
+            end
+            self.screen:setRotationMode(rotation_mode)
+            lipc_handle:close()
+        end
+    end
+    -- put awesome back to sleep
+    if os.getenv("AWESOME_STOPPED") == "yes" then
+        os.execute("killall -STOP awesome")
+    end
+
+    -- Setup accelerometer rotation input
+    self.input:registerEventAdjustHook(KindleGyroTransform)
+    self.input.handleMiscEv = function(this, ev)
+        if ev.code == C.MSC_GYRO then
+            return this:handleGyroEv(ev)
+        end
+    end
+
+    -- Setup pen input
+    self.input.wacom_protocol = true
+end
+
 function KindleColorSoft:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/fp9967-bl1/brightness",
-        warmth_intensity_file = "/sys/class/backlight/fp9967-bl0/brightness",
+        fl_intensity_files = { "/sys/class/backlight/fp9967-bl1/brightness" },
+        warmth_intensity_files = { "/sys/class/backlight/fp9967-bl0/brightness" },
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
         batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
@@ -1917,7 +2080,9 @@ KindlePaperWhite6.exit = KindleTouch.exit
 KindleBasic4.exit = KindleTouch.exit
 KindleBasic5.exit = KindleTouch.exit
 KindleScribe.exit = KindleTouch.exit
+KindleScribe3.exit = KindleTouch.exit
 KindleColorSoft.exit = KindleTouch.exit
+KindleScribeColorSoft.exit = KindleTouch.exit
 
 function Kindle3:exit()
     -- send double menu key press events to trigger screen refresh
@@ -1979,6 +2144,8 @@ local kcs_set = Set { "3H2", "3H4", "3H6", "3H7", "3H9", "3JT", "3J6", "455", "4
 local kt6_set = Set { "A89", "3L2", "3L3", "3L4", "3L5", "3L6", "3KM" }
 local pw6_set = Set { "33W", "33X", "346", "349", "3H3", "3H5", "3H8", "3HA", "3J5", "3JS" } --- some of these are probably SE :/
 local ks2_set = Set { "3V0", "3V1", "3X5", "3UV", "3X4", "3X3", "41E", "410" }
+local ks3_set = Set { "4PG", "4PE", "4PL", "4F8", "4FA", "454" } --- may be a no frontlight model in here, need to see when the model releases
+local kscs_set = Set { "4VX", "4PF", "4PH", "4F9", "4FB", "46P" }
 
 if kindle_sn_lead == "B" or kindle_sn_lead == "9" then
     local kindle_devcode = string.sub(kindle_sn, 3, 4)
@@ -2037,6 +2204,10 @@ else
         return KindlePaperWhite6
     elseif ks2_set[kindle_devcode_v2] then
         return KindleScribe -- Scribe 1 and 2 are identical.
+    elseif ks3_set[kindle_devcode_v2] then
+        return KindleScribe3
+    elseif kscs_set[kindle_devcode_v2] then
+        return KindleScribeColorSoft
     end
 end
 

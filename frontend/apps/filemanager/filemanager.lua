@@ -542,14 +542,17 @@ function FileManager:getPlusDialogButtons()
                     text = _("Delete"),
                     enabled = actions_enabled,
                     callback = function()
-                        UIManager:show(ConfirmBox:new{
-                            text = _("Delete selected files?\nIf you delete a file, it is permanently lost."),
+                        local confirmbox
+                        confirmbox = ConfirmBox:new{
+                            text = _("Delete selected files?\nIf you delete a file, it is permanently lost.") .. "\n",
                             ok_text = _("Delete"),
                             ok_callback = function()
                                 UIManager:close(self.plus_dialog)
                                 self:deleteSelectedFiles()
                             end,
-                        })
+                        }
+                        self.addMetadataArcCheckButton(confirmbox)
+                        UIManager:show(confirmbox)
                     end,
                 },
                 {
@@ -1114,11 +1117,10 @@ function FileManager:showDeleteFileDialog(filepath, post_delete_callback, pre_de
         return
     end
     local is_file = isFile(file)
-    local text = (is_file and _("Delete file permanently?") or _("Delete folder permanently?")) .. "\n\n" .. BD.filepath(file)
-    if is_file and BookList.hasBookBeenOpened(file) then
-        text = text .. "\n\n" .. _("Book settings, highlights and notes will be deleted.")
-    end
-    UIManager:show(ConfirmBox:new{
+    local text = (is_file and _("Delete file permanently?") or _("Delete folder permanently?"))
+        .. "\n\n" .. BD.filepath(file) .. "\n"
+    local confirmbox
+    confirmbox = ConfirmBox:new{
         text = text,
         ok_text = _("Delete"),
         ok_callback = function()
@@ -1128,6 +1130,24 @@ function FileManager:showDeleteFileDialog(filepath, post_delete_callback, pre_de
             if self:deleteFile(file, is_file) and post_delete_callback then
                 post_delete_callback()
             end
+        end,
+    }
+    if not is_file or BookList.hasBookBeenOpened(file) then
+        self.addMetadataArcCheckButton(confirmbox)
+    end
+    UIManager:show(confirmbox)
+end
+
+function FileManager.addMetadataArcCheckButton(confirmbox)
+    local folder = G_reader_settings:readSetting("document_metadata_arc_folder")
+    local enabled = folder ~= nil and lfs.attributes(folder, "mode") == "directory"
+    confirmbox:addWidget(CheckButton:new{
+        text = _("save book metadata to archive"),
+        enabled = enabled,
+        checked = enabled and G_reader_settings:isTrue("document_metadata_arc_on_deletion"),
+        parent = confirmbox,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("document_metadata_arc_on_deletion")
         end,
     })
 end

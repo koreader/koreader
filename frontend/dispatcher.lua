@@ -62,6 +62,7 @@ local settingsList = {
     favorites = {category="none", event="ShowColl", title=_("Favorites"), general=true},
     collections = {category="none", event="ShowCollList", title=_("Collections"), general=true},
     collections_search = {category="none", event="ShowCollectionsSearchDialog", title=_("Collections search"), general=true},
+    book_metadata_archive = {category="none", event="ShowBookMetadataArchive", title=_("Book metadata archive"), general=true},
     bookmark_browser = {category="none", event="ShowBookmarkBrowser", title=_("Bookmark browser"), general=true, separator=true},
     ----
     dictionary_lookup = {category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), general=true},
@@ -319,6 +320,7 @@ local dispatcher_menu_order = {
     "favorites",
     "collections",
     "collections_search",
+    "book_metadata_archive",
     "bookmark_browser",
     ----
     "dictionary_lookup",

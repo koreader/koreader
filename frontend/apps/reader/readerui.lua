@@ -7,6 +7,7 @@ It works using data gathered from a document interface.
 local Archiver = require("ffi/archiver")
 local BD = require("ui/bidi")
 local BookList = require("ui/widget/booklist")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DeviceListener = require("device/devicelistener")
 local DocCache = require("document/doccache")
@@ -125,7 +126,21 @@ function ReaderUI:init()
         self.dialog = self
     end
 
-    self.doc_settings = DocSettings:open(self.document.file)
+    local file = self.document.file
+    self.doc_settings = DocSettings:open(file)
+    if self.arc_settings_data then -- new book with archived metadata to be applied
+        local custom_props = self.arc_settings_data.metadata_arc.custom_props
+        if custom_props then
+            local custom_doc_settings = DocSettings.openSettingsFile()
+            custom_doc_settings.data.custom_props = custom_props
+            custom_doc_settings.data.doc_props = self.arc_settings_data.doc_props
+            custom_doc_settings:flushCustomMetadata(file)
+        end
+        self.arc_settings_data.metadata_arc = nil
+        self.arc_settings_data.doc_path = file
+        self.doc_settings.data = self.arc_settings_data
+        self.arc_settings_data = nil
+    end
     self.document.is_new = self.doc_settings:readSetting("doc_props") == nil
     -- Handle local settings migration
     SettingsMigration:migrateSettings(self.doc_settings)
@@ -469,13 +484,14 @@ function ReaderUI:init()
     local props = self.document:getProps()
     self.doc_settings:saveSetting("doc_props", props)
     -- And have an extended and customized copy in memory for quick access.
-    self.doc_props = FileManagerBookInfo.extendProps(props, self.document.file)
+    self.doc_props = FileManagerBookInfo.extendProps(props, file)
 
     local md5 = self.doc_settings:readSetting("partial_md5_checksum")
     if md5 == nil then
-        md5 = util.partialMD5(self.document.file)
+        md5 = self.md5_checksum or util.partialMD5(file)
         self.doc_settings:saveSetting("partial_md5_checksum", md5)
     end
+    self.md5_checksum = nil
 
     local summary = self.doc_settings:readSetting("summary", {})
     if BookList.getBookStatusString(summary.status) == nil then
@@ -484,7 +500,7 @@ function ReaderUI:init()
     end
 
     if summary.status ~= "complete" or not G_reader_settings:isTrue("history_freeze_finished_books") then
-        require("readhistory"):addItem(self.document.file) -- (will update "lastfile")
+        require("readhistory"):addItem(file) -- (will update "lastfile")
     end
 
     -- After initialisation notify that document is loaded and rendered
@@ -503,7 +519,7 @@ function ReaderUI:init()
         self.after_open_callback = nil
     end
 
-    BookList.setBookInfoCache(self.document.file, self.doc_settings)
+    BookList.setBookInfoCache(file, self.doc_settings)
 
     Device:setIgnoreInput(false) -- Allow processing of events (on Android).
     Input:inhibitInputUntil(0.2)
@@ -609,10 +625,38 @@ function ReaderUI:showReader(file, provider, seamless, is_provider_forced, after
         provider = self:extendProvider(file, provider, is_provider_forced)
     end
     if provider and provider.provider then
-        self.after_open_callback = after_open_callback
-        -- We can now signal the existing ReaderUI/FileManager instances that it's time to go bye-bye...
-        UIManager:broadcastEvent(Event:new("ShowingReader"))
-        self:showReaderCoroutine(file, provider, seamless)
+        local function do_show(settings_file)
+            if settings_file then
+                os.remove(settings_file)
+                os.remove(settings_file .. ".old")
+            end
+            self.after_open_callback = after_open_callback
+            -- We can now signal the existing ReaderUI/FileManager instances that it's time to go bye-bye...
+            UIManager:broadcastEvent(Event:new("ShowingReader"))
+            self:showReaderCoroutine(file, provider, seamless)
+        end
+        if BookList.hasBookBeenOpened(file) then
+            do_show()
+        else -- new book
+            self.md5_checksum = util.partialMD5(file)
+            local arc_settings_file = DocSettings.getSettingsArcFile(self.md5_checksum, true) -- check if exists
+            if arc_settings_file then
+                UIManager:show(ConfirmBox:new{
+                    text = _("The book has been read on this device earlier.\nDo you want to use book metadata from the archive?"),
+                    ok_text = _("Use"),
+                    ok_callback = function()
+                        self.arc_settings_data = DocSettings.openSettingsFile(arc_settings_file).data
+                        do_show(arc_settings_file)
+                    end,
+                    cancel_text = _("Don't use"),
+                    cancel_callback = function()
+                        do_show(arc_settings_file)
+                    end,
+                })
+            else -- no arc settings file
+                do_show()
+            end
+        end
     else
         UIManager:show(InfoMessage:new{
             text = T(_("File '%1' is not supported."), BD.filepath(filemanagerutil.abbreviate(file)))
@@ -791,6 +835,7 @@ end
 
 function ReaderUI:saveSettings()
     self:handleEvent(Event:new("SaveSettings"))
+    DocSettings.saveSettingsArcFile(self.doc_settings, nil, true)
     self.doc_settings:flush()
     G_reader_settings:flush()
 end
