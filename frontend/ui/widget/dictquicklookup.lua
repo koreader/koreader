@@ -156,6 +156,7 @@ local C_ = _.pgettext
 local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
+local ffiUtil  = require("ffi/util")
 local time = require("ui/time")
 
 --[[
@@ -938,6 +939,98 @@ function DictQuickLookup:_getButtonPool()
     return pool
 end
 
+-- Checks whether a given id is already present inside a layout table.
+function DictQuickLookup.layoutContainsButtonId(layout, button_id)
+    if not layout then return false end
+    for r = 1, #layout do
+        local r_buttons = layout[r]
+        for b = 1, #r_buttons do
+            if r_buttons[b] == button_id then return true end
+        end
+    end
+    return false
+end
+
+function DictQuickLookup:populatePluginButtons(pool, default_layout, extra_layout)
+    local dict_buttons = self.ui.dictionary._dict_buttons
+    if not dict_buttons then return end
+
+    local conditional_rows = {}
+    local conditional_row_order = {}
+
+    local function add_conditional_button(row_key, button_id)
+        local row = conditional_rows[row_key]
+        if not row then
+            row = {}
+            conditional_rows[row_key] = row
+            table.insert(conditional_row_order, row_key)
+        end
+        for _, existing in ipairs(row) do
+            if existing == button_id then
+                return
+            end
+        end
+        table.insert(row, button_id)
+    end
+
+    for id, spec in ffiUtil.orderedPairs(dict_buttons) do
+        local show = true
+        if spec.show_func then
+            show = spec.show_func(self)
+        end
+        if show then
+            local button = {
+                id = spec.id,
+                text = spec.text,
+                text_func = spec.text_func,
+                font_bold = spec.font_bold,
+                auto_row_style = spec.auto_row_style,
+                width = spec.width,
+                vsync = spec.vsync,
+                pairs_with = spec.pairs_with,
+                can_shrink = spec.can_shrink,
+                require_link = spec.require_link,
+                callback = spec.callback and function()
+                    return spec.callback(self)
+                end,
+                hold_callback = spec.hold_callback and function()
+                    return spec.hold_callback(self)
+                end,
+            }
+            if spec.enable_func then
+                button.enabled = spec.enable_func(self)
+            elseif spec.enabled ~= nil then
+                button.enabled = spec.enabled
+            end
+
+            pool[spec.id] = button
+
+            if spec.conditional then
+                local row_key = spec.row_group
+                if not row_key and spec.pairs_with then
+                    local left, right = spec.id, spec.pairs_with
+                    if left > right then
+                        left, right = right, left
+                    end
+                    row_key = "pair:" .. left .. "|" .. right
+                end
+                add_conditional_button(row_key or spec.id, spec.id)
+            elseif default_layout and not DictQuickLookup.layoutContainsButtonId(default_layout, spec.id) then
+                local i = spec.insert_first and 1 or (#default_layout + 1)
+                table.insert(default_layout, i, { spec.id })
+            end
+            logger.dbg("DictQuickLookup", id..": populated dict quick button")
+        end
+    end
+
+    for _, row_key in ipairs(conditional_row_order) do
+        local row = conditional_rows[row_key]
+        if #row > 0 then
+            table.insert(extra_layout, row)
+        end
+    end
+end
+
 function DictQuickLookup:buildButtonLayout()
     local pool = self:_getButtonPool()
     local buttons = {}
@@ -956,7 +1049,7 @@ function DictQuickLookup:buildButtonLayout()
         end
     end
     if self.ui and self.ui.dictionary then
-        self.ui.dictionary:populateDictQuickButtons(self, pool, default_layout, extra_layout)
+        self:populatePluginButtons(pool, default_layout, extra_layout)
     end
 
     if self.is_wiki_fullpage then
