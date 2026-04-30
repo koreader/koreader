@@ -643,9 +643,9 @@ function ReaderUI:showReader(file, provider, seamless, is_provider_forced, after
             if arc_settings_file then
                 UIManager:show(ConfirmBox:new{
                     text =
-_[[The book has been read on this device earlier.
-Do you want to restore book metadata from the archive?
-Discarded metadata will be deleted from the archive.]],
+_[[This book was previously opened on this device.
+Would you like to restore its metadata from the archive?
+Discarded metadata will be removed from the archive.]],
                     ok_text = _("Restore"),
                     ok_callback = function()
                         self.arc_settings_data = DocSettings.openSettingsFile(arc_settings_file).data
