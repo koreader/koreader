@@ -109,6 +109,14 @@ function ReaderDictionary:init()
     self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})
     self.disable_fuzzy_search_fm = G_reader_settings:isTrue("disable_fuzzy_search")
 
+    self.default_layout = {
+        { "prev_dict", "highlight", "next_dict" },
+        { "wikipedia",    "search",     "close" },
+    }
+    if Device:hasDPad() and Device:hasFewKeys() then
+        table.insert(self.default_layout, 1, {"text_selection"})
+    end
+
     if self.ui then
         self.ui.menu:registerToMainMenu(self)
     end
@@ -197,24 +205,6 @@ function ReaderDictionary:addToDictButtons(spec)
         return
     end
     self._dict_buttons[spec.id] = spec
-end
-
-function ReaderDictionary:_registerDictButtonsToCustomMenu(available_options, default_layout)
-    local seen = {}
-    for _, opt in ipairs(available_options) do
-        seen[opt.id] = true
-    end
-    for id, spec in ffiUtil.orderedPairs(self._dict_buttons) do
-        if not spec.conditional and spec.menu_text and not seen[spec.id] then
-            table.insert(available_options, { text = spec.menu_text, id = spec.id })
-            seen[spec.id] = true
-        end
-        if not spec.conditional and default_layout and not _layoutContainsButtonId(default_layout, spec.id) then
-            local i = spec.insert_first and 1 or (#default_layout + 1)
-            table.insert(default_layout, i, { spec.id })
-        end
-        logger.dbg("ReaderDictionary", id..": registered dict button spec")
-    end
 end
 
 function ReaderDictionary:populateDictQuickButtons(dict_popup, pool, default_layout, extra_layout)
@@ -599,6 +589,24 @@ function ReaderDictionary:addToMainMenu(menu_items)
     end
 end
 
+function ReaderDictionary:_registerDictButtonsToCustomMenu(available_options, default_layout)
+    local seen = {}
+    for _, opt in ipairs(available_options) do
+        seen[opt.id] = true
+    end
+    for id, spec in ffiUtil.orderedPairs(self._dict_buttons) do
+        if not spec.conditional and spec.menu_text and not seen[spec.id] then
+            table.insert(available_options, { text = spec.menu_text, id = spec.id })
+            seen[spec.id] = true
+        end
+        if not spec.conditional and default_layout and not _layoutContainsButtonId(default_layout, spec.id) then
+            local i = spec.insert_first and 1 or (#default_layout + 1)
+            table.insert(default_layout, i, { spec.id })
+        end
+        logger.dbg("ReaderDictionary", id..": registered dict button spec")
+    end
+end
+
 function ReaderDictionary:_genCustomizeButtonsMenu()
     local customize_buttons_menu = {}
     local available_options = {
@@ -610,34 +618,27 @@ function ReaderDictionary:_genCustomizeButtonsMenu()
         { text = _("Close"),           id = "close" },
         { text = _("Translate"),       id = "translate" },
     }
-    local default_layout = {
-        { "prev_dict", "highlight", "next_dict" },
-        { "wikipedia",    "search",     "close" },
-    }
     if Device:hasDPad() then
         table.insert(available_options, { text = _("Text selection"), id = "text_selection" })
-        if  Device:hasFewKeys() then
-            table.insert(default_layout, 1, {"text_selection"})
-        end
     end
-    self:_registerDictButtonsToCustomMenu(available_options, default_layout)
+    self:_registerDictButtonsToCustomMenu(available_options, self.default_layout)
 
     -- This function return the config from settings.
     local function getDictConfig()
         local config = util.tableDeepCopy(G_reader_settings:readSetting("dict_button_config"))
         if not config then
             config = {
-                layout = default_layout,
+                layout = self.default_layout,
                 order = {},
                 row_count = {}
             }
-            for i = 1, #default_layout do
-                config.row_count[i] = #default_layout[i]
+            for i = 1, #self.default_layout do
+                config.row_count[i] = #self.default_layout[i]
             end
         end
 
         if #config.order == 0 then
-            for _, row in ipairs(default_layout) do
+            for _, row in ipairs(self.default_layout) do
                 for _, id in ipairs(row) do
                     table.insert(config.order, id)
                 end
@@ -718,7 +719,7 @@ function ReaderDictionary:_genCustomizeButtonsMenu()
                         value = config.row_count[i] or 3,
                         value_min = 1,
                         value_max = 4,
-                        default_value = default_layout[i] and #default_layout[i] or 3,
+                        default_value = self.default_layout[i] and #self.default_layout[i] or 3,
                         title_text = T(_("Max buttons in row %1"), i),
                         callback = function(spin)
                             config.row_count[i] = spin.value

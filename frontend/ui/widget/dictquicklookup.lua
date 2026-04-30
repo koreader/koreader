@@ -40,14 +40,13 @@ Actions:
 
 Layout and style:
 - `conditional` (bool): runtime-only transient button/row if true.
-- `insert_first` (bool): non-conditional auto insertion at top of default layout.
 - `row_group` (string): group conditional buttons into same transient row.
+- `require_link` (bool): transient row insertion only when selected link exists.
 - `pairs_with` (string|string[]): pairing hint used in row grouping.
+- `insert_first` (bool): non-conditional auto insertion at top of default layout.
 - `can_shrink` (bool): allow width shrink in 4-button rows when paired.
 - `auto_row_style` (table): auto width rules; supports `width_min_row_size` and `width_ratio`.
-- `font_bold` (bool): bold label.
 - `vsync` (bool): propagated to button entry.
-- `require_link` (bool): transient row insertion only when selected link exists.
 
 ### Persistent vs transient behavior
 
@@ -944,15 +943,9 @@ function DictQuickLookup:buildButtonLayout()
     local buttons = {}
     local default_layout = nil
     if G_reader_settings:hasNot("dict_button_config") or self.is_wiki then
-        default_layout = {
-            { "prev_dict", "highlight", "next_dict" },
-            { "wikipedia",    "search",     "close" },
-        }
+        default_layout = self.ui.dictionary.default_layout
     end
     local extra_layout = {} -- transient buttons.
-    if default_layout and self.allow_key_text_selection and Device:hasFewKeys() then
-        table.insert(default_layout, 1, { "text_selection" })
-    end
     if not self.is_wiki and self.selected_link ~= nil then
         -- If selecting a word, which is part of a link (should be rare),
         -- append a new row with a single button to follow this link.
