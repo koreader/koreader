@@ -50,7 +50,6 @@ local BookInfo = WidgetContainer:extend{
         description  = _("Description:"),
         pages        = _("Pages:"),
     },
-    rating_max = 5,
 }
 
 function BookInfo:init()
@@ -254,11 +253,10 @@ Source (print edition):
 
     -- Summary section
     local summary = has_sidecar and doc_settings_or_file:readSetting("summary") or {}
-    local rating = summary.rating or 0
     local summary_hold_callback = is_file and function()
         self:editSummary(doc_settings_or_file, book_props)
     end
-    table.insert(kv_pairs, { _("Rating:"), ("★"):rep(rating) .. ("☆"):rep(self.rating_max - rating),
+    table.insert(kv_pairs, { _("Rating:"), BookList.getBookRatingString(summary.rating or 0),
         hold_callback = summary_hold_callback })
     table.insert(kv_pairs, { _("Review:"), summary.note or n_a,
         hold_callback = summary_hold_callback, separator = true })
@@ -716,8 +714,9 @@ function BookInfo:editSummary(doc_settings_or_file, book_props)
     local rating = summary.rating or 0
     local input_dialog
     local rating_buttons_row = {}
-    for i = -1, self.rating_max + 2 do -- 2 empty buttons on each side
-        if i < 1 or i > self.rating_max then
+    local rating_max = 5
+    for i = -1, rating_max + 2 do -- 2 empty buttons on each side
+        if i < 1 or i > rating_max then
             table.insert(rating_buttons_row, {
                 text = "",
                 no_vertical_sep = true,
@@ -733,6 +732,7 @@ function BookInfo:editSummary(doc_settings_or_file, book_props)
                     summary.note = note ~= "" and note or nil
                     summary.rating = (i ~= 1 or summary.rating ~= 1) and i or nil
                     doc_settings_or_file = filemanagerutil.saveSummary(doc_settings_or_file, summary)
+                    BookList.setBookInfoCacheProperty(doc_settings_or_file:readSetting("doc_path"), "rating", summary.rating)
                     self.summary_updated = true
                     self.kvp_widget:onClose()
                     self:show(doc_settings_or_file, book_props)
