@@ -219,6 +219,7 @@ function BookStatusWidget:setStar(num)
     if num then
         num = (num == 1 and self.summary.rating == 1) and 0 or num
         self.summary.rating = num ~= 0 and num or nil
+        BookList.setBookInfoCacheProperty(self.ui.document.file, "rating", num)
         self.updated = true
 
         for i = 1, num do
