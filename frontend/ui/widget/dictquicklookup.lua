@@ -63,7 +63,6 @@ Conditional or transient (`conditional == true`):
 ### Conditional row grouping rules
 
 - If `row_group` is shared, buttons join one transient row.
-- Else, if `pairs_with` is present, an implicit deterministic pair row key is derived.
 - Else, each conditional button becomes its own transient row.
 
 ### Runtime layout pipeline
