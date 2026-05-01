@@ -1981,10 +1981,8 @@ function VocabBuilder:registerDictButtons()
         text = _("Add to vocabulary builder"),
         insert_first = true,
         font_bold = false,
-        auto_row_style = {
-            width_min_row_size = 2,
-            width_ratio = 0.7,
-        },
+        auto_row_style_width_min_row_size = 2,
+        auto_row_style_width_ratio = 0.7,
         show_func = function(dict_popup)
             if settings.enabled then
                 -- words are added automatically, no need to add the button.

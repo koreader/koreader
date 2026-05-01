@@ -45,7 +45,8 @@ Layout and style:
 - `pairs_with` (string|string[]): pairing hint used in row grouping.
 - `insert_first` (bool): non-conditional auto insertion at top of default layout.
 - `can_shrink` (bool): allow width shrink in 4-button rows when paired.
-- `auto_row_style` (table): auto width rules; supports `width_min_row_size` and `width_ratio`.
+- `auto_row_style_width_min_row_size` (int): minimum row size for auto styling to apply.
+- `auto_row_style_width_ratio` (float): width ratio to apply when auto styling conditions are met.
 - `vsync` (bool): propagated to button entry.
 
 ### Persistent vs transient behavior
@@ -63,6 +64,7 @@ Conditional or transient (`conditional == true`):
 ### Conditional row grouping rules
 
 - If `row_group` is shared, buttons join one transient row.
+- Else, if `pairs_with` is present, an implicit deterministic pair row key is derived.
 - Else, each conditional button becomes its own transient row.
 
 ### Runtime layout pipeline
@@ -969,7 +971,8 @@ function DictQuickLookup:populatePluginButtons(pool, default_layout, extra_layou
                 text = spec.text,
                 text_func = spec.text_func,
                 font_bold = spec.font_bold,
-                auto_row_style = spec.auto_row_style,
+                auto_row_style_width_min_row_size = spec.auto_row_style_width_min_row_size,
+                auto_row_style_width_ratio = spec.auto_row_style_width_ratio,
                 width = spec.width,
                 vsync = spec.vsync,
                 pairs_with = spec.pairs_with,
@@ -1053,11 +1056,11 @@ function DictQuickLookup:buildButtonLayout()
             local row_size = #row
             if row_size == 0 then return end
             for _, btn in ipairs(row) do
-                local auto = btn.auto_row_style
-                if auto then
-                    local width_min_row_size = auto.width_min_row_size or 1
-                    if auto.width_ratio and row_size >= width_min_row_size and not btn.width then
-                        btn.width = math.floor(buttons_width * auto.width_ratio)
+                local width_min = btn.auto_row_style_width_min_row_size
+                local width_ratio = btn.auto_row_style_width_ratio
+                if width_min and width_ratio then
+                    if row_size >= width_min and not btn.width then
+                        btn.width = math.floor(buttons_width * width_ratio)
                     end
                 end
             end
