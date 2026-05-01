@@ -993,13 +993,6 @@ function DictQuickLookup:populatePluginButtons(pool, default_layout, extra_layou
 
             if spec.conditional then
                 local row_key = spec.row_group
-                if not row_key and spec.pairs_with then
-                    local left, right = spec.id, spec.pairs_with
-                    if left > right then
-                        left, right = right, left
-                    end
-                    row_key = "pair:" .. left .. "|" .. right
-                end
                 add_conditional_button(row_key or spec.id, spec.id)
             elseif default_layout and not DictQuickLookup.layoutContainsButtonId(default_layout, spec.id) then
                 local i = spec.insert_first and 1 or (#default_layout + 1)
@@ -1094,6 +1087,8 @@ function DictQuickLookup:buildButtonLayout()
 
         -- Make shrinkable paired buttons smaller when they share a 4-button row.
         if has_shrinkable_buttons then
+            -- 15% * 2 = 30%, thus we allow 70% for the remaing two buttons
+            -- so 35% each, which is roughly the size of buttons in a 3-button row.
             local fifteen_percent = math.floor(buttons_width * 0.15)
 
             local function btn_has_pair(btn, row_button_ids)

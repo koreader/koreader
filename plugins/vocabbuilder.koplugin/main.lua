@@ -2046,7 +2046,6 @@ function VocabBuilder:registerDictButtons()
         text = _("Forgot"),
         conditional = true,
         row_group = "vocab_review",
-        pairs_with = "got_it",
         show_func = function(dict_popup)
             local item = getCurrentVocabItem(dict_popup)
             return item ~= nil and item.due_time <= os.time()
@@ -2063,7 +2062,6 @@ function VocabBuilder:registerDictButtons()
         text = _("Got it"),
         conditional = true,
         row_group = "vocab_review",
-        pairs_with = "forgot",
         show_func = function(dict_popup)
             local item = getCurrentVocabItem(dict_popup)
             return item ~= nil and item.due_time <= os.time()
