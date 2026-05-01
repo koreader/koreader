@@ -1975,8 +1975,6 @@ end
 
 function VocabBuilder:registerDictButtons()
     if not (self.ui and self.ui.dictionary) then return end
-    -- use weak table to track the state of add/remove, simple bool will fail here.
-    local action_state_by_popup = setmetatable({}, { __mode = "k" })
     self.ui.dictionary:addToDictButtons({
         id = "vocabulary",
         menu_text = _("Vocabulary builder"),
@@ -2003,13 +2001,13 @@ function VocabBuilder:registerDictButtons()
             local button = dict_popup.button_table.button_by_id["vocabulary"]
             if not button then return end
 
-            local is_adding = action_state_by_popup[dict_popup]
+            local is_adding = dict_popup._vocabbuilder_action_state
             if is_adding == nil then
-                is_adding = DB:hasWord(dict_popup.lookupword) == nil
+                is_adding = true
             end
 
             if is_adding then
-                action_state_by_popup[dict_popup] = false
+                dict_popup._vocabbuilder_action_state = false
                 local book_title = (dict_popup.ui.doc_props and dict_popup.ui.doc_props.display_title) or _("Dictionary lookup")
                 dict_popup.ui:handleEvent(Event:new("WordLookedUp", dict_popup.lookupword, book_title, true)) -- is_manual: true
                 button:setText(_("Remove from vocabulary builder"), button.width)
@@ -2021,7 +2019,7 @@ function VocabBuilder:registerDictButtons()
                     text = T(_("Remove word \"%1\" from vocabulary builder?"), dict_popup.lookupword),
                     ok_text = _("Remove"),
                     ok_callback = function()
-                        action_state_by_popup[dict_popup] = true
+                        dict_popup._vocabbuilder_action_state = true
                         DB:remove({word = dict_popup.lookupword})
                         button:setText(_("Add to vocabulary builder"), button.width)
                         UIManager:setDirty(dict_popup, function()

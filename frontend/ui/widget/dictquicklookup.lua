@@ -83,19 +83,6 @@ This gives deterministic order for:
 - conditional row key discovery,
 - and final row composition.
 
-### State management across multiple popups
-
-Do not use one shared boolean for mutable button state across callbacks.
-The same registered callback may serve multiple popup instances.
-
-Use weak-key per-popup state:
-
-```lua
-local state_by_popup = setmetatable({}, { __mode = "k" })
-```
-
-This keeps state isolated per popup and allows garbage collection when popups close.
-
 @usage
 function MyPlugin:registerDictButtons()
     if self.ui and self.ui.dictionary then
