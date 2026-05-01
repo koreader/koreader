@@ -86,20 +86,19 @@ This gives deterministic order for:
 @usage
 function MyPlugin:registerDictButtons()
     if self.ui and self.ui.dictionary then
-        local state_by_popup = setmetatable({}, { __mode = "k" })
         self.ui.dictionary:addToDictButtons({
             id = "my_custom_action",
             menu_text = _("My custom action"),
             text_func = function(dict_popup)
-                return state_by_popup[dict_popup] and _("Disable action") or _("Enable action")
+                return dict_popup._my_custom_action_state and _("Disable action") or _("Enable action")
             end,
             insert_first = true,
             show_func = function(dict_popup)
                 return true -- or some condition based on dict_popup
             end,
             callback = function(dict_popup)
-                local current = state_by_popup[dict_popup] == true
-                state_by_popup[dict_popup] = not current
+                local current = dict_popup._my_custom_action_state == true
+                dict_popup._my_custom_action_state = not current
             end,
         })
     end
