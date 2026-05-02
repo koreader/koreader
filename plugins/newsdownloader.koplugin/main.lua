@@ -60,18 +60,18 @@ local function parseMaxAge(value)
         return nil, nil
     end
     if type(value) ~= "string" then
-        return nil, _("max_age must be a string")
+        return nil, _("Maximum age must be a string")
     end
     local n, u = value:match("^(%d+)([smhdwMy])$")
     if not n then
-        return nil, _("Invalid max_age format. Use e.g. 7d, 12h, 30m, 1M.")
+        return nil, _("Invalid maximum age format. Use e.g. 7d, 12h, 30m, 1M.")
     end
     return tonumber(n) * DURATION_UNITS[u], nil
 end
 
 -- Returns parsed unix timestamp (number) or nil if no parseable date field.
 local function getFeedItemTimestamp(feed)
-    local raw = feed.pubDate or feed.updated or feed.published
+    local raw = feed.updated or feed.pubDate or feed.published
     if not raw then return nil end
     local ts = dateparser.parse(raw)
     return type(ts) == "number" and ts or nil
@@ -638,7 +638,7 @@ function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, un
         if not ok then
             if type(error) == "string"
                     and error:find("__max_age_no_date__", 1, true) then
-                error_message = _("(Reason: max_age is set but feed has no <pubDate>/<updated>/<published>. Remove max_age from this feed in the config.)")
+                error_message = _("(Reason: Maximum age is set but the feed provides no date field (<updated>/<pubDate>/<published>). Remove maximum age from this feed in the config.)")
             elseif type(error) == "string"
                     and error:find("__max_age_invalid__:", 1, true) then
                 local msg = error:match("__max_age_invalid__:(.*)") or ""
@@ -806,27 +806,11 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit,
     end
 end
 
-local function parseDate(dateTime)
-    -- Uses lua-feedparser https://github.com/slact/lua-feedparser
-    -- feedparser is available under the (new) BSD license.
-    -- see: koreader/plugins/newsdownloader.koplugin/lib/LICENCE_lua-feedparser
-    logger.dbg("NewsDownloader: Parsing date:", dateTime)
-    local date = dateparser.parse(dateTime)
-    if type(date) == "number" then
-        return os.date("%y-%m-%d_%H-%M_", date)
-    end
-    return dateTime
-end
-
 local function getTitleWithDate(feed)
     local title = util.getSafeFilename(NewsDownloader.getFeedTitle(feed.title))
-    -- Field precedence (pubDate > updated > published) matches getFeedItemTimestamp.
-    -- Note: this is a deliberate change from the previous order (updated > pubDate >
-    -- published) so that both helpers agree on which date the item "has". For
-    -- well-formed feeds only one of these is set, so the visible filename is unchanged.
-    local raw = feed.pubDate or feed.updated or feed.published
-    if raw then
-        title = parseDate(raw) .. title
+    local ts = getFeedItemTimestamp(feed)
+    if ts then
+        title = os.date("%y-%m-%d_%H-%M_", ts) .. title
     end
     return title
 end
@@ -1072,8 +1056,8 @@ function NewsDownloader:editFeedAttribute(id, key, value)
             description = _("Set to 0 for no limit to how many items are downloaded")
             input_type = "number"
         elseif key == FeedView.MAX_AGE then
-            title = _("Edit max age")
-            description = _("Skip items older than this. Format: <number><unit>. " ..
+            title = _("Edit maximum age")
+            description = _("Download articles no older than this duration. Format: <number><unit>. " ..
                             "Units: s, m (minute), h, d, w, M (month=30d), y (year=365d). " ..
                             "Examples: 30m, 12h, 7d, 1M. Leave empty to disable.")
             input_type = "string"

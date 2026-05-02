@@ -354,10 +354,10 @@ describe("NewsDownloader module", function()
             assert.is_nil(getFeedItemTimestamp({ pubDate = "not a date" }))
         end)
 
-        it("prefers pubDate over updated and published", function()
+        it("prefers updated over pubDate and published", function()
             local ts = getFeedItemTimestamp({
-                pubDate = "Mon, 01 Jan 2024 00:00:00 GMT",
-                updated = "garbage",
+                updated = "2024-01-01T00:00:00Z",
+                pubDate = "garbage",
                 published = "garbage",
             })
             assert.is_number(ts)

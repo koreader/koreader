@@ -101,7 +101,7 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
             end
         },
         {
-            _("Max age"),
+            _("Maximum age"),
             feed.max_age or "",
             callback = function()
                 edit_feed_callback(
