@@ -85,9 +85,8 @@ function FileManagerShortcuts:refreshFileManager()
     return path_refreshed
 end
 
-function FileManagerShortcuts.registerShortcuts(shortcuts) -- for plugins
-    for _, shortcut in ipairs(shortcuts) do
-        if FileManagerShortcuts.provider_props[shortcut.provider] then return end
+function FileManagerShortcuts.registerShortcut(shortcut) -- for plugins
+    if not FileManagerShortcuts.provider_props[shortcut.provider] then
         shortcut.is_plugin = true
         table.insert(FileManagerShortcuts.providers, shortcut.provider)
         FileManagerShortcuts.provider_props[shortcut.provider] = shortcut
