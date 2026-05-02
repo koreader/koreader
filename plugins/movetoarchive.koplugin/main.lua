@@ -24,19 +24,17 @@ local MoveToArchive = WidgetContainer:extend{
 function MoveToArchive:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
-    self.ui.folder_shortcuts.registerShortcuts({
-        {
-            provider = MoveToArchive.name,
-            name = _("Move to archive folder"),
-            get = function()
-                self:loadSettings()
-                return self.data.archive_dir_path
-            end,
-            set = function(path)
-                self.data.archive_dir_path = path
-                self.updated = true
-            end,
-        },
+    self.ui.folder_shortcuts.registerShortcut({
+        provider = MoveToArchive.name,
+        name = _("Move to archive folder"),
+        get = function()
+            self:loadSettings()
+            return self.data.archive_dir_path
+        end,
+        set = function(path)
+            self.data.archive_dir_path = path
+            self.updated = true
+        end,
     })
 end
 
