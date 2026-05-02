@@ -24,19 +24,17 @@ function Cloud:init()
     self:getProviders()
     self:onDispatcherRegisterActions() -- will call loadSettings()
     self.ui.menu:registerToMainMenu(self)
-    self.ui.folder_shortcuts.registerShortcuts({
-        {
-            provider = Cloud.name,
-            name = _("Cloud storage download folder"),
-            get = function()
-                self:loadSettings()
-                return self.settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
-            end,
-            set = function(path)
-                self.settings:saveSetting("download_dir", path)
-                self.updated = true
-            end,
-        },
+    self.ui.folder_shortcuts.registerShortcut({
+        provider = Cloud.name,
+        name = _("Cloud storage download folder"),
+        get = function()
+            self:loadSettings()
+            return self.settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+        end,
+        set = function(path)
+            self.settings:saveSetting("download_dir", path)
+            self.updated = true
+        end,
     })
 end
 
