@@ -121,17 +121,15 @@ function Exporter:init()
     self.targets = genExportersTable(self.path)
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
-    self.ui.folder_shortcuts.registerShortcuts({
-        {
-            provider = Exporter.name,
-            name = _("Export highlights folder"),
-            get = function()
-                return self.settings.clipping_dir or self.default_clipping_dir
-            end,
-            set = function(path)
-                self.settings.clipping_dir = path
-            end,
-        },
+    self.ui.folder_shortcuts.registerShortcut({
+        provider = Exporter.name,
+        name = _("Export highlights folder"),
+        get = function()
+            return self.settings.clipping_dir or self.default_clipping_dir
+        end,
+        set = function(path)
+            self.settings.clipping_dir = path
+        end,
     })
 end
 
