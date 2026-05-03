@@ -1974,7 +1974,7 @@ function VocabBuilder:addToMainMenu(menu_items)
 end
 
 function VocabBuilder:registerDictButtons()
-    if not (self.ui and self.ui.dictionary) then return end
+    if not self.ui or not self.ui.dictionary then return end
     self.ui.dictionary:addToDictButtons({
         id = "vocabulary",
         menu_text = _("Vocabulary builder"),

@@ -41,12 +41,11 @@ Actions:
 Layout and style:
 - `conditional` (bool): runtime-only transient button/row if true.
 - `row_group` (string): group conditional buttons into same transient row.
-- `require_link` (bool): transient row insertion only when selected link exists.
-- `pairs_with` (string|string[]): pairing hint used in row grouping.
+- `pairs_with` (string|string[]): pairing hint used alongside can_shrink to create compact rows.
 - `insert_first` (bool): non-conditional auto insertion at top of default layout.
 - `can_shrink` (bool): allow width shrink in 4-button rows when paired.
-- `auto_row_style_width_min_row_size` (int): minimum row size for auto styling to apply.
-- `auto_row_style_width_ratio` (float): width ratio to apply when auto styling conditions are met.
+- `auto_row_style_width_min_row_size` (int): minimum number of buttons per row to apply auto styling.
+- `auto_row_style_width_ratio` (float): width percentage being given to the button when auto styling is applied.
 - `vsync` (bool): propagated to button entry.
 
 ### Persistent vs transient behavior
@@ -64,7 +63,6 @@ Conditional or transient (`conditional == true`):
 ### Conditional row grouping rules
 
 - If `row_group` is shared, buttons join one transient row.
-- Else, if `pairs_with` is present, an implicit deterministic pair row key is derived.
 - Else, each conditional button becomes its own transient row.
 
 ### Runtime layout pipeline
@@ -915,7 +913,6 @@ function DictQuickLookup:_getButtonPool()
         link = {
             id = "link",
             text = _("Follow Link"),
-            require_link = true,
             callback = function()
                 local link = self.selected_link.link or self.selected_link
                 self.ui.link:onGotoLink(link)
@@ -1014,6 +1011,10 @@ end
 
 function DictQuickLookup:buildButtonLayout()
     local pool = self:_getButtonPool()
+    if self.is_wiki_fullpage then
+        -- Wiki fullpage has a fixed, non-configurable layout
+        return { { pool.save, pool.close } }
+    end
     local buttons = {}
     local default_layout = nil
     if G_reader_settings:hasNot("dict_button_config") or self.is_wiki then
@@ -1023,120 +1024,111 @@ function DictQuickLookup:buildButtonLayout()
     if not self.is_wiki and self.selected_link ~= nil then
         -- If selecting a word, which is part of a link (should be rare),
         -- append a new row with a single button to follow this link.
-        for _, button in pairs(pool) do
-            if button.require_link then
-                table.insert(extra_layout, { button.id })
-            end
-        end
+        table.insert(extra_layout, { "link" })
     end
     if self.ui and self.ui.dictionary then
         self:populatePluginButtons(pool, default_layout, extra_layout)
     end
 
-    if self.is_wiki_fullpage then
-        -- Wiki fullpage has a fixed, non-configurable layout
-        return { { pool.save, pool.close } }
+    local button_layout
+    -- Wiki has a fixed, non-configurable layout (yet!)
+    if self.is_wiki then
+        button_layout = default_layout
     else
-        local button_layout
-        -- Wiki has a fixed, non-configurable layout (yet!)
-        if self.is_wiki then
-            button_layout = default_layout
-        else
-            -- We must do util.tableDeepCopy here so we don't accidentally save
-            -- transient buttons into user settings!
-            local config = G_reader_settings:readSetting("dict_button_config")
-            button_layout = config and util.tableDeepCopy(config.layout) or default_layout
+        -- We must do util.tableDeepCopy here so we don't accidentally save
+        -- transient buttons into user settings!
+        local config = G_reader_settings:readSetting("dict_button_config")
+        button_layout = config and util.tableDeepCopy(config.layout) or default_layout
+    end
+
+    local frame_bordersize = Size.border.window
+    local inner_width = self.width - 2 * frame_bordersize
+    local buttons_width = inner_width - 2 * Size.padding.default
+
+    local function applyAutoRowStyle(row)
+        local row_size = #row
+        if row_size == 0 then return end
+        for _, btn in ipairs(row) do
+            local width_min = btn.auto_row_style_width_min_row_size
+            local width_ratio = btn.auto_row_style_width_ratio
+            if width_min and width_ratio then
+                if row_size >= width_min and not btn.width then
+                    btn.width = math.floor(buttons_width * width_ratio)
+                end
+            end
+        end
+    end
+
+    for _, extra_row in ipairs(extra_layout) do
+        table.insert(button_layout, extra_row)
+    end
+    local has_shrinkable_buttons = false
+    for _, row_ids in ipairs(button_layout) do
+        local new_row = {}
+        for _, btn_id in ipairs(row_ids) do
+            local button = pool[btn_id]
+            if button then
+                if button.can_shrink and button.pairs_with then
+                    has_shrinkable_buttons = true
+                end
+                table.insert(new_row, button)
+            end
+        end
+        if #new_row > 0 then
+            applyAutoRowStyle(new_row)
+            table.insert(buttons, new_row)
+        end
+    end
+
+    -- Make shrinkable paired buttons smaller when they share a 4-button row.
+    if has_shrinkable_buttons then
+        -- 15% * 2 = 30%, thus we allow 70% for the remaing two buttons
+        -- so 35% each, which is roughly the size of buttons in a 3-button row.
+        local fifteen_percent = math.floor(buttons_width * 0.15)
+
+        local function btn_has_pair(btn, row_button_ids)
+            local pairs_with = btn.pairs_with
+            if type(pairs_with) == "table" then
+                for _, id in ipairs(pairs_with) do
+                    if row_button_ids[id] then return true end
+                end
+                return false
+            end
+            return pairs_with and row_button_ids[pairs_with] == true
         end
 
-        local frame_bordersize = Size.border.window
-        local inner_width = self.width - 2 * frame_bordersize
-        local buttons_width = inner_width - 2 * Size.padding.default
+        local function try_shrink_row(row)
+            if #row ~= 4 then return false end
 
-        local function applyAutoRowStyle(row)
-            local row_size = #row
-            if row_size == 0 then return end
+            local row_has_shrink_candidate = false
+            local has_custom_width = false
+            local row_button_ids = {}
             for _, btn in ipairs(row) do
-                local width_min = btn.auto_row_style_width_min_row_size
-                local width_ratio = btn.auto_row_style_width_ratio
-                if width_min and width_ratio then
-                    if row_size >= width_min and not btn.width then
-                        btn.width = math.floor(buttons_width * width_ratio)
-                    end
+                row_button_ids[btn.id] = true
+                if btn.width then
+                    has_custom_width = true
+                end
+                if btn.can_shrink and btn.pairs_with then
+                    row_has_shrink_candidate = true
                 end
             end
-        end
 
-        for _, extra_row in ipairs(extra_layout) do
-            table.insert(button_layout, extra_row)
-        end
-        local has_shrinkable_buttons = false
-        for _, row_ids in ipairs(button_layout) do
-            local new_row = {}
-            for _, btn_id in ipairs(row_ids) do
-                local button = pool[btn_id]
-                if button then
-                    if button.can_shrink and button.pairs_with then
-                        has_shrinkable_buttons = true
-                    end
-                    table.insert(new_row, button)
-                end
-            end
-            if #new_row > 0 then
-                applyAutoRowStyle(new_row)
-                table.insert(buttons, new_row)
-            end
-        end
+            if not row_has_shrink_candidate then return false end
 
-        -- Make shrinkable paired buttons smaller when they share a 4-button row.
-        if has_shrinkable_buttons then
-            -- 15% * 2 = 30%, thus we allow 70% for the remaing two buttons
-            -- so 35% each, which is roughly the size of buttons in a 3-button row.
-            local fifteen_percent = math.floor(buttons_width * 0.15)
-
-            local function btn_has_pair(btn, row_button_ids)
-                local pairs_with = btn.pairs_with
-                if type(pairs_with) == "table" then
-                    for _, id in ipairs(pairs_with) do
-                        if row_button_ids[id] then return true end
-                    end
-                    return false
-                end
-                return pairs_with and row_button_ids[pairs_with] == true
-            end
-
-            local function try_shrink_row(row)
-                if #row ~= 4 then return false end
-
-                local row_has_shrink_candidate = false
-                local has_custom_width = false
-                local row_button_ids = {}
+            if not has_custom_width then
                 for _, btn in ipairs(row) do
-                    row_button_ids[btn.id] = true
-                    if btn.width then
-                        has_custom_width = true
-                    end
-                    if btn.can_shrink and btn.pairs_with then
-                        row_has_shrink_candidate = true
+                    if btn.can_shrink and btn_has_pair(btn, row_button_ids) then
+                        btn.width = fifteen_percent
                     end
                 end
-
-                if not row_has_shrink_candidate then return false end
-
-                if not has_custom_width then
-                    for _, btn in ipairs(row) do
-                        if btn.can_shrink and btn_has_pair(btn, row_button_ids) then
-                            btn.width = fifteen_percent
-                        end
-                    end
-                end
-                return true
             end
+            return true
+        end
 
-            for _, row in ipairs(buttons) do
-                if try_shrink_row(row) then break end
-            end
-        end -- if has_shrinkable_buttons
-    end -- if/else fullpage wiki
+        for _, row in ipairs(buttons) do
+            if try_shrink_row(row) then break end
+        end
+    end -- if has_shrinkable_buttons
     return buttons
 end
 

@@ -500,20 +500,28 @@ function ReaderDictionary:addToMainMenu(menu_items)
 end
 
 function ReaderDictionary:_registerDictButtonsToCustomMenu(available_options, default_layout)
-    local seen = {}
-    for _, opt in ipairs(available_options) do
-        seen[opt.id] = true
+    if not self._plugin_buttons_registered then
+        self._available_plugin_buttons_cache = {}
+        local seen = {}
+        for _, opt in ipairs(available_options) do
+            seen[opt.id] = true
+        end
+        for id, spec in ffiUtil.orderedPairs(self._dict_buttons) do
+            if not spec.conditional and spec.menu_text and not seen[spec.id] then
+                table.insert(self._available_plugin_buttons_cache, { text = spec.menu_text, id = spec.id })
+                seen[spec.id] = true
+            end
+            if not spec.conditional and default_layout and not DictQuickLookup.layoutContainsButtonId(default_layout, spec.id) then
+                local i = spec.insert_first and 1 or (#default_layout + 1)
+                table.insert(default_layout, i, { spec.id })
+            end
+            logger.dbg("ReaderDictionary", id..": registered dict button spec")
+        end
+        self._plugin_buttons_registered = true
     end
-    for id, spec in ffiUtil.orderedPairs(self._dict_buttons) do
-        if not spec.conditional and spec.menu_text and not seen[spec.id] then
-            table.insert(available_options, { text = spec.menu_text, id = spec.id })
-            seen[spec.id] = true
-        end
-        if not spec.conditional and default_layout and not DictQuickLookup.layoutContainsButtonId(default_layout, spec.id) then
-            local i = spec.insert_first and 1 or (#default_layout + 1)
-            table.insert(default_layout, i, { spec.id })
-        end
-        logger.dbg("ReaderDictionary", id..": registered dict button spec")
+
+    for _, opt in ipairs(self._available_plugin_buttons_cache) do
+        table.insert(available_options, { text = opt.text, id = opt.id })
     end
 end
 
