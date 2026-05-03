@@ -514,17 +514,10 @@ function ReaderDictionary:_genCustomizeButtonsMenu()
         table.insert(available_options, { text = _("Text selection"), id = "text_selection" })
     end
 
-    if not self._available_plugin_buttons_cache then
-        self._available_plugin_buttons_cache = {}
-        for id, spec in ffiUtil.orderedPairs(self._dict_buttons) do
-            if not spec.conditional and spec.menu_text then
-                table.insert(self._available_plugin_buttons_cache, { text = spec.menu_text, id = spec.id })
-            end
-            logger.dbg("ReaderDictionary", id..": registered dict button spec")
+    for _, spec in ffiUtil.orderedPairs(self._dict_buttons) do
+        if not spec.conditional and spec.menu_text then
+            table.insert(available_options, { text = spec.menu_text, id = spec.id })
         end
-    end
-    for _, opt in ipairs(self._available_plugin_buttons_cache) do
-        table.insert(available_options, { text = opt.text, id = opt.id })
     end
 
     -- This function return the config from settings.
