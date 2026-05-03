@@ -144,6 +144,7 @@ function ReadTimer:init()
         self:addAdditionalFooterContent()
     end
 
+    UIManager.event_hook:registerWidget("InputEvent", self)
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
 end
@@ -169,10 +170,13 @@ function ReadTimer:scheduled()
     return self.time ~= 0
 end
 
+function ReadTimer:now()
+    return time.boottime_or_realtime_coarse()
+end
+
 function ReadTimer:remaining()
     if self:scheduled() then
-        -- Resolution: time.now() subsecond, os.time() two seconds
-        local remaining_s = time.to_s(self.time - time.now())
+        local remaining_s = time.to_s(self.time - self:now())
         if remaining_s > 0 then
             return remaining_s
         else
@@ -243,11 +247,27 @@ function ReadTimer:unschedule()
 end
 
 function ReadTimer:rescheduleIn(seconds)
-    -- Resolution: time.now() subsecond, os.time() two seconds
-    self.time = time.now() + time.s(seconds)
+    self.time = self:now() + time.s(seconds)
     UIManager:scheduleIn(seconds, self.alarm_callback)
     if self.settings.show_value_in_header or self.settings.show_value_in_footer then
         self:update_status_bars(seconds)
+    end
+end
+
+function ReadTimer:expireIfDue()
+    if self:scheduled() and self:remaining() == 0 then
+        UIManager:unschedule(self.alarm_callback)
+        UIManager:unschedule(self.update_status_bars, self)
+        self:alarm_callback()
+        return true
+    end
+    return false
+end
+
+function ReadTimer:onInputEvent()
+    if self:scheduled() and not self:expireIfDue() then
+        UIManager:unschedule(self.alarm_callback)
+        UIManager:scheduleIn(self:remaining(), self.alarm_callback)
     end
 end
 
@@ -391,7 +411,7 @@ function ReadTimer:addToMainMenu(menu_items)
     }
 end
 
--- The UI ticks on a MONOTONIC time domain, while this plugin deals with REAL wall clock time.
+-- The UI ticks on a MONOTONIC time domain, while this plugin deals with elapsed real time.
 function ReadTimer:onResume()
     if self:scheduled() then
         logger.dbg("ReadTimer: onResume with an active timer")
@@ -399,10 +419,9 @@ function ReadTimer:onResume()
 
         if remainder == 0 then
             -- Make sure we fire the alarm right away if it expired during suspend...
-            self:alarm_callback()
-            self:unschedule()
+            self:expireIfDue()
         else
-            -- ...and that we re-schedule the timer against the REAL time if it's still ticking.
+            -- ...and that we re-schedule the timer against the elapsed real time if it's still ticking.
             logger.dbg("ReadTimer: Rescheduling in", remainder, "seconds")
             self:unschedule()
             self:rescheduleIn(remainder)
