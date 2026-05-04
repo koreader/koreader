@@ -974,7 +974,6 @@ function DictQuickLookup:populatePluginButtons(pool, default_layout, extra_layou
                 vsync = spec.vsync,
                 pairs_with = spec.pairs_with,
                 can_shrink = spec.can_shrink,
-                require_link = spec.require_link,
                 callback = spec.callback and function()
                     return spec.callback(self)
                 end,
