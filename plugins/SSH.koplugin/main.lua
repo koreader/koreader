@@ -166,39 +166,37 @@ end
 
 function SSH:stop()
     local ok, err = self:stopPlugin(false)
-    if ok then
-        UIManager:show(InfoMessage:new{
-            text = _("SSH server stopped."),
-            timeout = 2,
-        })
-    else
-        -- Graceful stop failed; check if user wants to force-close all connections
+    if not ok then
+        logger.warn("SSH: graceful stop failed:", err)
+        -- If the user chose to force-close all connections, try a forced stop first.
         if self.force_kill_clients then
-            logger.info("SSH: graceful stop failed, force-killing as requested.")
             ok, err = self:stopPlugin(true)
             if not ok then
-                -- Last resort: terminate every dropbear process
+                -- Last resort: kill every dropbear process to close all sessions.
+                logger.warn("SSH: force-stop also failed, using killall:", err)
                 os.execute("killall -9 dropbear 2>/dev/null")
                 os.remove("/tmp/dropbear_koreader.pid")
                 UIManager:show(InfoMessage:new{
                     text = _("SSH server forcefully stopped."),
                     timeout = 2,
                 })
-            else
-                UIManager:show(InfoMessage:new{
-                    text = _("SSH server stopped."),
-                    timeout = 2,
-                })
+                return
             end
         else
-            -- Do not force; warn that active sessions may persist
-            logger.warn("SSH: graceful stop failed:", err)
+            -- Without force-kill, active connections may remain.
             UIManager:show(InfoMessage:new{
                 icon = "notice-warning",
                 text = _("SSH server is still shutting down… Active connections may remain until they are closed."),
                 timeout = 3,
             })
+            return
         end
+    end
+    if ok then
+        UIManager:show(InfoMessage:new{
+            text = _("SSH server stopped."),
+            timeout = 2,
+        })
     end
 end
 
