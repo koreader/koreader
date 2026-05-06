@@ -131,6 +131,26 @@ Event: time 1510346969.076908, -------------- SYN_REPORT ------------
     end)
 
     describe("stylus callback routing", function()
+        local function withInputState(overrides, callback)
+            local keys = {}
+            local old_state = {}
+            for key, value in pairs(overrides) do
+                table.insert(keys, key)
+                old_state[key] = Input[key]
+                Input[key] = value
+            end
+
+            local ok, err = pcall(callback)
+
+            for _, key in ipairs(keys) do
+                Input[key] = old_state[key]
+            end
+
+            if not ok then
+                error(err)
+            end
+        end
+
         it("routes stylus slots before gesture detection and removes dominated slots", function()
             local old_callback = Input.stylus_callback
             local old_slots = Input.MTSlots
@@ -177,6 +197,61 @@ Event: time 1510346969.076908, -------------- SYN_REPORT ------------
             Input.device = old_device
             Input.event_map = old_event_map
             Input.stylus_eraser_active = old_eraser_active
+        end)
+
+        it("ignores pen tool key events without a stylus tool protocol", function()
+            withInputState({
+                active_slots = {},
+                cur_slot = Input.main_finger_slot,
+                device = { isSDL = function() return false end },
+                event_map = {},
+                ev_slots = {
+                    [Input.main_finger_slot] = { slot = Input.main_finger_slot },
+                },
+                MTSlots = {},
+                wacom_protocol = false,
+            }, function()
+                Input:handleKeyBoardEv({
+                    type = C.EV_KEY,
+                    code = C.BTN_TOOL_PEN,
+                    value = 1,
+                })
+
+                assert.is_nil(Input.ev_slots[Input.pen_slot])
+                assert.is_equal(Input.main_finger_slot, Input.cur_slot)
+            end)
+        end)
+
+        it("accepts pen tool key events from SDL", function()
+            withInputState({
+                active_slots = {},
+                cur_slot = Input.main_finger_slot,
+                device = { isSDL = function() return true end },
+                event_map = {},
+                ev_slots = {
+                    [Input.main_finger_slot] = { slot = Input.main_finger_slot },
+                },
+                MTSlots = {},
+                wacom_protocol = false,
+            }, function()
+                Input:handleKeyBoardEv({
+                    type = C.EV_KEY,
+                    code = C.BTN_TOOL_RUBBER,
+                    value = 1,
+                })
+
+                assert.is_equal(Input.pen_slot, Input.cur_slot)
+                assert.is_equal(Input.TOOL_TYPE_ERASER, Input.ev_slots[Input.pen_slot].tool)
+
+                Input:handleKeyBoardEv({
+                    type = C.EV_KEY,
+                    code = C.BTN_TOOL_RUBBER,
+                    value = 0,
+                })
+
+                assert.is_equal(Input.main_finger_slot, Input.cur_slot)
+                assert.is_equal(Input.TOOL_TYPE_FINGER, Input.ev_slots[Input.pen_slot].tool)
+            end)
         end)
     end)
 
