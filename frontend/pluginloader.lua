@@ -346,7 +346,7 @@ function PluginLoader:genPluginManagerSubItem()
 end
 
 function PluginLoader:enableDisablePlugin(plugin, touchmenu_instance)
-    local plugins_disabled = G_reader_settings:readSetting("plugins_disabled")
+    local plugins_disabled = G_reader_settings:readSetting("plugins_disabled", {})
     local function set_and_restart(enable)
         plugin.enable = enable
         plugins_disabled[plugin.name] = not enable or nil
