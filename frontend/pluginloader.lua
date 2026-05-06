@@ -11,6 +11,9 @@ Plugins are controlled by the following settings.
 - plugins_disabled
 - extra_plugin_paths
 ]]
+local ButtonDialog = require("ui/widget/buttondialog")
+local ConfirmBox = require("ui/widget/confirmbox")
+local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
@@ -170,11 +173,7 @@ local PluginLoader = {
 }
 
 function PluginLoader:_discover()
-    local plugins_disabled = G_reader_settings:readSetting("plugins_disabled")
-    if type(plugins_disabled) ~= "table" then
-        plugins_disabled = {}
-    end
-
+    local plugins_disabled = G_reader_settings:readSetting("plugins_disabled", {})
     local discovered = {}
     local lookup_path_list = { DEFAULT_PLUGIN_PATH }
     local extra_paths = G_reader_settings:readSetting("extra_plugin_paths")
@@ -269,9 +268,7 @@ function PluginLoader:_load(t)
     end
     package.path = package_path
     package.cpath = package_cpath
-
 end
-
 
 function PluginLoader:loadPlugins()
     if self.enabled_plugins then return self.enabled_plugins, self.disabled_plugins end
@@ -298,90 +295,34 @@ function PluginLoader:genPluginManagerSubItem()
     if not self.all_plugins then
         local enabled_plugins, disabled_plugins = self:loadPlugins()
         self.all_plugins = {}
-
         for _, plugin in ipairs(enabled_plugins) do
             local element = getMenuTable(plugin)
             element.enable = true
             table.insert(self.all_plugins, element)
         end
-
         for _, plugin in ipairs(disabled_plugins) do
             local element = getMenuTable(plugin)
             element.enable = false
             table.insert(self.all_plugins, element)
         end
-
         table.sort(self.all_plugins, function(v1, v2) return v1.fullname < v2.fullname end)
     end
 
     local builtin_plugin_items = {}
     local user_plugin_items = {}
-    for __, plugin in ipairs(self.all_plugins) do
+    for _, plugin in ipairs(self.all_plugins) do
         local item = {
             text = plugin.fullname,
             checked_func = function()
                 return plugin.enable
             end,
-            callback = function()
-                local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
-                plugin.enable = not plugin.enable
-                if plugin.enable then
-                    plugins_disabled[plugin.name] = nil
-                else
-                    plugins_disabled[plugin.name] = true
-                    self:stopPluginInstanceByName(plugin.name)
-                end
-                G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
-                if self.show_info then
-                    self.show_info = false
-                    UIManager:askForRestart()
-                end
+            check_callback_updates_menu = true,
+            callback = function(touchmenu_instance)
+                self:enableDisablePlugin(plugin, touchmenu_instance)
             end,
-            hold_callback = function()
-                local CheckButton = require("ui/widget/checkbutton")
-                local ConfirmBox = require("ui/widget/confirmbox")
-                local instance = self:getPluginInstance(plugin.name)
-                local deletePluginSettingsFn = instance and instance.deletePluginSettings
-                local delete_plugin_settings = false
-                local delete_plugin_settings_checkbox
-                local confirmbox = ConfirmBox:new{
-                    text = plugin.description .. "\n\n" .. T(_("Are you sure you want to delete the plugin '%1'?"), plugin.fullname),
-                    ok_text = _("Delete"),
-                    ok_callback = function()
-                        self:stopPluginInstanceByName(plugin.name)
-                        local success, err = ffiUtil.purgeDir(plugin.path)
-                        if success then
-                            if delete_plugin_settings then
-                                self:deletePluginSettingsByName(plugin.name)
-                            end
-                            local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
-                            if plugins_disabled[plugin.name] then
-                                plugins_disabled[plugin.name] = nil
-                                G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
-                            end
-                            self.all_plugins = nil
-                            UIManager:askForRestart()
-                        else
-                            local InfoMessage = require("ui/widget/infomessage")
-                            UIManager:show(InfoMessage:new{
-                                text = _("Failed to delete plugin:") .. "\n" .. err,
-                            })
-                        end
-                    end,
-                }
-                delete_plugin_settings_checkbox = CheckButton:new{
-                    parent = confirmbox,
-                    text = _("Also delete plugin settings"),
-                    enabled = type(deletePluginSettingsFn) == "function",
-                    callback = function()
-                        delete_plugin_settings = not delete_plugin_settings
-                    end,
-                }
-                confirmbox:addWidget(delete_plugin_settings_checkbox)
-                UIManager:show(confirmbox)
-            end,
+            help_text = plugin.description,
         }
-        if BUILTIN_PLUGINS[plugin.name] == true then
+        if BUILTIN_PLUGINS[plugin.name] then
             table.insert(builtin_plugin_items, item)
         else
             table.insert(user_plugin_items, item)
@@ -390,15 +331,101 @@ function PluginLoader:genPluginManagerSubItem()
     return {
         {
             text = _("Built-in plugins"),
-            enabled_func = function() return #builtin_plugin_items > 0 end,
+            enabled_func = function()
+                return #builtin_plugin_items > 0
+            end,
             sub_item_table = builtin_plugin_items,
         },
         {
             text = _("User plugins"),
-            enabled_func = function() return #user_plugin_items > 0 end,
+            enabled_func = function()
+                return #user_plugin_items > 0
+            end,
             sub_item_table = user_plugin_items,
         },
     }
+end
+
+function PluginLoader:enableDisablePlugin(plugin, touchmenu_instance)
+    local plugins_disabled = G_reader_settings:readSetting("plugins_disabled")
+    local function set_and_restart(enable)
+        plugin.enable = enable
+        plugins_disabled[plugin.name] = not enable or nil
+        touchmenu_instance:updateItems()
+        if self.show_info then
+            self.show_info = false
+            UIManager:askForRestart()
+        end
+    end
+    if plugin.enable then
+        local plugin_instance = self:getPluginInstance(plugin.name)
+        if plugin_instance then -- show dialog
+            local plugin_dialog
+            local buttons = {
+                {{
+                    text = _("Disable plugin"),
+                    callback = function()
+                        UIManager:close(plugin_dialog)
+                        self:stopPluginInstance(plugin_instance)
+                        set_and_restart(false)
+                    end,
+                }},
+            }
+            local can_delete_settings = plugin_instance.deletePluginSettings
+                or plugin_instance.settings_file or plugin_instance.settings_key and true or false
+            if can_delete_settings then
+                table.insert(buttons, {{
+                    text = _("Disable plugin and delete settings"),
+                    callback = function()
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Delete plugin settings?"),
+                            ok_text = _("Delete"),
+                            ok_callback = function()
+                                UIManager:close(plugin_dialog)
+                                self:deletePluginSettings(plugin_instance)
+                                self:stopPluginInstance(plugin_instance)
+                                set_and_restart(false)
+                            end,
+                        })
+                    end,
+                }})
+            end
+            if not BUILTIN_PLUGINS[plugin.name] then
+                table.insert(buttons, {{
+                    text = _("Delete plugin"),
+                    callback = function()
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Delete plugin?"),
+                            ok_text = _("Delete"),
+                            ok_callback = function()
+                                local ok, err = ffiUtil.purgeDir(plugin.path)
+                                if ok then
+                                    UIManager:close(plugin_dialog)
+                                    if can_delete_settings then
+                                        self:deletePluginSettings(plugin_instance)
+                                    end
+                                    self:stopPluginInstance(plugin_instance)
+                                    set_and_restart(false)
+                                else
+                                    UIManager:show(InfoMessage:new{ text = _("Failed to delete plugin:") .. "\n" .. err })
+                                end
+                            end,
+                        })
+                    end,
+                }})
+            end
+            plugin_dialog = ButtonDialog:new{
+                title = plugin.fullname,
+                title_align = "center",
+                buttons = buttons,
+            }
+            UIManager:show(plugin_dialog)
+        else -- no plugin instance, disable
+            set_and_restart(false)
+        end
+    else -- enable
+        set_and_restart(true)
+    end
 end
 
 function PluginLoader:createPluginInstance(plugin, attr)
@@ -456,13 +483,20 @@ end
 --- @param instance table The plugin instance whose settings should be deleted.
 --- @return boolean Success, string|nil
 function PluginLoader:deletePluginSettings(instance)
-    local ok, err = false, "no deletePluginSettings method"
+    local ok
     local fn = instance.deletePluginSettings
     if type(fn) == "function" then
-        ok, err = pcall(fn, instance)
+        ok = pcall(fn, instance)
     end
-    if ok then return true, nil end
-    return false, err
+    if instance.settings_file then
+        os.remove(instance.settings_file)
+        ok = true
+    end
+    if instance.settings_key then
+        G_reader_settings:delSetting(instance.settings_key)
+        ok = true
+    end
+    return ok
 end
 
 --- Calls the stopPlugin() method on a plugin instance if it's currently loaded.
