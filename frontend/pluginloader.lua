@@ -315,11 +315,24 @@ function PluginLoader:genPluginManagerSubItem()
             checked_func = function()
                 return plugin.enable
             end,
-            check_callback_updates_menu = true,
-            callback = function(touchmenu_instance)
-                self:enableDisablePlugin(plugin, touchmenu_instance)
+            callback = function()
+                local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+                plugin.enable = not plugin.enable
+                if plugin.enable then
+                    plugins_disabled[plugin.name] = nil
+                else
+                    plugins_disabled[plugin.name] = true
+                    self:stopPluginInstanceByName(plugin.name)
+                end
+                G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
+                if self.show_info then
+                    self.show_info = false
+                    UIManager:askForRestart()
+                end
             end,
-            help_text = plugin.description,
+            hold_callback = function(touchmenu_instance)
+                self:showPluginDialog(plugin, touchmenu_instance)
+            end,
         }
         if BUILTIN_PLUGINS[plugin.name] then
             table.insert(builtin_plugin_items, item)
@@ -345,86 +358,94 @@ function PluginLoader:genPluginManagerSubItem()
     }
 end
 
-function PluginLoader:enableDisablePlugin(plugin, touchmenu_instance)
-    local plugins_disabled = G_reader_settings:readSetting("plugins_disabled", {})
-    local function set_and_restart(enable)
+function PluginLoader:showPluginDialog(plugin, touchmenu_instance)
+    local plugins_disabled = G_reader_settings:readSetting("plugins_disabled")
+    local function set_and_restart(enable, disabled)
         plugin.enable = enable
-        plugins_disabled[plugin.name] = not enable or nil
+        plugins_disabled[plugin.name] = disabled
         touchmenu_instance:updateItems()
         if self.show_info then
             self.show_info = false
             UIManager:askForRestart()
         end
     end
+    local plugin_instance = self:getPluginInstance(plugin.name)
+    local can_delete_settings = (plugin_instance and (plugin_instance.deletePluginSettings
+        or plugin_instance.settings_file or plugin_instance.settings_key)) and true or false
+    local plugin_dialog, buttons
     if plugin.enable then
-        local plugin_instance = self:getPluginInstance(plugin.name)
-        if plugin_instance then -- show dialog
-            local plugin_dialog
-            local buttons = {
-                {{
-                    text = _("Disable plugin"),
-                    callback = function()
-                        UIManager:close(plugin_dialog)
+        buttons = {
+            {{
+                text = _("Disable plugin"),
+                callback = function()
+                    UIManager:close(plugin_dialog)
+                    if plugin_instance then
                         self:stopPluginInstance(plugin_instance)
-                        set_and_restart(false)
-                    end,
-                }},
-            }
-            local can_delete_settings = plugin_instance.deletePluginSettings
-                or plugin_instance.settings_file or plugin_instance.settings_key and true or false
-            if can_delete_settings then
-                table.insert(buttons, {{
-                    text = _("Disable plugin and delete settings"),
-                    callback = function()
-                        UIManager:show(ConfirmBox:new{
-                            text = _("Delete plugin settings?"),
-                            ok_text = _("Delete"),
-                            ok_callback = function()
-                                UIManager:close(plugin_dialog)
-                                self:deletePluginSettings(plugin_instance)
-                                self:stopPluginInstance(plugin_instance)
-                                set_and_restart(false)
-                            end,
-                        })
-                    end,
-                }})
-            end
-            if not BUILTIN_PLUGINS[plugin.name] then
-                table.insert(buttons, {{
-                    text = _("Delete plugin"),
-                    callback = function()
-                        UIManager:show(ConfirmBox:new{
-                            text = _("Delete plugin?"),
-                            ok_text = _("Delete"),
-                            ok_callback = function()
-                                local ok, err = ffiUtil.purgeDir(plugin.path)
-                                if ok then
-                                    UIManager:close(plugin_dialog)
-                                    if can_delete_settings then
-                                        self:deletePluginSettings(plugin_instance)
-                                    end
-                                    self:stopPluginInstance(plugin_instance)
-                                    set_and_restart(false)
-                                else
-                                    UIManager:show(InfoMessage:new{ text = _("Failed to delete plugin:") .. "\n" .. err })
-                                end
-                            end,
-                        })
-                    end,
-                }})
-            end
-            plugin_dialog = ButtonDialog:new{
-                title = plugin.fullname,
-                title_align = "center",
-                buttons = buttons,
-            }
-            UIManager:show(plugin_dialog)
-        else -- no plugin instance, disable
-            set_and_restart(false)
+                    end
+                    set_and_restart(false, true)
+                end,
+            }},
+        }
+        if can_delete_settings then
+            table.insert(buttons, {{
+                text = _("Disable plugin and delete settings"),
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Delete plugin settings?"),
+                        ok_text = _("Delete"),
+                        ok_callback = function()
+                            UIManager:close(plugin_dialog)
+                            self:deletePluginSettings(plugin_instance)
+                            self:stopPluginInstance(plugin_instance)
+                            set_and_restart(false, true)
+                        end,
+                    })
+                end,
+            }})
         end
-    else -- enable
-        set_and_restart(true)
+    else -- disabled
+        buttons = {
+            {{
+                text = _("Enable plugin"),
+                callback = function()
+                    UIManager:close(plugin_dialog)
+                    set_and_restart(true, false)
+                end,
+            }},
+        }
     end
+    if not BUILTIN_PLUGINS[plugin.name] then
+        table.insert(buttons, {{
+            text = can_delete_settings and _("Delete plugin and settings") or _("Delete plugin"),
+            callback = function()
+                UIManager:show(ConfirmBox:new{
+                    text = can_delete_settings and _("Delete plugin and settings?") or _("Delete plugin?"),
+                    ok_text = _("Delete"),
+                    ok_callback = function()
+                        local ok, err = ffiUtil.purgeDir(plugin.path)
+                        if ok then
+                            UIManager:close(plugin_dialog)
+                            if can_delete_settings then
+                                self:deletePluginSettings(plugin_instance)
+                            end
+                            if plugin_instance then
+                                self:stopPluginInstance(plugin_instance)
+                            end
+                            set_and_restart(false, nil)
+                        else
+                            UIManager:show(InfoMessage:new{ text = _("Failed to delete plugin:") .. "\n" .. err })
+                        end
+                    end,
+                })
+            end,
+        }})
+    end
+    plugin_dialog = ButtonDialog:new{
+        title = plugin.fullname .. "\n" .. plugin.description,
+        title_align = "center",
+        buttons = buttons,
+    }
+    UIManager:show(plugin_dialog)
 end
 
 function PluginLoader:createPluginInstance(plugin, attr)
