@@ -39,6 +39,7 @@ function Key:getSequence()
         end
     end
     table.insert(seq, self.key)
+    return seq
 end
 
 --[[
