@@ -737,10 +737,12 @@ function Input:handleKeyBoardEv(ev)
         end
     end
 
+    local is_sdl = self.device and self.device.isSDL and self.device:isSDL()
+
     -- On Kobo-style stylus devices, barrel/tool buttons can double as
     -- eraser/highlighter tool selectors. SDL/Linux pen buttons are handled as
     -- plain buttons instead, so standard side buttons don't rewrite the tool.
-    local stylus_buttons_select_tool = not (self.device and self.device.isSDL and self.device:isSDL())
+    local stylus_buttons_select_tool = not is_sdl
     if stylus_buttons_select_tool then
         if ev.code == C.BTN_STYLUS then
             self.stylus_eraser_active = ev.value == 1
@@ -749,7 +751,8 @@ function Input:handleKeyBoardEv(ev)
         end
     end
 
-    if ev.code == C.BTN_TOOL_PEN or ev.code == C.BTN_TOOL_RUBBER then
+    local stylus_tool_protocol = self.wacom_protocol or is_sdl
+    if stylus_tool_protocol and (ev.code == C.BTN_TOOL_PEN or ev.code == C.BTN_TOOL_RUBBER) then
         -- Switch to the dedicated pen slot, and make sure it's active, as this can come in a dedicated input frame.
         self:setupSlotData(self.pen_slot)
         if ev.value == 1 then
