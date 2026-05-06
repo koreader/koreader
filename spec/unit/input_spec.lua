@@ -130,4 +130,54 @@ Event: time 1510346969.076908, -------------- SYN_REPORT ------------
         end)
     end)
 
+    describe("stylus callback routing", function()
+        it("routes stylus slots before gesture detection and removes dominated slots", function()
+            local old_callback = Input.stylus_callback
+            local old_slots = Input.MTSlots
+
+            local calls = {}
+            Input.MTSlots = {
+                { slot = Input.pen_slot, id = 7, x = 10, y = 20, tool = Input.TOOL_TYPE_PEN },
+                { slot = Input.main_finger_slot, id = 8, x = 30, y = 40, tool = Input.TOOL_TYPE_FINGER },
+            }
+
+            Input:registerStylusCallback(function(_, slot)
+                table.insert(calls, slot)
+                return true
+            end)
+
+            Input:routeStylusEvents()
+
+            assert.is_equal(1, #calls)
+            assert.is_equal(Input.pen_slot, calls[1].slot)
+            assert.is_equal(1, #Input.MTSlots)
+            assert.is_equal(Input.main_finger_slot, Input.MTSlots[1].slot)
+
+            Input.stylus_callback = old_callback
+            Input.MTSlots = old_slots
+        end)
+
+        it("does not turn SDL pen side buttons into eraser tool selectors", function()
+            local old_device = Input.device
+            local old_event_map = Input.event_map
+            local old_eraser_active = Input.stylus_eraser_active
+
+            Input.device = { isSDL = function() return true end }
+            Input.event_map = {}
+            Input.stylus_eraser_active = nil
+
+            Input:handleKeyBoardEv({
+                type = C.EV_KEY,
+                code = C.BTN_STYLUS,
+                value = 1,
+            })
+
+            assert.is_nil(Input.stylus_eraser_active)
+
+            Input.device = old_device
+            Input.event_map = old_event_map
+            Input.stylus_eraser_active = old_eraser_active
+        end)
+    end)
+
 end)
