@@ -1,12 +1,10 @@
 describe("PluginLoader module", function()
     local PluginLoader, UIManager
-    local ffiUtil
     local original_lfs
 
     setup(function()
         require("commonrequire")
         UIManager = require("ui/uimanager")
-        ffiUtil = require("ffi/util")
         original_lfs = require("libs/libkoreader-lfs")
     end)
 
