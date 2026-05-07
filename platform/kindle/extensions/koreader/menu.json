@@ -60,9 +60,7 @@
 				"action": "./bin/koreader-ext.sh",
 				"params": "update_koreader",
 				"exitmenu": false,
-				"checked": true,
 				"refresh": false,
-				"status": false,
 				"internal": "status Try to update KOReader . . ."
 			},
 			{
@@ -71,10 +69,26 @@
 				"action": "./bin/koreader-ext.sh",
 				"params": "install_koreader",
 				"exitmenu": false,
-				"checked": true,
 				"refresh": false,
-				"status": false,
 				"internal": "status Try to install KOReader from scratch . . ."
+			},
+			{
+				"name": "Start SSH server",
+				"priority": 3,
+				"action": "./bin/koreader-ext.sh",
+				"params": "start_ssh",
+				"exitmenu": false,
+				"refresh": false,
+				"internal": "status Try to start SSH server . . ."
+			},
+			{
+				"name": "Stop SSH server",
+				"priority": 4,
+				"action": "./bin/koreader-ext.sh",
+				"params": "stop_ssh",
+				"exitmenu": false,
+				"refresh": false,
+				"internal": "status Try to stop SSH server . . ."
 			}
 			]
 		}
