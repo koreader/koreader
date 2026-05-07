@@ -415,19 +415,17 @@ function PluginLoader:showPluginDialog(plugin, touchmenu_instance)
         }
     end
     if not BUILTIN_PLUGINS[plugin.name] then
+        table.insert(buttons, {}) -- separator
         table.insert(buttons, {{
-            text = can_delete_settings and _("Delete plugin and settings") or _("Delete plugin"),
+            text = _("Delete plugin"),
             callback = function()
                 UIManager:show(ConfirmBox:new{
-                    text = can_delete_settings and _("Delete plugin and settings?") or _("Delete plugin?"),
+                    text = _("Delete plugin?"),
                     ok_text = _("Delete"),
                     ok_callback = function()
                         local ok, err = ffiUtil.purgeDir(plugin.path)
                         if ok then
                             UIManager:close(plugin_dialog)
-                            if can_delete_settings then
-                                self:deletePluginSettings(plugin_instance)
-                            end
                             if plugin_instance then
                                 self:stopPluginInstance(plugin_instance)
                             end
@@ -439,9 +437,31 @@ function PluginLoader:showPluginDialog(plugin, touchmenu_instance)
                 })
             end,
         }})
+        if can_delete_settings then
+            table.insert(buttons, {{
+                text = _("Delete plugin and settings"),
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Delete plugin and settings?"),
+                        ok_text = _("Delete"),
+                        ok_callback = function()
+                            local ok, err = ffiUtil.purgeDir(plugin.path)
+                            if ok then
+                                UIManager:close(plugin_dialog)
+                                self:deletePluginSettings(plugin_instance)
+                                self:stopPluginInstance(plugin_instance)
+                                set_and_restart(false, nil)
+                            else
+                                UIManager:show(InfoMessage:new{ text = _("Failed to delete plugin:") .. "\n" .. err })
+                            end
+                        end,
+                    })
+                end,
+            }})
+        end
     end
     plugin_dialog = ButtonDialog:new{
-        title = plugin.fullname .. "\n" .. plugin.description,
+        title = plugin.fullname .. "\n\n" .. plugin.description .. "\n",
         title_align = "center",
         buttons = buttons,
     }
