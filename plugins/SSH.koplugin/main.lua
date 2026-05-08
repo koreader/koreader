@@ -130,7 +130,7 @@ function SSH:stopPlugin(force)
     end
 
     local function send(sig, p)
-        return os.execute(string.format("kill -%s %d", sig, p)) == 0
+        return os.execute(string.format("pkill -%s -P %d && kill -%s %d", sig, p, sig, p)) == 0
     end
 
     send("TERM", pid)
