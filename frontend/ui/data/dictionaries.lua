@@ -1596,6 +1596,14 @@ local dictionaries = {
         url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Greek-English%20Wiktionary%20dictionary%20stardict.tar.gz",
     },
     {
+        name = "Lemma Greek-English Dictionary",
+        lang_in = "ell",
+        lang_out = "eng",
+        entries = 31143,
+        license = "CC-BY-SA 4.0 https://github.com/ciscoriordan/lemma",
+        url = "https://github.com/ciscoriordan/lemma/releases/download/v1.3.1/lemma_greek_en_stardict.zip",
+    },
+    {
         name = "Greenlandic-English Wiktionary",
         lang_in = "kal",
         lang_out = "eng",
