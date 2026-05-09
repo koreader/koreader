@@ -24,7 +24,7 @@ local T = ffiUtil.template
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
     menu_items = nil, -- table, mandatory
-    registered_widgets = nil,
+    registered_widgets = nil, -- array
 }
 
 function FileManagerMenu:init()
@@ -54,10 +54,7 @@ function FileManagerMenu:init()
 
     self:registerKeyEvents()
 
-    self.activation_menu = G_reader_settings:readSetting("activate_menu")
-    if self.activation_menu == nil then
-        self.activation_menu = "swipe_tap"
-    end
+    self.activation_menu = G_reader_settings:readSetting("activate_menu") or "swipe_tap"
 end
 
 function FileManagerMenu:registerKeyEvents()
@@ -452,13 +449,6 @@ To:
             },
         },
     }
-
-    for _, widget in pairs(self.registered_widgets) do
-        local ok, err = pcall(widget.addToMainMenu, widget, self.menu_items)
-        if not ok then
-            logger.err("failed to register widget", widget.name, err)
-        end
-    end
 
     self.menu_items.show_filter = self:getShowFilterMenuTable()
     self.menu_items.sort_by = self:getSortingMenuTable()
@@ -871,6 +861,13 @@ To:
         }
     end
 
+    for _, widget in ipairs(self.registered_widgets) do
+        local ok, err = pcall(widget.addToMainMenu, widget, self.menu_items)
+        if not ok then
+            logger.err("failed to register widget", widget.name, err)
+        end
+    end
+
     -- NOTE: This is cached via require for ui/plugin/insert_menu's sake...
     local order = require("ui/elements/filemanager_menu_order")
 
@@ -880,7 +877,7 @@ end
 dbg:guard(FileManagerMenu, 'setUpdateItemTable',
     function(self)
         local mock_menu_items = {}
-        for _, widget in pairs(self.registered_widgets) do
+        for _, widget in ipairs(self.registered_widgets) do
             -- make sure addToMainMenu works in debug mode
             widget:addToMainMenu(mock_menu_items)
         end
