@@ -1601,7 +1601,7 @@ local dictionaries = {
         lang_out = "eng",
         entries = 31143,
         license = "CC-BY-SA 4.0 https://github.com/ciscoriordan/lemma",
-        url = "https://github.com/ciscoriordan/lemma/releases/download/v1.3.1/lemma_greek_en_stardict.zip",
+        url = "https://github.com/ciscoriordan/lemma/releases/download/v1.3.2/lemma_greek_en_stardict.zip",
     },
     {
         name = "Greenlandic-English Wiktionary",
