@@ -530,6 +530,7 @@ function PluginLoader:deletePluginSettings(instance)
     end
     if instance.settings_file then
         os.remove(instance.settings_file)
+        os.remove(instance.settings_file .. ".old")
         ok = true
     end
     if instance.settings_key then
