@@ -16,7 +16,7 @@ local QRClipboard = WidgetContainer:extend{
 }
 
 function QRClipboard:init()
-    if self.ui.document then
+    if self.document then
         self:addToHighlightDialog()
     end
     if Device:hasClipboard() then
