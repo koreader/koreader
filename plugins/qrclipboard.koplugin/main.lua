@@ -13,13 +13,14 @@ local _ = require("gettext")
 
 local QRClipboard = WidgetContainer:extend{
     name = "qrclipboard",
-    is_doc_only = false,
 }
 
 function QRClipboard:init()
-    self.ui.menu:registerToMainMenu(self)
-    if self.ui.highlight then
+    if self.ui.document then
         self:addToHighlightDialog()
+    end
+    if Device:hasClipboard() then
+        self.ui.menu:registerToMainMenu(self)
     end
 end
 
@@ -29,11 +30,13 @@ function QRClipboard:addToHighlightDialog()
     self.ui.highlight:addToHighlightDialog("12_generate_qr_code", function(this)
         return {
             text = _("Generate QR code"),
-            enabled = Device:hasClipboard(),
             callback = function()
-                Device.input.setClipboardText(util.cleanupSelectedText(this.selected_text.text))
+                local text = util.cleanupSelectedText(this.selected_text.text)
+                if Device:hasClipboard() then -- let the text to be reused via menu
+                    Device.input.setClipboardText(text)
+                end
                 UIManager:show(QRMessage:new{
-                    text = Device.input.getClipboardText(),
+                    text = text,
                     width = Device.screen:getWidth(),
                     height = Device.screen:getHeight(),
                     dismiss_callback = function()
@@ -57,7 +60,7 @@ function QRClipboard:addToMainMenu(menu_items)
             UIManager:show(QRMessage:new{
                 text = Device.input.getClipboardText(),
                 width = Device.screen:getWidth(),
-                height = Device.screen:getHeight()
+                height = Device.screen:getHeight(),
             })
         end,
     }
