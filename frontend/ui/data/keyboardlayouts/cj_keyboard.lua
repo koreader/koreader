@@ -189,7 +189,6 @@ local function genMenuItems()
             callback = function()
                 settings.show_candi = not settings.show_candi
                 ime.show_candidates = settings.show_candi
-                G_reader_settings:saveSetting(SETTING_NAME, settings)
             end,
         },
     }
