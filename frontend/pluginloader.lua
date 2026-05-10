@@ -460,8 +460,12 @@ function PluginLoader:showPluginDialog(plugin, touchmenu_instance)
             }})
         end
     end
+    local title = plugin.fullname .. "\n\n" .. plugin.description .. "\n"
+    if plugin.enable and not plugin_instance then
+        title = title .. "\n" .. _("This plugin is used in the reader only.\nOpen this dialog while reading a document to view additional options.")
+    end
     plugin_dialog = ButtonDialog:new{
-        title = plugin.fullname .. "\n\n" .. plugin.description .. "\n",
+        title = title,
         title_align = "center",
         buttons = buttons,
     }
