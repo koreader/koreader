@@ -8,7 +8,6 @@
 -- 4. Number keys 1-9 confirm the first segment, retain remaining buffer
 -- 5. Segmentation is lazy-cached: computed once per unique buffer content
 ---------------------------------
-local logger = require("logger")
 local util   = require("util")
 
 -- Maps each Cangjie key letter to its display radical
