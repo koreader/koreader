@@ -967,20 +967,20 @@ end
 -- (NOTE: This instantiates the inner bb (self._bb), so be careful about its lifecycle when you call this,
 --        c.f., TextBoxWidget:update).
 function TextBoxWidget:_updateLayout(update_highlight)
-    -- Pre-shape all visible lines so xglyphs exist before highlight
-    -- rect computation. _shapeLine is idempotent so _renderText
-    -- calling it again afterwards is safe.
-    if self.search_term and self.use_xtext and self._xtext then
-        local end_line = math.min(
-            self.virtual_line_num + self.lines_per_page - 1,
-            #self.vertical_string_list
-        )
-        for i = self.virtual_line_num, end_line do
-            local line = self.vertical_string_list[i]
-            if line then self:_shapeLine(line) end
-        end
-    end
     if self.highlight_text_selection and (update_highlight == nil or update_highlight) then
+        if self.search_term and self.use_xtext and self._xtext then
+            -- Pre-shape all visible lines so xglyphs exist before highlight
+            -- rect computation. _shapeLine is idempotent so _renderText
+            -- calling it again afterwards is safe.
+            local end_line = math.min(
+                self.virtual_line_num + self.lines_per_page - 1,
+                #self.vertical_string_list
+            )
+            for i = self.virtual_line_num, end_line do
+                local line = self.vertical_string_list[i]
+                if line then self:_shapeLine(line) end
+            end
+        end
         self:updateHighlight()
     end
     self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
@@ -1315,6 +1315,7 @@ function TextBoxWidget:free(full)
         -- c.f., :_splitToLines
         self.vertical_string_list = {}
         self.line_num_to_image = nil
+        self:clearSearch()
     end
 end
 
@@ -1337,6 +1338,7 @@ function TextBoxWidget:setText(text)
     self._search_lower = nil      -- search term cache is also stale
     self._search_char_len = nil   -- if text changed, term length against new text may differ
     self._match_page_list = nil
+    self._match_char_list = nil
     self._match_page_index = nil
     self.highlight_rects = nil
     self.highlight_start_idx = nil
@@ -1390,9 +1392,6 @@ end
 function TextBoxWidget:_postScrollHighlight()
     if self.search_term then
         self._match_page_index = nil
-        UIManager:setDirty(self.dialog or "all", function()
-            return "ui", self.dimen
-        end)
     end
 end
 
@@ -1414,7 +1413,6 @@ function TextBoxWidget:scrollDown()
         end
         self:_updateLayout()
     end
-    -- Re-apply search highlight after scrolling
     self:_postScrollHighlight()
     if self.editable then
         -- move cursor to first line of visible area
@@ -1434,7 +1432,6 @@ function TextBoxWidget:scrollUp()
         end
         self:_updateLayout()
     end
-    -- Re-apply search highlight after scrolling
     self:_postScrollHighlight()
     if self.editable then
         -- move cursor to first line of visible area
@@ -1459,7 +1456,6 @@ function TextBoxWidget:scrollLines(nb_lines)
     self.virtual_line_num = new_line_num
     self:free(false)
     self:_updateLayout()
-    -- Re-apply search highlight after scrolling
     self:_postScrollHighlight()
     if self.editable then
         local x, y = self:_getXYForCharPos() -- luacheck: no unused
@@ -1958,7 +1954,7 @@ function TextBoxWidget:scrollViewToCharPos()
 end
 
 -- Builds all derived structures once so findText only pays O(n) for the
--- string.find scan itself; all byte↔char conversions become O(1) lookups.
+-- string.find scan itself; all byte<=>char conversions become O(1) lookups.
 -- Uses Utf8Proc.lowercase(str, false) which guarantees strict 1:1 char mapping,
 -- allowing the lowercased and original char indices to be used interchangeably.
 function TextBoxWidget:_buildTextCache()
@@ -2004,24 +2000,29 @@ function TextBoxWidget:findText(text)
         self.highlight_start_idx = nil
         self:_buildMatchPageList()
     end
-    local cache = self._text_cache
-    local search_lower = self._search_lower
+    local match_chars = self._match_char_list
+    if not match_chars or #match_chars == 0 then return false end
+
     -- Advance from end of last match, or from current viewport if this is a fresh search
-    local start_byte
+    local start_char
     if self.highlight_end_idx then
-        start_byte = cache.char_to_byte[self.highlight_end_idx + 1] or 1
+        start_char = self.highlight_end_idx + 1
     else
         local current_line = self.vertical_string_list[self.virtual_line_num]
-        start_byte = current_line and cache.char_to_byte[current_line.offset] or 1
+        start_char = current_line and current_line.offset or 1
     end
-    -- O(n): unavoidable scan, wraps around if nothing found ahead of current position
-    local match_start, _ = cache.lower:find(search_lower, start_byte, true)
-    if not match_start and start_byte > 1 then
-        match_start, _ = cache.lower:find(search_lower, 1, true)
+    -- Reuse precomputed matches: pick first >= start_char, wrap to first when needed.
+    local char_start
+    for i = 1, #match_chars do
+        if match_chars[i] >= start_char then
+            char_start = match_chars[i]
+            break
+        end
     end
-    if not match_start then return false end
-    -- Since lowercase is 1:1, byte_to_char gives us the original char index directly
-    local char_start = cache.byte_to_char[match_start]
+    if not char_start then
+        char_start = match_chars[1]
+    end
+
     local char_end = char_start + self._search_char_len - 1
 
     self.highlight_start_idx = char_start
@@ -2040,6 +2041,7 @@ end
 
 function TextBoxWidget:_buildMatchPageList()
     self._match_page_list = {}
+    self._match_char_list = {}
     if not self._text_cache or not self._search_lower then return end
 
     local cache = self._text_cache
@@ -2047,8 +2049,9 @@ function TextBoxWidget:_buildMatchPageList()
     local match_byte, match_end = cache.lower:find(self._search_lower, 1, true)
 
     while match_byte do
-        -- Convert lower char index → original char index before page lookup
+        -- Convert lower char index -> original char index before page lookup
         local char_start = cache.byte_to_char[match_byte]
+        table.insert(self._match_char_list, char_start)
         local page_line = self:getCharPageTopLineNumber(char_start)
         if not seen_pages[page_line] then
             seen_pages[page_line] = true
@@ -2100,7 +2103,6 @@ function TextBoxWidget:_highlightSearchInView()
         self:_buildTextCache()
     end
     local cache = self._text_cache
-    local search_lower = self._search_lower or Utf8Proc.lowercase(self.search_term, false)
     local search_len = self._search_char_len or #util.splitToChars(self.search_term)
     self.highlight_rects = {}
 
@@ -2113,16 +2115,24 @@ function TextBoxWidget:_highlightSearchInView()
 
     local visible_start_char = self.vertical_string_list[start_line].offset
     local visible_end_char = self.vertical_string_list[end_line].end_offset or #cache.chars
+    local match_chars = self._match_char_list
+    if not match_chars then
+        self:_buildMatchPageList()
+        match_chars = self._match_char_list
+    end
+    if not match_chars or #match_chars == 0 then
+        self.highlight_rects = nil
+        return false
+    end
 
     local found_any = false
 
-    -- Back up by search term byte length to catch matches straddling the top of the viewport
-    local scan_start_byte = math.max(1, (cache.char_to_byte[visible_start_char] or 1) - #search_lower)
-    local match_start_byte, match_end_byte = cache.lower:find(search_lower, scan_start_byte, true)
+    -- Reuse precomputed char-start matches and inspect potentially straddling matches
+    local first_idx = util.bsearch_left(match_chars, visible_start_char - search_len + 1)
+    if first_idx < 1 then first_idx = 1 end
 
-    while match_start_byte do
-        -- O(1) byte → char conversion; since lowercase is 1:1 this is also the original char index
-        local char_start = cache.byte_to_char[match_start_byte]
+    for i = first_idx, #match_chars do
+        local char_start = match_chars[i]
         if char_start > visible_end_char then break end -- remaining matches are beyond the visible area
         local char_end = char_start + search_len - 1
 
@@ -2162,7 +2172,6 @@ function TextBoxWidget:_highlightSearchInView()
                 end
             end
         end
-        match_start_byte, match_end_byte = cache.lower:find(search_lower, match_end_byte + 1, true)
     end
     if not found_any then
         self.highlight_rects = nil
@@ -2176,6 +2185,7 @@ function TextBoxWidget:clearSearch(redraw)
     self._search_lower = nil
     self._search_char_len = nil
     self._match_page_list = nil
+    self._match_char_list = nil
     self._match_page_index = nil
     if self.on_clear_search then
         self.on_clear_search()

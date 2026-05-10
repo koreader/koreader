@@ -305,7 +305,7 @@ function ScrollTextWidget:onScrollText(arg, ges)
 end
 
 function ScrollTextWidget:onTapScrollText(arg, ges)
-    if not self:isTapScrollEnabled() then return false end
+    if self.ignore_taps then return false end
     if self.editable then
         -- Tap is used to position cursor
         return false
@@ -316,10 +316,6 @@ function ScrollTextWidget:onTapScrollText(arg, ges)
     else
         return self:onScrollDown()
     end
-end
-
-function ScrollTextWidget:isTapScrollEnabled()
-    return not self.ignore_taps
 end
 
 function ScrollTextWidget:setTapScrollEnabled(enabled)
