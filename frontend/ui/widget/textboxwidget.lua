@@ -2000,7 +2000,6 @@ function TextBoxWidget:findText(text)
         self.highlight_start_idx = nil
         self:_buildMatchPageList()
     end
-    local cache = self._text_cache
     local match_chars = self._match_char_list
     if not match_chars or #match_chars == 0 then return false end
 
@@ -2104,7 +2103,6 @@ function TextBoxWidget:_highlightSearchInView()
         self:_buildTextCache()
     end
     local cache = self._text_cache
-    local search_lower = self._search_lower or Utf8Proc.lowercase(self.search_term, false)
     local search_len = self._search_char_len or #util.splitToChars(self.search_term)
     self.highlight_rects = {}
 
