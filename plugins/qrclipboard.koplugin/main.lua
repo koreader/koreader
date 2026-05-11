@@ -31,7 +31,14 @@ function QRClipboard:addToHighlightDialog()
         return {
             text = _("Generate QR code"),
             callback = function()
-                local text = util.cleanupSelectedText(this.selected_text.text)
+                -- 'this' is self.ui.highlight. Do as ReaderHighlight:saveHighlight() does.
+                if this.hold_pos and not this.selected_text then
+                    this:highlightFromHoldPos()
+                end
+                if not (this.selected_text and this.selected_text.pos0 and this.selected_text.pos1) then return end
+                local text = this.ui.rolling
+                    and this.document:extendXPointersToSentenceSegment(this.selected_text.pos0, this.selected_text.pos1)
+                text = util.cleanupSelectedText(text or this.selected_text.text)
                 if Device:hasClipboard() then -- let the text to be reused via menu
                     Device.input.setClipboardText(text)
                 end
