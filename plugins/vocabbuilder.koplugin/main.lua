@@ -50,17 +50,18 @@ local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
 
+local VocabBuilder = WidgetContainer:extend{
+    name = "vocabulary_builder",
+    settings_key = "vocabulary_builder",
+}
+
 -------- shared values
 local word_face = Font:getFace("x_smallinfofont")
 local subtitle_face = Font:getFace("cfont", 12)
 local subtitle_italic_face = Font:getFace("NotoSans-Italic.ttf", 12)
 local subtitle_color = Blitbuffer.COLOR_DARK_GRAY
 local dim_color = Blitbuffer.COLOR_GRAY_3
-local settings = G_reader_settings:readSetting("vocabulary_builder", {enabled = false, with_context = true})
-
-local function saveSettings()
-    G_reader_settings:saveSetting("vocabulary_builder", settings)
-end
+local settings = G_reader_settings:readSetting(VocabBuilder.settings_key, {enabled = false, with_context = true})
 
 --[[--
 Menu dialogue widget
@@ -165,7 +166,6 @@ function MenuDialog:setupPluginMenu()
         callback = function()
             self:onClose()
             settings.reverse = not settings.reverse
-            saveSettings()
             self.vocabbuilder:reloadItems()
         end
     }
@@ -241,9 +241,7 @@ function MenuDialog:setupPluginMenu()
                     callback = function()
                         UIManager:close(self.sync_dialogue)
                         UIManager:close(self)
-                        DB:batchUpdateItems(self.vocabbuilder.item_table)
-                        cs:sync(server, DB.path, DB.onSync, false)
-                        self.vocabbuilder:reloadItems()
+                        self.vocabbuilder.vocabbuilder:onSyncVocabBuilder()
                     end,
                 },
             },
@@ -459,12 +457,10 @@ end
 
 function MenuDialog:onChangeContextStatus(args, position)
     settings.with_context = position == 2
-    saveSettings()
 end
 
 function MenuDialog:onChangeEnableStatus(args, position)
     settings.enabled = position == 2
-    saveSettings()
 end
 
 function MenuDialog:onConfigChoose(values, name, event, args, position)
@@ -1445,11 +1441,7 @@ function VocabularyBuilderWidget:refreshFooter()
         margin = 0,
         show_parent = self,
         callback = function()
-            if settings.server and self.ui.cloudstorage then
-                DB:batchUpdateItems(self.item_table)
-                self.ui.cloudstorage:sync(settings.server, DB.path, DB.onSync, false)
-                self:reloadItems()
-            end
+            self.vocabbuilder:onSyncVocabBuilder()
         end
     }
     self.footer_sync.label_widget.fgcolor = Blitbuffer.COLOR_GRAY_3
@@ -1953,11 +1945,6 @@ end
 --[[--
 Item shown in main menu
 --]]--
-local VocabBuilder = WidgetContainer:extend{
-    name = "vocabulary_builder",
-    is_doc_only = false
-}
-
 function VocabBuilder:init()
     self.ui.menu:registerToMainMenu(self)
     self:registerDictButtons()
@@ -2075,7 +2062,9 @@ end
 
 function VocabBuilder:onDispatcherRegisterActions()
     Dispatcher:registerAction("show_vocab_builder",
-        {category="none", event="ShowVocabBuilder", title=_("Open vocabulary builder"), general=true, separator=true})
+        {category="none", event="ShowVocabBuilder", title=_("Open vocabulary builder"), general=true})
+    Dispatcher:registerAction("sync_vocab_builder",
+        {category="none", event="SyncVocabBuilder", title=_("Sync vocabulary builder"), general=true, separator=true})
 end
 
 function VocabBuilder:onShowVocabBuilder()
@@ -2085,6 +2074,20 @@ function VocabBuilder:onShowVocabBuilder()
         ui = self.ui
     }
     UIManager:show(self.widget)
+    return true
+end
+
+function VocabBuilder:onSyncVocabBuilder()
+    if settings.server and self.ui.cloudstorage then
+        if self.widget then
+            DB:batchUpdateItems(self.widget.item_table)
+        end
+        self.ui.cloudstorage:sync(settings.server, DB.path, DB.onSync, false)
+        if self.widget then
+            self.widget:reloadItems()
+        end
+    end
+    return true
 end
 
 -- Event sent by readerdictionary "WordLookedUp"
