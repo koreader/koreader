@@ -1582,8 +1582,12 @@ function FileManager:showOpenWithDialog(file)
 end
 
 function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_callback, after_open_callback)
-    local is_provider_forced = provider ~= nil
-    provider = provider or DocumentRegistry:getProvider(file, true) -- include auxiliary
+    local is_provider_forced
+    if provider then -- called from Open with… dialog
+        is_provider_forced = true
+    else
+        provider, is_provider_forced = DocumentRegistry:getProvider(file, true) -- include auxiliary
+    end
     if provider and provider.order then -- auxiliary
         if aux_caller_callback then
             aux_caller_callback()
