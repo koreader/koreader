@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20260428
+local CURRENT_MIGRATION_DATE = 20260512
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -973,6 +973,23 @@ if last_migration_date < 20260428 then
                 hotkeys_settings:flush()
             end
         end
+    end
+end
+
+-- 20260512, Move HttpInspector plugin settings into one table.
+-- https://github.com/koreader/koreader/pull/15373
+if last_migration_date < 20260512 then
+    logger.info("Performing one-time migration for 20260512")
+
+    local autostart = G_reader_settings:readSetting("httpinspector_autostart")
+    local port = G_reader_settings:readSetting("httpinspector_port")
+    if autostart or port then
+        G_reader_settings:delSetting("httpinspector_autostart")
+        G_reader_settings:delSetting("httpinspector_port")
+        G_reader_settings:saveSetting("httpinspector", {
+            autostart = autostart,
+            port = tonumber(port),
+        })
     end
 end
 
