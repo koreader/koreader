@@ -32,9 +32,7 @@ function QRClipboard:addToHighlightDialog()
             text = _("Generate QR code"),
             callback = function()
                 -- 'this' is self.ui.highlight. Do as ReaderHighlight:saveHighlight() does.
-                if this.hold_pos and not this.selected_text then
-                    this:highlightFromHoldPos()
-                end
+                this:highlightFromHoldPos()
                 if not (this.selected_text and this.selected_text.pos0 and this.selected_text.pos1) then return end
                 local text = this.ui.rolling
                     and this.document:extendXPointersToSentenceSegment(this.selected_text.pos0, this.selected_text.pos1)
