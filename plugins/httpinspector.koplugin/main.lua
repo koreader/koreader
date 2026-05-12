@@ -1022,13 +1022,13 @@ local getOrderedDispatcherActions = function()
         return _dispatcher_actions
     end
     local Dispatcher = require("dispatcher")
-    local settings, order
+    local actions, order
     local n = 1
     while true do
         local name, value = debug.getupvalue(Dispatcher.init, n)
         if not name then break end
         if name == "settingsList" then
-            settings = value
+            actions = value
             break
         end
         n = n + 1
@@ -1057,8 +1057,8 @@ local getOrderedDispatcherActions = function()
         table.insert(_dispatcher_actions, section[2])
         local section_key = section[1]
         for _, k in ipairs(order) do
-            if settings[k][section_key] == true then
-                local t = util.tableDeepCopy(settings[k])
+            if actions[k][section_key] == true then
+                local t = util.tableDeepCopy(actions[k])
                 t.dispatcher_id = k
                 table.insert(_dispatcher_actions, t)
             end
