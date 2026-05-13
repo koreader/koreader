@@ -51,6 +51,7 @@ local ReaderRolling = require("apps/reader/modules/readerrolling")
 local ReaderSearch = require("apps/reader/modules/readersearch")
 local ReaderStatus = require("apps/reader/modules/readerstatus")
 local ReaderStyleTweak = require("apps/reader/modules/readerstyletweak")
+local ReaderTextSelection = require("apps/reader/modules/readertextselection")
 local ReaderThumbnail = require("apps/reader/modules/readerthumbnail")
 local ReaderToc = require("apps/reader/modules/readertoc")
 local ReaderTypeset = require("apps/reader/modules/readertypeset")
@@ -223,6 +224,13 @@ function ReaderUI:init()
     })
     -- wikipedia
     self:registerModule("wikipedia", ReaderWikipedia:new{
+        dialog = self.dialog,
+        view = self.view,
+        ui = self,
+        document = self.document,
+    })
+    -- text selection
+    self:registerModule("textselection", ReaderTextSelection:new{
         dialog = self.dialog,
         view = self.view,
         ui = self,
@@ -542,9 +550,6 @@ function ReaderUI:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.Home = { { "Home" } }
         self.key_events.Reload = { { "F5" } }
-        if Device:hasDPad() and Device:useDPadAsActionKeys() then
-            self.key_events.StartHighlightIndicator = { { { "Up", "Down" } } }
-        end
     end
 end
 
