@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" xml:lang="en" unique-identifier="q">
+    <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+        <dc:title id="title">%s</dc:title>
+        <dc:creator>%s</dc:creator>
+        <dc:language>%s</dc:language>
+        <dc:identifier id="q">NOID</dc:identifier>
+        <meta property="dcterms:modified">%s</meta>
+    </metadata>
+    <manifest>
+        %s
+    </manifest>
+    <spine>
+        %s
+    </spine>
+</package>
