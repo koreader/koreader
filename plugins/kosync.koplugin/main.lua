@@ -21,6 +21,7 @@ local KOSync = WidgetContainer:extend{
     name = "kosync",
     is_doc_only = true,
     title = _("Register/login to KOReader server"),
+    settings_key = "kosync",
 
     push_timestamp = nil,
     pull_timestamp = nil,
@@ -78,7 +79,7 @@ function KOSync:init()
         self:updateProgress(false, false)
     end
 
-    self.settings = G_reader_settings:readSetting("kosync", self.default_settings)
+    self.settings = G_reader_settings:readSetting(self.settings_key, self.default_settings)
     self.device_id = G_reader_settings:readSetting("device_id")
 
     -- Disable auto-sync if beforeWifiAction was reset to "prompt" behind our back...
