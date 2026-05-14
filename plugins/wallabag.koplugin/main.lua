@@ -123,6 +123,10 @@ function Wallabag:init()
         end
     end
 
+    self.sync_star_status = self.wb_settings.data.wallabag.sync_star_status or false
+    self.remote_star_threshold = self.wb_settings.data.wallabag.remote_star_threshold or 5
+    self.sync_star_rating_as_tag = self.wb_settings.data.wallabag.sync_star_rating_as_tag or false
+
     -- workaround for dateparser only available if newsdownloader is active
     self.is_dateparser_available = false
     self.is_dateparser_checked = false
@@ -504,6 +508,110 @@ function Wallabag:addToMainMenu(menu_items)
                             self:saveSettings()
                         end,
                         separator = true,
+                    },
+                    {
+                        text_func = function()
+                            local stars = {}
+                            stars[0] = ": " .. _("disabled")
+                            for i = 1, 5 do
+                                stars[i] = " if ⩾ "..string.rep("★", i)..""
+                            end
+                            return T(_("Star entries in Wallabag%1"), stars[self.remote_star_threshold])
+                        end,
+                        help_text = _("Favorite articles on the server when syncing if they have at least this rating."),
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            self.buttondlg = BD:new{
+                                title = "Threshold",
+                                title_align = "center",
+                                -- shrink_unneeded_width = true,
+                                width_factor = 0.33,
+                                buttons = {
+                                       { {
+                                            text = "★★★★★",
+                                            align = "left",
+                                            callback = function()
+                                                self.sync_star_status = true
+                                                self.remote_star_threshold = 5
+                                                self:saveSettings()
+                                                touchmenu_instance:updateItems()
+                                                UIManager:close(self.buttondlg)
+                                            end,
+                                        }},
+                                       { {
+                                            text = "★★★★",
+                                            align = "left",
+                                            callback = function()
+                                                self.sync_star_status = true
+                                                self.remote_star_threshold = 4
+                                                self:saveSettings()
+                                                touchmenu_instance:updateItems()
+                                                UIManager:close(self.buttondlg)
+                                            end,
+                                        }},
+                                       { {
+                                            text = "★★★",
+                                            align = "left",
+                                            callback = function()
+                                                self.sync_star_status = true
+                                                self.remote_star_threshold = 3
+                                                self:saveSettings()
+                                                touchmenu_instance:updateItems()
+                                                UIManager:close(self.buttondlg)
+                                            end,
+                                        }},
+                                       { {
+                                            text = "★★",
+                                            align = "left",
+                                            callback = function()
+                                                self.sync_star_status = true
+                                                self.remote_star_threshold = 2
+                                                self:saveSettings()
+                                                touchmenu_instance:updateItems()
+                                                UIManager:close(self.buttondlg)
+                                            end,
+
+                                        }},
+                                        {{
+                                            text = "★",
+                                            align = "left",
+                                            callback = function()
+                                                self.sync_star_status = true
+                                                self.remote_star_threshold = 1
+                                                self:saveSettings()
+                                                touchmenu_instance:updateItems()
+                                                UIManager:close(self.buttondlg)
+                                            end,
+
+                                        }},
+                                        {{
+                                            text_func = function()
+                                                return T(_("Disable"), self.remote_star_threshold)
+                                            end,
+                                            align = "left",
+                                            callback = function()
+                                                self.sync_star_status = false
+                                                self.remote_star_threshold = 0
+                                                self:saveSettings()
+                                                touchmenu_instance:updateItems()
+                                                UIManager:close(self.buttondlg)
+                                            end,
+                                        }}
+                                    }
+                               }
+                                UIManager:show(self.buttondlg)
+                            end,
+                    },
+                    {
+                        text = _("Tag entries in Wallabag with their star rating"),
+                        help_text = _("Sync star ratings to Wallabag as tags, regardless of threshold for marking entries as liked."),
+                        keep_menu_open = true,
+                        checked_func = function() return self.sync_star_rating_as_tag end,
+                        callback = function()
+                            self.sync_star_rating_as_tag = not self.sync_star_rating_as_tag
+                            self:saveSettings()
+                        end,
+                        seperator = true
                     },
                     {
                         text = _("Help"),
@@ -1319,8 +1427,39 @@ function Wallabag:archiveArticle(path)
             end
         else
             local body = { archive = 1 }
-            local bodyJSON = JSON.encode(body)
+            local tags = {}
+
             local headers = {
+                ["Content-type"] = "application/json",
+                ["Accept"] = "application/json, */*",
+                ["Authorization"] = "Bearer " .. self.access_token,
+            }
+
+            if self.sync_star_status then
+                local doc_settings = DocSettings:open(path)
+                local summary = doc_settings:readSetting("summary")
+                if summary and summary.rating then
+                    if summary.rating > 0 and self.sync_star_rating_as_tag == true then
+                        local ok, result = self:callAPI("GET", "/api/entries/"..id, headers)
+                        if ok and result and result.tags then
+                            local current_tags = result.tags
+                            for _, t in ipairs(current_tags) do
+                                table.insert(tags, t.label)
+                            end
+                        else
+                            logger.warn("Wallabag:archiveArticle:", id, "failed to get existing tags")
+                        end
+                        table.insert(tags, summary.rating .. "-star")
+                        body.tags = table.concat(tags,",")
+                    end
+                    if summary.rating >= self.remote_star_threshold then
+                        body.starred = 1
+                    end
+                end
+            end
+
+            local bodyJSON = JSON.encode(body)
+            headers = {
                 ["Content-type"] = "application/json",
                 ["Accept"] = "application/json, */*",
                 ["Content-Length"] = tostring(#bodyJSON),
@@ -1651,6 +1790,9 @@ function Wallabag:saveSettings()
         sync_remote_archive           = self.sync_remote_archive,
         articles_per_sync             = self.articles_per_sync,
         send_review_as_tags           = self.send_review_as_tags,
+        sync_star_status              = self.sync_star_status,
+        remote_star_threshold         = self.remote_star_threshold,
+        sync_star_rating_as_tag       = self.sync_star_rating_as_tag,
         remove_finished_from_history  = self.remove_finished_from_history,
         remove_read_from_history      = self.remove_read_from_history,
         remove_abandoned_from_history = self.remove_abandoned_from_history,
