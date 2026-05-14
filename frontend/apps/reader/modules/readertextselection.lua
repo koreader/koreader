@@ -303,6 +303,28 @@ function ReaderTextSelection:moveHighlightIndicator(args)
     return true
 end
 
+function ReaderTextSelection:pageTurnDuringSelection()
+    self._edge_dx, self._edge_dy = nil, nil
+    self._previous_indicator_word = nil
+    local last_pos = self._current_indicator_pos
+    local target_x = last_pos.x + last_pos.w * 0.5
+    local target_y = last_pos.y + last_pos.h * 0.5
+
+    local new_word = self:_getNearestWordFromScreenPoint(target_x, target_y)
+    if new_word then
+        self:_setIndicatorToWord(new_word)
+        if not self.ui.highlight.select_mode and self._start_indicator_highlight then
+            self.ui.highlight:startSelection()
+            -- we don't want to HoldPan during moveHighlightIndicator, a following Press
+            -- key should close the startSelection loop though.
+            self._start_indicator_highlight = nil -- breaks the `if moved and self._ then`
+        end
+        return true
+    else
+        self:stopHighlightIndicator(true)
+    end
+end
+
 function ReaderTextSelection:_isSingleWord(word)
     local trimmed_word = word.word:match("^%s*(.-)%s*$") or word.word
     if trimmed_word:match("%s") then
