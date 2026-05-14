@@ -44,6 +44,13 @@ local OPDSBrowser = Menu:extend{
     borrow_rel           = "http://opds-spec.org/acquisition/borrow",
     stream_rel           = "http://vaemendis.net/opds-pse/stream",
     facet_rel            = "http://opds-spec.org/facet",
+    catalog_rel          = {
+        ["subsection"] = true,
+        ["http://opds-spec.org/subsection"] = true,
+        ["http://opds-spec.org/crawlable"] = true,
+        ["http://opds-spec.org/sort/popular"] = true,
+        ["http://opds-spec.org/sort/new"] = true,
+    },
     image_rel            = {
         ["http://opds-spec.org/image"] = true,
         ["http://opds-spec.org/cover"] = true, -- ManyBooks.net, not in spec
@@ -587,12 +594,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
             for ___, link in ipairs(entry.link) do
                 local link_href = build_href(link.href)
                 if link.type and link.type:find(self.catalog_type)
-                        and (not link.rel
-                             or link.rel == "subsection"
-                             or link.rel == "http://opds-spec.org/subsection"
-                             or link.rel == "http://opds-spec.org/crawlable"
-                             or link.rel == "http://opds-spec.org/sort/popular"
-                             or link.rel == "http://opds-spec.org/sort/new") then
+                        and (not link.rel or self.catalog_rel[link.rel]) then
                     item.url = link_href
                 end
                 -- Some catalogs do not use the rel attribute to denote
