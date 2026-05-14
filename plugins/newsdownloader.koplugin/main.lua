@@ -1436,4 +1436,11 @@ end
 NewsDownloader._parseMaxAge = parseMaxAge
 NewsDownloader._getFeedItemTimestamp = getFeedItemTimestamp
 
+function NewsDownloader:deletePluginSettings()
+    local settings_file = ("%s/%s"):format(DataStorage:getSettingsDir(), self.news_config_file)
+    os.remove(settings_file)
+    os.remove(settings_file .. ".old")
+    os.remove(self.feed_config_path)
+end
+
 return NewsDownloader
