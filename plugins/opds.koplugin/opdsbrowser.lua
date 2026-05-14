@@ -590,6 +590,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                         and (not link.rel
                              or link.rel == "subsection"
                              or link.rel == "http://opds-spec.org/subsection"
+                             or link.rel == "http://opds-spec.org/crawlable"
                              or link.rel == "http://opds-spec.org/sort/popular"
                              or link.rel == "http://opds-spec.org/sort/new") then
                     item.url = link_href
