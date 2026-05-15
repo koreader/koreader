@@ -58,6 +58,7 @@ local STATISTICS_SQL_BOOK_TOTALS_QUERY = [[
 
 local ReaderStatistics = Widget:extend{
     name = "statistics",
+    settings_key = "statistics",
     start_current_period = 0,
     preserved_start_current_period = nil, -- should stay a class property
     curr_page = 0,
@@ -115,17 +116,12 @@ function ReaderStatistics:useColorRendering()
 end
 
 function ReaderStatistics:init()
-    if self.document and self.document.is_pic then
-        self.settings = { is_enabled = false }
-        return -- disable in PIC documents
-    end
-
     self.color = self:useColorRendering()
     self.is_doc = false
     self.is_doc_not_frozen = false -- freeze finished books statistics
 
     -- Placeholder until onReaderReady
-    self.data = {
+    self.data = self.document and {
         title = "",
         authors = "N/A",
         language = "N/A",
@@ -144,7 +140,7 @@ function ReaderStatistics:init()
     end
     self:resetVolatileStats()
 
-    self.settings = G_reader_settings:readSetting("statistics", self.default_settings)
+    self.settings = G_reader_settings:readSetting(self.settings_key, self.default_settings)
 
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
@@ -2736,10 +2732,12 @@ end
 
 function ReaderStatistics:onReaderReady(config)
     if self.settings.is_enabled then
-        self.data = config:readSetting("stats", { performance_in_pages = {} })
-        self.doc_md5 = config:readSetting("partial_md5_checksum")
-        -- we have correct page count now, do the actual initialization work
-        self:initData()
+        if not self.document.is_pic then -- disabled in PIC documents
+            self.data = config:readSetting("stats", { performance_in_pages = {} })
+            self.doc_md5 = config:readSetting("partial_md5_checksum")
+            -- we have correct page count now, do the actual initialization work
+            self:initData()
+        end
         self.view.footer:maybeUpdateFooter()
     end
 end
