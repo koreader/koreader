@@ -94,8 +94,8 @@ end
 function HotKeys:onHotkeyAction(hotkey)
     -- Note: we could have started text selection and then trigger a reflow through hotkeys (e.g., increase
     --       font-size) which will cause pandemonium to ensue (invalid coordinates).
-    if self.ui.textselection and self.ui.textselection:isActive() then
-        self.ui.textselection:stopHighlightIndicator(true)
+    if self.ui.keyselection and self.ui.keyselection:isActive() then
+        self.ui.keyselection:stopHighlightIndicator(true)
     end
     local hotkey_action_list = self.hotkeys[hotkey]
     local context = self.is_docless and "FileManager" or "Reader"

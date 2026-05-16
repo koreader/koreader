@@ -41,6 +41,7 @@ local ReaderHandMade = require("apps/reader/modules/readerhandmade")
 local ReaderHinting = require("apps/reader/modules/readerhinting")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local ReaderScrolling = require("apps/reader/modules/readerscrolling")
+local ReaderKeySelection = require("apps/reader/modules/readerkeyselection")
 local ReaderKoptListener = require("apps/reader/modules/readerkoptlistener")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local ReaderMenu = require("apps/reader/modules/readermenu")
@@ -51,7 +52,6 @@ local ReaderRolling = require("apps/reader/modules/readerrolling")
 local ReaderSearch = require("apps/reader/modules/readersearch")
 local ReaderStatus = require("apps/reader/modules/readerstatus")
 local ReaderStyleTweak = require("apps/reader/modules/readerstyletweak")
-local ReaderTextSelection = require("apps/reader/modules/readertextselection")
 local ReaderThumbnail = require("apps/reader/modules/readerthumbnail")
 local ReaderToc = require("apps/reader/modules/readertoc")
 local ReaderTypeset = require("apps/reader/modules/readertypeset")
@@ -229,15 +229,13 @@ function ReaderUI:init()
         ui = self,
         document = self.document,
     })
-    if not Device:isTouchDevice() or Device:hasDPad() then
-        -- text selection
-        self:registerModule("textselection", ReaderTextSelection:new{
-            dialog = self.dialog,
-            view = self.view,
-            ui = self,
-            document = self.document,
-        })
-    end
+    -- text selection with cursor keys
+    self:registerModule("keyselection", ReaderKeySelection:new{
+        dialog = self.dialog,
+        view = self.view,
+        ui = self,
+        document = self.document,
+    })
     -- screenshot controller
     self:registerModule("screenshot", Screenshoter:new{
         prefix = 'Reader',

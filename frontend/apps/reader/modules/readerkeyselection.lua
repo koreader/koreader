@@ -24,9 +24,9 @@ local math_floor = math.floor
 -- Reusable table for FFI probes to avoid repeated allocations.
 local SHARED_PROBE = { x = 0, y = 0 }
 
-local ReaderTextSelection = InputContainer:extend{}
+local ReaderKeySelection = InputContainer:extend{}
 
-function ReaderTextSelection:init()
+function ReaderKeySelection:init()
     if Device:isTouchDevice() and not Device:hasDPad() then
         return
     end
@@ -48,11 +48,11 @@ function ReaderTextSelection:init()
     end)
 end
 
-function ReaderTextSelection:onSetDimensions(dimen)
+function ReaderKeySelection:onSetDimensions(dimen)
     self.screen_w, self.screen_h = dimen.w, dimen.h
 end
 
-function ReaderTextSelection:registerKeyEvents()
+function ReaderKeySelection:registerKeyEvents()
     if Device:hasDPad() then
         self.key_events.StopHighlightIndicator  = { { Device.input.group.Back }, args = true } -- true: clear highlight selection
         local event = Device:useDPadAsActionKeys() and "StartOrMoveHighlightIndicator" or "MoveHighlightIndicator"
@@ -75,9 +75,9 @@ function ReaderTextSelection:registerKeyEvents()
         -- startHighlightIndicator (H) is handled by hotkeys.koplugin
     end
 end
-ReaderTextSelection.onPhysicalKeyboardConnected = ReaderTextSelection.init
+ReaderKeySelection.onPhysicalKeyboardConnected = ReaderKeySelection.init
 
-function ReaderTextSelection:addToMainMenu(menu_items)
+function ReaderKeySelection:addToMainMenu(menu_items)
     if Device:isTouchDevice() or not Device:hasDPad() then return end
     -- insert table to main reader menu
     if not Device:useDPadAsActionKeys() then
@@ -198,27 +198,27 @@ function ReaderTextSelection:addToMainMenu(menu_items)
 end
 
 -- for dispatcher and hotkeys
-function ReaderTextSelection:onStartHighlightIndicator()
+function ReaderKeySelection:onStartHighlightIndicator()
     return self:startHighlightIndicator()
 end
 
-function ReaderTextSelection:onStopHighlightIndicator(need_clear_selection)
+function ReaderKeySelection:onStopHighlightIndicator(need_clear_selection)
     return self:stopHighlightIndicator(need_clear_selection)
 end
 
-function ReaderTextSelection:onHighlightPress(skip_tap_check)
+function ReaderKeySelection:onHighlightPress(skip_tap_check)
     return self:highlightPress(skip_tap_check)
 end
 
-function ReaderTextSelection:onHighlightModifierPress()
+function ReaderKeySelection:onHighlightModifierPress()
     return self:highlightModifierPress()
 end
 
-function ReaderTextSelection:onMoveHighlightIndicator(args)
+function ReaderKeySelection:onMoveHighlightIndicator(args)
     return self:moveHighlightIndicator(args)
 end
 
-function ReaderTextSelection:onStartOrMoveHighlightIndicator(args)
+function ReaderKeySelection:onStartOrMoveHighlightIndicator(args)
     if not self._current_indicator_pos then
         self:startHighlightIndicator()
     else
@@ -227,11 +227,11 @@ function ReaderTextSelection:onStartOrMoveHighlightIndicator(args)
     return true
 end
 
-function ReaderTextSelection:isActive()
+function ReaderKeySelection:isActive()
     return self._current_indicator_pos ~= nil
 end
 
-function ReaderTextSelection:startHighlightIndicator()
+function ReaderKeySelection:startHighlightIndicator()
     -- disable long-press icon (poke-ball), as it is triggered constantly due to NT devices needing a workaround for text selection to work.
     self.ui.highlight.long_hold_reached_action = function() end
     if self.view.visible_area and not self._current_indicator_pos then
@@ -265,7 +265,7 @@ function ReaderTextSelection:startHighlightIndicator()
     return false
 end
 
-function ReaderTextSelection:stopHighlightIndicator(need_clear_selection)
+function ReaderKeySelection:stopHighlightIndicator(need_clear_selection)
     if not self._current_indicator_pos then return false end
     -- If we're in select mode and user presses back, end the selection
     if self.ui.highlight.select_mode and self.ui.highlight.highlight_idx then
@@ -294,7 +294,7 @@ function ReaderTextSelection:stopHighlightIndicator(need_clear_selection)
     return true
 end
 
-function ReaderTextSelection:highlightPress(skip_tap_check)
+function ReaderKeySelection:highlightPress(skip_tap_check)
     if not self._current_indicator_pos then return false end
     if self._start_indicator_highlight then
         self.ui.highlight:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
@@ -326,7 +326,7 @@ function ReaderTextSelection:highlightPress(skip_tap_check)
     return true
 end
 
-function ReaderTextSelection:highlightModifierPress()
+function ReaderKeySelection:highlightModifierPress()
     if not self._current_indicator_pos then return false end -- let event propagate to hotkeys
     if not self._start_indicator_highlight then
         self:highlightPress(true)
@@ -339,14 +339,14 @@ function ReaderTextSelection:highlightModifierPress()
     return true
 end
 
-function ReaderTextSelection:moveHighlightIndicator(args)
+function ReaderKeySelection:moveHighlightIndicator(args)
     if not (self.view.visible_area and self._current_indicator_pos) then return false end
     local dx, dy, quick_move = unpack(args)
     if dx == self._edge_dx and dy == self._edge_dy and self._last_move_was_quick_move == quick_move then
         -- don't waste resources trying to move in a direction that we know is blocked
         -- Note: the self._last_move_was_quick_move == quick_move is important because we don't
         --       want a quick_move (which does not wrap around) to block a legitimate wrap around.
-        logger.dbg("ReaderTextSelection: Previous boundary hit in this direction, skipping move attempt.")
+        logger.dbg("ReaderKeySelection: Previous boundary hit in this direction, skipping move attempt.")
         return true
     end
     local moved = false
@@ -363,7 +363,7 @@ function ReaderTextSelection:moveHighlightIndicator(args)
     local is_vertical_move = dx == 0 and dy ~= 0
     self._last_move_was_quick_move = quick_move
     local current_word = self._previous_indicator_word
-    logger.dbg("ReaderTextSelection: Current cached word:", current_word and current_word.word or "nil", "| dx:", dx, "| dy:", dy, "| quick_move:", quick_move)
+    logger.dbg("ReaderKeySelection: Current cached word:", current_word and current_word.word or "nil", "| dx:", dx, "| dy:", dy, "| quick_move:", quick_move)
     if not current_word then
         current_word = self:_getCurrentIndicatorWord(dx, dy)
     end
@@ -418,7 +418,7 @@ function ReaderTextSelection:moveHighlightIndicator(args)
     return true
 end
 
-function ReaderTextSelection:pageTurnDuringSelection()
+function ReaderKeySelection:pageTurnDuringSelection()
     self._edge_dx, self._edge_dy = nil, nil
     self._previous_indicator_word = nil
     local last_pos = self._current_indicator_pos
@@ -440,7 +440,7 @@ function ReaderTextSelection:pageTurnDuringSelection()
     end
 end
 
-function ReaderTextSelection:_isSingleWord(word)
+function ReaderKeySelection:_isSingleWord(word)
     local trimmed_word = word.word:match("^%s*(.-)%s*$") or word.word
     if trimmed_word:match("%s") then
         return false
@@ -448,7 +448,7 @@ function ReaderTextSelection:_isSingleWord(word)
     return true
 end
 
-function ReaderTextSelection:_isSplitHyphenatedWord(word)
+function ReaderKeySelection:_isSplitHyphenatedWord(word)
     if not word or not word.pos0 or not word.pos1 then return false end
     -- A single hyphenated word does not contain spaces in the middle.
     if not self:_isSingleWord(word) then
@@ -466,13 +466,13 @@ function ReaderTextSelection:_isSplitHyphenatedWord(word)
     -- fragment boxes that exist on completely different vertical coordinates.
     local is_split = #segments > 1 and segments[1].y ~= segments[#segments].y
     if is_split then
-        logger.dbg("ReaderTextSelection: Deterministic split word detected:", word.word)
+        logger.dbg("ReaderKeySelection: Deterministic split word detected:", word.word)
     end
     return is_split
 end
 
 -- X-based head/tail logic that manages RTL layout translation
-function ReaderTextSelection:_resolveSplitWordFromX(word, x_pos)
+function ReaderKeySelection:_resolveSplitWordFromX(word, x_pos)
     if not self:_isSplitHyphenatedWord(word) then
         return word, word.sbox.y
     end
@@ -499,7 +499,7 @@ function ReaderTextSelection:_resolveSplitWordFromX(word, x_pos)
     end
 end
 
-function ReaderTextSelection:_moveIndicatorCreDoc(current_word, dx, dy, steps, no_wrap_horizontal, preferred_center_x)
+function ReaderKeySelection:_moveIndicatorCreDoc(current_word, dx, dy, steps, no_wrap_horizontal, preferred_center_x)
     local target_word = current_word
     local did_move = false
     local lock_line_center_y
@@ -529,7 +529,7 @@ function ReaderTextSelection:_moveIndicatorCreDoc(current_word, dx, dy, steps, n
             if no_wrap_horizontal and target_word.is_split_fragment then
                 if (drop_off_head and target_word.is_split_fragment == "head") or
                    (drop_off_tail and target_word.is_split_fragment == "tail") then
-                    logger.dbg("ReaderTextSelection: Semantic wrap prevented on split word edge.")
+                    logger.dbg("ReaderKeySelection: Semantic wrap prevented on split word edge.")
                     break -- Terminate wrap before mutating state
                 end
             end
@@ -566,7 +566,7 @@ function ReaderTextSelection:_moveIndicatorCreDoc(current_word, dx, dy, steps, n
     return did_move
 end
 
-function ReaderTextSelection:_setIndicatorToWord(word)
+function ReaderKeySelection:_setIndicatorToWord(word)
     if not word or not word.sbox then return false end
     local rect = self._current_indicator_pos:copy()
     local anchor_x, anchor_y, is_split = self:_getWordAnchorCoordinates(word)
@@ -577,14 +577,14 @@ function ReaderTextSelection:_setIndicatorToWord(word)
     return true
 end
 
-function ReaderTextSelection:_setIndicatorRect(rect)
+function ReaderKeySelection:_setIndicatorRect(rect)
     UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
     self._current_indicator_pos = rect
     self.view.highlight.indicator = self._current_indicator_pos
     UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
 end
 
-function ReaderTextSelection:_getWordAnchorCoordinates(word)
+function ReaderKeySelection:_getWordAnchorCoordinates(word)
     if not word or not word.sbox then
         return nil, nil, false
     end
@@ -628,7 +628,7 @@ function ReaderTextSelection:_getWordAnchorCoordinates(word)
     return sbox.x + sbox.w * 0.5, sbox.y + sbox.h * 0.5, false
 end
 
-function ReaderTextSelection:_getWordFromScreenPoint(screen_x, screen_y, dx, dy)
+function ReaderKeySelection:_getWordFromScreenPoint(screen_x, screen_y, dx, dy)
     if screen_x >= 0 and screen_x <= self.view.visible_area.w and screen_y >= 0 and screen_y <= self.view.visible_area.h then
         SHARED_PROBE.x = screen_x
         SHARED_PROBE.y = screen_y
@@ -656,7 +656,7 @@ function ReaderTextSelection:_getWordFromScreenPoint(screen_x, screen_y, dx, dy)
     end
 end
 
-function ReaderTextSelection:_getNearestWordFromScreenPoint(screen_x, screen_y)
+function ReaderKeySelection:_getNearestWordFromScreenPoint(screen_x, screen_y)
     SHARED_PROBE.x = screen_x
     SHARED_PROBE.y = screen_y
     local pos = self.view:screenToPageTransform(SHARED_PROBE)
@@ -664,7 +664,7 @@ function ReaderTextSelection:_getNearestWordFromScreenPoint(screen_x, screen_y)
 
     local origin_word = doc:getWordFromPosition(pos, true)
     if origin_word and origin_word.sbox then
-        logger.dbg("ReaderTextSelection: Exact word found at position:", origin_word.word)
+        logger.dbg("ReaderKeySelection: Exact word found at position:", origin_word.word)
         if self:_isSingleWord(origin_word) then
             return origin_word
         end
@@ -672,14 +672,14 @@ function ReaderTextSelection:_getNearestWordFromScreenPoint(screen_x, screen_y)
     -- No exact word found, perform a ripple search for the nearest word
     local nearest_word = doc:getNearestWordAndBoxFromPosition(pos, 0) -- 0 means DIR_ANY, search the entire page
     if nearest_word and nearest_word.sbox then
-        logger.dbg("ReaderTextSelection: No word at exact position. Nearest word is:", nearest_word.word)
+        logger.dbg("ReaderKeySelection: No word at exact position. Nearest word is:", nearest_word.word)
         return nearest_word
     end
-    logger.dbg("ReaderTextSelection: No word found in current page.")
+    logger.dbg("ReaderKeySelection: No word found in current page.")
     return nil
 end
 
-function ReaderTextSelection:_getCurrentIndicatorWord(dx, dy)
+function ReaderKeySelection:_getCurrentIndicatorWord(dx, dy)
     local center_x = self._current_indicator_pos.x + self._current_indicator_pos.w * 0.5
     local center_y = self._current_indicator_pos.y + self._current_indicator_pos.h * 0.5
     local word = self:_getWordFromScreenPoint(center_x, center_y, dx, dy)
@@ -691,10 +691,10 @@ function ReaderTextSelection:_getCurrentIndicatorWord(dx, dy)
             -- Y-coordinates are absolute, universally bypassing RTL rules
             if center_y < midpoint_y then
                 word.is_split_fragment = "head"
-                logger.dbg("ReaderTextSelection: State recovered -> Head")
+                logger.dbg("ReaderKeySelection: State recovered -> Head")
             else
                 word.is_split_fragment = "tail"
-                logger.dbg("ReaderTextSelection: State recovered -> Tail")
+                logger.dbg("ReaderKeySelection: State recovered -> Tail")
             end
         end
     end
@@ -702,7 +702,7 @@ function ReaderTextSelection:_getCurrentIndicatorWord(dx, dy)
     return word
 end
 
-function ReaderTextSelection:_getQuickVerticalWordRolling(anchor_x, target_y, dy, exclude_word, current_anchor_y)
+function ReaderKeySelection:_getQuickVerticalWordRolling(anchor_x, target_y, dy, exclude_word, current_anchor_y)
     local doc = self.ui.document
     -- Prevent wrapping off the current page.
     local safe_y = math_max(self.view.visible_area.y, math_min(target_y, self.view.visible_area.y + self.view.visible_area.h))
@@ -713,12 +713,12 @@ function ReaderTextSelection:_getQuickVerticalWordRolling(anchor_x, target_y, dy
     local candidate = doc:getWordFromPosition(SHARED_PROBE, true)
 
     if not candidate or not candidate.sbox then
-        logger.dbg("ReaderTextSelection: Quick move failed - no word found at target.")
+        logger.dbg("ReaderKeySelection: Quick move failed - no word found at target.")
         return nil
     end
 
     if exclude_word and exclude_word.pos0 and candidate.pos0 == exclude_word.pos0 then
-        logger.dbg("ReaderTextSelection: Quick move rejected - hit origin word.")
+        logger.dbg("ReaderKeySelection: Quick move rejected - hit origin word.")
         return nil
     end
 
@@ -728,18 +728,18 @@ function ReaderTextSelection:_getQuickVerticalWordRolling(anchor_x, target_y, dy
     local line_tol = (exclude_word and exclude_word.sbox) and math_max(1, exclude_word.sbox.h * 0.5) or math_max(1, Size.item.height_default * 0.5)
     if current_anchor_y then
         if math_abs(candidate_sy - current_anchor_y) <= line_tol then
-            logger.dbg("ReaderTextSelection: Quick move rejected - did not clear current line.")
+            logger.dbg("ReaderKeySelection: Quick move rejected - did not clear current line.")
             return nil
         end
         if dy < 0 and candidate_sy >= current_anchor_y - line_tol then return nil end
         if dy > 0 and candidate_sy <= current_anchor_y + line_tol then return nil end
     end
 
-    logger.dbg("ReaderTextSelection: Quick vertical jump success to:", candidate.word)
+    logger.dbg("ReaderKeySelection: Quick vertical jump success to:", candidate.word)
     return candidate
 end
 
-function ReaderTextSelection:_getAdjacentWordRolling(word, direction, lock_line_center_y, lock_line_tolerance)
+function ReaderKeySelection:_getAdjacentWordRolling(word, direction, lock_line_center_y, lock_line_tolerance)
     if not word or not word.pos0 then return nil end
     local is_forward_physical = (not self.mirroredUI and direction > 0) or (self.mirroredUI and direction < 0)
     if self.invert_ui_layout then
@@ -749,11 +749,11 @@ function ReaderTextSelection:_getAdjacentWordRolling(word, direction, lock_line_
     -- If we're on one half of a split word, the next 'line' is just the other half.
     if self:_isSplitHyphenatedWord(word) then
         if is_forward_physical and word.is_split_fragment == "head" then
-            logger.dbg("ReaderTextSelection: Internal jump Forward -> Tail")
+            logger.dbg("ReaderKeySelection: Internal jump Forward -> Tail")
             word.is_split_fragment = "tail"
             return word
         elseif not is_forward_physical and word.is_split_fragment == "tail" then
-            logger.dbg("ReaderTextSelection: Internal jump Backward -> Head")
+            logger.dbg("ReaderKeySelection: Internal jump Backward -> Head")
             word.is_split_fragment = "head"
             return word
         end
@@ -765,13 +765,13 @@ function ReaderTextSelection:_getAdjacentWordRolling(word, direction, lock_line_
     -- Advance strictly via logical XPointer to perfectly step over BiDi traps
     local next_xp = logical_dir > 0 and doc:getNextVisibleWordStart(word.pos0) or doc:getPrevVisibleWordStart(word.pos0)
     if not next_xp or next_xp == word.pos0 then
-        logger.dbg("ReaderTextSelection: Reached logical end of stream.")
+        logger.dbg("ReaderKeySelection: Reached logical end of stream.")
         return nil
     end
     -- For hyphenated words straddled across different pages, tails are not detected so we need to phycally
     -- probe for them, otherwise indicator will hit a boundary before the fragment.
     if not doc:isXPointerInCurrentPage(next_xp) then
-        logger.dbg("ReaderTextSelection: Logical boundary hit. Attempting physical horizontal probe.")
+        logger.dbg("ReaderKeySelection: Logical boundary hit. Attempting physical horizontal probe.")
         local head_is_left = self.mirroredUI
         if self.invert_ui_layout then
             head_is_left = not head_is_left
@@ -789,7 +789,7 @@ function ReaderTextSelection:_getAdjacentWordRolling(word, direction, lock_line_
             if not probe_word.is_split_fragment and self:_isSplitHyphenatedWord(probe_word) then
                 probe_word.is_split_fragment = is_forward_physical and "head" or "tail"
             end
-            logger.dbg("ReaderTextSelection: Physical probe rescued word:", probe_word.word)
+            logger.dbg("ReaderKeySelection: Physical probe rescued word:", probe_word.word)
             return probe_word
         end
         return nil
@@ -810,10 +810,10 @@ function ReaderTextSelection:_getAdjacentWordRolling(word, direction, lock_line_
     -- Directional Entry: Stamp the initial state on newly discovered split words
     if not candidate.is_split_fragment and self:_isSplitHyphenatedWord(candidate) then
         if is_forward_physical then
-            logger.dbg("ReaderTextSelection: External entry Forward -> Head")
+            logger.dbg("ReaderKeySelection: External entry Forward -> Head")
             candidate.is_split_fragment = "head"
         else
-            logger.dbg("ReaderTextSelection: External entry Backward -> Tail")
+            logger.dbg("ReaderKeySelection: External entry Backward -> Tail")
             candidate.is_split_fragment = "tail"
         end
     end
@@ -828,7 +828,7 @@ function ReaderTextSelection:_getAdjacentWordRolling(word, direction, lock_line_
     return candidate
 end
 
-function ReaderTextSelection:_getAdjacentLineWordRolling(word, direction, preferred_center_x)
+function ReaderKeySelection:_getAdjacentLineWordRolling(word, direction, preferred_center_x)
     if not (word and word.pos0 and word.sbox) then return end
 
     local doc = self.ui.document
@@ -849,7 +849,7 @@ function ReaderTextSelection:_getAdjacentLineWordRolling(word, direction, prefer
     local logical_h = Size.item.height_default
     local line_tol = logical_h * 0.3
 
-    logger.dbg("ReaderTextSelection: Start ultra-lean search. AnchorY:", start_sy, "| TargetX:", target_x, "| Dir:", direction)
+    logger.dbg("ReaderKeySelection: Start ultra-lean search. AnchorY:", start_sy, "| TargetX:", target_x, "| Dir:", direction)
 
     local current_xp = word.pos0
     local target_line_y, fallback_sx, fallback_sy = nil, nil, nil
@@ -858,13 +858,13 @@ function ReaderTextSelection:_getAdjacentLineWordRolling(word, direction, prefer
     for _ = 1, 80 do
         local next_xp = direction > 0 and doc:getNextVisibleWordStart(current_xp) or doc:getPrevVisibleWordStart(current_xp)
         if not next_xp or next_xp == current_xp then
-            logger.dbg("ReaderTextSelection: Break - end of stream.")
+            logger.dbg("ReaderKeySelection: Break - end of stream.")
             break
         end
         current_xp = next_xp
 
         if not doc:isXPointerInCurrentPage(next_xp) then
-            logger.dbg("ReaderTextSelection: Break - hit page boundary.")
+            logger.dbg("ReaderKeySelection: Break - hit page boundary.")
             break
         end
 
@@ -874,7 +874,7 @@ function ReaderTextSelection:_getAdjacentLineWordRolling(word, direction, prefer
         local is_new_line = (direction > 0 and sy > start_sy + line_tol) or (direction < 0 and sy < start_sy - line_tol)
         if is_new_line then
             target_line_y, fallback_sx, fallback_sy = sy, sx, sy
-            logger.dbg("ReaderTextSelection: Target line hit at Y:", sy, "- Breaking loop.")
+            logger.dbg("ReaderKeySelection: Target line hit at Y:", sy, "- Breaking loop.")
             break -- The magic bullet: Stop scanning. We have our Y-coordinate.
         end
     end
@@ -893,28 +893,28 @@ function ReaderTextSelection:_getAdjacentLineWordRolling(word, direction, prefer
         if not (evaluate_y and target_line_y and math_abs(evaluate_y - target_line_y) > line_tol) then
             best_word = probe_word
         else
-            logger.dbg("ReaderTextSelection: Physical probe rejected - out of bounds:", evaluate_y)
+            logger.dbg("ReaderKeySelection: Physical probe rejected - out of bounds:", evaluate_y)
         end
     end
 
     -- Phase 3: Fallback (If the line is short and the physical probe grabbed empty space)
     if not best_word and fallback_sx and fallback_sy then
-        logger.dbg("ReaderTextSelection: Probe failed. Falling back to logical edge word.")
+        logger.dbg("ReaderKeySelection: Probe failed. Falling back to logical edge word.")
         SHARED_PROBE.x = fallback_sx
         SHARED_PROBE.y = fallback_sy
         best_word = doc:getWordFromPosition(SHARED_PROBE, true)
     end
 
     if best_word then
-        logger.dbg("ReaderTextSelection: Success. Best word:", best_word.word)
+        logger.dbg("ReaderKeySelection: Success. Best word:", best_word.word)
     else
-        logger.dbg("ReaderTextSelection: Failed to find valid adjacent word.")
+        logger.dbg("ReaderKeySelection: Failed to find valid adjacent word.")
     end
 
     return best_word
 end
 
-function ReaderTextSelection:_moveIndicatorFreeFormPaging(dx, dy, quick_move)
+function ReaderKeySelection:_moveIndicatorFreeFormPaging(dx, dy, quick_move)
     local quick_move_distance_dx = self.view.visible_area.w * (1/5) -- quick move distance: fifth of visible_area
     local quick_move_distance_dy = self.view.visible_area.h * (1/5)
     -- single move distance, user adjustable, default value (4) capable to move on word with small font size and narrow line height
@@ -963,7 +963,7 @@ function ReaderTextSelection:_moveIndicatorFreeFormPaging(dx, dy, quick_move)
     return moved
 end
 
-function ReaderTextSelection:_createHighlightGesture(gesture)
+function ReaderKeySelection:_createHighlightGesture(gesture)
     local point = self._current_indicator_pos:copy()
     point.x = point.x + point.w * 0.5
     point.y = point.y + point.h * 0.5
@@ -976,4 +976,4 @@ function ReaderTextSelection:_createHighlightGesture(gesture)
     }
 end
 
-return ReaderTextSelection
+return ReaderKeySelection

@@ -408,9 +408,7 @@ function ReaderMenu:exitOrRestart(callback, force)
 end
 
 function ReaderMenu:onShowMenu(tab_index, do_not_show)
-    if self.ui.textselection and self.ui.textselection:isActive() then
-        self.ui.textselection:stopHighlightIndicator(true) -- stop any text selection in progress, if applicable
-    end
+    self.ui.keyselection:stopHighlightIndicator(true) -- stop any text selection in progress, if applicable
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
     end

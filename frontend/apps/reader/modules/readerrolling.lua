@@ -944,8 +944,8 @@ function ReaderRolling:onGotoViewRel(diff)
     if self.ui.document ~= nil then
         self.xpointer = self.ui.document:getXPointer()
     end
-    if self.ui.textselection and self.ui.textselection:isActive() then
-        self.ui.textselection:pageTurnDuringSelection()
+    if self.ui.keyselection:isActive() then
+        self.ui.keyselection:pageTurnDuringSelection()
     end
     return true
 end

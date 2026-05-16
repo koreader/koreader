@@ -98,7 +98,7 @@ function ReaderHighlight:init()
                     this:startSelection(index)
                     this:onClose()
                     if not Device:isTouchDevice() then
-                        self.ui.textselection:onStartHighlightIndicator()
+                        self.ui.keyselection:startHighlightIndicator()
                     end
                 end,
             }
@@ -374,7 +374,7 @@ local long_press_action = {
     {_("Dictionary"), "dictionary"},
     {_("Fulltext search"), "search"},
 }
--- we need to expose this table to readertextselection
+-- we need to expose this table to readerkeyselection
 -- as here it is hidden under a isTouchDevice cap
 ReaderHighlight.long_press_action = long_press_action
 
