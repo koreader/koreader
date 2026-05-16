@@ -139,6 +139,7 @@ function ReaderTextSelection:startHighlightIndicator()
         end
         local center_x = rect.x + rect.w * 0.5
         local center_y = rect.y + rect.h * 0.5
+        self.invert_ui_layout = self.view:shouldInvertBiDiLayoutMirroring()
         local nearest_word = self:_getNearestWordFromScreenPoint(center_x, center_y)
         if nearest_word then
             self:_setIndicatorToWord(nearest_word)
@@ -372,6 +373,9 @@ function ReaderTextSelection:_resolveSplitWordFromX(word, x_pos)
     else
         is_head = right_half
     end
+    if self.invert_ui_layout then
+        is_head = not is_head
+    end
     if is_head then
         word.is_split_fragment = "head"
         return word, head_box.y
@@ -487,18 +491,22 @@ function ReaderTextSelection:_getWordAnchorCoordinates(word)
         end
     end
     if word.is_split_fragment then
+        local head_is_left = self.mirroredUI
+        if self.invert_ui_layout then
+            head_is_left = not head_is_left
+        end
         -- Grab the width of the crosshairs so we can tuck it inside the bounding box
         local ind_w = self._current_indicator_pos and self._current_indicator_pos.w or 0
         if word.is_split_fragment == "head" and word.segments then
             -- Target the physical box of the head fragment
             local head_box = word.segments[1]
-            local x = self.mirroredUI and head_box.x or (head_box.x + head_box.w - ind_w)
+            local x = head_is_left and head_box.x or (head_box.x + head_box.w - ind_w)
             local y = head_box.y + head_box.h * 0.5
             return x, y, true
         elseif word.is_split_fragment == "tail" and word.segments then
             -- Target the physical box of the tail fragment
             local tail_box = word.segments[#word.segments]
-            local x = self.mirroredUI and (tail_box.x + tail_box.w - ind_w) or tail_box.x
+            local x = head_is_left and (tail_box.x + tail_box.w - ind_w) or tail_box.x
             local y = tail_box.y + tail_box.h * 0.5
             return x, y, true
         end
@@ -620,6 +628,10 @@ end
 function ReaderTextSelection:_getAdjacentWordRolling(word, direction, lock_line_center_y, lock_line_tolerance)
     if not word or not word.pos0 then return nil end
     local is_forward_physical = (not self.mirroredUI and direction > 0) or (self.mirroredUI and direction < 0)
+    if self.invert_ui_layout then
+        is_forward_physical = not is_forward_physical
+        direction = -direction
+    end
     -- If we're on one half of a split word, the next 'line' is just the other half.
     if self:_isSplitHyphenatedWord(word) then
         if is_forward_physical and word.is_split_fragment == "head" then
@@ -646,7 +658,11 @@ function ReaderTextSelection:_getAdjacentWordRolling(word, direction, lock_line_
     -- probe for them, otherwise indicator will hit a boundary before the fragment.
     if not doc:isXPointerInCurrentPage(next_xp) then
         logger.dbg("ReaderTextSelection: Logical boundary hit. Attempting physical horizontal probe.")
-        if self.mirroredUI then
+        local head_is_left = self.mirroredUI
+        if self.invert_ui_layout then
+            head_is_left = not head_is_left
+        end
+        if head_is_left then
             SHARED_PROBE.x = is_forward_physical and (word.sbox.x - 10) or (word.sbox.x + word.sbox.w + 10)
         else
             SHARED_PROBE.x = is_forward_physical and (word.sbox.x + word.sbox.w + 10) or (word.sbox.x - 10)
