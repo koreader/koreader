@@ -14,6 +14,7 @@ local Notification = require("ui/widget/notification")
 local QRMessage = require("ui/widget/qrmessage")
 local UIManager = require("ui/uimanager")
 local ffiUtil = require("ffi/util")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -45,9 +46,7 @@ local function is_wiki_page(link_url)
         end
         -- or in wikipedia save directory
         if not epub_fullpath then
-            local dir = G_reader_settings:readSetting("wikipedia_save_dir")
-            if not dir then dir = G_reader_settings:readSetting("home_dir") end
-            if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
+            local dir = G_reader_settings:readSetting("wikipedia_save_dir") or filemanagerutil.getHomeFolder()
             if dir then
                 local safe_filename = util.getSafeFilename(epub_filename, dir):gsub("_", " ")
                 local epub_path = dir .. "/" .. safe_filename
