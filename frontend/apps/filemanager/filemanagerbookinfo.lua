@@ -789,7 +789,7 @@ function BookInfo:getNotebookFile(doc_settings_or_file)
             elseif type(doc_settings_or_file) == "string" then
                 notebook_file = doc_settings_or_file .. ".txt"
             else
-                local home_folder = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+                local home_folder = filemanagerutil.getHomeFolder()
                 notebook_file = ffiUtil.realpath(home_folder) .. "/notebook.txt"
             end
         end
