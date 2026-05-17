@@ -60,7 +60,7 @@ describe("Koptinterface module", function()
 
         it("should hint reflowed page in background", function()
             doc.configurable.text_wrap = 1
-            Koptinterface:hintReflowedPage(doc, 1, 1.0, 0, 1.0, 0)
+            Koptinterface:hintReflowedPage(doc, 1, 1.0, 0, 1.0, false, false)
             -- and wait for reflowing to complete
             local kc = Koptinterface:getCachedContext(doc, 1)
             assert.truthy(kc)

@@ -390,31 +390,33 @@ function Document:resetTileCacheValidity()
     self.tile_cache_validity_ts = os.time()
 end
 
-function Document:getFullPageHash(pageno, zoom, rotation, gamma)
+function Document:getFullPageHash(pageno, zoom, rotation, gamma, optimize_scanned)
     return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
                     ..zoom.."|"
-                    ..rotation.."|"..gamma.."|"..self.render_mode..(self.render_color and "|color" or "|bw")
+                    ..rotation.."|"..gamma.."|"..tostring(optimize_scanned).."|"
+                    ..self.render_mode..(self.render_color and "|color" or "|bw")
                     ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
 end
 
-function Document:getPagePartHash(pageno, zoom, rotation, gamma, rect)
+function Document:getPagePartHash(pageno, zoom, rotation, gamma, optimize_scanned, rect)
     return "renderpgpart|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
                     ..tostring(rect).."|"..zoom.."|"..tostring(rect.scaled_rect).."|"
-                    ..rotation.."|"..gamma.."|"..self.render_mode..(self.render_color and "|color" or "|bw")
+                    ..rotation.."|"..gamma.."|"..tostring(optimize_scanned).."|"
+                    ..self.render_mode..(self.render_color and "|color" or "|bw")
                     ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
 end
 
-function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
+function Document:renderPage(pageno, rect, zoom, rotation, gamma, optimize_scanned, hinting)
     -- If rect contains a nested scaled_rect object, our caller handled scaling itself (e.g., drawPagePart)
     local is_prescaled = rect and rect.scaled_rect ~= nil or false
 
     local hash, hash_excerpt, tile
     if is_prescaled then
-        hash = self:getPagePartHash(pageno, zoom, rotation, gamma, rect)
+        hash = self:getPagePartHash(pageno, zoom, rotation, gamma, optimize_scanned, rect)
 
         tile = DocCache:check(hash, TileCacheItem)
     else
-        hash = self:getFullPageHash(pageno, zoom, rotation, gamma)
+        hash = self:getFullPageHash(pageno, zoom, rotation, gamma, optimize_scanned)
 
         tile = DocCache:check(hash, TileCacheItem)
 
@@ -502,6 +504,8 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
         dc:setGamma(gamma)
     end
 
+    dc:setIsolateSMask(optimize_scanned)
+
     -- And finally, render the page in our BB
     local page = self._document:openPage(pageno)
     page:draw(dc, tile.bb, size.x, size.y, self.render_mode)
@@ -516,9 +520,9 @@ end
 
 -- a hint for the cache engine to paint a full page to the cache
 --- @todo this should trigger a background operation
-function Document:hintPage(pageno, zoom, rotation, gamma)
+function Document:hintPage(pageno, zoom, rotation, gamma, optimize_scanned)
     logger.dbg("hinting page", pageno)
-    self:renderPage(pageno, nil, zoom, rotation, gamma, true)
+    self:renderPage(pageno, nil, zoom, rotation, gamma, optimize_scanned, true)
 end
 
 --[[
@@ -529,8 +533,8 @@ Draw page content to blitbuffer.
 @target: target blitbuffer
 @rect: visible_area inside document page
 --]]
-function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma)
-    local tile = self:renderPage(pageno, rect, zoom, rotation, gamma)
+function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, optimize_scanned)
+    local tile = self:renderPage(pageno, rect, zoom, rotation, gamma, optimize_scanned)
     -- Enable SW dithering if requested (only available in koptoptions)
     if self.sw_dithering then
         target:ditherblitFrom(tile.bb,
@@ -547,8 +551,8 @@ function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma)
     end
 end
 
-function Document:drawPageInverted(target, x, y, rect, pageno, zoom, rotation, gamma)
-    local tile = self:renderPage(pageno, rect, zoom, rotation, gamma)
+function Document:drawPageInverted(target, x, y, rect, pageno, zoom, rotation, gamma, optimize_scanned)
+    local tile = self:renderPage(pageno, rect, zoom, rotation, gamma, optimize_scanned)
     target:invertblitFrom(tile.bb,
         x, y,
         rect.x - tile.excerpt.x,
@@ -579,7 +583,7 @@ function Document:drawPagePart(pageno, native_rect, rotation)
     rect.scaled_rect = scaled_rect
 
     -- Enable SMP via the hinting flag
-    local tile = self:renderPage(pageno, rect, zoom, rotation, 1.0, true)
+    local tile = self:renderPage(pageno, rect, zoom, rotation, 1.0, false, true)
     return tile.bb, rotate
 end
 

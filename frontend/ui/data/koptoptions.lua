@@ -507,14 +507,18 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 },
             },
             {
-                name = "page_opt",
-                name_text = _("Dewatermark"),
-                toggle = {C_("Dewatermark", "off"), C_("Dewatermark", "on")},
-                values = {0, 1},
+                name = "render_optimization",
+                name_text = _("Render Optimization"),
+                -- off = 0, dewatermark = 1, scanned = 2
+                toggle = {C_("Render Optimization", "off"), C_("Optimization", "dewatermark"), C_("Optimization", "scanned")},
+                values = {0, 1, 2},
                 default_value = 0,
+                args = {"off", "dewatermark", "scanned"},
+                event = "RenderOptimizationUpdate",
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Remove watermarks from the rendered document.
-This can also be used to remove some gray background or to convert a grayscale or color document to black & white and get more contrast for easier reading.]]),
+                help_text = _([[- 'off' renders the document as is
+- 'dewatermark' removes watermarks and some gray background for more contrast
+- 'scanned' renders the essentials in black & white ignoring extra data for more contrast and faster rendering]]),
             },
             {
                 name = "hw_dithering",
