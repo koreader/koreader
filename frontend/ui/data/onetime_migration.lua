@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20260516
+local CURRENT_MIGRATION_DATE = 20260517
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -993,10 +993,10 @@ if last_migration_date < 20260512 then
     end
 end
 
--- 20260516, Move BookShortcuts plugin settings into the settings file.
+-- 20260517, Move BookShortcuts plugin settings into the settings file.
 -- https://github.com/koreader/koreader/pull/15392
-if last_migration_date < 20260516 then
-    logger.info("Performing one-time migration for 20260516")
+if last_migration_date < 20260517 then
+    logger.info("Performing one-time migration for 20260517")
 
     local directory_action = G_reader_settings:readSetting("BookShortcuts_directory_action")
     local recursive_directory = G_reader_settings:readSetting("BookShortcuts_recursive_directory")
