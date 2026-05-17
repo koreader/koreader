@@ -392,24 +392,20 @@ end
 
 function Document:getFullPageHash(pageno, zoom, rotation, gamma)
     return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
-                    ..zoom.."|"
-                    ..rotation.."|"..gamma.."|"..self.configurable.page_opt.."|"
-                    ..self.render_mode..(self.render_color and "|color" or "|bw")
+                    ..zoom.."|"..rotation.."|"..gamma.."|"
+                    ..self.configurable.page_opt.."|"..self.render_mode..(self.render_color and "|color" or "|bw")
                     ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
 end
 
 function Document:getPagePartHash(pageno, zoom, rotation, gamma, rect)
     return "renderpgpart|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
-                    ..tostring(rect).."|"..zoom.."|"..tostring(rect.scaled_rect).."|"
-                    ..rotation.."|"..gamma.."|"..self.configurable.page_opt.."|"
-                    ..self.render_mode..(self.render_color and "|color" or "|bw")
+                    ..tostring(rect).."|"..zoom.."|"..tostring(rect.scaled_rect).."|"..rotation.."|"..gamma.."|"
+                    ..self.configurable.page_opt.."|"..self.render_mode..(self.render_color and "|color" or "|bw")
                     ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
 end
 
 function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
     -- If rect contains a nested scaled_rect object, our caller handled scaling itself (e.g., drawPagePart)
-    logger.dbg("page_opt = ", self.configurable.page_opt)
-    
     local is_prescaled = rect and rect.scaled_rect ~= nil or false
 
     local hash, hash_excerpt, tile

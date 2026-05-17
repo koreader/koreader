@@ -509,7 +509,7 @@ Some of the other settings are only available when reflow mode is enabled.]]),
             {
                 name = "page_opt",
                 name_text = _("Render Optimization"),
-                -- off = 0, dewatermark = 1, scanned = 2
+                -- off = 0, moderate (dewatermark) = 1, aggressive (smask) = 2
                 toggle = {C_("Render Optimization", "off"), C_("Render Optimization", "moderate"), C_("Render Optimization", "aggressive")},
                 values = {0, 1, 2},
                 default_value = 0,

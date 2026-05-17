@@ -99,9 +99,11 @@ function KoptInterface:setDefaultConfigurable(configurable)
     configurable.font_size = G_defaults:readSetting("DKOPTREADER_CONFIG_FONT_SIZE")
     configurable.page_margin = G_defaults:readSetting("DKOPTREADER_CONFIG_PAGE_MARGIN")
     configurable.quality = G_defaults:readSetting("DKOPTREADER_CONFIG_RENDER_QUALITY")
+    configurable.contrast = G_defaults:readSetting("DKOPTREADER_CONFIG_CONTRAST")
     configurable.defect_size = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFECT_SIZE")
     configurable.line_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_LINE_SPACING")
     configurable.word_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING")
+    configurable.page_opt = 0
 end
 
 function KoptInterface:waitForContext(kc)
