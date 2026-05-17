@@ -76,6 +76,7 @@ describe("Readerview module", function()
                     h = 0, w = 0,
                 },
                 rotation = 0,
+                optimize_scanned = false,
             },
             -- visible_area
             {
@@ -139,6 +140,7 @@ describe("Readerview module", function()
                      x = 0,
                      y = 0,
                  },
+                 optimize_scanned = false,
             },
         }
 

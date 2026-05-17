@@ -123,6 +123,7 @@ describe("ReaderLink module", function()
                         h = 106, w = 566,
                     },
                     zoom = 0.95032191328269044472,
+                    optimize_scanned = false,
                 },
                 {
                     gamma = 1,
@@ -138,6 +139,7 @@ describe("ReaderLink module", function()
                         x = 0, y = 0,
                     },
                     zoom = 0.95032191328269044472,
+                    optimize_scanned = false,
                 },
             }
             -- disable footer
