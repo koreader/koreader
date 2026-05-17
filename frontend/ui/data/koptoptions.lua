@@ -507,7 +507,7 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 },
             },
             {
-                name = "render_optimization",
+                name = "page_opt",
                 name_text = _("Render Optimization"),
                 -- off = 0, dewatermark = 1, scanned = 2
                 toggle = {C_("Render Optimization", "off"), C_("Render Optimization", "dewatermark"), C_("Render Optimization", "scanned")},

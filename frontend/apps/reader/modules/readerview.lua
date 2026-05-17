@@ -86,7 +86,6 @@ function ReaderView:init()
         zoom = 1.0,
         rotation = 0,
         gamma = 1.0,
-        optimize_scanned = false,
         offset = nil,
         bbox = nil,
     }
@@ -385,8 +384,7 @@ function ReaderView:drawScrollPages(bb, x, y)
             state.page,
             state.zoom,
             state.rotation,
-            state.gamma,
-            state.optimize_scanned)
+            state.gamma)
         pos.y = pos.y + state.visible_area.h
         -- draw page gap if not the last part
         if page ~= #self.page_states then
@@ -460,8 +458,7 @@ function ReaderView:drawSinglePage(bb, x, y)
         self.state.page,
         self.state.zoom,
         self.state.rotation,
-        self.state.gamma,
-        self.state.optimize_scanned)
+        self.state.gamma)
     UIManager:nextTick(self.emitHintPageEvent)
 end
 
@@ -874,7 +871,6 @@ function ReaderView:getViewContext()
                 zoom = self.state.zoom,
                 rotation = self.state.rotation,
                 gamma = self.state.gamma,
-                optimize_scanned = self.state.optimize_scanned,
                 offset = self.state.offset:copy(),
                 bbox = self.state.bbox,
             },
@@ -1109,14 +1105,6 @@ function ReaderView:onGammaUpdate(gamma, no_notification)
     end
     if not no_notification then
         Notification:notify(T(_("Contrast set to: %1."), gamma))
-    end
-end
-
-function ReaderView:onRenderOptimizationUpdate(render_optimization)
-    self.document.configurable.page_opt = render_optimization == 1 and 1 or 0
-    self.state.optimize_scanned = render_optimization == 2
-    if self.page_scroll then
-        self.ui:handleEvent(Event:new("UpdateScrollPageOptimizeScanned", render_optimization == 2))
     end
 end
 

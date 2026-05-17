@@ -390,13 +390,13 @@ function KoptInterface:getCoverPageImage(doc)
     end
 end
 
-function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, optimize_scanned, hinting)
+function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, hinting)
     if doc.configurable.text_wrap == 1 then
         return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, hinting)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
         return self:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hinting)
     else
-        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, optimize_scanned, hinting)
+        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, doc.configurable.page_opt == 2, hinting)
     end
 end
 
@@ -534,16 +534,16 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hi
     end
 end
 
-function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, optimize_scanned)
+function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma)
     --- @note: Crappy safeguard around memory issues like in #7627: if we're eating too much RAM, drop half the cache...
     DocCache:memoryPressureCheck()
 
     if doc.configurable.text_wrap == 1 then
-        self:hintReflowedPage(doc, pageno, zoom, rotation, gamma, optimize_scanned, true)
+        self:hintReflowedPage(doc, pageno, zoom, rotation, true)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
         self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, true)
     else
-        Document.hintPage(doc, pageno, zoom, rotation, gamma, optimize_scanned)
+        Document.hintPage(doc, pageno, zoom, rotation, gamma)
     end
 end
 
@@ -556,7 +556,7 @@ off by calling self:waitForContext(kctx)
 
 Inherited from common document interface.
 --]]
-function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, optimize_scanned, hinting)
+function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, hinting)
     local bbox = doc:getPageBBox(pageno)
     local hash_list = { "kctx" }
     self:getContextHash(doc, pageno, bbox, hash_list)
@@ -576,16 +576,16 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, opti
     end
 end
 
-function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, optimize_scanned)
+function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
     local nightmode_invert = doc.configurable.nightmode_document == 1 and Screen.night_mode
     if doc.configurable.text_wrap == 1 then
         self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
         self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
     elseif nightmode_invert then
-        Document.drawPageInverted(doc, target, x, y, rect, pageno, zoom, rotation, gamma, optimize_scanned)
+        Document.drawPageInverted(doc, target, x, y, rect, pageno, zoom, rotation, gamma, doc.configurable.page_opt == 2)
     else
-        Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, optimize_scanned)
+        Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, doc.configurable.page_opt == 2)
     end
 end
 
