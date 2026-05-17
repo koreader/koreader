@@ -396,7 +396,7 @@ function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, hint
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
         return self:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hinting)
     else
-        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, doc.configurable.page_opt == 2, hinting)
+        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, hinting)
     end
 end
 
@@ -583,9 +583,9 @@ function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation,
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
         self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
     elseif nightmode_invert then
-        Document.drawPageInverted(doc, target, x, y, rect, pageno, zoom, rotation, gamma, doc.configurable.page_opt == 2)
+        Document.drawPageInverted(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
     else
-        Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, doc.configurable.page_opt == 2)
+        Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
     end
 end
 
