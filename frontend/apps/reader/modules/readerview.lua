@@ -1112,13 +1112,11 @@ function ReaderView:onGammaUpdate(gamma, no_notification)
     end
 end
 
-function ReaderView:onRenderOptimizationUpdate(optimization)
-    self.document.configurable.page_opt = optimization == 1 and 1 or 0
-    self.state.optimize_scanned = optimization == 2
-    Notification:notify(T(_("Optimization set to: %1."), optimization))
-
+function ReaderView:onRenderOptimizationUpdate(render_optimization)
+    self.document.configurable.page_opt = render_optimization == 1 and 1 or 0
+    self.state.optimize_scanned = render_optimization == 2
     if self.page_scroll then
-        self.ui:handleEvent(Event:new("UpdateScrollPageOptimizeScanned", optimization == 2))
+        self.ui:handleEvent(Event:new("UpdateScrollPageOptimizeScanned", render_optimization == 2))
     end
 end
 

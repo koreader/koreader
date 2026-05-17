@@ -510,10 +510,10 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 name = "render_optimization",
                 name_text = _("Render Optimization"),
                 -- off = 0, dewatermark = 1, scanned = 2
-                toggle = {C_("Render Optimization", "off"), C_("Optimization", "dewatermark"), C_("Optimization", "scanned")},
+                toggle = {C_("Render Optimization", "off"), C_("Render Optimization", "dewatermark"), C_("Render Optimization", "scanned")},
                 values = {0, 1, 2},
                 default_value = 0,
-                args = {"off", "dewatermark", "scanned"},
+                args = {0, 1, 2},
                 event = "RenderOptimizationUpdate",
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[- 'off' renders the document as is
