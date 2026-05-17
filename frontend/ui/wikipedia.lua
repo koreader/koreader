@@ -127,6 +127,20 @@ end
 -- See https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/core/+blame/90f9bb549d5fc17eb7e71c094ded6264a71f609c/includes/MainConfigSchema.php#8997
 local cached_cookie = nil
 
+-- Wikipedia thumbnails are enforced to be certain widths, round up to the nearest allowed step.
+-- See https://www.mediawiki.org/wiki/Common_thumbnail_sizes
+local WIKIMEDIA_THUMBNAIL_STEPS = { 20, 40, 60, 120, 250, 330, 500, 960, 1280, 1920, 3840 }
+
+local function getWikimediaThumbnailStep(width)
+    for _, step in ipairs(WIKIMEDIA_THUMBNAIL_STEPS) do
+        if width <= step then
+            return step
+        end
+    end
+    -- In the case that width is larger than all steps, use the largest avaiable step.
+    return WIKIMEDIA_THUMBNAIL_STEPS[#WIKIMEDIA_THUMBNAIL_STEPS]
+end
+
 -- Get URL content
 local function getUrlContent(url, timeout, maxtime, reuse_cookie)
     local http = require("socket.http")
@@ -141,25 +155,42 @@ local function getUrlContent(url, timeout, maxtime, reuse_cookie)
     end
     if not timeout then timeout = 10 end
 
-    local sink = {}
     socketutil:set_timeout(timeout, maxtime or 30)
-    local request = {
-        url     = url,
-        method  = "GET",
-        sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
-    }
-    -- Add headers only when an image_cookie is present, otherwise make a default call without cookie headers
-    if reuse_cookie then
-        logger.dbg("Creating a request with cookie header:", cached_cookie)
-        request.headers = {
-            cookie = cached_cookie,
-            referer = "https://en.wikipedia.org/"
+    local function doRequest()
+        local sink = {}
+        local request = {
+            url    = url,
+            method = "GET",
+            sink   = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
         }
+        -- Add headers only when an image_cookie is present, otherwise make a default call without cookie headers
+        if reuse_cookie then
+            logger.dbg("Creating a request with cookie header:", cached_cookie)
+            request.headers = {
+                cookie = cached_cookie,
+                referer = "https://en.wikipedia.org/"
+            }
+        end
+
+        local code, headers, status = socket.skip(1, http.request(request))
+        local content = table.concat(sink) -- empty or content accumulated till now
+        return code, headers, status, content
     end
 
-    local code, headers, status = socket.skip(1, http.request(request))
+    local code, headers, status, content
+    for attempt = 1, 2 do
+        code, headers, status, content = doRequest()
+        if code == 429 and attempt < 2 then
+            local retry_after = tonumber(headers and headers["retry-after"]) or 1
+            retry_after = math.min(retry_after, 30)
+            logger.warn("HTTP 429 from Wikipedia, retrying after", retry_after, "seconds")
+            ffiutil.sleep(retry_after)
+        else
+            break
+        end
+    end
+
     socketutil:reset_timeout()
-    local content = table.concat(sink) -- empty or content accumulated till now
     -- Cache cookies from Wikipedia API responses
     local response_cookie = nil
     if not reuse_cookie and headers then
@@ -555,12 +586,14 @@ function Wikipedia:addImages(page, lang, more_images, image_size_factor, hi_imag
         -- .jpg or .gif to it)
         -- The resize is so done on Wikipedia servers from the source image for
         -- the best quality.
-        local source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1"..width.."%2")
+        local request_width = getWikimediaThumbnailStep(width)
+        local source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1" .. request_width .. "%2", 1)
         -- We build values for a high resolution version of the image, to be displayed
         -- with ImageViewer (x 4 by default)
         local hi_width = width * (hi_image_size_factor or 4)
         local hi_height = height * (hi_image_size_factor or 4)
-        local hi_source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1"..hi_width.."%2")
+        local hi_request_width = getWikimediaThumbnailStep(hi_width)
+        local hi_source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1" .. hi_request_width .. "%2", 1)
         local title = wimage.filename
         if title then
             title = title:gsub("_", " ")
