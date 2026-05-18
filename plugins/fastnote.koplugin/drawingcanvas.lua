@@ -22,19 +22,26 @@ ASSUMES: InputContainer, GestureRange, UIManager, Screen, Blitbuffer are
   available from the KOReader runtime (not required for unit tests of lib/).
 --]]--
 
-local Blitbuffer     = require("ffi/blitbuffer")
-local Device         = require("device")
-local GestureRange   = require("ui/gesturerange")
-local Geom           = require("ui/geometry")
-local InputContainer = require("ui/widget/container/inputcontainer")
-local PenDev         = require("input/pendev")
-local Screen         = Device.screen
-local UIManager      = require("ui/uimanager")
-local logger         = require("logger")
-local utils          = require("lib/canvas_utils")
+local Blitbuffer        = require("ffi/blitbuffer")
+local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local Device            = require("device")
+local GestureRange      = require("ui/gesturerange")
+local Geom              = require("ui/geometry")
+local InputContainer    = require("ui/widget/container/inputcontainer")
+local PenDev            = require("input/pendev")
+local Screen            = Device.screen
+local UIManager         = require("ui/uimanager")
+local logger            = require("logger")
+local utils             = require("lib/canvas_utils")
 
 -- Exit-zone tap area (top-left square, in pixels)
 local EXIT_ZONE_SIZE = 60
+
+-- Menu button (bottom-right corner)
+-- Visual square drawn in paintTo(); tap zone extends MENU_BTN_HIT_PAD beyond.
+local MENU_BTN_SIZE    = 80   -- visible button size (px)
+local MENU_BTN_MARGIN  = 24   -- gap from screen edge to button edge (px)
+local MENU_BTN_HIT_PAD =  8   -- extra tap-zone padding beyond visual bounds (px)
 
 -- Default stroke appearance
 local DEFAULT_LINE_WIDTH = 3
@@ -114,6 +121,24 @@ function DrawingCanvas:init()
         },
     }
 
+    -- Menu button: tap in the bottom-right corner.
+    -- Always registered (never gated by finger_draw) so the user can always
+    -- reach the menu regardless of input mode.
+    -- Hit zone is MENU_BTN_HIT_PAD larger than the visual on each side.
+    local btn_vis_x = self.dimen.w - MENU_BTN_MARGIN - MENU_BTN_SIZE
+    local btn_vis_y = self.dimen.h - MENU_BTN_MARGIN - MENU_BTN_SIZE
+    self.ges_events.MenuTap = {
+        GestureRange:new{
+            ges   = "tap",
+            range = Geom:new{
+                x = btn_vis_x - MENU_BTN_HIT_PAD,
+                y = btn_vis_y - MENU_BTN_HIT_PAD,
+                w = MENU_BTN_SIZE + MENU_BTN_HIT_PAD * 2,
+                h = MENU_BTN_SIZE + MENU_BTN_HIT_PAD * 2,
+            },
+        },
+    }
+
     -- Drawing zone: pan anywhere on screen.
     -- Registered when: emulator (gesture is the only input), OR finger_draw is
     -- explicitly enabled on device (touch events draw alongside pen).
@@ -175,6 +200,25 @@ function DrawingCanvas:paintTo(bb, x, y)
     self.dimen.y = y
     if not self._bb then return end
     bb:blitFrom(self._bb, x, y, 0, 0, self.dimen.w, self.dimen.h)
+
+    -- Draw menu button overlay directly onto the screen buffer.
+    -- This is drawn AFTER blitting the drawing surface so it always appears
+    -- on top and is never overwritten by strokes.
+    local bx = x + self.dimen.w - MENU_BTN_MARGIN - MENU_BTN_SIZE
+    local by = y + self.dimen.h - MENU_BTN_MARGIN - MENU_BTN_SIZE
+
+    -- Dark background square
+    bb:paintRect(bx, by, MENU_BTN_SIZE, MENU_BTN_SIZE, Blitbuffer.COLOR_BLACK)
+
+    -- Hamburger icon: three white horizontal bars
+    -- Bar width = 60 % of button width, centred horizontally.
+    -- Bar heights and Y positions are hand-tuned for an 80 px square.
+    local bar_w = math.floor(MENU_BTN_SIZE * 0.60)  -- 48 px
+    local bar_h = 4
+    local bar_x = bx + math.floor((MENU_BTN_SIZE - bar_w) / 2)
+    bb:paintRect(bar_x, by + 22, bar_w, bar_h, Blitbuffer.COLOR_WHITE)
+    bb:paintRect(bar_x, by + 36, bar_w, bar_h, Blitbuffer.COLOR_WHITE)
+    bb:paintRect(bar_x, by + 50, bar_w, bar_h, Blitbuffer.COLOR_WHITE)
 end
 
 -- ---------------------------------------------------------------------------
@@ -188,6 +232,33 @@ function DrawingCanvas:onExitTap(_, ges)
         self:_doClose()
         return true
     end
+end
+
+function DrawingCanvas:onMenuTap()
+    logger.dbg("FastNote canvas: menu tap")
+    local menu
+    menu = ButtonDialogTitle:new{
+        title = "Fast Note",
+        buttons = {
+            {
+                {
+                    text = "Keep drawing",
+                    callback = function()
+                        UIManager:close(menu)
+                    end,
+                },
+                {
+                    text = "Close canvas",
+                    callback = function()
+                        UIManager:close(menu)
+                        self:_doClose()
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(menu)
+    return true
 end
 
 function DrawingCanvas:onDrawStroke(_, ges)
