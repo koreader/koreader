@@ -1,34 +1,37 @@
 --[[--
-DrawingCanvas — Stage 1 implementation.
+DrawingCanvas — Stage 2 implementation.
 
-Full-screen drawing canvas backed by a BlitBuffer. Gesture-based input
-(use_raw_input = false, emulator-compatible). Pen strokes are drawn directly
-onto the backing buffer using paintLine. setDirty is called with a tight rect
-on every move event; a "flash" refresh fires on stroke end.
+Full-screen drawing canvas backed by a BlitBuffer.
+
+Input paths (selected by use_raw_input flag):
+  • Gesture layer (use_raw_input = false, emulator / fallback):
+      pan gesture → draw segment; pan_release → flash refresh.
+  • Raw evdev (use_raw_input = true, device-only):
+      UIManager:scheduleIn loop polls pendev at ~120 Hz.
+      Supports pressure-sensitive line width.
 
 Exit zone: tap in the top-left EXIT_ZONE_SIZE × EXIT_ZONE_SIZE area closes
 the canvas.
 
-Stage 1 does NOT implement:
-  - Raw evdev input (Stage 2)
+Not yet implemented:
   - StrokeBuffer / undo model (Stage 4)
   - SVG persistence (Stage 5)
   - Palm rejection (Stage 3)
-  - Pressure sensitivity (Stage 2)
 
 ASSUMES: InputContainer, GestureRange, UIManager, Screen, Blitbuffer are
   available from the KOReader runtime (not required for unit tests of lib/).
 --]]--
 
-local Blitbuffer    = require("ffi/blitbuffer")
-local Device        = require("device")
-local GestureRange  = require("ui/gesturerange")
-local Geom          = require("ui/geometry")
+local Blitbuffer     = require("ffi/blitbuffer")
+local Device         = require("device")
+local GestureRange   = require("ui/gesturerange")
+local Geom           = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local Screen        = Device.screen
-local UIManager     = require("ui/uimanager")
-local logger        = require("logger")
-local utils         = require("lib/canvas_utils")
+local PenDev         = require("input/pendev")
+local Screen         = Device.screen
+local UIManager      = require("ui/uimanager")
+local logger         = require("logger")
+local utils          = require("lib/canvas_utils")
 
 -- Exit-zone tap area (top-left square, in pixels)
 local EXIT_ZONE_SIZE = 60
@@ -45,7 +48,17 @@ local DrawingCanvas = InputContainer:extend{
     -- BlitBuffer backing the drawing surface
     _bb = nil,
 
-    -- Stroke state: last point seen in a pan gesture
+    -- Input mode: false = gesture layer (emulator), true = raw evdev (device)
+    use_raw_input = false,
+
+    -- Raw pen device (PenDev instance, only when use_raw_input = true)
+    _pendev = nil,
+
+    -- Last drawn pen position for line segment continuity (raw input path)
+    _last_pen_x = nil,
+    _last_pen_y = nil,
+
+    -- Stroke state: last point seen in a pan gesture (gesture path)
     _stroke_x = nil,
     _stroke_y = nil,
 
@@ -79,6 +92,9 @@ function DrawingCanvas:init()
     logger.dbg("FastNote canvas: init", self.dimen.w, "x", self.dimen.h,
                "color=", Screen:isColorEnabled())
 
+    -- Input mode: raw evdev on Kobo device, gesture fallback in emulator
+    self.use_raw_input = Device:isKobo()
+
     -- Register touch zones ------------------------------------------------
 
     -- Exit zone: tap in the top-left corner
@@ -109,10 +125,32 @@ function DrawingCanvas:init()
             range = self.dimen,
         },
     }
+
+    -- Raw evdev pen polling (device only) ----------------------------------
+    if self.use_raw_input then
+        local dev_path = PenDev.find()
+        if dev_path then
+            local pd, err = PenDev.open(dev_path)
+            if pd then
+                self._pendev = pd
+                UIManager:scheduleIn(0.008, function() self:_pollPen() end)
+                logger.dbg("FastNote canvas: raw pen input enabled:", dev_path)
+            else
+                logger.warn("FastNote canvas: pendev open failed:", err)
+            end
+        else
+            logger.warn("FastNote canvas: Wacom not found; using gesture fallback")
+        end
+    end
 end
 
 function DrawingCanvas:onCloseWidget()
     logger.dbg("FastNote canvas: onCloseWidget, freeing bb")
+    -- Stop raw pen polling and close fd before freeing the buffer
+    if self._pendev then
+        self._pendev:close()
+        self._pendev = nil
+    end
     if self._bb then
         self._bb:free()
         self._bb = nil
@@ -221,6 +259,48 @@ end
 -- ---------------------------------------------------------------------------
 -- Internal
 -- ---------------------------------------------------------------------------
+
+--- Raw pen poll loop, scheduled at ~120 Hz when use_raw_input = true.
+-- Translates raw Wacom coordinates to screen space, draws pressure-sensitive
+-- line segments, and reschedules itself until the canvas is closed.
+function DrawingCanvas:_pollPen()
+    if not self._pendev then return end
+
+    self._pendev:poll(function(ev)
+        if ev.type == "down" or ev.type == "move" then
+            -- Translate raw digitizer coords to screen pixels.
+            -- Wacom range from PenDev._query_abs (default 0..4095).
+            local W  = Screen:getWidth()
+            local H  = Screen:getHeight()
+            local sx = math.floor(ev.x / self._pendev.x_max * (W - 1))
+            local sy = math.floor(ev.y / self._pendev.y_max * (H - 1))
+            local lw = utils.pressure_to_width(ev.pressure, self._pendev.p_max, 1, 8)
+
+            if self._last_pen_x then
+                self._bb:paintLine(
+                    self._last_pen_x, self._last_pen_y, sx, sy, lw, STROKE_COLOR)
+                local dirty = utils.compute_dirty_rect(
+                    self._last_pen_x, self._last_pen_y, sx, sy, lw)
+                UIManager:setDirty(self, function()
+                    return "fast", Geom:new(dirty)
+                end)
+            end
+            self._last_pen_x = sx
+            self._last_pen_y = sy
+
+        elseif ev.type == "up" then
+            self._last_pen_x = nil
+            self._last_pen_y = nil
+            UIManager:setDirty(self, "flash")
+        end
+        -- "hover" events are currently ignored (future: cursor preview)
+    end)
+
+    -- Reschedule as long as the device is still open
+    if self._pendev then
+        UIManager:scheduleIn(0.008, function() self:_pollPen() end)
+    end
+end
 
 function DrawingCanvas:_doClose()
     UIManager:close(self)
