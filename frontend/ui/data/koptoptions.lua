@@ -524,8 +524,8 @@ This can also be used to remove some gray background or to convert a grayscale o
                 default_value = 0,
                 args = {0, 1},
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Render the essentials in black & white ignoring extra data for better contrast and faster rendering.
-Useful for Internet Archive's documents.]]),
+                help_text = _([[Render the essentials in black and white, ignoring extra data for better contrast and faster rendering.
+Useful for Internet Archive PDF documents.]]),
             },
             {
                 name = "hw_dithering",
