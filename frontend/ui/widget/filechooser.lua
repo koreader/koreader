@@ -97,7 +97,7 @@ end
 function FileChooser:init()
     self.path_items = {}
     if lfs.attributes(self.path, "mode") ~= "directory" then
-        self.path = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+        self.path = filemanagerutil.getHomeFolder()
     end
     BookList.init(self)
     self:refreshPath()
