@@ -79,7 +79,7 @@ function DocSettingTweak:onDocSettingsLoad(doc_settings, document)
     if document.is_new and lfs.attributes(self.settings_file, "mode") == "file" then
         local directory_defaults = LuaSettings:open(self.settings_file)
         if directory_defaults.data == nil then return true end
-        local base = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+        local base = filemanagerutil.getHomeFolder()
         local absolute_path = ffiUtil.realpath(document.file)
         local directory = ffiUtil.dirname(absolute_path)
         -- check if folder matches our defaults to override

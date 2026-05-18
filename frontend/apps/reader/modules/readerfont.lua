@@ -11,6 +11,7 @@ local Notification = require("ui/widget/notification")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local cre -- Delayed loading
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -867,9 +868,7 @@ function ReaderFont:buildFontsTestDocument()
         html_sample = f:read("*all")
         f:close()
     end
-    local dir = G_reader_settings:readSetting("home_dir")
-             or require("apps/filemanager/filemanagerutil").getDefaultDir()
-             or "."
+    local dir = filemanagerutil.getHomeFolder()
     local font_test_final_path = dir .. "/" .. FONT_TEST_FINAL_FILENAME
     f = io.open(font_test_final_path, "w")
     if not f then return end

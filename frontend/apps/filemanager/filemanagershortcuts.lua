@@ -1,6 +1,5 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
-local Device = require("device")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -10,6 +9,7 @@ local Screenshoter = require("ui/widget/screenshoter")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local _ = require("gettext")
@@ -32,7 +32,7 @@ local FileManagerShortcuts = WidgetContainer:extend{
         home_dir = {
             name = _("Home"),
             get = function()
-                return G_reader_settings:readSetting("home_dir") or Device.home_dir
+                return filemanagerutil.getHomeFolder()
             end,
             set = function(path)
                 G_reader_settings:saveSetting("home_dir", path)

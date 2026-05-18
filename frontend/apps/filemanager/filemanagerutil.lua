@@ -22,10 +22,14 @@ function filemanagerutil.getDefaultDir()
     return Device.home_dir or "."
 end
 
+function filemanagerutil.getHomeFolder()
+    return G_reader_settings:readSetting("home_dir") or Device.home_dir or "."
+end
+
 function filemanagerutil.abbreviate(path)
     if not path then return "" end
     if G_reader_settings:nilOrTrue("shorten_home_dir") then
-        local home_dir = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+        local home_dir = filemanagerutil.getHomeFolder()
         if path == home_dir or path == home_dir .. "/" then
             return _("Home")
         end
@@ -382,7 +386,7 @@ function filemanagerutil.showChooseDialog(title_header, caller_callback, current
                             path = ffiUtil.dirname(path)
                         end
                         if lfs.attributes(path, "mode") ~= "directory" then
-                            path = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+                            path = filemanagerutil.getHomeFolder()
                         end
                     end
                     local PathChooser = require("ui/widget/pathchooser")
