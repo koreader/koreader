@@ -51,6 +51,10 @@ local DrawingCanvas = InputContainer:extend{
     -- Input mode: false = gesture layer (emulator), true = raw evdev (device)
     use_raw_input = false,
 
+    -- When use_raw_input is true: allow capacitive touch to draw as well as pen.
+    -- Injected from main.lua via Config.load().  Default false = pen-only.
+    finger_draw = false,
+
     -- Raw pen device (PenDev instance, only when use_raw_input = true)
     _pendev = nil,
 
@@ -110,21 +114,23 @@ function DrawingCanvas:init()
         },
     }
 
-    -- Drawing zone: pan anywhere on screen
-    self.ges_events.DrawStroke = {
-        GestureRange:new{
-            ges   = "pan",
-            range = self.dimen,
-        },
-    }
-
-    -- Stroke end: pan_release anywhere
-    self.ges_events.DrawStrokeEnd = {
-        GestureRange:new{
-            ges   = "pan_release",
-            range = self.dimen,
-        },
-    }
+    -- Drawing zone: pan anywhere on screen.
+    -- Registered when: emulator (gesture is the only input), OR finger_draw is
+    -- explicitly enabled on device (touch events draw alongside pen).
+    if not self.use_raw_input or self.finger_draw then
+        self.ges_events.DrawStroke = {
+            GestureRange:new{
+                ges   = "pan",
+                range = self.dimen,
+            },
+        }
+        self.ges_events.DrawStrokeEnd = {
+            GestureRange:new{
+                ges   = "pan_release",
+                range = self.dimen,
+            },
+        }
+    end
 
     -- Raw evdev pen polling (device only) ----------------------------------
     if self.use_raw_input then

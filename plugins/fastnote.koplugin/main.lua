@@ -5,11 +5,13 @@ This is a plugin for quick notes with pen input.
 --]]--
 
 
-local Dispatcher = require("dispatcher")  -- luacheck:ignore
+local Config        = require("lib/config")
+local DataStorage   = require("datastorage")
+local Dispatcher    = require("dispatcher")  -- luacheck:ignore
 local DrawingCanvas = require("drawingcanvas")
-local UIManager = require("ui/uimanager")
+local UIManager     = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local _ = require("gettext")
+local _             = require("gettext")
 
 local FastNote = WidgetContainer:extend{
     name = "fastnote",
@@ -36,10 +38,10 @@ function FastNote:addToMainMenu(menu_items)
 end
 
 function FastNote:onOpenFnoteCanvas()
+    local cfg = Config.load(DataStorage:getSettingsDir() .. "/fastnote.conf")
     local canvas = DrawingCanvas:new{
-        on_close_callback = function()
-            -- Canvas closed; nothing to do at Stage 1
-        end,
+        finger_draw       = cfg.finger_draw,
+        on_close_callback = function() end,
     }
     UIManager:show(canvas)
 end
