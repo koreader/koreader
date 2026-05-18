@@ -103,6 +103,7 @@ function KoptInterface:setDefaultConfigurable(configurable)
     configurable.defect_size = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFECT_SIZE")
     configurable.line_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_LINE_SPACING")
     configurable.word_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING")
+    configurable.background_cleanup = 0
 end
 
 function KoptInterface:waitForContext(kc)
@@ -385,7 +386,7 @@ function KoptInterface:getCoverPageImage(doc)
     local native_size = Document.getNativePageDimensions(doc, 1)
     local canvas_size = CanvasContext:getSize()
     local zoom = math.min(canvas_size.w / native_size.w, canvas_size.h / native_size.h)
-    local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1.0)
+    local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1.0, false)
     if tile then
         return tile.bb:copy()
     end
@@ -540,9 +541,9 @@ function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma)
     DocCache:memoryPressureCheck()
 
     if doc.configurable.text_wrap == 1 then
-        self:hintReflowedPage(doc, pageno, zoom, rotation, gamma, true)
+        self:hintReflowedPage(doc, pageno, zoom, rotation, true)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
-        self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, gamma, true)
+        self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, true)
     else
         Document.hintPage(doc, pageno, zoom, rotation, gamma)
     end
@@ -557,7 +558,7 @@ off by calling self:waitForContext(kctx)
 
 Inherited from common document interface.
 --]]
-function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, hinting)
+function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, hinting)
     local bbox = doc:getPageBBox(pageno)
     local hash_list = { "kctx" }
     self:getContextHash(doc, pageno, bbox, hash_list)
@@ -596,7 +597,7 @@ Draw cached tile pixels into target blitbuffer.
 Inherited from common document interface.
 --]]
 function KoptInterface:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
-    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 1.0)
+    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 1.0, false)
     target:blitFrom(tile.bb,
         x, y,
         rect.x - tile.excerpt.x,
