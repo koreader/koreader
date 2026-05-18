@@ -25,6 +25,12 @@ Config.DEFAULTS = {
     --- Allow drawing with finger touches in addition to the pen.
     -- false = pen-only (default). true = pen + finger both draw.
     finger_draw = false,
+
+    --- Rotation mode to apply when the canvas opens.
+    -- "auto" (default) — inherit whatever orientation is current on open.
+    -- 0 = portrait upright, 1 = landscape CW, 2 = portrait inverted,
+    -- 3 = landscape CCW (buttons at bottom on Kobo Libra — recommended landscape).
+    rotation_mode = "auto",
 }
 
 --- Load a config file and return the merged result.

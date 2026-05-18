@@ -40,8 +40,9 @@ end
 function FastNote:onOpenFnoteCanvas()
     local cfg = Config.load(DataStorage:getSettingsDir() .. "/fastnote.conf")
     local canvas = DrawingCanvas:new{
-        finger_draw       = cfg.finger_draw,
-        on_close_callback = function() end,
+        finger_draw        = cfg.finger_draw,
+        init_rotation_mode = cfg.rotation_mode,
+        on_close_callback  = function() end,
     }
     UIManager:show(canvas)
 end

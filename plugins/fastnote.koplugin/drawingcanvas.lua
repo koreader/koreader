@@ -47,6 +47,12 @@ local MENU_BTN_HIT_PAD =  8   -- extra tap-zone padding beyond visual bounds (px
 local DEFAULT_LINE_WIDTH = 3
 local STROKE_COLOR = Blitbuffer.COLOR_BLACK
 
+-- Rotation mode constants used for menu-driven orientation change.
+-- Mirror KOReader's Screen.DEVICE_ROTATED_* values without requiring a
+-- Screen reference at module load time.
+local ROT_PORTRAIT  = 0  -- DEVICE_ROTATED_UPRIGHT
+local ROT_LANDSCAPE = 3  -- DEVICE_ROTATED_COUNTER_CLOCKWISE (buttons at bottom on Kobo Libra)
+
 ---@class DrawingCanvas : InputContainer
 local DrawingCanvas = InputContainer:extend{
     -- Injected by parent (main.lua)
@@ -61,6 +67,14 @@ local DrawingCanvas = InputContainer:extend{
     -- When use_raw_input is true: allow capacitive touch to draw as well as pen.
     -- Injected from main.lua via Config.load().  Default false = pen-only.
     finger_draw = false,
+
+    -- Orientation lock.
+    -- init_rotation_mode is injected from main.lua (from Config):
+    --   "auto" or nil  — lock to whatever rotation is active when canvas opens
+    --   0/1/2/3        — force a specific rotation on open
+    -- _rotation_mode holds the active locked mode (set in init, updated by menu).
+    init_rotation_mode = nil,
+    _rotation_mode = nil,
 
     -- Raw pen device (PenDev instance, only when use_raw_input = true)
     _pendev = nil,
@@ -105,6 +119,15 @@ function DrawingCanvas:init()
 
     -- Input mode: raw evdev on Kobo device, gesture fallback in emulator
     self.use_raw_input = Device:isKobo()
+
+    -- Orientation lock: apply config-specified rotation (if any), then record
+    -- the active mode.  From this point on, onSetRotationMode() re-asserts
+    -- this mode whenever KOReader tries to auto-rotate the device.
+    if type(self.init_rotation_mode) == "number" then
+        Screen:setRotationMode(self.init_rotation_mode)
+    end
+    self._rotation_mode = Screen:getRotationMode()
+    logger.dbg("FastNote canvas: orientation locked to mode", self._rotation_mode)
 
     -- Register touch zones ------------------------------------------------
 
@@ -236,10 +259,29 @@ end
 
 function DrawingCanvas:onMenuTap()
     logger.dbg("FastNote canvas: menu tap")
+    local cur = self._rotation_mode
+    local portrait_label  = (cur == ROT_PORTRAIT)  and "Portrait \xE2\x9C\x93"  or "Portrait"
+    local landscape_label = (cur == ROT_LANDSCAPE) and "Landscape \xE2\x9C\x93" or "Landscape"
     local menu
     menu = ButtonDialogTitle:new{
         title = "Fast Note",
         buttons = {
+            {
+                {
+                    text = portrait_label,
+                    callback = function()
+                        UIManager:close(menu)
+                        self:_reinitAtRotation(ROT_PORTRAIT)
+                    end,
+                },
+                {
+                    text = landscape_label,
+                    callback = function()
+                        UIManager:close(menu)
+                        self:_reinitAtRotation(ROT_LANDSCAPE)
+                    end,
+                },
+            },
             {
                 {
                     text = "Keep drawing",
@@ -259,6 +301,24 @@ function DrawingCanvas:onMenuTap()
     }
     UIManager:show(menu)
     return true
+end
+
+--- Block accelerometer-driven auto-rotation while the canvas is open.
+-- When KOReader detects a device rotation it calls Screen:setRotationMode()
+-- and then broadcasts a SetRotationMode event.  We intercept that event and
+-- immediately re-lock to self._rotation_mode, keeping the canvas stable.
+-- The user can still change orientation deliberately via the canvas menu
+-- (which calls _reinitAtRotation directly, not through this path).
+function DrawingCanvas:onSetRotationMode(event)
+    local new_mode = type(event) == "number" and event
+                     or (type(event) == "table" and event[1] or nil)
+    if new_mode ~= nil and new_mode ~= self._rotation_mode then
+        logger.dbg("FastNote canvas: blocking auto-rotation to mode", new_mode,
+                   "(locked to", self._rotation_mode, ")")
+        Screen:setRotationMode(self._rotation_mode)
+        UIManager:setDirty(self, "full")
+    end
+    return true  -- consume: we are the active full-screen widget
 end
 
 function DrawingCanvas:onDrawStroke(_, ges)
@@ -336,6 +396,61 @@ end
 -- ---------------------------------------------------------------------------
 -- Internal
 -- ---------------------------------------------------------------------------
+
+--- Update the MenuTap gesture zone to match current screen dimensions.
+-- Must be called after self.dimen is updated in-place by _reinitAtRotation.
+-- ExitTap is always at (0,0) so it needs no update; DrawStroke/DrawStrokeEnd
+-- reference self.dimen directly and pick up changes automatically.
+function DrawingCanvas:_updateGestureZones()
+    if not (self.ges_events.MenuTap and self.ges_events.MenuTap[1]) then return end
+    local btn_vis_x = self.dimen.w - MENU_BTN_MARGIN - MENU_BTN_SIZE
+    local btn_vis_y = self.dimen.h - MENU_BTN_MARGIN - MENU_BTN_SIZE
+    local r = self.ges_events.MenuTap[1].range
+    r.x = btn_vis_x - MENU_BTN_HIT_PAD
+    r.y = btn_vis_y - MENU_BTN_HIT_PAD
+    r.w = MENU_BTN_SIZE + MENU_BTN_HIT_PAD * 2
+    r.h = MENU_BTN_SIZE + MENU_BTN_HIT_PAD * 2
+end
+
+--- Apply a rotation change requested from the canvas menu.
+-- Sets the new rotation, reallocates the BlitBuffer at the updated screen
+-- dimensions (clearing the current drawing — stroke persistence comes in
+-- Stage 4), and triggers a full repaint.
+-- @param  new_mode  integer  rotation constant (e.g. ROT_PORTRAIT = 0)
+function DrawingCanvas:_reinitAtRotation(new_mode)
+    if new_mode == self._rotation_mode then return end
+    logger.dbg("FastNote canvas: rotating to mode", new_mode)
+
+    Screen:setRotationMode(new_mode)
+    self._rotation_mode = new_mode
+
+    -- Update self.dimen IN-PLACE so that GestureRange objects holding a
+    -- reference to self.dimen (DrawStroke, DrawStrokeEnd) pick up new dims.
+    self.dimen.w = Screen:getWidth()
+    self.dimen.h = Screen:getHeight()
+
+    -- Reallocate the backing BlitBuffer at the new screen dimensions.
+    -- This clears the current drawing (Stage 4 will preserve strokes on rotate).
+    if self._bb then self._bb:free() end
+    local bbtype = Screen:isColorEnabled()
+        and Blitbuffer.TYPE_BBRGB32
+        or  Blitbuffer.TYPE_BB8
+    self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bbtype)
+    self._bb:fill(Blitbuffer.COLOR_WHITE)
+
+    -- Reset per-stroke state (old screen coordinates are invalid after rotation)
+    self._last_pen_x   = nil
+    self._last_pen_y   = nil
+    self._stroke_x     = nil
+    self._stroke_y     = nil
+    self._stroke_min_x = nil
+    self._stroke_min_y = nil
+    self._stroke_max_x = nil
+    self._stroke_max_y = nil
+
+    self:_updateGestureZones()
+    UIManager:setDirty(self, "full")
+end
 
 --- Raw pen poll loop, scheduled at ~120 Hz when use_raw_input = true.
 -- Translates raw Wacom coordinates to screen space, draws pressure-sensitive

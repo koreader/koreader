@@ -30,4 +30,21 @@ return {
     --
     finger_draw = false,
 
+    -- rotation_mode
+    -- -------------
+    -- Screen orientation when the canvas opens.  The canvas locks to this
+    -- orientation and ignores accelerometer-based auto-rotation while it is
+    -- open; you can still change orientation from the in-canvas menu.
+    --
+    --   "auto"  (default) — inherit whatever orientation is currently active
+    --              when the canvas opens.  This is the recommended default.
+    --
+    --   0       — always open in portrait (upright).
+    --   3       — always open in landscape with buttons at the bottom
+    --              (counter-clockwise rotation — recommended for Kobo Libra).
+    --   1       — landscape with buttons at the top (clockwise rotation).
+    --   2       — portrait upside-down.
+    --
+    rotation_mode = "auto",
+
 }

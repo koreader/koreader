@@ -29,6 +29,25 @@ describe("lib/config", function()
         assert.is_false(Config.DEFAULTS.finger_draw)
     end)
 
+    it("exposes DEFAULTS table with rotation_mode = 'auto'", function()
+        assert.is_table(Config.DEFAULTS)
+        assert.are.equal("auto", Config.DEFAULTS.rotation_mode)
+    end)
+
+    it("reads rotation_mode as a number from a valid config file", function()
+        local path = write_tmp("return { rotation_mode = 3 }")
+        local cfg = Config.load(path)
+        os.remove(path)
+        assert.are.equal(3, cfg.rotation_mode)
+    end)
+
+    it("uses default rotation_mode when absent from config file", function()
+        local path = write_tmp("return { finger_draw = true }")
+        local cfg = Config.load(path)
+        os.remove(path)
+        assert.are.equal("auto", cfg.rotation_mode)
+    end)
+
     -- NIL / MISSING PATH -----------------------------------------------------
 
     it("returns defaults when path is nil", function()
