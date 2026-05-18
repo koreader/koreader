@@ -85,9 +85,6 @@ function run_make() {
     if [[ "${CURDIR}" != "${PWD}" ]]; then
         cmd+=(-C "${CURDIR}")
     fi
-    if [[ "${TARGET}" == 'android' ]]; then
-        cmd+=("ANDROID_ARCH=${ANDROID_ARCH}")
-    fi
     for param in TARGET KODEBUG VERBOSE; do
         cmd+=("${param}=${!param}")
     done
@@ -170,10 +167,7 @@ function setup_target() {
         macos) is_system macOS ;;
         win32) is_system Windows ;;
         # Devices.
-        android-arm | android-arm64 | android-x86 | android-x86_64)
-            ANDROID_ARCH="${TARGET#android-}"
-            TARGET='android'
-            ;;
+        android-arm | android-arm64 | android-x86 | android-x86_64) ;;
         cervantes) ;;
         kindle | kindlehf | kindlepw2 | kindle-legacy) ;;
         kobo | kobov4 | kobov5) ;;
@@ -199,7 +193,7 @@ function setup_target() {
     # Fetch third party as needed.
     check_submodules
     # Automatically install Android NDK / SDK when not configured.
-    if [[ "${TARGET}" == 'android' ]]; then
+    if [[ "${TARGET}" = android-* ]]; then
         local wanted=()
         [[ -n "${ANDROID_NDK_HOME}${ANDROID_NDK_ROOT}" ]] || wanted+=('android-ndk')
         [[ -n "${ANDROID_HOME}${ANDROID_SDK_ROOT}" ]] || wanted+=('android-sdk')
@@ -590,7 +584,7 @@ ANDROID TARGET:
     fi
     # Build the final make command.
     local margs=()
-    if [[ "${TARGET}" == 'android' ]]; then
+    if [[ "${TARGET}" = android-* ]]; then
         if [[ "$1" = *.apk ]]; then
             margs+=(ANDROID_APK="$1")
             NO_BUILD=1
