@@ -392,15 +392,16 @@ end
 
 function Document:getFullPageHash(pageno, zoom, rotation, gamma)
     return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
-                    ..zoom.."|"..rotation.."|"..gamma.."|"
-                    ..self.configurable.page_opt.."|"..self.render_mode..(self.render_color and "|color" or "|bw")
+                    ..zoom.."|"..rotation.."|"..gamma.."|"..self.configurable.background_cleanup.."|"
+                    ..self.render_mode..(self.render_color and "|color" or "|bw")
                     ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
 end
 
 function Document:getPagePartHash(pageno, zoom, rotation, gamma, rect)
     return "renderpgpart|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
-                    ..tostring(rect).."|"..zoom.."|"..tostring(rect.scaled_rect).."|"..rotation.."|"..gamma.."|"
-                    ..self.configurable.page_opt.."|"..self.render_mode..(self.render_color and "|color" or "|bw")
+                    ..tostring(rect).."|"..zoom.."|"..tostring(rect.scaled_rect)
+                    .."|"..rotation.."|"..gamma.."|"..self.configurable.background_cleanup.."|"
+                    ..self.render_mode..(self.render_color and "|color" or "|bw")
                     ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
 end
 
@@ -502,7 +503,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
         dc:setGamma(gamma)
     end
 
-    dc:setIsolateSMask(self.configurable.page_opt == 2 and 1 or 0)
+    dc:setIsolateSMask(self.configurable.background_cleanup)
 
     -- And finally, render the page in our BB
     local page = self._document:openPage(pageno)

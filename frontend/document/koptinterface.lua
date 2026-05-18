@@ -103,7 +103,7 @@ function KoptInterface:setDefaultConfigurable(configurable)
     configurable.defect_size = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFECT_SIZE")
     configurable.line_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_LINE_SPACING")
     configurable.word_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING")
-    configurable.page_opt = 0
+    configurable.background_cleanup = 0
 end
 
 function KoptInterface:waitForContext(kc)

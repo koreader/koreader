@@ -508,16 +508,24 @@ Some of the other settings are only available when reflow mode is enabled.]]),
             },
             {
                 name = "page_opt",
-                name_text = _("Image Cleanup"),
-                -- off = 0, moderate (dewatermark) = 1, aggressive (smask) = 2
-                toggle = {C_("Image Cleanup", "off"), C_("Image Cleanup", "moderate"), C_("Image Cleanup", "aggressive")},
-                values = {0, 1, 2},
+                name_text = _("Dewatermark"),
+                toggle = {C_("Dewatermark", "off"), C_("Dewatermark", "on")},
+                values = {0, 1},
                 default_value = 0,
-                args = {0, 1, 2},
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[- 'off' renders the document as is.
-- 'moderate' removes watermarks and some gray background for better contrast.
-- 'aggressive' renders the essentials in black & white ignoring extra data for better contrast and faster rendering.]]),
+                help_text = _([[Remove watermarks from the rendered document.
+This can also be used to remove some gray background or to convert a grayscale or color document to black & white and get more contrast for easier reading.]]),
+            },
+            {
+                name = "background_cleanup",
+                name_text = _("Background Cleanup"),
+                toggle = {C_("Background Cleanup", "off"), C_("Background Cleanup", "on")},
+                values = {0, 1},
+                default_value = 0,
+                args = {0, 1},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Render the essentials in black & white ignoring extra data for better contrast and faster rendering.
+Useful for Internet Archive's documents.]]),
             },
             {
                 name = "hw_dithering",
