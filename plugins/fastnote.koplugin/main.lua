@@ -6,10 +6,9 @@ This is a plugin for quick notes with pen input.
 
 
 local Dispatcher = require("dispatcher")  -- luacheck:ignore
-local InfoMessage = require("ui/widget/infomessage")
+local DrawingCanvas = require("plugins/fastnote.koplugin/drawingcanvas")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local DrawingCanvas = require("plugins/fastnote.koplugin/drawingcanvas")
 local _ = require("gettext")
 
 local FastNote = WidgetContainer:extend{
@@ -29,22 +28,20 @@ end
 function FastNote:addToMainMenu(menu_items)
     menu_items.fast_note = {
         text = _("Fast Note"),
-        -- in which menu this should be appended
         sorting_hint = "more_tools",
-        -- a callback when tapping
         callback = function()
-            UIManager:show(InfoMessage:new{
-                text = _("Hello, plugin world -FastNote"),
-            })
+            self:onOpenFnoteCanvas()
         end,
     }
 end
 
 function FastNote:onOpenFnoteCanvas()
-    local popup = InfoMessage:new{
-        text = _("Fast Note Canvas first message confirmed!"),
+    local canvas = DrawingCanvas:new{
+        on_close_callback = function()
+            -- Canvas closed; nothing to do at Stage 1
+        end,
     }
-    UIManager:show(popup)
+    UIManager:show(canvas)
 end
 
 return FastNote
