@@ -353,14 +353,16 @@ function Device:retrieveNetworkInfo()
     ok, type = tonumber(ok), tonumber(type)
     if not ok or not type or type == C.ANETWORK_NONE then
         return _("Not connected")
-    else
-        if type == C.ANETWORK_WIFI then
-            return _("Connected to Wi-Fi")
-        elseif type == C.ANETWORK_MOBILE then
-            return _("Connected to mobile data network")
-        elseif type == C.ANETWORK_ETHERNET then
-            return _("Connected to Ethernet")
+    elseif type == C.ANETWORK_WIFI then
+        local details = android.getWifiNetworkDetails()
+        if details and details ~= "" then
+            return _("Connected to Wi-Fi") .. "\n" .. details
         end
+        return _("Connected to Wi-Fi")
+    elseif type == C.ANETWORK_MOBILE then
+        return _("Connected to mobile data network")
+    elseif type == C.ANETWORK_ETHERNET then
+        return _("Connected to Ethernet")
     end
 end
 
