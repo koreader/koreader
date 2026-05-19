@@ -230,6 +230,29 @@ function Profiles:getSubMenuItems()
                 end,
             },
             {
+                text = _("Update"),
+                enabled = self.document ~= nil,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local curr_profile_name = v.settings.name or ""
+                    UIManager:show(ConfirmBox:new{
+                        text = T(_("Are you sure you want to overwrite profile '%1' with current settings?"), curr_profile_name),
+                        ok_text = _("Update"),
+                        ok_callback = function()
+                            self.data[curr_profile_name] = self:getProfileFromCurrentBookSettings(curr_profile_name)
+                            self.updated = true
+                            touchmenu_instance.item_table = self:getSubMenuItems()
+                            touchmenu_instance:updateItems()
+                            table.remove(touchmenu_instance.item_table_stack)
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Profile '%1' was updated with current settings."), curr_profile_name),
+                                timeout = 2,
+                            })
+                        end,
+                    })
+                end,
+            },
+            {
                 text = _("Duplicate"),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
