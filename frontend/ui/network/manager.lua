@@ -833,14 +833,7 @@ end
 
 
 function NetworkMgr:getWifiMenuTable()
-    if Device:isAndroid() then
-        return {
-            text = _("Wi-Fi settings"),
-            callback = function() self:openSettings() end,
-        }
-    else
-        return self:getWifiToggleMenuTable()
-    end
+    return self:getWifiToggleMenuTable()
 end
 
 function NetworkMgr:getWifiToggleMenuTable()
