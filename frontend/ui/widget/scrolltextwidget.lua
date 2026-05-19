@@ -42,6 +42,7 @@ local ScrollTextWidget = InputContainer:extend{
     auto_para_direction = false,
     alignment_strict = false,
     highlight_text_selection = false,
+    on_clear_search = nil,
 
     -- for internal use
     for_measurement_only = nil, -- When the widget is a one-off used to compute text height
@@ -70,6 +71,7 @@ function ScrollTextWidget:init()
         alignment_strict = self.alignment_strict,
         for_measurement_only = self.for_measurement_only,
         highlight_text_selection = self.highlight_text_selection,
+        on_clear_search = self.on_clear_search,
     }
     local visible_line_count = self.text_widget:getVisLineCount()
     local total_line_count = self.text_widget:getAllLineCount()
@@ -303,6 +305,7 @@ function ScrollTextWidget:onScrollText(arg, ges)
 end
 
 function ScrollTextWidget:onTapScrollText(arg, ges)
+    if self.ignore_taps then return false end
     if self.editable then
         -- Tap is used to position cursor
         return false
@@ -313,6 +316,10 @@ function ScrollTextWidget:onTapScrollText(arg, ges)
     else
         return self:onScrollDown()
     end
+end
+
+function ScrollTextWidget:setTapScrollEnabled(enabled)
+    self.ignore_taps = not enabled
 end
 
 function ScrollTextWidget:onScrollUp()
