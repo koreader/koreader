@@ -6,6 +6,7 @@ local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -22,7 +23,8 @@ local Cloud = WidgetContainer:extend{
 
 function Cloud:init()
     self:getProviders()
-    self:onDispatcherRegisterActions() -- will call loadSettings()
+    self:loadSettings()
+    self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
     self.ui.folder_shortcuts.registerShortcut({
         provider = Cloud.name,
@@ -33,6 +35,18 @@ function Cloud:init()
         end,
         set = function(path)
             self.settings:saveSetting("download_dir", path)
+            self.updated = true
+        end,
+    })
+    self.ui.folder_shortcuts.registerShortcut({
+        provider = "cloudstorage_upload",
+        name = _("Cloud storage upload folder"),
+        get = function()
+            self:loadSettings()
+            return self.settings:readSetting("upload_dir") or filemanagerutil.getHomeFolder()
+        end,
+        set = function(path)
+            self.settings:saveSetting("upload_dir", path)
             self.updated = true
         end,
     })
@@ -70,7 +84,6 @@ function Cloud:onFlushSettings()
 end
 
 function Cloud:onDispatcherRegisterActions()
-    self:loadSettings()
     Dispatcher:registerAction("cloudstorage", { category="none", event="ShowCloudStorageList", title=self.title, general=true })
 end
 
