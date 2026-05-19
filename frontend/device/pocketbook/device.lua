@@ -977,10 +977,10 @@ elseif codename == "650" then
     return PocketBook650
 elseif codename == "700" then
     return PocketBook700
-elseif codename == "710" then
-    return PocketBook710
 elseif codename == "700K3" then
     return PocketBook700K3
+elseif codename == "710" then
+    return PocketBook710
 elseif codename == "740" then
     return PocketBook740
 elseif codename == "740-2" or codename == "740-3" then
