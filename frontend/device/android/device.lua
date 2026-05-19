@@ -314,13 +314,18 @@ end
 
 function Device:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback)
-        android.openWifiSettings()
+        if not android.setWifiEnabled(true) then
+            -- Android 10+ blocks programmatic WiFi toggling; fall back to system settings
+            android.openWifiSettings()
+        end
         if complete_callback then
             complete_callback()
         end
     end
     function NetworkMgr:turnOffWifi(complete_callback)
-        android.openWifiSettings()
+        if not android.setWifiEnabled(false) then
+            android.openWifiSettings()
+        end
         if complete_callback then
             complete_callback()
         end
@@ -330,13 +335,16 @@ function Device:initNetworkManager(NetworkMgr)
         android.openWifiSettings()
     end
 
+    function NetworkMgr:isWifiOn()
+        return android.isWifiEnabled()
+    end
+
     function NetworkMgr:isConnected()
         local ok = android.getNetworkInfo()
         ok = tonumber(ok)
         if not ok then return false end
         return ok == 1
     end
-    NetworkMgr.isWifiOn = NetworkMgr.isConnected
 end
 
 function Device:performHapticFeedback(type)
