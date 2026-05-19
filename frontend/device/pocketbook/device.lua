@@ -766,6 +766,11 @@ local PocketBook700K3 = PocketBook:extend{
     needs_orientation_sync_after_resume = true,
 }
 
+function PocketBook700K3._fb_init(fb, finfo, vinfo)
+    -- Pocketbook Color Lux reports bits_per_pixel = 8, but actually uses an RGB24 framebuffer
+    vinfo.bits_per_pixel = 24
+end
+
 -- PocketBook Era Lite (710)
 local PocketBook710 = PocketBook:extend{
     model = "PB710",
@@ -776,11 +781,6 @@ local PocketBook710 = PocketBook:extend{
     inkview_translates_buttons = true,
     needs_orientation_sync_after_resume = true,
 }
-
-function PocketBook700K3._fb_init(fb, finfo, vinfo)
-    -- Pocketbook Color Lux reports bits_per_pixel = 8, but actually uses an RGB24 framebuffer
-    vinfo.bits_per_pixel = 24
-end
 
 -- PocketBook InkPad 3 (740)
 local PocketBook740 = PocketBook:extend{
