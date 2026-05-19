@@ -752,17 +752,6 @@ local PocketBook700 = PocketBook:extend{
     needs_orientation_sync_after_resume = true,
 }
 
--- PocketBook Era Lite (710)
-local PocketBook710 = PocketBook:extend{
-    model = "PB710",
-    display_dpi = 300,
-    isAlwaysPortrait = yes,
-    hasNaturalLight = yes,
-    -- c.f., https://github.com/koreader/koreader/issues/9556
-    inkview_translates_buttons = true,
-    needs_orientation_sync_after_resume = true,
-}
-
 -- PocketBook Era Color (PB700K3)
 local PocketBook700K3 = PocketBook:extend{
     model = "PBEraColor",
@@ -770,6 +759,17 @@ local PocketBook700K3 = PocketBook:extend{
     hasColorScreen = yes,
     canHWDither = yes, -- Adjust color saturation with inkview
     canUseCBB = no, -- 24bpp
+    isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
+    -- c.f., https://github.com/koreader/koreader/issues/9556
+    inkview_translates_buttons = true,
+    needs_orientation_sync_after_resume = true,
+}
+
+-- PocketBook Era Lite (710)
+local PocketBook710 = PocketBook:extend{
+    model = "PB710",
+    display_dpi = 300,
     isAlwaysPortrait = yes,
     hasNaturalLight = yes,
     -- c.f., https://github.com/koreader/koreader/issues/9556
