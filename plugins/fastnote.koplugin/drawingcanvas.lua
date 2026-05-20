@@ -62,9 +62,11 @@ local ROT_LANDSCAPE = 3  -- DEVICE_ROTATED_COUNTER_CLOCKWISE
 
 ---@class DrawingCanvas : InputContainer
 local DrawingCanvas = InputContainer:extend{
-    on_close_callback  = nil,
-    on_save_callback   = nil,      -- called with path after each save (Stage 5)
-    load_path          = nil,      -- if set, load this SVG on init (Stage 5)
+    on_close_callback    = nil,
+    on_save_callback     = nil,    -- called with path after each save (Stage 5)
+    on_dark_mode_change  = nil,    -- called with (bool) when dark mode toggles; persist in state
+    load_path            = nil,    -- if set, load this SVG on init (Stage 5)
+    dark_mode            = false,  -- initial dark mode state (from persisted state)
 
     -- Page navigation callbacks (Stage 8).
     -- Each returns (new_page_idx, total_pages, path) or nil at boundary.
@@ -73,7 +75,7 @@ local DrawingCanvas = InputContainer:extend{
 
     _bb           = nil,           -- BlitBuffer (display cache)
     _stroke_buf   = nil,           -- StrokeBuffer (source of truth, Stage 4)
-    _current_color = DEFAULT_COLOR,
+    _current_color = DEFAULT_COLOR, -- canonical ink color (#000000 always for now)
 
     _page_path  = nil,             -- path of the current page SVG (Stage 5)
     _page_dirty = false,           -- true when strokes added since last save
@@ -86,8 +88,16 @@ local DrawingCanvas = InputContainer:extend{
     _eraser_mode   = false,        -- true while eraser end of stylus is active (per-stroke)
     _eraser_locked = false,        -- true when menu eraser toggle is ON (persistent)
 
-    -- Dark mode
+    -- Dark mode: purely a display transform — stroke data is always canonical #000000.
+    -- Toggling inverts bg/fg colors in _repaintAll; no stroke color mutation.
     _dark_mode = false,
+
+    -- Auto-save idle timer (30 s after last stroke change)
+    _idle_save_fn = nil,
+
+    -- Minimum pressure floor applied before pressure_to_width.
+    -- Ensures a light touch produces a readable stroke; hardware hover stays below.
+    _pressure_floor = 200,
 
     -- Stage 8: hardware page buttons (Kobo right-side rocker: 193=RPgBack, 194=RPgFwd)
     key_events = {
@@ -134,6 +144,9 @@ local DrawingCanvas = InputContainer:extend{
 function DrawingCanvas:init()
     self.dimen = Geom:new{x=0, y=0,
                           w=Screen:getWidth(), h=Screen:getHeight()}
+
+    -- Restore dark mode preference from caller (persisted in state.lua).
+    self._dark_mode = self.dark_mode == true
 
     -- Always use 8-bit buffer: paintLine is only implemented for BB8 in
     -- KOReader's blitbuffer library. blitFrom handles the BB8→screen conversion
@@ -415,7 +428,7 @@ function DrawingCanvas:onMenuTap()
                      self:_toggleDarkMode()
                  end},
             },
-            -- Row 4: finger draw / save / clear page
+            -- Row 4: finger draw / clear page
             {
                 {text = finger_lbl,
                  callback = function()
@@ -423,21 +436,14 @@ function DrawingCanvas:onMenuTap()
                      self.finger_draw = not self.finger_draw
                      logger.dbg("FastNote canvas: finger_draw =", self.finger_draw)
                  end},
-                {text = "Save",
-                 callback = function()
-                     UIManager:close(menu)
-                     self:_saveDrawing()
-                 end},
                 {text = "Clear page",
                  callback = function()
                      UIManager:close(menu)
                      self:_confirmClearPage()
                  end},
             },
-            -- Row 5: keep / close
+            -- Row 5: close (tapping outside the menu also dismisses it)
             {
-                {text = "Keep drawing",
-                 callback = function() UIManager:close(menu) end},
                 {text = "Close canvas",
                  callback = function()
                      UIManager:close(menu)
@@ -545,6 +551,7 @@ function DrawingCanvas:onDrawStrokeEnd(_, ges)
 
     self._stroke_buf:penUp()
     self._page_dirty = true
+    self:_scheduleIdleSave()
 
     if self._stroke_min_x then
         local stroke_rect = utils.compute_dirty_rect(
@@ -619,7 +626,9 @@ end
 function DrawingCanvas:_repaintAll()
     if not self._bb then return end
     self._bb:fill(self:_bgColor())
-    if self._stroke_buf then self._stroke_buf:repaintTo(self._bb) end
+    if self._stroke_buf then
+        self._stroke_buf:repaintTo(self._bb, self:_strokeColor())
+    end
     UIManager:setDirty(self, "ui")
 end
 
@@ -710,12 +719,17 @@ function DrawingCanvas:_pollPen()
             end
 
             -- ── Pen drawing ───────────────────────────────────────────────
-            local lw = utils.pressure_to_width(ev.pressure, self._pendev.p_max, 1, 8)
+            -- Apply pressure floor: boosts light-touch pressure to a minimum
+            -- so a gentle stroke still produces a readable line, while hover
+            -- (pressure near 0) remains below MIN_PEN_PRESSURE and is rejected.
+            local raw_p     = ev.pressure or 0
+            local floored_p = math.max(self._pressure_floor, raw_p)
+            local lw        = utils.pressure_to_width(floored_p, self._pendev.p_max, 1, 8)
 
             if ev.type == "down" then
                 -- Guard against hover: Elan BTN_TOUCH fires before contact on
                 -- some firmware.  Real contact has significantly higher pressure.
-                if (ev.pressure or 0) < MIN_PEN_PRESSURE then
+                if raw_p < MIN_PEN_PRESSURE then
                     self._last_pen_x = nil
                     self._last_pen_y = nil
                     return
@@ -750,6 +764,7 @@ function DrawingCanvas:_pollPen()
             self._stroke_buf:penUp()
             if self._last_pen_x then
                 self._page_dirty = true
+                self:_scheduleIdleSave()
             end
             self._last_pen_x = nil
             self._last_pen_y = nil
@@ -912,6 +927,11 @@ function DrawingCanvas:_saveDrawing()
 end
 
 function DrawingCanvas:_doClose()
+    -- Cancel any pending idle-save timer; _autoSave below handles the final write.
+    if self._idle_save_fn then
+        UIManager:unschedule(self._idle_save_fn)
+        self._idle_save_fn = nil
+    end
     -- Auto-save back to _page_path if there are new strokes since last save.
     if self._page_path and self._page_dirty and not self._stroke_buf:isEmpty() then
         local ok_svg, svg_module = pcall(require, "lib/svg")
@@ -944,23 +964,17 @@ end
 -- ---------------------------------------------------------------------------
 
 --- Toggle between dark (black bg, white ink) and light (white bg, black ink) mode.
--- Inverts all existing stroke colors so they remain visible after the switch.
+-- Dark mode is a pure display transform: stroke data (#000000 canonical) is
+-- never mutated.  _repaintAll passes _strokeColor() as a color_override to
+-- paintTo, so all strokes flip visually without changing their stored color.
 function DrawingCanvas:_toggleDarkMode()
     self._dark_mode = not self._dark_mode
-    self._current_color = self._dark_mode and "#ffffff" or "#000000"
-
-    -- Invert every committed stroke's color so existing content stays readable.
-    for _, s in ipairs(self._stroke_buf.strokes) do
-        if s.color == "#ffffff" or s.color == "#FFFFFF" then
-            s.color = "#000000"
-        else
-            s.color = "#ffffff"
-        end
-    end
-
     self._page_dirty = true
     self:_repaintAll()
     UIManager:setDirty(self, "full")
+    if self.on_dark_mode_change then
+        self.on_dark_mode_change(self._dark_mode)
+    end
     logger.dbg("FastNote canvas: dark_mode =", self._dark_mode)
 end
 
@@ -1012,6 +1026,26 @@ function DrawingCanvas:_autoSave()
     self._page_dirty = false
     if self.on_save_callback then self.on_save_callback(self._page_path) end
     logger.dbg("FastNote canvas: auto-saved to", self._page_path)
+end
+
+--- Schedule a silent save 30 s after the last stroke change.
+-- Cancels any previously pending timer so only one fires per idle period.
+function DrawingCanvas:_scheduleIdleSave()
+    if self._idle_save_fn then
+        UIManager:unschedule(self._idle_save_fn)
+        self._idle_save_fn = nil
+    end
+    self._idle_save_fn = function()
+        self._idle_save_fn = nil
+        self:_autoSave()
+    end
+    UIManager:scheduleIn(30, self._idle_save_fn)
+end
+
+--- Save before the device suspends so work is never lost to a sleep-induced shutdown.
+function DrawingCanvas:onSuspend()
+    self:_autoSave()
+    return false  -- propagate; do not consume the suspend event
 end
 
 --- Navigate to a neighbouring page (+1 forward, -1 back).

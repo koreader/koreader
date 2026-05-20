@@ -81,10 +81,16 @@ function FastNote:onOpenFnoteCanvas()
         load_path  = load_path,
         page_index = page_idx,
         page_count = nb:pageCount(),
+        dark_mode  = state.dark_mode == 1,
 
         on_save_callback = function(path)
             state.last_notebook_uuid = nb.uuid
             state.last_page_index    = page_idx
+            lib:writeState(state)
+        end,
+
+        on_dark_mode_change = function(dm)
+            state.dark_mode = dm and 1 or 0
             lib:writeState(state)
         end,
 
