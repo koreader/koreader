@@ -1,6 +1,7 @@
 KOBO_DIR = $(PLATFORM_DIR)/kobo
 KOBO_PACKAGE = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).zip
-KOBO_PACKAGE_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).targz
+KOBO_PACKAGE_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).tar.xz
+KOBO_PACKAGE_OLD_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).targz
 
 define UPDATE_PATH_EXCLUDES +=
 $(filter-out tools/kobo%,$(wildcard tools/*))
@@ -17,7 +18,10 @@ update-prepare: all
 update-zip: update-prepare
 	$(strip $(call mkupdate,--manifest-transform=/^koreader\.png$$/d $(KOBO_PACKAGE))) koreader.png
 
-update-tgz: update-prepare
-	$(strip $(call mkupdate,$(KOBO_PACKAGE_OTA)))
+update-txz: update-prepare
+	$(strip $(call mkupdate,--manifest-transform=/^koreader\.png$$/d $(KOBO_PACKAGE_OTA))) koreader.png
 
-update: update-zip update-tgz
+update-tgz: update-prepare
+	$(strip $(call mkupdate,$(KOBO_PACKAGE_OLD_OTA)))
+
+update: update-zip update-txz update-tgz

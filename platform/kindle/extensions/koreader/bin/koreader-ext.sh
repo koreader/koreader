@@ -39,16 +39,15 @@ update_koreader() {
 
     found_koreader_package="false"
     # Try to find a koreader package... Behavior undefined if there are multiple packages...
-    for file in /mnt/us/koreader-kindle*.targz; do
+    for file in /mnt/us/koreader-kindle*.tar.xz /mnt/us/koreader-kindle*.targz /mnt/us/koreader-kindle*.zip; do
         if [ -f "${file}" ]; then
             found_koreader_package="${file}"
-            koreader_pkg_type="tgz"
-        fi
-    done
-    for file in /mnt/us/koreader-kindle*.zip; do
-        if [ -f "${file}" ]; then
-            found_koreader_package="${file}"
-            koreader_pkg_type="zip"
+            case "${file}" in
+                *.tar.xz) koreader_pkg_type='txz' ;;
+                *.targz) koreader_pkg_type='tgz' ;;
+                *.zip) koreader_pkg_type='zip' ;;
+            esac
+            break
         fi
     done
 
@@ -70,14 +69,11 @@ update_koreader() {
         koreader_pkg_ver="${koreader_pkg_ver%_*}"
         # Install it!
         logmsg "Updating to KOReader ${koreader_pkg_ver} . . ."
-        if [ "${koreader_pkg_type}" = "tgz" ]; then
-            tar -C "/mnt/us" -xzf "${found_koreader_package}"
-            fail=$?
-        else
-            unzip -q -o "${found_koreader_package}" -d "/mnt/us"
-            fail=$?
-        fi
-        if [ ${fail} -eq 0 ]; then
+        if case "${koreader_pkg_type}" in
+            txz) tar -C '/mnt/us' -xJf "${found_koreader_package}" ;;
+            tgz) tar -C '/mnt/us' -xzf "${found_koreader_package}" ;;
+            zip) unzip -q -o "${found_koreader_package}" -d '/mnt/us' ;;
+        esac then
             # Cleanup behind us...
             rm -f "${found_koreader_package}"
             # Flush to disk first...

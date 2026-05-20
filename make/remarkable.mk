@@ -1,6 +1,7 @@
 REMARKABLE_DIR = $(PLATFORM_DIR)/remarkable
 REMARKABLE_PACKAGE = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).zip
-REMARKABLE_PACKAGE_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).targz
+REMARKABLE_PACKAGE_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).tar.xz
+REMARKABLE_PACKAGE_OLD_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).targz
 
 define UPDATE_PATH_EXCLUDES +=
 plugins/SSH.koplugin
@@ -29,7 +30,10 @@ endif
 update-zip: update-prepare
 	$(strip $(call mkupdate,$(REMARKABLE_PACKAGE)))
 
-update-tgz: update-prepare
+update-txz: update-prepare
 	$(strip $(call mkupdate,$(REMARKABLE_PACKAGE_OTA)))
 
-update: update-zip update-tgz
+update-tgz: update-prepare
+	$(strip $(call mkupdate,$(REMARKABLE_PACKAGE_OLD_OTA)))
+
+update: update-zip update-txz update-tgz
