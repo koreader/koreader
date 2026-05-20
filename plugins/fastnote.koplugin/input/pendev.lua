@@ -1,14 +1,21 @@
 --[[--
 input/pendev.lua
-FFI layer: find the Wacom EMR digitizer, open its /dev/input/eventX node,
+FFI layer: find the Elan/Wacom digitizer, open its /dev/input/eventX node,
 poll raw events, and delegate state transitions to lib/pen_statemachine.
 
-ASSUMES: KOReader FFI environment (ffi/posix_h + ffi/linux_input_h loaded).
-ASSUMES: Running on a device with a Wacom EMR digitizer (Kobo Libra Colour).
-ASSUMES: LuaJIT 2.1 (Lua 5.1) — uses bit.bor for O_RDONLY | O_NONBLOCK.
+The Kobo Libra Colour uses an Elan combo chip (event1, "Elan Touchscreen")
+that sends pen input via **MT protocol** (ABS_MT_TOOL_TYPE=1 for pen,
+ABS_MT_POSITION_X/Y, ABS_MT_TRACKING_ID, ABS_MT_PRESSURE) rather than
+the single-touch Wacom protocol (ABS_X/Y, BTN_TOUCH).
 
-Not directly busted-testable (needs real /dev/input device fd).
-The state machine logic in lib/pen_statemachine.lua IS testable.
+poll() handles both:
+  • MT events: tracked per slot; pen slot (TOOL_TYPE_PEN=1) synthesizes
+    ABS_X/Y/PRESSURE + BTN_TOUCH events into the state machine.
+  • Single-touch EV_KEY / EV_ABS: passed directly to the state machine
+    (handles Wacom EMR devices and provides BTN_TOOL_PEN if sent).
+
+ASSUMES: KOReader FFI environment (ffi/posix_h + ffi/linux_input_h loaded).
+ASSUMES: LuaJIT 2.1 (Lua 5.1) — uses bit.bor for O_RDONLY | O_NONBLOCK.
 --]]--
 
 require("ffi/posix_h")         -- O_RDONLY, O_NONBLOCK, open, read, close, ioctl
@@ -22,19 +29,35 @@ local SM       = require("lib/pen_statemachine")
 local C   = ffi.C
 local bor = bit.bor
 
--- Wacom axis fallback ranges (if EVIOCGABS is not available or fails).
--- Calibrated for Kobo Libra Colour Wacom I2C digitizer.
+-- ---------------------------------------------------------------------------
+-- MT protocol constants (linux/input-event-codes.h)
+-- Hardcoded to avoid dependency on whether linux_input_h.lua exports them.
+-- ---------------------------------------------------------------------------
+local ABS_MT_SLOT        = 0x2f  -- 47  Switch to MT slot N
+local ABS_MT_POSITION_X  = 0x35  -- 53  X for current MT slot
+local ABS_MT_POSITION_Y  = 0x36  -- 54  Y for current MT slot
+local ABS_MT_TOOL_TYPE   = 0x37  -- 55  Tool: 0=finger, 1=pen, 2=palm
+local ABS_MT_TRACKING_ID = 0x39  -- 57  Contact ID; -1 = lifted
+local ABS_MT_PRESSURE    = 0x3a  -- 58  Pressure for current MT slot
+local MT_TOOL_PEN        = 1     -- ABS_MT_TOOL_TYPE value for pen
+
+-- EV_KEY codes for synthesizing into the state machine
+local BTN_TOOL_PEN = 0x140  -- 320
+local BTN_TOUCH    = 0x14a  -- 330
+
+-- ---------------------------------------------------------------------------
+-- Axis fallback ranges (Elan I2C digitizer on Kobo Libra Colour).
+-- Updated by _query_abs() if EVIOCGABS succeeds.
+-- ---------------------------------------------------------------------------
 local FALLBACK_X_MIN   = 0
 local FALLBACK_Y_MIN   = 0
 local FALLBACK_P_MIN   = 0
 local FALLBACK_X_MAX   = 4095
 local FALLBACK_Y_MAX   = 4095
-local FALLBACK_P_MAX   = 4095   -- Wacom pressure is commonly 0-4095 or 0-8191;
-                                 -- calibrate on device via evtest if needed.
+local FALLBACK_P_MAX   = 4095
 
--- Declare struct once at module level so repeated PenDev.open() calls don't
--- trigger a LuaJIT "attempt to redefine" error.
--- pcall guards against benign re-definition if two modules require this file.
+-- Declare struct once at module level.
+-- pcall guards against benign re-definition on second require.
 pcall(ffi.cdef, [[
     struct fn_input_absinfo {
         int value;
@@ -53,12 +76,9 @@ local PenDev = {}
 PenDev.__index = PenDev
 
 -- Pen device name fragments (case-insensitive) to match against N: lines.
--- The Kobo Libra Colour uses an Elan combo chip ("Elan Touchscreen") that
--- handles both capacitive touch and the EMR pen on the same event node.
 local PEN_NAME_PATTERNS = {"wacom", "elan", "digitizer", "pen", "stylus", "tablet"}
 
 --- Check if a KEY= bitmask hex string has BTN_TOOL_PEN (0x140 = bit 320) set.
--- Bit 320: hex digit index from right = floor(320/4) = 80; bit in digit = 0.
 local function has_btn_tool_pen(key_hex)
     key_hex = key_hex:gsub("%s", "")
     local idx = #key_hex - 80
@@ -68,9 +88,6 @@ local function has_btn_tool_pen(key_hex)
 end
 
 --- Check if an ABS= bitmask hex string has ABS_PRESSURE (0x18 = bit 24) set.
--- ABS_PRESSURE being reported as a single-axis (not MT) event distinguishes
--- pen digitizers from pure touchscreens.
--- Bit 24: hex digit from right = 6; bit in digit = 0.
 local function has_abs_pressure(abs_hex)
     abs_hex = abs_hex:gsub("%s", "")
     local idx = #abs_hex - 6
@@ -80,8 +97,6 @@ local function has_abs_pressure(abs_hex)
 end
 
 --- Scan /proc/bus/input/devices for the pen digitizer.
--- Detection order: name match, then BTN_TOOL_PEN bitmask, then ABS_PRESSURE.
--- On Kobo Libra Colour the Elan combo chip serves as both pen and touch.
 -- @treturn string|nil  Path like "/dev/input/event1", or nil if not found.
 function PenDev.find()
     local f = io.open("/proc/bus/input/devices", "r")
@@ -113,7 +128,6 @@ function PenDev.find()
             local ev = cur_handlers:match("(event%d+)")
             if ev then
                 result = "/dev/input/" .. ev
-                logger.dbg("FastNote pendev: candidate device:", cur_name, "→", result)
             end
         end
     end
@@ -133,7 +147,7 @@ function PenDev.find()
             cur_name, cur_key, cur_abs, cur_handlers = nil, nil, nil, nil
         end
     end
-    if not result then check_block() end  -- last block with no trailing blank line
+    if not result then check_block() end
 
     f:close()
 
@@ -147,7 +161,7 @@ end
 
 --- Open a digitizer device node and create a PenDev instance.
 -- @string path   /dev/input/eventX path (typically from PenDev.find()).
--- @treturn PenDev|nil, string?   Opened instance, or nil + error message.
+-- @treturn PenDev|nil, string?
 function PenDev.open(path)
     if not path then
         return nil, "pendev.open: nil path"
@@ -164,16 +178,20 @@ function PenDev.open(path)
         fd      = fd,
         path    = path,
         sm      = SM:new(),
-        -- Axis calibration (may be updated by _query_abs if ioctl is available)
+        -- Axis calibration
         x_min   = FALLBACK_X_MIN,
         y_min   = FALLBACK_Y_MIN,
         p_min   = FALLBACK_P_MIN,
         x_max   = FALLBACK_X_MAX,
         y_max   = FALLBACK_Y_MAX,
         p_max   = FALLBACK_P_MAX,
+        -- MT pen tracking (Elan combo chip protocol)
+        _mt_cur          = 0,    -- current MT slot being updated
+        _mt_slots        = {},   -- slot# -> {tool, id, x, y, p}
+        _mt_pen_slot     = nil,  -- slot# identified as pen (TOOL_TYPE_PEN)
+        _mt_pen_was_down = false, -- tracks BTN_TOUCH state we synthesized
     }, PenDev)
 
-    -- Best-effort axis query — updates self.x_max / y_max / p_max if possible.
     self:_query_abs()
 
     logger.dbg("FastNote pendev: opened", path,
@@ -184,17 +202,13 @@ function PenDev.open(path)
 end
 
 --- Attempt to read axis ranges via EVIOCGABS ioctl.
--- Falls back to FALLBACK_* values silently if the ioctl is unavailable.
--- EVIOCGABS(axis) = _IOR('E', 0x40 + axis, struct input_absinfo)
--- On ARM/x86-64 Linux: sizeof(struct input_absinfo) = 24 bytes.
+-- Tries single-touch axes first, then MT axes as fallback.
 function PenDev:_query_abs()
     local function eviocgabs(axis)
-        -- _IOR('E', 0x40+axis, struct input_absinfo)
-        -- direction READ = 2, size = 24
         return bit.bor(
             bit.lshift(2, 30),
             bit.lshift(0x45, 8),   -- 'E' = 0x45
-            bit.lshift(24, 16),
+            bit.lshift(24, 16),    -- sizeof(struct fn_input_absinfo) = 24
             0x40 + axis
         )
     end
@@ -209,9 +223,13 @@ function PenDev:_query_abs()
         return nil, nil
     end
 
-    local xmin, xm = query(0)  -- ABS_X
-    local ymin, ym = query(1)  -- ABS_Y
-    local pmin, pm = query(24) -- ABS_PRESSURE
+    -- Single-touch axes first (Wacom EMR), MT axes as fallback (Elan MT)
+    local xmin, xm = query(0)             -- ABS_X
+    if not xm then xmin, xm = query(ABS_MT_POSITION_X) end
+    local ymin, ym = query(1)             -- ABS_Y
+    if not ym then ymin, ym = query(ABS_MT_POSITION_Y) end
+    local pmin, pm = query(24)            -- ABS_PRESSURE
+    if not pm then pmin, pm = query(ABS_MT_PRESSURE) end
 
     if xm then self.x_min = xmin or 0; self.x_max = xm end
     if ym then self.y_min = ymin or 0; self.y_max = ym end
@@ -219,8 +237,10 @@ function PenDev:_query_abs()
 end
 
 --- Non-blocking poll: read all available events, emit high-level events via cb.
--- Intended to be called from a UIManager:scheduleIn loop (~120 Hz).
--- @func cb   Callback receiving {type, x, y, pressure, tool} tables.
+-- Handles both single-touch (Wacom) and MT pen (Elan combo chip) protocols.
+-- On MT devices, synthesizes ABS_X/Y/PRESSURE + BTN_TOUCH into the SM from
+-- the pen's ABS_MT_* events so the state machine stays protocol-agnostic.
+-- @func cb  Callback receiving {type, x, y, pressure, tool} tables.
 function PenDev:poll(cb)
     if not self.fd then return end
 
@@ -234,13 +254,85 @@ function PenDev:poll(cb)
 
         local count = math.floor(n / ev_sz)
         for i = 0, count - 1 do
-            local e = buf[i]
-            local t = e.type
+            local e  = buf[i]
+            local t  = e.type
+            local ec = e.code
+            local ev = e.value
+
             if t == C.EV_KEY then
-                self.sm:feed_key(e.code, e.value, cb)
+                -- Pass EV_KEY directly: BTN_TOOL_PEN, BTN_TOUCH etc.
+                self.sm:feed_key(ec, ev, cb)
+
             elseif t == C.EV_ABS then
-                self.sm:feed_abs(e.code, e.value)
+                -- ── MT protocol ──────────────────────────────────────────
+                if ec == ABS_MT_SLOT then
+                    self._mt_cur = ev
+
+                elseif ec == ABS_MT_TOOL_TYPE then
+                    local s = self._mt_cur
+                    if not self._mt_slots[s] then self._mt_slots[s] = {} end
+                    self._mt_slots[s].tool = ev
+                    if ev == MT_TOOL_PEN then
+                        self._mt_pen_slot = s
+                        logger.dbg("FastNote pendev: pen identified at MT slot", s)
+                    end
+
+                elseif ec == ABS_MT_TRACKING_ID then
+                    local s = self._mt_cur
+                    if not self._mt_slots[s] then self._mt_slots[s] = {} end
+                    self._mt_slots[s].id = ev
+
+                elseif ec == ABS_MT_POSITION_X then
+                    local s = self._mt_cur
+                    if not self._mt_slots[s] then self._mt_slots[s] = {} end
+                    self._mt_slots[s].x = ev
+
+                elseif ec == ABS_MT_POSITION_Y then
+                    local s = self._mt_cur
+                    if not self._mt_slots[s] then self._mt_slots[s] = {} end
+                    self._mt_slots[s].y = ev
+
+                elseif ec == ABS_MT_PRESSURE then
+                    local s = self._mt_cur
+                    if not self._mt_slots[s] then self._mt_slots[s] = {} end
+                    self._mt_slots[s].p = ev
+
+                else
+                    -- ── Single-touch (Wacom / fallback) ──────────────────
+                    -- ABS_X=0, ABS_Y=1, ABS_PRESSURE=24 pass straight through.
+                    self.sm:feed_abs(ec, ev)
+                end
+
             elseif t == C.EV_SYN then
+                -- Before firing the SM sync, synthesize from MT pen slot if known.
+                local pen_slot = self._mt_pen_slot
+                if pen_slot then
+                    local pd = self._mt_slots[pen_slot]
+                    if pd then
+                        -- Update SM coordinates from MT pen data
+                        if pd.x then self.sm:feed_abs(0,  pd.x) end  -- ABS_X
+                        if pd.y then self.sm:feed_abs(1,  pd.y) end  -- ABS_Y
+                        if pd.p then self.sm:feed_abs(24, pd.p) end  -- ABS_PRESSURE
+
+                        -- Derive pen-down state:
+                        -- touching = valid tracking ID AND (no pressure data yet, or p > 0)
+                        local is_down = (pd.id ~= nil and pd.id >= 0)
+                                     and (pd.p == nil or pd.p > 0)
+
+                        if is_down and not self._mt_pen_was_down then
+                            -- Pen just touched down: synthesize BTN_TOOL_PEN 1, BTN_TOUCH 1
+                            self.sm:feed_key(BTN_TOOL_PEN, 1, nil)
+                            self.sm:feed_key(BTN_TOUCH, 1, nil)
+                            self._mt_pen_was_down = true
+                        elseif not is_down and self._mt_pen_was_down then
+                            -- Pen lifted: synthesize BTN_TOUCH 0 (emits "up" event)
+                            self._mt_pen_was_down = false
+                            self.sm:feed_key(BTN_TOUCH, 0, cb)
+                            -- BTN_TOOL_PEN 0 handled separately via feed_syn "up"
+                        end
+                    end
+                end
+
                 self.sm:feed_syn(cb)
             end
         end
