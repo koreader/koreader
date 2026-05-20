@@ -34,6 +34,7 @@ local PAGE_CSS = [[
 }
 %6
 %7
+%8
 ]]
 
 -- Make default MuPDF styles (source/html/html-layout.c) a bit
@@ -44,7 +45,6 @@ body {
     margin: 0;                  /* MuPDF: margin: 1em */
     padding: 0;
     line-height: 1.3;           /* MuPDF defaults to 1.2 */
-    text-align: justify;
 }
 /* We keep left and right margin the same so it also displays as expected in RTL */
 h1, h2, h3, h4, h5, h6 { margin: 0; } /* MuPDF: margin: XXem 0 , vary with level */
@@ -264,6 +264,11 @@ function FootnoteWidget:init()
         end
     end
 
+    local text_align_css = ""
+    if G_reader_settings:nilOrTrue("footnote_popup_justify") then
+        text_align_css = "body { text-align: justify; }\n"
+    end
+
     -- We want to display the footnote text with the same margins as
     -- the document, but keep the scrollbar in the right margin, so
     -- both small footnotes (without scrollbar) and longer ones (with
@@ -278,7 +283,7 @@ function FootnoteWidget:init()
     end
 
     local css = T(PAGE_CSS, "0", html_right_margin, "0", html_left_margin, -- top right bottom left
-                    self.font_face, font_css, DEFAULT_CSS)
+                    self.font_face, font_css, DEFAULT_CSS, text_align_css)
     if self.css then -- add any provided css
         css = css .. "\n" .. self.css
     end

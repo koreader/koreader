@@ -112,7 +112,7 @@ function MultiInputDialog:init()
 
     -- Reset self.keyboard_visible because InputDialog:onCloseKeyboard sets it to false, which can lead to an incorrect keyboard
     -- visibility state since we still might want our very own virtual keyboard.
-    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:nilOrFalse("virtual_keyboard_enabled") then
         do end -- luacheck: ignore 541
     elseif self.readonly then
         do end -- luacheck: ignore 541
@@ -134,6 +134,7 @@ function MultiInputDialog:init()
     end
     self.input_fields = {}
     local input_description = {}
+    local layout_insert_idx = 1
     for i, field in ipairs(self.fields) do
         local input_field_tmp = InputText:new{
             text = field.text,
@@ -158,10 +159,6 @@ function MultiInputDialog:init()
             enter_callback = self.enter_callback,
         }
         table.insert(self.input_fields, input_field_tmp)
-        --- @fixme: This is semi-broken when text_type is password, as we actually end up with the checkbox instead of the field,
-        --          and a "Press" on the checkbox will actually focus the password field and *not* check the box.
-        -- addWidget may have added stuff below us, so make sure we insert above that...
-        table.insert(self.layout, i, { input_field_tmp })
         if field.description then
             input_description[i] = FrameContainer:new{
                 padding = self.description_padding,
@@ -181,13 +178,18 @@ function MultiInputDialog:init()
                 input_description[i],
             })
         end
-        table.insert(VerticalGroupData, CenterContainer:new{
-            dimen = Geom:new{
-                w = self.title_bar:getSize().w,
-                h = input_field_tmp:getSize().h,
-            },
-            input_field_tmp,
-        })
+        local focus_widgets = input_field_tmp:getFocusableWidgets()
+        for _, focus_widget in ipairs(focus_widgets) do
+            table.insert(self.layout, layout_insert_idx, { focus_widget })
+            layout_insert_idx = layout_insert_idx + 1
+            table.insert(VerticalGroupData, CenterContainer:new{
+                dimen = Geom:new{
+                    w = self.title_bar:getSize().w,
+                    h = focus_widget:getSize().h,
+                },
+                focus_widget,
+            })
+        end
     end
 
     -- Add same vertical space after than before InputText
@@ -263,7 +265,7 @@ function MultiInputDialog:onSwitchFocus(inputbox)
     self._input_widget:focus()
     self.focused_field_idx = inputbox.idx
 
-    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:nilOrFalse("virtual_keyboard_enabled") then
         -- do not load virtual keyboard when user is hiding it.
         return
     end

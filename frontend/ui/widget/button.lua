@@ -511,7 +511,7 @@ function Button:onTapSelectButton()
                     UIManager:forceRePaint()
                 end
             end
-            if self.checked_func then
+            if self.checked_func and not self.no_refresh_checkmark then
                 local text = self:getDisplayText()
                 self.label_widget:setText(text)
                 self:refresh()
@@ -541,7 +541,7 @@ function Button:refresh()
     UIManager:widgetRepaint(self[1], self[1].dimen.x, self.dimen.y)
 
     UIManager:setDirty(nil, function()
-        return self.enabled and "fast" or "ui", self[1].dimen
+        return (self.enabled and not self.background) and "fast" or "ui", self[1].dimen
     end)
 end
 

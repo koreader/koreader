@@ -28,7 +28,7 @@ if ! [ -d "${1}" ]; then
     exit 1
 fi
 
-VERSION="$(cut -f2 -dv "${1}/koreader/git-rev" | cut -f1,2 -d-)"
+VERSION="$(cat "${1}/koreader/git-rev")"
 APP_PATH="${1}/bundle"
 APP_BUNDLE="${1}/../KOReader"
 APP_ARCH="$(uname -m)"
@@ -64,7 +64,7 @@ cat <<END >"${APP_PATH}/Contents/Info.plist"
         <key>CFBundleIdentifier</key>
         <string>rocks.koreader</string>
         <key>CFBundleShortVersionString</key>
-        <string>${VERSION}</string>
+        <string>${VERSION#v}</string>
         <key>CFBundleInfoDictionaryVersion</key>
         <string>6.0</string>
         <key>CFBundlePackageType</key>
@@ -156,6 +156,6 @@ codesign --force --deep -s - "${APP_BUNDLE}.app"
 
 # Package as 7z reduces size from 80MB to 30MB.
 if command_exists "7z"; then
-    7z a -l -m0=flzma2 -mx=9 "${APP_BUNDLE}-${APP_ARCH}-${VERSION}.7z" "${APP_BUNDLE}.app"
+    7z a -l -m0=flzma2 -mx=9 "koreader-macos-${MACOSX_DEPLOYMENT_TARGET}-${APP_ARCH}-${VERSION}.7z" "${APP_BUNDLE}.app"
     rm -rf "${APP_BUNDLE}.app"
 fi

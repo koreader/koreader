@@ -109,18 +109,24 @@ local Device = Generic:extend{
     window = G_reader_settings:readSetting("sdl_window", {}),
 }
 
-function Device:otaModel()
-    if self.ota_model then
-        return self.ota_model, "link"
-    end
-end
-
 local AppImage = Device:extend{
     model = "AppImage",
-    ota_model = "appimage",
     hasOTAUpdates = yes,
     isDesktop = yes,
 }
+
+function AppImage:otaModel()
+    local arch = jit.arch
+    local model
+    if arch == "arm64" then
+        model = "appimage-aarch64"
+    elseif arch == "arm" then
+        model = "appimage-armhf"
+    elseif arch == "x64" then
+        model = "appimage-x86_64"
+    end
+    return model, "link"
+end
 
 local Desktop = Device:extend{
     model = SDL.getPlatform(),
@@ -199,10 +205,7 @@ function Device:init()
         event_map = dofile("frontend/device/sdl/event_map_sdl2.lua"),
         handleSdlEv = function(device_input, ev)
 
-            if ev.code == SDL.SDL.SDL_EVENT_MOUSE_WHEEL then
-                local scrolled_x = ev.value.x
-                local scrolled_y = ev.value.y
-
+            if ev.code == SDL.SDL.SDL_EVENT_MOUSE_WHEEL and (ev.value.integer_x ~= 0 or ev.value.integer_y ~= 0) then
                 local pos = Geom:new{
                     x = 0,
                     y = 0,
@@ -213,13 +216,13 @@ function Device:init()
                     ges = "pan",
                     distance = 200,
                     relative = {
-                        x = 50*scrolled_x,
-                        y = 100*scrolled_y,
+                        x = 50 * ev.value.integer_x,
+                        y = 100 * ev.value.integer_y,
                     },
                     pos = pos,
                     time = time.timeval(ev.time),
-                    mousewheel_direction = scrolled_y,
-                    direction = scrolled_y > 0 and "south" or "north"
+                    mousewheel_direction = ev.value.integer_y,
+                    direction = ev.value.integer_y > 0 and "south" or "north"
                 }
                 local fake_ges_release = {
                     ges = "pan_release",

@@ -29,14 +29,15 @@ local T = ffiUtil.template
 
 local Gestures = WidgetContainer:extend{
     name = "gestures",
-    settings_data = nil,
+    settings_file = DataStorage:getSettingsDir() .. "/gestures.lua",
+    settings = nil,
+    data = nil, -- direct access to the settings table
     gestures = nil,
     defaults = nil,
     custom_multiswipes = nil,
     updated = false,
     has_multitouch = Device:hasMultitouch(),
 }
-local gestures_path = ffiUtil.joinPath(DataStorage:getSettingsDir(), "gestures.lua")
 
 local section_titles = {
     tap_corner          = _("Tap corner"),
@@ -213,29 +214,45 @@ function Gestures:isGestureAlwaysActive(ges, multiswipe_directions)
 end
 
 function Gestures:init()
-    local defaults_path = ffiUtil.joinPath(self.path, "defaults.lua")
+    self:loadSettings()
+    self.ui.menu:registerToMainMenu(self)
+    Dispatcher:init()
+    self:initGesture()
+    -- Overload InputContainer's stub to allow it to recognize "always active" gestures
+    InputContainer.isGestureAlwaysActive = function(this, ges, multiswipe_directions)
+        return self:isGestureAlwaysActive(ges, multiswipe_directions)
+    end
+end
+
+function Gestures:loadSettings()
+    if not Gestures.settings then
+        Gestures.default_settings = LuaSettings:open(ffiUtil.joinPath(self.path, "defaults.lua"))
+        Gestures.settings = LuaSettings:open(self.settings_file)
+        if not next(Gestures.settings.data) then
+            logger.warn("No gestures file or invalid gestures file found, copying defaults")
+            Gestures.settings.data = util.tableDeepCopy(Gestures.default_settings.data)
+            self.updated = true
+        end
+        if G_reader_settings:has("gesture_fm") or G_reader_settings:has("gesture_reader") then
+            logger.info("Migrate old gestures")
+            local Migration = require("migration")
+            Migration.migrateGestures(self)
+            self.updated = true
+        end
+        Gestures.rtl_applied = {}
+    end
+
     self.ignore_hold_corners = G_reader_settings:isTrue("ignore_hold_corners")
     self.multiswipes_enabled = G_reader_settings:isTrue("multiswipes_enabled")
     self.is_docless = self.ui.document == nil
     self.ges_mode = self.is_docless and "gesture_fm" or "gesture_reader"
-    self.defaults = LuaSettings:open(defaults_path).data[self.ges_mode]
-    if not self.settings_data then
-        self.settings_data = LuaSettings:open(gestures_path)
-        if not next(self.settings_data.data) then
-            logger.warn("No gestures file or invalid gestures file found, copying defaults")
-            self.settings_data:purge()
-            ffiUtil.copyFile(defaults_path, gestures_path)
-            self.settings_data = LuaSettings:open(gestures_path)
-        end
-    end
-    self.gestures = self.settings_data.data[self.ges_mode]
-    self.custom_multiswipes = self.settings_data.data["custom_multiswipes"]
-    if G_reader_settings:has("gesture_fm") or G_reader_settings:has("gesture_reader") then
-        -- Migrate old gestures
-        local Migration = require("migration")
-        Migration:migrateGestures(self)
-    end
+    self.defaults = Gestures.default_settings.data[self.ges_mode]
+    self.data = Gestures.settings.data
+    self.gestures = self.data[self.ges_mode]
+    self.custom_multiswipes = self.data["custom_multiswipes"]
 
+    if Gestures.rtl_applied[self.ges_mode] then return end
+    Gestures.rtl_applied[self.ges_mode] = true
     -- Some of these defaults need to be reversed in RTL mirrored UI,
     -- and as we set them in the saved gestures, we need to reset them
     -- to the defaults in case of UI language's direction change.
@@ -244,7 +261,6 @@ function Gestures:init()
         tap_right_bottom_corner = "tap_left_bottom_corner",
         double_tap_left_side = "double_tap_right_side",
     }
-
     local is_rtl = BD.mirroredUILayout()
     if is_rtl then
         for k, v in pairs(mirrored_if_rtl) do
@@ -275,12 +291,6 @@ function Gestures:init()
         end
         G_reader_settings:flipNilOrFalse(ges_dir_setting)
     end
-
-    self.ui.menu:registerToMainMenu(self)
-    Dispatcher:init()
-    self:initGesture()
-    -- Overload InputContainer's stub to allow it to recognize "always active" gestures
-    InputContainer.isGestureAlwaysActive = function(this, ges, multiswipe_directions) return self:isGestureAlwaysActive(ges, multiswipe_directions) end
 end
 
 function Gestures:onCloseWidget()
@@ -554,8 +564,8 @@ function Gestures:genCustomMultiswipeSubmenu()
                     -- remove from list of custom multiswipes
                     self.custom_multiswipes[item] = nil
                     -- remove any settings for the muliswipe
-                    self.settings_data.data["gesture_fm"][item] = nil
-                    self.settings_data.data["gesture_reader"][item] = nil
+                    self.data["gesture_fm"][item] = nil
+                    self.data["gesture_reader"][item] = nil
                     self.updated = true
 
                     --touchmenu_instance.item_table = self:genMultiswipeMenu()
@@ -1391,15 +1401,15 @@ function Gestures:onIgnoreHoldCornersTime(seconds)
 end
 
 function Gestures:onFlushSettings()
-    if self.settings_data and self.updated then
-        self.settings_data:flush()
+    if self.updated then
+        Gestures.settings:flush()
         self.updated = false
     end
 end
 
 function Gestures:onDispatcherActionNameChanged(action)
     for _, section in ipairs({ "gesture_fm", "gesture_reader" }) do
-        local gestures = self.settings_data.data[section]
+        local gestures = self.data[section]
         for gesture_name, gesture in pairs(gestures) do
             if gesture[action.old_name] ~= nil then
                 if gesture.settings and gesture.settings.order then
@@ -1425,7 +1435,7 @@ function Gestures:onDispatcherActionNameChanged(action)
                     gesture[action.new_name] = true
                 else
                     if next(gesture) == nil then
-                        self.settings_data.data[section][gesture_name] = nil
+                        self.data[section][gesture_name] = nil
                     end
                 end
                 self.updated = true
@@ -1436,7 +1446,7 @@ end
 
 function Gestures:onDispatcherActionValueChanged(action)
     for _, section in ipairs({ "gesture_fm", "gesture_reader" }) do
-        local gestures = self.settings_data.data[section]
+        local gestures = self.data[section]
         for gesture_name, gesture in pairs(gestures) do
             if gesture[action.name] == action.old_value then
                 gesture[action.name] = action.new_value
@@ -1456,7 +1466,7 @@ function Gestures:onDispatcherActionValueChanged(action)
                         end
                     end
                     if next(gesture) == nil then
-                        self.settings_data.data[section][gesture_name] = nil
+                        self.data[section][gesture_name] = nil
                     end
                 end
                 self.updated = true

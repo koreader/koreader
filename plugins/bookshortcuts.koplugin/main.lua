@@ -5,27 +5,35 @@ local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local LuaSettings = require("luasettings")
 local PathChooser = require("ui/widget/pathchooser")
-local ReadHistory = require("readhistory")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
+local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = ffiUtil.template
 
 local BookShortcuts = WidgetContainer:extend{
     name = "bookshortcuts",
-    shortcuts = LuaSettings:open(DataStorage:getSettingsDir() .. "/bookshortcuts.lua"),
+    settings_file = DataStorage:getSettingsDir() .. "/bookshortcuts.lua",
+    bs_settings = nil,
     updated = false,
 }
 
+local function dispatcherRegisterShortcut(name)
+    local mode = lfs.attributes(name, "mode")
+    if mode then
+        local title = T(C_("File", "Open %1"), mode == "file" and name:gsub(".*/", "") or name)
+        Dispatcher:registerAction(BookShortcuts.name .. name,
+            {category="none", event="BookShortcut", title=title, general=true, arg=name,})
+    end
+end
+
 function BookShortcuts:onDispatcherRegisterActions()
-    for k,v in pairs(self.shortcuts.data) do
-        local mode = lfs.attributes(k, "mode")
-        if mode then
-            local title = T(C_("File", "Open %1"), mode == "file" and k:gsub(".*/", "") or k)
-            Dispatcher:registerAction(k, {category="none", event="BookShortcut", title=title, general=true, arg=k,})
+    for name in pairs(self.shortcuts) do
+        if name ~= "settings" then
+            dispatcherRegisterShortcut(name)
         end
     end
 end
@@ -35,7 +43,7 @@ function BookShortcuts:onBookShortcut(path)
     if mode then
         local file
         if mode ~= "file" then
-            if G_reader_settings:readSetting("BookShortcuts_directory_action") == "FM" then
+            if self.settings.directory_action == "FM" then
                 if self.ui.file_chooser then
                     self.ui.file_chooser:changeToPath(path)
                 else -- called from Reader
@@ -43,7 +51,15 @@ function BookShortcuts:onBookShortcut(path)
                     self.ui:showFileManager(path)
                 end
             else
-                file = ReadHistory:getFileByDirectory(path, G_reader_settings:isTrue("BookShortcuts_recursive_directory"))
+                local real_path = ffiUtil.realpath(path)
+                for _, v in ipairs(require("readhistory").hist) do
+                    local ipath = ffiUtil.realpath(ffiUtil.dirname(v.file))
+                    if ipath and (ipath == real_path
+                            or (self.settings.recursive_directory and util.stringStartsWith(ipath, real_path))) then
+                        file = v.file
+                        break
+                    end
+                end
             end
         else
             file = path
@@ -61,13 +77,25 @@ function BookShortcuts:onBookShortcut(path)
 end
 
 function BookShortcuts:init()
+    self:loadSettings()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 end
 
+function BookShortcuts:loadSettings()
+    if not BookShortcuts.bs_settings then
+        BookShortcuts.bs_settings = LuaSettings:open(self.settings_file)
+        if not next(BookShortcuts.bs_settings.data) then
+            self.updated = true
+        end
+    end
+    self.shortcuts = BookShortcuts.bs_settings.data
+    self.settings = BookShortcuts.bs_settings:readSetting("settings", { directory_action = "FM" })
+end
+
 function BookShortcuts:onFlushSettings()
-    if self.shortcuts and self.updated then
-        self.shortcuts:flush()
+    if self.updated then
+        BookShortcuts.bs_settings:flush()
         self.updated = false
     end
 end
@@ -104,33 +132,52 @@ function BookShortcuts:getSubMenuItems()
             end,
         },
         {
-            text_func = function() return T(_("Folder action: %1"),
-                G_reader_settings:readSetting("BookShortcuts_directory_action", "FM") == "FM" and FM_text or last_text) end,
+            text_func = function()
+                return T(_("Folder action: %1"), self.settings.directory_action == "FM" and FM_text or last_text)
+            end,
             keep_menu_open = true,
             sub_item_table = {
                 {
                     text = FM_text,
                     radio = true,
-                    checked_func = function() return G_reader_settings:readSetting("BookShortcuts_directory_action") == "FM" end,
-                    callback = function() G_reader_settings:saveSetting("BookShortcuts_directory_action", "FM") end,
+                    checked_func = function()
+                        return self.settings.directory_action == "FM"
+                    end,
+                    callback = function()
+                        self.settings.directory_action = "FM"
+                        self.updated = true
+                    end,
                 },
                 {
                     text = last_text,
                     radio = true,
-                    checked_func = function() return G_reader_settings:readSetting("BookShortcuts_directory_action") == "Last" end,
-                    callback = function() G_reader_settings:saveSetting("BookShortcuts_directory_action", "Last") end,
+                    checked_func = function()
+                        return self.settings.directory_action == "Last"
+                    end,
+                    callback = function()
+                        self.settings.directory_action = "Last"
+                        self.updated = true
+                    end,
                 },
                 {
                     text = _("Recursively search folders"),
-                    enabled_func = function() return G_reader_settings:readSetting("BookShortcuts_directory_action") == "Last" end,
-                    checked_func = function() return G_reader_settings:isTrue("BookShortcuts_recursive_directory") end,
-                    callback = function() G_reader_settings:flipNilOrFalse("BookShortcuts_recursive_directory") end,
+                    enabled_func = function()
+                        return self.settings.directory_action == "Last"
+                    end,
+                    checked_func = function()
+                        return self.settings.directory_action == "Last" and self.settings.recursive_directory
+                    end,
+                    callback = function()
+                        self.settings.recursive_directory = not self.settings.recursive_directory or nil
+                        self.updated = true
+                    end,
                 },
             },
             separator = true,
         },
     }
-    for k in ffiUtil.orderedPairs(self.shortcuts.data) do
+    for k in ffiUtil.orderedPairs(self.shortcuts) do
+        if k == "settings" then goto continue end
         local mode = lfs.attributes(k, "mode")
         local icon = mode and (mode == "file" and "\u{F016} " or "\u{F114} ") or "\u{F48E} "
         local text = mode == "file" and k:gsub(".*/", "") or k
@@ -150,18 +197,19 @@ function BookShortcuts:getSubMenuItems()
                 })
             end,
         })
+        ::continue::
     end
     return sub_item_table
 end
 
 function BookShortcuts:addShortcut(name)
-    self.shortcuts.data[name] = true
+    self.shortcuts[name] = true
+    dispatcherRegisterShortcut(name)
     self.updated = true
-    self:onDispatcherRegisterActions()
 end
 
 function BookShortcuts:deleteShortcut(name)
-    self.shortcuts.data[name] = nil
+    self.shortcuts[name] = nil
     Dispatcher:removeAction(name)
     UIManager:broadcastEvent(Event:new("DispatcherActionNameChanged", { old_name = name, new_name = nil }))
     self.updated = true

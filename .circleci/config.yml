@@ -7,7 +7,7 @@ parameters:
     # Bump this to reset all caches.
     cache_epoch:
       type: integer
-      default: 2
+      default: 3
 
 # }}}
 
@@ -59,12 +59,12 @@ jobs:
       - restore_cache:
           name: Restore build directory
           keys:
-            - &CACHE_KEY_BUILD_DIR '<< pipeline.parameters.cache_epoch >>-{{ .Environment.CIRCLE_JOB }}-build-{{ arch }}-{{ checksum "cache-key" }}'
+            - &CACHE_KEY_BUILD_DIR '<< pipeline.parameters.cache_epoch >>-{{ .Environment.CIRCLE_JOB }}-build-{{ checksum "cache-key" }}'
       - restore_cache:
           name: Restore build cache
           keys:
-            - &CACHE_KEY_BUILD_CACHE '<< pipeline.parameters.cache_epoch >>-{{ .Environment.CIRCLE_JOB }}-ccache-{{ arch }}-{{ checksum "cache-key" }}'
-            - '<< pipeline.parameters.cache_epoch >>-{{ .Environment.CIRCLE_JOB }}-ccache-{{ arch }}-'
+            - &CACHE_KEY_BUILD_CACHE '<< pipeline.parameters.cache_epoch >>-{{ .Environment.CIRCLE_JOB }}-ccache-{{ checksum "cache-key" }}'
+            - '<< pipeline.parameters.cache_epoch >>-{{ .Environment.CIRCLE_JOB }}-ccache-'
       - run:
           name: Setup build cache
           command: |

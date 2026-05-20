@@ -80,7 +80,7 @@ end
 function XMNoteExporter:getBookReadingDurationsByDay(title, md5)
     if util.fileExists(db_location) then
         local conn = SQ3.open(db_location)
-        local sql_query_book_id = [[SELECT id FROM book WHERE title = "%s" and md5 = "%s" LIMIT 1]]
+        local sql_query_book_id = [[SELECT id FROM book WHERE title = '%s' and md5 = '%s' LIMIT 1]]
         local sql_query_durations = [[
             SELECT date(start_time, 'unixepoch', 'localtime') AS date,
                    max(page)                                  AS last_page,

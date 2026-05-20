@@ -237,4 +237,145 @@ describe("NewsDownloader module", function()
             NewsDownloader.createFromDescription = old_createFromDescription
         end)
     end)
+
+    describe("parseMaxAge", function()
+        local parseMaxAge
+
+        setup(function()
+            parseMaxAge = NewsDownloader._parseMaxAge
+            assert.is_function(parseMaxAge)
+        end)
+
+        it("returns (nil, nil) for nil (disabled)", function()
+            local s, err = parseMaxAge(nil)
+            assert.is_nil(s)
+            assert.is_nil(err)
+        end)
+
+        it("returns (nil, nil) for empty string (disabled)", function()
+            local s, err = parseMaxAge("")
+            assert.is_nil(s)
+            assert.is_nil(err)
+        end)
+
+        it("parses seconds", function()
+            assert.equals(1, parseMaxAge("1s"))
+        end)
+
+        it("parses minutes (lowercase m)", function()
+            assert.equals(1800, parseMaxAge("30m"))
+        end)
+
+        it("parses hours", function()
+            assert.equals(43200, parseMaxAge("12h"))
+        end)
+
+        it("parses days", function()
+            assert.equals(604800, parseMaxAge("7d"))
+        end)
+
+        it("parses weeks", function()
+            assert.equals(1209600, parseMaxAge("2w"))
+        end)
+
+        it("parses months (uppercase M, 30d)", function()
+            assert.equals(2592000, parseMaxAge("1M"))
+        end)
+
+        it("parses years (365d)", function()
+            assert.equals(31536000, parseMaxAge("1y"))
+        end)
+
+        it("rejects bare number", function()
+            local s, err = parseMaxAge("7")
+            assert.is_nil(s)
+            assert.is_string(err)
+        end)
+
+        it("rejects 7days", function()
+            local s, err = parseMaxAge("7days")
+            assert.is_nil(s)
+            assert.is_string(err)
+        end)
+
+        it("rejects uppercase D (case-sensitive)", function()
+            local s, err = parseMaxAge("7D")
+            assert.is_nil(s)
+            assert.is_string(err)
+        end)
+
+        it("rejects negative duration", function()
+            local s, err = parseMaxAge("-1d")
+            assert.is_nil(s)
+            assert.is_string(err)
+        end)
+
+        it("rejects pure garbage", function()
+            local s, err = parseMaxAge("abc")
+            assert.is_nil(s)
+            assert.is_string(err)
+        end)
+
+        it("rejects non-string types", function()
+            local s, err = parseMaxAge(7)
+            assert.is_nil(s)
+            assert.is_string(err)
+        end)
+    end)
+
+    describe("getFeedItemTimestamp", function()
+        local getFeedItemTimestamp
+
+        setup(function()
+            getFeedItemTimestamp = NewsDownloader._getFeedItemTimestamp
+            assert.is_function(getFeedItemTimestamp)
+        end)
+
+        it("parses RSS pubDate", function()
+            local ts = getFeedItemTimestamp({ pubDate = "Mon, 01 Jan 2024 00:00:00 GMT" })
+            assert.is_number(ts)
+        end)
+
+        it("parses Atom updated", function()
+            local ts = getFeedItemTimestamp({ updated = "2024-01-01T00:00:00Z" })
+            assert.is_number(ts)
+        end)
+
+        it("parses Atom published", function()
+            local ts = getFeedItemTimestamp({ published = "2024-01-01T00:00:00Z" })
+            assert.is_number(ts)
+        end)
+
+        it("returns nil when no date fields present", function()
+            assert.is_nil(getFeedItemTimestamp({ title = "no date here" }))
+        end)
+
+        it("returns nil for unparseable date string", function()
+            assert.is_nil(getFeedItemTimestamp({ pubDate = "not a date" }))
+        end)
+
+        it("prefers updated over pubDate and published", function()
+            local ts = getFeedItemTimestamp({
+                updated = "2024-01-01T00:00:00Z",
+                pubDate = "garbage",
+                published = "garbage",
+            })
+            assert.is_number(ts)
+        end)
+    end)
+
+    describe("getFeedItemTimestamp publisher quirk", function()
+        local getFeedItemTimestamp
+
+        setup(function()
+            getFeedItemTimestamp = NewsDownloader._getFeedItemTimestamp
+        end)
+
+        it("returns nil for an item missing all date fields, so the for-loop processes it without filtering", function()
+            -- The for-loop in processFeed treats `ts == nil` as "no age check"
+            -- once the first-item probe has succeeded. This test locks in the
+            -- nil contract that the loop relies on.
+            assert.is_nil(getFeedItemTimestamp({ title = "x", link = "y" }))
+        end)
+    end)
 end)

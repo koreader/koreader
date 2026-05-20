@@ -233,7 +233,9 @@ end
 
 function CoverImage:onSetRotationMode(rotation)
     logger.dbg("CoverImage: onSetRotationMode", rotation)
-    self:createCoverImage(self.ui.doc_settings)
+    if self.cover_image_rotate then
+        self:createCoverImage(self.ui.doc_settings)
+    end
 end
 
 function CoverImage:fallbackEnabled()

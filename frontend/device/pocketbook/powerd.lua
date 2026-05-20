@@ -1,7 +1,8 @@
 local BasePowerD = require("device/generic/powerd")
 local ffi = require("ffi")
-local inkview = ffi.load("inkview")
+local inkview = require("ffi/inkview")
 local logger = require("logger")
+local C = ffi.C
 
 local PocketBookPowerD = BasePowerD:new{
     is_charging = nil,
@@ -31,18 +32,17 @@ function PocketBookPowerD:frontlightIntensity()
 end
 
 function PocketBookPowerD:setIntensityHW(intensity)
-    local v2api = pcall(function()
+    if C.POCKETBOOK_VERSION >= 519 then
         inkview.SetFrontlightEnabled(intensity == 0 and 0 or 1)
-    end)
+    end
     if intensity == 0 then
-        -- -1 is valid only for the old api, on newer firmwares that's just a bogus brightness level
-        if not v2api then
+        if C.POCKETBOOK_VERSION < 519 then
+            -- -1 is valid only for the old api, on newer firmwares that's just a bogus brightness level
             inkview.SetFrontlightState(-1)
         end
     else
         inkview.SetFrontlightState(intensity)
     end
-
     -- We have a custom isFrontlightOn implementation, so this is redundant
     self:_decideFrontlightState()
 end
@@ -50,10 +50,12 @@ end
 function PocketBookPowerD:isFrontlightOn()
     if not self.device:hasFrontlight() then return false end
     -- Query directly instead of assuming from cached value.
-    local enabled = inkview.GetFrontlightState() >= 0
-    pcall(function()
+    local enabled
+    if C.POCKETBOOK_VERSION >= 519 then
         enabled = inkview.GetFrontlightEnabled() > 0
-    end)
+    else
+        enabled = inkview.GetFrontlightState() >= 0
+    end
     return enabled
 end
 
@@ -102,7 +104,7 @@ function PocketBookPowerD:afterResume()
 
         -- Create a synthetic MSC_GYRO event and let the existing handler process it
         local synthetic_event = { value = gyro_value }
-        local Event = self.device.input:handleMiscGyroEv(synthetic_event)
+        local Event = self.device.input:handleGyroEv(synthetic_event)
 
         if Event then
             local UIManager = require("ui/uimanager")

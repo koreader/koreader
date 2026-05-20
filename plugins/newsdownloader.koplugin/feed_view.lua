@@ -4,6 +4,7 @@ local _ = require("gettext")
 local FeedView = {
     URL = "url",
     LIMIT = "limit",
+    MAX_AGE = "max_age",
     DOWNLOAD_FULL_ARTICLE = "download_full_article",
     INCLUDE_IMAGES = "include_images",
     ENABLE_FILTER = "enable_filter",
@@ -96,6 +97,17 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
                     id,
                     FeedView.LIMIT,
                     limit
+                )
+            end
+        },
+        {
+            _("Maximum age"),
+            feed.max_age or "",
+            callback = function()
+                edit_feed_callback(
+                    id,
+                    FeedView.MAX_AGE,
+                    feed.max_age
                 )
             end
         },

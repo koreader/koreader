@@ -137,6 +137,8 @@ function Screenshoter:chooseFolder()
     local current_path = G_reader_settings:readSetting("screenshot_dir")
     local default_path = self.default_dir
     local caller_callback = function(path)
+        local ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
+        ui.folder_shortcuts:updateShortcut("screenshot", path)
         G_reader_settings:saveSetting("screenshot_dir", path)
     end
     filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path)

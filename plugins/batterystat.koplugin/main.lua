@@ -11,6 +11,12 @@ local dbg = require("dbg")
 local time = require("ui/time")
 local _ = require("gettext")
 
+local BatteryStatWidget = WidgetContainer:extend{
+    name = "batterystat",
+    title = _("Battery statistics"),
+    settings_file = DataStorage:getSettingsDir() .. "/battery_stats.lua",
+}
+
 local State = {}
 
 function State:new(o)
@@ -99,7 +105,7 @@ function Usage:dumpCharging(kv_pairs)
 end
 
 local BatteryStat = {
-    settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/battery_stats.lua"),
+    settings = LuaSettings:open(BatteryStatWidget.settings_file),
     kv_page = nil,
 }
 
@@ -212,7 +218,7 @@ function BatteryStat:showStatistics()
                                 end)
                             end})
     self.kv_page = KeyValuePage:new{
-        title = _("Battery statistics") .. " (" .. self.awake_state.percentage .. "%)",
+        title = BatteryStatWidget.title .. " (" .. self.awake_state.percentage .. "%)",
         kv_pairs = kv_pairs,
         single_page = true,
     }
@@ -263,12 +269,8 @@ end
 
 BatteryStat:init()
 
-local BatteryStatWidget = WidgetContainer:extend{
-    name = "batterystat",
-}
-
 function BatteryStatWidget:onDispatcherRegisterActions()
-    Dispatcher:registerAction("battery_statistics", {category="none", event="ShowBatteryStatistics", title=_("Battery statistics"), device=true, separator=true})
+    Dispatcher:registerAction("battery_statistics", {category="none", event="ShowBatteryStatistics", title=self.title, device=true, separator=true})
 end
 
 function BatteryStatWidget:init()
@@ -280,7 +282,7 @@ end
 
 function BatteryStatWidget:addToMainMenu(menu_items)
     menu_items.battery_statistics = {
-        text = _("Battery statistics"),
+        text = self.title,
         keep_menu_open = true,
         callback = function()
             BatteryStat:showStatistics()

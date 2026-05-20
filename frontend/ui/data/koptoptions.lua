@@ -517,6 +517,20 @@ Some of the other settings are only available when reflow mode is enabled.]]),
 This can also be used to remove some gray background or to convert a grayscale or color document to black & white and get more contrast for easier reading.]]),
             },
             {
+                name = "background_cleanup",
+                name_text = _("Background Cleanup"),
+                toggle = {C_("Background Cleanup", "off"), C_("Background Cleanup", "on")},
+                values = {0, 1},
+                default_value = 0,
+                args = {0, 1},
+                show_func = function(configurable, document)
+                    return document.is_pdf == true
+                end,
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Render the essentials in black and white, ignoring extra data for better contrast and faster rendering.
+Useful for Internet Archive PDF documents.]]),
+            },
+            {
                 name = "hw_dithering",
                 name_text = _("Dithering"),
                 toggle = {C_("Dithering", "off"), C_("Dithering", "on")},
@@ -629,6 +643,16 @@ This can also be used to remove some gray background or to convert a grayscale o
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
                 end,
                 name_text_hold_callback = optionsutil.showValues,
+            },
+            {
+                name = "nightmode_document",
+                name_text = _("Invert Document"),
+                toggle = {_("off"), _("on")},
+                values = {0, 1},
+                default_value = 0,
+                show_func = function() return Device.screen.night_mode end,
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Invert document in night mode. Useful for image-heavy documents such as comics or manga.]]),
             },
             {
                 name = "max_columns",

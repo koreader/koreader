@@ -12,7 +12,6 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputDialog = require("ui/widget/inputdialog")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local ProgressWidget = require("ui/widget/progresswidget")
@@ -219,7 +218,8 @@ function BookStatusWidget:setStar(num)
     local row = {}
     if num then
         num = (num == 1 and self.summary.rating == 1) and 0 or num
-        self.summary.rating = num
+        self.summary.rating = num ~= 0 and num or nil
+        BookList.setBookInfoCacheProperty(self.ui.document.file, "rating", num)
         self.updated = true
 
         for i = 1, num do
@@ -463,9 +463,15 @@ function BookStatusWidget:genSummaryGroup(width)
         self.note_widget,
     }
     self.note_frame.onGesture = function(frame, ev)
-        if ev and ev.ges == "tap" then
+        if ev and ev.ges == "tap"
+            and ev.pos
+            and self.note_frame
+            and self.note_frame.dimen
+            and ev.pos:intersectWith(self.note_frame.dimen)
+        then
             return self:openReviewDialog()
         end
+        return false
     end
 
     table.insert(self.layout, {self.note_frame})
@@ -576,9 +582,10 @@ function BookStatusWidget:openReviewDialog()
                     is_enter_default = true,
                     callback = function()
                         local note = self.note_dialog:getInputText()
+                        note = note ~= "" and note or nil
                         self.summary.note = note
                         if self.note_widget then
-                            self.note_widget:setText(note ~= "" and note or _("A few words about the book"))
+                            self.note_widget:setText(note or _("A few words about the book"))
                         end
                         self.updated = true
                         self:closeInputDialog()

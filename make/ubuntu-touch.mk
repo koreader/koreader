@@ -26,5 +26,3 @@ update: all
 		unzip ../../koreader-$(DIST)-$(MACHINE)-$(VERSION).zip && \
 		click build koreader && \
 		mv *.click ../../koreader-$(DIST)-$(MACHINE)-$(VERSION).click
-
-PHONY += update
