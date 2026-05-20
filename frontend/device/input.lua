@@ -186,6 +186,10 @@ local Input = {
     ev_slots = nil, -- table
     gesture_detector = nil,
 
+    -- tool type constants (for stylus support)
+    TOOL_TYPE_FINGER = TOOL_TYPE_FINGER,  -- 0
+    TOOL_TYPE_PEN = TOOL_TYPE_PEN,        -- 1
+
     -- simple internal clipboard implementation, can be overridden to use system clipboard
     hasClipboardText = function()
         return _internal_clipboard_text ~= ""
@@ -449,6 +453,57 @@ end
 
 function Input:gestureAdjustHook(ges)
     -- do nothing by default
+end
+
+--[[--
+Register a callback for stylus/pen events.
+Called before gesture detection with fully-processed slot data.
+The callback receives the Input object and a slot table: {slot, id, x, y, tool, timev}
+Return true from the callback to "dominate" the event (remove from gesture detection).
+@param callback function(input, slot)
+]]
+function Input:registerStylusCallback(callback)
+    self.stylus_callback = callback
+    logger.info("Input: stylus callback registered, pen_slot =", self.pen_slot)
+end
+
+function Input:unregisterStylusCallback()
+    self.stylus_callback = nil
+    logger.info("Input: stylus callback unregistered")
+end
+
+--[[--
+Filter stylus events from MTSlots and route to callback.
+Called before gesture detection. Modifies self.MTSlots in place.
+--]]
+function Input:routeStylusEvents()
+    if not self.stylus_callback or #self.MTSlots == 0 then
+        return
+    end
+
+    local dominated_indices = {}
+
+    for i, slot in ipairs(self.MTSlots) do
+        -- Identify stylus by tool type OR pen slot
+        local is_stylus = (slot.tool == TOOL_TYPE_PEN) or
+                          (slot.slot == self.pen_slot)
+
+        if is_stylus then
+            logger.dbg("Input:routeStylusEvents: stylus detected in slot", slot.slot,
+                       "tool=", slot.tool, "id=", slot.id, "x=", slot.x, "y=", slot.y,
+                       "pen_slot=", self.pen_slot)
+            local dominated = self.stylus_callback(self, slot)
+            if dominated then
+                table.insert(dominated_indices, i)
+                logger.dbg("Input:routeStylusEvents: slot", slot.slot, "dominated, will remove from gesture detection")
+            end
+        end
+    end
+
+    -- Remove dominated slots in reverse order (preserves indices)
+    for i = #dominated_indices, 1, -1 do
+        table.remove(self.MTSlots, dominated_indices[i])
+    end
 end
 
 --- Catalog of predefined hooks.
@@ -963,6 +1018,7 @@ function Input:handleTouchEv(ev)
                 self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
             -- feed ev in all slots to state machine
+            self:routeStylusEvents()
             local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
             self:newFrame()
             local ges_evs = {}
@@ -1004,6 +1060,7 @@ function Input:handleMixedTouchEv(ev)
                 self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
             -- feed ev in all slots to state machine
+            self:routeStylusEvents()
             local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
             self:newFrame()
             local ges_evs = {}
@@ -1069,6 +1126,7 @@ function Input:handleTouchEvSnow(ev)
                 self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
             -- feed ev in all slots to state machine
+            self:routeStylusEvents()
             local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
             self:newFrame()
             local ges_evs = {}
@@ -1129,6 +1187,7 @@ function Input:handleTouchEvPhoenix(ev)
                 self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
             -- feed ev in all slots to state machine
+            self:routeStylusEvents()
             local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
             self:newFrame()
             local ges_evs = {}
@@ -1178,6 +1237,7 @@ function Input:handleTouchEvLegacy(ev)
             end
 
             -- feed ev in all slots to state machine
+            self:routeStylusEvents()
             local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
             self:newFrame()
             local ges_evs = {}
