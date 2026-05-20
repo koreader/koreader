@@ -1,6 +1,13 @@
---[[
-Subclass of ImageWidget to show icons
-]]
+--- A subclass of ImageWidget to show icons, so its fields can be used here
+-- @usage local IconWidget = require("ui/widget/iconwidget")
+-- local icon_widget = IconWidget:new{
+--     icon = "check", -- Which corresponds to resources/icons/mdlight/check.svg
+--     dim = true,
+--     alpha = true
+-- }
+-- UIManager:show(icon_widget)
+-- @module ui.widget.iconwidget
+-- @see ui.widget.imagewidget
 
 local DataStorage = require("datastorage")
 local ImageWidget = require("ui/widget/imagewidget")
@@ -30,6 +37,9 @@ local ICON_NOT_FOUND = "resources/icons/icon-not-found.svg"
 -- Icon filepath location cache
 local ICONS_PATH = {}
 
+--- @table IconWidget
+-- @field alpha A boolean on whether to enable transparency on the icon (defaults to false)
+-- @field icon The name (excluding the file extension) of any SVG or PNG in [resources/icons](https://github.com/koreader/koreader/tree/master/resources/icons)
 local IconWidget = ImageWidget:extend{
     -- The icon filename should be provided without any path
     icon = ICON_NOT_FOUND, -- show this if not provided
@@ -38,10 +48,11 @@ local IconWidget = ImageWidget:extend{
     -- be overridden by callers.
     width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
     height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
-    alpha = false, --- @note: Our icons have a transparent background, but, by default, we flatten them at caching time.
-                   ---        Our caller may choose to override that by setting this to true, in which case,
-                   ---        the alpha layer will be kept intact, and we'll do alpha-blending at blitting time.
     is_icon = true, -- avoid dithering in ImageWidget:paintTo()
+    --- @note: Our icons have a transparent background, but, by default, we flatten them at caching time.
+    ---        Our caller may choose to override that by setting this to true, in which case,
+    ---        the alpha layer will be kept intact, and we'll do alpha-blending at blitting time.
+    alpha = false
 }
 
 function IconWidget:init()

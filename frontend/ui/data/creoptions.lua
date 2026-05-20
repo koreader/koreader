@@ -731,10 +731,10 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
             {   -- ReaderTypeset
                 name = "nightmode_images",
                 name_text = _("Invert Images"),
-                toggle = {C_("Invert images", "on"), C_("Invert images", "off")},
-                values = {1, 0},
+                toggle = {C_("Invert images", "off"), C_("Invert images", "on")},
+                values = {0, 1},
                 default_value = 1,
-                args = {true, false},
+                args = {false, true},
                 event = "ToggleNightmodeImages",
                 show_func = function() return Screen.night_mode end,
                 name_text_hold_callback = optionsutil.showValues,

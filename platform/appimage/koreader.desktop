@@ -1,9 +1,0 @@
-[Desktop Entry]
-Name=KOReader
-Comment=Ebook reader
-Exec=reader.lua %u
-Icon=koreader
-Terminal=false
-Type=Application
-Categories=Graphics;
-MimeType=application/epub+zip;application/fb2;application/fb3;application/msword;application/oxps;application/pdf;application/rtf;application/tcr;application/vnd.amazon.mobi8-ebook;application/vnd.comicbook+tar;application/vnd.comicbook+zip;application/vnd.ms-htmlhelp;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/vnd.palm;application/x-cbz;application/x-chm;application/x-fb2;application/x-fb3;application/x-mobipocket-ebook;application/x-tar;application/xhtml+xml;application/xml;application/zip;image/djvu;image/gif;image/jp2;image/jpeg;image/jxr;image/png;image/svg+xml;image/tiff;image/vnd.djvu;image/vnd.ms-photo;image/x-djvu;image/x-portable-arbitrarymap;image/x-portable-bitmap;text/html;text/plain;

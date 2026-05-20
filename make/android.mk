@@ -38,8 +38,6 @@ endif
 
 # Update. {{{
 
-PHONY += update
-
 ANDROID_DIR = $(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR = $(ANDROID_DIR)/luajit-launcher
 ANDROID_LAUNCHER_BUILD = $(INSTALL_DIR)/luajit-launcher

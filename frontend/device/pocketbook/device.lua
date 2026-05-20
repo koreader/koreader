@@ -4,14 +4,17 @@ local UIManager
 local logger = require("logger")
 local ffi = require("ffi")
 local C = ffi.C
-local inkview = ffi.load("inkview")
+local inkview = require("ffi/inkview")
 local band = require("bit").band
 local util = require("util")
 local _ = require("gettext")
 
-require("ffi/posix_h")
 require("ffi/linux_input_h")
-require("ffi/inkview_h")
+
+ffi.cdef[[
+    int res_init(void);
+    int __res_init(void);
+]]
 
 local function yes() return true end
 local function no() return false end
@@ -363,10 +366,8 @@ function PocketBook:initNetworkManager(NetworkMgr)
         UIManager:unschedule(keepWifiAlive)
 
         if NetworkMgr:isWifiOn() then
-            -- check if NetMgrPing is available on the device and skip keepalive if not
-            if pcall(function() return inkview.NetMgrPing and true end) then
+            if C.POCKETBOOK_VERSION >= 508 then
                 logger.dbg("ping wifi keep alive and reschedule")
-
                 inkview.NetMgrPing()
                 UIManager:scheduleIn(30, keepWifiAlive)
             else
@@ -396,22 +397,62 @@ function PocketBook:initNetworkManager(NetworkMgr)
         end
     end
 
-    function NetworkMgr:isConnected()
+    function NetworkMgr:isWifiOn()
         return band(inkview.QueryNetwork(), C.NET_CONNECTED) ~= 0
     end
-    NetworkMgr.isWifiOn = NetworkMgr.isConnected
+
+    local res_init_done = false
+    function NetworkMgr:isConnected()
+        local is_connected = self:isWifiOn() and self:hasDefaultRoute()
+
+        if is_connected then
+            if not res_init_done then
+                -- Re-init resolver once connected
+                -- Workaround for glibc bug where /etc/resolv.conf is parsed
+                -- only once. We force a reload when the route first appears.
+                -- See https://sourceware.org/bugzilla/show_bug.cgi?id=984
+                local ok = pcall(function() ffi.C.res_init() end)
+                if not ok then pcall(function() ffi.C.__res_init() end) end
+                res_init_done = true
+            end
+        else
+            -- Connection lost; reset flag to trigger re-init on next success
+            res_init_done = false
+        end
+
+        return is_connected
+    end
 
     function NetworkMgr:isOnline()
-        -- Fail early if we don't even have a default route, otherwise we're
-        -- unlikely to be online and canResolveHostnames would never succeed
-        -- again because PocketBook's glibc parses /etc/resolv.conf on first
-        -- use only. See https://sourceware.org/bugzilla/show_bug.cgi?id=984
-        return NetworkMgr:hasDefaultRoute() and NetworkMgr:canResolveHostnames()
+        -- Override to call isConnected before canResolveHostnames
+        -- to work around glibc bug. See https://sourceware.org/bugzilla/show_bug.cgi?id=984
+        return self:isConnected() and self:canResolveHostnames()
     end
-end
 
-function PocketBook:getSoftwareVersion()
-    return ffi.string(inkview.GetSoftwareVersion())
+    -- Ensure NetworkConnected is eventually broadcasted if KOReader boots
+    -- while the system network stack is still coming up.
+    local orig_init = NetworkMgr.init
+    function NetworkMgr:init()
+        local is_link_up = self:isWifiOn()
+        local res = orig_init(self)
+
+        if is_link_up and not self.is_connected then
+            local function waitForRoute(iter)
+                iter = iter or 0
+                if not self:isWifiOn() then return end
+                if self:isConnected() then
+                    self.is_connected = true
+                    UIManager:broadcastEvent(require("ui/event"):new("NetworkConnected"))
+                elseif iter < 90 then
+                    UIManager:scheduleIn(0.5, function() waitForRoute(iter + 1) end)
+                else
+                    logger.warn("NetworkMgr: Network route not established after 60s, giving up.")
+                end
+            end
+            UIManager:scheduleIn(0.5, function() waitForRoute(0) end)
+        end
+        return res
+    end
 end
 
 function PocketBook:getDeviceModel()
@@ -730,6 +771,17 @@ function PocketBook700K3._fb_init(fb, finfo, vinfo)
     vinfo.bits_per_pixel = 24
 end
 
+-- PocketBook Era Lite (710)
+local PocketBook710 = PocketBook:extend{
+    model = "PB710",
+    display_dpi = 300,
+    isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
+    -- c.f., https://github.com/koreader/koreader/issues/9556
+    inkview_translates_buttons = true,
+    needs_orientation_sync_after_resume = true,
+}
+
 -- PocketBook InkPad 3 (740)
 local PocketBook740 = PocketBook:extend{
     model = "PBInkPad3",
@@ -793,7 +845,7 @@ end
 local PocketBook743K3 = PocketBook:extend{
     model = "PBInkPadColor3",
     display_dpi = 300,
-    viewport = Geom:new{x=3, y=2, w=1395, h=1864},
+    viewport = Geom:new{x=3, y=2, w=1398, h=1864},
     hasColorScreen = yes,
     canHWDither = yes, -- Adjust color saturation with inkview
     canUseCBB = no, -- 24bpp
@@ -857,8 +909,6 @@ local PocketBook1040 = PocketBook:extend{
     usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
-
-logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
 
 local full_codename = PocketBook:getDeviceModel()
 
@@ -929,6 +979,8 @@ elseif codename == "700" then
     return PocketBook700
 elseif codename == "700K3" then
     return PocketBook700K3
+elseif codename == "710" then
+    return PocketBook710
 elseif codename == "740" then
     return PocketBook740
 elseif codename == "740-2" or codename == "740-3" then

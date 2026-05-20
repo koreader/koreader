@@ -3,7 +3,6 @@ local BookList = require("ui/widget/booklist")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
-local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local ffi = require("ffi")
@@ -98,7 +97,7 @@ end
 function FileChooser:init()
     self.path_items = {}
     if lfs.attributes(self.path, "mode") ~= "directory" then
-        self.path = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+        self.path = filemanagerutil.getHomeFolder()
     end
     BookList.init(self)
     self:refreshPath()
@@ -253,8 +252,10 @@ function FileChooser:genItemTable(dirs, files, path)
     end
 
     if path then -- file browser or PathChooser
-        if path ~= "/" and not (G_reader_settings:isTrue("lock_home_folder") and
-                                path == G_reader_settings:readSetting("home_dir")) then
+        if path ~= "/"
+            and not (G_reader_settings:isFalse("show_parent_folder") and self.name == "filemanager")
+            and not (G_reader_settings:isTrue("lock_home_folder") and path == G_reader_settings:readSetting("home_dir"))
+        then
             table.insert(item_table, 1, {
                 text = BD.mirroredUILayout() and BD.ltr("../ ⬆") or "⬆ ../",
                 path = path.."/..",
@@ -300,7 +301,7 @@ function FileChooser:getMenuItemMandatory(item, collate)
         if #sub_dirs > 0 then
             text = T("%1 \u{F114} ", #sub_dirs) .. text
         end
-        if FileManagerShortcuts:hasFolderShortcut(item.path) then
+        if self.ui.folder_shortcuts:hasFolderShortcut(item.path, true) then
             text = "☆ " .. text
         end
     end
@@ -321,7 +322,8 @@ function FileChooser:refreshPath()
         itemmatch = {path = self.focused_path}
         self.focused_path = nil
     end
-    local subtitle = self.name ~= "filemanager" and BD.directory(filemanagerutil.abbreviate(self.path)) -- PathChooser
+    local subtitle = self.name ~= "filemanager" -- filemanager does it by itself
+        and (self.ui.folder_shortcuts:getShortcutFullName(self.path) or BD.directory(filemanagerutil.abbreviate(self.path)))
     self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path], itemmatch, subtitle)
 end
 

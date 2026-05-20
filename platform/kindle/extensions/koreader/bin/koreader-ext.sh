@@ -97,12 +97,41 @@ install_koreader() {
     update_koreader "clean"
 }
 
+start_ssh() {
+    iptables -A INPUT -p tcp --dport 2222 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+    iptables -A OUTPUT -p tcp --sport 2222 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+    (cd /mnt/us/koreader && ./dropbear -E -R -p 2222 -P /tmp/dropbear_koreader.pid)
+}
+
+stop_ssh() {
+    pid="$(cat /tmp/dropbear_koreader.pid)"
+    for spec in TERM:20 KILL:10; do
+        signal=${spec%:*}
+        tries=${spec#*:}
+        for n in $(seq "${tries}"); do
+            if [ -z "${pid}" ] || ! [ -d "/proc/${pid}" ]; then
+                break
+            fi
+            if [ "${n}" = 1 ]; then
+                kill -"${signal}" "${pid}"
+            fi
+            sleep 0.1
+        done
+    done
+    rm /tmp/dropbear_koreader.pid
+    iptables -D INPUT -p tcp --dport 2222 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+    iptables -D OUTPUT -p tcp --sport 2222 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+}
+
 ## Main
 case "${1}" in
     "update_koreader")
         ${1}
         ;;
     "install_koreader")
+        ${1}
+        ;;
+    start_ssh | stop_ssh)
         ${1}
         ;;
     *)

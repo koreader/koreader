@@ -10,20 +10,20 @@ local ffiUtil = require("ffi/util")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
-local T = require("ffi/util").template
+local T = ffiUtil.template
 
 local HttpInspector = WidgetContainer:extend{
     name = "httpinspector",
+    settings_key = "httpinspector",
 }
 
 -- A plugin gets instantiated on each document load and reader/FM switch.
 -- Ensure autostart only on KOReader startup, and keep the running state
 -- across document load and reader/FM switch.
-local should_run = G_reader_settings:isTrue("httpinspector_autostart")
+local settings = G_reader_settings:readSetting(HttpInspector.settings_key, { port = 8080 })
 
 function HttpInspector:init()
-    self.port = G_reader_settings:readSetting("httpinspector_port", "8080")
-    if should_run then
+    if settings.autostart then
         -- Delay this until after all plugins are loaded
         UIManager:nextTick(function()
             self:start()
@@ -66,14 +66,14 @@ end
 
 function HttpInspector:onLeaveStandby()
     logger.dbg("HttpInspector: onLeaveStandby")
-    if should_run and not self:isRunning() then
+    if settings.autostart and not self:isRunning() then
         self:start()
     end
 end
 
 function HttpInspector:onResume()
     logger.dbg("HttpInspector: onResume")
-    if should_run and not self:isRunning() then
+    if settings.autostart and not self:isRunning() then
         self:start()
     end
 end
@@ -84,10 +84,10 @@ function HttpInspector:start()
     -- Make a hole in the Kindle's firewall
     if Device:isKindle() then
         os.execute(string.format("%s %s %s",
-            "iptables -A INPUT -p tcp --dport", self.port,
+            "iptables -A INPUT -p tcp --dport", settings.port,
             "-m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT"))
         os.execute(string.format("%s %s %s",
-            "iptables -A OUTPUT -p tcp --sport", self.port,
+            "iptables -A OUTPUT -p tcp --sport", settings.port,
             "-m conntrack --ctstate ESTABLISHED -j ACCEPT"))
     end
 
@@ -97,19 +97,19 @@ function HttpInspector:start()
     local ServerClass = require("ui/message/simpletcpserver")
     self.http_socket = ServerClass:new{
         host = "*",
-        port = self.port,
+        port = settings.port,
         receiveCallback = function(data, id) return self:onRequest(data, id) end,
     }
     local ok, err = self.http_socket:start()
     if ok then
         self.http_messagequeue = UIManager:insertZMQ(self.http_socket)
-        logger.dbg("HttpInspector: Server listening on port " .. self.port)
+        logger.dbg("HttpInspector: Server listening on port " .. settings.port)
     else
         logger.err("HttpInspector: Failed to start server:", err)
         self.http_socket = nil
         local InfoMessage = require("ui/widget/infomessage")
         UIManager:show(InfoMessage:new{
-            text = T(_("Failed to start HTTP inspector on port %1."), self.port) .. "\n\n" .. err,
+            text = T(_("Failed to start HTTP inspector on port %1."), settings.port) .. "\n\n" .. err,
         })
     end
 end
@@ -120,10 +120,10 @@ function HttpInspector:stop()
     -- Plug the hole in the Kindle's firewall
     if Device:isKindle() then
         os.execute(string.format("%s %s %s",
-            "iptables -D INPUT -p tcp --dport", self.port,
+            "iptables -D INPUT -p tcp --dport", settings.port,
             "-m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT"))
         os.execute(string.format("%s %s %s",
-            "iptables -D OUTPUT -p tcp --sport", self.port,
+            "iptables -D OUTPUT -p tcp --sport", settings.port,
             "-m conntrack --ctstate ESTABLISHED -j ACCEPT"))
     end
 
@@ -155,10 +155,10 @@ function HttpInspector:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     if self:isRunning() then
-                        should_run = false
+                        settings.autostart = nil
                         self:stop()
                     else
-                        should_run = true
+                        settings.autostart = true
                         self:start()
                     end
                     touchmenu_instance:updateItems()
@@ -167,7 +167,7 @@ function HttpInspector:addToMainMenu(menu_items)
             {
                 text_func = function()
                     if self:isRunning() then
-                        return T(_("Listening on port %1"), self.port)
+                        return T(_("Listening on port %1"), settings.port)
                     else
                         return _("Not running")
                     end
@@ -180,15 +180,15 @@ function HttpInspector:addToMainMenu(menu_items)
             {
                 text = _("Auto start HTTP server"),
                 checked_func = function()
-                    return G_reader_settings:isTrue("httpinspector_autostart")
+                    return settings.autostart == true
                 end,
                 callback = function()
-                    G_reader_settings:flipNilOrFalse("httpinspector_autostart")
+                    settings.autostart = not settings.autostart or nil
                 end,
             },
             {
                 text_func = function()
-                    return T(_("Port: %1"), self.port)
+                    return T(_("Port: %1"), settings.port)
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
@@ -196,7 +196,7 @@ function HttpInspector:addToMainMenu(menu_items)
                     local port_dialog
                     port_dialog = InputDialog:new{
                         title = _("Set custom port"),
-                        input = self.port,
+                        input = settings.port,
                         input_type = "number",
                         input_hint = _("Port number (default is 8080)"),
                         buttons =  {
@@ -210,13 +210,11 @@ function HttpInspector:addToMainMenu(menu_items)
                                 },
                                 {
                                     text = _("OK"),
-                                    -- keep_menu_open = true,
                                     callback = function()
                                         local port = port_dialog:getInputValue()
                                         logger.warn("port", port)
                                         if port and port >= 1 and port <= 65535 then
-                                            self.port = port
-                                            G_reader_settings:saveSetting("httpinspector_port", port)
+                                            settings.port = port
                                             if self:isRunning() then
                                                 self:stop()
                                                 self:start()
@@ -1024,13 +1022,13 @@ local getOrderedDispatcherActions = function()
         return _dispatcher_actions
     end
     local Dispatcher = require("dispatcher")
-    local settings, order
+    local actions, order
     local n = 1
     while true do
         local name, value = debug.getupvalue(Dispatcher.init, n)
         if not name then break end
         if name == "settingsList" then
-            settings = value
+            actions = value
             break
         end
         n = n + 1
@@ -1059,8 +1057,8 @@ local getOrderedDispatcherActions = function()
         table.insert(_dispatcher_actions, section[2])
         local section_key = section[1]
         for _, k in ipairs(order) do
-            if settings[k][section_key] == true then
-                local t = util.tableDeepCopy(settings[k])
+            if actions[k][section_key] == true then
+                local t = util.tableDeepCopy(actions[k])
                 t.dispatcher_id = k
                 table.insert(_dispatcher_actions, t)
             end

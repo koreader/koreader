@@ -49,6 +49,8 @@ local AutoWarmth = WidgetContainer:extend{
     name = "autowarmth",
     sched_times_s = nil, -- array
     sched_warmths = nil, -- array
+    event_auto_night_mode_activated = "AutoNightModeActivated",
+    event_auto_warmth_activated = "AutoWarmthActivated",
 
     -- Static member that shall survive reloading of the plugin but not a restart
     fl_user_toggle = false, -- true/false if someone (AutoWarmth, gesture ...) has toggled the frontlight
@@ -56,6 +58,20 @@ local AutoWarmth = WidgetContainer:extend{
 }
 
 function AutoWarmth:init()
+    self.ui:registerPostInitCallback(function()
+        if self.ui.profiles then
+            self.ui.profiles:registerAutoExecTrigger({
+                text = _("on auto night mode activation"),
+                event = self.event_auto_night_mode_activated,
+            })
+            if Device:hasNaturalLight() then
+                self.ui.profiles:registerAutoExecTrigger({
+                    text = _("on auto warmth activation"),
+                    event = self.event_auto_warmth_activated,
+                })
+            end
+        end
+    end)
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 
@@ -536,11 +552,13 @@ function AutoWarmth:setWarmth(val, force_warmth)
     if val then
         if self.control_nightmode then
             DeviceListener:onSetNightMode(val > 100)
+            UIManager:broadcastEvent(Event:new(self.event_auto_night_mode_activated))
         end
 
         if self.control_warmth and Device:hasNaturalLight() then
             val = math.min(val, 100) -- "mask" night mode
             Powerd:setWarmth(val, force_warmth)
+            UIManager:broadcastEvent(Event:new(self.event_auto_warmth_activated))
         end
     end
 end

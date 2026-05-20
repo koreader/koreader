@@ -12,6 +12,7 @@ local FFIUtil = require("ffi/util")
 local Geom = require("ui/geometry")
 local KOPTContext = require("ffi/koptcontext")
 local Persist = require("persist")
+local Screen = require("device").screen
 local TileCacheItem = require("document/tilecacheitem")
 local Utf8Proc = require("ffi/utf8proc")
 local logger = require("logger")
@@ -102,6 +103,7 @@ function KoptInterface:setDefaultConfigurable(configurable)
     configurable.defect_size = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFECT_SIZE")
     configurable.line_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_LINE_SPACING")
     configurable.word_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING")
+    configurable.background_cleanup = 0
 end
 
 function KoptInterface:waitForContext(kc)
@@ -384,7 +386,7 @@ function KoptInterface:getCoverPageImage(doc)
     local native_size = Document.getNativePageDimensions(doc, 1)
     local canvas_size = CanvasContext:getSize()
     local zoom = math.min(canvas_size.w / native_size.w, canvas_size.h / native_size.h)
-    local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1.0)
+    local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1.0, false)
     if tile then
         return tile.bb:copy()
     end
@@ -440,6 +442,76 @@ Render optimized page into tile cache.
 Inherited from common document interface.
 --]]
 function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hinting)
+    local function buildOptimizedTile(bbox, persistent)
+        local kc = self:createContext(doc, pageno, bbox)
+        local page = doc._document:openPage(pageno)
+        kc:setZoom(zoom)
+        page:getPagePix(kc, doc.render_mode)
+        page:close()
+        logger.dbg("optimizing page", pageno)
+        kc:optimizePage()
+        local fullwidth, fullheight = kc:getPageDim()
+        -- prepare cache item with contained blitbuffer
+        local tile = TileCacheItem:new{
+            persistent = persistent,
+            doc_path = doc.file,
+            excerpt = Geom:new{
+                x = 0, y = 0,
+                w = fullwidth,
+                h = fullheight,
+            },
+            pageno = pageno,
+        }
+        tile.bb = kc:dstToBlitBuffer()
+        tile.size = tonumber(tile.bb.stride) * tile.bb.h + 512 -- estimation
+        kc:free()
+        return tile
+    end
+
+    local function buildOptimizedFullPageTile()
+        local page_size = Document.getNativePageDimensions(doc, pageno)
+        local full_page_bbox = {
+            x0 = 0,
+            y0 = 0,
+            x1 = page_size.w,
+            y1 = page_size.h,
+        }
+        return buildOptimizedTile(full_page_bbox, true)
+    end
+
+    local function buildOptimizedPagePartTile()
+        local page_size = Document.getNativePageDimensions(doc, pageno)
+        local x0 = math.max(rect.x, 0)
+        local y0 = math.max(rect.y, 0)
+        local x1 = math.min(rect.x + rect.w, page_size.w)
+        local y1 = math.min(rect.y + rect.h, page_size.h)
+        if x1 <= x0 or y1 <= y0 then
+            return nil
+        end
+        local bbox = {
+            x0 = x0,
+            y0 = y0,
+            x1 = x1,
+            y1 = y1,
+        }
+        return buildOptimizedTile(bbox, false)
+    end
+
+    local is_prescaled = rect and rect.scaled_rect ~= nil or false
+    if is_prescaled then
+        if hinting then
+            CanvasContext:enableCPUCores(2)
+        end
+
+        local part_tile = buildOptimizedPagePartTile()
+
+        if hinting then
+            CanvasContext:enableCPUCores(1)
+        end
+
+        return part_tile
+    end
+
     local bbox = doc:getPageBBox(pageno)
     local hash_list = { "renderoptpg" }
     self:getContextHash(doc, pageno, bbox, hash_list)
@@ -451,34 +523,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hi
             CanvasContext:enableCPUCores(2)
         end
 
-        local page_size = Document.getNativePageDimensions(doc, pageno)
-        local full_page_bbox = {
-            x0 = 0, y0 = 0,
-            x1 = page_size.w,
-            y1 = page_size.h,
-        }
-        local kc = self:createContext(doc, pageno, full_page_bbox)
-        local page = doc._document:openPage(pageno)
-        kc:setZoom(zoom)
-        page:getPagePix(kc, doc.render_mode)
-        page:close()
-        logger.dbg("optimizing page", pageno)
-        kc:optimizePage()
-        local fullwidth, fullheight = kc:getPageDim()
-        -- prepare cache item with contained blitbuffer
-        local tile = TileCacheItem:new{
-            persistent = true,
-            doc_path = doc.file,
-            excerpt = Geom:new{
-                x = 0, y = 0,
-                w = fullwidth,
-                h = fullheight
-            },
-            pageno = pageno,
-        }
-        tile.bb = kc:dstToBlitBuffer()
-        tile.size = tonumber(tile.bb.stride) * tile.bb.h + 512 -- estimation
-        kc:free()
+        local tile = buildOptimizedFullPageTile()
         DocCache:insert(hash, tile)
 
         if hinting then
@@ -496,9 +541,9 @@ function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma)
     DocCache:memoryPressureCheck()
 
     if doc.configurable.text_wrap == 1 then
-        self:hintReflowedPage(doc, pageno, zoom, rotation, gamma, true)
+        self:hintReflowedPage(doc, pageno, zoom, rotation, true)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
-        self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, gamma, true)
+        self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, true)
     else
         Document.hintPage(doc, pageno, zoom, rotation, gamma)
     end
@@ -513,7 +558,7 @@ off by calling self:waitForContext(kctx)
 
 Inherited from common document interface.
 --]]
-function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, hinting)
+function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, hinting)
     local bbox = doc:getPageBBox(pageno)
     local hash_list = { "kctx" }
     self:getContextHash(doc, pageno, bbox, hash_list)
@@ -534,10 +579,13 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, hint
 end
 
 function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
+    local nightmode_invert = doc.configurable.nightmode_document == 1 and Screen.night_mode
     if doc.configurable.text_wrap == 1 then
-        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
+        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
     elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
-        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
+        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
+    elseif nightmode_invert then
+        Document.drawPageInverted(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
     else
         Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
     end
@@ -548,13 +596,16 @@ Draw cached tile pixels into target blitbuffer.
 
 Inherited from common document interface.
 --]]
-function KoptInterface:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
-    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 1.0)
+function KoptInterface:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
+    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 1.0, false)
     target:blitFrom(tile.bb,
         x, y,
         rect.x - tile.excerpt.x,
         rect.y - tile.excerpt.y,
         rect.w, rect.h)
+    if nightmode_invert then
+        target:invertRect(x, y, rect.w, rect.h)
+    end
 end
 
 --[[

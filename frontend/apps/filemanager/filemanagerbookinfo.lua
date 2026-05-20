@@ -50,7 +50,6 @@ local BookInfo = WidgetContainer:extend{
         description  = _("Description:"),
         pages        = _("Pages:"),
     },
-    rating_max = 5,
 }
 
 function BookInfo:init()
@@ -87,16 +86,22 @@ function BookInfo:show(doc_settings_or_file, book_props)
         has_sidecar = true
     end
     local folder, filename = util.splitFilePathName(file)
-    local __, filetype = filemanagerutil.splitFileNameType(filename)
     local attr = lfs.attributes(file)
-    local file_size = attr.size or 0
-    local size_f = util.getFriendlySize(file_size)
-    local size_b = util.getFormattedSize(file_size)
+    local is_file = attr and true or nil
     table.insert(kv_pairs, { _("Filename:"), BD.filename(filename) })
-    table.insert(kv_pairs, { _("Format:"), filetype:upper() })
-    table.insert(kv_pairs, { _("Size:"), string.format("%s (%s bytes)", size_f, size_b) })
-    table.insert(kv_pairs, { _("File date:"), os.date("%Y-%m-%d %H:%M:%S", attr.modification) })
-    table.insert(kv_pairs, { _("Folder:"), BD.dirpath(filemanagerutil.abbreviate(folder)), separator = true })
+    if is_file then
+        local __, filetype = filemanagerutil.splitFileNameType(filename)
+        local file_size = attr.size or 0
+        local size_f = util.getFriendlySize(file_size)
+        local size_b = util.getFormattedSize(file_size)
+        table.insert(kv_pairs, { _("Format:"), filetype:upper() })
+        table.insert(kv_pairs, { _("Size:"), string.format("%s (%s bytes)", size_f, size_b) })
+        table.insert(kv_pairs, { _("File date:"), os.date("%Y-%m-%d %H:%M:%S", attr.modification) })
+        table.insert(kv_pairs, { _("Folder:"), BD.dirpath(filemanagerutil.abbreviate(folder)), separator = true })
+    else -- for deleted books show doc_settings info only
+        table.insert(kv_pairs, { _("Metadata:"),
+            doc_settings_or_file:readSetting("metadata_arc").datetime, separator = true })
+    end
 
     -- Book section
     -- book_props may be provided if caller already has them available
@@ -104,27 +109,33 @@ function BookInfo:show(doc_settings_or_file, book_props)
     book_props = book_props or self:getDocProps(file, book_props)
     book_props.pages = book_props.pages or BookList.getBookInfo(file).pages
     -- cover image
-    self.custom_book_cover = DocSettings:findCustomCoverFile(file)
-    local key_text = self.prop_text["cover"]
-    if self.custom_book_cover then
-        key_text = "\u{F040} " .. key_text
+    if is_file then
+        self.custom_book_cover = DocSettings:findCustomCoverFile(file)
+        local key_text = self.prop_text["cover"]
+        if self.custom_book_cover then
+            key_text = "\u{F040} " .. key_text
+        end
+        table.insert(kv_pairs, { key_text, _("Tap to display"),
+            callback = function()
+                self:onShowBookCover(file)
+            end,
+            hold_callback = function()
+                self:showCustomDialog(file, book_props)
+            end,
+            separator = true,
+        })
     end
-    table.insert(kv_pairs, { key_text, _("Tap to display"),
-        callback = function()
-            self:onShowBookCover(file)
-        end,
-        hold_callback = function()
-            self:showCustomDialog(file, book_props)
-        end,
-        separator = true,
-    })
     -- metadata
     local n_a = _("N/A")
     local custom_props
-    local custom_metadata_file = DocSettings:findCustomMetadataFile(file)
-    if custom_metadata_file then
-        self.custom_doc_settings = DocSettings.openSettingsFile(custom_metadata_file)
-        custom_props = self.custom_doc_settings:readSetting("custom_props")
+    if is_file then
+        local custom_metadata_file = DocSettings:findCustomMetadataFile(file)
+        if custom_metadata_file then
+            self.custom_doc_settings = DocSettings.openSettingsFile(custom_metadata_file)
+            custom_props = self.custom_doc_settings:readSetting("custom_props")
+        end
+    else
+        custom_props = doc_settings_or_file:readSetting("metadata_arc").custom_props
     end
     local values_lang, callback
     for _i, prop_key in ipairs(self.props) do
@@ -154,13 +165,16 @@ function BookInfo:show(doc_settings_or_file, book_props)
                 self:showBookProp("description", prop)
             end
         end
-        key_text = self.prop_text[prop_key]
+        local key_text = self.prop_text[prop_key]
         if custom_props and custom_props[prop_key] then -- customized
+            if not is_file then -- props not customized yet
+                prop = custom_props[prop_key]
+            end
             key_text = "\u{F040} " .. key_text
         end
         table.insert(kv_pairs, { key_text, prop,
             callback = callback,
-            hold_callback = function()
+            hold_callback = is_file and function()
                 self:showCustomDialog(file, book_props, prop_key)
             end,
         })
@@ -239,22 +253,23 @@ Source (print edition):
 
     -- Summary section
     local summary = has_sidecar and doc_settings_or_file:readSetting("summary") or {}
-    local rating = summary.rating or 0
-    local summary_hold_callback = function()
+    local summary_hold_callback = is_file and function()
         self:editSummary(doc_settings_or_file, book_props)
     end
-    table.insert(kv_pairs, { _("Rating:"), ("★"):rep(rating) .. ("☆"):rep(self.rating_max - rating),
+    table.insert(kv_pairs, { _("Rating:"), BookList.getBookRatingString(summary.rating or 0),
         hold_callback = summary_hold_callback })
     table.insert(kv_pairs, { _("Review:"), summary.note or n_a,
         hold_callback = summary_hold_callback, separator = true })
 
     -- Notebook file
-    local notebook_file = self:getNotebookFile(doc_settings_or_file)
-    local notebook_file_callback = function()
-        self:showNotebookFileDialog(notebook_file, doc_settings_or_file, book_props)
+    if is_file then
+        local notebook_file = self:getNotebookFile(doc_settings_or_file)
+        local notebook_file_callback = function()
+            self:showNotebookFileDialog(notebook_file, doc_settings_or_file, book_props)
+        end
+        table.insert(kv_pairs, { _("Notebook file:"), notebook_file:gsub(".*/", ""),
+            callback = notebook_file_callback })
     end
-    table.insert(kv_pairs, { _("Notebook file:"), notebook_file:gsub(".*/", ""),
-        callback = notebook_file_callback })
 
     local KeyValuePage = require("ui/widget/keyvaluepage")
     self.kvp_widget = KeyValuePage:new{
@@ -699,8 +714,9 @@ function BookInfo:editSummary(doc_settings_or_file, book_props)
     local rating = summary.rating or 0
     local input_dialog
     local rating_buttons_row = {}
-    for i = -1, self.rating_max + 2 do -- 2 empty buttons on each side
-        if i < 1 or i > self.rating_max then
+    local rating_max = 5
+    for i = -1, rating_max + 2 do -- 2 empty buttons on each side
+        if i < 1 or i > rating_max then
             table.insert(rating_buttons_row, {
                 text = "",
                 no_vertical_sep = true,
@@ -714,8 +730,9 @@ function BookInfo:editSummary(doc_settings_or_file, book_props)
                     UIManager:close(input_dialog)
                     local note = input_dialog:getInputText()
                     summary.note = note ~= "" and note or nil
-                    summary.rating = (i == 1 and summary.rating == 1) and 0 or i
+                    summary.rating = (i ~= 1 or summary.rating ~= 1) and i or nil
                     doc_settings_or_file = filemanagerutil.saveSummary(doc_settings_or_file, summary)
+                    BookList.setBookInfoCacheProperty(doc_settings_or_file:readSetting("doc_path"), "rating", summary.rating)
                     self.summary_updated = true
                     self.kvp_widget:onClose()
                     self:show(doc_settings_or_file, book_props)
@@ -772,7 +789,7 @@ function BookInfo:getNotebookFile(doc_settings_or_file)
             elseif type(doc_settings_or_file) == "string" then
                 notebook_file = doc_settings_or_file .. ".txt"
             else
-                local home_folder = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+                local home_folder = filemanagerutil.getHomeFolder()
                 notebook_file = ffiUtil.realpath(home_folder) .. "/notebook.txt"
             end
         end
@@ -909,6 +926,13 @@ function BookInfo:onShowNotebookFile()
 end
 
 -- book metadata (sdr)
+
+function BookInfo:onShowBookMetadataArchive()
+    if G_reader_settings:has("document_metadata_arc_folder") then
+        local BookMetadataArchive = require("ui/widget/bookmetadataarchive")
+        BookMetadataArchive:showBookList(self.ui)
+    end
+end
 
 function BookInfo:moveBookMetadata()
     -- called by filemanagermenu only

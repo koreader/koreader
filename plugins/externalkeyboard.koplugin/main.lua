@@ -79,18 +79,27 @@ local function setupDebugFS()
     return true
 end
 
+-- Check whether we can manage OTG role switching (Kobo) or at least receive
+-- input hotplug events (Kindle). On Kindle, the uevent listener in
+-- input-kindle.h generates EvdevInputInsert/Remove events for UHID devices
+-- (e.g., kindle-hid-passthrough keyboards), so the plugin can work without
+-- OTG role management.
+local has_otg_role = false
 -- The mount point probably doesn't exist on kernels built w/o CONFIG_DEBUG_FS
 if lfs.attributes("/sys/kernel/debug", "mode") == "directory" then
-    -- This should be in init() but the check must come first. So this part of initialization is here.
-    -- It is quick and harmless enough to be in a check.
-    if not setupDebugFS() then
-        return { disabled = true }
+    -- This should be in init() but the check must come first. So this part
+    -- of initialization is here. It is quick and harmless enough for a check.
+    setupDebugFS()
+    if lfs.attributes(OTG_CHIPIDEA_ROLE_PATH, "mode") == "file" or
+       lfs.attributes(OTG_SUNXI_ROLE_PATH,    "mode") == "file" then
+        has_otg_role = true
     end
-    if lfs.attributes(OTG_CHIPIDEA_ROLE_PATH, "mode") ~= "file" and
-       lfs.attributes(OTG_SUNXI_ROLE_PATH,    "mode") ~= "file" then
-        return { disabled = true }
-    end
-else
+end
+
+-- On Kindle, we don't need OTG role switching — UHID devices are created by
+-- userspace daemons and the uevent listener handles hotplug. On Kobo, OTG
+-- role files must exist.
+if not has_otg_role and not Device:isKindle() then
     return { disabled = true }
 end
 
@@ -108,60 +117,72 @@ local ExternalKeyboard = WidgetContainer:extend{
 function ExternalKeyboard:init()
     self.ui.menu:registerToMainMenu(self)
 
-    -- Check if we should go with the sunxi otg manager, or the chipidea driver...
-    if lfs.attributes(OTG_SUNXI_ROLE_PATH, "mode") == "file" then
-        self.getOTGRole = self.sunxiGetOTGRole
-        self.setOTGRole = self.sunxiSetOTGRole
+    if has_otg_role then
+        -- Kobo: set up OTG role management
+        if lfs.attributes(OTG_SUNXI_ROLE_PATH, "mode") == "file" then
+            self.getOTGRole = self.sunxiGetOTGRole
+            self.setOTGRole = self.sunxiSetOTGRole
+        else
+            self.getOTGRole = self.chipideaGetOTGRole
+            self.setOTGRole = self.chipideaSetOTGRole
+        end
+
+        local role = self:getOTGRole()
+        logger.dbg("ExternalKeyboard: role", role)
+
+        if role == USB_ROLE_DEVICE and G_reader_settings:isTrue("external_keyboard_otg_mode_on_start") then
+            self:setOTGRole(USB_ROLE_HOST)
+            role = USB_ROLE_HOST
+        end
+        if role == USB_ROLE_HOST then
+            self:findAndSetupKeyboards()
+        end
     else
-        self.getOTGRole = self.chipideaGetOTGRole
-        self.setOTGRole = self.chipideaSetOTGRole
-    end
-
-    local role = self:getOTGRole()
-    logger.dbg("ExternalKeyboard: role", role)
-
-    if role == USB_ROLE_DEVICE and G_reader_settings:isTrue("external_keyboard_otg_mode_on_start") then
-        self:setOTGRole(USB_ROLE_HOST)
-        role = USB_ROLE_HOST
-    end
-    if role == USB_ROLE_HOST then
-        -- Sweep the full class/input sysfs tree to look for keyboards
+        -- Kindle: no OTG role management, but scan for any keyboards that
+        -- may already be present (e.g., UHID device created before KOReader
+        -- started). New keyboards are handled via EvdevInputInsert events.
         self:findAndSetupKeyboards()
     end
 end
 
 function ExternalKeyboard:addToMainMenu(menu_items)
+    local sub_items = {}
+
+    -- OTG role management is only available on platforms with OTG sysfs knobs (Kobo)
+    if has_otg_role then
+        table.insert(sub_items, {
+            text = _("Enable OTG mode to connect peripherals"),
+            checked_func = function()
+                return self:getOTGRole() == USB_ROLE_HOST
+            end,
+            callback = function(touchmenu_instance)
+                local role = self:getOTGRole()
+                local new_role = (role == USB_ROLE_DEVICE) and USB_ROLE_HOST or USB_ROLE_DEVICE
+                self:setOTGRole(new_role)
+            end,
+        })
+        table.insert(sub_items, {
+            text = _("Always enable OTG mode"),
+            checked_func = function()
+                 return G_reader_settings:isTrue("external_keyboard_otg_mode_on_start")
+            end,
+            callback = function(touchmenu_instance)
+                G_reader_settings:flipNilOrFalse("external_keyboard_otg_mode_on_start")
+            end,
+        })
+    end
+
+    table.insert(sub_items, {
+        text = _("Help"),
+        keep_menu_open = true,
+        callback = function()
+            self:showHelp()
+        end,
+    })
+
     menu_items.external_keyboard = {
         text = _("External Keyboard"),
-        sub_item_table = {
-            {
-                text = _("Enable OTG mode to connect peripherals"),
-                checked_func = function()
-                    return self:getOTGRole() == USB_ROLE_HOST
-                end,
-                callback = function(touchmenu_instance)
-                    local role = self:getOTGRole()
-                    local new_role = (role == USB_ROLE_DEVICE) and USB_ROLE_HOST or USB_ROLE_DEVICE
-                    self:setOTGRole(new_role)
-                end,
-            },
-            {
-                text = _("Always enable OTG mode"),
-                checked_func = function()
-                     return G_reader_settings:isTrue("external_keyboard_otg_mode_on_start")
-                end,
-                callback = function(touchmenu_instance)
-                    G_reader_settings:flipNilOrFalse("external_keyboard_otg_mode_on_start")
-                end,
-            },
-            {
-                text = _("Help"),
-                keep_menu_open = true,
-                callback = function()
-                    self:showHelp()
-                end,
-            },
-        }
+        sub_item_table = sub_items,
     }
 end
 
@@ -217,9 +238,11 @@ function ExternalKeyboard:setOTGRole(role) end
 
 function ExternalKeyboard:onExit()
     logger.dbg("ExternalKeyboard:onExit")
-    local role = self:getOTGRole()
-    if role == USB_ROLE_HOST then
-        self:setOTGRole(USB_ROLE_DEVICE)
+    if has_otg_role then
+        local role = self:getOTGRole()
+        if role == USB_ROLE_HOST then
+            self:setOTGRole(USB_ROLE_DEVICE)
+        end
     end
 end
 

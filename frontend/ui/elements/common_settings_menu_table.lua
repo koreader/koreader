@@ -8,6 +8,8 @@ local Language = require("ui/language")
 local NetworkMgr = require("ui/network/manager")
 local PowerD = Device:getPowerDevice()
 local UIManager = require("ui/uimanager")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
+local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
 local C_ = _.pgettext
@@ -17,7 +19,6 @@ local T = require("ffi/util").template
 local common_settings = {}
 
 if Device:isCervantes() then
-    local util = require("util")
     if util.pathExists("/usr/bin/restart.sh") then
         common_settings.start_bq = {
             text = T(_("Start %1 reader app"), "BQ"),
@@ -685,6 +686,78 @@ common_settings.document_auto_save = {
                 UIManager:show(InfoMessage:new{ text = auto_save_help_text, })
             end,
         } or nil,
+    },
+    separator = true,
+}
+
+local document_metadata_arc_help_text = _([[
+Book metadata (view settings, bookmarks, notes) can be saved to the archive when deleting a book.
+
+If a book is restored on the device, its archived metadata can be used.
+Annotations of deleted books can be viewed in Bookmark browser.
+
+To keep book metadata when deleting a book outside of KOReader, book metadata can be saved to archive on book closing.]])
+common_settings.document_metadata_arc = {
+    text = _("Book metadata archive"),
+    sub_item_table = {
+        {
+            text = _("About"),
+            keep_menu_open = true,
+            callback = function()
+                UIManager:show(InfoMessage:new{ text = document_metadata_arc_help_text })
+            end,
+        },
+        {
+            text_func = function()
+                return T(_("Archive location: %1"),
+                    G_reader_settings:readSetting("document_metadata_arc_folder") or _("not set"))
+            end,
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                local title_header = _("Book metadata archive folder:")
+                local current_path = G_reader_settings:readSetting("document_metadata_arc_folder")
+                local caller_callback = function(path)
+                    local ok = true
+                    if path and path ~= current_path then
+                        local FileManager = require("apps/filemanager/filemanager")
+                        util.findFiles(current_path, function(fullpath, filename)
+                            if filename:match("%.lua$") then
+                                ok = FileManager:moveFile(fullpath, path .. "/" .. filename)
+                            elseif filename:match("%.old$") then
+                                os.remove(fullpath)
+                            end
+                        end, false)
+                    end
+                    if ok then
+                        G_reader_settings:saveSetting("document_metadata_arc_folder", path)
+                        touchmenu_instance:updateItems()
+                    end
+                end
+                filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, nil, nil, true)
+            end,
+        },
+        {
+            text = _("Save metadata to archive on book closing"),
+            enabled_func = function()
+                return G_reader_settings:has("document_metadata_arc_folder")
+            end,
+            checked_func = function()
+                return G_reader_settings:isTrue("document_metadata_arc_on_closing")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("document_metadata_arc_on_closing")
+            end,
+            separator = true,
+        },
+        {
+            text = _("Archived book list"),
+            enabled_func = function()
+                return G_reader_settings:has("document_metadata_arc_folder")
+            end,
+            callback = function()
+                FileManagerBookInfo:onShowBookMetadataArchive()
+            end,
+        },
     },
     separator = true,
 }

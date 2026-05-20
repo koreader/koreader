@@ -87,6 +87,7 @@ local order = {
     document = {
         "document_metadata_location",
         "document_auto_save",
+        "document_metadata_arc",
         "document_end_action",
         "language_support",
         "----------------------------",
@@ -178,6 +179,7 @@ local order = {
         "exporter",
         "statistics",
         "progress_sync",
+        "cloudstorage",
         "move_to_archive",
         "wallabag",
         "news_downloader",
