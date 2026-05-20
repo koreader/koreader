@@ -243,7 +243,7 @@ function BasePowerD:setWarmth(warmth, force_setting)
     -- Which means that fl_warmth is *also* in the KOReader scale (unlike fl_intensity)
     self.fl_warmth = self:normalizeWarmth(warmth)
     local nat_warmth = self:toNativeWarmth(self.fl_warmth)
-    logger.warn("BasePowerD:setWarmth: fl_warmth=", self.fl_warmth, "->nat=", nat_warmth)
+    logger.warn("BasePowerD:setWarmth: fl_warmth=", self.fl_warmth, "->nat=", nat_warmth, "\n", debug.traceback())
     self:setWarmthHW(nat_warmth)
     self:stateChanged()
     return true
