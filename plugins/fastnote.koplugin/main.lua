@@ -8,7 +8,7 @@ This is a plugin for quick notes with pen input.
 local Dispatcher = require("dispatcher")  -- luacheck:ignore
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local DrawingCanvas = require("plugins/fastnote.koplugin/drawingcanvas")
+local DrawingCanvas = require("drawingcanvas")
 local _ = require("gettext")
 
 local FastNote = WidgetContainer:extend{
