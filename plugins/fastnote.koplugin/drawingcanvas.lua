@@ -39,18 +39,18 @@ local UIManager         = require("ui/uimanager")
 local logger            = require("logger")
 local utils             = require("lib/canvas_utils")
 
--- Exit-zone tap area (top-left square, in pixels)
-local EXIT_ZONE_SIZE = 60
-
--- Menu button (bottom-right corner)
-local MENU_BTN_SIZE    = 80
-local MENU_BTN_MARGIN  = 24
-local MENU_BTN_HIT_PAD =  8
+-- Chrome strip (Stage 7)
+local CHROME_HEIGHT     = 56   -- top strip height in pixels
+local CHROME_EXIT_W     = 80   -- width of exit tap area (left)
+local CHROME_TOOLS_W    = 80   -- width of tools tap area (right)
 
 -- Default stroke appearance
 local DEFAULT_LINE_WIDTH = 4
 local STROKE_COLOR       = Blitbuffer.COLOR_BLACK
 local DEFAULT_COLOR      = "#000000"
+
+-- Eraser (Stage 10)
+local ERASER_RADIUS = 24       -- stroke-erase hit radius in pixels
 
 -- Rotation mode constants
 local ROT_PORTRAIT  = 0  -- DEVICE_ROTATED_UPRIGHT
@@ -68,6 +68,13 @@ local DrawingCanvas = InputContainer:extend{
 
     _page_path  = nil,             -- path of the current page SVG (Stage 5)
     _page_dirty = false,           -- true when strokes added since last save
+
+    -- Chrome (Stage 7)
+    page_index  = 1,               -- current page number (set by caller)
+    page_count  = 1,               -- total pages in notebook (set by caller)
+
+    -- Eraser (Stage 10)
+    _eraser_mode = false,          -- true while eraser end of stylus is active
 
     use_raw_input      = false,    -- false = gesture layer; true = raw evdev
     finger_draw        = false,    -- allow capacitive touch to draw (pen-only default)
@@ -152,25 +159,23 @@ function DrawingCanvas:init()
 
     -- ── Gesture zones ──────────────────────────────────────────────────────
 
-    -- Exit zone: top-left corner tap
+    -- Exit zone: left portion of chrome strip
     self.ges_events.ExitTap = {
         GestureRange:new{
             ges   = "tap",
-            range = Geom:new{x=0, y=0, w=EXIT_ZONE_SIZE, h=EXIT_ZONE_SIZE},
+            range = Geom:new{x=0, y=0, w=CHROME_EXIT_W, h=CHROME_HEIGHT},
         },
     }
 
-    -- Menu button: bottom-right corner tap (always active, even in pen-only mode)
-    local bvx = self.dimen.w - MENU_BTN_MARGIN - MENU_BTN_SIZE
-    local bvy = self.dimen.h - MENU_BTN_MARGIN - MENU_BTN_SIZE
+    -- Tools / menu: right portion of chrome strip
     self.ges_events.MenuTap = {
         GestureRange:new{
             ges   = "tap",
             range = Geom:new{
-                x = bvx - MENU_BTN_HIT_PAD,
-                y = bvy - MENU_BTN_HIT_PAD,
-                w = MENU_BTN_SIZE + MENU_BTN_HIT_PAD * 2,
-                h = MENU_BTN_SIZE + MENU_BTN_HIT_PAD * 2,
+                x = self.dimen.w - CHROME_TOOLS_W,
+                y = 0,
+                w = CHROME_TOOLS_W,
+                h = CHROME_HEIGHT,
             },
         },
     }
@@ -262,17 +267,48 @@ function DrawingCanvas:paintTo(bb, x, y)
     self.dimen.y = y
     if not self._bb then return end
     bb:blitFrom(self._bb, x, y, 0, 0, self.dimen.w, self.dimen.h)
+    self:_paintChrome(bb, x, y)
+end
 
-    -- Menu button drawn into the screen buffer so it's always on top
-    local bx = x + self.dimen.w - MENU_BTN_MARGIN - MENU_BTN_SIZE
-    local by = y + self.dimen.h - MENU_BTN_MARGIN - MENU_BTN_SIZE
-    bb:paintRect(bx, by, MENU_BTN_SIZE, MENU_BTN_SIZE, Blitbuffer.COLOR_BLACK)
-    local bar_w = math.floor(MENU_BTN_SIZE * 0.60)
+--- Draw the chrome strip directly into the screen buffer (always on top of strokes).
+function DrawingCanvas:_paintChrome(bb, x, y)
+    local W = self.dimen.w
+
+    -- White background
+    bb:paintRect(x, y, W, CHROME_HEIGHT, Blitbuffer.COLOR_WHITE)
+    -- 2 px bottom border
+    bb:paintRect(x, y + CHROME_HEIGHT - 2, W, 2, Blitbuffer.COLOR_BLACK)
+
+    -- Exit "×": two diagonal lines in the left zone
+    local pad = 16
+    local sz  = CHROME_HEIGHT - pad * 2
+    local ex, ey = x + pad, y + pad
+    utils.drawLine(bb, ex, ey, ex + sz, ey + sz, 3, Blitbuffer.COLOR_BLACK)
+    utils.drawLine(bb, ex + sz, ey, ex, ey + sz, 3, Blitbuffer.COLOR_BLACK)
+
+    -- Page indicator: "n / N" centered (attempt RenderText; skip silently if unavailable)
+    local ok_f, Font = pcall(require, "ui/font")
+    local ok_r, RT   = pcall(require, "ui/rendertext")
+    if ok_f and ok_r then
+        local face = Font:getFace("cfont", 22)
+        if face then
+            local page_str = tostring(self.page_index) .. " / " .. tostring(self.page_count)
+            -- Estimate text width (≈ 13 px per char at size 22)
+            local tw  = #page_str * 13
+            local tx  = x + math.floor((W - tw) / 2)
+            local ty  = y + CHROME_HEIGHT - 16  -- baseline
+            RT:renderUtf8Text(bb, tx, ty, face, page_str)
+        end
+    end
+
+    -- Tools hamburger (right zone): three horizontal bars
+    local bar_w = 36
     local bar_h = 4
-    local bar_x = bx + math.floor((MENU_BTN_SIZE - bar_w) / 2)
-    bb:paintRect(bar_x, by + 22, bar_w, bar_h, Blitbuffer.COLOR_WHITE)
-    bb:paintRect(bar_x, by + 36, bar_w, bar_h, Blitbuffer.COLOR_WHITE)
-    bb:paintRect(bar_x, by + 50, bar_w, bar_h, Blitbuffer.COLOR_WHITE)
+    local bx    = x + W - CHROME_TOOLS_W + math.floor((CHROME_TOOLS_W - bar_w) / 2)
+    local by0   = y + 12
+    bb:paintRect(bx, by0,      bar_w, bar_h, Blitbuffer.COLOR_BLACK)
+    bb:paintRect(bx, by0 + 14, bar_w, bar_h, Blitbuffer.COLOR_BLACK)
+    bb:paintRect(bx, by0 + 28, bar_w, bar_h, Blitbuffer.COLOR_BLACK)
 end
 
 -- ---------------------------------------------------------------------------
@@ -280,7 +316,8 @@ end
 -- ---------------------------------------------------------------------------
 
 function DrawingCanvas:onExitTap(_, ges)
-    if utils.point_in_zone(ges.pos.x, ges.pos.y, 0, 0, EXIT_ZONE_SIZE, EXIT_ZONE_SIZE) then
+    if utils.point_in_zone(ges.pos.x, ges.pos.y,
+                           0, 0, CHROME_EXIT_W, CHROME_HEIGHT) then
         logger.dbg("FastNote canvas: exit tap")
         self:_doClose()
         return true
@@ -289,7 +326,7 @@ end
 
 function DrawingCanvas:onMenuTap()
     logger.dbg("FastNote canvas: menu tap")
-    local cur          = self._rotation_mode
+    local cur           = self._rotation_mode
     local portrait_lbl  = (cur == ROT_PORTRAIT)  and "Portrait \xE2\x9C\x93"  or "Portrait"
     local landscape_lbl = (cur == ROT_LANDSCAPE) and "Landscape \xE2\x9C\x93" or "Landscape"
     local finger_lbl    = self.finger_draw and "Finger draw: on" or "Finger draw: off"
@@ -298,6 +335,7 @@ function DrawingCanvas:onMenuTap()
     menu = ButtonDialogTitle:new{
         title = "Fast Note",
         buttons = {
+            -- Row 1: orientation
             {
                 {text = portrait_lbl,
                  callback = function()
@@ -310,6 +348,26 @@ function DrawingCanvas:onMenuTap()
                      self:_reinitAtRotation(ROT_LANDSCAPE)
                  end},
             },
+            -- Row 2: undo / redo (Stage 11)
+            {
+                {text = "Undo",
+                 callback = function()
+                     UIManager:close(menu)
+                     if self._stroke_buf:undo() then
+                         self._page_dirty = true
+                         self:_repaintAll()
+                     end
+                 end},
+                {text = "Redo",
+                 callback = function()
+                     UIManager:close(menu)
+                     if self._stroke_buf:redo() then
+                         self._page_dirty = true
+                         self:_repaintAll()
+                     end
+                 end},
+            },
+            -- Row 3: finger draw / save
             {
                 {text = finger_lbl,
                  callback = function()
@@ -317,12 +375,13 @@ function DrawingCanvas:onMenuTap()
                      self.finger_draw = not self.finger_draw
                      logger.dbg("FastNote canvas: finger_draw =", self.finger_draw)
                  end},
-                {text = "Save drawing",
+                {text = "Save",
                  callback = function()
                      UIManager:close(menu)
                      self:_saveDrawing()
                  end},
             },
+            -- Row 4: keep / close
             {
                 {text = "Keep drawing",
                  callback = function() UIManager:close(menu) end},
@@ -357,6 +416,9 @@ function DrawingCanvas:onDrawStroke(_, ges)
 
     local x = math.floor(ges.pos.x)
     local y = math.floor(ges.pos.y)
+
+    -- Ignore strokes in the chrome strip
+    if y < CHROME_HEIGHT then return end
     local prev_x = self._stroke_x or x
     local prev_y = self._stroke_y or y
 
@@ -457,14 +519,23 @@ function DrawingCanvas:_digToScreen(rx, ry)
 end
 
 function DrawingCanvas:_updateGestureZones()
+    -- After rotation dimen.w changes; MenuTap x must track the right edge.
+    -- ExitTap is always at x=0 so it never needs updating.
     if not (self.ges_events.MenuTap and self.ges_events.MenuTap[1]) then return end
-    local bvx = self.dimen.w - MENU_BTN_MARGIN - MENU_BTN_SIZE
-    local bvy = self.dimen.h - MENU_BTN_MARGIN - MENU_BTN_SIZE
-    local r   = self.ges_events.MenuTap[1].range
-    r.x = bvx - MENU_BTN_HIT_PAD
-    r.y = bvy - MENU_BTN_HIT_PAD
-    r.w = MENU_BTN_SIZE + MENU_BTN_HIT_PAD * 2
-    r.h = MENU_BTN_SIZE + MENU_BTN_HIT_PAD * 2
+    local r = self.ges_events.MenuTap[1].range
+    r.x = self.dimen.w - CHROME_TOOLS_W
+    r.y = 0
+    r.w = CHROME_TOOLS_W
+    r.h = CHROME_HEIGHT
+end
+
+--- Repaint all strokes into the BlitBuffer and request a UI refresh.
+-- Use after undo, redo, or erase to rebuild the display cache.
+function DrawingCanvas:_repaintAll()
+    if not self._bb then return end
+    self._bb:fill(Blitbuffer.COLOR_WHITE)
+    if self._stroke_buf then self._stroke_buf:repaintTo(self._bb) end
+    UIManager:setDirty(self, "ui")
 end
 
 --- Apply a rotation change from the canvas menu.
@@ -484,9 +555,7 @@ function DrawingCanvas:_reinitAtRotation(new_mode)
     self._bb:fill(Blitbuffer.COLOR_WHITE)
 
     -- Replay strokes into the new buffer (Stage 4: preserve on rotate)
-    if self._stroke_buf then
-        self._stroke_buf:repaintTo(self._bb)
-    end
+    self:_repaintAll()
 
     -- Reset per-stroke state (old screen coords are invalid after rotation)
     self._last_pen_x   = nil
@@ -514,10 +583,37 @@ function DrawingCanvas:_pollPen()
 
         if ev.type == "down" or ev.type == "move" then
             local sx, sy = self:_digToScreen(ev.x, ev.y)
-            local lw     = utils.pressure_to_width(
-                ev.pressure, self._pendev.p_max, 1, 8)
 
-            -- StrokeBuffer accumulation (Stage 4)
+            -- Chrome strip: abort any open stroke and ignore the event
+            if sy < CHROME_HEIGHT then
+                if self._last_pen_x then
+                    self._stroke_buf:penUp()
+                    self._last_pen_x = nil
+                    self._last_pen_y = nil
+                end
+                return
+            end
+
+            -- ── Eraser mode (Stage 10) ────────────────────────────────────
+            if ev.type == "down" and ev.tool == "eraser" then
+                self._eraser_mode = true
+                self._stroke_buf:penUp()   -- commit any open pen stroke
+                self._last_pen_x = nil
+                self._last_pen_y = nil
+            end
+
+            if self._eraser_mode then
+                local removed = self._stroke_buf:eraseAt(sx, sy, ERASER_RADIUS)
+                if #removed > 0 then
+                    self._page_dirty = true
+                    self:_repaintAll()
+                end
+                return
+            end
+
+            -- ── Pen drawing ───────────────────────────────────────────────
+            local lw = utils.pressure_to_width(ev.pressure, self._pendev.p_max, 1, 8)
+
             if ev.type == "down" then
                 self._stroke_buf:penDown(sx, sy, lw, self._current_color)
             else
@@ -537,19 +633,12 @@ function DrawingCanvas:_pollPen()
             self._last_pen_y = sy
 
         elseif ev.type == "up" then
+            self._eraser_mode = false
             self._stroke_buf:penUp()
             self._page_dirty = true
             self._last_pen_x = nil
             self._last_pen_y = nil
             UIManager:setDirty(self, "ui")
-
-        elseif ev.type == "eraser" or
-               (ev.type == "down" and ev.tool == "eraser") then
-            -- Eraser end of stylus: Stage 10 will implement stroke-level erase.
-            -- For now, commit any open stroke and ignore the eraser motion.
-            self._stroke_buf:penUp()
-            self._last_pen_x = nil
-            self._last_pen_y = nil
         end
     end)
 
