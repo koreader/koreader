@@ -180,6 +180,7 @@ function Device:init()
                 end
                 if this.device:hasNaturalLight() then
                     local powerd = this.device.powerd
+                    logger.warn("APP_CMD_RESUME: fl_warmth=", powerd.fl_warmth, "->native=", powerd:toNativeWarmth(powerd.fl_warmth or 0))
                     if powerd.fl_warmth and powerd.fl_warmth > 0 then
                         android.setScreenWarmth(powerd:toNativeWarmth(powerd.fl_warmth))
                     end
