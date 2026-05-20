@@ -34,11 +34,21 @@ function AndroidPowerD:init()
         self.fl_warmth_min = android.getScreenMinWarmth()
         self.fl_warmth_max = android.getScreenMaxWarmth()
         self.warm_diff = self.fl_warmth_max - self.fl_warmth_min
+        -- The sysfs warmth node resets on every app start/resume, so push the
+        -- saved value back to hardware now so frontlightWarmthHW() reads it correctly.
+        local saved = G_reader_settings:readSetting("frontlight_warmth") or 0
+        if saved > 0 then
+            android.setScreenWarmth(math.floor(saved * self.warm_diff / 100))
+        end
     end
 end
 
 function AndroidPowerD:setWarmthHW(warmth)
     android.setScreenWarmth(warmth)
+    if self.fl_warmth then
+        G_reader_settings:saveSetting("frontlight_warmth", self.fl_warmth)
+        G_reader_settings:flush()
+    end
 end
 
 function AndroidPowerD:frontlightWarmthHW()
