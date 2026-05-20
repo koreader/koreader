@@ -37,6 +37,7 @@ local function _write_meta(nb)
     f:write("return {\n")
     f:write(string.format("  name = %q,\n", nb.name))
     f:write(string.format("  created_at = %d,\n", nb.created_at))
+    f:write(string.format("  last_edited = %d,\n", nb.last_edited or 0))
     f:write("  pages = {\n")
     for _, fname in ipairs(nb._pages) do
         f:write(string.format("    %q,\n", fname))
@@ -60,12 +61,14 @@ function Notebook.create(name, base_dir)
     local dir  = base_dir .. "/" .. uuid
     os.execute("mkdir -p " .. dir)
 
+    local now = os.time()
     local nb = setmetatable({
-        uuid       = uuid,
-        dir        = dir,
-        name       = name or "Untitled",
-        created_at = os.time(),
-        _pages     = {"page_001.svg"},
+        uuid        = uuid,
+        dir         = dir,
+        name        = name or "Untitled",
+        created_at  = now,
+        last_edited = now,
+        _pages      = {"page_001.svg"},
     }, Notebook)
 
     _write_meta(nb)
@@ -88,11 +91,12 @@ function Notebook.load(uuid, base_dir)
     end
 
     return setmetatable({
-        uuid       = uuid,
-        dir        = dir,
-        name       = t.name or "Untitled",
-        created_at = t.created_at or 0,
-        _pages     = t.pages or {"page_001.svg"},
+        uuid        = uuid,
+        dir         = dir,
+        name        = t.name or "Untitled",
+        created_at  = t.created_at or 0,
+        last_edited = t.last_edited or 0,
+        _pages      = t.pages or {"page_001.svg"},
     }, Notebook)
 end
 
@@ -142,6 +146,12 @@ end
 --- Flush metadata to disk (call after any external mutation).
 function Notebook:save()
     _write_meta(self)
+end
+
+--- Path where a thumbnail image would be stored (Stage 13 generates it).
+-- Caller should check whether the file exists before using it.
+function Notebook:getThumbnailPath()
+    return self.dir .. "/thumb.png"
 end
 
 return Notebook

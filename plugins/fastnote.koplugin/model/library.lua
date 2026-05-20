@@ -40,24 +40,30 @@ function Library:_nb_dir()
 end
 
 function Library:_scan()
-    -- Sort alphabetically; UUID format nb_<timestamp>_<seq>_<rand> means
-    -- alphabetical order = chronological creation order.
     local handle = io.popen("ls -1 " .. self:_nb_dir() .. " 2>/dev/null | sort")
     if not handle then return end
     for entry in handle:lines() do
-        -- Each entry should be a UUID dir containing notebook.lua
         local meta = self:_nb_dir() .. "/" .. entry .. "/notebook.lua"
         local f    = io.open(meta, "r")
         if f then
             f:close()
             local nb, err = Notebook.load(entry, self:_nb_dir())
             if nb then
-                self._nbs[entry]           = nb
+                self._nbs[entry]              = nb
                 self._order[#self._order + 1] = entry
             end
         end
     end
     handle:close()
+    self:_sortOrder()
+end
+
+-- Sort _order by last_edited descending (most recently edited first).
+function Library:_sortOrder()
+    local nbs = self._nbs
+    table.sort(self._order, function(a, b)
+        return (nbs[a].last_edited or 0) > (nbs[b].last_edited or 0)
+    end)
 end
 
 -- ---------------------------------------------------------------------------
@@ -96,8 +102,9 @@ end
 -- @string name  User-visible name (optional, defaults to "Untitled").
 function Library:createNotebook(name)
     local nb = Notebook.create(name or "Untitled", self:_nb_dir())
-    self._nbs[nb.uuid]             = nb
-    self._order[#self._order + 1]  = nb.uuid
+    self._nbs[nb.uuid]            = nb
+    self._order[#self._order + 1] = nb.uuid
+    self:_sortOrder()
     return nb
 end
 

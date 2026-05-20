@@ -121,16 +121,38 @@ describe("Library", function()
     end)
 
     describe("Library:all", function()
-        it("returns all notebooks in insertion order", function()
+        it("returns all notebooks", function()
             local lib = Library.new(base_dir)
             lib:createNotebook("First")
             lib:createNotebook("Second")
             lib:createNotebook("Third")
             local all = lib:all()
             assert.equal(3, #all)
-            assert.equal("First",  all[1].name)
-            assert.equal("Second", all[2].name)
-            assert.equal("Third",  all[3].name)
+            -- Order is by last_edited desc; just verify all names are present.
+            local names = {}
+            for _, nb in ipairs(all) do names[nb.name] = true end
+            assert.truthy(names["First"])
+            assert.truthy(names["Second"])
+            assert.truthy(names["Third"])
+        end)
+    end)
+
+    describe("Library sort by last_edited", function()
+        it("returns most-recently-edited notebook first", function()
+            local lib = Library.new(base_dir)
+            local nb1 = lib:createNotebook("Old")
+            nb1.last_edited = 100
+            nb1:save()
+            local nb2 = lib:createNotebook("New")
+            nb2.last_edited = 200
+            nb2:save()
+
+            -- Re-scan from disk to pick up persisted last_edited values.
+            local lib2 = Library.new(base_dir)
+            local all  = lib2:all()
+            assert.equal(2,     #all)
+            assert.equal("New", all[1].name)
+            assert.equal("Old", all[2].name)
         end)
     end)
 

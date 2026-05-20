@@ -1,7 +1,8 @@
 # Chunk 2: Quick-access overlay, color picker, contact sensitivity
 
 **Branch:** master  
-**Status:** 🔄 In progress
+**Status:** ✅ Complete — commit 18327b9  
+**Pending on-device:** color rendering verification, double-tap gesture feel
 
 ---
 

@@ -77,6 +77,7 @@ local DrawingCanvas = InputContainer:extend{
     on_dark_mode_change  = nil,    -- called with (bool) when dark mode toggles; persist in state
     on_color_change      = nil,    -- called with (hex) when ink color changes; persist in state
     on_pressure_change   = nil,    -- called with (number) when pressure floor changes; persist in state
+    on_show_browser      = nil,    -- called when user picks "Notebooks" from hamburger (Stage 9)
     load_path            = nil,    -- if set, load this SVG on init (Stage 5)
     dark_mode            = false,  -- initial dark mode state (from persisted state)
     current_color        = nil,    -- initial ink color hex (from persisted state; nil = default black)
@@ -474,8 +475,16 @@ function DrawingCanvas:onMenuTap()
                      self:_confirmClearPage()
                  end},
             },
-            -- Row 5: close (tapping outside the menu also dismisses it)
+            -- Row 5: notebooks browser
             {
+                {text = "Notebooks",
+                 callback = function()
+                     UIManager:close(menu)
+                     self:_doClose()
+                     if self.on_show_browser then
+                         self.on_show_browser()
+                     end
+                 end},
                 {text = "Close canvas",
                  callback = function()
                      UIManager:close(menu)
