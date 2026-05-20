@@ -69,4 +69,32 @@ function canvas_utils.pressure_to_width(pressure, max_pressure, min_width, max_w
     return math.floor(width + 0.5)  -- round to nearest integer
 end
 
+--- Draw a thick line from (x0,y0) to (x1,y1) using Bresenham + paintRect.
+-- KOReader's BlitBuffer has no paintLine method; this is the replacement.
+-- @param bb     BlitBuffer  destination buffer
+-- @param x0     number  start x (integer)
+-- @param y0     number  start y (integer)
+-- @param x1     number  end x (integer)
+-- @param y1     number  end y (integer)
+-- @param w      number  brush diameter in pixels (>= 1)
+-- @param color  BlitBuffer color value
+function canvas_utils.drawLine(bb, x0, y0, x1, y1, w, color)
+    x0, y0, x1, y1 = math.floor(x0), math.floor(y0),
+                     math.floor(x1), math.floor(y1)
+    local r  = math.max(0, math.floor((w - 1) / 2))
+    local s  = 2 * r + 1
+    local dx = math.abs(x1 - x0)
+    local dy = math.abs(y1 - y0)
+    local sx = x0 < x1 and 1 or -1
+    local sy = y0 < y1 and 1 or -1
+    local err = dx - dy
+    while true do
+        bb:paintRect(x0 - r, y0 - r, s, s, color)
+        if x0 == x1 and y0 == y1 then break end
+        local e2 = 2 * err
+        if e2 > -dy then err = err - dy; x0 = x0 + sx end
+        if e2 <  dx then err = err + dx; y0 = y0 + sy end
+    end
+end
+
 return canvas_utils
