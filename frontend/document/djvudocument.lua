@@ -57,7 +57,6 @@ function DjvuDocument:comparePositions(pos1, pos2)
 end
 
 -- Performance is better pre-allocated than as table.sort(tbl, function() … end).
-local function compareByX(a, b) return a.x0 < b.x0 end
 local function compareByYThenX(a, b)
     if a.y0 - b.y0 == 0 then return a.x0 < b.x0 end
     return a.y0 < b.y0
@@ -73,21 +72,6 @@ local function collectWords(node, words)
         collectWords(node[i], words)
     end
     return words
-end
-
---- X-only sort that tries to avoid sorting when already ordered.
-local function sortWordsByX(words)
-    local n = #words
-    if n < 2 then return end
-    local prev = words[1].x0
-    for i = 2, n do
-        local x = words[i].x0
-        if prev > x then
-            table.sort(words, compareByX)
-            return
-        end
-        prev = x
-    end
 end
 
 --- Collect only direct word children (no recursion).
@@ -108,15 +92,18 @@ local function hasDirectWordChildren(node)
     return false
 end
 
-local function groupWordsIntoLines(words)
-    if #words == 0 then return {} end
-    -- Sort by y (top to bottom), then x (left to right)
-    table.sort(words, compareByYThenX)
-    -- Estimate a dynamic threshold based on word heights
+local function getLineGroupingThreshold(words)
     local sum_h = 0
-    for i = 1, #words do sum_h = sum_h + math.floor((words[i].y1 - words[i].y0) + 0.5) end
+    for i = 1, #words do
+        sum_h = sum_h + math.floor((words[i].y1 - words[i].y0) + 0.5)
+    end
     local avg_h = sum_h / #words
-    local threshold = math.max(2, math.floor(avg_h * 0.5 + 0.5))
+    return math.max(2, math.floor(avg_h * 0.5 + 0.5))
+end
+
+local function groupWordsIntoLinesInOrder(words)
+    if #words == 0 then return {} end
+    local threshold = getLineGroupingThreshold(words)
     local lines = {}
     local current = { words[1] }
     local current_y = (words[1].y0 + words[1].y1) / 2
@@ -135,6 +122,11 @@ local function groupWordsIntoLines(words)
     end
     lines[#lines + 1] = current
     return lines
+end
+
+local function groupWordsIntoLinesByGeometry(words)
+    table.sort(words, compareByYThenX)
+    return groupWordsIntoLinesInOrder(words)
 end
 
 local function computeBboxFromWords(words)
@@ -167,7 +159,6 @@ function DjvuDocument:getPageTextBoxes(pageno)
         if node.line then
             local words = collectWords(node, {})
             if #words > 0 then
-                sortWordsByX(words)
                 setLineBbox(words)
                 lines[#lines + 1] = words
             end
@@ -177,7 +168,7 @@ function DjvuDocument:getPageTextBoxes(pageno)
             -- Only handle direct words here to avoid double-processing nested structures.
             local words = collectDirectWords(node, {})
             if #words > 0 then
-                local groups = groupWordsIntoLines(words)
+                local groups = groupWordsIntoLinesInOrder(words)
                 for i = 1, #groups do
                     setLineBbox(groups[i])
                     lines[#lines + 1] = groups[i]
@@ -204,7 +195,7 @@ function DjvuDocument:getPageTextBoxes(pageno)
     end
     -- No explicit line nodes: group all words heuristically by y.
     local all_words = collectWords(page_text, {})
-    local grouped = groupWordsIntoLines(all_words)
+    local grouped = groupWordsIntoLinesByGeometry(all_words)
     for i = 1, #grouped do setLineBbox(grouped[i]) end
     return grouped
 end

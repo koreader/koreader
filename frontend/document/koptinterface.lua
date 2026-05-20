@@ -995,6 +995,16 @@ local function getWordBoxIndices(boxes, pos)
     return m, n
 end
 
+local function compareWordBoxIndices(i1, j1, i2, j2)
+    if i1 == i2 then
+        if j1 == j2 then
+            return 0
+        end
+        return j1 < j2 and 1 or -1
+    end
+    return i1 < i2 and 1 or -1
+end
+
 --[[--
 Get word and word box around `pos`.
 --]]
@@ -1025,7 +1035,7 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
     local line_boxes = {}
     local i_start, j_start = getWordBoxIndices(boxes, pos0)
     local i_stop, j_stop = getWordBoxIndices(boxes, pos1)
-    if i_start == i_stop and j_start > j_stop or i_start > i_stop then
+    if compareWordBoxIndices(i_start, j_start, i_stop, j_stop) == -1 then
         i_start, i_stop = i_stop, i_start
         j_start, j_stop = j_stop, j_start
     end
@@ -1068,12 +1078,12 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
                     if prev_word:sub(-1, -1) == " " or word:sub(1, 1) == " " then
                         -- Already a space between these words
                         add_space = false
-                    elseif dist_from_prev_word < box_height * 0.03 then
+                    elseif dist_from_prev_word >= 0 and dist_from_prev_word < box_height * 0.03 then
                         -- If the space between previous word box and this word box
                         -- is smaller than 5% of box height, assume these boxes
                         -- should be stuck
                         add_space = false
-                    elseif dist_from_prev_word < box_height * 0.8 then
+                    elseif dist_from_prev_word >= 0 and dist_from_prev_word < box_height * 0.8 then
                         local prev_word_end = prev_word:match(util.UTF8_CHAR_PATTERN.."$")
                         local word_start = word:match(util.UTF8_CHAR_PATTERN)
                         if util.isCJKChar(prev_word_end) and util.isCJKChar(word_start) then
@@ -1450,18 +1460,13 @@ function KoptInterface:comparePositions(doc, ppos1, ppos2)
     elseif ppos1.page > ppos2.page then
         return -1
     end
-    local box1 = self:getWordFromPosition(doc, ppos1).pbox
-    local box2 = self:getWordFromPosition(doc, ppos2).pbox
-    if box1.y == box2.y then
-        if box1.x == box2.x then
-            return 0
-        elseif box1.x > box2.x then
-            return -1
-        end
-    elseif box1.y > box2.y then
-        return -1
+    local text_boxes = self:getTextBoxes(doc, ppos1.page)
+    if not text_boxes then
+        return 0
     end
-    return 1
+    local i1, j1 = getWordBoxIndices(text_boxes, ppos1)
+    local i2, j2 = getWordBoxIndices(text_boxes, ppos2)
+    return compareWordBoxIndices(i1, j1, i2, j2)
 end
 
 --[[--
