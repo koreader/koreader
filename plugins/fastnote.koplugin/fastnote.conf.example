@@ -1,0 +1,50 @@
+-- fastnote.koplugin — user configuration
+--
+-- HOW TO ACTIVATE
+-- ---------------
+-- Copy (or rename) this file to:
+--
+--   koreader/settings/fastnote.conf
+--
+-- On a Kobo device that is usually:
+--   /mnt/onboard/.adds/koreader/settings/fastnote.conf
+--
+-- Edit the values below, then restart KOReader.
+-- Missing keys fall back to the built-in defaults shown here.
+
+return {
+
+    -- finger_draw
+    -- -----------
+    -- Allow drawing with finger (capacitive touch) in addition to the pen.
+    --
+    --   false  (default) — pen-only mode.
+    --              Capacitive touch events are ignored while the raw pen
+    --              driver is active, so accidental palm / finger marks
+    --              cannot appear.  Recommended for normal use.
+    --
+    --   true   — pen + finger both draw.
+    --              Useful for testing in the SDL emulator (which has no
+    --              Wacom digitizer and falls back to the gesture path), or
+    --              if you prefer sketching with your finger.
+    --
+    finger_draw = false,
+
+    -- rotation_mode
+    -- -------------
+    -- Screen orientation when the canvas opens.  The canvas locks to this
+    -- orientation and ignores accelerometer-based auto-rotation while it is
+    -- open; you can still change orientation from the in-canvas menu.
+    --
+    --   "auto"  (default) — inherit whatever orientation is currently active
+    --              when the canvas opens.  This is the recommended default.
+    --
+    --   0       — always open in portrait (upright).
+    --   3       — always open in landscape with buttons at the bottom
+    --              (counter-clockwise rotation — recommended for Kobo Libra).
+    --   1       — landscape with buttons at the top (clockwise rotation).
+    --   2       — portrait upside-down.
+    --
+    rotation_mode = "auto",
+
+}
