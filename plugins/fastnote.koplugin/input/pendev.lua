@@ -52,7 +52,20 @@ local BATCH_SIZE = 64
 local PenDev = {}
 PenDev.__index = PenDev
 
---- Scan /proc/bus/input/devices for the Wacom digitizer.
+--- Check if a KEY= bitmask hex string has BTN_TOOL_PEN (0x140 = bit 320) set.
+-- BTN_TOOL_PEN is set by all Wacom/EMR pen digitizers regardless of their name.
+-- Bit 320: hex digit from right = floor(320/4) = 80; bit within digit = 320%4 = 0.
+local function has_btn_tool_pen(key_hex)
+    key_hex = key_hex:gsub("%s", "")
+    local idx = #key_hex - 80   -- 1-indexed from left
+    if idx < 1 then return false end
+    local digit = tonumber(key_hex:sub(idx, idx), 16)
+    return digit ~= nil and bit.band(digit, 1) ~= 0
+end
+
+--- Scan /proc/bus/input/devices for the pen digitizer.
+-- Matches by name ("wacom") first; falls back to KEY= bitmask check for
+-- BTN_TOOL_PEN, which is set by all EMR pen digitizers regardless of name.
 -- @treturn string|nil  Path like "/dev/input/event2", or nil if not found.
 function PenDev.find()
     local f = io.open("/proc/bus/input/devices", "r")
@@ -61,33 +74,42 @@ function PenDev.find()
         return nil
     end
 
-    local found_wacom = false
-    local result      = nil
+    local result       = nil
+    local cur_name     = nil
+    local cur_key      = nil
+    local cur_handlers = nil
+
+    local function check_block()
+        if not cur_handlers then return end
+        local is_pen = (cur_name and cur_name:find("wacom", 1, true))
+                    or (cur_key  and has_btn_tool_pen(cur_key))
+        if is_pen then
+            local ev = cur_handlers:match("(event%d+)")
+            if ev then result = "/dev/input/" .. ev end
+        end
+    end
 
     for line in f:lines() do
         if line:find("^N:") then
-            -- N: Name="Wacom I2C Digitizer" (case-insensitive match)
-            found_wacom = line:lower():find("wacom") ~= nil
-        end
-        if found_wacom and line:find("^H:") then
-            -- H: Handlers=mouse0 event2 js0
-            local ev = line:match("(event%d+)")
-            if ev then
-                result = "/dev/input/" .. ev
-                break
-            end
-        end
-        if line == "" then
-            found_wacom = false
+            cur_name = line:lower()
+        elseif line:find("^B: KEY=") then
+            cur_key = line:match("KEY=(%x[%x ]*)")
+        elseif line:find("^H:") then
+            cur_handlers = line:match("H: Handlers=(.*)")
+        elseif line == "" then
+            check_block()
+            if result then break end
+            cur_name, cur_key, cur_handlers = nil, nil, nil
         end
     end
+    if not result then check_block() end  -- last block (no trailing blank line)
 
     f:close()
 
     if result then
-        logger.dbg("FastNote pendev: found Wacom at", result)
+        logger.dbg("FastNote pendev: found pen digitizer at", result)
     else
-        logger.warn("FastNote pendev: Wacom digitizer not found in /proc/bus/input/devices")
+        logger.warn("FastNote pendev: pen digitizer not found in /proc/bus/input/devices")
     end
     return result
 end

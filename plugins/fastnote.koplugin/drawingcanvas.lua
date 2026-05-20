@@ -162,10 +162,13 @@ function DrawingCanvas:init()
                 UIManager:scheduleIn(0.008, function() self:_pollPen() end)
                 logger.dbg("FastNote canvas: raw pen enabled:", pen_path)
             else
-                logger.warn("FastNote canvas: pendev open failed:", err)
+                logger.warn("FastNote canvas: pendev open failed:", err,
+                            "— falling back to gesture layer")
+                self.use_raw_input = false
             end
         else
-            logger.warn("FastNote canvas: Wacom not found; falling back to gestures")
+            logger.warn("FastNote canvas: pen digitizer not found — falling back to gesture layer")
+            self.use_raw_input = false
         end
 
         -- Touch device (Stage 3 palm rejection)
