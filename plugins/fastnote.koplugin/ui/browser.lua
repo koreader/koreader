@@ -195,7 +195,7 @@ _rebuild = function(lib, on_open)
     _close_menu()
     _current_menu = Menu:new{
         title         = _("Notebooks"),
-        items         = _build_items(lib, on_open),
+        item_table    = _build_items(lib, on_open),
         is_borderless = true,
         is_popout     = false,
         width         = Screen:getWidth(),

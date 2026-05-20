@@ -37,6 +37,7 @@ local Screen            = Device.screen
 local StrokeBuffer      = require("lib/strokebuffer")
 local UIManager         = require("ui/uimanager")
 local logger            = require("logger")
+local time              = require("ui/time")
 local utils             = require("lib/canvas_utils")
 
 -- Chrome strip (Stage 7)
@@ -131,8 +132,9 @@ local DrawingCanvas = InputContainer:extend{
     _palmreject = nil,             -- PalmReject instance (Stage 3)
 
     -- Raw pen tracking (raw input path)
-    _last_pen_x   = nil,
-    _last_pen_y   = nil,
+    _last_pen_x         = nil,
+    _last_pen_y         = nil,
+    _last_pen_down_time = nil,  -- fts timestamp of last pen-tip down (double-tap detection)
 
     -- Raw touch tracking (separate from pen to avoid cross-contamination)
     _last_touch_x = nil,
@@ -743,7 +745,7 @@ function DrawingCanvas:_repaintAll()
         local override = self._dark_mode and Blitbuffer.COLOR_WHITE or nil
         self._stroke_buf:repaintTo(self._bb, override)
     end
-    UIManager:setDirty(self, "ui")
+    UIManager:setDirty(self, "partial")
 end
 
 --- Return the Blitbuffer color for new live strokes (current ink, mode-aware).
@@ -857,6 +859,18 @@ function DrawingCanvas:_pollPen()
                     self._last_pen_y = nil
                     return
                 end
+                -- Pen double-tap: two pen-tip downs within 400 ms opens quick menu.
+                -- Eraser-end downs are excluded (already returned via eraser path).
+                local now = time.now()
+                if self._last_pen_down_time and
+                   (now - self._last_pen_down_time) < time.ms(400) then
+                    self._last_pen_down_time = nil
+                    self._last_pen_x = nil
+                    self._last_pen_y = nil
+                    self:_showQuickMenu()
+                    return
+                end
+                self._last_pen_down_time = now
                 self._stroke_buf:penDown(sx, sy, lw, self._current_color)
             else
                 self._stroke_buf:penMove(sx, sy, lw)

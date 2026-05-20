@@ -48,10 +48,11 @@ local bor = bit.bor
 local ABS_MT_SLOT        = 0x2f  -- 47  Switch to MT slot N
 local ABS_MT_POSITION_X  = 0x35  -- 53  X for current MT slot
 local ABS_MT_POSITION_Y  = 0x36  -- 54  Y for current MT slot
-local ABS_MT_TOOL_TYPE   = 0x37  -- 55  Tool: 0=finger, 1=pen, 2=palm
+local ABS_MT_TOOL_TYPE   = 0x37  -- 55  Tool: 0=finger, 1=pen, 2=eraser
 local ABS_MT_TRACKING_ID = 0x39  -- 57  Contact ID; -1 = lifted
 local ABS_MT_PRESSURE    = 0x3a  -- 58  Pressure for current MT slot
 local MT_TOOL_PEN        = 1     -- ABS_MT_TOOL_TYPE value for pen
+local MT_TOOL_ERASER     = 2     -- ABS_MT_TOOL_TYPE value for eraser end
 
 -- EV_KEY codes
 local BTN_TOOL_PEN = 0x140  -- 320
@@ -302,6 +303,10 @@ function PenDev:poll(cb)
                         self._mt_pen_slot = s
                         self._has_mt_pen  = true  -- mark device as MT pen
                         logger.dbg("FastNote pendev: pen identified at MT slot", s)
+                    elseif ev == MT_TOOL_ERASER then
+                        self._mt_pen_slot = s
+                        self._has_mt_pen  = true  -- same slot tracking, BTN_TOOL_RUBBER sets tool in SM
+                        logger.dbg("FastNote pendev: eraser identified at MT slot", s)
                     end
 
                 elseif ec == ABS_MT_TRACKING_ID then
