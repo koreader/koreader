@@ -178,6 +178,12 @@ function Device:init()
                 if not android.prop.brokenLifecycle then
                     UIManager:broadcastEvent(Event:new("Resume"))
                 end
+                if this.device:hasNaturalLight() then
+                    local powerd = this.device.powerd
+                    if powerd.fl_warmth and powerd.fl_warmth > 0 then
+                        android.setScreenWarmth(powerd:toNativeWarmth(powerd.fl_warmth))
+                    end
+                end
                 if external.when_back_callback then
                     external.when_back_callback()
                     external.when_back_callback = nil

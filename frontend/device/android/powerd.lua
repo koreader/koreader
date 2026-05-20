@@ -47,13 +47,6 @@ function AndroidPowerD:setWarmthHW(warmth)
     android.setScreenWarmth(warmth)
 end
 
-function AndroidPowerD:afterResume()
-    if self.device:hasNaturalLight() and self.fl_warmth and self.fl_warmth > 0 then
-        android.setScreenWarmth(self:toNativeWarmth(self.fl_warmth))
-    end
-    BasePowerD.afterResume(self)
-end
-
 function AndroidPowerD:frontlightWarmthHW()
     return android.getScreenWarmth() * self.warm_diff
 end
