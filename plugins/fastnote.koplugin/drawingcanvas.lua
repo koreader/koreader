@@ -1,22 +1,26 @@
 --[[--
-DrawingCanvas — Stage 2 implementation.
+DrawingCanvas — Stage 3 / Stage 4 implementation.
 
-Full-screen drawing canvas backed by a BlitBuffer.
+Full-screen drawing canvas backed by a BlitBuffer and a StrokeBuffer.
 
 Input paths (selected by use_raw_input flag):
   • Gesture layer (use_raw_input = false, emulator / fallback):
       pan gesture → draw segment; pan_release → flash refresh.
+      Always registered; on device the handler returns early unless
+      finger_draw is true — see onDrawStroke.
   • Raw evdev (use_raw_input = true, device-only):
-      UIManager:scheduleIn loop polls pendev at ~120 Hz.
-      Supports pressure-sensitive line width.
+      _pollPen loop at ~120 Hz reads Wacom events.
+      _pollTouch loop at ~60 Hz reads touch events, filtered by PalmReject.
+      Supports pressure-sensitive line width and palm rejection.
+
+Stage 4: StrokeBuffer is the source of truth.  BlitBuffer is a display cache
+rebuilt by repaintTo after undo/erase/rotation.
+
+Stage 3: PalmReject gates capacitive touch events through pen-proximity.
+Pen-only mode is the default; finger_draw can be toggled in the canvas menu.
 
 Exit zone: tap in the top-left EXIT_ZONE_SIZE × EXIT_ZONE_SIZE area closes
 the canvas.
-
-Not yet implemented:
-  - StrokeBuffer / undo model (Stage 4)
-  - SVG persistence (Stage 5)
-  - Palm rejection (Stage 3)
 
 ASSUMES: InputContainer, GestureRange, UIManager, Screen, Blitbuffer are
   available from the KOReader runtime (not required for unit tests of lib/).
@@ -30,6 +34,7 @@ local Geom              = require("ui/geometry")
 local InputContainer    = require("ui/widget/container/inputcontainer")
 local PenDev            = require("input/pendev")
 local Screen            = Device.screen
+local StrokeBuffer      = require("lib/strokebuffer")
 local UIManager         = require("ui/uimanager")
 local logger            = require("logger")
 local utils             = require("lib/canvas_utils")
@@ -38,56 +43,44 @@ local utils             = require("lib/canvas_utils")
 local EXIT_ZONE_SIZE = 60
 
 -- Menu button (bottom-right corner)
--- Visual square drawn in paintTo(); tap zone extends MENU_BTN_HIT_PAD beyond.
-local MENU_BTN_SIZE    = 80   -- visible button size (px)
-local MENU_BTN_MARGIN  = 24   -- gap from screen edge to button edge (px)
-local MENU_BTN_HIT_PAD =  8   -- extra tap-zone padding beyond visual bounds (px)
+local MENU_BTN_SIZE    = 80
+local MENU_BTN_MARGIN  = 24
+local MENU_BTN_HIT_PAD =  8
 
 -- Default stroke appearance
 local DEFAULT_LINE_WIDTH = 3
-local STROKE_COLOR = Blitbuffer.COLOR_BLACK
+local STROKE_COLOR       = Blitbuffer.COLOR_BLACK
+local DEFAULT_COLOR      = "#000000"
 
--- Rotation mode constants used for menu-driven orientation change.
--- Mirror KOReader's Screen.DEVICE_ROTATED_* values without requiring a
--- Screen reference at module load time.
+-- Rotation mode constants
 local ROT_PORTRAIT  = 0  -- DEVICE_ROTATED_UPRIGHT
-local ROT_LANDSCAPE = 3  -- DEVICE_ROTATED_COUNTER_CLOCKWISE (buttons at bottom on Kobo Libra)
+local ROT_LANDSCAPE = 3  -- DEVICE_ROTATED_COUNTER_CLOCKWISE
 
 ---@class DrawingCanvas : InputContainer
 local DrawingCanvas = InputContainer:extend{
-    -- Injected by parent (main.lua)
-    on_close_callback = nil,
+    on_close_callback  = nil,
 
-    -- BlitBuffer backing the drawing surface
-    _bb = nil,
+    _bb           = nil,           -- BlitBuffer (display cache)
+    _stroke_buf   = nil,           -- StrokeBuffer (source of truth, Stage 4)
+    _current_color = DEFAULT_COLOR,
 
-    -- Input mode: false = gesture layer (emulator), true = raw evdev (device)
-    use_raw_input = false,
+    use_raw_input      = false,    -- false = gesture layer; true = raw evdev
+    finger_draw        = false,    -- allow capacitive touch to draw (pen-only default)
 
-    -- When use_raw_input is true: allow capacitive touch to draw as well as pen.
-    -- Injected from main.lua via Config.load().  Default false = pen-only.
-    finger_draw = false,
-
-    -- Orientation lock.
-    -- init_rotation_mode is injected from main.lua (from Config):
-    --   "auto" or nil  — lock to whatever rotation is active when canvas opens
-    --   0/1/2/3        — force a specific rotation on open
-    -- _rotation_mode holds the active locked mode (set in init, updated by menu).
     init_rotation_mode = nil,
-    _rotation_mode = nil,
+    _rotation_mode     = nil,
 
-    -- Raw pen device (PenDev instance, only when use_raw_input = true)
-    _pendev = nil,
+    _pendev    = nil,              -- PenDev instance
+    _touchdev  = nil,              -- TouchDev instance (Stage 3)
+    _palmreject = nil,             -- PalmReject instance (Stage 3)
 
-    -- Last drawn pen position for line segment continuity (raw input path)
+    -- Raw pen tracking (raw input path)
     _last_pen_x = nil,
     _last_pen_y = nil,
 
-    -- Stroke state: last point seen in a pan gesture (gesture path)
-    _stroke_x = nil,
-    _stroke_y = nil,
-
-    -- Bounding box of the current stroke (for flash refresh on pan_release)
+    -- Gesture path tracking
+    _stroke_x     = nil,
+    _stroke_y     = nil,
     _stroke_min_x = nil,
     _stroke_min_y = nil,
     _stroke_max_x = nil,
@@ -99,111 +92,114 @@ local DrawingCanvas = InputContainer:extend{
 -- ---------------------------------------------------------------------------
 
 function DrawingCanvas:init()
-    self.dimen = Geom:new{
-        x = 0,
-        y = 0,
-        w = Screen:getWidth(),
-        h = Screen:getHeight(),
-    }
+    self.dimen = Geom:new{x=0, y=0,
+                          w=Screen:getWidth(), h=Screen:getHeight()}
 
-    -- Allocate the backing BlitBuffer (colour or grayscale depending on device)
     local bbtype = Screen:isColorEnabled()
         and Blitbuffer.TYPE_BBRGB32
         or  Blitbuffer.TYPE_BB8
-
     self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bbtype)
     self._bb:fill(Blitbuffer.COLOR_WHITE)
+
+    self._stroke_buf = StrokeBuffer.new()
 
     logger.dbg("FastNote canvas: init", self.dimen.w, "x", self.dimen.h,
                "color=", Screen:isColorEnabled())
 
-    -- Input mode: raw evdev on Kobo device, gesture fallback in emulator
     self.use_raw_input = Device:isKobo()
 
-    -- Orientation lock: apply config-specified rotation (if any), then record
-    -- the active mode.  From this point on, onSetRotationMode() re-asserts
-    -- this mode whenever KOReader tries to auto-rotate the device.
+    -- Orientation lock
     if type(self.init_rotation_mode) == "number" then
         Screen:setRotationMode(self.init_rotation_mode)
     end
     self._rotation_mode = Screen:getRotationMode()
     logger.dbg("FastNote canvas: orientation locked to mode", self._rotation_mode)
 
-    -- Register touch zones ------------------------------------------------
+    -- ── Gesture zones ──────────────────────────────────────────────────────
 
-    -- Exit zone: tap in the top-left corner
+    -- Exit zone: top-left corner tap
     self.ges_events.ExitTap = {
         GestureRange:new{
             ges   = "tap",
-            range = Geom:new{
-                x = 0,
-                y = 0,
-                w = EXIT_ZONE_SIZE,
-                h = EXIT_ZONE_SIZE,
-            },
+            range = Geom:new{x=0, y=0, w=EXIT_ZONE_SIZE, h=EXIT_ZONE_SIZE},
         },
     }
 
-    -- Menu button: tap in the bottom-right corner.
-    -- Always registered (never gated by finger_draw) so the user can always
-    -- reach the menu regardless of input mode.
-    -- Hit zone is MENU_BTN_HIT_PAD larger than the visual on each side.
-    local btn_vis_x = self.dimen.w - MENU_BTN_MARGIN - MENU_BTN_SIZE
-    local btn_vis_y = self.dimen.h - MENU_BTN_MARGIN - MENU_BTN_SIZE
+    -- Menu button: bottom-right corner tap (always active, even in pen-only mode)
+    local bvx = self.dimen.w - MENU_BTN_MARGIN - MENU_BTN_SIZE
+    local bvy = self.dimen.h - MENU_BTN_MARGIN - MENU_BTN_SIZE
     self.ges_events.MenuTap = {
         GestureRange:new{
             ges   = "tap",
             range = Geom:new{
-                x = btn_vis_x - MENU_BTN_HIT_PAD,
-                y = btn_vis_y - MENU_BTN_HIT_PAD,
+                x = bvx - MENU_BTN_HIT_PAD,
+                y = bvy - MENU_BTN_HIT_PAD,
                 w = MENU_BTN_SIZE + MENU_BTN_HIT_PAD * 2,
                 h = MENU_BTN_SIZE + MENU_BTN_HIT_PAD * 2,
             },
         },
     }
 
-    -- Drawing zone: pan anywhere on screen.
-    -- Registered when: emulator (gesture is the only input), OR finger_draw is
-    -- explicitly enabled on device (touch events draw alongside pen).
-    if not self.use_raw_input or self.finger_draw then
-        self.ges_events.DrawStroke = {
-            GestureRange:new{
-                ges   = "pan",
-                range = self.dimen,
-            },
-        }
-        self.ges_events.DrawStrokeEnd = {
-            GestureRange:new{
-                ges   = "pan_release",
-                range = self.dimen,
-            },
-        }
-    end
+    -- Drawing gesture zones: always registered.
+    -- On device (use_raw_input=true), onDrawStroke returns early unless
+    -- finger_draw is enabled, keeping the emulator path always working.
+    self.ges_events.DrawStroke = {
+        GestureRange:new{ges="pan", range=self.dimen},
+    }
+    self.ges_events.DrawStrokeEnd = {
+        GestureRange:new{ges="pan_release", range=self.dimen},
+    }
 
-    -- Raw evdev pen polling (device only) ----------------------------------
+    -- ── Raw input setup ────────────────────────────────────────────────────
+
     if self.use_raw_input then
-        local dev_path = PenDev.find()
-        if dev_path then
-            local pd, err = PenDev.open(dev_path)
+        -- Pen device
+        local pen_path = PenDev.find()
+        if pen_path then
+            local pd, err = PenDev.open(pen_path)
             if pd then
                 self._pendev = pd
                 UIManager:scheduleIn(0.008, function() self:_pollPen() end)
-                logger.dbg("FastNote canvas: raw pen input enabled:", dev_path)
+                logger.dbg("FastNote canvas: raw pen enabled:", pen_path)
             else
-                logger.warn("FastNote canvas: pendev open failed:", err)
+                logger.warn("FastNote canvas: pendev open failed:", err,
+                            "— falling back to gesture layer")
+                self.use_raw_input = false
             end
         else
-            logger.warn("FastNote canvas: Wacom not found; using gesture fallback")
+            logger.warn("FastNote canvas: pen digitizer not found — falling back to gesture layer")
+            self.use_raw_input = false
+        end
+
+        -- Touch device (Stage 3 palm rejection)
+        local ok_touch, TouchDev = pcall(require, "input/touchdev")
+        if ok_touch then
+            local touch_path = TouchDev.find()
+            if touch_path then
+                local td, err = TouchDev.open(touch_path)
+                if td then
+                    self._touchdev = td
+                    local PalmReject = require("lib/palmreject")
+                    self._palmreject = PalmReject.new()
+                    UIManager:scheduleIn(0.016, function() self:_pollTouch() end)
+                    logger.dbg("FastNote canvas: touch + palm rejection enabled:", touch_path)
+                else
+                    logger.warn("FastNote canvas: touchdev open failed:", err)
+                end
+            end
         end
     end
 end
 
 function DrawingCanvas:onCloseWidget()
-    logger.dbg("FastNote canvas: onCloseWidget, freeing bb")
-    -- Stop raw pen polling and close fd before freeing the buffer
+    logger.dbg("FastNote canvas: onCloseWidget, freeing resources")
     if self._pendev then
         self._pendev:close()
         self._pendev = nil
+    end
+    if self._touchdev then
+        self._touchdev:close()
+        self._touchdev = nil
     end
     if self._bb then
         self._bb:free()
@@ -215,28 +211,17 @@ end
 -- Rendering
 -- ---------------------------------------------------------------------------
 
----@param bb BlitBuffer  UIManager's display buffer
----@param x  number
----@param y  number
 function DrawingCanvas:paintTo(bb, x, y)
     self.dimen.x = x
     self.dimen.y = y
     if not self._bb then return end
     bb:blitFrom(self._bb, x, y, 0, 0, self.dimen.w, self.dimen.h)
 
-    -- Draw menu button overlay directly onto the screen buffer.
-    -- This is drawn AFTER blitting the drawing surface so it always appears
-    -- on top and is never overwritten by strokes.
+    -- Menu button drawn into the screen buffer so it's always on top
     local bx = x + self.dimen.w - MENU_BTN_MARGIN - MENU_BTN_SIZE
     local by = y + self.dimen.h - MENU_BTN_MARGIN - MENU_BTN_SIZE
-
-    -- Dark background square
     bb:paintRect(bx, by, MENU_BTN_SIZE, MENU_BTN_SIZE, Blitbuffer.COLOR_BLACK)
-
-    -- Hamburger icon: three white horizontal bars
-    -- Bar width = 60 % of button width, centred horizontally.
-    -- Bar heights and Y positions are hand-tuned for an 80 px square.
-    local bar_w = math.floor(MENU_BTN_SIZE * 0.60)  -- 48 px
+    local bar_w = math.floor(MENU_BTN_SIZE * 0.60)
     local bar_h = 4
     local bar_x = bx + math.floor((MENU_BTN_SIZE - bar_w) / 2)
     bb:paintRect(bar_x, by + 22, bar_w, bar_h, Blitbuffer.COLOR_WHITE)
@@ -249,7 +234,6 @@ end
 -- ---------------------------------------------------------------------------
 
 function DrawingCanvas:onExitTap(_, ges)
-    -- Verify the tap lands in the exit zone (belt-and-suspenders)
     if utils.point_in_zone(ges.pos.x, ges.pos.y, 0, 0, EXIT_ZONE_SIZE, EXIT_ZONE_SIZE) then
         logger.dbg("FastNote canvas: exit tap")
         self:_doClose()
@@ -259,43 +243,48 @@ end
 
 function DrawingCanvas:onMenuTap()
     logger.dbg("FastNote canvas: menu tap")
-    local cur = self._rotation_mode
-    local portrait_label  = (cur == ROT_PORTRAIT)  and "Portrait \xE2\x9C\x93"  or "Portrait"
-    local landscape_label = (cur == ROT_LANDSCAPE) and "Landscape \xE2\x9C\x93" or "Landscape"
+    local cur          = self._rotation_mode
+    local portrait_lbl  = (cur == ROT_PORTRAIT)  and "Portrait \xE2\x9C\x93"  or "Portrait"
+    local landscape_lbl = (cur == ROT_LANDSCAPE) and "Landscape \xE2\x9C\x93" or "Landscape"
+    local finger_lbl    = self.finger_draw and "Finger draw: on" or "Finger draw: off"
     local menu
+
     menu = ButtonDialogTitle:new{
         title = "Fast Note",
         buttons = {
             {
-                {
-                    text = portrait_label,
-                    callback = function()
-                        UIManager:close(menu)
-                        self:_reinitAtRotation(ROT_PORTRAIT)
-                    end,
-                },
-                {
-                    text = landscape_label,
-                    callback = function()
-                        UIManager:close(menu)
-                        self:_reinitAtRotation(ROT_LANDSCAPE)
-                    end,
-                },
+                {text = portrait_lbl,
+                 callback = function()
+                     UIManager:close(menu)
+                     self:_reinitAtRotation(ROT_PORTRAIT)
+                 end},
+                {text = landscape_lbl,
+                 callback = function()
+                     UIManager:close(menu)
+                     self:_reinitAtRotation(ROT_LANDSCAPE)
+                 end},
             },
             {
-                {
-                    text = "Keep drawing",
-                    callback = function()
-                        UIManager:close(menu)
-                    end,
-                },
-                {
-                    text = "Close canvas",
-                    callback = function()
-                        UIManager:close(menu)
-                        self:_doClose()
-                    end,
-                },
+                {text = finger_lbl,
+                 callback = function()
+                     UIManager:close(menu)
+                     self.finger_draw = not self.finger_draw
+                     logger.dbg("FastNote canvas: finger_draw =", self.finger_draw)
+                 end},
+                {text = "Save drawing",
+                 callback = function()
+                     UIManager:close(menu)
+                     self:_saveDrawing()
+                 end},
+            },
+            {
+                {text = "Keep drawing",
+                 callback = function() UIManager:close(menu) end},
+                {text = "Close canvas",
+                 callback = function()
+                     UIManager:close(menu)
+                     self:_doClose()
+                 end},
             },
         },
     }
@@ -303,25 +292,21 @@ function DrawingCanvas:onMenuTap()
     return true
 end
 
---- Block accelerometer-driven auto-rotation while the canvas is open.
--- When KOReader detects a device rotation it calls Screen:setRotationMode()
--- and then broadcasts a SetRotationMode event.  We intercept that event and
--- immediately re-lock to self._rotation_mode, keeping the canvas stable.
--- The user can still change orientation deliberately via the canvas menu
--- (which calls _reinitAtRotation directly, not through this path).
+--- Block accelerometer auto-rotation while the canvas is open.
 function DrawingCanvas:onSetRotationMode(event)
     local new_mode = type(event) == "number" and event
                      or (type(event) == "table" and event[1] or nil)
     if new_mode ~= nil and new_mode ~= self._rotation_mode then
-        logger.dbg("FastNote canvas: blocking auto-rotation to mode", new_mode,
-                   "(locked to", self._rotation_mode, ")")
+        logger.dbg("FastNote canvas: blocking auto-rotation to", new_mode)
         Screen:setRotationMode(self._rotation_mode)
         UIManager:setDirty(self, "full")
     end
-    return true  -- consume: we are the active full-screen widget
+    return true
 end
 
 function DrawingCanvas:onDrawStroke(_, ges)
+    -- On device, gesture path is only active when finger_draw is enabled.
+    if self.use_raw_input and not self.finger_draw then return end
     if not self._bb then return end
 
     local x = math.floor(ges.pos.x)
@@ -329,36 +314,35 @@ function DrawingCanvas:onDrawStroke(_, ges)
     local prev_x = self._stroke_x or x
     local prev_y = self._stroke_y or y
 
-    -- Draw the segment onto the backing buffer
+    -- StrokeBuffer: start or extend current stroke
+    if not self._stroke_buf.current then
+        self._stroke_buf:penDown(prev_x, prev_y, DEFAULT_LINE_WIDTH, self._current_color)
+    end
+    self._stroke_buf:penMove(x, y, DEFAULT_LINE_WIDTH)
+
     self._bb:paintLine(prev_x, prev_y, x, y, DEFAULT_LINE_WIDTH, STROKE_COLOR)
 
-    -- Update stroke bounding box
     self._stroke_min_x = math.min(self._stroke_min_x or x, prev_x, x)
     self._stroke_min_y = math.min(self._stroke_min_y or y, prev_y, y)
     self._stroke_max_x = math.max(self._stroke_max_x or x, prev_x, x)
     self._stroke_max_y = math.max(self._stroke_max_y or y, prev_y, y)
+    self._stroke_x     = x
+    self._stroke_y     = y
 
-    self._stroke_x = x
-    self._stroke_y = y
-
-    -- Fast partial refresh for the dirty segment
     local dirty = utils.compute_dirty_rect(prev_x, prev_y, x, y, DEFAULT_LINE_WIDTH)
-    UIManager:setDirty(self, function()
-        return "fast", Geom:new(dirty)
-    end)
-
-    logger.dbg("FastNote canvas: draw", prev_x, prev_y, "->", x, y)
+    UIManager:setDirty(self, function() return "fast", Geom:new(dirty) end)
     return true
 end
 
 function DrawingCanvas:onDrawStrokeEnd(_, ges)
+    if self.use_raw_input and not self.finger_draw then return end
     if not self._bb then return end
 
-    -- Final point of the stroke
     if ges and ges.pos then
         local x = math.floor(ges.pos.x)
         local y = math.floor(ges.pos.y)
         if self._stroke_x and self._stroke_y then
+            self._stroke_buf:penMove(x, y, DEFAULT_LINE_WIDTH)
             self._bb:paintLine(self._stroke_x, self._stroke_y,
                                x, y, DEFAULT_LINE_WIDTH, STROKE_COLOR)
         end
@@ -368,55 +352,72 @@ function DrawingCanvas:onDrawStrokeEnd(_, ges)
         self._stroke_min_y = math.min(self._stroke_min_y or y, y)
     end
 
-    -- Flash refresh for the full stroke bounding box (makes last point crisp)
+    self._stroke_buf:penUp()
+
     if self._stroke_min_x then
         local stroke_rect = utils.compute_dirty_rect(
             self._stroke_min_x, self._stroke_min_y,
             self._stroke_max_x, self._stroke_max_y,
-            DEFAULT_LINE_WIDTH
-        )
-        UIManager:setDirty(self, function()
-            return "flash", Geom:new(stroke_rect)
-        end)
-        logger.dbg("FastNote canvas: stroke end, flash rect",
-                   stroke_rect.x, stroke_rect.y, stroke_rect.w, stroke_rect.h)
+            DEFAULT_LINE_WIDTH)
+        UIManager:setDirty(self, function() return "ui", Geom:new(stroke_rect) end)
     end
 
-    -- Reset stroke state
-    self._stroke_x    = nil
-    self._stroke_y    = nil
+    self._stroke_x     = nil
+    self._stroke_y     = nil
     self._stroke_min_x = nil
     self._stroke_min_y = nil
     self._stroke_max_x = nil
     self._stroke_max_y = nil
-
     return true
 end
 
 -- ---------------------------------------------------------------------------
--- Internal
+-- Internal helpers
 -- ---------------------------------------------------------------------------
 
---- Update the MenuTap gesture zone to match current screen dimensions.
--- Must be called after self.dimen is updated in-place by _reinitAtRotation.
--- ExitTap is always at (0,0) so it needs no update; DrawStroke/DrawStrokeEnd
--- reference self.dimen directly and pick up changes automatically.
+--- Translate raw Wacom digitizer coordinates to screen pixels.
+-- Handles all four rotation modes.  Uses the canvas-locked rotation
+-- (self._rotation_mode) rather than Screen:getRotationMode() to avoid
+-- any race with auto-rotation blocking.
+-- @number rx  raw digitizer x (from pendev)
+-- @number ry  raw digitizer y
+-- @return sx, sy  integer screen coordinates
+function DrawingCanvas:_digToScreen(rx, ry)
+    local pd  = self._pendev
+    local W   = Screen:getWidth()
+    local H   = Screen:getHeight()
+    local nx  = (rx - pd.x_min) / (pd.x_max - pd.x_min)
+    local ny  = (ry - pd.y_min) / (pd.y_max - pd.y_min)
+    -- Clamp to [0,1] in case of out-of-range values during fast movement
+    nx = math.max(0, math.min(1, nx))
+    ny = math.max(0, math.min(1, ny))
+
+    local rot = self._rotation_mode
+    if     rot == 0 then
+        return math.floor(nx * (W-1)), math.floor(ny * (H-1))
+    elseif rot == 1 then
+        return math.floor((1-ny) * (W-1)), math.floor(nx  * (H-1))
+    elseif rot == 2 then
+        return math.floor((1-nx) * (W-1)), math.floor((1-ny) * (H-1))
+    elseif rot == 3 then
+        return math.floor(ny     * (W-1)), math.floor((1-nx) * (H-1))
+    end
+    return math.floor(nx * (W-1)), math.floor(ny * (H-1))
+end
+
 function DrawingCanvas:_updateGestureZones()
     if not (self.ges_events.MenuTap and self.ges_events.MenuTap[1]) then return end
-    local btn_vis_x = self.dimen.w - MENU_BTN_MARGIN - MENU_BTN_SIZE
-    local btn_vis_y = self.dimen.h - MENU_BTN_MARGIN - MENU_BTN_SIZE
-    local r = self.ges_events.MenuTap[1].range
-    r.x = btn_vis_x - MENU_BTN_HIT_PAD
-    r.y = btn_vis_y - MENU_BTN_HIT_PAD
+    local bvx = self.dimen.w - MENU_BTN_MARGIN - MENU_BTN_SIZE
+    local bvy = self.dimen.h - MENU_BTN_MARGIN - MENU_BTN_SIZE
+    local r   = self.ges_events.MenuTap[1].range
+    r.x = bvx - MENU_BTN_HIT_PAD
+    r.y = bvy - MENU_BTN_HIT_PAD
     r.w = MENU_BTN_SIZE + MENU_BTN_HIT_PAD * 2
     r.h = MENU_BTN_SIZE + MENU_BTN_HIT_PAD * 2
 end
 
---- Apply a rotation change requested from the canvas menu.
--- Sets the new rotation, reallocates the BlitBuffer at the updated screen
--- dimensions (clearing the current drawing — stroke persistence comes in
--- Stage 4), and triggers a full repaint.
--- @param  new_mode  integer  rotation constant (e.g. ROT_PORTRAIT = 0)
+--- Apply a rotation change from the canvas menu.
+-- After Stage 4: strokes are preserved via repaintTo.
 function DrawingCanvas:_reinitAtRotation(new_mode)
     if new_mode == self._rotation_mode then return end
     logger.dbg("FastNote canvas: rotating to mode", new_mode)
@@ -424,21 +425,22 @@ function DrawingCanvas:_reinitAtRotation(new_mode)
     Screen:setRotationMode(new_mode)
     self._rotation_mode = new_mode
 
-    -- Update self.dimen IN-PLACE so that GestureRange objects holding a
-    -- reference to self.dimen (DrawStroke, DrawStrokeEnd) pick up new dims.
     self.dimen.w = Screen:getWidth()
     self.dimen.h = Screen:getHeight()
 
-    -- Reallocate the backing BlitBuffer at the new screen dimensions.
-    -- This clears the current drawing (Stage 4 will preserve strokes on rotate).
-    if self._bb then self._bb:free() end
     local bbtype = Screen:isColorEnabled()
         and Blitbuffer.TYPE_BBRGB32
         or  Blitbuffer.TYPE_BB8
+    if self._bb then self._bb:free() end
     self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bbtype)
     self._bb:fill(Blitbuffer.COLOR_WHITE)
 
-    -- Reset per-stroke state (old screen coordinates are invalid after rotation)
+    -- Replay strokes into the new buffer (Stage 4: preserve on rotate)
+    if self._stroke_buf then
+        self._stroke_buf:repaintTo(self._bb)
+    end
+
+    -- Reset per-stroke state (old screen coords are invalid after rotation)
     self._last_pen_x   = nil
     self._last_pen_y   = nil
     self._stroke_x     = nil
@@ -452,21 +454,27 @@ function DrawingCanvas:_reinitAtRotation(new_mode)
     UIManager:setDirty(self, "full")
 end
 
---- Raw pen poll loop, scheduled at ~120 Hz when use_raw_input = true.
--- Translates raw Wacom coordinates to screen space, draws pressure-sensitive
--- line segments, and reschedules itself until the canvas is closed.
+--- Raw pen poll loop at ~120 Hz.
 function DrawingCanvas:_pollPen()
     if not self._pendev then return end
 
     self._pendev:poll(function(ev)
+        -- Feed pen event to palm rejection state machine (Stage 3)
+        if self._palmreject then
+            self._palmreject:onPenEvent(ev)
+        end
+
         if ev.type == "down" or ev.type == "move" then
-            -- Translate raw digitizer coords to screen pixels.
-            -- Wacom range from PenDev._query_abs (default 0..4095).
-            local W  = Screen:getWidth()
-            local H  = Screen:getHeight()
-            local sx = math.floor(ev.x / self._pendev.x_max * (W - 1))
-            local sy = math.floor(ev.y / self._pendev.y_max * (H - 1))
-            local lw = utils.pressure_to_width(ev.pressure, self._pendev.p_max, 1, 8)
+            local sx, sy = self:_digToScreen(ev.x, ev.y)
+            local lw     = utils.pressure_to_width(
+                ev.pressure, self._pendev.p_max, 1, 8)
+
+            -- StrokeBuffer accumulation (Stage 4)
+            if ev.type == "down" then
+                self._stroke_buf:penDown(sx, sy, lw, self._current_color)
+            else
+                self._stroke_buf:penMove(sx, sy, lw)
+            end
 
             if self._last_pen_x then
                 self._bb:paintLine(
@@ -481,21 +489,112 @@ function DrawingCanvas:_pollPen()
             self._last_pen_y = sy
 
         elseif ev.type == "up" then
+            self._stroke_buf:penUp()
             self._last_pen_x = nil
             self._last_pen_y = nil
-            UIManager:setDirty(self, "flash")
+            UIManager:setDirty(self, "ui")
+
+        elseif ev.type == "eraser" or
+               (ev.type == "down" and ev.tool == "eraser") then
+            -- Eraser end of stylus: Stage 10 will implement stroke-level erase.
+            -- For now, commit any open stroke and ignore the eraser motion.
+            self._stroke_buf:penUp()
+            self._last_pen_x = nil
+            self._last_pen_y = nil
         end
-        -- "hover" events are currently ignored (future: cursor preview)
     end)
 
-    -- Reschedule as long as the device is still open
     if self._pendev then
         UIManager:scheduleIn(0.008, function() self:_pollPen() end)
     end
 end
 
+--- Raw touch poll loop at ~60 Hz (Stage 3).
+-- Events are filtered through PalmReject before acting on them.
+function DrawingCanvas:_pollTouch()
+    if not self._touchdev then return end
+
+    self._touchdev:poll(function(slot_ev)
+        -- Filter through palm rejection
+        local filtered = self._palmreject
+            and self._palmreject:onTouchEvent(slot_ev)
+            or  slot_ev
+
+        if filtered and self.finger_draw then
+            -- Touch drawing path (finger_draw is on):
+            -- treat touch events like pen events using DEFAULT_LINE_WIDTH.
+            if filtered.type == "down" then
+                self._stroke_buf:penDown(filtered.x, filtered.y,
+                                         DEFAULT_LINE_WIDTH, self._current_color)
+                self._last_pen_x = filtered.x
+                self._last_pen_y = filtered.y
+            elseif filtered.type == "move" then
+                self._stroke_buf:penMove(filtered.x, filtered.y, DEFAULT_LINE_WIDTH)
+                if self._last_pen_x then
+                    self._bb:paintLine(self._last_pen_x, self._last_pen_y,
+                                       filtered.x, filtered.y,
+                                       DEFAULT_LINE_WIDTH, STROKE_COLOR)
+                    local dirty = utils.compute_dirty_rect(
+                        self._last_pen_x, self._last_pen_y,
+                        filtered.x, filtered.y, DEFAULT_LINE_WIDTH)
+                    UIManager:setDirty(self, function()
+                        return "fast", Geom:new(dirty)
+                    end)
+                end
+                self._last_pen_x = filtered.x
+                self._last_pen_y = filtered.y
+            elseif filtered.type == "up" then
+                self._stroke_buf:penUp()
+                self._last_pen_x = nil
+                self._last_pen_y = nil
+                UIManager:setDirty(self, "ui")
+            end
+        end
+    end)
+
+    if self._touchdev then
+        UIManager:scheduleIn(0.016, function() self:_pollTouch() end)
+    end
+end
+
+--- Save current drawing to a timestamped SVG file.
+function DrawingCanvas:_saveDrawing()
+    if self._stroke_buf:isEmpty() then
+        logger.dbg("FastNote canvas: nothing to save")
+        return
+    end
+
+    local ok_svg, svg_module = pcall(require, "lib/svg")
+    if not ok_svg then
+        logger.warn("FastNote canvas: svg module unavailable:", svg_module)
+        return
+    end
+
+    local DataStorage = require("datastorage")
+    local save_dir    = DataStorage:getDataDir() .. "/fastnote/"
+
+    -- Ensure directory exists
+    os.execute("mkdir -p " .. save_dir)
+
+    local filename = os.date("fastnote_%Y-%m-%d_%H-%M-%S.svg")
+    local path     = save_dir .. filename
+    local f        = io.open(path, "w")
+    if not f then
+        logger.warn("FastNote canvas: cannot write to", path)
+        return
+    end
+    f:write(svg_module.write(self._stroke_buf, self.dimen.w, self.dimen.h))
+    f:close()
+
+    local InfoMessage = require("ui/widget/infomessage")
+    UIManager:show(InfoMessage:new{text = "Saved: " .. filename, timeout = 2})
+    logger.dbg("FastNote canvas: saved to", path)
+end
+
 function DrawingCanvas:_doClose()
+    -- Full refresh after close so the underlying UI redraws cleanly.
     UIManager:close(self)
+    UIManager:setDirty(nil, "full")
     if self.on_close_callback then
         self.on_close_callback()
     end

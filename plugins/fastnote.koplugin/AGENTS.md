@@ -27,16 +27,19 @@ algorithm in detail.
 
 ## Current State
 
-**Stages 0, 1, 2 complete** (64/64 tests passing). HEAD: `b3d344f87`.
+**Stages 0, 1, 2, 3, 4 complete** (147/147 tests passing).
 
-Completed work beyond the numbered stages:
+Completed work:
 - Config system (`lib/config.lua`) with `finger_draw` toggle and `rotation_mode`
 - Hamburger menu button (bottom-right) with portrait/landscape rotation + keep/close
 - Orientation lock — canvas locks rotation on open; re-locks on system rotation events
+- Stroke model (`lib/stroke.lua`, `lib/strokebuffer.lua`) — source of truth for all drawing
+- SVG persistence (`lib/svg.lua`) — `svg.write`/`svg.read` with lossless `<metadata>` JSON round-trip
+- Palm rejection (`lib/palmreject.lua`) — pen-proximity gate + area threshold, injectable clock
+- Capacitive touch input (`input/touchdev.lua`) — MT protocol B, non-blocking poll
+- `drawingcanvas.lua` rewritten for Stages 3+4: StrokeBuffer integration, `_digToScreen` rotation-aware coordinate translation, finger-draw toggle in canvas menu, SVG save
 
-**Stage 3 (palm rejection) and Stage 4 (stroke model + SVG) are next.**  
-Executor-ready plan: `helper-user/tmp/plans/plan-stage3-stage4-20260518.md`  
-Execute Stage 4 first (fully testable without device), then Stage 3.
+**Stage 5 (SVG load + continue editing) is next** — requires on-device testing of Stage 3/4 first.
 
 ---
 
@@ -52,14 +55,14 @@ fastnote.koplugin/
 │   ├── canvas_utils.lua       Pure math: compute_dirty_rect, point_in_zone, pressure_to_width
 │   ├── config.lua             Pure Lua config loader (loadfile + pcall + merge)
 │   ├── pen_statemachine.lua   Wacom evdev state machine → high-level pen events
-│   ├── dkjson.lua             [Stage 4] Bundled JSON codec (MIT, copied from KOReader common/)
-│   ├── stroke.lua             [Stage 4] Stroke object: points, hitTest, bbox, paintTo, toJSON
-│   ├── strokebuffer.lua       [Stage 4] Stroke list, undo/redo stack, eraseAt, repaintTo
-│   ├── svg.lua                [Stage 4] svg.write() + svg.read() with <metadata> JSON block
-│   └── palmreject.lua         [Stage 3] Proximity-gated palm rejection state machine
+│   ├── json.lua               Pure Lua JSON encoder/decoder (no KOReader deps; busted-testable)
+│   ├── stroke.lua             Stroke object: points, hitTest, bbox, paintTo, toTable/fromTable
+│   ├── strokebuffer.lua       Stroke list, undo/redo stack, eraseAt, repaintTo, serialization
+│   ├── svg.lua                svg.write() + svg.read() with <metadata> JSON block
+│   └── palmreject.lua         Proximity-gated palm rejection state machine
 ├── input/
 │   ├── pendev.lua             FFI: finds Wacom, opens fd, polls events → pen_statemachine
-│   ├── touchdev.lua           [Stage 3] FFI: MT protocol B reader for capacitive touch
+│   ├── touchdev.lua           FFI: MT protocol B reader for capacitive touch
 │   └── buttondev.lua          [Stage 8] FFI: hardware page button reader
 ├── model/
 │   ├── page.lua               [Stage 6] One page: StrokeBuffer + load/save path
@@ -73,10 +76,10 @@ fastnote.koplugin/
 │   ├── canvas_utils_spec.lua  20 tests ✅
 │   ├── config_spec.lua        14 tests ✅
 │   ├── pen_statemachine_spec.lua  30 tests ✅
-│   ├── palmreject_spec.lua    [Stage 3] to be created
-│   ├── stroke_spec.lua        [Stage 4] to be created
-│   ├── strokebuffer_spec.lua  [Stage 4] to be created
-│   └── svg_spec.lua           [Stage 4] to be created
+│   ├── palmreject_spec.lua    20 tests ✅
+│   ├── stroke_spec.lua        22 tests ✅
+│   ├── strokebuffer_spec.lua  24 tests ✅
+│   └── svg_spec.lua           17 tests ✅
 ├── dev-plan-v2.md             ← canonical design doc (read before implementing any stage)
 ├── landscape-research.md      ← analysis of 4 reference plugins
 └── PLAN.md                    ← superseded by dev-plan-v2.md (ignore)
@@ -93,17 +96,17 @@ main.lua
     └── UIManager:show(DrawingCanvas)
             └── drawingcanvas.lua (InputContainer)
                     ├── BlitBuffer (display cache — rebuilt by replaying StrokeBuffer)
-                    ├── StrokeBuffer [Stage 4] (source of truth for stroke data)
-                    │       └── each Stroke → paintTo(bb) + toJSON() + toSVGPolyline()
+                    ├── StrokeBuffer (source of truth for stroke data)
+                    │       └── each Stroke → paintTo(bb) + toTable() + SVG polyline
                     ├── input/ (raw evdev, Stages 2+)
                     │       ├── pendev.lua    → pen_statemachine → {down/move/up/hover}
-                    │       ├── touchdev.lua  [Stage 3] → MT slot events
-                    │       └── lib/palmreject.lua [Stage 3] → filters touch through pen-proximity gate
+                    │       ├── touchdev.lua  → MT slot events
+                    │       └── lib/palmreject.lua → filters touch through pen-proximity gate
                     └── ui/chrome.lua [Stage 7] (drawn into the same BlitBuffer)
 ```
 
 **The BlitBuffer is a display cache** — it can be rebuilt at any time by replaying the StrokeBuffer.
-After Stage 4, never treat BlitBuffer as the source of truth for stroke data.
+Never treat BlitBuffer as the source of truth for stroke data.
 
 **Dual-path invariant:** `use_raw_input = Device:isKobo()`. Emulator always uses the gesture
 layer (`onDrawStroke`/`onDrawStrokeEnd`). Device always uses raw evdev poll loop (`_pollPen`).
@@ -137,6 +140,17 @@ fallback path must be kept working even after Stages 2+.
 - Crash logs: `<onboard>/.adds/koreader/crash.log`
 - Plugin reload: re-trigger the activation gesture (no full KOReader restart needed)
 
+### Running unit tests
+
+```bash
+cd plugins/fastnote.koplugin
+busted spec/
+```
+
+All spec files under `spec/` are pure Lua — no KOReader runtime needed.
+The `lib/` modules have no KOReader/FFI dependencies. The `input/` modules
+do (they use FFI) and are not unit-testable; test them on device.
+
 ---
 
 ## Stage Checklist
@@ -145,14 +159,15 @@ Each stage has a "Definition of done" in `dev-plan-v2.md`. Do not close a stage
 until all criteria pass. The stages in execution order:
 
 ```
-0 ✅ → 1 ✅ → 2 ✅ → 4 → 5 → 6 → 9
-                ↓         ↓
-                3          7 → 8
-                           ↓
-                           10 → 11 → 12 → 13
+0 ✅ → 1 ✅ → 2 ✅ → 4 ✅ → 5 → 6 → 9
+                ↓              ↓
+                3 ✅            7 → 8
+                               ↓
+                               10 → 11 → 12 → 13
 ```
 
-Current position: **Stage 4 is next** (then Stage 3 — see plan doc).
+Current position: **Stage 5 is next** (SVG load + continue editing).  
+Requires on-device validation of Stage 3/4 first (palm rejection, touch polling, SVG save).
 
 ---
 
@@ -188,12 +203,18 @@ surface these to the user when the stage is reached.
 ### Coordinate translation
 Raw Wacom coordinates must be mapped to screen pixels. The formula is in
 `dev-plan-v2.md` → "Coordinate translation." Respect `Screen:getRotationMode()`.
+`drawingcanvas.lua:_digToScreen(rx, ry)` implements all four rotation modes using
+normalized coordinates: `nx = (rx - x_min) / (x_max - x_min)`.
 
 ### SVG round-trip
 `svg.read(svg.write(buffer))` must be lossless. The `<metadata>` block contains
 the JSON stroke data. If the block is absent (file hand-edited externally),
-fall back to a view-only mode by parsing `<polyline>` elements and setting a
-`read_only` flag — never crash.
+fall back to parsing `<polyline>` elements — never crash.
+
+### ffi.cdef idempotency
+`input/pendev.lua` defines `struct fn_input_absinfo` at module level guarded by
+`pcall(ffi.cdef, ...)`. LuaJIT throws on duplicate struct declarations; never
+put `ffi.cdef` inside a function that may be called more than once.
 
 ### Chrome zone
 The top 56 px of the canvas is reserved for UI chrome (exit button, page
@@ -222,3 +243,9 @@ self.dimen.w = new_w; self.dimen.h = new_h
 ```
 Only the `MenuTap` zone (which stores its own independent Geom) needs an explicit update
 via `_updateGestureZones()` after a rotation.
+
+### Gesture zone registration timing
+Touch zones must be registered in `init()` via `self:registerTouchZones({...})` — not in
+`onShow`. The DrawStroke/DrawStrokeEnd zones are **always registered**; the handler
+checks `self.use_raw_input` and `self.finger_draw` at runtime to decide whether to process
+or return early. This allows the `finger_draw` toggle to work without re-registering zones.

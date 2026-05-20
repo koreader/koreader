@@ -5,13 +5,11 @@ This is a plugin for quick notes with pen input.
 --]]--
 
 
-local Config        = require("lib/config")
-local DataStorage   = require("datastorage")
-local Dispatcher    = require("dispatcher")  -- luacheck:ignore
-local DrawingCanvas = require("drawingcanvas")
-local UIManager     = require("ui/uimanager")
+local Dispatcher = require("dispatcher")  -- luacheck:ignore
+local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local _             = require("gettext")
+local DrawingCanvas = require("plugins/fastnote.koplugin/drawingcanvas")
+local _ = require("gettext")
 
 local FastNote = WidgetContainer:extend{
     name = "fastnote",
@@ -38,13 +36,7 @@ function FastNote:addToMainMenu(menu_items)
 end
 
 function FastNote:onOpenFnoteCanvas()
-    local cfg = Config.load(DataStorage:getSettingsDir() .. "/fastnote.conf")
-    local canvas = DrawingCanvas:new{
-        finger_draw        = cfg.finger_draw,
-        init_rotation_mode = cfg.rotation_mode,
-        on_close_callback  = function() end,
-    }
-    UIManager:show(canvas)
+    UIManager:show(DrawingCanvas:new{})
 end
 
 return FastNote
