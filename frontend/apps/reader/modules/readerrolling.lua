@@ -198,6 +198,8 @@ function ReaderRolling:onReadSettings(config)
         end
     end
 
+    self.furthest_xpointer = config:readSetting("furthest_xpointer")
+
     local last_xp = config:readSetting("last_xpointer")
     local last_per = config:readSetting("last_percent")
     if last_xp then
@@ -336,6 +338,10 @@ function ReaderRolling:onSaveSettings()
     self.ui.doc_settings:saveSetting("percent_finished", self.view.footer.percent_finished)
     self.ui.doc_settings:delSetting("last_percent") -- deprecated
     self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
+
+    self:_updateFurthestXpointer()
+    self.ui.doc_settings:saveSetting("furthest_xpointer", self.furthest_xpointer)
+
     self.ui.doc_settings:saveSetting("hide_nonlinear_flows", self.hide_nonlinear_flows)
     self.ui.doc_settings:saveSetting("partial_rerendering", self.partial_rerendering)
 end
@@ -744,10 +750,25 @@ function ReaderRolling:onNotCharging()
     self:updateBatteryState()
 end
 
+function ReaderRolling:_updateFurthestXpointer()
+    local current_xp = self.xpointer
+    if current_xp and self.ui.document then
+        if not self.furthest_xpointer then
+            self.furthest_xpointer = current_xp
+        else
+            local cmp = self.ui.document:compareXPointers(self.furthest_xpointer, current_xp)
+            if cmp == 1 then
+                self.furthest_xpointer = current_xp
+            end
+        end
+    end
+end
+
 function ReaderRolling:onGotoPercent(percent)
     logger.dbg("goto document offset in percent:", percent)
     self:_gotoPercent(percent)
     self.xpointer = self.ui.document:getXPointer()
+    self:_updateFurthestXpointer()
     return true
 end
 
@@ -756,6 +777,7 @@ function ReaderRolling:onGotoPage(number)
         self:_gotoPage(number)
     end
     self.xpointer = self.ui.document:getXPointer()
+    self:_updateFurthestXpointer()
     return true
 end
 
@@ -764,6 +786,7 @@ function ReaderRolling:onGotoRelativePage(number)
         self:_gotoPage(self.current_page + number)
     end
     self.xpointer = self.ui.document:getXPointer()
+    self:_updateFurthestXpointer()
     return true
 end
 
@@ -943,6 +966,7 @@ function ReaderRolling:onGotoViewRel(diff)
     end
     if self.ui.document ~= nil then
         self.xpointer = self.ui.document:getXPointer()
+        self:_updateFurthestXpointer()
     end
     return true
 end
@@ -955,6 +979,7 @@ function ReaderRolling:onPanning(args, _)
     end
     self:_gotoPos(self.current_pos + dy * self.panning_steps.normal)
     self.xpointer = self.ui.document:getXPointer()
+    self:_updateFurthestXpointer()
     return true
 end
 
