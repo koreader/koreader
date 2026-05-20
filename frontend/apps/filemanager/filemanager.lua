@@ -1396,9 +1396,9 @@ function FileManager:onShowFolderMenu()
             indent = indent + 1
         end
     end
-    -- child folders
+    -- subfolders
     if FileChooser.show_recursive then
-        local child_folders = {}
+        local subfolders = {}
         local ok, iter, dir_obj = pcall(lfs.dir, curr_path)
         if ok then
             for f in iter, dir_obj do
@@ -1406,18 +1406,18 @@ function FileManager:onShowFolderMenu()
                     local attributes = lfs.attributes(curr_path .. "/" .. f)
                     if attributes and attributes.mode == "directory" and f ~= "." and f ~= ".."
                             and self.file_chooser:show_dir(f) then
-                        table.insert(child_folders, f)
+                        table.insert(subfolders, f)
                     end
                 end
             end
         end
-        if #child_folders > 0 then
-            if #child_folders > 1 then
-                table.sort(child_folders, function(a, b) return ffiUtil.strcoll(a, b) end)
+        if #subfolders > 0 then
+            if #subfolders > 1 then
+                table.sort(subfolders, function(a, b) return ffiUtil.strcoll(a, b) end)
             end
             table.insert(buttons, {}) -- separator
             local prefix = (" "):rep(indent + 1) .. "└ "
-            for _, f in ipairs(child_folders) do
+            for _, f in ipairs(subfolders) do
                 table.insert(buttons, genButton(prefix .. f, curr_path .. "/" .. f))
             end
         end
@@ -1692,6 +1692,13 @@ end
 
 function FileManager:onSetMixedSorting(toggle)
     G_reader_settings:saveSetting("collate_mixed", toggle or nil)
+    self.file_chooser:refreshPath()
+    return true
+end
+
+function FileManager:onSetShowRecursive(toggle)
+    FileChooser.show_recursive = toggle
+    G_reader_settings:saveSetting("show_recursive", toggle)
     self.file_chooser:refreshPath()
     return true
 end
