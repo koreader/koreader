@@ -391,7 +391,7 @@ function FileChooser:onFolderUp()
 end
 
 function FileChooser:toggleShowFilesMode(mode)
-    -- modes: "show_hidden", "show_unsupported"
+    -- modes: "show_recursive", "show_hidden", "show_unsupported"
     FileChooser[mode] = not FileChooser[mode]
     G_reader_settings:saveSetting(mode, FileChooser[mode])
     self:refreshPath()
