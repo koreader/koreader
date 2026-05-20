@@ -589,7 +589,9 @@ function DrawingCanvas:_saveDrawing()
 end
 
 function DrawingCanvas:_doClose()
+    -- Full refresh after close so the underlying UI redraws cleanly.
     UIManager:close(self)
+    UIManager:setDirty(nil, "full")
     if self.on_close_callback then
         self.on_close_callback()
     end
