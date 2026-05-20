@@ -522,6 +522,7 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                     value_step = 1, value_hold_step = 5,
                     value_min = 0, value_max = 255,
                 },
+                help_text = _([[Render everything above the threshold white.]]),
             },
             {
                 name = "page_opt",
