@@ -52,21 +52,37 @@ local BATCH_SIZE = 64
 local PenDev = {}
 PenDev.__index = PenDev
 
+-- Pen device name fragments (case-insensitive) to match against N: lines.
+-- The Kobo Libra Colour uses an Elan combo chip ("Elan Touchscreen") that
+-- handles both capacitive touch and the EMR pen on the same event node.
+local PEN_NAME_PATTERNS = {"wacom", "elan", "digitizer", "pen", "stylus", "tablet"}
+
 --- Check if a KEY= bitmask hex string has BTN_TOOL_PEN (0x140 = bit 320) set.
--- BTN_TOOL_PEN is set by all Wacom/EMR pen digitizers regardless of their name.
--- Bit 320: hex digit from right = floor(320/4) = 80; bit within digit = 320%4 = 0.
+-- Bit 320: hex digit index from right = floor(320/4) = 80; bit in digit = 0.
 local function has_btn_tool_pen(key_hex)
     key_hex = key_hex:gsub("%s", "")
-    local idx = #key_hex - 80   -- 1-indexed from left
+    local idx = #key_hex - 80
     if idx < 1 then return false end
     local digit = tonumber(key_hex:sub(idx, idx), 16)
     return digit ~= nil and bit.band(digit, 1) ~= 0
 end
 
+--- Check if an ABS= bitmask hex string has ABS_PRESSURE (0x18 = bit 24) set.
+-- ABS_PRESSURE being reported as a single-axis (not MT) event distinguishes
+-- pen digitizers from pure touchscreens.
+-- Bit 24: hex digit from right = 6; bit in digit = 0.
+local function has_abs_pressure(abs_hex)
+    abs_hex = abs_hex:gsub("%s", "")
+    local idx = #abs_hex - 6
+    if idx < 1 then return false end
+    local digit = tonumber(abs_hex:sub(idx, idx), 16)
+    return digit ~= nil and bit.band(digit, 1) ~= 0
+end
+
 --- Scan /proc/bus/input/devices for the pen digitizer.
--- Matches by name ("wacom") first; falls back to KEY= bitmask check for
--- BTN_TOOL_PEN, which is set by all EMR pen digitizers regardless of name.
--- @treturn string|nil  Path like "/dev/input/event2", or nil if not found.
+-- Detection order: name match, then BTN_TOOL_PEN bitmask, then ABS_PRESSURE.
+-- On Kobo Libra Colour the Elan combo chip serves as both pen and touch.
+-- @treturn string|nil  Path like "/dev/input/event1", or nil if not found.
 function PenDev.find()
     local f = io.open("/proc/bus/input/devices", "r")
     if not f then
@@ -77,15 +93,28 @@ function PenDev.find()
     local result       = nil
     local cur_name     = nil
     local cur_key      = nil
+    local cur_abs      = nil
     local cur_handlers = nil
 
     local function check_block()
         if not cur_handlers then return end
-        local is_pen = (cur_name and cur_name:find("wacom", 1, true))
-                    or (cur_key  and has_btn_tool_pen(cur_key))
+        local name_match = false
+        if cur_name then
+            for _, pat in ipairs(PEN_NAME_PATTERNS) do
+                if cur_name:find(pat, 1, true) then
+                    name_match = true; break
+                end
+            end
+        end
+        local is_pen = name_match
+                    or (cur_key and has_btn_tool_pen(cur_key))
+                    or (cur_abs and has_abs_pressure(cur_abs))
         if is_pen then
             local ev = cur_handlers:match("(event%d+)")
-            if ev then result = "/dev/input/" .. ev end
+            if ev then
+                result = "/dev/input/" .. ev
+                logger.dbg("FastNote pendev: candidate device:", cur_name, "→", result)
+            end
         end
     end
 
@@ -94,15 +123,17 @@ function PenDev.find()
             cur_name = line:lower()
         elseif line:find("^B: KEY=") then
             cur_key = line:match("KEY=(%x[%x ]*)")
+        elseif line:find("^B: ABS=") then
+            cur_abs = line:match("ABS=(%x[%x ]*)")
         elseif line:find("^H:") then
             cur_handlers = line:match("H: Handlers=(.*)")
         elseif line == "" then
             check_block()
             if result then break end
-            cur_name, cur_key, cur_handlers = nil, nil, nil
+            cur_name, cur_key, cur_abs, cur_handlers = nil, nil, nil, nil
         end
     end
-    if not result then check_block() end  -- last block (no trailing blank line)
+    if not result then check_block() end  -- last block with no trailing blank line
 
     f:close()
 
