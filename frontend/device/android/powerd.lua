@@ -47,6 +47,7 @@ function AndroidPowerD:setWarmthHW(warmth)
     android.setScreenWarmth(warmth)
     if self.fl_warmth then
         G_reader_settings:saveSetting("frontlight_warmth", self.fl_warmth)
+        G_reader_settings:flush()
     end
 end
 
