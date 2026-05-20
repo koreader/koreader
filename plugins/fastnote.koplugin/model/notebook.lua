@@ -18,9 +18,17 @@ Notebook.__index = Notebook
 -- Helpers
 -- ---------------------------------------------------------------------------
 
+-- Seed once at module load; avoids collision when create() is called rapidly.
+math.randomseed(os.time())
+math.random(); math.random(); math.random()   -- discard first few values
+
+local _nb_seq = 0   -- per-process sequence counter for UUID uniqueness
+
 local function _uuid()
-    -- Compact unique ID: timestamp + random suffix (single-user app, no collision risk).
-    return string.format("nb_%d_%06d", os.time(), math.random(0, 999999))
+    _nb_seq = _nb_seq + 1
+    -- Format: nb_<timestamp>_<seq3>_<rand6>
+    -- Alphabetical sort of directory names = chronological creation order.
+    return string.format("nb_%d_%03d_%06d", os.time(), _nb_seq, math.random(0, 999999))
 end
 
 local function _write_meta(nb)
@@ -48,7 +56,6 @@ end
 -- @string base_dir  Parent directory (the notebooks/ folder).
 -- @return Notebook
 function Notebook.create(name, base_dir)
-    math.randomseed(os.time())
     local uuid = _uuid()
     local dir  = base_dir .. "/" .. uuid
     os.execute("mkdir -p " .. dir)
