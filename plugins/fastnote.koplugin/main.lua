@@ -48,6 +48,9 @@ function FastNote:onOpenFnoteCanvas()
     local DataStorage = require("datastorage")
     local base_dir    = DataStorage:getDataDir() .. "/fastnote"
 
+    local logger = require("logger")
+    logger.info("FastNote: data directory =", base_dir)
+
     local Library  = require("model/library")
     local lib      = Library.new(base_dir)
     local state    = lib:readState()

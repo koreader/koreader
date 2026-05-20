@@ -885,9 +885,8 @@ function DrawingCanvas:_saveDrawing()
     self._page_dirty = false
     if self.on_save_callback then self.on_save_callback(path) end
 
-    local name = path:match("[^/]+$") or path
     local InfoMessage = require("ui/widget/infomessage")
-    UIManager:show(InfoMessage:new{text = "Saved: " .. name, timeout = 2})
+    UIManager:show(InfoMessage:new{text = "Saved:\n" .. path, timeout = 3})
     logger.dbg("FastNote canvas: saved to", path)
 end
 
