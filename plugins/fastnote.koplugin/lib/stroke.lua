@@ -104,13 +104,14 @@ end
 -- Color support is deferred to Stage 12; all strokes render as black for now.
 -- @param bb  BlitBuffer  the destination buffer
 function Stroke:paintTo(bb)
-    local Blitbuffer = require("ffi/blitbuffer")
-    local color      = Blitbuffer.COLOR_BLACK  -- Stage 12: parse self.color
-    local pts        = self.pts
+    local Blitbuffer   = require("ffi/blitbuffer")
+    local canvas_utils = require("lib/canvas_utils")
+    local color        = Blitbuffer.COLOR_BLACK  -- Stage 12: parse self.color
+    local pts          = self.pts
     for i = 4, #pts, 3 do
         local x1, y1     = pts[i-3], pts[i-2]
         local x2, y2, w2 = pts[i],   pts[i+1], pts[i+2]
-        bb:paintLine(x1, y1, x2, y2, w2, color)
+        canvas_utils.drawLine(bb, x1, y1, x2, y2, w2, color)
     end
 end
 

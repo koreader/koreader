@@ -320,7 +320,7 @@ function DrawingCanvas:onDrawStroke(_, ges)
     end
     self._stroke_buf:penMove(x, y, DEFAULT_LINE_WIDTH)
 
-    self._bb:paintLine(prev_x, prev_y, x, y, DEFAULT_LINE_WIDTH, STROKE_COLOR)
+    utils.drawLine(self._bb, prev_x, prev_y, x, y, DEFAULT_LINE_WIDTH, STROKE_COLOR)
 
     self._stroke_min_x = math.min(self._stroke_min_x or x, prev_x, x)
     self._stroke_min_y = math.min(self._stroke_min_y or y, prev_y, y)
@@ -343,8 +343,8 @@ function DrawingCanvas:onDrawStrokeEnd(_, ges)
         local y = math.floor(ges.pos.y)
         if self._stroke_x and self._stroke_y then
             self._stroke_buf:penMove(x, y, DEFAULT_LINE_WIDTH)
-            self._bb:paintLine(self._stroke_x, self._stroke_y,
-                               x, y, DEFAULT_LINE_WIDTH, STROKE_COLOR)
+            utils.drawLine(self._bb, self._stroke_x, self._stroke_y,
+                           x, y, DEFAULT_LINE_WIDTH, STROKE_COLOR)
         end
         self._stroke_max_x = math.max(self._stroke_max_x or x, x)
         self._stroke_max_y = math.max(self._stroke_max_y or y, y)
@@ -474,7 +474,7 @@ function DrawingCanvas:_pollPen()
             end
 
             if self._last_pen_x then
-                self._bb:paintLine(
+                utils.drawLine(self._bb,
                     self._last_pen_x, self._last_pen_y, sx, sy, lw, STROKE_COLOR)
                 local dirty = utils.compute_dirty_rect(
                     self._last_pen_x, self._last_pen_y, sx, sy, lw)
@@ -528,9 +528,9 @@ function DrawingCanvas:_pollTouch()
             elseif filtered.type == "move" then
                 self._stroke_buf:penMove(filtered.x, filtered.y, DEFAULT_LINE_WIDTH)
                 if self._last_pen_x then
-                    self._bb:paintLine(self._last_pen_x, self._last_pen_y,
-                                       filtered.x, filtered.y,
-                                       DEFAULT_LINE_WIDTH, STROKE_COLOR)
+                    utils.drawLine(self._bb, self._last_pen_x, self._last_pen_y,
+                                   filtered.x, filtered.y,
+                                   DEFAULT_LINE_WIDTH, STROKE_COLOR)
                     local dirty = utils.compute_dirty_rect(
                         self._last_pen_x, self._last_pen_y,
                         filtered.x, filtered.y, DEFAULT_LINE_WIDTH)
