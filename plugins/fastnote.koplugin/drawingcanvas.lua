@@ -108,6 +108,36 @@ function DrawingCanvas:init()
 
     self.use_raw_input = Device:isKobo()
 
+    -- Digitizer → portrait-screen transform offset.
+    -- Kobo always swaps X/Y in its touch adjustment hook (touch_switch_xy=true).
+    -- KoboMonza (Libra Colour) additionally mirrors Y after the swap.
+    -- The combined effect is a 90° CCW rotation of the digitizer coordinate system
+    -- relative to KOReader's canonical portrait, equivalent to _dig_rot_base = 3
+    -- (i.e., use the rot-3 formula when screen rotation is 0, etc.).
+    -- mirror_x only (e.g. some older Kobos) = +1 offset.
+    if Device:isKobo() then
+        if Device.touch_mirrored_y then
+            self._dig_rot_base = 3
+        elseif Device.touch_mirrored_x then
+            self._dig_rot_base = 1
+        else
+            self._dig_rot_base = 3  -- switch_xy alone; treat as mirror_y case
+        end
+    else
+        self._dig_rot_base = 0  -- emulator / Wacom: identity
+    end
+
+    -- Disable gyroscope auto-rotation while canvas is open.
+    -- The gsensor fires via devicelistener → self.ui:handleEvent, bypassing
+    -- our onSetRotationMode handler (which only sees broadcastEvent paths).
+    -- toggleGSensor(false) stops MSC_GYRO events from reaching the gesture layer.
+    self._gsensor_disabled = false
+    if Device:hasGSensor() then
+        Device:toggleGSensor(false)
+        self._gsensor_disabled = true
+        logger.dbg("FastNote canvas: gyroscope auto-rotation disabled")
+    end
+
     -- Orientation lock
     if type(self.init_rotation_mode) == "number" then
         Screen:setRotationMode(self.init_rotation_mode)
@@ -204,6 +234,11 @@ function DrawingCanvas:onCloseWidget()
     if self._bb then
         self._bb:free()
         self._bb = nil
+    end
+    -- Re-enable gyroscope that was disabled on init
+    if self._gsensor_disabled then
+        Device:toggleGSensor(true)
+        logger.dbg("FastNote canvas: gyroscope auto-rotation restored")
     end
 end
 
@@ -392,7 +427,11 @@ function DrawingCanvas:_digToScreen(rx, ry)
     nx = math.max(0, math.min(1, nx))
     ny = math.max(0, math.min(1, ny))
 
-    local rot = self._rotation_mode
+    -- _dig_rot_base accounts for the device's axis-swap/mirror hook so that
+    -- (nx, ny) are interpreted in the digitizer's native space, not portrait space.
+    -- For KoboMonza (switch_xy + mirror_y): base = 3.
+    -- Composing with _rotation_mode gives the effective transform to apply.
+    local rot = (self._rotation_mode + self._dig_rot_base) % 4
     if     rot == 0 then
         return math.floor(nx * (W-1)), math.floor(ny * (H-1))
     elseif rot == 1 then
