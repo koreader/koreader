@@ -95,10 +95,10 @@ function DrawingCanvas:init()
     self.dimen = Geom:new{x=0, y=0,
                           w=Screen:getWidth(), h=Screen:getHeight()}
 
-    local bbtype = Screen:isColorEnabled()
-        and Blitbuffer.TYPE_BBRGB32
-        or  Blitbuffer.TYPE_BB8
-    self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bbtype)
+    -- Always use 8-bit buffer: paintLine is only implemented for BB8 in
+    -- KOReader's blitbuffer library. blitFrom handles the BB8→screen conversion
+    -- (including BBRGB32 on color e-ink). Stage 12 will revisit for color ink.
+    self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, Blitbuffer.TYPE_BB8)
     self._bb:fill(Blitbuffer.COLOR_WHITE)
 
     self._stroke_buf = StrokeBuffer.new()
@@ -428,11 +428,8 @@ function DrawingCanvas:_reinitAtRotation(new_mode)
     self.dimen.w = Screen:getWidth()
     self.dimen.h = Screen:getHeight()
 
-    local bbtype = Screen:isColorEnabled()
-        and Blitbuffer.TYPE_BBRGB32
-        or  Blitbuffer.TYPE_BB8
     if self._bb then self._bb:free() end
-    self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bbtype)
+    self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, Blitbuffer.TYPE_BB8)
     self._bb:fill(Blitbuffer.COLOR_WHITE)
 
     -- Replay strokes into the new buffer (Stage 4: preserve on rotate)
