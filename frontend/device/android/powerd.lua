@@ -1,5 +1,4 @@
 local BasePowerD = require("device/generic/powerd")
-local logger = require("logger")
 local _, android = pcall(require, "android")
 
 local AndroidPowerD = BasePowerD:new{
@@ -38,22 +37,17 @@ function AndroidPowerD:init()
         -- The sysfs warmth node resets on every app start/resume, so push the
         -- saved value back to hardware now so frontlightWarmthHW() reads it correctly.
         local saved = G_reader_settings:readSetting("frontlight_warmth") or 0
-        logger.warn("AndroidPowerD:init: saved frontlight_warmth=", saved, "warm_diff=", self.warm_diff)
         if saved > 0 then
-            local native = math.floor(saved * self.warm_diff / 100)
-            logger.warn("AndroidPowerD:init: setting native warmth=", native)
-            android.setScreenWarmth(native)
+            android.setScreenWarmth(math.floor(saved * self.warm_diff / 100))
         end
     end
 end
 
 function AndroidPowerD:setWarmthHW(warmth)
-    logger.warn("AndroidPowerD:setWarmthHW: warmth=", warmth, "fl_warmth=", self.fl_warmth)
     android.setScreenWarmth(warmth)
     if self.fl_warmth then
         G_reader_settings:saveSetting("frontlight_warmth", self.fl_warmth)
         G_reader_settings:flush()
-        logger.warn("AndroidPowerD:setWarmthHW: saved frontlight_warmth=", self.fl_warmth)
     end
 end
 
@@ -81,7 +75,6 @@ function AndroidPowerD:turnOffFrontlightHW()
 end
 
 function AndroidPowerD:turnOnFrontlightHW(done_callback)
-    logger.warn("AndroidPowerD:turnOnFrontlightHW: fl_warmth=", self.fl_warmth, "hasStandaloneWarmth=", android.hasStandaloneWarmth())
     if self:isFrontlightOn() and self:isFrontlightOnHW() then
         return
     end
