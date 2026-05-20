@@ -112,10 +112,9 @@ function Stroke:paintTo(bb, color_override)
     if color_override then
         color = color_override
     else
-        local c = self.color
-        color = (c and (c == "#ffffff" or c == "#FFFFFF"))
-                and Blitbuffer.COLOR_WHITE
-                or  Blitbuffer.COLOR_BLACK
+        -- colorFromString handles any #rrggbb hex; fall back to black on bad input.
+        color = Blitbuffer.colorFromString(self.color or "#000000")
+                or Blitbuffer.COLOR_BLACK
     end
     local pts = self.pts
     for i = 4, #pts, 3 do

@@ -78,10 +78,12 @@ function FastNote:onOpenFnoteCanvas()
     local load_path = nb:pagePath(page_idx)
 
     UIManager:show(DrawingCanvas:new{
-        load_path  = load_path,
-        page_index = page_idx,
-        page_count = nb:pageCount(),
-        dark_mode  = state.dark_mode == 1,
+        load_path      = load_path,
+        page_index     = page_idx,
+        page_count     = nb:pageCount(),
+        dark_mode      = state.dark_mode == 1,
+        current_color  = state.current_color,
+        pressure_floor = state.pressure_floor,
 
         on_save_callback = function(path)
             state.last_notebook_uuid = nb.uuid
@@ -91,6 +93,16 @@ function FastNote:onOpenFnoteCanvas()
 
         on_dark_mode_change = function(dm)
             state.dark_mode = dm and 1 or 0
+            lib:writeState(state)
+        end,
+
+        on_color_change = function(hex)
+            state.current_color = hex
+            lib:writeState(state)
+        end,
+
+        on_pressure_change = function(val)
+            state.pressure_floor = val
             lib:writeState(state)
         end,
 

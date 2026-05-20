@@ -51,6 +51,16 @@ local DEFAULT_COLOR      = "#000000"
 -- Eraser (Stage 10)
 local ERASER_RADIUS = 24       -- stroke-erase hit radius in pixels
 
+-- 6-color ink palette (Kaleido 3).  Stored as hex; rendered via colorFromString.
+local PALETTE = {
+    { name = "Black",  hex = "#000000" },
+    { name = "Red",    hex = "#cc2222" },
+    { name = "Blue",   hex = "#2244cc" },
+    { name = "Green",  hex = "#22aa44" },
+    { name = "Orange", hex = "#cc7700" },
+    { name = "Purple", hex = "#8822bb" },
+}
+
 -- Hover-prevention: minimum digitizer pressure to accept a "down" event.
 -- The Elan chip can send BTN_TOUCH=1 a few mm above the screen; real contact
 -- registers significantly higher pressure than hover proximity.
@@ -65,8 +75,12 @@ local DrawingCanvas = InputContainer:extend{
     on_close_callback    = nil,
     on_save_callback     = nil,    -- called with path after each save (Stage 5)
     on_dark_mode_change  = nil,    -- called with (bool) when dark mode toggles; persist in state
+    on_color_change      = nil,    -- called with (hex) when ink color changes; persist in state
+    on_pressure_change   = nil,    -- called with (number) when pressure floor changes; persist in state
     load_path            = nil,    -- if set, load this SVG on init (Stage 5)
     dark_mode            = false,  -- initial dark mode state (from persisted state)
+    current_color        = nil,    -- initial ink color hex (from persisted state; nil = default black)
+    pressure_floor       = nil,    -- initial pressure floor (from persisted state; nil = default 200)
 
     -- Page navigation callbacks (Stage 8).
     -- Each returns (new_page_idx, total_pages, path) or nil at boundary.
@@ -145,13 +159,17 @@ function DrawingCanvas:init()
     self.dimen = Geom:new{x=0, y=0,
                           w=Screen:getWidth(), h=Screen:getHeight()}
 
-    -- Restore dark mode preference from caller (persisted in state.lua).
-    self._dark_mode = self.dark_mode == true
+    -- Restore persisted preferences from caller.
+    self._dark_mode      = self.dark_mode == true
+    self._current_color  = self.current_color or DEFAULT_COLOR
+    self._pressure_floor = self.pressure_floor or 200
 
-    -- Always use 8-bit buffer: paintLine is only implemented for BB8 in
-    -- KOReader's blitbuffer library. blitFrom handles the BB8→screen conversion
-    -- (including BBRGB32 on color e-ink). Stage 12 will revisit for color ink.
-    self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, Blitbuffer.TYPE_BB8)
+    -- Use BBRGB32 on color e-ink panels so ink renders in the chosen color.
+    -- Fall back to BB8 (grayscale) on mono e-ink devices.
+    local bb_type = Screen:isColorEnabled()
+                    and Blitbuffer.TYPE_BBRGB32
+                    or  Blitbuffer.TYPE_BB8
+    self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bb_type)
     self._bb:fill(self:_bgColor())
 
     self._stroke_buf = StrokeBuffer.new()
@@ -229,6 +247,20 @@ function DrawingCanvas:init()
     }
     self.ges_events.DrawStrokeEnd = {
         GestureRange:new{ges="pan_release", range=self.dimen},
+    }
+
+    -- Double-tap anywhere below the chrome strip opens the quick-access overlay
+    -- (color picker + sensitivity).  Chrome tap zones take priority for the top strip.
+    self.ges_events.QuickDoubleTap = {
+        GestureRange:new{
+            ges   = "double_tap",
+            range = Geom:new{
+                x = 0,
+                y = CHROME_HEIGHT,
+                w = self.dimen.w,
+                h = self.dimen.h - CHROME_HEIGHT,
+            },
+        },
     }
 
     -- ── Stage 5: load existing page ───────────────────────────────────────
@@ -456,6 +488,70 @@ function DrawingCanvas:onMenuTap()
     return true
 end
 
+function DrawingCanvas:onQuickDoubleTap()
+    self:_showQuickMenu()
+    return true
+end
+
+--- Compact overlay: ink color palette + contact sensitivity.
+-- Opens on double-tap anywhere on the drawing area.
+function DrawingCanvas:_showQuickMenu()
+    -- Build color rows with a checkmark on the current selection.
+    local function color_btn(entry)
+        local lbl = (entry.hex == self._current_color)
+                    and (entry.name .. " \xE2\x9C\x93")  -- ✓
+                    or  entry.name
+        return {
+            text = lbl,
+            callback = function()
+                UIManager:close(self._quick_menu)
+                self._quick_menu = nil
+                self._current_color = entry.hex
+                if self.on_color_change then self.on_color_change(entry.hex) end
+                logger.dbg("FastNote canvas: ink color =", entry.hex)
+            end,
+        }
+    end
+
+    self._quick_menu = ButtonDialogTitle:new{
+        title = "Ink & Pressure",
+        buttons = {
+            -- Color row 1: Black / Red / Blue
+            { color_btn(PALETTE[1]), color_btn(PALETTE[2]), color_btn(PALETTE[3]) },
+            -- Color row 2: Green / Orange / Purple
+            { color_btn(PALETTE[4]), color_btn(PALETTE[5]), color_btn(PALETTE[6]) },
+            -- Sensitivity row
+            {
+                {
+                    text = string.format("Contact Sensitivity: %d / 512", self._pressure_floor),
+                    callback = function()
+                        UIManager:close(self._quick_menu)
+                        self._quick_menu = nil
+                        local ok_sw, SpinWidget = pcall(require, "ui/widget/spinwidget")
+                        if not ok_sw then return end
+                        UIManager:show(SpinWidget:new{
+                            title_text   = "Contact Sensitivity",
+                            value        = self._pressure_floor,
+                            value_min    = 0,
+                            value_max    = 512,
+                            value_step   = 25,
+                            default_value = 200,
+                            callback     = function(spin)
+                                self._pressure_floor = spin.value
+                                if self.on_pressure_change then
+                                    self.on_pressure_change(spin.value)
+                                end
+                                logger.dbg("FastNote canvas: pressure_floor =", spin.value)
+                            end,
+                        })
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(self._quick_menu)
+end
+
 --- Block accelerometer auto-rotation while the canvas is open.
 function DrawingCanvas:onSetRotationMode(event)
     local new_mode = type(event) == "number" and event
@@ -627,14 +723,23 @@ function DrawingCanvas:_repaintAll()
     if not self._bb then return end
     self._bb:fill(self:_bgColor())
     if self._stroke_buf then
-        self._stroke_buf:repaintTo(self._bb, self:_strokeColor())
+        -- Dark mode: override all strokes to white (bg inversion).
+        -- Light mode: nil = each stroke uses its stored #rrggbb color.
+        local override = self._dark_mode and Blitbuffer.COLOR_WHITE or nil
+        self._stroke_buf:repaintTo(self._bb, override)
     end
     UIManager:setDirty(self, "ui")
 end
 
---- Return the Blitbuffer color for drawing strokes (mode-dependent).
+--- Return the Blitbuffer color for new live strokes (current ink, mode-aware).
+-- In dark mode always returns white (ink inverts with background).
+-- In light mode returns a color derived from _current_color.
 function DrawingCanvas:_strokeColor()
-    return self._dark_mode and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_BLACK
+    if self._dark_mode then
+        return Blitbuffer.COLOR_WHITE
+    end
+    return Blitbuffer.colorFromString(self._current_color or "#000000")
+           or Blitbuffer.COLOR_BLACK
 end
 
 --- Return the Blitbuffer color for the page background (mode-dependent).
@@ -655,7 +760,10 @@ function DrawingCanvas:_reinitAtRotation(new_mode)
     self.dimen.h = Screen:getHeight()
 
     if self._bb then self._bb:free() end
-    self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, Blitbuffer.TYPE_BB8)
+    local bb_type = Screen:isColorEnabled()
+                    and Blitbuffer.TYPE_BBRGB32
+                    or  Blitbuffer.TYPE_BB8
+    self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bb_type)
     self._bb:fill(self:_bgColor())
 
     -- Replay strokes into the new buffer (Stage 4: preserve on rotate)
