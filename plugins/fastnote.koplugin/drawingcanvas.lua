@@ -46,11 +46,15 @@ local CHROME_TOOLS_W    = 80   -- width of tools tap area (right)
 
 -- Default stroke appearance
 local DEFAULT_LINE_WIDTH = 4
-local STROKE_COLOR       = Blitbuffer.COLOR_BLACK
 local DEFAULT_COLOR      = "#000000"
 
 -- Eraser (Stage 10)
 local ERASER_RADIUS = 24       -- stroke-erase hit radius in pixels
+
+-- Hover-prevention: minimum digitizer pressure to accept a "down" event.
+-- The Elan chip can send BTN_TOUCH=1 a few mm above the screen; real contact
+-- registers significantly higher pressure than hover proximity.
+local MIN_PEN_PRESSURE = 50
 
 -- Rotation mode constants
 local ROT_PORTRAIT  = 0  -- DEVICE_ROTATED_UPRIGHT
@@ -79,7 +83,11 @@ local DrawingCanvas = InputContainer:extend{
     page_count  = 1,               -- total pages in notebook (set by caller)
 
     -- Eraser (Stage 10)
-    _eraser_mode = false,          -- true while eraser end of stylus is active
+    _eraser_mode   = false,        -- true while eraser end of stylus is active (per-stroke)
+    _eraser_locked = false,        -- true when menu eraser toggle is ON (persistent)
+
+    -- Dark mode
+    _dark_mode = false,
 
     -- Stage 8: hardware page buttons (Kobo right-side rocker: 193=RPgBack, 194=RPgFwd)
     key_events = {
@@ -98,8 +106,12 @@ local DrawingCanvas = InputContainer:extend{
     _palmreject = nil,             -- PalmReject instance (Stage 3)
 
     -- Raw pen tracking (raw input path)
-    _last_pen_x = nil,
-    _last_pen_y = nil,
+    _last_pen_x   = nil,
+    _last_pen_y   = nil,
+
+    -- Raw touch tracking (separate from pen to avoid cross-contamination)
+    _last_touch_x = nil,
+    _last_touch_y = nil,
 
     -- Gesture path tracking
     _stroke_x     = nil,
@@ -122,7 +134,7 @@ function DrawingCanvas:init()
     -- KOReader's blitbuffer library. blitFrom handles the BB8→screen conversion
     -- (including BBRGB32 on color e-ink). Stage 12 will revisit for color ink.
     self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, Blitbuffer.TYPE_BB8)
-    self._bb:fill(Blitbuffer.COLOR_WHITE)
+    self._bb:fill(self:_bgColor())
 
     self._stroke_buf = StrokeBuffer.new()
 
@@ -340,7 +352,9 @@ function DrawingCanvas:onMenuTap()
     local cur           = self._rotation_mode
     local portrait_lbl  = (cur == ROT_PORTRAIT)  and "Portrait \xE2\x9C\x93"  or "Portrait"
     local landscape_lbl = (cur == ROT_LANDSCAPE) and "Landscape \xE2\x9C\x93" or "Landscape"
-    local finger_lbl    = self.finger_draw and "Finger draw: on" or "Finger draw: off"
+    local finger_lbl    = self.finger_draw  and "Finger draw: on"  or "Finger draw: off"
+    local eraser_lbl    = self._eraser_locked and "Eraser: on"     or "Eraser: off"
+    local mode_lbl      = self._dark_mode  and "Light mode"        or "Dark mode"
     local menu
 
     menu = ButtonDialogTitle:new{
@@ -359,7 +373,7 @@ function DrawingCanvas:onMenuTap()
                      self:_reinitAtRotation(ROT_LANDSCAPE)
                  end},
             },
-            -- Row 2: undo / redo (Stage 11)
+            -- Row 2: undo / redo
             {
                 {text = "Undo",
                  callback = function()
@@ -378,7 +392,25 @@ function DrawingCanvas:onMenuTap()
                      end
                  end},
             },
-            -- Row 3: finger draw / save
+            -- Row 3: eraser toggle / dark mode toggle
+            {
+                {text = eraser_lbl,
+                 callback = function()
+                     UIManager:close(menu)
+                     self._eraser_locked = not self._eraser_locked
+                     -- Sync per-stroke mode immediately
+                     if not self._eraser_locked then
+                         self._eraser_mode = false
+                     end
+                     logger.dbg("FastNote canvas: eraser_locked =", self._eraser_locked)
+                 end},
+                {text = mode_lbl,
+                 callback = function()
+                     UIManager:close(menu)
+                     self:_toggleDarkMode()
+                 end},
+            },
+            -- Row 4: finger draw / save / clear page
             {
                 {text = finger_lbl,
                  callback = function()
@@ -391,8 +423,13 @@ function DrawingCanvas:onMenuTap()
                      UIManager:close(menu)
                      self:_saveDrawing()
                  end},
+                {text = "Clear page",
+                 callback = function()
+                     UIManager:close(menu)
+                     self:_confirmClearPage()
+                 end},
             },
-            -- Row 4: keep / close
+            -- Row 5: keep / close
             {
                 {text = "Keep drawing",
                  callback = function() UIManager:close(menu) end},
@@ -430,6 +467,24 @@ function DrawingCanvas:onDrawStroke(_, ges)
 
     -- Ignore strokes in the chrome strip
     if y < CHROME_HEIGHT then return end
+
+    -- Eraser mode via menu toggle
+    if self._eraser_locked then
+        local removed = self._stroke_buf:eraseAt(x, y, ERASER_RADIUS)
+        if #removed > 0 then
+            self._page_dirty = true
+            self:_repaintAll()
+        end
+        return true
+    end
+
+    -- If there is no current stroke (e.g. pan_release was missed), discard any
+    -- stale position so we don't draw a line from the previous gesture's endpoint.
+    if not self._stroke_buf.current then
+        self._stroke_x = nil
+        self._stroke_y = nil
+    end
+
     local prev_x = self._stroke_x or x
     local prev_y = self._stroke_y or y
 
@@ -439,7 +494,7 @@ function DrawingCanvas:onDrawStroke(_, ges)
     end
     self._stroke_buf:penMove(x, y, DEFAULT_LINE_WIDTH)
 
-    utils.drawLine(self._bb, prev_x, prev_y, x, y, DEFAULT_LINE_WIDTH, STROKE_COLOR)
+    utils.drawLine(self._bb, prev_x, prev_y, x, y, DEFAULT_LINE_WIDTH, self:_strokeColor())
 
     self._stroke_min_x = math.min(self._stroke_min_x or x, prev_x, x)
     self._stroke_min_y = math.min(self._stroke_min_y or y, prev_y, y)
@@ -463,7 +518,7 @@ function DrawingCanvas:onDrawStrokeEnd(_, ges)
         if self._stroke_x and self._stroke_y then
             self._stroke_buf:penMove(x, y, DEFAULT_LINE_WIDTH)
             utils.drawLine(self._bb, self._stroke_x, self._stroke_y,
-                           x, y, DEFAULT_LINE_WIDTH, STROKE_COLOR)
+                           x, y, DEFAULT_LINE_WIDTH, self:_strokeColor())
         end
         self._stroke_max_x = math.max(self._stroke_max_x or x, x)
         self._stroke_max_y = math.max(self._stroke_max_y or y, y)
@@ -541,12 +596,22 @@ function DrawingCanvas:_updateGestureZones()
 end
 
 --- Repaint all strokes into the BlitBuffer and request a UI refresh.
--- Use after undo, redo, or erase to rebuild the display cache.
+-- Use after undo, redo, erase, or mode changes to rebuild the display cache.
 function DrawingCanvas:_repaintAll()
     if not self._bb then return end
-    self._bb:fill(Blitbuffer.COLOR_WHITE)
+    self._bb:fill(self:_bgColor())
     if self._stroke_buf then self._stroke_buf:repaintTo(self._bb) end
     UIManager:setDirty(self, "ui")
+end
+
+--- Return the Blitbuffer color for drawing strokes (mode-dependent).
+function DrawingCanvas:_strokeColor()
+    return self._dark_mode and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_BLACK
+end
+
+--- Return the Blitbuffer color for the page background (mode-dependent).
+function DrawingCanvas:_bgColor()
+    return self._dark_mode and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE
 end
 
 --- Apply a rotation change from the canvas menu.
@@ -563,7 +628,7 @@ function DrawingCanvas:_reinitAtRotation(new_mode)
 
     if self._bb then self._bb:free() end
     self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, Blitbuffer.TYPE_BB8)
-    self._bb:fill(Blitbuffer.COLOR_WHITE)
+    self._bb:fill(self:_bgColor())
 
     -- Replay strokes into the new buffer (Stage 4: preserve on rotate)
     self:_repaintAll()
@@ -605,12 +670,15 @@ function DrawingCanvas:_pollPen()
                 return
             end
 
-            -- ── Eraser mode (Stage 10) ────────────────────────────────────
-            if ev.type == "down" and ev.tool == "eraser" then
-                self._eraser_mode = true
-                self._stroke_buf:penUp()   -- commit any open pen stroke
-                self._last_pen_x = nil
-                self._last_pen_y = nil
+            -- ── Eraser mode ───────────────────────────────────────────────
+            -- Activated by hardware BTN_TOOL_RUBBER OR the menu eraser lock.
+            if ev.type == "down" then
+                if ev.tool == "eraser" or self._eraser_locked then
+                    self._eraser_mode = true
+                    self._stroke_buf:penUp()
+                    self._last_pen_x = nil
+                    self._last_pen_y = nil
+                end
             end
 
             if self._eraser_mode then
@@ -626,27 +694,44 @@ function DrawingCanvas:_pollPen()
             local lw = utils.pressure_to_width(ev.pressure, self._pendev.p_max, 1, 8)
 
             if ev.type == "down" then
+                -- Guard against hover: Elan BTN_TOUCH fires before contact on
+                -- some firmware.  Real contact has significantly higher pressure.
+                if (ev.pressure or 0) < MIN_PEN_PRESSURE then
+                    self._last_pen_x = nil
+                    self._last_pen_y = nil
+                    return
+                end
                 self._stroke_buf:penDown(sx, sy, lw, self._current_color)
             else
                 self._stroke_buf:penMove(sx, sy, lw)
             end
 
-            if self._last_pen_x then
-                utils.drawLine(self._bb,
-                    self._last_pen_x, self._last_pen_y, sx, sy, lw, STROKE_COLOR)
-                local dirty = utils.compute_dirty_rect(
-                    self._last_pen_x, self._last_pen_y, sx, sy, lw)
-                UIManager:setDirty(self, function()
-                    return "fast", Geom:new(dirty)
-                end)
+            -- Only update the display buffer when there is an active stroke,
+            -- so hover events that slipped through can't leave marks in the BB.
+            if self._stroke_buf.current then
+                if self._last_pen_x then
+                    utils.drawLine(self._bb,
+                        self._last_pen_x, self._last_pen_y, sx, sy, lw,
+                        self:_strokeColor())
+                    local dirty = utils.compute_dirty_rect(
+                        self._last_pen_x, self._last_pen_y, sx, sy, lw)
+                    UIManager:setDirty(self, function()
+                        return "fast", Geom:new(dirty)
+                    end)
+                end
+                self._last_pen_x = sx
+                self._last_pen_y = sy
             end
-            self._last_pen_x = sx
-            self._last_pen_y = sy
 
         elseif ev.type == "up" then
-            self._eraser_mode = false
+            -- Clear hardware eraser mode; menu eraser lock (_eraser_locked) persists.
+            if not self._eraser_locked then
+                self._eraser_mode = false
+            end
             self._stroke_buf:penUp()
-            self._page_dirty = true
+            if self._last_pen_x then
+                self._page_dirty = true
+            end
             self._last_pen_x = nil
             self._last_pen_y = nil
             UIManager:setDirty(self, "ui")
@@ -670,33 +755,44 @@ function DrawingCanvas:_pollTouch()
             or  slot_ev
 
         if filtered and self.finger_draw then
-            -- Touch drawing path (finger_draw is on):
-            -- treat touch events like pen events using DEFAULT_LINE_WIDTH.
-            if filtered.type == "down" then
-                self._stroke_buf:penDown(filtered.x, filtered.y,
-                                         DEFAULT_LINE_WIDTH, self._current_color)
-                self._last_pen_x = filtered.x
-                self._last_pen_y = filtered.y
+            local fx, fy = filtered.x, filtered.y
+
+            -- Eraser mode via menu toggle
+            if self._eraser_locked and filtered.type ~= "up" then
+                local removed = self._stroke_buf:eraseAt(fx, fy, ERASER_RADIUS)
+                if #removed > 0 then
+                    self._page_dirty = true
+                    self:_repaintAll()
+                end
+            elseif filtered.type == "down" then
+                -- Clear stale touch tracking to avoid a line from the previous
+                -- gesture if the "up" event was dropped by palm rejection.
+                self._last_touch_x = nil
+                self._last_touch_y = nil
+                self._stroke_buf:penDown(fx, fy, DEFAULT_LINE_WIDTH, self._current_color)
+                self._last_touch_x = fx
+                self._last_touch_y = fy
             elseif filtered.type == "move" then
-                self._stroke_buf:penMove(filtered.x, filtered.y, DEFAULT_LINE_WIDTH)
-                if self._last_pen_x then
-                    utils.drawLine(self._bb, self._last_pen_x, self._last_pen_y,
-                                   filtered.x, filtered.y,
-                                   DEFAULT_LINE_WIDTH, STROKE_COLOR)
+                self._stroke_buf:penMove(fx, fy, DEFAULT_LINE_WIDTH)
+                if self._last_touch_x then
+                    utils.drawLine(self._bb, self._last_touch_x, self._last_touch_y,
+                                   fx, fy, DEFAULT_LINE_WIDTH, self:_strokeColor())
                     local dirty = utils.compute_dirty_rect(
-                        self._last_pen_x, self._last_pen_y,
-                        filtered.x, filtered.y, DEFAULT_LINE_WIDTH)
+                        self._last_touch_x, self._last_touch_y,
+                        fx, fy, DEFAULT_LINE_WIDTH)
                     UIManager:setDirty(self, function()
                         return "fast", Geom:new(dirty)
                     end)
                 end
-                self._last_pen_x = filtered.x
-                self._last_pen_y = filtered.y
+                self._last_touch_x = fx
+                self._last_touch_y = fy
             elseif filtered.type == "up" then
                 self._stroke_buf:penUp()
-                self._page_dirty = true
-                self._last_pen_x = nil
-                self._last_pen_y = nil
+                if self._last_touch_x then
+                    self._page_dirty = true
+                end
+                self._last_touch_x = nil
+                self._last_touch_y = nil
                 UIManager:setDirty(self, "ui")
             end
         end
@@ -742,7 +838,7 @@ function DrawingCanvas:loadPage(path)
     self._page_dirty = false
 
     if self._bb then
-        self._bb:fill(Blitbuffer.COLOR_WHITE)
+        self._bb:fill(self:_bgColor())
         self._stroke_buf:repaintTo(self._bb)
         UIManager:setDirty(self, "full")
     end
@@ -812,12 +908,69 @@ function DrawingCanvas:_doClose()
             end
         end
     end
-    -- Full refresh after close so the underlying UI redraws cleanly.
+    -- Close the canvas, then schedule a full e-ink refresh on the next tick
+    -- so the underlying UI gets a complete paint cycle without ghosting.
     UIManager:close(self)
-    UIManager:setDirty(nil, "full")
+    UIManager:nextTick(function()
+        UIManager:setDirty(nil, "full")
+    end)
     if self.on_close_callback then
         self.on_close_callback()
     end
+end
+
+-- ---------------------------------------------------------------------------
+-- Dark mode / clear page helpers
+-- ---------------------------------------------------------------------------
+
+--- Toggle between dark (black bg, white ink) and light (white bg, black ink) mode.
+-- Inverts all existing stroke colors so they remain visible after the switch.
+function DrawingCanvas:_toggleDarkMode()
+    self._dark_mode = not self._dark_mode
+    self._current_color = self._dark_mode and "#ffffff" or "#000000"
+
+    -- Invert every committed stroke's color so existing content stays readable.
+    for _, s in ipairs(self._stroke_buf.strokes) do
+        if s.color == "#ffffff" or s.color == "#FFFFFF" then
+            s.color = "#000000"
+        else
+            s.color = "#ffffff"
+        end
+    end
+
+    self._page_dirty = true
+    self:_repaintAll()
+    UIManager:setDirty(self, "full")
+    logger.dbg("FastNote canvas: dark_mode =", self._dark_mode)
+end
+
+--- Show a confirmation dialog before clearing the page.
+function DrawingCanvas:_confirmClearPage()
+    local confirm
+    confirm = ButtonDialogTitle:new{
+        title = "Clear page?",
+        buttons = {
+            {
+                {text = "Cancel",
+                 callback = function() UIManager:close(confirm) end},
+                {text = "Clear",
+                 callback = function()
+                     UIManager:close(confirm)
+                     self:_clearPage()
+                 end},
+            },
+        },
+    }
+    UIManager:show(confirm)
+end
+
+--- Erase all strokes on the current page (cannot be undone).
+function DrawingCanvas:_clearPage()
+    self._stroke_buf = StrokeBuffer.new()
+    self._page_dirty = true
+    self:_repaintAll()
+    UIManager:setDirty(self, "full")
+    logger.dbg("FastNote canvas: page cleared")
 end
 
 -- ---------------------------------------------------------------------------
@@ -856,7 +1009,7 @@ function DrawingCanvas:_navigatePage(delta)
 
     -- Reset stroke buffer and display before loading so a blank new page is clean.
     self._stroke_buf = StrokeBuffer.new()
-    if self._bb then self._bb:fill(Blitbuffer.COLOR_WHITE) end
+    if self._bb then self._bb:fill(self:_bgColor()) end
 
     self:loadPage(new_path)           -- populates _stroke_buf if SVG exists
 
