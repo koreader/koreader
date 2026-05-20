@@ -530,6 +530,9 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 toggle = {C_("Dewatermark", "off"), C_("Dewatermark", "on")},
                 values = {0, 1},
                 default_value = 0,
+                enabled_func = function(configurable)
+                    return optionsutil.enableIfEquals(configurable, "white_threshold", 255)
+                end,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Remove watermarks from the rendered document.
 This can also be used to remove some gray background or to convert a grayscale or color document to black & white and get more contrast for easier reading.]]),
