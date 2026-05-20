@@ -871,14 +871,16 @@ end
 -- If _page_path is set, saves back to that file (round-trip).
 -- Otherwise creates a timestamped file and sets _page_path to it.
 function DrawingCanvas:_saveDrawing()
+    local InfoMessage = require("ui/widget/infomessage")
     if self._stroke_buf:isEmpty() then
-        logger.dbg("FastNote canvas: nothing to save")
+        UIManager:show(InfoMessage:new{text = "Nothing to save yet.", timeout = 2})
         return
     end
 
     local ok_svg, svg_module = pcall(require, "lib/svg")
     if not ok_svg then
         logger.warn("FastNote canvas: svg module unavailable:", svg_module)
+        UIManager:show(InfoMessage:new{text = "Save failed: SVG module unavailable.", timeout = 3})
         return
     end
 
@@ -895,6 +897,7 @@ function DrawingCanvas:_saveDrawing()
     local f = io.open(path, "w")
     if not f then
         logger.warn("FastNote canvas: cannot write to", path)
+        UIManager:show(InfoMessage:new{text = "Save failed: cannot write to\n" .. path, timeout = 4})
         return
     end
     f:write(svg_module.write(self._stroke_buf, self.dimen.w, self.dimen.h))
@@ -904,7 +907,6 @@ function DrawingCanvas:_saveDrawing()
     self._page_dirty = false
     if self.on_save_callback then self.on_save_callback(path) end
 
-    local InfoMessage = require("ui/widget/infomessage")
     UIManager:show(InfoMessage:new{text = "Saved:\n" .. path, timeout = 3})
     logger.dbg("FastNote canvas: saved to", path)
 end
