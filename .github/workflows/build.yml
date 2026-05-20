@@ -4,7 +4,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-on: [push, pull_request, workflow_dispatch]
+# on: [push, pull_request, workflow_dispatch]   # disabled — solo dev, local tests are sufficient
+on: [workflow_dispatch]
 
 defaults:
   run:
