@@ -155,7 +155,7 @@ function FileManagerMenu:setUpdateItemTable()
         text = _("Settings"),
         sub_item_table = {
             {
-                text = _("Show files recursively"),
+                text = _("Show all files from subfolders"),
                 checked_func = function() return FileChooser.show_recursive end,
                 callback = function() FileChooser:toggleShowFilesMode("show_recursive") end,
             },
