@@ -42,9 +42,11 @@ local function _date_str(ts)
 end
 
 local function _sorted_nbs(lib)
-    local nbs = lib:all()   -- already last_edited desc from Library
+    local nbs = lib:all()
     if _sort_by == "name" then
         table.sort(nbs, function(a, b) return a.name:lower() < b.name:lower() end)
+    else
+        table.sort(nbs, function(a, b) return (a.last_edited or 0) > (b.last_edited or 0) end)
     end
     return nbs
 end

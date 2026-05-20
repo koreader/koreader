@@ -505,7 +505,13 @@ end
 --- Compact overlay: ink color palette + contact sensitivity.
 -- Opens on double-tap anywhere on the drawing area.
 function DrawingCanvas:_showQuickMenu()
-    -- Build color rows with a checkmark on the current selection.
+    -- Dismiss any previously-open quick menu (e.g. user double-tapped again
+    -- without selecting, or tapped outside which leaves _quick_menu stale).
+    if self._quick_menu then
+        UIManager:close(self._quick_menu)
+        self._quick_menu = nil
+    end
+
     local function color_btn(entry)
         local lbl = (entry.hex == self._current_color)
                     and (entry.name .. " \xE2\x9C\x93")  -- ✓
@@ -747,7 +753,7 @@ function DrawingCanvas:_strokeColor()
     if self._dark_mode then
         return Blitbuffer.COLOR_WHITE
     end
-    return Blitbuffer.colorFromString(self._current_color or "#000000")
+    return Blitbuffer.colorFromString(self._current_color or DEFAULT_COLOR)
            or Blitbuffer.COLOR_BLACK
 end
 
@@ -999,72 +1005,12 @@ function DrawingCanvas:loadPage(path)
     return true
 end
 
---- Save current drawing.
--- If _page_path is set, saves back to that file (round-trip).
--- Otherwise creates a timestamped file and sets _page_path to it.
-function DrawingCanvas:_saveDrawing()
-    local InfoMessage = require("ui/widget/infomessage")
-    if self._stroke_buf:isEmpty() then
-        UIManager:show(InfoMessage:new{text = "Nothing to save yet.", timeout = 2})
-        return
-    end
-
-    local ok_svg, svg_module = pcall(require, "lib/svg")
-    if not ok_svg then
-        logger.warn("FastNote canvas: svg module unavailable:", svg_module)
-        UIManager:show(InfoMessage:new{text = "Save failed: SVG module unavailable.", timeout = 3})
-        return
-    end
-
-    local DataStorage = require("datastorage")
-    local save_dir    = DataStorage:getDataDir() .. "/fastnote/"
-    os.execute("mkdir -p " .. save_dir)
-
-    local path = self._page_path
-    if not path then
-        local filename = os.date("fastnote_%Y-%m-%d_%H-%M-%S.svg")
-        path = save_dir .. filename
-    end
-
-    local f = io.open(path, "w")
-    if not f then
-        logger.warn("FastNote canvas: cannot write to", path)
-        UIManager:show(InfoMessage:new{text = "Save failed: cannot write to\n" .. path, timeout = 4})
-        return
-    end
-    f:write(svg_module.write(self._stroke_buf, self.dimen.w, self.dimen.h))
-    f:close()
-
-    self._page_path  = path
-    self._page_dirty = false
-    if self.on_save_callback then self.on_save_callback(path) end
-
-    UIManager:show(InfoMessage:new{text = "Saved:\n" .. path, timeout = 3})
-    logger.dbg("FastNote canvas: saved to", path)
-end
-
 function DrawingCanvas:_doClose()
-    -- Cancel any pending idle-save timer; _autoSave below handles the final write.
     if self._idle_save_fn then
         UIManager:unschedule(self._idle_save_fn)
         self._idle_save_fn = nil
     end
-    -- Auto-save back to _page_path if there are new strokes since last save.
-    if self._page_path and self._page_dirty and not self._stroke_buf:isEmpty() then
-        local ok_svg, svg_module = pcall(require, "lib/svg")
-        if ok_svg then
-            local f = io.open(self._page_path, "w")
-            if f then
-                f:write(svg_module.write(self._stroke_buf, self.dimen.w, self.dimen.h))
-                f:close()
-                self._page_dirty = false
-                if self.on_save_callback then
-                    self.on_save_callback(self._page_path)
-                end
-                logger.dbg("FastNote canvas: auto-saved to", self._page_path)
-            end
-        end
-    end
+    self:_autoSave()
     -- Close the canvas, then schedule a full e-ink refresh on the next tick
     -- so the underlying UI gets a complete paint cycle without ghosting.
     UIManager:close(self)
@@ -1125,7 +1071,7 @@ function DrawingCanvas:_clearPage()
 end
 
 -- ---------------------------------------------------------------------------
--- Stage 8: hardware page-button navigation
+-- Save / close / navigation
 -- ---------------------------------------------------------------------------
 
 --- Save the current page silently if dirty (no InfoMessage).
