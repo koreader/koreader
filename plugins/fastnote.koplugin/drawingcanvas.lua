@@ -62,6 +62,11 @@ local DrawingCanvas = InputContainer:extend{
     on_save_callback   = nil,      -- called with path after each save (Stage 5)
     load_path          = nil,      -- if set, load this SVG on init (Stage 5)
 
+    -- Page navigation callbacks (Stage 8).
+    -- Each returns (new_page_idx, total_pages, path) or nil at boundary.
+    on_page_forward    = nil,
+    on_page_back       = nil,
+
     _bb           = nil,           -- BlitBuffer (display cache)
     _stroke_buf   = nil,           -- StrokeBuffer (source of truth, Stage 4)
     _current_color = DEFAULT_COLOR,
@@ -75,6 +80,12 @@ local DrawingCanvas = InputContainer:extend{
 
     -- Eraser (Stage 10)
     _eraser_mode = false,          -- true while eraser end of stylus is active
+
+    -- Stage 8: hardware page buttons (Kobo right-side rocker: 193=RPgBack, 194=RPgFwd)
+    key_events = {
+        PageForward = { { "RPgFwd" }, { "LPgFwd" } },
+        PageBack    = { { "RPgBack" }, { "LPgBack" } },
+    },
 
     use_raw_input      = false,    -- false = gesture layer; true = raw evdev
     finger_draw        = false,    -- allow capacitive touch to draw (pen-only default)
@@ -807,6 +818,62 @@ function DrawingCanvas:_doClose()
     if self.on_close_callback then
         self.on_close_callback()
     end
+end
+
+-- ---------------------------------------------------------------------------
+-- Stage 8: hardware page-button navigation
+-- ---------------------------------------------------------------------------
+
+--- Save the current page silently if dirty (no InfoMessage).
+function DrawingCanvas:_autoSave()
+    if not (self._page_path and self._page_dirty
+            and not self._stroke_buf:isEmpty()) then
+        return
+    end
+    local ok_svg, svg_module = pcall(require, "lib/svg")
+    if not ok_svg then return end
+    local f = io.open(self._page_path, "w")
+    if not f then return end
+    f:write(svg_module.write(self._stroke_buf, self.dimen.w, self.dimen.h))
+    f:close()
+    self._page_dirty = false
+    if self.on_save_callback then self.on_save_callback(self._page_path) end
+    logger.dbg("FastNote canvas: auto-saved to", self._page_path)
+end
+
+--- Navigate to a neighbouring page (+1 forward, -1 back).
+function DrawingCanvas:_navigatePage(delta)
+    local cb = delta > 0 and self.on_page_forward or self.on_page_back
+    if not cb then return end
+
+    self:_autoSave()
+
+    local new_idx, new_count, new_path = cb()
+    if not new_path then return end   -- at boundary (page 1 going back, etc.)
+
+    self.page_index = new_idx
+    self.page_count = new_count
+
+    -- Reset stroke buffer and display before loading so a blank new page is clean.
+    self._stroke_buf = StrokeBuffer.new()
+    if self._bb then self._bb:fill(Blitbuffer.COLOR_WHITE) end
+
+    self:loadPage(new_path)           -- populates _stroke_buf if SVG exists
+
+    UIManager:setDirty(self, "full")
+    logger.dbg("FastNote canvas: navigated to page", new_idx, "/", new_count)
+end
+
+--- Key handler: physical forward-page button (RPgFwd / LPgFwd).
+function DrawingCanvas:onPageForward()
+    self:_navigatePage(1)
+    return true
+end
+
+--- Key handler: physical back-page button (RPgBack / LPgBack).
+function DrawingCanvas:onPageBack()
+    self:_navigatePage(-1)
+    return true
 end
 
 return DrawingCanvas

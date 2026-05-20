@@ -75,12 +75,40 @@ function FastNote:onOpenFnoteCanvas()
     local load_path = nb:pagePath(page_idx)
 
     UIManager:show(DrawingCanvas:new{
-        load_path = load_path,
+        load_path  = load_path,
+        page_index = page_idx,
+        page_count = nb:pageCount(),
+
         on_save_callback = function(path)
-            -- Keep state pointing at the current notebook + page.
             state.last_notebook_uuid = nb.uuid
             state.last_page_index    = page_idx
             lib:writeState(state)
+        end,
+
+        -- Stage 8: hardware page-button navigation.
+        -- Each callback mutates the page_idx upvalue and returns the new state.
+
+        on_page_forward = function()
+            page_idx = page_idx + 1
+            if page_idx > nb:pageCount() then
+                nb:addPage()  -- creates the new page file slot
+            end
+            page_idx = math.min(page_idx, nb:pageCount())
+            local path = nb:pagePath(page_idx)
+            state.last_notebook_uuid = nb.uuid
+            state.last_page_index    = page_idx
+            lib:writeState(state)
+            return page_idx, nb:pageCount(), path
+        end,
+
+        on_page_back = function()
+            if page_idx <= 1 then return nil end
+            page_idx = page_idx - 1
+            local path = nb:pagePath(page_idx)
+            state.last_notebook_uuid = nb.uuid
+            state.last_page_index    = page_idx
+            lib:writeState(state)
+            return page_idx, nb:pageCount(), path
         end,
     })
 end
