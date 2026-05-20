@@ -27,8 +27,11 @@ algorithm in detail.
 
 ## Workflow
 
-**No pull requests.** Commit directly to `claude/review-agents-docs-E7gb0` and push.
+**No pull requests. Commit directly to `master` and push.**
 Use descriptive commit messages — the commit log is the record of what changed and why.
+
+The macOS CI workflow (`.github/workflows/build.yml`) is disabled for auto-triggers.
+Local `busted spec/` is the test gate.
 
 ---
 

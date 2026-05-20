@@ -120,6 +120,11 @@ local DrawingCanvas = InputContainer:extend{
     _stroke_min_y = nil,
     _stroke_max_x = nil,
     _stroke_max_y = nil,
+
+    -- Tracks ges.start_pos of the current pan gesture to detect new finger-downs
+    -- even when pan_release was missed (straight-line bug prevention).
+    _ges_start_x  = nil,
+    _ges_start_y  = nil,
 }
 
 -- ---------------------------------------------------------------------------
@@ -478,11 +483,23 @@ function DrawingCanvas:onDrawStroke(_, ges)
         return true
     end
 
-    -- If there is no current stroke (e.g. pan_release was missed), discard any
-    -- stale position so we don't draw a line from the previous gesture's endpoint.
-    if not self._stroke_buf.current then
-        self._stroke_x = nil
-        self._stroke_y = nil
+    -- Detect a new gesture via ges.start_pos (the initial touch-down point, constant
+    -- throughout one pan sequence).  When start_pos changes, a new finger-down occurred.
+    -- If the previous pan_release was missed, the old stroke is still open in the buffer
+    -- and _stroke_x/y are stale.  Close and reset before starting the new stroke so we
+    -- never draw a line from the previous gesture's last point to the new start point.
+    local gsx = ges.start_pos and math.floor(ges.start_pos.x) or x
+    local gsy = ges.start_pos and math.floor(ges.start_pos.y) or y
+    if gsx ~= self._ges_start_x or gsy ~= self._ges_start_y then
+        if self._stroke_buf.current then
+            self._stroke_buf:penUp()
+            self._page_dirty = true
+        end
+        self._stroke_x     = nil; self._stroke_y     = nil
+        self._stroke_min_x = nil; self._stroke_max_x = nil
+        self._stroke_min_y = nil; self._stroke_max_y = nil
+        self._ges_start_x  = gsx
+        self._ges_start_y  = gsy
     end
 
     local prev_x = self._stroke_x or x
@@ -543,6 +560,8 @@ function DrawingCanvas:onDrawStrokeEnd(_, ges)
     self._stroke_min_y = nil
     self._stroke_max_x = nil
     self._stroke_max_y = nil
+    self._ges_start_x  = nil   -- allow next gesture to be fresh even if startPos repeats
+    self._ges_start_y  = nil
     return true
 end
 
