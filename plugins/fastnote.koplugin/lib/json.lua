@@ -66,7 +66,8 @@ local function _encode(val)
             local parts = {}
             for k, v in pairs(val) do
                 if type(k) == "string" then
-                    parts[#parts + 1] = '"' .. k .. '":' .. _encode(v)
+                    local ek = k:gsub('\\','\\\\'):gsub('"','\\"')
+                    parts[#parts + 1] = '"' .. ek .. '":' .. _encode(v)
                 end
             end
             table.sort(parts)

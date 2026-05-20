@@ -25,9 +25,16 @@ algorithm in detail.
 
 ---
 
+## Workflow
+
+**No pull requests.** Commit directly to `claude/review-agents-docs-E7gb0` and push.
+Use descriptive commit messages — the commit log is the record of what changed and why.
+
+---
+
 ## Current State
 
-**Stages 0, 1, 2, 3, 4 complete** (147/147 tests passing).
+**Stages 0–5 complete** (147/147 busted tests passing; on-device pen drawing verified).
 
 Completed work:
 - Config system (`lib/config.lua`) with `finger_draw` toggle and `rotation_mode`
@@ -38,8 +45,16 @@ Completed work:
 - Palm rejection (`lib/palmreject.lua`) — pen-proximity gate + area threshold, injectable clock
 - Capacitive touch input (`input/touchdev.lua`) — MT protocol B, non-blocking poll
 - `drawingcanvas.lua` rewritten for Stages 3+4: StrokeBuffer integration, `_digToScreen` rotation-aware coordinate translation, finger-draw toggle in canvas menu, SVG save
+- Stage 5 SVG round-trip: `loadPage(path)`, auto-save on close, `on_save_callback`, `main.lua` persists `last_page_path` in `fastnote/state.lua`
+- On-device fixes: Elan combo chip MT protocol, coordinate axis mapping (`_dig_rot_base`), gyroscope auto-rotation lock, hover-writes-on-screen (removed MT BTN_TOUCH synthesis)
 
-**Stage 5 (SVG load + continue editing) is next** — requires on-device testing of Stage 3/4 first.
+**Stage 6 (Notebook model) is next.**
+
+### Known hardware notes (Kobo Libra Colour / KoboMonza)
+- The Elan combo chip on event1 handles **both** pen and touch in the same device node
+  (MT protocol: ABS_MT_TOOL_TYPE 1=pen, 0=finger). The separate "capacitive touch" device
+  described in dev-plan-v2.md may not exist as a separate node. If `TouchDev.find()` fails,
+  the canvas still works — palm rejection is simply disabled.
 
 ---
 
@@ -159,15 +174,14 @@ Each stage has a "Definition of done" in `dev-plan-v2.md`. Do not close a stage
 until all criteria pass. The stages in execution order:
 
 ```
-0 ✅ → 1 ✅ → 2 ✅ → 4 ✅ → 5 → 6 → 9
-                ↓              ↓
-                3 ✅            7 → 8
-                               ↓
-                               10 → 11 → 12 → 13
+0 ✅ → 1 ✅ → 2 ✅ → 4 ✅ → 5 ✅ → 6 → 9
+                ↓                   ↓
+                3 ✅                 7 → 8
+                                    ↓
+                                    10 → 11 → 12 → 13
 ```
 
-Current position: **Stage 5 is next** (SVG load + continue editing).  
-Requires on-device validation of Stage 3/4 first (palm rejection, touch polling, SVG save).
+Current position: **Stage 6** (Notebook model — `model/page.lua`, `model/notebook.lua`, `model/library.lua`).
 
 ---
 

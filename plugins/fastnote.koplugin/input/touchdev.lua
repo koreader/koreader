@@ -83,8 +83,7 @@ function TouchDev.find()
     end
 
     for line in f:lines() do
-        if line:find("^A:") then
-            -- A: Handlers=... ABS=...  (not all formats include this)
+        if line:find("^B: ABS=") then
             local abs = line:match("ABS=(%x+)")
             if abs then cur_abs = abs end
         elseif line:find("^H:") then
@@ -163,23 +162,25 @@ function TouchDev:poll(cb)
             if e.type == C.EV_ABS then
                 local code = e.code
                 local val  = e.value
-                local slot = self._slots[self._slot]
 
                 if code == ABS_MT_SLOT then
+                    -- Update the active slot FIRST; all following codes in
+                    -- this frame apply to the newly-selected slot.
                     if val >= 0 and val < MAX_SLOTS then
                         self._slot = val
                     end
-                elseif code == ABS_MT_TRACKING_ID then
-                    if slot then
-                        slot.id    = val
-                        slot.dirty = true
+                else
+                    -- Fetch slot AFTER any ABS_MT_SLOT event has updated self._slot.
+                    local slot = self._slots[self._slot]
+                    if code == ABS_MT_TRACKING_ID then
+                        if slot then slot.id    = val; slot.dirty = true end
+                    elseif code == ABS_MT_POSITION_X then
+                        if slot then slot.x     = val; slot.dirty = true end
+                    elseif code == ABS_MT_POSITION_Y then
+                        if slot then slot.y     = val; slot.dirty = true end
+                    elseif code == ABS_MT_TOUCH_MAJOR then
+                        if slot then slot.touch_major = val; slot.dirty = true end
                     end
-                elseif code == ABS_MT_POSITION_X then
-                    if slot then slot.x = val; slot.dirty = true end
-                elseif code == ABS_MT_POSITION_Y then
-                    if slot then slot.y = val; slot.dirty = true end
-                elseif code == ABS_MT_TOUCH_MAJOR then
-                    if slot then slot.touch_major = val; slot.dirty = true end
                 end
 
             elseif e.type == C.EV_SYN then

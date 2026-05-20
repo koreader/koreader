@@ -612,9 +612,14 @@ end
 -- @string path  Absolute path to the SVG file.
 -- @return boolean  true on success
 function DrawingCanvas:loadPage(path)
+    -- Always claim this path for saves, even if the file doesn't exist yet
+    -- (new notebook pages are created on first save, not on open).
+    self._page_path  = path
+    self._page_dirty = false
+
     local f = io.open(path, "r")
     if not f then
-        logger.warn("FastNote canvas: loadPage: cannot open", path)
+        logger.dbg("FastNote canvas: loadPage: new page at", path)
         return false
     end
     local text = f:read("*a")
