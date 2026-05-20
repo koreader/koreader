@@ -4,7 +4,6 @@ local Notification = require("ui/widget/notification")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local random = require("random")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -263,7 +262,7 @@ function ReaderAnnotation:onExportAnnotations(on_closing)
     if do_export and self:hasAnnotations() then
         local file = self:getExportAnnotationsFilepath()
         local anno = LuaSettings:open(file)
-        local device_id = G_reader_settings:readSetting("device_id", random.uuid())
+        local device_id = G_reader_settings:readSetting("device_id")
         anno:saveSetting("device_id", device_id)
         anno:saveSetting("datetime", os.date("%Y-%m-%d %H:%M:%S"))
         anno:saveSetting("paging", self.ui.paging and true)

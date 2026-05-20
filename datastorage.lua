@@ -1,3 +1,7 @@
+--- Used for getting the directory paths that KoReader uses.
+-- @usage local DataStorage = require("datastorage")
+-- @module datastorage
+
 -- need low-level mechanism to detect android to avoid recursive dependency
 local isAndroid, android = pcall(require, "android")
 local lfs = require("libs/libkoreader-lfs")
@@ -7,6 +11,8 @@ local DataStorage = {}
 local data_dir
 local full_data_dir
 
+--- Gets the path where configuration/data is stored for KoReader.
+-- @treturn string Directory path
 function DataStorage:getDataDir()
     if data_dir then return data_dir end
 
@@ -43,22 +49,35 @@ function DataStorage:getDataDir()
     return data_dir
 end
 
+--- (Deprecated) Gets the path where legacy/obsolete sidecar files are stored.
+-- @treturn string Directory path
 function DataStorage:getHistoryDir()
     return self:getDataDir() .. "/history"
 end
 
+--- Gets the path where @{luasettings} should be stored.
+-- @treturn string Directory path
 function DataStorage:getSettingsDir()
     return self:getDataDir() .. "/settings"
 end
 
+--- Gets the path where @{docsettings}
+-- (sidecar files) should be stored although this directory isn't guaranteed to exist.
+-- @treturn string Directory path
 function DataStorage:getDocSettingsDir()
     return self:getDataDir() .. "/docsettings"
 end
 
+--- Gets the path where @{docsettings}
+-- (sidecar files) should be stored although this directory isn't guaranteed to exist.
+-- This is used instead of `DataStorage:getDocSettingsDir` when hashing is enabled.
+-- @treturn string Directory path
 function DataStorage:getDocSettingsHashDir()
     return self:getDataDir() .. "/hashdocsettings"
 end
 
+--- Gets the full configuration/data path.
+-- @treturn string Directory path (e.g., /mnt/onboard/.adds/koreader)
 function DataStorage:getFullDataDir()
     if full_data_dir then return full_data_dir end
 

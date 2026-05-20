@@ -223,7 +223,7 @@ function InputDialog:init()
     if self.fullscreen or self.add_nav_bar then
         self.deny_keyboard_hiding = true
     end
-    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:nilOrFalse("virtual_keyboard_enabled") then
         self.keyboard_visible = false
         self.skip_first_show_keyboard = true
     end
@@ -393,6 +393,10 @@ function InputDialog:init()
         charpos = self._charpos,
     }
     table.insert(self.layout[1], self._input_widget)
+    self._password_toggle_widget = self._input_widget:getPasswordToggleWidget()
+    if self._password_toggle_widget then
+        table.insert(self.layout, { self._password_toggle_widget })
+    end
     self:mergeLayoutInVertical(self.button_table)
     -- NOTE: Never send a Focus event, as, on hasDPad device, InputText's onFocus *will* call onShowKeyboard,
     --       and that will wreak havoc on toggleKeyboard...
@@ -430,6 +434,17 @@ function InputDialog:init()
         vspan_after_input_text,
         buttons_container,
     }
+    if self._password_toggle_widget then
+        local toggle_row = CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width,
+                h = self._password_toggle_widget:getSize().h,
+            },
+            self._password_toggle_widget,
+        }
+        -- Keep password toggle between input field and the post-input spacer.
+        table.insert(self.vgroup, 4, toggle_row)
+    end
 
     -- Final widget
     self.dialog_frame = FrameContainer:new{
@@ -642,7 +657,7 @@ function InputDialog:isKeyboardVisible()
 end
 
 function InputDialog:lockKeyboard(toggle)
-    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:nilOrFalse("virtual_keyboard_enabled") then
         -- do not lock the virtual keyboard when user is hiding it, we still *might* want to activate it via shortcuts ("Shift" + "Home") when in need of special characters or symbols
         return
     end

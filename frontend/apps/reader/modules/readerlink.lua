@@ -14,6 +14,7 @@ local Notification = require("ui/widget/notification")
 local QRMessage = require("ui/widget/qrmessage")
 local UIManager = require("ui/uimanager")
 local ffiUtil = require("ffi/util")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -45,9 +46,7 @@ local function is_wiki_page(link_url)
         end
         -- or in wikipedia save directory
         if not epub_fullpath then
-            local dir = G_reader_settings:readSetting("wikipedia_save_dir")
-            if not dir then dir = G_reader_settings:readSetting("home_dir") end
-            if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
+            local dir = G_reader_settings:readSetting("wikipedia_save_dir") or filemanagerutil.getHomeFolder()
             if dir then
                 local safe_filename = util.getSafeFilename(epub_filename, dir):gsub("_", " ")
                 local epub_path = dir .. "/" .. safe_filename
@@ -243,16 +242,7 @@ function ReaderLink:onGesture() end
 function ReaderLink:registerKeyEvents()
     if Device:hasScreenKB() or Device:hasSymKey() then
         self.key_events.GotoSelectedPageLink = { { "Press" }, event = "GotoSelectedPageLink" }
-        if Device:hasKeyboard() then
-            self.key_events.AddCurrentLocationToStackNonTouch = { { "Shift", "Press" } }
-            self.key_events.SelectNextPageLink = { { "Shift", "LPgFwd" }, event = "SelectNextPageLink" }
-            self.key_events.SelectPrevPageLink = { { "Shift", "LPgBack" }, event = "SelectPrevPageLink" }
-        else
-            self.key_events.AddCurrentLocationToStackNonTouch = { { "ScreenKB", "Press" } }
-            self.key_events.SelectNextPageLink = { { "ScreenKB", "LPgFwd" }, event = "SelectNextPageLink" }
-            self.key_events.SelectPrevPageLink = { { "ScreenKB", "LPgBack" }, event = "SelectPrevPageLink" }
-        end
-    elseif Device:hasKeys() then
+    elseif Device:hasKeyboard() then
         self.key_events = {
             SelectNextPageLink = {
                 { "Tab" },
@@ -437,6 +427,21 @@ The recommended value is -2.]]),
                 help_text = _([[
 The footnote popup font adjusts to the font size you've set for the document.
 This allows you to specify how much smaller or larger it should be relative to the document font size.]]),
+                separator = true,
+            },
+            {
+                text = _("Justify text in popups"),
+                enabled_func = function()
+                    return isFootnoteLinkInPopupEnabled() and
+                        (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
+                end,
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("footnote_popup_justify")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("footnote_popup_justify")
+                end,
+                help_text = _([[Justify text in footnote popup.]]),
             },
         }
         return temp_menu_items

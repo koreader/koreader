@@ -716,6 +716,10 @@ function CreDocument:getScreenBoxesFromPositions(pos0, pos1, get_segments)
     return line_boxes
 end
 
+function CreDocument:getNearestWordFromPosition(pos, direction)
+    return self._document:getNearestWordFromPosition(pos.x, pos.y, direction)
+end
+
 function CreDocument:compareXPointers(xp1, xp2)
     -- Returns 1 if XPointers are ordered (if xp2 is after xp1), -1 if not, 0 if same
     -- Returns nil if any of XPointers are invalid
@@ -1562,6 +1566,7 @@ function CreDocument:register(registry)
     registry:addProvider("epub", "application/epub", self, 100) -- Alternative mimetype for OPDS.
     registry:addProvider("epub3", "application/epub+zip", self, 100)
     registry:addProvider("fb2", "application/fb2", self, 90)
+    registry:addProvider("fb2", "application/x-fictionbook+xml", self, 90) -- Alternative mimetype for OPDS.
     registry:addProvider("fb2", "text/fb2+xml", self, 90) -- Alternative mimetype for OPDS.
     registry:addProvider("fb2.zip", "application/zip", self, 90)
     registry:addProvider("fb2.zip", "application/fb2+zip", self, 90) -- Alternative mimetype for OPDS.
@@ -1893,6 +1898,7 @@ function CreDocument:setupCallCache()
             elseif name == "getPageLinks" then cache_by_tag = true
             elseif name == "getScreenBoxesFromPositions" then cache_by_tag = true
             elseif name == "getScreenPositionFromXPointer" then cache_by_tag = true
+            elseif name == "getNearestWordFromPosition" then cache_by_tag = true
             elseif name == "getXPointer" then cache_by_tag = true
             elseif name == "isXPointerInCurrentPage" then cache_by_tag = true
             elseif name == "getPageMapCurrentPageLabel" then cache_by_tag = true

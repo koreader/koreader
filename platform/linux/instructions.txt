@@ -4,7 +4,6 @@ KOReader %%VERSION%% (Linux %%ARCH%%)
 ## Requires
 
 - `GLIBC` >= %%ABI%%
-- `SDL2`
 
 ## Users
 

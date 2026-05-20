@@ -1,13 +1,22 @@
 {
   "$schema": "https://raw.githubusercontent.com/EmmyLuaLs/emmylua-analyzer-rust/refs/heads/main/crates/emmylua_code_analysis/resources/schema.json",
   "workspace": {
+    "ignoreDir": [
+      "base/build",
+      "base/thirdparty"
+    ],
     "ignoreGlobs": [
-      "base/build/**/**",
-      "base/third_party/**/**"
-    ]
+      "koreader-*/**"
+    ],
+    "workspaceRoots": [
+      "./base",
+      "./frontend",
+      "./plugins/exporter.koplugin"
+     ]
   },
   "diagnostics": {
     "globals": [
+      "G_defaults",
       "G_reader_settings"
     ]
   },

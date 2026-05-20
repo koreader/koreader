@@ -65,8 +65,9 @@ local ST_SPACE=9;              -- linear whitespace state
 local ST_ATTR_NAME=10;         -- attribute name state
 local ST_ATTR_NAME_END=11;     -- attribute name ending state
 local ST_ATTR_VAL=12;          -- attribute value starting state
-local ST_ATTR_VAL2=13;         -- attribute value state
-local ST_ERROR=14;             -- error state
+local ST_ATTR_VAL2=13;         -- attribute value state (double-quoted)
+local ST_ATTR_VAL_SQ=14;      -- attribute value state (single-quoted)
+local ST_ERROR=15;             -- error state
 
 -- character classes that we will match against; This could be expanded if
 --   need be, however, we are aiming for simple.
@@ -76,9 +77,10 @@ local CCLASS_SLASH=2;          -- matches forward slash
 local CCLASS_RIGHT_ANGLE=3;    -- matches end tag '>'
 local CCLASS_EQUALS=4;         -- matches equals sign
 local CCLASS_QUOTE=5;          -- matches double-quotes
-local CCLASS_LETTERS=6;        -- matches a-zA-Z letters and digits 0-9
-local CCLASS_SPACE=7;          -- matches whitespace
-local CCLASS_ANY=8;            -- matches any ASCII character; will match all above classes
+local CCLASS_SQUOTE=6;         -- matches single-quotes
+local CCLASS_LETTERS=7;        -- matches a-zA-Z letters and digits 0-9
+local CCLASS_SPACE=8;          -- matches whitespace
+local CCLASS_ANY=9;            -- matches any ASCII character; will match all above classes
 
 -- Types of events: start element, end element, text, attr name, attr
 -- val and start/end document. Other events can be ignored!
@@ -115,6 +117,7 @@ local STATE_NAMES = {
     [ST_ATTR_NAME_END] = "ST_ATTR_NAME_END",
     [ST_ATTR_VAL] = "ST_ATTR_VAL",
     [ST_ATTR_VAL2] = "ST_ATTR_VAL2",
+    [ST_ATTR_VAL_SQ] = "ST_ATTR_VAL_SQ",
     [ST_ERROR] = "ST_ERROR",
 }
 
@@ -185,16 +188,22 @@ local LEXER_STATES = {
   { state = ST_ATTR_NAME_END, cclass = CCLASS_LETTERS,      next_state = ST_ATTR_NAME,         event = EVENT_MARK },
   { state = ST_ATTR_NAME_END, cclass = CCLASS_EQUALS,       next_state = ST_ATTR_VAL,          event = EVENT_NONE },
 
-  -- [33-34] handle attribute values, initial quote and spaces
+  -- handle attribute values, initial quote and spaces
   { state = ST_ATTR_VAL,      cclass = CCLASS_QUOTE,        next_state = ST_ATTR_VAL2,         event = EVENT_NONE },
+  { state = ST_ATTR_VAL,      cclass = CCLASS_SQUOTE,       next_state = ST_ATTR_VAL_SQ,       event = EVENT_NONE },
   { state = ST_ATTR_VAL,      cclass = CCLASS_SPACE,        next_state = ST_ATTR_VAL,          event = EVENT_NONE },        -- initial spaces before quoted attribute value
 
-  -- [35-37] handle actual attribute values
+  -- handle double-quoted attribute values
   { state = ST_ATTR_VAL2,     cclass = CCLASS_QUOTE,        next_state = ST_START_TAGNAME_END, event = EVENT_ATTR_VAL },
   { state = ST_ATTR_VAL2,     cclass = CCLASS_LETTERS,      next_state = ST_ATTR_VAL2,         event = EVENT_MARK },
   { state = ST_ATTR_VAL2,     cclass = CCLASS_SLASH,        next_state = ST_ATTR_VAL2,         event = EVENT_MARK },
 
-  -- [38] End of table marker
+  -- handle single-quoted attribute values
+  { state = ST_ATTR_VAL_SQ,   cclass = CCLASS_SQUOTE,       next_state = ST_START_TAGNAME_END, event = EVENT_ATTR_VAL },
+  { state = ST_ATTR_VAL_SQ,   cclass = CCLASS_LETTERS,      next_state = ST_ATTR_VAL_SQ,       event = EVENT_MARK },
+  { state = ST_ATTR_VAL_SQ,   cclass = CCLASS_SLASH,        next_state = ST_ATTR_VAL_SQ,       event = EVENT_MARK },
+
+  -- End of table marker
   { state = ST_ERROR,         cclass = CCLASS_NONE,         next_state = ST_ERROR,             event = EVENT_NONE }
 };
 
@@ -216,6 +225,7 @@ local cclass_match = {
     [CCLASS_RIGHT_ANGLE] = "(c == T_GT)",
     [CCLASS_EQUALS] = "(c == T_EQ)",
     [CCLASS_QUOTE] = "(c == T_QUOTE)",
+    [CCLASS_SQUOTE] = "(c == T_SQUOTE)",
     [CCLASS_SPACE] = "(ctype == 3)",
     [CCLASS_ANY] = "true",
 }
@@ -254,6 +264,7 @@ local T_SLASH = string.byte('/')
 local T_GT = string.byte('>')
 local T_EQ = string.byte('=')
 local T_QUOTE = string.byte('"')
+local T_SQUOTE = string.byte("'")
 
 ]]
 -- pre-define locals for state functions.

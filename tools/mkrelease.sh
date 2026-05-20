@@ -12,6 +12,7 @@ OPTIONS:
     -e EPOCH, --epoch EPOCH      set contents timestamp to EPOCH
     -m ENTRY, --manifest ENTRY   add a manifest ENTRY to the release
     --manifest-transform SCRIPT  transform manifest using sed SCRIPT
+    --no-dereference             keep links
     -o OPTS, --options OPTS      forward options to compressor
 "
 
@@ -35,7 +36,7 @@ else
     declare -r TAR=tar
 fi
 
-if ! opt=$(getopt -o '+de:hj:m:o:' --long 'debug,epoch:,help,jobs:,manifest:,manifest-transform:,options:' --name "$0" -- "$@"); then
+if ! opt=$(getopt -o '+de:hj:m:o:' --long 'debug,epoch:,help,jobs:,manifest:,manifest-transform:,no-dereference,options:' --name "$0" -- "$@"); then
     echo "${USAGE}"
     exit 1
 fi
@@ -47,6 +48,7 @@ epoch=''
 jobs=''
 manifest=''
 manifest_transform=''
+dereference=1
 options=()
 
 eval set -- "${opt}"
@@ -74,6 +76,9 @@ while [[ $# -gt 0 ]]; do
         --manifest-transform)
             manifest_transform="$2"
             shift
+            ;;
+        --no-dereference)
+            dereference=''
             ;;
         -o | --options)
             declare -a a="($2)"
@@ -113,7 +118,7 @@ fi
 
 # }}}
 
-if command -v pv >/dev/null; then
+if type -P pv >/dev/null; then
     write_to_file() {
         pv --interval=0.25 --bytes --timer --rate --output="$1"
     }
@@ -129,7 +134,7 @@ export LC_ALL=C
 # We need to use the full path to the executable to avoid
 # a weird issue when using the p7zip project pre-built
 # binary (`Can't load './7z.dll' (7z.so)...`).
-if ! sevenzip="$(which 7z)"; then
+if ! sevenzip="$(type -P 7z)"; then
     echo "ERROR: 7z executable not found!" 1>&2
     exit 2
 fi
@@ -150,7 +155,7 @@ fi
 rm -f "${tmpdir}/symlink"
 
 # Prefer `pigz` over `gzip` (faster).
-gzip="$(command -v pigz || command -v gzip)"
+gzip="$(type -P pigz || type -P gzip)"
 gzip_cmd=("${gzip}")
 
 # Jobs.
@@ -255,7 +260,8 @@ fi
 
 # Make a copy of everything so we can later patch timestamps and
 # fix permissions to ensure reproducibility.
-"${TAR}" --create --dereference --hard-dereference --no-recursion \
+"${TAR}" --create --no-recursion \
+    ${dereference:+--dereference --hard-dereference} \
     --verbatim-files-from --files-from="${tmpdir}/paths" |
     "${TAR}" --extract --directory="${tmpdir}/contents"
 
@@ -300,8 +306,13 @@ case "${format}" in
         ;;
     tar.xz)
         echo "Creating archive: ${output}"
+        # NOTE: override xz default block size, as otherwise with the size of our
+        # uncompressed data (< 100 MiB), we never benefit from multi-threading:
+        # level 9 → 64 MiB dictionary → ×3 default block size = 192 MiB.
+        # With a block size of 32 MiB, compression with 4 threads is ~2.7 times faster,
+        # for a final output size increase of just 200 KiB (less than 1%).
         "${tar_compress_cmd[@]}" |
-            xz -9 ${jobs:+--threads=${jobs}} "${options[@]}" |
+            xz -9 --block-size=32M ${jobs:+--threads=${jobs}} "${options[@]}" |
             write_to_file "${output}"
         ;;
     tar.zst)

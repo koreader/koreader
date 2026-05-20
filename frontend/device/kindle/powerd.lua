@@ -140,12 +140,16 @@ function KindlePowerD:setIntensityHW(intensity)
         -- NOTE: when intensity is 0, we want to *really* kill the light, so do it manually
         -- (asking lipc to set it to 0 would in fact set it to > 0 on ! canTurnFrontlightOff Kindles).
         -- We do *both* to make the fl restore on resume less jarring on devices where lipc 0 != off.
-        ffiUtil.writeToSysfs(intensity, self.fl_intensity_file)
+        for _, fl_intensity_file in ipairs(self.fl_intensity_files) do
+            ffiUtil.writeToSysfs(intensity, fl_intensity_file)
+        end
 
         -- And in case there are two LED groups...
         -- This should never happen as all warmth devices so far canTurnFrontlightOff
-        if self.warmth_intensity_file then
-            ffiUtil.writeToSysfs(intensity, self.warmth_intensity_file)
+        if self.warmth_intensity_files then
+            for _, warmth_intensity_file in ipairs(self.warmth_intensity_files ) do
+                ffiUtil.writeToSysfs(intensity, warmth_intensity_file)
+            end
         end
     end
 
@@ -230,7 +234,7 @@ function KindlePowerD:onToggleHallSensor(toggle)
 end
 
 function KindlePowerD:_readFLIntensity()
-    return self:read_int_file(self.fl_intensity_file)
+    return self:read_int_file(self.fl_intensity_files[1])
 end
 
 function KindlePowerD:toggleSuspend()
