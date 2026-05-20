@@ -10,9 +10,21 @@ the single-touch Wacom protocol (ABS_X/Y, BTN_TOUCH).
 
 poll() handles both:
   • MT events: tracked per slot; pen slot (TOOL_TYPE_PEN=1) synthesizes
-    ABS_X/Y/PRESSURE + BTN_TOUCH events into the state machine.
+    ABS_X/Y/PRESSURE into the state machine.  BTN_TOUCH is derived from
+    ABS_MT_PRESSURE (see below) rather than from EV_KEY — the Elan fires
+    EV_KEY BTN_TOUCH at hover distance, not at physical contact.
   • Single-touch EV_KEY / EV_ABS: passed directly to the state machine
     (handles Wacom EMR devices and provides BTN_TOOL_PEN if sent).
+
+Hover-prevention for Elan MT pen:
+  The Elan chip asserts EV_KEY BTN_TOUCH=1 when the pen enters proximity
+  (~10 mm), long before physical contact.  If we feed that directly to the
+  state machine, the canvas receives "down" events while the pen is in the
+  air.  Fix: once we identify a device as an MT pen device (_has_mt_pen),
+  we ignore EV_KEY BTN_TOUCH entirely and instead synthesize contact state
+  from ABS_MT_PRESSURE on each EV_SYN:
+    pressure >= PRESSURE_CONTACT_THRESHOLD  →  BTN_TOUCH=1  (contact)
+    pressure <  PRESSURE_CONTACT_THRESHOLD  →  BTN_TOUCH=0  (hover/lift)
 
 ASSUMES: KOReader FFI environment (ffi/posix_h + ffi/linux_input_h loaded).
 ASSUMES: LuaJIT 2.1 (Lua 5.1) — uses bit.bor for O_RDONLY | O_NONBLOCK.
@@ -41,9 +53,14 @@ local ABS_MT_TRACKING_ID = 0x39  -- 57  Contact ID; -1 = lifted
 local ABS_MT_PRESSURE    = 0x3a  -- 58  Pressure for current MT slot
 local MT_TOOL_PEN        = 1     -- ABS_MT_TOOL_TYPE value for pen
 
--- EV_KEY codes for synthesizing into the state machine
+-- EV_KEY codes
 local BTN_TOOL_PEN = 0x140  -- 320
 local BTN_TOUCH    = 0x14a  -- 330
+
+-- Pressure at or above this value is treated as physical contact.
+-- The Elan chip reports 0 (or near-0) for hover and measurable pressure
+-- only when the pen actually touches the glass.
+local PRESSURE_CONTACT_THRESHOLD = 20
 
 -- ---------------------------------------------------------------------------
 -- Axis fallback ranges (Elan I2C digitizer on Kobo Libra Colour).
@@ -189,6 +206,7 @@ function PenDev.open(path)
         _mt_cur      = 0,    -- current MT slot being updated
         _mt_slots    = {},   -- slot# -> {tool, id, x, y, p}
         _mt_pen_slot = nil,  -- slot# identified as pen (TOOL_TYPE_PEN)
+        _has_mt_pen  = false, -- true once MT pen protocol detected; gates BTN_TOUCH skip
     }, PenDev)
 
     self:_query_abs()
@@ -259,8 +277,17 @@ function PenDev:poll(cb)
             local ev = e.value
 
             if t == C.EV_KEY then
-                -- Pass EV_KEY directly: BTN_TOOL_PEN, BTN_TOUCH etc.
-                self.sm:feed_key(ec, ev, cb)
+                -- For MT pen devices the Elan fires EV_KEY BTN_TOUCH=1 at
+                -- hover distance (not contact).  Once we've seen an MT pen
+                -- slot (_has_mt_pen), ignore this key — contact state is
+                -- derived from ABS_MT_PRESSURE in the EV_SYN handler instead.
+                -- BTN_TOOL_PEN/RUBBER still pass through so the SM tracks
+                -- proximity and tool type correctly.
+                if ec == BTN_TOUCH and self._has_mt_pen then
+                    -- deliberately ignored for MT pen devices
+                else
+                    self.sm:feed_key(ec, ev, cb)
+                end
 
             elseif t == C.EV_ABS then
                 -- ── MT protocol ──────────────────────────────────────────
@@ -273,6 +300,7 @@ function PenDev:poll(cb)
                     self._mt_slots[s].tool = ev
                     if ev == MT_TOOL_PEN then
                         self._mt_pen_slot = s
+                        self._has_mt_pen  = true  -- mark device as MT pen
                         logger.dbg("FastNote pendev: pen identified at MT slot", s)
                     end
 
@@ -303,17 +331,31 @@ function PenDev:poll(cb)
                 end
 
             elseif t == C.EV_SYN then
-                -- Synthesize coordinates from the MT pen slot into the SM.
-                -- BTN_TOUCH and BTN_TOOL_PEN arrive as EV_KEY events on the
-                -- Elan chip and are handled by the EV_KEY branch above —
-                -- we must NOT synthesize them here or hover triggers drawing.
                 local pen_slot = self._mt_pen_slot
                 if pen_slot then
                     local pd = self._mt_slots[pen_slot]
                     if pd then
+                        -- Feed MT coordinates into the SM's single-touch axes.
                         if pd.x then self.sm:feed_abs(0,  pd.x) end  -- ABS_X
                         if pd.y then self.sm:feed_abs(1,  pd.y) end  -- ABS_Y
                         if pd.p then self.sm:feed_abs(24, pd.p) end  -- ABS_PRESSURE
+
+                        -- Synthesize BTN_TOUCH from pressure (Elan hover fix).
+                        -- The Elan fires EV_KEY BTN_TOUCH for proximity; we
+                        -- ignore that and use pressure to detect real contact.
+                        local pressure = pd.p or 0
+                        if pressure >= PRESSURE_CONTACT_THRESHOLD then
+                            if not self.sm.pen_down then
+                                -- Pen just touched: prime "down" for next SYN.
+                                -- Pass nil cb so "down" fires on feed_syn below.
+                                self.sm:feed_key(BTN_TOUCH, 1, nil)
+                            end
+                        else
+                            if self.sm.pen_down then
+                                -- Pressure dropped: pen lifted.  Emit "up" now.
+                                self.sm:feed_key(BTN_TOUCH, 0, cb)
+                            end
+                        end
                     end
                 end
 
