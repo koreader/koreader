@@ -1,101 +1,251 @@
-# fastnote.koplugin — Maintenance Guide
+# AGENTS.md — fastnote.koplugin
 
-Full-screen pen drawing canvas for KOReader. Built in four phases: gesture-based drawing (A), SVG save (B), raw evdev input with pressure (C), color/shade picker (D).
+Read this before changing any code in this directory.
+Written for a coding agent or developer coming in cold.
 
-## Current Status
+---
 
-| Phase | Goal | Status |
-|-------|------|--------|
-| A | Minimal drawing canvas (gesture-based pan strokes) | 🔲 In progress — `drawingcanvas.lua` is empty |
-| B | Save drawing as SVG | 🔲 Not started |
-| C | Raw evdev input, pressure-sensitive line width | 🔲 Not started |
-| D | Ink color / shade picker overlay | 🔲 Not started |
+## What This Plugin Does
+
+`fastnote` is a KOReader plugin for the **Kobo Libra Colour** that provides a
+full-screen hand-drawn note-taking canvas. Features (planned):
+
+- Multi-page notebooks with a notebook browser
+- Wacom EMR pen input with pressure-sensitive line width
+- Palm rejection via two-device gating (pen + capacitive touch streams)
+- Eraser (physical eraser end of the stylus, stroke-level delete)
+- Undo / redo
+- 6-color palette (Kaleido 3 panel)
+- Pages saved as SVG with embedded JSON stroke data (round-trippable)
+
+**Source of truth for design decisions:** [`dev-plan-v2.md`](dev-plan-v2.md)  
+Read it before implementing any stage. It contains the open questions, the
+storage layout, the coordinate translation formula, and the palm rejection
+algorithm in detail.
+
+---
+
+## Current State
+
+**Stages 0, 1, 2, 3, 4 complete** (147/147 tests passing).
+
+Completed work:
+- Config system (`lib/config.lua`) with `finger_draw` toggle and `rotation_mode`
+- Hamburger menu button (bottom-right) with portrait/landscape rotation + keep/close
+- Orientation lock — canvas locks rotation on open; re-locks on system rotation events
+- Stroke model (`lib/stroke.lua`, `lib/strokebuffer.lua`) — source of truth for all drawing
+- SVG persistence (`lib/svg.lua`) — `svg.write`/`svg.read` with lossless `<metadata>` JSON round-trip
+- Palm rejection (`lib/palmreject.lua`) — pen-proximity gate + area threshold, injectable clock
+- Capacitive touch input (`input/touchdev.lua`) — MT protocol B, non-blocking poll
+- `drawingcanvas.lua` rewritten for Stages 3+4: StrokeBuffer integration, `_digToScreen` rotation-aware coordinate translation, finger-draw toggle in canvas menu, SVG save
+
+**Stage 5 (SVG load + continue editing) is next** — requires on-device testing of Stage 3/4 first.
+
+---
+
+## File Map
+
+```
+fastnote.koplugin/
+├── _meta.lua                  Plugin metadata — do not add logic here
+├── main.lua                   Entry point: config load, Dispatcher, canvas open
+├── drawingcanvas.lua          Drawing canvas widget — all input, rendering, menu, orientation
+├── fastnote.conf.example      Documented user config (finger_draw, rotation_mode)
+├── lib/
+│   ├── canvas_utils.lua       Pure math: compute_dirty_rect, point_in_zone, pressure_to_width
+│   ├── config.lua             Pure Lua config loader (loadfile + pcall + merge)
+│   ├── pen_statemachine.lua   Wacom evdev state machine → high-level pen events
+│   ├── json.lua               Pure Lua JSON encoder/decoder (no KOReader deps; busted-testable)
+│   ├── stroke.lua             Stroke object: points, hitTest, bbox, paintTo, toTable/fromTable
+│   ├── strokebuffer.lua       Stroke list, undo/redo stack, eraseAt, repaintTo, serialization
+│   ├── svg.lua                svg.write() + svg.read() with <metadata> JSON block
+│   └── palmreject.lua         Proximity-gated palm rejection state machine
+├── input/
+│   ├── pendev.lua             FFI: finds Wacom, opens fd, polls events → pen_statemachine
+│   ├── touchdev.lua           FFI: MT protocol B reader for capacitive touch
+│   └── buttondev.lua          [Stage 8] FFI: hardware page button reader
+├── model/
+│   ├── page.lua               [Stage 6] One page: StrokeBuffer + load/save path
+│   ├── notebook.lua           [Stage 6] One notebook: ordered page list + metadata
+│   └── library.lua            [Stage 6] All notebooks + app-wide state
+├── ui/
+│   ├── browser.lua            [Stage 9] Notebook list widget
+│   ├── colorpicker.lua        [Stage 12] Color palette overlay
+│   └── chrome.lua             [Stage 7] Always-visible canvas chrome (exit, page indicator)
+├── spec/
+│   ├── canvas_utils_spec.lua  20 tests ✅
+│   ├── config_spec.lua        14 tests ✅
+│   ├── pen_statemachine_spec.lua  30 tests ✅
+│   ├── palmreject_spec.lua    20 tests ✅
+│   ├── stroke_spec.lua        22 tests ✅
+│   ├── strokebuffer_spec.lua  24 tests ✅
+│   └── svg_spec.lua           17 tests ✅
+├── dev-plan-v2.md             ← canonical design doc (read before implementing any stage)
+├── landscape-research.md      ← analysis of 4 reference plugins
+└── PLAN.md                    ← superseded by dev-plan-v2.md (ignore)
+```
+
+Files marked `[Stage N]` do not exist yet; `model/` and `ui/` dirs do not exist yet.
+
+---
 
 ## Architecture
 
 ```
-fastnote.koplugin/
-├── _meta.lua              ← Plugin metadata (name, fullname, description)
-├── main.lua               ← WidgetContainer; registers Dispatcher action + menu entry
-├── drawingcanvas.lua      ← InputContainer canvas widget (Phase A–D)
-├── strokebuffer.lua       ← In-memory stroke list + SVG serializer (Phase B+)
-└── PLAN.md                ← Detailed per-phase implementation plan with code examples
+main.lua
+    └── UIManager:show(DrawingCanvas)
+            └── drawingcanvas.lua (InputContainer)
+                    ├── BlitBuffer (display cache — rebuilt by replaying StrokeBuffer)
+                    ├── StrokeBuffer (source of truth for stroke data)
+                    │       └── each Stroke → paintTo(bb) + toTable() + SVG polyline
+                    ├── input/ (raw evdev, Stages 2+)
+                    │       ├── pendev.lua    → pen_statemachine → {down/move/up/hover}
+                    │       ├── touchdev.lua  → MT slot events
+                    │       └── lib/palmreject.lua → filters touch through pen-proximity gate
+                    └── ui/chrome.lua [Stage 7] (drawn into the same BlitBuffer)
 ```
 
-`main.lua` is the plugin entry point. It delegates all drawing work to `DrawingCanvas` via `UIManager:show(DrawingCanvas:new{})`. The canvas is a self-contained widget — closing it returns to whatever screen was active before.
+**The BlitBuffer is a display cache** — it can be rebuilt at any time by replaying the StrokeBuffer.
+Never treat BlitBuffer as the source of truth for stroke data.
 
-## Key KOReader APIs
+**Dual-path invariant:** `use_raw_input = Device:isKobo()`. Emulator always uses the gesture
+layer (`onDrawStroke`/`onDrawStrokeEnd`). Device always uses raw evdev poll loop (`_pollPen`).
+Both paths must keep working. Do not break the emulator path when adding device features.
 
-**Drawing**
-- `Blitbuffer.new(w, h, Blitbuffer.TYPE_BB8)` — allocate an 8-bit grayscale pixel buffer
-- `bb:paintLine(x0, y0, x1, y1, width, color)` — draw a line segment
-- `bb:blitFrom(src, dx, dy, sx, sy, w, h)` — blit canvas onto the display buffer (called by `paintTo`)
+---
 
-**Display refresh**
-- `UIManager:setDirty(widget, mode, geom)` — schedule a partial screen refresh
-  - `"fast"` — low-latency, allows ghosting (use per stroke segment)
-  - `"ui"` — light partial refresh (use on pen-up)
-  - `"full"` — full refresh, no ghosting (use on canvas open/close)
+## Development Loop
 
-**Input**
-- `InputContainer:registerTouchZones({...})` — register gesture handlers in `init()`
-- `ges` events: `"pan"` (carries `ges.pos`, `ges.relative`), `"pan_release"`, `"hold"`
-- Raw evdev (Phase C): open `/dev/input/eventX`, poll via `UIManager:scheduleIn`, use `ffi/linux_input_h`
-
-**Screen**
-- `require("device").screen:getSize()` → `{w, h}` Geom
-- `Screen:getWidth()`, `Screen:getHeight()`
-
-## Development Workflow
-
-KOReader has no unit test runner for UI widgets. Development is test-on-device (or emulator):
+### In the SDL emulator (most work happens here)
 
 ```bash
-# Build the emulator (from koreader repo root)
-./kodev build
-
-# Run emulator
+cd /path/to/koreader
 ./kodev run
-
-# The plugin loads automatically from plugins/fastnote.koplugin/
-# Access via: Menu → More tools → Fast Note
-# Or assign to a gesture: Menu → Gesture Manager → Open Fast Note Canvas
 ```
 
-Iterating without a device: edit files, restart the emulator. `logger.dbg(...)` output goes to stdout.
+The emulator supports: widget rendering, BlitBuffer, file I/O, tap/pan gestures (via mouse).
 
+It does NOT support: `/dev/input/eventX`, `EVIOCGABS`, E-Ink waveform modes, `Screen:isColorEnabled()` returning true.
+
+**`use_raw_input` flag:** `drawingcanvas.lua` gates all evdev code behind
+`Device:isKobo()` (or an explicit config flag). When false, the gesture fallback
+path (`onTouch` / `onPan`) allows the canvas to work in the emulator. This
+fallback path must be kept working even after Stages 2+.
+
+### On device (for input stages)
+
+- `input/pendev.lua`, `input/touchdev.lua`, `input/buttondev.lua` require real hardware
+- Use `evtest` to inspect events before writing code: `evtest /dev/input/event0`
+- Capture a palm rejection test stream: `evtest --grab /dev/input/event1 > palm_session.bin`
+- Crash logs: `<onboard>/.adds/koreader/crash.log`
+- Plugin reload: re-trigger the activation gesture (no full KOReader restart needed)
+
+### Running unit tests
+
+```bash
+cd plugins/fastnote.koplugin
+busted spec/
+```
+
+All spec files under `spec/` are pure Lua — no KOReader runtime needed.
+The `lib/` modules have no KOReader/FFI dependencies. The `input/` modules
+do (they use FFI) and are not unit-testable; test them on device.
+
+---
+
+## Stage Checklist
+
+Each stage has a "Definition of done" in `dev-plan-v2.md`. Do not close a stage
+until all criteria pass. The stages in execution order:
+
+```
+0 ✅ → 1 ✅ → 2 ✅ → 4 ✅ → 5 → 6 → 9
+                ↓              ↓
+                3 ✅            7 → 8
+                               ↓
+                               10 → 11 → 12 → 13
+```
+
+Current position: **Stage 5 is next** (SVG load + continue editing).  
+Requires on-device validation of Stage 3/4 first (palm rejection, touch polling, SVG save).
+
+---
+
+## Coding Conventions
+
+- **Lua dialect:** LuaJIT / Lua 5.1. See `.github/instructions/lua.instructions.md` for the full rules.
+- **KOReader patterns:** See `.github/skills/koreader-plugin/SKILL.md` for widget hierarchy, BlitBuffer usage, raw evdev, coordinate translation, setDirty modes, and SVG persistence.
+- **`local` everything.** Global leaks in a long-running KOReader process are hard to debug.
+- **GC discipline in hot paths.** The pen poll loop runs at ~120 Hz. Do not allocate new tables per poll tick — use persistent scratch tables (see `lua.instructions.md` → Tables).
+- **Error handling:** Wrap file I/O and JSON decode in `pcall`. A corrupt page file should degrade gracefully, not crash the plugin.
+
+---
+
+## Open Questions (from dev-plan-v2.md)
+
+These need answers before the relevant stage is implemented. Do not guess —
+surface these to the user when the stage is reached.
+
+| # | Stage | Question | Status |
+|---|-------|----------|--------|
+| 1 | 4 | One SVG file per page, or SVG + separate data file? | **Resolved: one file** ✅ |
+| 2 | 3 | Fingers draw too, or pen-only? | **Resolved: pen-only default; `finger_draw = true` in config enables finger drawing** ✅ |
+| 3 | 7 | Chrome strip height — 56 px? Configurable? | 56 px, maybe configurable |
+| 4 | 8 | Auto-create page on end-of-notebook page-forward? | Auto-create |
+| 5 | 10 | Eraser radius — 24 px default? | 24 px |
+| 6 | — | Include a "Stage 14 — latency tuning" stage? | Side quest |
+| 7 | 2 | Trust EVIOCGABS range, or show first-launch corner calibration wizard? | Trust + fallback wizard in settings |
+
+---
+
+## Key Technical Notes
+
+### Coordinate translation
+Raw Wacom coordinates must be mapped to screen pixels. The formula is in
+`dev-plan-v2.md` → "Coordinate translation." Respect `Screen:getRotationMode()`.
+`drawingcanvas.lua:_digToScreen(rx, ry)` implements all four rotation modes using
+normalized coordinates: `nx = (rx - x_min) / (x_max - x_min)`.
+
+### SVG round-trip
+`svg.read(svg.write(buffer))` must be lossless. The `<metadata>` block contains
+the JSON stroke data. If the block is absent (file hand-edited externally),
+fall back to parsing `<polyline>` elements — never crash.
+
+### ffi.cdef idempotency
+`input/pendev.lua` defines `struct fn_input_absinfo` at module level guarded by
+`pcall(ffi.cdef, ...)`. LuaJIT throws on duplicate struct declarations; never
+put `ffi.cdef` inside a function that may be called more than once.
+
+### Chrome zone
+The top 56 px of the canvas is reserved for UI chrome (exit button, page
+indicator, tools icon). Pen strokes in this zone are ignored. All touch events
+in this zone go to chrome handlers, not to drawing.
+
+### Undo stack scope
+Undo is per-page. Crossing a page boundary clears the undo stack. This is a
+deliberate scope choice — document it in comments if anyone asks.
+
+### Orientation lock
+`drawingcanvas.lua` stores `self._rotation_mode` (the locked mode). On
+`onSetRotationMode(event)`, if the incoming mode differs from `self._rotation_mode`, the
+canvas calls `self:_reinitAtRotation(self._rotation_mode)` to re-lock. That re-lock call
+emits `SetRotationMode(self._rotation_mode)` again — but the handler's `new_mode ~=
+self._rotation_mode` check is false for the second call, so there is no loop. No extra guard
+is needed.
+
+### self.dimen mutation — IN-PLACE only
+GestureRange objects inside `self.ges_events` (DrawStroke, DrawStrokeEnd) hold a direct
+reference to the `self.dimen` table created at init. **Never assign a new table** to
+`self.dimen` — mutate its fields in-place:
 ```lua
-local logger = require("logger")
-logger.dbg("fastnote: canvas opened, dimen =", self.dimen)
+self.dimen.x = 0; self.dimen.y = 0
+self.dimen.w = new_w; self.dimen.h = new_h
 ```
+Only the `MenuTap` zone (which stores its own independent Geom) needs an explicit update
+via `_updateGestureZones()` after a rotation.
 
-## Maintenance Notes
-
-**Phase A checklist** (implement `drawingcanvas.lua`):
-- [ ] `init()`: allocate full-screen `BlitBuffer`, fill white, register two touch zones (pan → draw, hold top-left → close)
-- [ ] `paintTo(bb, x, y)`: blit canvas buffer onto display
-- [ ] `onStroke(ges)`: extract prev/curr point from `ges.pos` and `ges.relative`, call `bb:paintLine`, call `UIManager:setDirty` with `"fast"` and tight bounding rect
-- [ ] Wire `main.lua` `onOpenFnoteCanvas` to show `DrawingCanvas:new{}` instead of `InfoMessage`
-- [ ] Wire `addToMainMenu` callback to the same canvas open call
-
-**Phase B** — add `strokebuffer.lua` with `penDown/penMove/penUp/toSVG`, add `pan_release` touch zone, add save+close gesture (hold bottom-left), write to `DataStorage:getDataDir() .. "/fastnote/"`.
-
-**Phase C** — add `openPenDevice()`, `startRawLoop()`, `rawTick()`, `processRawEvent()`, `digToScreen()`. Keep `use_raw_input` flag to fall back to gesture path. Full spec in `PLAN.md`.
-
-**Phase D** — add `showColorPicker()` using `ButtonDialog`, hold bottom-right corner to open. On grayscale: `Blitbuffer.gray()` shades. On color eink: `Blitbuffer.colorRGB()`. Detect at runtime with `Screen:isColorEnabled()`. Update `StrokeBuffer` to track per-stroke color in SVG output.
-
-## Integration Points
-
-- **Dispatcher action:** `open_fnote_canvas` → appears in Gesture Manager and Profile actions
-- **Main menu:** registered under `"more_tools"` sorting hint
-- **DataStorage** (Phase B+): `DataStorage:getDataDir()` for the save path — always resolves correctly across device types
-- **`/dev/input/eventX`** (Phase C): find via `/proc/bus/input/devices` — look for `"Wacom"` or `"[Pp]en"` in device name, extract `eventN` from Handlers line
-
-## Gotchas
-
-- `drawingcanvas.lua` must be required from `main.lua` as `require("plugins/fastnote.koplugin/drawingcanvas")` — relative requires don't work in KOReader plugins.
-- `InputContainer` touch zones are registered in `init()` via `self:registerTouchZones({...})` — not `onShow`.
-- `ges.relative` on a `pan` event is the **delta from the last event**, so the previous point is `ges.pos - ges.relative` (both are `Geom` objects supporting `-`).
-- On eink, `setDirty` with `"full"` on every stroke is too slow — always use `"fast"` per segment and `"ui"` on pen-up.
-- Phase C raw polling at 120 Hz: `UIManager:scheduleIn(0.008, ...)` re-schedules itself — always guard with `if not self._raw_active then return end` and clean up `pen_fd` in the close handler.
-- The digitizer coordinate range (EVIOCGABS) varies by device. Always query at open time; never hardcode `0–4095`.
+### Gesture zone registration timing
+Touch zones must be registered in `init()` via `self:registerTouchZones({...})` — not in
+`onShow`. The DrawStroke/DrawStrokeEnd zones are **always registered**; the handler
+checks `self.use_raw_input` and `self.finger_draw` at runtime to decide whether to process
+or return early. This allows the `finger_draw` toggle to work without re-registering zones.
