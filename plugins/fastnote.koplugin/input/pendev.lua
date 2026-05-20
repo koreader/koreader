@@ -186,10 +186,9 @@ function PenDev.open(path)
         y_max   = FALLBACK_Y_MAX,
         p_max   = FALLBACK_P_MAX,
         -- MT pen tracking (Elan combo chip protocol)
-        _mt_cur          = 0,    -- current MT slot being updated
-        _mt_slots        = {},   -- slot# -> {tool, id, x, y, p}
-        _mt_pen_slot     = nil,  -- slot# identified as pen (TOOL_TYPE_PEN)
-        _mt_pen_was_down = false, -- tracks BTN_TOUCH state we synthesized
+        _mt_cur      = 0,    -- current MT slot being updated
+        _mt_slots    = {},   -- slot# -> {tool, id, x, y, p}
+        _mt_pen_slot = nil,  -- slot# identified as pen (TOOL_TYPE_PEN)
     }, PenDev)
 
     self:_query_abs()
@@ -304,32 +303,17 @@ function PenDev:poll(cb)
                 end
 
             elseif t == C.EV_SYN then
-                -- Before firing the SM sync, synthesize from MT pen slot if known.
+                -- Synthesize coordinates from the MT pen slot into the SM.
+                -- BTN_TOUCH and BTN_TOOL_PEN arrive as EV_KEY events on the
+                -- Elan chip and are handled by the EV_KEY branch above —
+                -- we must NOT synthesize them here or hover triggers drawing.
                 local pen_slot = self._mt_pen_slot
                 if pen_slot then
                     local pd = self._mt_slots[pen_slot]
                     if pd then
-                        -- Update SM coordinates from MT pen data
                         if pd.x then self.sm:feed_abs(0,  pd.x) end  -- ABS_X
                         if pd.y then self.sm:feed_abs(1,  pd.y) end  -- ABS_Y
                         if pd.p then self.sm:feed_abs(24, pd.p) end  -- ABS_PRESSURE
-
-                        -- Derive pen-down state:
-                        -- touching = valid tracking ID AND (no pressure data yet, or p > 0)
-                        local is_down = (pd.id ~= nil and pd.id >= 0)
-                                     and (pd.p == nil or pd.p > 0)
-
-                        if is_down and not self._mt_pen_was_down then
-                            -- Pen just touched down: synthesize BTN_TOOL_PEN 1, BTN_TOUCH 1
-                            self.sm:feed_key(BTN_TOOL_PEN, 1, nil)
-                            self.sm:feed_key(BTN_TOUCH, 1, nil)
-                            self._mt_pen_was_down = true
-                        elseif not is_down and self._mt_pen_was_down then
-                            -- Pen lifted: synthesize BTN_TOUCH 0 (emits "up" event)
-                            self._mt_pen_was_down = false
-                            self.sm:feed_key(BTN_TOUCH, 0, cb)
-                            -- BTN_TOOL_PEN 0 handled separately via feed_syn "up"
-                        end
                     end
                 end
 

@@ -48,7 +48,7 @@ local MENU_BTN_MARGIN  = 24
 local MENU_BTN_HIT_PAD =  8
 
 -- Default stroke appearance
-local DEFAULT_LINE_WIDTH = 3
+local DEFAULT_LINE_WIDTH = 4
 local STROKE_COLOR       = Blitbuffer.COLOR_BLACK
 local DEFAULT_COLOR      = "#000000"
 
@@ -59,10 +59,15 @@ local ROT_LANDSCAPE = 3  -- DEVICE_ROTATED_COUNTER_CLOCKWISE
 ---@class DrawingCanvas : InputContainer
 local DrawingCanvas = InputContainer:extend{
     on_close_callback  = nil,
+    on_save_callback   = nil,      -- called with path after each save (Stage 5)
+    load_path          = nil,      -- if set, load this SVG on init (Stage 5)
 
     _bb           = nil,           -- BlitBuffer (display cache)
     _stroke_buf   = nil,           -- StrokeBuffer (source of truth, Stage 4)
     _current_color = DEFAULT_COLOR,
+
+    _page_path  = nil,             -- path of the current page SVG (Stage 5)
+    _page_dirty = false,           -- true when strokes added since last save
 
     use_raw_input      = false,    -- false = gesture layer; true = raw evdev
     finger_draw        = false,    -- allow capacitive touch to draw (pen-only default)
@@ -179,6 +184,12 @@ function DrawingCanvas:init()
     self.ges_events.DrawStrokeEnd = {
         GestureRange:new{ges="pan_release", range=self.dimen},
     }
+
+    -- ── Stage 5: load existing page ───────────────────────────────────────
+
+    if self.load_path then
+        self:loadPage(self.load_path)
+    end
 
     -- ── Raw input setup ────────────────────────────────────────────────────
 
@@ -388,6 +399,7 @@ function DrawingCanvas:onDrawStrokeEnd(_, ges)
     end
 
     self._stroke_buf:penUp()
+    self._page_dirty = true
 
     if self._stroke_min_x then
         local stroke_rect = utils.compute_dirty_rect(
@@ -526,6 +538,7 @@ function DrawingCanvas:_pollPen()
 
         elseif ev.type == "up" then
             self._stroke_buf:penUp()
+            self._page_dirty = true
             self._last_pen_x = nil
             self._last_pen_y = nil
             UIManager:setDirty(self, "ui")
@@ -581,6 +594,7 @@ function DrawingCanvas:_pollTouch()
                 self._last_pen_y = filtered.y
             elseif filtered.type == "up" then
                 self._stroke_buf:penUp()
+                self._page_dirty = true
                 self._last_pen_x = nil
                 self._last_pen_y = nil
                 UIManager:setDirty(self, "ui")
@@ -593,7 +607,49 @@ function DrawingCanvas:_pollTouch()
     end
 end
 
---- Save current drawing to a timestamped SVG file.
+--- Load an SVG page into this canvas, replacing the current StrokeBuffer.
+-- Safe to call during init (before the widget is on the UIManager stack).
+-- @string path  Absolute path to the SVG file.
+-- @return boolean  true on success
+function DrawingCanvas:loadPage(path)
+    local f = io.open(path, "r")
+    if not f then
+        logger.warn("FastNote canvas: loadPage: cannot open", path)
+        return false
+    end
+    local text = f:read("*a")
+    f:close()
+
+    local ok_svg, svg_module = pcall(require, "lib/svg")
+    if not ok_svg then
+        logger.warn("FastNote canvas: loadPage: svg unavailable:", svg_module)
+        return false
+    end
+
+    local ok, sb = pcall(svg_module.read, text)
+    if not ok or not sb then
+        logger.warn("FastNote canvas: loadPage: svg.read failed")
+        return false
+    end
+
+    self._stroke_buf = sb
+    self._page_path  = path
+    self._page_dirty = false
+
+    if self._bb then
+        self._bb:fill(Blitbuffer.COLOR_WHITE)
+        self._stroke_buf:repaintTo(self._bb)
+        UIManager:setDirty(self, "full")
+    end
+
+    logger.dbg("FastNote canvas: loadPage", path,
+               "(" .. #sb.strokes .. " strokes)")
+    return true
+end
+
+--- Save current drawing.
+-- If _page_path is set, saves back to that file (round-trip).
+-- Otherwise creates a timestamped file and sets _page_path to it.
 function DrawingCanvas:_saveDrawing()
     if self._stroke_buf:isEmpty() then
         logger.dbg("FastNote canvas: nothing to save")
@@ -608,13 +664,15 @@ function DrawingCanvas:_saveDrawing()
 
     local DataStorage = require("datastorage")
     local save_dir    = DataStorage:getDataDir() .. "/fastnote/"
-
-    -- Ensure directory exists
     os.execute("mkdir -p " .. save_dir)
 
-    local filename = os.date("fastnote_%Y-%m-%d_%H-%M-%S.svg")
-    local path     = save_dir .. filename
-    local f        = io.open(path, "w")
+    local path = self._page_path
+    if not path then
+        local filename = os.date("fastnote_%Y-%m-%d_%H-%M-%S.svg")
+        path = save_dir .. filename
+    end
+
+    local f = io.open(path, "w")
     if not f then
         logger.warn("FastNote canvas: cannot write to", path)
         return
@@ -622,12 +680,33 @@ function DrawingCanvas:_saveDrawing()
     f:write(svg_module.write(self._stroke_buf, self.dimen.w, self.dimen.h))
     f:close()
 
+    self._page_path  = path
+    self._page_dirty = false
+    if self.on_save_callback then self.on_save_callback(path) end
+
+    local name = path:match("[^/]+$") or path
     local InfoMessage = require("ui/widget/infomessage")
-    UIManager:show(InfoMessage:new{text = "Saved: " .. filename, timeout = 2})
+    UIManager:show(InfoMessage:new{text = "Saved: " .. name, timeout = 2})
     logger.dbg("FastNote canvas: saved to", path)
 end
 
 function DrawingCanvas:_doClose()
+    -- Auto-save back to _page_path if there are new strokes since last save.
+    if self._page_path and self._page_dirty and not self._stroke_buf:isEmpty() then
+        local ok_svg, svg_module = pcall(require, "lib/svg")
+        if ok_svg then
+            local f = io.open(self._page_path, "w")
+            if f then
+                f:write(svg_module.write(self._stroke_buf, self.dimen.w, self.dimen.h))
+                f:close()
+                self._page_dirty = false
+                if self.on_save_callback then
+                    self.on_save_callback(self._page_path)
+                end
+                logger.dbg("FastNote canvas: auto-saved to", self._page_path)
+            end
+        end
+    end
     -- Full refresh after close so the underlying UI redraws cleanly.
     UIManager:close(self)
     UIManager:setDirty(nil, "full")
