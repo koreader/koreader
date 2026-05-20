@@ -101,13 +101,15 @@ end
 
 --- Replay this stroke onto a BlitBuffer.
 -- KOReader runtime required; not busted-testable.
--- Color support is deferred to Stage 12; all strokes render as black for now.
 -- @param bb  BlitBuffer  the destination buffer
 function Stroke:paintTo(bb)
     local Blitbuffer   = require("ffi/blitbuffer")
     local canvas_utils = require("lib/canvas_utils")
-    local color        = Blitbuffer.COLOR_BLACK  -- Stage 12: parse self.color
-    local pts          = self.pts
+    local c = self.color
+    local color = (c and (c == "#ffffff" or c == "#FFFFFF"))
+                  and Blitbuffer.COLOR_WHITE
+                  or  Blitbuffer.COLOR_BLACK
+    local pts = self.pts
     for i = 4, #pts, 3 do
         local x1, y1     = pts[i-3], pts[i-2]
         local x2, y2, w2 = pts[i],   pts[i+1], pts[i+2]
