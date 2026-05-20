@@ -174,14 +174,27 @@ Each stage has a "Definition of done" in `dev-plan-v2.md`. Do not close a stage
 until all criteria pass. The stages in execution order:
 
 ```
-0 ✅ → 1 ✅ → 2 ✅ → 4 ✅ → 5 ✅ → 6 → 9
-                ↓                   ↓
-                3 ✅                 7 → 8
-                                    ↓
-                                    10 → 11 → 12 → 13
+0 ✅ → 1 ✅ → 2 ✅ → 4 ✅ → 5 ✅ → 6* → 9
+                ↓                    ↓
+                3 ✅                  7 ✅ → 8
+                                     ↓
+                                     10 ✅ → 11 ✅ → 12 → 13
 ```
 
-Current position: **Stage 6** (Notebook model — `model/page.lua`, `model/notebook.lua`, `model/library.lua`).
+`*` Stage 6 code is complete; needs on-device validation.
+
+Current position: **Stage 8** (hardware page buttons) and **Stage 9** (browser)
+can be worked in parallel once Stage 6 is validated on device.
+
+### What each remaining stage adds
+
+| Stage | What | Status |
+|-------|------|--------|
+| 6 | Notebook model (`model/*.lua`, `main.lua` routing) | code done, needs device test |
+| 8 | Hardware page buttons — prev/next page | not started |
+| 9 | Notebook browser UI — list/create/rename/delete | not started |
+| 12 | Color picker — 6-color palette overlay | not started |
+| 13 | Optional polish — thumbnails, PDF export | not started |
 
 ---
 

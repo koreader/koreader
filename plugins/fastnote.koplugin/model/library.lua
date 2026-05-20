@@ -40,7 +40,9 @@ function Library:_nb_dir()
 end
 
 function Library:_scan()
-    local handle = io.popen("ls -1 " .. self:_nb_dir() .. " 2>/dev/null")
+    -- Sort alphabetically; UUID format nb_<timestamp>_<seq>_<rand> means
+    -- alphabetical order = chronological creation order.
+    local handle = io.popen("ls -1 " .. self:_nb_dir() .. " 2>/dev/null | sort")
     if not handle then return end
     for entry in handle:lines() do
         -- Each entry should be a UUID dir containing notebook.lua
