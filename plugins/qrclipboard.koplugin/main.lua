@@ -34,8 +34,12 @@ function QRClipboard:addToHighlightDialog()
                 -- 'this' is self.ui.highlight. Do as ReaderHighlight:saveHighlight() does.
                 this:highlightFromHoldPos()
                 if not (this.selected_text and this.selected_text.pos0 and this.selected_text.pos1) then return end
-                local text = this.ui.rolling
-                    and this.document:extendXPointersToSentenceSegment(this.selected_text.pos0, this.selected_text.pos1)
+                local text
+                if this.ui.rolling then
+                    local extended_text =
+                        this.document:extendXPointersToSentenceSegment(this.selected_text.pos0, this.selected_text.pos1)
+                    text = extended_text and extended_text.text
+                end
                 text = util.cleanupSelectedText(text or this.selected_text.text)
                 if Device:hasClipboard() then -- let the text to be reused via menu
                     Device.input.setClipboardText(text)
