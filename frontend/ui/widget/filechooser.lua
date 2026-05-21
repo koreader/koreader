@@ -20,7 +20,7 @@ local FileChooser = BookList:extend{
     show_path = true,
     parent = nil,
     show_filter      = G_reader_settings:readSetting("show_filter", {}),
-    show_recursive   = G_reader_settings:readSetting("show_recursive", false), -- flat view
+    show_flat_view   = G_reader_settings:readSetting("show_flat_view", false), -- show all files from subfolders
     show_hidden      = G_reader_settings:readSetting("show_hidden", false), -- folders/files starting with "."
     show_unsupported = G_reader_settings:readSetting("show_unsupported", false), -- set to true to ignore file_filter
     file_filter = nil, -- function defined in the caller, returns true for files to be shown
@@ -122,7 +122,7 @@ function FileChooser:getPathList(path, collate, dirs, files)
                 local item = true
                 if attributes.mode == "directory" and f ~= "." and f ~= ".."
                         and self:show_dir(f) then
-                    if FileChooser.show_recursive then
+                    if FileChooser.show_flat_view then
                         self:getPathList(fullpath, collate, dirs, files)
                     else
                         if collate then -- when collate == nil count only to display in folder mandatory
@@ -141,7 +141,7 @@ function FileChooser:getPathList(path, collate, dirs, files)
             end
         end
     else -- error, probably "permission denied"
-        if FileChooser.show_recursive then return end
+        if FileChooser.show_flat_view then return end
         if unreadable_dir_content[path] then
             -- Add this dummy item that will be replaced with a message by genItemTable()
             table.insert(dirs, self:getListItem(path, "./.", path, {}))
@@ -391,7 +391,7 @@ function FileChooser:onFolderUp()
 end
 
 function FileChooser:toggleShowFilesMode(mode)
-    -- modes: "show_recursive", "show_hidden", "show_unsupported"
+    -- modes: "show_flat_view", "show_hidden", "show_unsupported"
     FileChooser[mode] = not FileChooser[mode]
     G_reader_settings:saveSetting(mode, FileChooser[mode])
     self:refreshPath()
