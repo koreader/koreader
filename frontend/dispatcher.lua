@@ -145,7 +145,7 @@ local settingsList = {
     set_sort_by = {category="string", event="SetSortBy", title=_("Sort by"), args_func=FileManager.getSortByActions, filemanager=true},
     set_reverse_sorting = {category="string", event="SetReverseSorting", title=_("Reverse sorting"), args={true, false}, toggle={_("on"), _("off")}, filemanager=true},
     set_mixed_sorting = {category="string", event="SetMixedSorting", title=_("Folders and files mixed"), args={true, false}, toggle={_("on"), _("off")}, filemanager=true},
-    set_show_recursive = {category="string", event="SetShowRecursive", title=_("Show all files from subfolders"), args={true, false}, toggle={_("on"), _("off")}, filemanager=true, separator=true},
+    set_flat_view = {category="string", event="SetFlatView", title=_("Show all files from subfolders"), args={true, false}, toggle={_("on"), _("off")}, filemanager=true, separator=true},
     ----
     show_plus_menu = {category="none", event="ShowPlusMenu", title=_("Show plus menu"), filemanager=true},
     toggle_select_mode = {category="none", event="ToggleSelectMode", title=_("Toggle select mode"), filemanager=true},
@@ -405,7 +405,7 @@ local dispatcher_menu_order = {
     "set_sort_by",
     "set_reverse_sorting",
     "set_mixed_sorting",
-    "set_show_recursive",
+    "set_flat_view",
     ----
     "show_plus_menu",
     "toggle_select_mode",
