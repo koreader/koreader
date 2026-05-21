@@ -156,8 +156,8 @@ function FileManagerMenu:setUpdateItemTable()
         sub_item_table = {
             {
                 text = _("Show all files from subfolders"),
-                checked_func = function() return FileChooser.show_recursive end,
-                callback = function() FileChooser:toggleShowFilesMode("show_recursive") end,
+                checked_func = function() return FileChooser.show_flat_view end,
+                callback = function() FileChooser:toggleShowFilesMode("show_flat_view") end,
             },
             {
                 text = _("Show hidden files"),
