@@ -1397,7 +1397,7 @@ function FileManager:onShowFolderMenu()
         end
     end
     -- subfolders
-    if FileChooser.show_recursive then
+    if FileChooser.show_flat_view then
         local subfolders = {}
         local ok, iter, dir_obj = pcall(lfs.dir, curr_path)
         if ok then
@@ -1696,9 +1696,9 @@ function FileManager:onSetMixedSorting(toggle)
     return true
 end
 
-function FileManager:onSetShowRecursive(toggle)
-    FileChooser.show_recursive = toggle
-    G_reader_settings:saveSetting("show_recursive", toggle)
+function FileManager:onSetFlatView(toggle)
+    FileChooser.show_flat_view = toggle
+    G_reader_settings:saveSetting("show_flat_view", toggle)
     self.file_chooser:refreshPath()
     return true
 end
