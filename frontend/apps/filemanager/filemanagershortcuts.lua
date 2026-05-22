@@ -28,6 +28,12 @@ local FileManagerShortcuts = WidgetContainer:extend{
         "wikipedia_save_dir",
         -- plugin shortcuts
     },
+    provider_patterns = {
+        ["%H%"] = "home_dir",
+        ["%D%"] = "download_dir",
+        ["%S%"] = "screenshot_dir",
+        ["%W%"] = "wikipedia_save_dir",
+    },
     provider_props = {
         home_dir = {
             name = _("Home"),
@@ -576,6 +582,33 @@ end
 
 function FileManagerShortcuts:onSetDimensions(dimen)
     self.dimen = dimen
+end
+
+function FileManagerShortcuts:expandPath(path)
+    if self then
+        local function replace_func(pattern)
+            local provider = self.provider_patterns[pattern]
+            return provider and self.provider_props[provider].get()
+        end
+        if path and path:find("%%") then
+            return path:gsub("(%%%a%%)", replace_func)
+        end
+        return path
+    end
+
+    local function getPatternName(pattern)
+        local provider = FileManagerShortcuts.provider_patterns[pattern]
+        return provider and pattern .. " " .. FileManagerShortcuts.provider_props[provider].name
+    end
+    UIManager:show(InfoMessage:new{
+        text = table.concat({
+            getPatternName("%H%"),
+            getPatternName("%D%"),
+            getPatternName("%S%"),
+            getPatternName("%W%"),
+        }, "\n"),
+        monospace_font = true,
+    })
 end
 
 return FileManagerShortcuts
