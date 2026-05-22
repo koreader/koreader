@@ -17,7 +17,6 @@ To get and compile the source you must have:
 - `awk`
 - `bash`: version >= 4.0
 - `cmake`: version >= 3.17.5
-- `curl`
 - `find`
 - `gcc/g++` or `clang/clang++`: with C11 & C++17 support
 - `gettext`
@@ -38,18 +37,17 @@ Optional:
 - `ccache`: recommended for faster recompilation times
 - `luacheck`, `shellcheck` and `shfmt`: for linting the codebase with `./kodev check`
 - `luajit` (Linux only): to update Linux packages' metadata
-- `luajit` development files and `gcc` plugin support (Linux only): to generate FFI cdecls
-- `SDL3`: version >= 3.2.12, for running the emulator / tests (if the library is not found, a version will automatically be built)
+- `ffi-cdecl` or `luajit` + `tree-sitter >= 0.26.0` + `tree-sitter-c >= 0.24.0`: to generate FFI cdecls
+- `SDL3`: version >= 3.2.12, only the library, for running the emulator / tests (if not found, a version will automatically be built)
 
 ### Alpine Linux
 
 Install the prerequisites using apk:
 
 ```
-sudo apk add autoconf automake bash cmake coreutils curl diffutils \
-    findutils g++ gcc gettext-dev git grep gzip libtool linux-headers \
-    make meson nasm ninja-build patch pkgconf procps-ng sdl3 tar \
-    unzip wget
+sudo apk add autoconf automake bash cmake coreutils diffutils findutils \
+    g++ gcc gettext-dev git grep gzip libtool linux-headers make meson \
+    nasm ninja-build patch pkgconf procps-ng sdl3 tar unzip wget
 ```
 
 **Note:** don't forget to add `/usr/lib/ninja-build/bin` to `$PATH`
@@ -80,8 +78,8 @@ Install the prerequisites using APT:
 
 ```
 sudo apt install --no-install-recommends autoconf automake build-essential \
-    ca-certificates cmake curl gcc-multilib gettext git libtool libtool-bin \
-    meson nasm ninja-build patch pkg-config unzip wget
+    ca-certificates cmake gcc-multilib gettext git libtool libtool-bin meson \
+    nasm ninja-build patch pkg-config unzip wget
 ```
 
 To install SDL3, on recent enough distributions:
