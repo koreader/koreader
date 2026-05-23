@@ -219,6 +219,7 @@ function BookStatusWidget:setStar(num)
     if num then
         num = (num == 1 and self.summary.rating == 1) and 0 or num
         self.summary.rating = num ~= 0 and num or nil
+        BookList.setBookInfoCacheProperty(self.ui.document.file, "rating", num)
         self.updated = true
 
         for i = 1, num do
@@ -462,9 +463,15 @@ function BookStatusWidget:genSummaryGroup(width)
         self.note_widget,
     }
     self.note_frame.onGesture = function(frame, ev)
-        if ev and ev.ges == "tap" then
+        if ev and ev.ges == "tap"
+            and ev.pos
+            and self.note_frame
+            and self.note_frame.dimen
+            and ev.pos:intersectWith(self.note_frame.dimen)
+        then
             return self:openReviewDialog()
         end
+        return false
     end
 
     table.insert(self.layout, {self.note_frame})

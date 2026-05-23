@@ -24,7 +24,7 @@ local T = ffiUtil.template
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
     menu_items = nil, -- table, mandatory
-    registered_widgets = nil,
+    registered_widgets = nil, -- array
 }
 
 function FileManagerMenu:init()
@@ -54,10 +54,7 @@ function FileManagerMenu:init()
 
     self:registerKeyEvents()
 
-    self.activation_menu = G_reader_settings:readSetting("activate_menu")
-    if self.activation_menu == nil then
-        self.activation_menu = "swipe_tap"
-    end
+    self.activation_menu = G_reader_settings:readSetting("activate_menu") or "swipe_tap"
 end
 
 function FileManagerMenu:registerKeyEvents()
@@ -66,9 +63,7 @@ function FileManagerMenu:registerKeyEvents()
         if Device:hasFewKeys() then
             self.key_events.KeyPressShowMenu = { { { "Menu", "Right" } } }
         end
-        if Device:hasScreenKB() then
-            self.key_events.OpenLastDoc = { { "ScreenKB", "Back" } }
-        end
+        -- OpenLastDoc = { { "ScreenKB", "Back" } } handled by hotkeys
     end
 end
 
@@ -159,6 +154,11 @@ function FileManagerMenu:setUpdateItemTable()
     self.menu_items.filebrowser_settings = {
         text = _("Settings"),
         sub_item_table = {
+            {
+                text = _("Show all files from subfolders"),
+                checked_func = function() return FileChooser.show_flat_view end,
+                callback = function() FileChooser:toggleShowFilesMode("show_flat_view") end,
+            },
             {
                 text = _("Show hidden files"),
                 checked_func = function() return FileChooser.show_hidden end,
@@ -342,6 +342,7 @@ function FileManagerMenu:setUpdateItemTable()
                             local current_path = G_reader_settings:readSetting("home_dir")
                             local default_path = filemanagerutil.getDefaultDir()
                             local caller_callback = function(path)
+                                self.ui.folder_shortcuts:updateShortcut("home_dir", path)
                                 G_reader_settings:saveSetting("home_dir", path)
                                 self.ui:updateTitleBarPath()
                             end
@@ -393,9 +394,19 @@ To:
                 end,
             },
             {
+                text = _("Show parent folder"),
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("show_parent_folder")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("show_parent_folder")
+                    FileChooser:refreshPath()
+                end,
+            },
+            {
                 text = _("Show collection mark"),
                 checked_func = function()
-                    return G_reader_settings:hasNot("collection_show_mark")
+                    return G_reader_settings:nilOrTrue("collection_show_mark")
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrTrue("collection_show_mark")
@@ -453,13 +464,6 @@ To:
             },
         },
     }
-
-    for _, widget in pairs(self.registered_widgets) do
-        local ok, err = pcall(widget.addToMainMenu, widget, self.menu_items)
-        if not ok then
-            logger.err("failed to register widget", widget.name, err)
-        end
-    end
 
     self.menu_items.show_filter = self:getShowFilterMenuTable()
     self.menu_items.sort_by = self:getSortingMenuTable()
@@ -872,6 +876,13 @@ To:
         }
     end
 
+    for _, widget in ipairs(self.registered_widgets) do
+        local ok, err = pcall(widget.addToMainMenu, widget, self.menu_items)
+        if not ok then
+            logger.err("failed to register widget", widget.name, err)
+        end
+    end
+
     -- NOTE: This is cached via require for ui/plugin/insert_menu's sake...
     local order = require("ui/elements/filemanager_menu_order")
 
@@ -881,7 +892,7 @@ end
 dbg:guard(FileManagerMenu, 'setUpdateItemTable',
     function(self)
         local mock_menu_items = {}
-        for _, widget in pairs(self.registered_widgets) do
+        for _, widget in ipairs(self.registered_widgets) do
             -- make sure addToMainMenu works in debug mode
             widget:addToMainMenu(mock_menu_items)
         end

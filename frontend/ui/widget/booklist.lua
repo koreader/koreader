@@ -1,6 +1,5 @@
 local DocSettings = require("docsettings")
 local Menu = require("ui/widget/menu")
-local Utf8Proc = require("ffi/utf8proc")
 local datetime = require("datetime")
 local ffiUtil = require("ffi/util")
 local sort = require("sort")
@@ -245,6 +244,26 @@ BookList.collates = {
             end
         end,
     },
+    rating = {
+        text = _("rating"),
+        menu_order = 140,
+        item_func = function(item, ui)
+            local file = item.path or item.file
+            item.doc_props = ui.bookinfo:getDocProps(file)
+            item.rating = BookList.getBookInfo(file).rating or 0
+        end,
+        init_sort_func = function()
+            return function(a, b)
+                if a.rating ~= b.rating then
+                    return a.rating > b.rating
+                end
+                return ffiUtil.strcoll(a.doc_props.display_title, b.doc_props.display_title)
+            end
+        end,
+        mandatory_func = function(item)
+            return BookList.getBookRatingString(item.rating)
+        end,
+    },
 }
 
 function BookList:init()
@@ -258,6 +277,7 @@ function BookList.setBookInfoCache(file, doc_settings)
     local book_info = {
         been_opened      = true,
         status           = nil,
+        rating           = nil,
         pages            = nil,
         has_annotations  = nil,
         percent_finished = doc_settings:readSetting("percent_finished"),
@@ -267,6 +287,7 @@ function BookList.setBookInfoCache(file, doc_settings)
     if BookList.getBookStatusString(book_info.status) == nil then
         book_info.status = "reading"
     end
+    book_info.rating = summary and summary.rating or 0
     local pages = doc_settings:isTrue("pagemap_use_page_labels")
         and doc_settings:readSetting("pagemap_doc_pages")
          or doc_settings:readSetting("doc_pages")
@@ -357,13 +378,11 @@ local status_strings_singular = {
 
 function BookList.getBookStatusString(status, with_prefix, singular)
     local status_string = status and (singular and status_strings_singular[status] or status_strings[status])
-    if status_string then
-        if with_prefix then
-            status_string = Utf8Proc.lowercase(util.fixUtf8(status_string, "?"))
-            return T(_("Status: %1"), status_string)
-        end
-        return status_string
-    end
+    return status_string and (with_prefix and T(_("Status: %1"), util.stringLower(status_string)) or status_string)
+end
+
+function BookList.getBookRatingString(rating)
+    return ({ "☆☆☆☆☆", "★☆☆☆☆", "★★☆☆☆", "★★★☆☆", "★★★★☆", "★★★★★" })[rating + 1]
 end
 
 return BookList

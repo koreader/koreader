@@ -422,8 +422,6 @@ function Emulator:initNetworkManager(NetworkMgr)
     NetworkMgr.isConnected = NetworkMgr.isWifiOn
 end
 
-io.write("Starting SDL in " .. SDL.getBasePath() .. "\n")
-
 -------------- device probe ------------
 if os.getenv("APPIMAGE") then
     return AppImage

@@ -95,7 +95,7 @@ function DocumentRegistry:getProvider(file, include_aux)
         local provider_key = DocumentRegistry:getAssociatedProviderKey(file)
         local provider = provider_key and self.known_providers[provider_key]
         if provider and (not provider.order or include_aux) then -- excluding auxiliary by default
-            return provider
+            return provider, true
         end
         -- highest weighted provider
         return providers and providers[1].provider

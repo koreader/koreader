@@ -62,6 +62,7 @@ local settingsList = {
     favorites = {category="none", event="ShowColl", title=_("Favorites"), general=true},
     collections = {category="none", event="ShowCollList", title=_("Collections"), general=true},
     collections_search = {category="none", event="ShowCollectionsSearchDialog", title=_("Collections search"), general=true},
+    book_metadata_archive = {category="none", event="ShowBookMetadataArchive", title=_("Book metadata archive"), general=true},
     bookmark_browser = {category="none", event="ShowBookmarkBrowser", title=_("Bookmark browser"), general=true, separator=true},
     ----
     dictionary_lookup = {category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), general=true},
@@ -143,15 +144,16 @@ local settingsList = {
     set_display_mode = {category="string", event="SetDisplayMode", title=_("Set display mode"), args_func=FileManager.getDisplayModeActions, filemanager=true},
     set_sort_by = {category="string", event="SetSortBy", title=_("Sort by"), args_func=FileManager.getSortByActions, filemanager=true},
     set_reverse_sorting = {category="string", event="SetReverseSorting", title=_("Reverse sorting"), args={true, false}, toggle={_("on"), _("off")}, filemanager=true},
-    set_mixed_sorting = {category="string", event="SetMixedSorting", title=_("Folders and files mixed"), args={true, false}, toggle={_("on"), _("off")}, filemanager=true, separator=true},
+    set_mixed_sorting = {category="string", event="SetMixedSorting", title=_("Folders and files mixed"), args={true, false}, toggle={_("on"), _("off")}, filemanager=true},
+    set_flat_view = {category="string", event="SetFlatView", title=_("Show all files from subfolders"), args={true, false}, toggle={_("on"), _("off")}, filemanager=true, separator=true},
     ----
     show_plus_menu = {category="none", event="ShowPlusMenu", title=_("Show plus menu"), filemanager=true},
     toggle_select_mode = {category="none", event="ToggleSelectMode", title=_("Toggle select mode"), filemanager=true},
     refresh_content = {category="none", event="RefreshContent", title=_("Refresh content"), filemanager=true},
-    folder_shortcuts = {category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true},
     file_search = {category="none", event="ShowFileSearch", title=_("File search"), filemanager=true},
     file_search_results = {category="none", event="ShowSearchResults", title=_("Last file search results"), filemanager=true},
     ----
+    folder_shortcuts = {category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true},
     folder_up = {category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
     fm_go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), filemanager=true},
     fm_back = {category="none", event="Back", title=_("Back"), filemanager=true, separator=true},
@@ -216,6 +218,7 @@ local settingsList = {
     toggle_handmade_toc = {category="none", event="ToggleHandmadeToc", title=_("Toggle custom TOC"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
     toggle_handmade_flows = {category="none", event="ToggleHandmadeFlows", title=_("Toggle custom hidden flows"), reader=true, separator=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
     ----
+    text_selection = {category="none", event="StartHighlightIndicator", title=_("Toggle text selection mode"), reader=true, condition=Device:hasKeyboard()},
     set_highlight_action = {category="string", event="SetHighlightAction", title=_("Set highlight action"), args_func=ReaderHighlight.getHighlightActions, reader=true},
     cycle_highlight_action = {category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), reader=true},
     cycle_highlight_style = {category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), reader=true, separator=true},
@@ -318,6 +321,7 @@ local dispatcher_menu_order = {
     "favorites",
     "collections",
     "collections_search",
+    "book_metadata_archive",
     "bookmark_browser",
     ----
     "dictionary_lookup",
@@ -401,14 +405,15 @@ local dispatcher_menu_order = {
     "set_sort_by",
     "set_reverse_sorting",
     "set_mixed_sorting",
+    "set_flat_view",
     ----
     "show_plus_menu",
     "toggle_select_mode",
     "refresh_content",
-    "folder_shortcuts",
     "file_search",
     "file_search_results",
     ----
+    "folder_shortcuts",
     "folder_up",
     "fm_go_to",
     "fm_back",
@@ -473,6 +478,7 @@ local dispatcher_menu_order = {
     "toggle_handmade_toc",
     "toggle_handmade_flows",
     ----
+    "text_selection",
     "set_highlight_action",
     "cycle_highlight_action",
     "cycle_highlight_style",

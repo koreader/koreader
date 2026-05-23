@@ -21,6 +21,7 @@ local ReadTimer = WidgetContainer:extend{
     timer_symbol = "\u{23F2}", -- ⏲ timer symbol
     timer_letter = "T",
     default_expiry_message_text = _("Time is up"),
+    event_timer_expired = "ReadTimerExpired",
 
     -- static for all plugin instances, to keep scheduled timer across views
     restore_scheduled_time = nil,
@@ -55,7 +56,7 @@ function ReadTimer:init()
         end
 
         self.time = 0
-        UIManager:broadcastEvent(Event:new("ReadTimerExpired"))
+        UIManager:broadcastEvent(Event:new(self.event_timer_expired))
         if self.settings.show_on_expiry == "nothing" then
             maybeRescheduleInterval()
             return
@@ -144,6 +145,14 @@ function ReadTimer:init()
         self:addAdditionalFooterContent()
     end
 
+    self.ui:registerPostInitCallback(function()
+        if self.ui.profiles then
+            self.ui.profiles:registerAutoExecTrigger({
+                text = _("on read timer expiry"),
+                event = self.event_timer_expired,
+            })
+        end
+    end)
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
 end

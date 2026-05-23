@@ -121,6 +121,16 @@ function Exporter:init()
     self.targets = genExportersTable(self.path)
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
+    self.ui.folder_shortcuts.registerShortcut({
+        provider = Exporter.name,
+        name = _("Export highlights folder"),
+        get = function()
+            return self.settings.clipping_dir or self.default_clipping_dir
+        end,
+        set = function(path)
+            self.settings.clipping_dir = path
+        end,
+    })
 end
 
 function Exporter:onDispatcherRegisterActions()
@@ -484,7 +494,10 @@ function Exporter:chooseFolder()
     local current_path = self.settings.clipping_dir
     local default_path = self.default_clipping_dir
     local caller_callback = function(path)
-        self.settings.clipping_dir = path
+        if current_path ~= path then
+            self.ui.folder_shortcuts:updateShortcut(Exporter.name, path)
+            self.settings.clipping_dir = path
+        end
     end
     filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path)
 end

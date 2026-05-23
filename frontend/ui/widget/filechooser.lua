@@ -3,7 +3,6 @@ local BookList = require("ui/widget/booklist")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
-local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local ffi = require("ffi")
@@ -21,6 +20,7 @@ local FileChooser = BookList:extend{
     show_path = true,
     parent = nil,
     show_filter      = G_reader_settings:readSetting("show_filter", {}),
+    show_flat_view   = G_reader_settings:readSetting("show_flat_view", false), -- show all files from subfolders
     show_hidden      = G_reader_settings:readSetting("show_hidden", false), -- folders/files starting with "."
     show_unsupported = G_reader_settings:readSetting("show_unsupported", false), -- set to true to ignore file_filter
     file_filter = nil, -- function defined in the caller, returns true for files to be shown
@@ -98,7 +98,7 @@ end
 function FileChooser:init()
     self.path_items = {}
     if lfs.attributes(self.path, "mode") ~= "directory" then
-        self.path = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+        self.path = filemanagerutil.getHomeFolder()
     end
     BookList.init(self)
     self:refreshPath()
@@ -106,6 +106,11 @@ end
 
 function FileChooser:getList(path, collate)
     local dirs, files = {}, {}
+    self:getPathList(path, collate, dirs, files)
+    return dirs, files
+end
+
+function FileChooser:getPathList(path, collate, dirs, files)
     -- lfs.dir directory without permission will give error
     local ok, iter, dir_obj = pcall(lfs.dir, path)
     if ok then
@@ -117,10 +122,14 @@ function FileChooser:getList(path, collate)
                 local item = true
                 if attributes.mode == "directory" and f ~= "." and f ~= ".."
                         and self:show_dir(f) then
-                    if collate then -- when collate == nil count only to display in folder mandatory
-                        item = self:getListItem(path, f, fullpath, attributes, collate)
+                    if FileChooser.show_flat_view then
+                        self:getPathList(fullpath, collate, dirs, files)
+                    else
+                        if collate then -- when collate == nil count only to display in folder mandatory
+                            item = self:getListItem(path, f, fullpath, attributes, collate)
+                        end
+                        table.insert(dirs, item)
                     end
-                    table.insert(dirs, item)
                 -- Always ignore macOS resource forks.
                 elseif attributes.mode == "file" and not util.stringStartsWith(f, "._")
                         and self:show_file(f, fullpath) then
@@ -132,6 +141,7 @@ function FileChooser:getList(path, collate)
             end
         end
     else -- error, probably "permission denied"
+        if FileChooser.show_flat_view then return end
         if unreadable_dir_content[path] then
             -- Add this dummy item that will be replaced with a message by genItemTable()
             table.insert(dirs, self:getListItem(path, "./.", path, {}))
@@ -146,7 +156,6 @@ function FileChooser:getList(path, collate)
             end
         end
     end
-    return dirs, files
 end
 
 function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
@@ -253,8 +262,10 @@ function FileChooser:genItemTable(dirs, files, path)
     end
 
     if path then -- file browser or PathChooser
-        if path ~= "/" and not (G_reader_settings:isTrue("lock_home_folder") and
-                                path == G_reader_settings:readSetting("home_dir")) then
+        if path ~= "/"
+            and not (G_reader_settings:isFalse("show_parent_folder") and self.name == "filemanager")
+            and not (G_reader_settings:isTrue("lock_home_folder") and path == G_reader_settings:readSetting("home_dir"))
+        then
             table.insert(item_table, 1, {
                 text = BD.mirroredUILayout() and BD.ltr("../ ⬆") or "⬆ ../",
                 path = path.."/..",
@@ -300,7 +311,7 @@ function FileChooser:getMenuItemMandatory(item, collate)
         if #sub_dirs > 0 then
             text = T("%1 \u{F114} ", #sub_dirs) .. text
         end
-        if FileManagerShortcuts:hasFolderShortcut(item.path) then
+        if self.ui.folder_shortcuts:hasFolderShortcut(item.path, true) then
             text = "☆ " .. text
         end
     end
@@ -321,7 +332,8 @@ function FileChooser:refreshPath()
         itemmatch = {path = self.focused_path}
         self.focused_path = nil
     end
-    local subtitle = self.name ~= "filemanager" and BD.directory(filemanagerutil.abbreviate(self.path)) -- PathChooser
+    local subtitle = self.name ~= "filemanager" -- filemanager does it by itself
+        and (self.ui.folder_shortcuts:getShortcutFullName(self.path) or BD.directory(filemanagerutil.abbreviate(self.path)))
     self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path], itemmatch, subtitle)
 end
 
@@ -379,7 +391,7 @@ function FileChooser:onFolderUp()
 end
 
 function FileChooser:toggleShowFilesMode(mode)
-    -- modes: "show_hidden", "show_unsupported"
+    -- modes: "show_flat_view", "show_hidden", "show_unsupported"
     FileChooser[mode] = not FileChooser[mode]
     G_reader_settings:saveSetting(mode, FileChooser[mode])
     self:refreshPath()

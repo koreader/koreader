@@ -4,6 +4,7 @@ local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonSelector = require("ui/widget/buttonselector")
 local CheckButton = require("ui/widget/checkbutton")
+local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -100,6 +101,19 @@ function BookmarkBrowser:showSourceDialog(ui, force_show_dialog)
                     for file in pairs(ui.selected_files) do
                         books[file] = true
                     end
+                end)
+            end,
+        },
+        metadata_archive = {
+            text = _("Book metadata archive"),
+            enabled = G_reader_settings:has("document_metadata_arc_folder"),
+            callback = function()
+                fetch_and_show_bookmarks("metadata_archive", function(books)
+                    util.findFiles(G_reader_settings:readSetting("document_metadata_arc_folder"), function(fullpath, filename)
+                        if filename:match("%.lua$") then
+                            books[fullpath] = true
+                        end
+                    end, false)
                 end)
             end,
         },
@@ -204,6 +218,7 @@ function BookmarkBrowser:showSourceDialog(ui, force_show_dialog)
             gen_source_button("history"),
             gen_source_button("collections"),
             gen_source_button("selected_files"),
+            gen_source_button("metadata_archive"),
             gen_source_button("home_folder"),
             gen_source_button("home_folder_subfolders"),
             gen_source_button("folder"),
@@ -310,14 +325,19 @@ function BookmarkBrowser:getBookList(files)
     local current_file = self.ui.document and self.ui.document.file
     local books = {}
     for file in pairs(files) do
+        local is_deleted, doc_settings, doc_props, annotations
         local is_current_file = file == current_file or nil
-        local doc_settings, doc_props, annotations
         if is_current_file then
             doc_settings = self.ui.doc_settings
             doc_props = self.ui.doc_props
             annotations = self.ui.annotation.annotations
         else
-            doc_settings = BookList.hasBookBeenOpened(file) and BookList.getDocSettings(file)
+            is_deleted = file:match("%.lua$")
+            if is_deleted then
+                doc_settings = DocSettings.openSettingsFile(file)
+            else
+                doc_settings = BookList.hasBookBeenOpened(file) and BookList.getDocSettings(file)
+            end
             if doc_settings then
                 doc_props = doc_settings:readSetting("doc_props")
                 annotations = doc_settings:readSetting("annotations")
@@ -333,6 +353,7 @@ function BookmarkBrowser:getBookList(files)
                 enabled = true, -- start with showing all books from the source
                 file = file,
                 is_current_file = is_current_file,
+                is_deleted = is_deleted,
                 doc_settings = doc_settings,
                 doc_props = doc_props,
                 annotations = annotations,
@@ -368,7 +389,7 @@ function BookmarkBrowser:getItemTable()
     local no_filter = self.filters_nb == 0
     self.visible_books_nb = 0 -- may differ from the enabled books number due to bookmarks filtering
     local item_table = {}
-    for __, book in ipairs(self.books) do
+    for self_books_idx, book in ipairs(self.books) do
         if book.enabled then
             local book_item_table_idx = #item_table + 1
             local bookmark_idx = 0
@@ -413,12 +434,18 @@ function BookmarkBrowser:getItemTable()
             if annotations_nb > 0 then
                 book.item_table_idx = book_item_table_idx
                 self.visible_books_nb = self.visible_books_nb + 1
+                local mandatory = "(" .. annotations_nb .. ")"
+                if book.is_deleted and book.doc_settings:readSetting("metadata_arc").on_closing then
+                    mandatory = "\u{e28b} " .. mandatory
+                end
                 table.insert(item_table, { -- book entry
                     text = T(_("%1 • %2"), book.authors, book.doc_props.display_title),
                     bold = true,
-                    mandatory = "(" .. annotations_nb .. ")",
+                    mandatory = mandatory,
+                    self_books_idx = self_books_idx,
                     file = book.file,
                     is_current_file = book.is_current_file,
+                    is_deleted = book.is_deleted,
                     doc_props = book.doc_props,
                     doc_settings = book.doc_settings,
                     authors = book.authors,
@@ -460,6 +487,7 @@ function BookmarkBrowser:showBookDialog(item)
         {
             {
                 text = _("Open"),
+                enabled = not item.is_deleted,
                 callback = function()
                     UIManager:close(book_dialog)
                     self.bm_list:onClose()
@@ -475,8 +503,8 @@ function BookmarkBrowser:showBookDialog(item)
             filemanagerutil.genBookInformationButton(item.doc_settings, item.doc_props, close_dialog_callback),
         },
         {
-            filemanagerutil.genBookCoverButton(file, item.doc_props, close_dialog_callback),
-            filemanagerutil.genBookDescriptionButton(file, item.doc_props, close_dialog_callback),
+            filemanagerutil.genBookCoverButton(file, item.doc_props, close_dialog_callback, item.is_deleted),
+            filemanagerutil.genBookDescriptionButton(file, item.doc_props, close_dialog_callback, item.is_deleted),
         },
         {}, -- separator
         {
@@ -546,6 +574,7 @@ function BookmarkBrowser:showBookmarkDetails(item)
         {
             {
                 text = _("View in book"),
+                enabled = not book.is_deleted,
                 callback = function()
                     textviewer:onClose()
                     self.bm_list:onClose()
@@ -600,7 +629,6 @@ function BookmarkBrowser:showBookmarkListMenu()
             {
                 text = are_disabled_books
                     and T(_("Books: %1 / %2"), self.filter_table.enabled_books_nb, #self.books) or _("Books"),
-                enabled = #self.books > 1,
                 callback = function()
                     UIManager:close(bm_list_menu)
                     self:showBookList(true)
@@ -930,7 +958,7 @@ end
 function BookmarkBrowser:genShowBookListButton(caller_callback)
     return {
         text = _("Book list"),
-        enabled = self.visible_books_nb > 1,
+        enabled = self.visible_books_nb > 0,
         callback = function()
             caller_callback()
             self:showBookList()

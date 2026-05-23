@@ -106,10 +106,8 @@ function FileManager:onSetDimensions(dimen)
 end
 
 function FileManager:updateTitleBarPath(path)
-    local text = BD.directory(filemanagerutil.abbreviate(path))
-    if self.folder_shortcuts:hasFolderShortcut(path) then
-        text = "☆ " .. text
-    end
+    path = path or self.file_chooser.path
+    local text = self.folder_shortcuts:getShortcutFullName(path) or BD.directory(filemanagerutil.abbreviate(path))
     self.title_bar:setSubTitle(text)
 end
 
@@ -366,11 +364,7 @@ function FileManager:registerKeyEvents()
         self.key_events.Home = { { "Home" } }
         -- Override the menu.lua way of handling the back key
         self.file_chooser.key_events.Back = { { Device.input.group.Back } }
-        if Device:hasScreenKB() then
-            self.key_events.ToggleWifi = { { "ScreenKB", "Home" } }
-        elseif Device:hasKeyboard() then
-            self.key_events.ToggleWifi = { { "Shift", "Home" } }
-        end
+        -- ToggleWifi = { { "Shift", "Home" } } handled by hotkeys
         if not Device:hasFewKeys() then
             -- Also remove the handler assigned to the "Back" key by menu.lua
             self.file_chooser.key_events.Close = nil
@@ -394,9 +388,14 @@ function FileManager:registerModule(name, ui_module, always_active)
     end
 end
 
+function FileManager:registerPostInitCallback(callback)
+    table.insert(self.postInitCallback, callback)
+end
+
 -- NOTE: The only thing that will *ever* instantiate a new FileManager object is our very own showFiles below!
 function FileManager:init()
     self.active_widgets = {}
+    self.postInitCallback = {}
 
     self:registerModule("screenshot", Screenshoter:new{
         prefix = "FileManager",
@@ -433,6 +432,11 @@ function FileManager:init()
     self:initGesListener()
     self:handleEvent(Event:new("SetDimensions", self.dimen))
     self:handleEvent(Event:new("PathChanged", self.file_chooser.path))
+
+    for _, v in ipairs(self.postInitCallback) do
+        v()
+    end
+    self.postInitCallback = nil
 
     if FileManager.instance == nil then
         logger.dbg("Spinning up new FileManager instance", tostring(self))
@@ -548,14 +552,17 @@ function FileManager:getPlusDialogButtons()
                     text = _("Delete"),
                     enabled = actions_enabled,
                     callback = function()
-                        UIManager:show(ConfirmBox:new{
-                            text = _("Delete selected files?\nIf you delete a file, it is permanently lost."),
+                        local confirmbox
+                        confirmbox = ConfirmBox:new{
+                            text = _("Delete selected files?\nIf you delete a file, it is permanently lost.") .. "\n",
                             ok_text = _("Delete"),
                             ok_callback = function()
                                 UIManager:close(self.plus_dialog)
                                 self:deleteSelectedFiles()
                             end,
-                        })
+                        }
+                        self.addMetadataArcCheckButton(confirmbox)
+                        UIManager:show(confirmbox)
                     end,
                 },
                 {
@@ -868,9 +875,11 @@ function FileManager:setHome(path)
         text = T(_("Set '%1' as HOME folder?"), BD.dirpath(path)),
         ok_text = _("Set as HOME"),
         ok_callback = function()
+            local path_refreshed = self.folder_shortcuts:updateShortcut("home_dir", path)
             G_reader_settings:saveSetting("home_dir", path)
-            if G_reader_settings:isTrue("lock_home_folder") then
-                self:onRefresh()
+            self:updateTitleBarPath()
+            if not path_refreshed and G_reader_settings:isTrue("lock_home_folder") then
+                self.file_chooser:refreshPath()
             end
         end,
     })
@@ -947,6 +956,7 @@ function FileManager:pasteFileFromClipboard(file)
                 else
                     ReadHistory:updateItemsByPath(orig_file, dest_file)
                     ReadCollection:updateItemsByPath(orig_file, dest_file)
+                    self.folder_shortcuts:updateItemsByPath(orig_file, dest_file) -- will update system folders in settings
                 end
             end
             self.clipboard = nil
@@ -985,13 +995,13 @@ function FileManager:pasteFileFromClipboard(file)
     end
 end
 
-function FileManager:showCopyMoveSelectedFilesDialog(close_callback)
+function FileManager:showCopyMoveSelectedFilesDialog(close_callback, folder)
     local text, ok_text
     if self.cutfile then
-        text = _("Move selected files to the current folder?")
+        text = folder and _("Move selected files?") or _("Move selected files to the current folder?")
         ok_text = _("Move")
     else
-        text = _("Copy selected files to the current folder?")
+        text = folder and _("Copy selected files?") or _("Copy selected files to the current folder?")
         ok_text = _("Copy")
     end
     local confirmbox, check_button_overwrite
@@ -1000,7 +1010,7 @@ function FileManager:showCopyMoveSelectedFilesDialog(close_callback)
         ok_text = ok_text,
         ok_callback = function()
             close_callback()
-            self:pasteSelectedFiles(check_button_overwrite.checked)
+            self:pasteSelectedFiles(check_button_overwrite.checked, folder)
         end,
     }
     check_button_overwrite = CheckButton:new{
@@ -1012,8 +1022,8 @@ function FileManager:showCopyMoveSelectedFilesDialog(close_callback)
     UIManager:show(confirmbox)
 end
 
-function FileManager:pasteSelectedFiles(overwrite)
-    local dest_path = ffiUtil.realpath(self.file_chooser.path)
+function FileManager:pasteSelectedFiles(overwrite, folder)
+    local dest_path = ffiUtil.realpath(folder or self.file_chooser.path)
     local ok_files = {}
     for orig_file in pairs(self.selected_files) do
         local orig_name = ffiUtil.basename(orig_file)
@@ -1117,11 +1127,10 @@ function FileManager:showDeleteFileDialog(filepath, post_delete_callback, pre_de
         return
     end
     local is_file = isFile(file)
-    local text = (is_file and _("Delete file permanently?") or _("Delete folder permanently?")) .. "\n\n" .. BD.filepath(file)
-    if is_file and BookList.hasBookBeenOpened(file) then
-        text = text .. "\n\n" .. _("Book settings, highlights and notes will be deleted.")
-    end
-    UIManager:show(ConfirmBox:new{
+    local text = (is_file and _("Delete file permanently?") or _("Delete folder permanently?"))
+        .. "\n\n" .. BD.filepath(file) .. "\n"
+    local confirmbox
+    confirmbox = ConfirmBox:new{
         text = text,
         ok_text = _("Delete"),
         ok_callback = function()
@@ -1131,6 +1140,24 @@ function FileManager:showDeleteFileDialog(filepath, post_delete_callback, pre_de
             if self:deleteFile(file, is_file) and post_delete_callback then
                 post_delete_callback()
             end
+        end,
+    }
+    if not is_file or BookList.hasBookBeenOpened(file) then
+        self.addMetadataArcCheckButton(confirmbox)
+    end
+    UIManager:show(confirmbox)
+end
+
+function FileManager.addMetadataArcCheckButton(confirmbox)
+    local folder = G_reader_settings:readSetting("document_metadata_arc_folder")
+    local enabled = folder ~= nil and lfs.attributes(folder, "mode") == "directory"
+    confirmbox:addWidget(CheckButton:new{
+        text = _("save book metadata to archive"),
+        enabled = enabled,
+        checked = enabled and G_reader_settings:isTrue("document_metadata_arc_on_deletion"),
+        parent = confirmbox,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("document_metadata_arc_on_deletion")
         end,
     })
 end
@@ -1150,6 +1177,7 @@ function FileManager:deleteFile(file, is_file)
         if ok then
             ReadHistory:folderDeleted(file) -- will delete sdr
             ReadCollection:removeItemsByPath(file)
+            self.folder_shortcuts:updateItemsByPath(nil, file) -- will delete system folders in settings
             return true
         end
     end
@@ -1231,6 +1259,7 @@ function FileManager:renameFile(file, basename, is_file)
             else
                 ReadHistory:updateItemsByPath(file, dest)
                 ReadCollection:updateItemsByPath(file, dest)
+                self.folder_shortcuts:updateItemsByPath(file, dest) -- will update system folders in settings
             end
             self:onRefresh()
         else
@@ -1332,7 +1361,8 @@ function FileManager:onShowFolderMenu()
         }}
     end
 
-    local home_dir = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+    local curr_path = self.file_chooser.path
+    local home_dir = filemanagerutil.getHomeFolder()
     local home_dir_shortened = G_reader_settings:nilOrTrue("shorten_home_dir")
     local home_dir_not_locked = G_reader_settings:nilOrFalse("lock_home_folder")
     local home_dir_suffix = "  \u{f015}" -- "home" character
@@ -1350,9 +1380,9 @@ function FileManager:onShowFolderMenu()
         table.insert(buttons, genButton(text, path))
     end
     -- other folders
-    local indent = ""
-    for part in self.file_chooser.path:gmatch("([^/]+)") do
-        text = (#buttons == 0 and path or indent .. "└ ") .. part
+    local indent = 0
+    for part in curr_path:gmatch("([^/]+)") do
+        text = (#buttons == 0 and path or (" "):rep(indent) .. "└ ") .. part
         path = path .. part .. "/"
         is_home = path == home_dir or path == home_dir .. "/"
         if not home_found and is_home then
@@ -1363,7 +1393,33 @@ function FileManager:onShowFolderMenu()
                 text = text .. home_dir_suffix
             end
             table.insert(buttons, genButton(text, path))
-            indent = indent .. " "
+            indent = indent + 1
+        end
+    end
+    -- subfolders
+    if FileChooser.show_flat_view then
+        local subfolders = {}
+        local ok, iter, dir_obj = pcall(lfs.dir, curr_path)
+        if ok then
+            for f in iter, dir_obj do
+                if FileChooser.show_hidden or not util.stringStartsWith(f, ".") then
+                    local attributes = lfs.attributes(curr_path .. "/" .. f)
+                    if attributes and attributes.mode == "directory" and f ~= "." and f ~= ".."
+                            and self.file_chooser:show_dir(f) then
+                        table.insert(subfolders, f)
+                    end
+                end
+            end
+        end
+        if #subfolders > 0 then
+            if #subfolders > 1 then
+                table.sort(subfolders, function(a, b) return ffiUtil.strcoll(a, b) end)
+            end
+            table.insert(buttons, {}) -- separator
+            local prefix = (" "):rep(indent + 1) .. "└ "
+            for _, f in ipairs(subfolders) do
+                table.insert(buttons, genButton(prefix .. f, curr_path .. "/" .. f))
+            end
         end
     end
 
@@ -1553,8 +1609,12 @@ function FileManager:showOpenWithDialog(file)
 end
 
 function FileManager:openFile(file, provider, doc_caller_callback, aux_caller_callback, after_open_callback)
-    local is_provider_forced = provider ~= nil
-    provider = provider or DocumentRegistry:getProvider(file, true) -- include auxiliary
+    local is_provider_forced
+    if provider then -- called from Open with… dialog
+        is_provider_forced = true
+    else
+        provider, is_provider_forced = DocumentRegistry:getProvider(file, true) -- include auxiliary
+    end
     if provider and provider.order then -- auxiliary
         if aux_caller_callback then
             aux_caller_callback()
@@ -1632,6 +1692,13 @@ end
 
 function FileManager:onSetMixedSorting(toggle)
     G_reader_settings:saveSetting("collate_mixed", toggle or nil)
+    self.file_chooser:refreshPath()
+    return true
+end
+
+function FileManager:onSetFlatView(toggle)
+    FileChooser.show_flat_view = toggle
+    G_reader_settings:saveSetting("show_flat_view", toggle)
     self.file_chooser:refreshPath()
     return true
 end

@@ -290,9 +290,7 @@ function ReaderHighlight:registerKeyEvents()
         self.key_events.QuickLeftHighlightIndicator  = { { modifier, "Left" },  event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICATOR_MOVE} }
         self.key_events.QuickRightHighlightIndicator = { { modifier, "Right" }, event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICATOR_MOVE} }
         self.key_events.HighlightModifierPress       = { { modifier, "Press" } }
-        if Device:hasKeyboard() then
-            self.key_events.StartHighlightIndicator  = { { "H" } }
-        end
+        -- onStartHighlightIndicator (H) is handled by hotkeys.koplugin
     end
 end
 
@@ -1812,12 +1810,14 @@ function ReaderHighlight:onHold(arg, ges)
         end
         return true
     end
-    -- It has happened it failed because the text range was detected on the
-    -- previous page and highlighted by crengine, but no word was returned
-    -- (because the boxes were not on the current page).
-    -- Be sure we clear any such selection
-    self.ui.document:clearSelection()
-    -- And that we don't get stuck in a hold state
+    if self.ui.rolling then
+        -- It has happened it failed because the text range was detected on the
+        -- previous page and highlighted by crengine, but no word was returned
+        -- (because the boxes were not on the current page).
+        -- Be sure we clear any such selection
+        self.ui.document:clearSelection()
+    end
+    -- Be sure we don't get stuck in a hold state
     self.hold_pos = nil
     return false
 end
@@ -2017,6 +2017,9 @@ function ReaderHighlight:lookupDictWord()
             UIManager:show(InfoMessage:new{
                 text = info_message_ocr_text,
             })
+            UIManager:scheduleIn(G_defaults:readSetting("DELAY_CLEAR_HIGHLIGHT_S"),function()
+                self:clear()
+            end)
         end
     end
 end
@@ -2058,6 +2061,9 @@ function ReaderHighlight:translate(index)
             UIManager:show(InfoMessage:new{
                 text = info_message_ocr_text,
             })
+            UIManager:scheduleIn(G_defaults:readSetting("DELAY_CLEAR_HIGHLIGHT_S"),function()
+                self:clear()
+            end)
         end
     end
 end

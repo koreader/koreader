@@ -42,6 +42,41 @@ local NewsDownloader = WidgetContainer:extend{
 local FEED_TYPE_RSS = "rss"
 local FEED_TYPE_ATOM = "atom"
 
+-- Single-unit duration shorthand parser used for the per-feed `max_age` option.
+-- Returns (seconds, nil) when enabled, (nil, nil) when disabled (nil/empty),
+-- (nil, error_string) when invalid.
+local DURATION_UNITS = {
+    s = 1,
+    m = 60,           -- minute (lowercase)
+    h = 3600,
+    d = 86400,
+    w = 604800,
+    M = 2592000,      -- month: 30 days (uppercase, distinct from minute)
+    y = 31536000,     -- year: 365 days
+}
+
+local function parseMaxAge(value)
+    if value == nil or value == "" then
+        return nil, nil
+    end
+    if type(value) ~= "string" then
+        return nil, _("Maximum age must be a string")
+    end
+    local n, u = value:match("^(%d+)([smhdwMy])$")
+    if not n then
+        return nil, _("Invalid maximum age format. Use e.g. 7d, 12h, 30m, 1M.")
+    end
+    return tonumber(n) * DURATION_UNITS[u], nil
+end
+
+-- Returns parsed unix timestamp (number) or nil if no parseable date field.
+local function getFeedItemTimestamp(feed)
+    local raw = feed.updated or feed.pubDate or feed.published
+    if not raw then return nil end
+    local ts = dateparser.parse(raw)
+    return type(ts) == "number" and ts or nil
+end
+
 -- If a title looks like <title>blabla</title> it'll just be feed.title.
 -- If a title looks like <title attr="alb">blabla</title> then we get a table
 -- where [1] is the title string and the attributes are also available.
@@ -320,6 +355,7 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
         local block_element = parseCommaSeparatedOption(feed.block_element)
         local credentials = feed.credentials
         local http_auth = feed.http_auth
+        local max_age_str = feed.max_age
         -- Check if the two required attributes are set.
         if url and limit then
             feed_message = T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, BD.url(url))
@@ -336,7 +372,8 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
                 feed_message,
                 enable_filter,
                 filter_element,
-                block_element)
+                block_element,
+                max_age_str)
         else
             logger.warn("NewsDownloader: invalid feed config entry.", feed)
         end
@@ -408,7 +445,7 @@ function NewsDownloader:loadConfigAndProcessFeedsWithUI(touchmenu_instance)
     end)
 end
 
-function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, unsupported_feeds_urls, download_full_article, include_images, message, enable_filter, filter_element, block_element)
+function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, unsupported_feeds_urls, download_full_article, include_images, message, enable_filter, filter_element, block_element, max_age_str)
     -- Check if we have a cached response first
     local cache = DownloadBackend:getCache()
     local cached_response = cache:check(url)
@@ -571,7 +608,8 @@ function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, un
                     message,
                     enable_filter,
                     filter_element,
-                    block_element
+                    block_element,
+                    max_age_str
                 )
         end)
     elseif is_rss then
@@ -587,7 +625,8 @@ function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, un
                     message,
                     enable_filter,
                     filter_element,
-                    block_element
+                    block_element,
+                    max_age_str
                 )
         end)
     end
@@ -597,8 +636,17 @@ function NewsDownloader:processFeedSource(url, credentials, http_auth, limit, un
     if not ok or (not is_rss and not is_atom) then
         local error_message
         if not ok then
-            logger.err("NewsDownloader: Error processing feed", error)
-            error_message = _("(Reason: Failed to download content)")
+            if type(error) == "string"
+                    and error:find("__max_age_no_date__", 1, true) then
+                error_message = _("(Reason: Maximum age is set but the feed provides no date field (<updated>/<pubDate>/<published>). Remove maximum age from this feed in the config.)")
+            elseif type(error) == "string"
+                    and error:find("__max_age_invalid__:", 1, true) then
+                local msg = error:match("__max_age_invalid__:(.*)") or ""
+                error_message = T(_("(Reason: %1)"), msg)
+            else
+                logger.err("NewsDownloader: Error processing feed", error)
+                error_message = _("(Reason: Failed to download content)")
+            end
         elseif not is_rss then
             error_message = _("(Reason: Couldn't process RSS)")
         elseif not is_atom then
@@ -632,7 +680,7 @@ function NewsDownloader:deserializeXMLString(xml_str)
     return xmlhandler.root
 end
 
-function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit, download_full_article, include_images, message, enable_filter, filter_element, block_element)
+function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit, download_full_article, include_images, message, enable_filter, filter_element, block_element, max_age_str)
     local feed_title
     local feed_item
     local total_items
@@ -658,6 +706,22 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit,
             feed_item = {feed_item}
         end
     end
+    -- Parse max_age (if set) and prepare the cutoff timestamp. Invalid format
+    -- and missing-date conditions raise sentinel errors that the caller's
+    -- pcall converts into user-facing messages.
+    local max_age_seconds, max_age_err = parseMaxAge(max_age_str)
+    if max_age_err then
+        error("__max_age_invalid__:" .. max_age_err)
+    end
+
+    local cutoff
+    if max_age_seconds and feed_item[1] then
+        local first_ts = getFeedItemTimestamp(feed_item[1])
+        if not first_ts then
+            error("__max_age_no_date__")
+        end
+        cutoff = os.time() - max_age_seconds
+    end
     -- Get the path to the output directory.
     local feed_output_dir = ("%s%s/"):format(
         self.download_dir,
@@ -671,6 +735,17 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit,
         -- If limit has been met, stop downloading feed.
         if limit ~= 0 and index - 1 == limit then
             break
+        end
+        if cutoff then
+            local ts = getFeedItemTimestamp(feed)
+            if ts and ts < cutoff then
+                -- Feeds are chronological newest-first; remaining items are
+                -- older too, so we can stop iterating.
+                break
+            end
+            -- ts == nil after the first-item probe succeeded means the
+            -- publisher omitted a date for this item. Process it normally
+            -- without an age check.
         end
         -- Create a message to display during processing.
         local article_message = T(
@@ -731,26 +806,11 @@ function NewsDownloader:processFeed(feed_type, feeds, cookies, http_auth, limit,
     end
 end
 
-local function parseDate(dateTime)
-    -- Uses lua-feedparser https://github.com/slact/lua-feedparser
-    -- feedparser is available under the (new) BSD license.
-    -- see: koreader/plugins/newsdownloader.koplugin/lib/LICENCE_lua-feedparser
-    logger.dbg("NewsDownloader: Parsing date:", dateTime)
-    local date = dateparser.parse(dateTime)
-    if type(date) == "number" then
-        return os.date("%y-%m-%d_%H-%M_", date)
-    end
-    return dateTime
-end
-
 local function getTitleWithDate(feed)
     local title = util.getSafeFilename(NewsDownloader.getFeedTitle(feed.title))
-    if feed.updated then
-        title = parseDate(feed.updated) .. title
-    elseif feed.pubDate then
-        title = parseDate(feed.pubDate) .. title
-    elseif feed.published then
-        title = parseDate(feed.published) .. title
+    local ts = getFeedItemTimestamp(feed)
+    if ts then
+        title = os.date("%y-%m-%d_%H-%M_", ts) .. title
     end
     return title
 end
@@ -978,6 +1038,7 @@ function NewsDownloader:editFeedAttribute(id, key, value)
     -- attribute will need and displays the corresponding dialog.
     if key == FeedView.URL
         or key == FeedView.LIMIT
+        or key == FeedView.MAX_AGE
         or key == FeedView.FILTER_ELEMENT
         or key == FeedView.BLOCK_ELEMENT
         or key == FeedView.HTTP_AUTH_USERNAME
@@ -994,6 +1055,12 @@ function NewsDownloader:editFeedAttribute(id, key, value)
             title = _("Edit feed limit")
             description = _("Set to 0 for no limit to how many items are downloaded")
             input_type = "number"
+        elseif key == FeedView.MAX_AGE then
+            title = _("Edit maximum age")
+            description = _("Download articles no older than this duration. Format: <number><unit>. " ..
+                            "Units: s, m (minute), h, d, w, M (month=30d), y (year=365d). " ..
+                            "Examples: 30m, 12h, 7d, 1M. Leave empty to disable.")
+            input_type = "string"
         elseif key == FeedView.FILTER_ELEMENT then
             title = _("Edit filter element.")
             description = _("Filter based on the given CSS selector. E.g.: name_of_css.element.class")
@@ -1032,8 +1099,16 @@ function NewsDownloader:editFeedAttribute(id, key, value)
                         text = _("Save"),
                         is_enter_default = true,
                         callback = function()
+                            local new_value = input_dialog:getInputValue()
+                            if key == FeedView.MAX_AGE and new_value ~= "" then
+                                local _, err = parseMaxAge(new_value)
+                                if err then
+                                    UIManager:show(InfoMessage:new{ text = err })
+                                    return
+                                end
+                            end
                             UIManager:close(input_dialog)
-                            self:updateFeedConfig(id, key, input_dialog:getInputValue())
+                            self:updateFeedConfig(id, key, new_value)
                         end,
                     },
                 }
@@ -1146,6 +1221,8 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                         }
                     )
                 end
+            elseif key == FeedView.MAX_AGE then
+                feed.max_age = value
             elseif key == FeedView.DOWNLOAD_FULL_ARTICLE then
                 if feed.download_full_article ~= nil then
                     feed.download_full_article = value
@@ -1354,6 +1431,16 @@ function NewsDownloader:onCloseDocument()
         local doc_dir = util.splitFilePathName(document_full_path)
         self.ui:setLastDirForFileBrowser(doc_dir)
     end
+end
+
+NewsDownloader._parseMaxAge = parseMaxAge
+NewsDownloader._getFeedItemTimestamp = getFeedItemTimestamp
+
+function NewsDownloader:deletePluginSettings()
+    local settings_file = ("%s/%s"):format(DataStorage:getSettingsDir(), self.news_config_file)
+    os.remove(settings_file)
+    os.remove(settings_file .. ".old")
+    os.remove(self.feed_config_path)
 end
 
 return NewsDownloader

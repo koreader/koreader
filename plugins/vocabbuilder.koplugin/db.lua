@@ -9,24 +9,24 @@ local db_location = DataStorage:getSettingsDir() .. "/vocabulary_builder.sqlite3
 local DB_SCHEMA_VERSION = 20240905
 local VOCABULARY_DB_SCHEMA = [[
     -- To store looked up words
-    CREATE TABLE IF NOT EXISTS "vocabulary" (
-        "word"          TEXT NOT NULL UNIQUE,
-        "title_id"      INTEGER,
-        "create_time"   INTEGER NOT NULL,
-        "review_time"   INTEGER,
-        "due_time"      INTEGER NOT NULL,
-        "review_count"  INTEGER NOT NULL DEFAULT 0,
-        "prev_context"  TEXT,
-        "next_context"  TEXT,
-        "streak_count"  INTEGER NOT NULL DEFAULT 0,
-        "highlight"     TEXT,
-        PRIMARY KEY("word")
+    CREATE TABLE IF NOT EXISTS vocabulary (
+        word          TEXT NOT NULL UNIQUE,
+        title_id      INTEGER,
+        create_time   INTEGER NOT NULL,
+        review_time   INTEGER,
+        due_time      INTEGER NOT NULL,
+        review_count  INTEGER NOT NULL DEFAULT 0,
+        prev_context  TEXT,
+        next_context  TEXT,
+        streak_count  INTEGER NOT NULL DEFAULT 0,
+        highlight     TEXT,
+        PRIMARY KEY(word)
     );
-    CREATE TABLE IF NOT EXISTS "title" (
-        "id"            INTEGER NOT NULL UNIQUE,
-        "name"          TEXT UNIQUE,
-        "filter"        INTEGER NOT NULL DEFAULT 1,
-        PRIMARY KEY("id")
+    CREATE TABLE IF NOT EXISTS title (
+        id            INTEGER NOT NULL UNIQUE,
+        name          TEXT UNIQUE,
+        filter        INTEGER NOT NULL DEFAULT 1,
+        PRIMARY KEY(id)
     );
     CREATE INDEX IF NOT EXISTS due_time_index ON vocabulary(due_time);
     CREATE INDEX IF NOT EXISTS title_name_index ON title(name);

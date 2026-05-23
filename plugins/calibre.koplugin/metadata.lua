@@ -21,6 +21,7 @@ local used_metadata = {
     "size",
     "title",
     "authors",
+    "author_sort",
     "tags",
     "series",
     "series_index"

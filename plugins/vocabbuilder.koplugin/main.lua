@@ -50,17 +50,18 @@ local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
 
+local VocabBuilder = WidgetContainer:extend{
+    name = "vocabulary_builder",
+    settings_key = "vocabulary_builder",
+}
+
 -------- shared values
 local word_face = Font:getFace("x_smallinfofont")
 local subtitle_face = Font:getFace("cfont", 12)
 local subtitle_italic_face = Font:getFace("NotoSans-Italic.ttf", 12)
 local subtitle_color = Blitbuffer.COLOR_DARK_GRAY
 local dim_color = Blitbuffer.COLOR_GRAY_3
-local settings = G_reader_settings:readSetting("vocabulary_builder", {enabled = false, with_context = true})
-
-local function saveSettings()
-    G_reader_settings:saveSetting("vocabulary_builder", settings)
-end
+local settings = G_reader_settings:readSetting(VocabBuilder.settings_key, {enabled = false, with_context = true})
 
 --[[--
 Menu dialogue widget
@@ -165,7 +166,6 @@ function MenuDialog:setupPluginMenu()
         callback = function()
             self:onClose()
             settings.reverse = not settings.reverse
-            saveSettings()
             self.vocabbuilder:reloadItems()
         end
     }
@@ -241,9 +241,7 @@ function MenuDialog:setupPluginMenu()
                     callback = function()
                         UIManager:close(self.sync_dialogue)
                         UIManager:close(self)
-                        DB:batchUpdateItems(self.vocabbuilder.item_table)
-                        cs:sync(server, DB.path, DB.onSync, false)
-                        self.vocabbuilder:reloadItems()
+                        self.vocabbuilder.vocabbuilder:onSyncVocabBuilder()
                     end,
                 },
             },
@@ -459,12 +457,10 @@ end
 
 function MenuDialog:onChangeContextStatus(args, position)
     settings.with_context = position == 2
-    saveSettings()
 end
 
 function MenuDialog:onChangeEnableStatus(args, position)
     settings.enabled = position == 2
-    saveSettings()
 end
 
 function MenuDialog:onConfigChoose(values, name, event, args, position)
@@ -1243,53 +1239,6 @@ function VocabItemWidget:onShowBookAssignment(title_changed_cb)
     UIManager:show(sort_widget)
 end
 
-function VocabItemWidget:onDictButtonsReady(dict_popup, buttons)
-    if not self.item or self.item.word ~= dict_popup.word then
-        return false
-    end
-    if self.item.due_time > os.time() then
-        return true
-    end
-    local tweaked_button_count = 0
-    local early_break
-    for j = 1, #buttons do
-        for k = 1, #buttons[j] do
-            if buttons[j][k].id == "highlight" and not buttons[j][k].enabled then
-                buttons[j][k] = {
-                    id = "got_it",
-                    text = _("Got it"),
-                    callback = function()
-                        self.show_parent:gotItFromDict(self.item.word)
-                        dict_popup:onClose()
-                    end
-                }
-                if tweaked_button_count == 1 then
-                    early_break = true
-                    break
-                end
-                tweaked_button_count = tweaked_button_count + 1
-            elseif buttons[j][k].id == "search" and not buttons[j][k].enabled then
-                buttons[j][k] = {
-                    id = "forgot",
-                    text = _("Forgot"),
-                    callback = function()
-                        self.show_parent:forgotFromDict(self.item.word)
-                        dict_popup:onClose()
-                    end
-                }
-                if tweaked_button_count == 1 then
-                    early_break = true
-                    break
-                end
-                tweaked_button_count = tweaked_button_count + 1
-            end
-        end
-        if early_break then break end
-    end
-    return true -- we consume the event here!
-end
-
-
 --[[--
 Container widget. Same as sortwidget
 --]]--
@@ -1492,11 +1441,7 @@ function VocabularyBuilderWidget:refreshFooter()
         margin = 0,
         show_parent = self,
         callback = function()
-            if settings.server and self.ui.cloudstorage then
-                DB:batchUpdateItems(self.item_table)
-                self.ui.cloudstorage:sync(settings.server, DB.path, DB.onSync, false)
-                self:reloadItems()
-            end
+            self.vocabbuilder:onSyncVocabBuilder()
         end
     }
     self.footer_sync.label_widget.fgcolor = Blitbuffer.COLOR_GRAY_3
@@ -2000,13 +1945,9 @@ end
 --[[--
 Item shown in main menu
 --]]--
-local VocabBuilder = WidgetContainer:extend{
-    name = "vocabulary_builder",
-    is_doc_only = false
-}
-
 function VocabBuilder:init()
     self.ui.menu:registerToMainMenu(self)
+    self:registerDictButtons()
     self:onDispatcherRegisterActions()
 end
 
@@ -2019,24 +1960,39 @@ function VocabBuilder:addToMainMenu(menu_items)
     }
 end
 
-function VocabBuilder:onDictButtonsReady(dict_popup, buttons)
-    if settings.enabled then
-        -- words are added automatically, no need to add the button
-        return
-    end
-    if dict_popup.is_wiki_fullpage then
-        return
-    end
-    local is_adding = true
-    table.insert(buttons, 1, {{
+function VocabBuilder:registerDictButtons()
+    if not self.ui or not self.ui.dictionary then return end
+    self.ui.dictionary:addToDictButtons({
         id = "vocabulary",
+        menu_text = _("Vocabulary builder"),
         text = _("Add to vocabulary builder"),
+        insert_first = true,
         font_bold = false,
-        callback = function()
+        auto_row_style_width_min_row_size = 2,
+        auto_row_style_width_ratio = 0.7,
+        show_func = function(dict_popup)
+            if settings.enabled then
+                -- words are added automatically, no need to add the button.
+                return false
+            end
+            if self.widget and self.widget.current_lookup_word == dict_popup.word then
+                -- We are calling from within the vocab builder, and the word is already
+                -- added to vocab builder, no need to add the button for review.
+                return false
+            end
+            return true
+        end,
+        callback = function(dict_popup)
             local button = dict_popup.button_table.button_by_id["vocabulary"]
             if not button then return end
+
+            local is_adding = dict_popup._vocabbuilder_action_state
+            if is_adding == nil then
+                is_adding = true
+            end
+
             if is_adding then
-                is_adding = false
+                dict_popup._vocabbuilder_action_state = false
                 local book_title = (dict_popup.ui.doc_props and dict_popup.ui.doc_props.display_title) or _("Dictionary lookup")
                 dict_popup.ui:handleEvent(Event:new("WordLookedUp", dict_popup.lookupword, book_title, true)) -- is_manual: true
                 button:setText(_("Remove from vocabulary builder"), button.width)
@@ -2048,7 +2004,7 @@ function VocabBuilder:onDictButtonsReady(dict_popup, buttons)
                     text = T(_("Remove word \"%1\" from vocabulary builder?"), dict_popup.lookupword),
                     ok_text = _("Remove"),
                     ok_callback = function()
-                        is_adding = true
+                        dict_popup._vocabbuilder_action_state = true
                         DB:remove({word = dict_popup.lookupword})
                         button:setText(_("Add to vocabulary builder"), button.width)
                         UIManager:setDirty(dict_popup, function()
@@ -2057,13 +2013,58 @@ function VocabBuilder:onDictButtonsReady(dict_popup, buttons)
                     end
                 })
             end
+        end,
+    })
+    local function getCurrentVocabItem(dict_popup)
+        if not self.widget then
+            return nil
         end
-    }})
+        for vocabItem in self.widget:vocabItemIter() do
+            if vocabItem.item and vocabItem.item.word == dict_popup.word then
+                return vocabItem.item
+            end
+        end
+        return nil
+    end
+    self.ui.dictionary:addToDictButtons({
+        id = "forgot",
+        text = _("Forgot"),
+        conditional = true,
+        row_group = "vocab_review",
+        show_func = function(dict_popup)
+            local item = getCurrentVocabItem(dict_popup)
+            return item ~= nil and item.due_time <= os.time()
+        end,
+        callback = function(dict_popup)
+            local item = getCurrentVocabItem(dict_popup)
+            if not item or not self.widget then return end
+            self.widget:forgotFromDict(item.word)
+            dict_popup:onClose()
+        end,
+    })
+    self.ui.dictionary:addToDictButtons({
+        id = "got_it",
+        text = _("Got it"),
+        conditional = true,
+        row_group = "vocab_review",
+        show_func = function(dict_popup)
+            local item = getCurrentVocabItem(dict_popup)
+            return item ~= nil and item.due_time <= os.time()
+        end,
+        callback = function(dict_popup)
+            local item = getCurrentVocabItem(dict_popup)
+            if not item or not self.widget then return end
+            self.widget:gotItFromDict(item.word)
+            dict_popup:onClose()
+        end,
+    })
 end
 
 function VocabBuilder:onDispatcherRegisterActions()
     Dispatcher:registerAction("show_vocab_builder",
-        {category="none", event="ShowVocabBuilder", title=_("Open vocabulary builder"), general=true, separator=true})
+        {category="none", event="ShowVocabBuilder", title=_("Open vocabulary builder"), general=true})
+    Dispatcher:registerAction("sync_vocab_builder",
+        {category="none", event="SyncVocabBuilder", title=_("Sync vocabulary builder"), general=true, separator=true})
 end
 
 function VocabBuilder:onShowVocabBuilder()
@@ -2073,6 +2074,20 @@ function VocabBuilder:onShowVocabBuilder()
         ui = self.ui
     }
     UIManager:show(self.widget)
+    return true
+end
+
+function VocabBuilder:onSyncVocabBuilder()
+    if settings.server and self.ui.cloudstorage then
+        if self.widget then
+            DB:batchUpdateItems(self.widget.item_table)
+        end
+        self.ui.cloudstorage:sync(settings.server, DB.path, DB.onSync, false)
+        if self.widget then
+            self.widget:reloadItems()
+        end
+    end
+    return true
 end
 
 -- Event sent by readerdictionary "WordLookedUp"

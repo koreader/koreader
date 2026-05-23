@@ -246,6 +246,7 @@ function ReadCollection:_updateItem(coll_name, file_name, new_filepath, new_path
     local item = buildEntry(new_filepath, item_old.order, item_old.attr) -- no lfs call
     coll[item.file] = item
     coll[file_name] = nil
+    return item.file
 end
 
 function ReadCollection:updateItem(file, new_filepath) -- FM: rename file, move file
@@ -282,9 +283,11 @@ function ReadCollection:updateItemsByPath(path, new_path) -- FM: rename folder, 
     local len = #path
     local do_write
     for coll_name, coll in pairs(self.coll) do
+        local seen = {}
         for file_name in pairs(coll) do
-            if file_name:sub(1, len) == path then
-                self:_updateItem(coll_name, file_name, new_path .. file_name:sub(len + 1))
+            if not seen[file_name] and file_name:sub(1, len) == path then
+                local new_file_name = self:_updateItem(coll_name, file_name, new_path .. file_name:sub(len + 1))
+                seen[new_file_name] = true
                 do_write = true
             end
         end

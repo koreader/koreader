@@ -28,7 +28,7 @@ describe("Cache module", function()
 
     it("should deserialize blitbuffer", function()
         for pageno = 1, math.min(max_page, doc.info.number_of_pages) do
-            doc:hintPage(pageno, 1, 0, 1.0, 0)
+            doc:hintPage(pageno, 1, 0, 1.0)
         end
         DocCache:clear()
     end)

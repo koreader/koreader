@@ -41,6 +41,7 @@ local order = {
         "document_metadata_location",
         "document_metadata_location_move",
         "document_auto_save",
+        "document_metadata_arc",
         "document_end_action",
         "language_support",
     },

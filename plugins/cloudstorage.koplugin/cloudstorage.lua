@@ -574,6 +574,7 @@ function CloudStorage:showFileDownloadDialog(item)
                         select_file = false,
                         path = download_dir,
                         onConfirm = function(path)
+                            self._manager.ui.folder_shortcuts:updateShortcut("cloudstorage", path)
                             self.settings:saveSetting("download_dir", path)
                             self._manager.updated = true
                             download_dir = path
@@ -655,12 +656,18 @@ function CloudStorage:showFileDownloadDialog(item)
 end
 
 function CloudStorage:showFileUploadDialog(url)
+    local old_path = self.settings:readSetting("upload_dir") or filemanagerutil.getHomeFolder()
     UIManager:show(PathChooser:new{
         select_directory = false,
-        path = self.last_path,
+        path = old_path,
         onConfirm = function(file_path)
-            self.last_path = file_path:match("(.*)/")
-            if self.last_path == "" then self.last_path = "/" end
+            local new_path = file_path:match("(.*)/")
+            if new_path == "" then new_path = "/" end
+            if new_path ~= old_path then
+                self._manager.ui.folder_shortcuts:updateShortcut("cloudstorage_upload", new_path)
+                self.settings:saveSetting("upload_dir", new_path)
+                self._manager.updated = true
+            end
             if lfs.attributes(file_path, "size") > 157286400 then
                 UIManager:show(InfoMessage:new{ text = _("File size must be less than 150 MB.") })
             else
