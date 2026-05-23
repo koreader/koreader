@@ -1361,6 +1361,7 @@ function FileManager:onShowFolderMenu()
         }}
     end
 
+    local curr_path = self.file_chooser.path
     local home_dir = filemanagerutil.getHomeFolder()
     local home_dir_shortened = G_reader_settings:nilOrTrue("shorten_home_dir")
     local home_dir_not_locked = G_reader_settings:nilOrFalse("lock_home_folder")
@@ -1379,9 +1380,9 @@ function FileManager:onShowFolderMenu()
         table.insert(buttons, genButton(text, path))
     end
     -- other folders
-    local indent = ""
-    for part in self.file_chooser.path:gmatch("([^/]+)") do
-        text = (#buttons == 0 and path or indent .. "└ ") .. part
+    local indent = 0
+    for part in curr_path:gmatch("([^/]+)") do
+        text = (#buttons == 0 and path or (" "):rep(indent) .. "└ ") .. part
         path = path .. part .. "/"
         is_home = path == home_dir or path == home_dir .. "/"
         if not home_found and is_home then
@@ -1392,7 +1393,33 @@ function FileManager:onShowFolderMenu()
                 text = text .. home_dir_suffix
             end
             table.insert(buttons, genButton(text, path))
-            indent = indent .. " "
+            indent = indent + 1
+        end
+    end
+    -- subfolders
+    if FileChooser.show_flat_view then
+        local subfolders = {}
+        local ok, iter, dir_obj = pcall(lfs.dir, curr_path)
+        if ok then
+            for f in iter, dir_obj do
+                if FileChooser.show_hidden or not util.stringStartsWith(f, ".") then
+                    local attributes = lfs.attributes(curr_path .. "/" .. f)
+                    if attributes and attributes.mode == "directory" and f ~= "." and f ~= ".."
+                            and self.file_chooser:show_dir(f) then
+                        table.insert(subfolders, f)
+                    end
+                end
+            end
+        end
+        if #subfolders > 0 then
+            if #subfolders > 1 then
+                table.sort(subfolders, function(a, b) return ffiUtil.strcoll(a, b) end)
+            end
+            table.insert(buttons, {}) -- separator
+            local prefix = (" "):rep(indent + 1) .. "└ "
+            for _, f in ipairs(subfolders) do
+                table.insert(buttons, genButton(prefix .. f, curr_path .. "/" .. f))
+            end
         end
     end
 
@@ -1665,6 +1692,13 @@ end
 
 function FileManager:onSetMixedSorting(toggle)
     G_reader_settings:saveSetting("collate_mixed", toggle or nil)
+    self.file_chooser:refreshPath()
+    return true
+end
+
+function FileManager:onSetFlatView(toggle)
+    FileChooser.show_flat_view = toggle
+    G_reader_settings:saveSetting("show_flat_view", toggle)
     self.file_chooser:refreshPath()
     return true
 end
