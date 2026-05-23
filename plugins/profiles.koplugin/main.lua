@@ -97,6 +97,7 @@ end
 
 function Profiles:getSubMenuItems()
     local sub_item_table = {
+        max_per_page = 20,
         {
             text = _("New"),
             keep_menu_open = true,
@@ -124,6 +125,15 @@ function Profiles:getSubMenuItems()
                     touchmenu_instance:updateItems()
                 end
                 self:editProfileName(editCallback)
+            end,
+        },
+        {
+            text = _("Auto-executing"),
+            enabled_func = function()
+                return next(self.autoexec) ~= nil
+            end,
+            sub_item_table_func = function()
+                return self:genAllAutoExecMenu()
             end,
             separator = true,
         },
@@ -274,20 +284,26 @@ function Profiles:getSubMenuItems()
         }
         table.insert(sub_item_table, {
             text_func = function()
-                local prefix
-                if v.settings.show_as_quickmenu then
-                    prefix = "\u{F0CA} "
-                elseif v.settings.execute_one_by_one then
-                    prefix = "\u{F051} "
-                else
-                    prefix = "\u{F144} "
-                end
-                return prefix .. k
+                return self:getProfileMenuText(k)
             end,
+            name = k,
             sub_item_table = sub_items,
         })
     end
     return sub_item_table
+end
+
+function Profiles:getProfileMenuText(profile_name)
+    local profile = self.data[profile_name]
+    local prefix
+    if profile.settings.show_as_quickmenu then
+        prefix = "\u{F0CA} "
+    elseif profile.settings.execute_one_by_one then
+        prefix = "\u{F051} "
+    else
+        prefix = "\u{F144} "
+    end
+    return prefix .. profile_name
 end
 
 function Profiles:onProfileExecute(name, exec_props)
@@ -476,6 +492,54 @@ function Profiles:updateAutoExec(old_name, new_name)
             end
         end
     end
+end
+
+function Profiles:genAllAutoExecMenu()
+    local profiles = {}
+    for event, event_profiles in pairs(self.autoexec) do
+        for profile_name in pairs(event_profiles) do
+            profiles[profile_name] = profiles[profile_name] or {}
+            profiles[profile_name][event] = true
+        end
+    end
+    local sub_item_table = {}
+    for profile_name, profile_events in pairs(profiles) do
+        table.insert(sub_item_table, {
+            text = self:getProfileMenuText(profile_name),
+            name = profile_name,
+            events = profile_events,
+            keep_menu_open = true,
+            callback = function(touchmenu_instance) -- open profile menu
+                local upper_item_table = touchmenu_instance.item_table_stack[#touchmenu_instance.item_table_stack]
+                for _, item in ipairs(upper_item_table) do
+                    if item.name == profile_name then
+                        touchmenu_instance.item_table = item.sub_item_table
+                        touchmenu_instance:updateItems(1)
+                        break
+                    end
+                end
+            end,
+            hold_callback = function(touchmenu_instance, item)
+                UIManager:show(ConfirmBox:new{
+                    text = _("Disable profile auto-executing?") .. "\n\n" .. profile_name .. "\n",
+                    ok_text = _("Disable"),
+                    ok_callback = function()
+                        self:updateAutoExec(profile_name)
+                        table.remove(touchmenu_instance.item_table, item.idx)
+                        if #touchmenu_instance.item_table > 0 then
+                            touchmenu_instance:updateItems()
+                        else
+                            touchmenu_instance:backToUpperMenu()
+                        end
+                    end,
+                })
+            end,
+        })
+    end
+    if #sub_item_table > 1 then
+        table.sort(sub_item_table, function(a, b) return ffiUtil.strcoll(a.name, b.name) end)
+    end
+    return sub_item_table
 end
 
 function Profiles:genAutoExecMenu(k, v)
@@ -735,7 +799,7 @@ function Profiles:genAutoExecPathChangedMenuItem(text, event, profile_name, sepa
                     text_func = function()
                         local txt = mode[1]
                         local value = util.tableGetValue(self.autoexec, event, profile_name, condition)
-                        return value and txt .. ": " .. value or txt
+                        return value and txt .. ": " .. self.ui.folder_shortcuts:expandPath(value) or txt
                     end,
                     checked_func = function()
                         return util.tableGetValue(self.autoexec, event, profile_name, condition)
@@ -752,6 +816,21 @@ function Profiles:genAutoExecPathChangedMenuItem(text, event, profile_name, sepa
                                 end,
                             },
                         }}
+                        table.insert(buttons, {
+                            {
+                                text = _("Info"),
+                                callback = self.ui.folder_shortcuts.expandPath,
+                            },
+                            {
+                                text = _("Show"),
+                                callback = function()
+                                    local txt = dialog:getInputText()
+                                    if txt ~= "" then
+                                        UIManager:show(InfoMessage:new{ text = self.ui.folder_shortcuts:expandPath(txt) })
+                                    end
+                                end,
+                            },
+                        })
                         table.insert(buttons, {
                             {
                                 text = _("Cancel"),
@@ -775,7 +854,7 @@ function Profiles:genAutoExecPathChangedMenuItem(text, event, profile_name, sepa
                             },
                         })
                         dialog = InputDialog:new{
-                            title =  _("Enter text contained in folder path"),
+                            title = _("Enter text contained in folder path"),
                             input = util.tableGetValue(self.autoexec, event, profile_name, condition),
                             buttons = buttons,
                         }
@@ -933,7 +1012,7 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                     text_func = function() -- filepath
                         local txt = conditions[3][1]
                         local value = util.tableGetValue(self.autoexec, event, profile_name, conditions[3][2])
-                        return value and txt .. ": " .. value or txt
+                        return value and txt .. ": " .. self.ui.folder_shortcuts:expandPath(value) or txt
                     end,
                     enabled_func = function()
                         return not util.tableGetValue(self.autoexec, event_always, profile_name)
@@ -953,6 +1032,21 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                                 end,
                             },
                         }}
+                        table.insert(buttons, {
+                            {
+                                text = _("Info"),
+                                callback = self.ui.folder_shortcuts.expandPath,
+                            },
+                            {
+                                text = _("Show"),
+                                callback = function()
+                                    local txt = dialog:getInputText()
+                                    if txt ~= "" then
+                                        UIManager:show(InfoMessage:new{ text = self.ui.folder_shortcuts:expandPath(txt) })
+                                    end
+                                end,
+                            },
+                        })
                         table.insert(buttons, {
                             {
                                 text = _("Cancel"),
@@ -1074,10 +1168,6 @@ function Profiles:onOutOfScreenSaver() -- global
     self:executeAutoExecEvent("OutOfScreenSaver")
 end
 
-function Profiles:onReadTimerExpired() -- global by ReadTimer plugin
-    self:executeAutoExecEvent("ReadTimerExpired")
-end
-
 function Profiles:onSetRotationMode(mode) -- global
     local event = "SetRotationMode"
     if self.autoexec[event] == nil then return end
@@ -1104,14 +1194,15 @@ function Profiles:onPathChanged(path) -- global
     for profile_name, conditions in pairs(self.autoexec[event]) do
         local do_execute
         for condition, trigger in pairs(conditions) do
+            local expanded_trigger = self.ui.folder_shortcuts:expandPath(trigger)
             if condition == "has" then
-                do_execute = is_match(path, trigger)
+                do_execute = is_match(path, expanded_trigger)
             elseif condition == "has_not" then
-                do_execute = not is_match(path, trigger)
+                do_execute = not is_match(path, expanded_trigger)
             elseif condition == "is_equal" then
-                do_execute = path == trigger
+                do_execute = path == expanded_trigger
             elseif condition == "is_not_equal" then
-                do_execute = path ~= trigger
+                do_execute = path ~= expanded_trigger
             end
             if do_execute then
                 break
@@ -1222,7 +1313,7 @@ function Profiles:executeAutoExecDocConditional(event)
                         end
                     elseif condition == "filepath" then
                         if self.document then
-                            do_execute = is_match(self.document.file, trigger)
+                            do_execute = is_match(self.document.file, self.ui.folder_shortcuts:expandPath(trigger))
                         end
                     elseif condition == "collections" then
                         if self.document then
