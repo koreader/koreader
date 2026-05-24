@@ -93,5 +93,40 @@ describe("Exporter plugin module", function()
         assert.not_truthy(ok)
         ok = readerui.exporter.targets["readwise"]:export(sample_clippings)
         assert.not_truthy(ok)
+        ok = readerui.exporter.targets["acorny"]:export(sample_clippings)
+        assert.not_truthy(ok)
+    end)
+
+    it("should export highlights to Acorny using the Readwise-compatible API", function()
+        local acorny = readerui.exporter.targets["acorny"]
+        local endpoint, method, body, headers
+        acorny.settings.token = "test-token"
+        acorny.makeJsonRequest = function(_, request_endpoint, request_method, request_body, request_headers)
+            endpoint = request_endpoint
+            method = request_method
+            body = request_body
+            headers = request_headers
+            return {}
+        end
+
+        local ok = acorny:createHighlights(sample_clippings.Title1)
+
+        assert.is_truthy(ok)
+        assert.are.equal("https://acorny.io/api/v2/highlights/", endpoint)
+        assert.are.equal("POST", method)
+        assert.are.equal("Token test-token", headers["Authorization"])
+        assert.are.equal(2, #body.highlights)
+        assert.are.equal("Some important stuff 1", body.highlights[1].text)
+        assert.are.equal("Title1", body.highlights[1].title)
+        assert.are.equal("koreader", body.highlights[1].source_type)
+    end)
+
+    it("should show Acorny setup help", function()
+        local acorny_menu = readerui.exporter.targets["acorny"]:getMenuTable()
+        local help_item = acorny_menu.sub_item_table[3]
+
+        assert.are.equal("Help", help_item.text)
+        assert.is_true(help_item.keep_menu_open)
+        assert.is_function(help_item.callback)
     end)
 end)

@@ -77,6 +77,7 @@ local function updateMyClippings(clippings, new_clippings)
 end
 
 local targets = {
+    acorny = require("target/acorny"),
     html = require("target/html"),
     joplin = require("target/joplin"),
     json = require("target/json"),
