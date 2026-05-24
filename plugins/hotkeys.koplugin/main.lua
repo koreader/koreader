@@ -62,7 +62,7 @@ end
 
 for i = 0, 15 do
     local id = Gamepad.button_ids[i] or tostring(i)
-    local name = Gamepad.button_names[i] or T(("Button %1"), i)
+    local name = Gamepad.button_names[i] or T(_("Button %1"), i)
     hotkeys_list["gamepad_button_" .. id] = T(_("Gamepad %1"), name)
 end
 for i = 0, 5 do
