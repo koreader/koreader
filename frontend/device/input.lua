@@ -232,6 +232,8 @@ function Input:init()
         self.input = require("ffi/input_android")
     elseif self.device:isPocketBook() then
         self.input = require("ffi/input_pocketbook")
+    elseif self.device:isRemarkable() and os.getenv("KO_USE_QTFB") == "1" then
+        self.input = require("ffi/input_qtfb")
     else
         self.input = require("libs/libkoreader-input")
     end

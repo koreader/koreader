@@ -208,7 +208,8 @@ function Remarkable:init()
     -- os.execute("ps | grep $PPID")
     -- logger.info(string.format("parent process is oxide?: %s", parent_process_is_oxide))
 
-    self.screen = require("ffi/framebuffer_mxcfb"):new{
+    local fb_module = os.getenv("KO_USE_QTFB") and "ffi/framebuffer_qtfb" or "ffi/framebuffer_mxcfb"
+    self.screen = require(fb_module):new{
         device = self,
         debug = logger.dbg,
         wf_level = G_reader_settings:readSetting("wf_level") or 2,
@@ -460,11 +461,13 @@ function Remarkable:setEventHandlers(UIManager)
 end
 
 if is_rm2 then
+    if os.getenv("KO_USE_QTFB") then return Remarkable2 end
     if not os.getenv("RM2FB_SHIM") and not is_qtfb_shimmed then
         error("reMarkable 2 requires a RM2FB server and client to work (https://github.com/ddvk/remarkable2-framebuffer or https://github.com/asivery/rmpp-qtfb-shim)")
     end
     return Remarkable2
 elseif is_rmpp then
+    if os.getenv("KO_USE_QTFB") then return RemarkablePaperPro end
     if not is_qtfb_shimmed then
         error("reMarkable Paper Pro requires a RM2FB server and client to work (https://github.com/asivery/rm-appload)")
     end
@@ -473,6 +476,7 @@ elseif is_rmpp then
     end
     return RemarkablePaperPro
 elseif is_rmppm then
+    if os.getenv("KO_USE_QTFB") then return RemarkablePaperProMove end
     if not is_qtfb_shimmed then
         error("reMarkable Paper Pro Move requires a RM2FB server and client to work (https://github.com/asivery/rm-appload)")
     end

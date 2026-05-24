@@ -1,0 +1,8 @@
+{
+  "name": "KOReader",
+  "application": "koreader.sh",
+  "environment": {
+    "KO_USE_QTFB": "1"
+  },
+  "qtfb": true
+}
