@@ -965,17 +965,21 @@ function UIManager:broadcastEvent(event)
     -- Unlike sendEvent, we send the event to *all* (window-level) widgets (i.e., we don't stop, even if a handler returns true).
     -- NOTE: Same defensive approach to _window_stack changing from under our feet as above.
     local checked_widgets = {}
+    local handled = false
     local i = #self._window_stack
     while i > 0 do
         local widget = self._window_stack[i].widget
         if not checked_widgets[widget] then
             checked_widgets[widget] = true
-            widget:handleEvent(event)
+            if widget:handleEvent(event) then
+                handled = true
+            end
             i = #self._window_stack
         else
             i = i - 1
         end
     end
+    return handled
 end
 
 --[[
