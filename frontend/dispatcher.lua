@@ -1312,9 +1312,17 @@ function Dispatcher:execute(settings, exec_props)
             local arg = settingsList[k].arg
             if category == "none" then
                 if arg ~= nil then
-                    UIManager:sendEvent(Event:new(event, arg, exec_props))
+                    if event == "HotkeyEmitKeyPress" then
+                        UIManager:broadcastEvent(Event:new(event, arg, exec_props))
+                    else
+                        UIManager:sendEvent(Event:new(event, arg, exec_props))
+                    end
                 else
-                    UIManager:sendEvent(Event:new(event))
+                    if event == "HotkeyEmitKeyPress" then
+                        UIManager:broadcastEvent(Event:new(event))
+                    else
+                        UIManager:sendEvent(Event:new(event))
+                    end
                 end
             elseif category == "absolutenumber" or category == "string" then
                 arg = arg ~= nil and { arg, v } or v
