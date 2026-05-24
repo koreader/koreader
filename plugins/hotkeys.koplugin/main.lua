@@ -50,10 +50,10 @@ local key_emitter_actions = {
     key_context_menu = { key = "ContextMenu", title = T(_("Send key: %1"), _("Context menu")) },
 }
 -- modifier *here* refers to either screenkb or shift
-local modifier_one = Device:hasScreenKB() and "ScreenKB + " or "Shift + "
+local modifier_one = Device:hasScreenKB() and _("ScreenKB + %1") or _("Shift + %1")
 -- screenkb/shift + base_keys
 for key, label in pairs(base_keys) do
-    hotkeys_list["modifier_plus_" .. key] = _(modifier_one .. label)
+    hotkeys_list["modifier_plus_" .. key] = T(modifier_one, label)
     -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
 end
 if LuaSettings:open(hotkeys_path).data["press_key_does_hotkeys"] then
@@ -77,16 +77,16 @@ if Device:hasKeyboard() then
     base_keys.menu = "Menu"
     -- NOTE: we will use 'alt' for kindles and 'ctrl' for other devices with keyboards
     --       but for simplicity we will use in code 'alt+keys' as the array's key for all.
-    local modifier_two = Device:hasSymKey() and "Alt + " or "Ctrl + "
+    local modifier_two = Device:hasSymKey() and _("Alt + %1") or _("Ctrl + %1")
     -- Alt/Ctrl + base_keys
     for key, label in pairs(base_keys) do
-        hotkeys_list_haskeyboard["alt_plus_" .. key] = _(modifier_two .. label)
+        hotkeys_list_haskeyboard["alt_plus_" .. key] = T(modifier_two, label)
     end
 
     local type_to_search = LuaSettings:open(hotkeys_path).data["type_to_search"]
     -- Alt/Ctrl + alphabet keys and (no modifier) + alphabet keys
     for dummy, char in ipairs(Device.input.group.Alphabet) do
-        hotkeys_list_haskeyboard["alt_plus_" .. char:lower()] = _(modifier_two .. char)
+        hotkeys_list_haskeyboard["alt_plus_" .. char:lower()] = T(modifier_two, char)
         if not type_to_search then
             hotkeys_list_haskeyboard[char:lower()] = char
         end
