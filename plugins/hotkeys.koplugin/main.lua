@@ -1,7 +1,10 @@
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
+local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Key = require("device/key")
+local Gamepad = require("device/sdl/gamepad")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local ffiUtil = require("ffi/util")
@@ -31,6 +34,21 @@ local base_keys = {
     right_page_back = "RPgBack", right_page_forward = "RPgFwd",
     back = "Back", home = "Home", press = "Press"
 }
+local key_emitter_actions = {
+    key_up = { key = "Up", title = T(_("Send key: %1"), _("Up")) },
+    key_down = { key = "Down", title = T(_("Send key: %1"), _("Down")) },
+    key_left = { key = "Left", title = T(_("Send key: %1"), _("Left")) },
+    key_right = { key = "Right", title = T(_("Send key: %1"), _("Right")) },
+    key_left_page_back = { key = "LPgBack", title = T(_("Send key: %1"), _("Left page back")) },
+    key_left_page_forward = { key = "LPgFwd", title = T(_("Send key: %1"), _("Left page forward")) },
+    key_right_page_back = { key = "RPgBack", title = T(_("Send key: %1"), _("Right page back")) },
+    key_right_page_forward = { key = "RPgFwd", title = T(_("Send key: %1"), _("Right page forward")) },
+    key_back = { key = "Back", title = T(_("Send key: %1"), _("Back")) },
+    key_home = { key = "Home", title = T(_("Send key: %1"), _("Home")) },
+    key_press = { key = "Press", title = T(_("Send key: %1"), _("Press")) },
+    key_menu = { key = "Menu", title = T(_("Send key: %1"), _("Menu")) },
+    key_context_menu = { key = "ContextMenu", title = T(_("Send key: %1"), _("Context menu")) },
+}
 -- modifier *here* refers to either screenkb or shift
 local modifier_one = Device:hasScreenKB() and "ScreenKB + " or "Shift + "
 -- screenkb/shift + base_keys
@@ -40,6 +58,18 @@ for key, label in pairs(base_keys) do
 end
 if LuaSettings:open(hotkeys_path).data["press_key_does_hotkeys"] then
     util.tableMerge(hotkeys_list, { press = _("Press") })
+end
+
+for i = 0, 15 do
+    local id = Gamepad.button_ids[i] or tostring(i)
+    local name = Gamepad.button_names[i] or ("Button " .. i)
+    hotkeys_list["gamepad_button_" .. id] = _("Gamepad " .. name)
+end
+for i = 0, 5 do
+    local id = Gamepad.axis_ids[i] or tostring(i)
+    local name = Gamepad.axis_names[i] or ("Axis " .. i)
+    hotkeys_list["gamepad_axis_" .. id .. "_minus"] = _("Gamepad " .. name .. " -")
+    hotkeys_list["gamepad_axis_" .. id .. "_plus"] = _("Gamepad " .. name .. " +")
 end
 if Device:hasKeyboard() then
     local hotkeys_list_haskeyboard = { modifier_plus_menu = _("Shift + Menu") }
@@ -83,7 +113,20 @@ function HotKeys:init()
 
     self.ui.menu:registerToMainMenu(self)
     Dispatcher:init()
+    self:registerDispatcherActions()
     self:registerKeyEvents()
+end
+
+function HotKeys:registerDispatcherActions()
+    for action_name, action in pairs(key_emitter_actions) do
+        Dispatcher:registerAction(action_name, {
+            category = "none",
+            event = "HotkeyEmitKeyPress",
+            arg = action.key,
+            title = action.title,
+            general = true,
+        })
+    end
 end
 
 --[[
@@ -108,6 +151,26 @@ function HotKeys:onHotkeyAction(hotkey)
         return true
     end
 end
+
+function HotKeys:onHotkeyEmitKeyPress(key_name)
+    UIManager:nextTick(function()
+        UIManager:sendEvent(Event:new("KeyPress", Key:new(key_name, {})))
+        UIManager:sendEvent(Event:new("KeyRelease", Key:new(key_name, {})))
+    end)
+    return true
+end
+
+function HotKeys:onGamepadButtonDown(ev)
+    local button = ev.button
+    local id = Gamepad.button_ids[button] or tostring(button)
+    local hotkey = "gamepad_button_" .. id
+    return self:onHotkeyAction(hotkey)
+end
+
+function HotKeys:onGamepadAxisMotion(ev)
+    return self:onHotkeyAction(Gamepad:getAxisHotkeyName(ev.axis, ev.value))
+end
+
 --[[ The following snippet is an example of the hotkeys.lua file that is generated in the settings directory:
 ["modifier_plus_right_page_forward"] = {
     ["settings"] = {
@@ -420,8 +483,25 @@ function HotKeys:addToMainMenu(menu_items)
                     "j", "k", "l", "m", "n", "o", "p", "q", "r",
                     "s", "t", "u", "v", "w", "x", "y", "z",
                 }),
+                separator = true,
             })
         end
+    end
+    if Device:isSDL() then --- @todo Something like Device:hasGamepad() or :supportsGamepad()?
+        local gamepad_keys = {}
+        for i = 0, 15 do
+            local id = Gamepad.button_ids[i] or tostring(i)
+            table.insert(gamepad_keys, "gamepad_button_" .. id)
+        end
+        for i = 0, 5 do
+            local id = Gamepad.axis_ids[i] or tostring(i)
+            table.insert(gamepad_keys, "gamepad_axis_" .. id .. "_minus")
+            table.insert(gamepad_keys, "gamepad_axis_" .. id .. "_plus")
+        end
+        table.insert(menu_items.hotkeys.sub_item_table, {
+            text = _("Gamepad"),
+            sub_item_table = self:genSubItemTable(gamepad_keys),
+        })
     end
 end
 
