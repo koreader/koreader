@@ -62,14 +62,14 @@ end
 
 for i = 0, 15 do
     local id = Gamepad.button_ids[i] or tostring(i)
-    local name = Gamepad.button_names[i] or ("Button " .. i)
-    hotkeys_list["gamepad_button_" .. id] = _("Gamepad " .. name)
+    local name = Gamepad.button_names[i] or T(("Button %1"), i)
+    hotkeys_list["gamepad_button_" .. id] = T(_("Gamepad %1"), name)
 end
 for i = 0, 5 do
     local id = Gamepad.axis_ids[i] or tostring(i)
     local name = Gamepad.axis_names[i] or ("Axis " .. i)
-    hotkeys_list["gamepad_axis_" .. id .. "_minus"] = _("Gamepad " .. name .. " -")
-    hotkeys_list["gamepad_axis_" .. id .. "_plus"] = _("Gamepad " .. name .. " +")
+    hotkeys_list["gamepad_axis_" .. id .. "_minus"] = T(_("Gamepad %1 –"), name)
+    hotkeys_list["gamepad_axis_" .. id .. "_plus"] = T(_("Gamepad %1 +"), name)
 end
 if Device:hasKeyboard() then
     local hotkeys_list_haskeyboard = { modifier_plus_menu = _("Shift + Menu") }
