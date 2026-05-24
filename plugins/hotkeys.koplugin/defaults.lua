@@ -71,6 +71,27 @@ return {
         -- m = nil, n = nil, o = nil, p = nil, q = nil, r = nil,
         -- s = nil, t = nil, u = nil, v = nil, w = nil, x = nil,
         -- y = nil, z = nil,
+
+        -- Gamepad
+        gamepad_axis_left_x_minus = {key_left = true,}, -- left
+        gamepad_axis_left_x_plus  = {key_right = true,}, -- right
+        gamepad_axis_left_y_minus = {key_up = true,}, -- up
+        gamepad_axis_left_y_plus  = {key_down = true,}, -- down
+        gamepad_axis_right_y_minus = {key_right_page_back = true,}, -- Page Up
+        gamepad_axis_right_y_plus  = {key_right_page_forward = true,}, -- Page Down
+        gamepad_button_a = {key_press = true,}, -- South (A) -> Enter/Press
+        gamepad_button_b = {key_back = true,}, -- East (B) -> Escape
+        gamepad_button_y = {key_context_menu = true,}, -- North (Y) -> ContextMenu
+        gamepad_button_back = {key_right_page_back = true,}, -- Back
+        gamepad_button_guide = {key_right_page_forward = true,}, -- Guide
+        gamepad_button_start = {key_menu = true,}, -- Start
+        gamepad_button_left_stick = {key_menu = true,}, -- Left Stick
+        gamepad_button_left_shoulder = {key_right_page_back = true,}, -- Left Shoulder
+        gamepad_button_right_shoulder = {key_right_page_forward = true,}, -- Right Shoulder
+        gamepad_button_dpad_up = {key_up = true,}, -- D-pad Up
+        gamepad_button_dpad_down = {key_down = true,}, -- D-pad Down
+        gamepad_button_dpad_left = {key_left = true,}, -- D-pad Left
+        gamepad_button_dpad_right = {key_right = true,}, -- D-pad Right
     },
     hotkeys_reader = {
         modifier_plus_up                 = {toc = true,},
@@ -136,5 +157,25 @@ return {
         o = nil, p = nil, q = nil, r = nil, s = nil,
         t = Device:hasKeyboard() and {toc = true,} or {},
         u = nil, v = nil, w = nil, x = nil, y = nil, z = nil,
+
+        gamepad_axis_left_x_minus = {key_left = true,}, -- left
+        gamepad_axis_left_x_plus  = {key_right = true,}, -- right
+        gamepad_axis_left_y_minus = {key_up = true,}, -- up
+        gamepad_axis_left_y_plus  = {key_down = true,}, -- down
+        gamepad_axis_right_y_minus = {key_right_page_back = true,}, -- Page Up
+        gamepad_axis_right_y_plus  = {key_right_page_forward = true,}, -- Page Down
+        gamepad_button_a = {key_press = true,}, -- South (A) -> Enter/Press
+        gamepad_button_b = {key_back = true,}, -- East (B) -> Escape
+        gamepad_button_y = {key_context_menu = true,}, -- North (Y) -> ContextMenu
+        gamepad_button_back = {key_right_page_back = true,}, -- Back (was Page Up in SDL3 mappings)
+        gamepad_button_guide = {key_right_page_forward = true,}, -- Guide (was Page Down in SDL3 mappings)
+        gamepad_button_start = {key_menu = true,}, -- Start
+        gamepad_button_left_stick = {key_menu = true,}, -- Left Stick
+        gamepad_button_left_shoulder = {key_right_page_back = true,}, -- Left Shoulder
+        gamepad_button_right_shoulder = {key_right_page_forward = true,}, -- Right Shoulder
+        gamepad_button_dpad_up = {key_up = true,}, -- D-pad Up
+        gamepad_button_dpad_down = {key_down = true,}, -- D-pad Down
+        gamepad_button_dpad_left = {key_left = true,}, -- D-pad Left
+        gamepad_button_dpad_right = {key_right = true,}, -- D-pad Right
     },
 }
