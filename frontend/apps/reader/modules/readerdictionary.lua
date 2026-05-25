@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
+local ButtonSelector = require("ui/widget/buttonselector")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -1637,20 +1638,52 @@ function ReaderDictionary:showNoResultsDialog(word, dict_names, fuzzy_search, bo
 end
 
 function ReaderDictionary:showDownload(lang, downloadable_dicts)
-    local item_table = {}
-    for i, dict in ipairs(downloadable_dicts) do
-        item_table[i] = {
-            text = dict.name,
-            mandatory = dict.entries,
-            dict = dict,
-        }
-    end
-    UIManager:show(BookList:new{
-        title = T(_("Available dictionaries (%1)"), #item_table),
-        subtitle = T(_("Language: %1"), lang),
-        item_table = item_table,
+    self.dl_dict_list = BookList:new{
+        lang = lang,
+        dicts = downloadable_dicts,
+        filter = nil,
         _manager = self,
+        title_bar_left_icon = "appbar.menu",
+        onLeftButtonTap = function()
+            self:filterDownloadDict()
+        end,
         onMenuSelect = self.onTapDownloadDict,
+    }
+    self:updateDownloadDictItemTable()
+    UIManager:show(self.dl_dict_list)
+end
+
+function ReaderDictionary:updateDownloadDictItemTable()
+    local item_table = {}
+    for _, dict in ipairs(self.dl_dict_list.dicts) do
+        if self.dl_dict_list.filter == nil or self.dl_dict_list.filter == (dict.lang_in == dict.lang_out) then
+            table.insert(item_table, {
+                text = dict.name,
+                mandatory = dict.entries,
+                dict = dict,
+            })
+        end
+    end
+    local title = T(_("Available dictionaries (%1)"), #item_table)
+    local subtitle = T(_("Language: %1"), self.dl_dict_list.lang)
+    if self.dl_dict_list.filter ~= nil then
+        subtitle = subtitle .. " \u{F0B0}"
+    end
+    self.dl_dict_list:switchItemTable(title, item_table, nil, nil, subtitle)
+end
+
+function ReaderDictionary:filterDownloadDict()
+    UIManager:show(ButtonSelector:new{
+        current_value = self.dl_dict_list.filter,
+        values = {
+            { _("all"), nil },
+            { self.dl_dict_list.lang, true },
+            { _("bilingual"), false },
+        },
+        callback = function(value)
+            self.dl_dict_list.filter = value
+            self:updateDownloadDictItemTable()
+        end,
     })
 end
 
