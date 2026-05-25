@@ -487,7 +487,7 @@ function HotKeys:addToMainMenu(menu_items)
             })
         end
     end
-    if Device:isSDL() then --- @todo Something like Device:hasGamepad() or :supportsGamepad()?
+    if Device:supportsGamepad() then
         local gamepad_keys = {}
         for i = 0, 15 do
             local id = Gamepad.button_ids[i] or tostring(i)
