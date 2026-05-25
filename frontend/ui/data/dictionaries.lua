@@ -3012,6 +3012,14 @@ local dictionaries = {
         url = "https://www.reader-dict.com/file/sv/dict-sv-sv.zip"
     },
     {
+        name = "reader.dict Turkish",
+        lang_in = "tur",
+        lang_out = "tur",
+        entries =  751227,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/tr/dict-tr-tr.zip"
+    },
+    {
         name = "reader.dict Chinese",
         lang_in = "zho",
         lang_out = "zho",
