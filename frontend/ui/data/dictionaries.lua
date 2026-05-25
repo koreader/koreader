@@ -3021,4 +3021,8 @@ local dictionaries = {
     },
 }
 
+-- WikDict bilingual dictionaries (generated, see dictionaries_wikdict.lua)
+local wikdict = require("ui/data/dictionaries_wikdict")
+table.move(wikdict, 1, #wikdict, #dictionaries + 1, dictionaries)
+
 return dictionaries
