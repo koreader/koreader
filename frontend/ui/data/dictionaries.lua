@@ -3021,4 +3021,9 @@ local dictionaries = {
     },
 }
 
+-- WikDict bilingual dictionaries (generated, see dictionaries_wikdict.lua)
+for _, d in ipairs(require("ui/data/dictionaries_wikdict")) do
+    table.insert(dictionaries, d)
+end
+
 return dictionaries
