@@ -102,9 +102,16 @@ function HotKeys:init()
     if not self.settings_data then
         self.settings_data = LuaSettings:open(hotkeys_path)
         if not next(self.settings_data.data) then
-            logger.warn("No hotkeys file or invalid hotkeys file found, copying defaults")
+            logger.warn("No hotkeys file or invalid hotkeys file found, building defaults")
             self.settings_data:purge()
-            ffiUtil.copyFile(defaults_path, hotkeys_path)
+            local defaults_src = LuaSettings:open(defaults_path).data
+            for mode_name, mode_data in pairs(defaults_src) do
+                self.settings_data.data[mode_name] = {}
+                for k, v in pairs(mode_data) do
+                    self.settings_data.data[mode_name][k] = v
+                end
+            end
+            self.settings_data:flush()
             self.settings_data = LuaSettings:open(hotkeys_path)
         end
     end
