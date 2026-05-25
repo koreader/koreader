@@ -79,14 +79,18 @@ function DocSettingTweak:onDocSettingsLoad(doc_settings, document)
     if document.is_new and lfs.attributes(self.settings_file, "mode") == "file" then
         local directory_defaults = LuaSettings:open(self.settings_file)
         if directory_defaults.data == nil then return true end
+        local tweaks = {}
+        for path, tweak in pairs(directory_defaults.data) do
+            tweaks[self.ui.folder_shortcuts:expandPath(path)] = tweak
+        end
         local base = filemanagerutil.getHomeFolder()
         local absolute_path = ffiUtil.realpath(document.file)
         local directory = ffiUtil.dirname(absolute_path)
         -- check if folder matches our defaults to override
         while directory:sub(1, #base) == base do
-            if directory_defaults:has(directory) then
+            if tweaks[directory] then
                 local summary = doc_settings.data.summary -- keep status
-                doc_settings.data = util.tableDeepCopy(directory_defaults:readSetting(directory))
+                doc_settings.data = util.tableDeepCopy(tweaks[directory])
                 doc_settings.data.doc_path = document.file
                 doc_settings.data.summary = doc_settings.data.summary or summary
                 break
