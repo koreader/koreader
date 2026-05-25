@@ -959,7 +959,7 @@ function ReaderDictionary:_genDownloadDictionariesMenu()
             keep_menu_open = true,
             text = lang_key,
             callback = function()
-                self:showDownload(available_langs)
+                self:showDownload(lang_key, available_langs)
             end
         })
     end
@@ -1636,7 +1636,7 @@ function ReaderDictionary:showNoResultsDialog(word, dict_names, fuzzy_search, bo
     return true
 end
 
-function ReaderDictionary:showDownload(downloadable_dicts)
+function ReaderDictionary:showDownload(lang, downloadable_dicts)
     local item_table = {}
     for i, dict in ipairs(downloadable_dicts) do
         item_table[i] = {
@@ -1647,6 +1647,7 @@ function ReaderDictionary:showDownload(downloadable_dicts)
     end
     UIManager:show(BookList:new{
         title = T(_("Available dictionaries (%1)"), #item_table),
+        subtitle = T(_("Language: %1"), lang),
         item_table = item_table,
         _manager = self,
         onMenuSelect = self.onTapDownloadDict,
