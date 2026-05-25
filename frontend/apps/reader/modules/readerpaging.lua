@@ -19,6 +19,7 @@ local function copyPageState(page_state)
         zoom = page_state.zoom,
         rotation = page_state.rotation,
         gamma = page_state.gamma,
+        saturation = page_state.saturation,
         offset = page_state.offset:copy(),
         visible_area = page_state.visible_area:copy(),
         page_area = page_state.page_area:copy(),
