@@ -550,9 +550,6 @@ function ReaderUI:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.Home = { { "Home" } }
         self.key_events.Reload = { { "F5" } }
-        if Device:hasDPad() and Device:useDPadAsActionKeys() then
-            self.key_events.StartHighlightIndicator = { { { "Up", "Down" } } }
-        end
     end
 end
 

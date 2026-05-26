@@ -40,8 +40,9 @@ end
 function ReaderKeySelection:registerKeyEvents()
     if Device:hasDPad() then
         self.key_events.StopHighlightIndicator  = { { Device.input.group.Back }, args = true } -- true: clear highlight selection
-        self.key_events.UpHighlightIndicator    = { { "Up" },    event = "MoveHighlightIndicator", args = {0, -1} }
-        self.key_events.DownHighlightIndicator  = { { "Down" },  event = "MoveHighlightIndicator", args = {0, 1} }
+        local event = Device:useDPadAsActionKeys() and "StartOrMoveHighlightIndicator" or "MoveHighlightIndicator"
+        self.key_events.UpHighlightIndicator    = { { "Up" },    event = event, args = {0, -1} }
+        self.key_events.DownHighlightIndicator  = { { "Down" },  event = event, args = {0, 1} }
         -- let hasFewKeys device move the indicator left
         self.key_events.LeftHighlightIndicator  = { { "Left" },  event = "MoveHighlightIndicator", args = {-1, 0} }
         self.key_events.RightHighlightIndicator = { { "Right" }, event = "MoveHighlightIndicator", args = {1, 0} }
@@ -56,7 +57,7 @@ function ReaderKeySelection:registerKeyEvents()
         self.key_events.QuickLeftHighlightIndicator  = { { modifier, "Left" },  event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICATOR_MOVE} }
         self.key_events.QuickRightHighlightIndicator = { { modifier, "Right" }, event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICATOR_MOVE} }
         self.key_events.HighlightModifierPress       = { { modifier, "Press" } }
-        -- onStartHighlightIndicator (H) is handled by hotkeys.koplugin
+        -- startHighlightIndicator (H) is handled by hotkeys.koplugin
     end
 end
 ReaderKeySelection.onPhysicalKeyboardConnected = ReaderKeySelection.registerKeyEvents
@@ -181,23 +182,53 @@ function ReaderKeySelection:addToMainMenu(menu_items)
     end
 end
 
+-- for dispatcher and hotkeys
+function ReaderKeySelection:onStartHighlightIndicator()
+    return self:startHighlightIndicator()
+end
+
+function ReaderKeySelection:onStopHighlightIndicator(need_clear_selection)
+    return self:stopHighlightIndicator(need_clear_selection)
+end
+
 function ReaderKeySelection:onHighlightPress(skip_tap_check)
+    return self:highlightPress(skip_tap_check)
+end
+
+function ReaderKeySelection:onHighlightModifierPress()
+    return self:highlightModifierPress()
+end
+
+function ReaderKeySelection:onMoveHighlightIndicator(args)
+    return self:moveHighlightIndicator(args)
+end
+
+function ReaderKeySelection:onStartOrMoveHighlightIndicator(args)
+    if not self._current_indicator_pos then
+        self:startHighlightIndicator()
+    else
+        self:moveHighlightIndicator(args)
+    end
+    return true
+end
+
+function ReaderKeySelection:highlightPress(skip_tap_check)
     if not self._current_indicator_pos then return false end
     if self._start_indicator_highlight then
         self.ui.highlight:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
-        self:onStopHighlightIndicator()
+        self:stopHighlightIndicator()
         return true
     end
     -- Check if we're in select mode (or extending an existing highlight)
     if self.ui.highlight.select_mode and self.ui.highlight.highlight_idx then
         self.ui.highlight:onHold(nil, self:_createHighlightGesture("hold"))
         self.ui.highlight:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
-        self:onStopHighlightIndicator()
+        self:stopHighlightIndicator()
         return true
     end
     -- Attempt to open an existing highlight
     if not skip_tap_check and self.ui.highlight:onTap(nil, self:_createHighlightGesture("tap")) then
-        self:onStopHighlightIndicator(true) -- need_clear_selection=true
+        self:stopHighlightIndicator(true) -- need_clear_selection=true
         return true
     end
     -- no existing highlight at current indicator position: start hold
@@ -278,20 +309,20 @@ function ReaderKeySelection:onHighlightPress(skip_tap_check)
     return true
 end
 
-function ReaderKeySelection:onHighlightModifierPress()
+function ReaderKeySelection:highlightModifierPress()
     if not self._current_indicator_pos then return false end -- let event propagate to hotkeys
     if not self._start_indicator_highlight then
-        self:onHighlightPress(true)
+        self:highlightPress(true)
         return true -- don't trigger hotkeys during text selection
     end
     -- Simulate very long-long press by setting the long hold flag. This will trigger the long-press dialog.
     self.ui.highlight.long_hold_reached = true
     self.ui.highlight:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
-    self:onStopHighlightIndicator()
+    self:stopHighlightIndicator()
     return true
 end
 
-function ReaderKeySelection:onStartHighlightIndicator()
+function ReaderKeySelection:startHighlightIndicator()
     -- disable long-press icon (poke-ball), as it is triggered constantly due to NT devices needing a workaround for text selection to work.
     self.ui.highlight.long_hold_reached_action = function() end
     if self.view.visible_area and not self._current_indicator_pos then
@@ -312,7 +343,7 @@ function ReaderKeySelection:onStartHighlightIndicator()
     return false
 end
 
-function ReaderKeySelection:onStopHighlightIndicator(need_clear_selection)
+function ReaderKeySelection:stopHighlightIndicator(need_clear_selection)
     if not self._current_indicator_pos then return false end
     -- If we're in select mode and user presses back, end the selection
     if self.ui.highlight.select_mode and self.ui.highlight.highlight_idx then
@@ -337,7 +368,7 @@ function ReaderKeySelection:onStopHighlightIndicator(need_clear_selection)
     return true
 end
 
-function ReaderKeySelection:onMoveHighlightIndicator(args)
+function ReaderKeySelection:moveHighlightIndicator(args)
     if self.view.visible_area and self._current_indicator_pos then
         local dx, dy, quick_move = unpack(args)
         local quick_move_distance_dx = self.view.visible_area.w * (1/5) -- quick move distance: fifth of visible_area
