@@ -25,7 +25,7 @@ if [ -n "${KO_USE_QTFB}" ]; then
     export KO_DONT_SET_DEPTH=1
 fi
 
-fbink() {
+fbink_wrapped() {
     if [ -n "${KO_USE_QTFB}" ]; then
         LD_PRELOAD="/home/root/shims/qtfb-shim.so" \
             QTFB_SHIM_MODEL="false" \
@@ -57,7 +57,7 @@ ko_update_check() {
             systemctl stop button-listen
         fi
 
-        fbink -q -y -7 -pmh "Updating KOReader"
+        fbink_wrapped -q -y -7 -pmh "Updating KOReader"
         # Keep a copy of the old manifest for cleaning leftovers later.
         cp "${KOREADER_DIR}/ota/package.index" /tmp/
         # Setup the FBInk daemon
@@ -78,12 +78,12 @@ ko_update_check() {
             mv "${NEWUPDATE}" "${INSTALLED}"
             # Cleanup leftovers from previous install.
             (cd "${UNPACK_DIR}" && grep -xvFf "${KOREADER_DIR}/ota/package.index" /tmp/package.index | xargs -r rm -vf)
-            fbink -q -y -6 -pm "Update successful :)"
-            fbink -q -y -5 -pm "KOReader will start momentarily . . ."
+            fbink_wrapped -q -y -6 -pm "Update successful :)"
+            fbink_wrapped -q -y -5 -pm "KOReader will start momentarily . . ."
         else
             # Uh oh...
-            fbink -q -y -6 -pmh "Update failed :("
-            fbink -q -y -5 -pm "KOReader may fail to function properly!"
+            fbink_wrapped -q -y -6 -pmh "Update failed :("
+            fbink_wrapped -q -y -5 -pm "KOReader may fail to function properly!"
         fi
         rm -f /tmp/package.index "${NEWUPDATE}" # always purge newupdate to prevent update loops
         unset CPOINTS FBINK_NAMED_PIPE
@@ -211,20 +211,20 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         bombHeight=$((viewHeight / 2 + viewHeight / 15))
         bombMargin=$((FONTH + FONTH / 2))
         # With a little notice at the top of the screen, on a big gray screen of death ;).
-        fbink -q -b -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
+        fbink_wrapped -q -b -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
         if [ ${CRASH_COUNT} -eq 1 ]; then
             # Warn that we're sleeping for a bit...
-            fbink -q -b -O -m -y 2 "KOReader will restart in 15 sec."
+            fbink_wrapped -q -b -O -m -y 2 "KOReader will restart in 15 sec."
         fi
         # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
         # shellcheck disable=SC2039,SC3003
-        fbink -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -- $'\xf0\x9f\x92\xa3'
+        fbink_wrapped -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -- $'\xf0\x9f\x92\xa3'
         # And then print the tail end of the log on the bottom of the screen...
         crashLog="$(tail -n 25 crash.log | sed -e 's/\t/    /g')"
         # The idea for the margins being to leave enough room for an fbink -Z bar, small horizontal margins, and a font size based on what 6pt looked like @ 265dpi
-        fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64)) -- "${crashLog}"
+        fbink_wrapped -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64)) -- "${crashLog}"
         # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
-        fbink -q -f -s
+        fbink_wrapped -q -f -s
         # Cue a lemming's faceplant sound effect!
 
         {
