@@ -307,10 +307,17 @@ function ReaderKeySelection:highlightPress(skip_tap_check)
         self:stopHighlightIndicator()
         return true
     end
-    -- Attempt to open an existing highlight
-    if not skip_tap_check and self.ui.highlight:onTap(nil, self:_createHighlightGesture("tap")) then
-        self:stopHighlightIndicator(true) -- need_clear_selection=true
-        return true
+    if not skip_tap_check then
+        -- Follow link if there's one at the current indicator position
+        if self.ui.link and self.ui.link:onTap(nil, self:_createHighlightGesture("tap")) then
+            self:stopHighlightIndicator()
+            return true
+        end
+        -- Attempt to open an existing highlight
+        if self.ui.highlight:onTap(nil, self:_createHighlightGesture("tap")) then
+            self:stopHighlightIndicator(true) -- need_clear_selection=true
+            return true
+        end
     end
     -- no existing highlight at current indicator position: start hold
     self._start_indicator_highlight = true
