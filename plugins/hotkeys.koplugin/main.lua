@@ -159,15 +159,17 @@ function HotKeys:onHotkeyAction(hotkey)
     end
 end
 
-function HotKeys:onGamepadButtonDown(ev)
-    local button = ev.button
-    local id = Gamepad.button_ids[button] or tostring(button)
-    local hotkey = "gamepad_button_" .. id
-    return self:onHotkeyAction(hotkey)
-end
+if Device:supportsGamepad() then
+    function HotKeys:onGamepadButtonDown(ev)
+        local button = ev.button
+        local id = Gamepad.button_ids[button] or tostring(button)
+        local hotkey = "gamepad_button_" .. id
+        return self:onHotkeyAction(hotkey)
+    end
 
-function HotKeys:onGamepadAxisMotion(ev)
-    return self:onHotkeyAction(Gamepad:getAxisHotkeyName(ev.axis, ev.value))
+    function HotKeys:onGamepadAxisMotion(ev)
+        return self:onHotkeyAction(Gamepad:getAxisHotkeyName(ev.axis, ev.value))
+    end
 end
 
 --[[ The following snippet is an example of the hotkeys.lua file that is generated in the settings directory:
