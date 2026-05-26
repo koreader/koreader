@@ -68,7 +68,7 @@ if Device:supportsGamepad() then
     end
     for i = 0, 5 do
         local id = Gamepad.axis_ids[i] or tostring(i)
-        local name = Gamepad.axis_names[i] or ("Axis " .. i)
+        local name = Gamepad.axis_names[i] or T(_("Axis %1"), i)
         hotkeys_list["gamepad_axis_" .. id .. "_minus"] = T(_("Gamepad %1 –"), name)
         hotkeys_list["gamepad_axis_" .. id .. "_plus"] = T(_("Gamepad %1 +"), name)
     end
