@@ -128,8 +128,7 @@ end
 function HotKeys:registerDispatcherActions()
     for action_name, action in pairs(key_emitter_actions) do
         Dispatcher:registerAction(action_name, {
-            category = "none",
-            event = "HotkeyEmitKeyPress",
+            category = "key",
             arg = action.key,
             title = action.title,
             general = true,
@@ -158,14 +157,6 @@ function HotKeys:onHotkeyAction(hotkey)
         Dispatcher:execute(hotkey_action_list, execution_properties)
         return true
     end
-end
-
-function HotKeys:onHotkeyEmitKeyPress(key_name)
-    UIManager:nextTick(function()
-        UIManager:sendEvent(Event:new("KeyPress", Key:new(key_name, {})))
-        UIManager:sendEvent(Event:new("KeyRelease", Key:new(key_name, {})))
-    end)
-    return true
 end
 
 function HotKeys:onGamepadButtonDown(ev)

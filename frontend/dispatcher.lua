@@ -33,6 +33,7 @@ local KoptOptions = require("ui/data/koptoptions")
 local Device = require("device")
 local Event = require("ui/event")
 local FileManager = require("apps/filemanager/filemanager")
+local Key = require("device/key")
 local Notification = require("ui/widget/notification")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
@@ -1312,17 +1313,9 @@ function Dispatcher:execute(settings, exec_props)
             local arg = settingsList[k].arg
             if category == "none" then
                 if arg ~= nil then
-                    if event == "HotkeyEmitKeyPress" then
-                        UIManager:broadcastEvent(Event:new(event, arg, exec_props))
-                    else
-                        UIManager:sendEvent(Event:new(event, arg, exec_props))
-                    end
+                    UIManager:sendEvent(Event:new(event, arg, exec_props))
                 else
-                    if event == "HotkeyEmitKeyPress" then
-                        UIManager:broadcastEvent(Event:new(event))
-                    else
-                        UIManager:sendEvent(Event:new(event))
-                    end
+                    UIManager:sendEvent(Event:new(event))
                 end
             elseif category == "absolutenumber" or category == "string" then
                 arg = arg ~= nil and { arg, v } or v
@@ -1335,6 +1328,10 @@ function Dispatcher:execute(settings, exec_props)
                 -- the event can accept a gesture object or a number
                 arg = v ~= 0 and v or gesture or 0
                 UIManager:sendEvent(Event:new(event, arg))
+            elseif category == "key" then
+                local key = Key:new(arg, {})
+                UIManager:sendEvent(Event:new("KeyPress", key))
+                UIManager:sendEvent(Event:new("KeyRelease", key))
             end
         end
     end
