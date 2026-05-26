@@ -716,6 +716,33 @@ function CreDocument:getScreenBoxesFromPositions(pos0, pos1, get_segments)
     return line_boxes
 end
 
+function CreDocument:getNearestWordAndBoxFromPosition(pos, cpp_direction)
+    local nearest = self._document:getNearestWordFromPosition(pos.x, pos.y, cpp_direction)
+    if not nearest or not nearest.text then return nil end
+    logger.dbg("CreDocument: get nearest word", nearest)
+    local wordbox = {
+        page = self._document:getCurrentPage(),
+        word = nearest.text,
+        pos0 = nearest.pos0,
+        pos1 = nearest.pos1,
+    }
+    if nearest.pos0 and nearest.pos1 then
+        local word_boxes = self._document:getWordBoxesFromPositions(nearest.pos0, nearest.pos1, true)
+        if word_boxes then
+            for i = 1, #word_boxes do
+                local v = word_boxes[i]
+                word_boxes[i] = { x = v.x0,        y = v.y0,
+                                  w = v.x1 - v.x0, h = v.y1 - v.y0 }
+            end
+            wordbox.sbox = Geom.boundingBox(word_boxes)
+            if wordbox.sbox then
+                return wordbox
+            end
+        end
+    end
+    return nil
+end
+
 function CreDocument:getNearestWordFromPosition(pos, direction)
     return self._document:getNearestWordFromPosition(pos.x, pos.y, direction)
 end
