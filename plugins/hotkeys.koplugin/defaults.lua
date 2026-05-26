@@ -1,5 +1,6 @@
 -- typed on my Commodore 64 ;)
 local Device = require("device")
+local util = require("util")
 
 -- The hotkey shortcuts defined here are only the defaults. The user can
 -- change them at any time using the hotkey shortcuts configuration menu.
@@ -164,9 +165,7 @@ if Device:supportsGamepad() then
     }
 
     for _, mode in ipairs({"hotkeys_fm", "hotkeys_reader"}) do
-        for k, v in pairs(gamepad_defaults) do
-            defaults[mode][k] = v
-        end
+        util.tableMerge(defaults[mode], gamepad_defaults)
     end
 end
 
