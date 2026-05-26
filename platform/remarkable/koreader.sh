@@ -63,7 +63,7 @@ ko_update_check() {
         # Setup the FBInk daemon
         export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
         rm -f "${FBINK_NAMED_PIPE}"
-        FBINK_PID="$(fbink --daemon 1 %KOREADER% -q -y -6 -P 0)"
+        FBINK_PID="$(fbink_wrapped --daemon 1 %KOREADER% -q -y -6 -P 0)"
         # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
         # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
         FILESIZE="$(stat -c %b "${NEWUPDATE}")"
@@ -205,7 +205,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         viewWidth=600
         viewHeight=800
         FONTH=16
-        eval "$(fbink -e | tr ';' '\n' | grep -e viewWidth -e viewHeight -e FONTH | tr '\n' ';')"
+        eval "$(fbink_wrapped -e | tr ';' '\n' | grep -e viewWidth -e viewHeight -e FONTH | tr '\n' ';')"
         # Compute margins & sizes relative to the screen's resolution, so we end up with a similar layout, no matter the device.
         # Height @ ~56.7%, w/ a margin worth 1.5 lines
         bombHeight=$((viewHeight / 2 + viewHeight / 15))
