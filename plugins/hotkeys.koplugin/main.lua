@@ -126,6 +126,7 @@ function HotKeys:init()
     self:registerKeyEvents()
 end
 function HotKeys:registerDispatcherActions()
+    if not Device:supportsGamepad() then return end --- @todo Are we sure this should be gated? It seems generically useful.
     for action_name, action in pairs(key_emitter_actions) do
         Dispatcher:registerAction(action_name, {
             category = "key",
