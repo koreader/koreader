@@ -98,7 +98,7 @@ function ReaderHighlight:init()
                     this:startSelection(index)
                     this:onClose()
                     if not Device:isTouchDevice() then
-                        self:onStartHighlightIndicator()
+                        self.ui.keyselection:startHighlightIndicator()
                     end
                 end,
             }
@@ -1591,7 +1591,7 @@ function ReaderHighlight:onHold(arg, ges)
             with_title_bar = false, -- more room for image
             fullscreen = true,
         })
-        self.ui.keyselection:onStopHighlightIndicator()
+        self.ui.keyselection:stopHighlightIndicator()
         return true
     end
 
