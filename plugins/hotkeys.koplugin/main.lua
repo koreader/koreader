@@ -60,16 +60,18 @@ if LuaSettings:open(hotkeys_path).data["press_key_does_hotkeys"] then
     util.tableMerge(hotkeys_list, { press = _("Press") })
 end
 
-for i = 0, 15 do
-    local id = Gamepad.button_ids[i] or tostring(i)
-    local name = Gamepad.button_names[i] or T(_("Button %1"), i)
-    hotkeys_list["gamepad_button_" .. id] = T(_("Gamepad %1"), name)
-end
-for i = 0, 5 do
-    local id = Gamepad.axis_ids[i] or tostring(i)
-    local name = Gamepad.axis_names[i] or ("Axis " .. i)
-    hotkeys_list["gamepad_axis_" .. id .. "_minus"] = T(_("Gamepad %1 –"), name)
-    hotkeys_list["gamepad_axis_" .. id .. "_plus"] = T(_("Gamepad %1 +"), name)
+if Device:supportsGamepad() then
+    for i = 0, 15 do
+        local id = Gamepad.button_ids[i] or tostring(i)
+        local name = Gamepad.button_names[i] or T(_("Button %1"), i)
+        hotkeys_list["gamepad_button_" .. id] = T(_("Gamepad %1"), name)
+    end
+    for i = 0, 5 do
+        local id = Gamepad.axis_ids[i] or tostring(i)
+        local name = Gamepad.axis_names[i] or ("Axis " .. i)
+        hotkeys_list["gamepad_axis_" .. id .. "_minus"] = T(_("Gamepad %1 –"), name)
+        hotkeys_list["gamepad_axis_" .. id .. "_plus"] = T(_("Gamepad %1 +"), name)
+    end
 end
 if Device:hasKeyboard() then
     local hotkeys_list_haskeyboard = { modifier_plus_menu = _("Shift + Menu") }
@@ -123,7 +125,6 @@ function HotKeys:init()
     self:registerDispatcherActions()
     self:registerKeyEvents()
 end
-
 function HotKeys:registerDispatcherActions()
     for action_name, action in pairs(key_emitter_actions) do
         Dispatcher:registerAction(action_name, {
