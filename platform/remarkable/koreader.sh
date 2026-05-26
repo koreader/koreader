@@ -28,11 +28,11 @@ fi
 fbink() {
     if [ -n "${KO_USE_QTFB}" ]; then
         LD_PRELOAD="/home/root/shims/qtfb-shim.so" \
-        QTFB_SHIM_MODEL="false" \
-        QTFB_SHIM_INPUT_MODE="NATIVE" \
-        QTFB_SHIM_MODE="N_RGB565" \
-        QTFB_SHIM_RESPECT_FULL_REFRESH_REQUESTS="1" \
-        ./fbink "$@"
+            QTFB_SHIM_MODEL="false" \
+            QTFB_SHIM_INPUT_MODE="NATIVE" \
+            QTFB_SHIM_MODE="N_RGB565" \
+            QTFB_SHIM_RESPECT_FULL_REFRESH_REQUESTS="1" \
+            ./fbink "$@"
     else
         ./fbink "$@"
     fi
