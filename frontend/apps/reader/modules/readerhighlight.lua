@@ -4,7 +4,6 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonSelector = require("ui/widget/buttonselector")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local DoubleSpinWidget = require("ui/widget/doublespinwidget")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureDetector = require("device/gesturedetector")
@@ -19,7 +18,6 @@ local ffiUtil = require("ffi/util")
 local logger = require("logger")
 local util = require("util")
 local Size = require("ui/size")
-local time = require("ui/time")
 local _ = require("gettext")
 local C_ = _.pgettext
 local N_ = _.ngettext
@@ -376,6 +374,9 @@ local long_press_action = {
     {_("Dictionary"), "dictionary"},
     {_("Fulltext search"), "search"},
 }
+-- we need to expose this table to readerkeyselection
+-- as here it is hidden under a isTouchDevice cap
+ReaderHighlight.long_press_action = long_press_action
 
 local highlight_dialog_position = {
     {_("Top"), "top"},
@@ -385,16 +386,6 @@ local highlight_dialog_position = {
 }
 
 function ReaderHighlight:addToMainMenu(menu_items)
-    -- insert table to main reader menu
-    if not Device:isTouchDevice() and Device:hasDPad() and not Device:useDPadAsActionKeys() then
-        menu_items.start_content_selection = {
-            text = _("Start content selection"),
-            callback = function()
-                self:onStartHighlightIndicator()
-            end,
-        }
-    end
-
     -- main menu Typeset
     local star = "   ★"
     local hl_sub_item_table = {}
@@ -813,113 +804,6 @@ Except when in two columns mode, where this is limited to showing only the previ
             self.allow_corner_scroll = G_reader_settings:nilOrTrue("highlight_corner_scroll")
         end,
     })
-
-    -- we allow user to select the rate at which the content selection tool moves through screen
-    if not Device:isTouchDevice() and Device:hasDPad() then
-        table.insert(menu_items.long_press.sub_item_table, {
-            text_func = function()
-                local reader_speed = G_reader_settings:readSetting("highlight_non_touch_factor") or 4
-                local dict_speed = G_reader_settings:readSetting("highlight_non_touch_factor_dict") or 3
-                return T(_("Crosshairs speed (reader/dict): %1 / %2"), reader_speed, dict_speed)
-            end,
-            callback = function(touchmenu_instance)
-                local reader_speed = G_reader_settings:readSetting("highlight_non_touch_factor") or 4
-                local dict_speed = G_reader_settings:readSetting("highlight_non_touch_factor_dict") or 3
-                local double_spin_widget = DoubleSpinWidget:new{
-                    left_text = _("Reader"),
-                    left_value = reader_speed,
-                    left_min = 0.25,
-                    left_max = 5,
-                    left_default = 4,
-                    left_precision = "%.2f",
-                    left_step = 0.25,
-                    left_hold_step = 0.05,
-                    right_text = _("Dictionary"),
-                    right_value = dict_speed,
-                    right_min = 0.25,
-                    right_max = 5,
-                    right_default = 3,
-                    right_precision = "%.2f",
-                    right_step = 0.25,
-                    right_hold_step = 0.05,
-                    title_text = _("Crosshairs speed"),
-                    info_text = _("Select a decimal value from 0.25 to 5. A smaller value increases the travel distance of the crosshairs per keystroke. Font size and this value are inversely correlated, meaning a smaller font size requires a larger value and vice versa."),
-                    callback = function(left_value, right_value)
-                        G_reader_settings:saveSetting("highlight_non_touch_factor", left_value)
-                        G_reader_settings:saveSetting("highlight_non_touch_factor_dict", right_value)
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end
-                }
-                UIManager:show(double_spin_widget)
-            end,
-        })
-        table.insert(menu_items.long_press.sub_item_table, {
-            text = _("Increase crosshairs speed on consecutive keystrokes"),
-            checked_func = function()
-                return G_reader_settings:nilOrTrue("highlight_non_touch_spedup")
-            end,
-            enabled_func = function()
-                return not self.view.highlight.disabled
-            end,
-            callback = function()
-                G_reader_settings:flipNilOrTrue("highlight_non_touch_spedup")
-            end,
-        })
-        table.insert(menu_items.long_press.sub_item_table, {
-            text_func = function()
-                local highlight_non_touch_interval = G_reader_settings:readSetting("highlight_non_touch_interval") or 1
-                return T(N_("Interval for crosshairs speed increase: 1 second", "Interval for crosshairs speed increase: %1 seconds", highlight_non_touch_interval), highlight_non_touch_interval)
-            end,
-            separator = true, -- needed as this is not the last item, readerlink adds another one
-            enabled_func = function()
-                return not self.view.highlight.disabled and G_reader_settings:nilOrTrue("highlight_non_touch_spedup")
-            end,
-            callback = function(touchmenu_instance)
-                local curr_val = G_reader_settings:readSetting("highlight_non_touch_interval") or 1
-                local spin_widget = SpinWidget:new{
-                    value = curr_val,
-                    value_min = 0.1,
-                    value_max = 1,
-                    precision = "%.1f",
-                    value_step = 0.1,
-                    default_value = 1,
-                    title_text = _("Time interval"),
-                    info_text = _("Select a decimal value up to 1 second. This defines the time period within which multiple keystrokes will trigger an increase in the crosshairs speed."),
-                    callback = function(spin)
-                        G_reader_settings:saveSetting("highlight_non_touch_interval", spin.value)
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end
-                }
-                UIManager:show(spin_widget)
-            end,
-        })
-
-        -- long_press settings are under the taps_and_gestures menu, which is not available for non-touch devices
-        -- Clone long_press settings, and change its label, making it much more meaningful for non-touch device users.
-        menu_items.selection_text = {
-            text = _("Text selection tools"),
-            sub_item_table = {
-                menu_items.long_press.sub_item_table[1], -- Dictionary on single word selection
-                {
-                    text_func = function()
-                        local multi_word = G_reader_settings:readSetting("default_highlight_action")
-                        for __, v in ipairs(long_press_action) do
-                            if v[2] == multi_word then
-                                return T(_("Multi-word selection: %1"), v[1]:lower())
-                            end
-                        end
-                    end,
-                    sub_item_table = { table.unpack(menu_items.long_press.sub_item_table, 2, #long_press_action + 1) }
-                }
-            }
-        }
-        local post_long_press_action_index = #menu_items.selection_text.sub_item_table + #long_press_action -- index after long_press_action
-        -- Copy remaining items (anything after long_press_action) directly to selection_text's sub_item_table
-        for i = post_long_press_action_index, #menu_items.long_press.sub_item_table do
-            table.insert(menu_items.selection_text.sub_item_table, menu_items.long_press.sub_item_table[i])
-        end
-        menu_items.long_press = nil
-    end
 
     -- main menu Search
     menu_items.translation_settings = Translator:genSettingsMenu()
@@ -2711,7 +2595,5 @@ function ReaderHighlight:onClose(keep_highlight)
         self:clear()
     end
 end
-
-
 
 return ReaderHighlight
