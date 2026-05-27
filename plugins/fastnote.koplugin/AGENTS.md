@@ -16,8 +16,16 @@ full-screen hand-drawn note-taking canvas. Features (planned/implemented):
 - Eraser (physical eraser end of the stylus, stroke-level delete)
 - Undo / redo
 - Dark mode
-- 6-color palette (Kaleido 3 panel) — Stage 12, not started
+- 6-color ink palette (Kaleido 3 panel) — infrastructure in place, Phase A
 - Pages saved as SVG with embedded JSON stroke data (round-trippable)
+
+**Target hardware:**
+- Device: **Kobo Libra Colour** (model `KoboMonza`, MTK SoC, Kaleido 3 colour E-ink)
+- Pen: **Kobo Stylus 2** — Wacom EMR protocol, has pen tip and eraser tip
+- Digitizer: Elan combo chip on `/dev/input/event1`; handles pen and capacitive
+  touch in the same node. Uses MT protocol with `ABS_MT_TOOL_TYPE` (0=finger,
+  1=pen tip, 2=eraser tip). Does **not** emit `BTN_TOOL_PEN`/`BTN_TOOL_RUBBER`
+  via EV_KEY — those must be synthesised from `ABS_MT_TOOL_TYPE` on contact start.
 
 **Source of truth for design decisions:** `.agents/planning/fastnote-dev-plan-v2.md`  
 Read it before implementing any stage. It contains the open questions, the
@@ -164,7 +172,10 @@ cd /path/to/koreader
 
 The emulator supports: widget rendering, BlitBuffer, file I/O, tap/pan gestures (via mouse).
 
-It does NOT support: `/dev/input/eventX`, `EVIOCGABS`, E-Ink waveform modes, `Screen:isColorEnabled()` returning true.
+It does NOT support: `/dev/input/eventX`, `EVIOCGABS`, E-Ink waveform modes.
+`Screen:isColorEnabled()` returns false in the emulator — this is now bypassed;
+colour buffer selection uses `Device:hasKaleidoWfm()` / `Screen:isColorScreen()`
+instead (both return false in SDL, so BB8 is used in the emulator as expected).
 
 ### Running unit tests
 

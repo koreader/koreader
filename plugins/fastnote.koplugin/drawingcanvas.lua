@@ -167,9 +167,14 @@ function DrawingCanvas:init()
     self._current_color  = self.current_color or DEFAULT_COLOR
     self._pressure_floor = self.pressure_floor or 200
 
-    -- Use BBRGB32 on color e-ink panels so ink renders in the chosen color.
-    -- Fall back to BB8 (grayscale) on mono e-ink devices.
-    local bb_type = Screen:isColorEnabled()
+    -- Use BBRGB32 on colour e-ink panels so ink renders in the chosen colour.
+    -- Screen:isColorEnabled() is a user toggle (reads G_reader_settings) and
+    -- can be off even on a Kaleido 3 device.  Use the hardware capability
+    -- queries instead: hasKaleidoWfm() is set for all MTK Kobo colour panels;
+    -- isColorScreen() is the broader fallback for other colour e-ink devices.
+    local has_color_hw = (Device.hasKaleidoWfm and Device:hasKaleidoWfm())
+                         or Screen:isColorScreen()
+    local bb_type = has_color_hw
                     and Blitbuffer.TYPE_BBRGB32
                     or  Blitbuffer.TYPE_BB8
     self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bb_type)
@@ -178,7 +183,8 @@ function DrawingCanvas:init()
     self._stroke_buf = StrokeBuffer.new()
 
     logger.dbg("FastNote canvas: init", self.dimen.w, "x", self.dimen.h,
-               "color=", Screen:isColorEnabled())
+               "has_color_hw=", has_color_hw,
+               "isColorEnabled=", Screen:isColorEnabled())
 
     self.use_raw_input = Device:isKobo()
 
@@ -777,7 +783,9 @@ function DrawingCanvas:_reinitAtRotation(new_mode)
     self.dimen.h = Screen:getHeight()
 
     if self._bb then self._bb:free() end
-    local bb_type = Screen:isColorEnabled()
+    local has_color_hw = (Device.hasKaleidoWfm and Device:hasKaleidoWfm())
+                         or Screen:isColorScreen()
+    local bb_type = has_color_hw
                     and Blitbuffer.TYPE_BBRGB32
                     or  Blitbuffer.TYPE_BB8
     self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bb_type)
