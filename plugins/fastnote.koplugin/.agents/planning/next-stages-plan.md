@@ -266,25 +266,198 @@ open-existing. Routes through main.lua state machine.
 
 ---
 
-## Deferred: Double-Tap for Quick Menu
+## Phase A.1: Kaleido Colour Waveform (dither flag)  ← NEXT
 
-The double-tap → open menu feature **works** in master (`b48d58e91`) and
-should be left as-is. The complexity is in the false-positive rejection — we
-need to know when a second tap is genuinely a "double" and not just rapid
-writing. Ideas for if/when we revisit:
+**Status:** Not yet implemented. Phase A fixed the *buffer type*; the
+*display waveform* still renders colour as greyscale.
 
-- **Time gate only (current):** 350 ms window. Too wide. Drawing pace of 3
-  strokes/second will trigger false positives.
-- **Spatial gate:** Both taps must land within N pixels of each other. Rapid
-  writing moves the pen; a deliberate double-tap usually stays in the same
-  spot.
-- **Combined gate:** Time < 350 ms AND spatial < 30 px.
-- **Hold approach:** Single long-press (500 ms no-move) opens menu. Avoids the
-  "two fast taps" problem entirely.
+### Root cause
 
-**Do not implement any of these until Phases A and B are stable.** Opening
-the double-tap rabbit-hole while color and eraser are untested adds risk with
-no benefit.
+`framebuffer_mxcfb.lua` line 370:
+
+```lua
+if dither and fb.device:hasKaleidoWfm() and fb:isColorEnabled() then
+    -- → GCC16 / GLRC16 colour waveforms
+```
+
+Our `UIManager:setDirty` calls never pass `dither = true`, so the Kaleido
+hardware always takes the greyscale path. The buffer holds valid RGB32
+values (Phase A fixed that), but the display renders them as greyscale
+luminance.
+
+`Screen:isColorEnabled()` returns `Screen:isColorScreen()` when the user
+hasn't touched the setting — which is `true` on KoboMonza. So the only
+missing piece is the `dither` flag.
+
+### The fix (single commit, on top of Phase A)
+
+**File:** `drawingcanvas.lua`
+
+1. **Cache `has_color_hw` as `self._has_color_hw`** in `init()` (already
+   computed there; just store it on self).
+
+2. **Set `self.dithered = has_color_hw`** in `init()`. UIManager propagates
+   the colour waveform hint when dialogs (e.g. `_showQuickMenu`) close if
+   the underlying widget has `dithered = true`.
+
+3. **After pen-up** (ev.type == "up" handler): change `UIManager:setDirty(self, "ui")`
+   to `UIManager:setDirty(self, function() return "partial", nil, true end)`
+   on Kaleido devices (`self._has_color_hw`); keep `"ui"` on greyscale
+   devices.
+
+4. **In `_repaintAll()`**: change `UIManager:setDirty(self, "partial")` to
+   use `function() return "partial", nil, true end` on Kaleido; keep
+   `"partial"` on greyscale.
+
+5. **In `_reinitAtRotation()`**: replace the repeated `has_color_hw`
+   computation with `self._has_color_hw` (DRY).
+
+> **Live drawing waveform stays `"fast"` (A2).** Dithered refreshes per
+> sample point would be far too slow. Colours "snap in" after pen-up, which
+> is the standard colour E-ink drawing behaviour.
+
+### Pitfalls
+
+- Using `"partial"` (REAGL) everywhere without dither still does NOT
+  trigger Kaleido waveforms — the `dither` flag is required.
+- `imageviewer.lua` is the reference implementation: `self.dithered = true`
+  + `UIManager:setDirty(self, function() return "partial", region, true end)`.
+- After `_showQuickMenu` closes and a colour is selected, UIManager already
+  schedules a dirty refresh; `self.dithered = true` ensures that refresh
+  also uses the colour waveform.
+
+### Test plan
+
+1. **Busted:** No unit-testable surface change; `setDirty` is a KOReader
+   runtime call. Existing 187 tests continue to pass.
+2. **On device:** Select Red ink, draw a stroke. After pen-up, stroke should
+   appear red (not dark grey). Rotate — colour persists through `_reinitAtRotation`.
+
+### Commit message
+
+```
+fix(color): pass dither=true to UIManager:setDirty for Kaleido waveform
+
+Phase A fixed the buffer type to BBRGB32 on colour hardware. However,
+the display waveform still used the greyscale path because setDirty never
+passed dither=true. The Kaleido waveform gate in framebuffer_mxcfb.lua
+requires dither AND hasKaleidoWfm() AND isColorEnabled() — all three must
+be true. Set self.dithered=true on the canvas widget and use
+function()→"partial",nil,true for post-stroke and repaint refreshes.
+```
+
+---
+
+## Phase A.2: Double-Tap Spatial Gate  ← NEXT (bundle with A.1)
+
+**Status:** Not yet implemented. On-device testing confirmed false positives
+during normal handwriting.
+
+### Root cause
+
+Current detector (`_pollPen`, ev.type == "down"):
+
+```lua
+if self._last_pen_down_time and
+   (now - self._last_pen_down_time) < time.ms(400) then
+    self:_showQuickMenu()   -- fires on rapid letter-to-letter strokes!
+end
+```
+
+400 ms time window with **no spatial constraint**. Between letters while
+writing, the pen lifts for ~100–250 ms and re-contacts at a *different*
+position. The time gate triggers; the position check (absent) doesn't filter
+it out.
+
+### The fix (bundle with A.1)
+
+**File:** `drawingcanvas.lua`, `_pollPen()`, ev.type == "down" handler.
+
+1. **Reduce time window:** `time.ms(400)` → `time.ms(300)`.
+2. **Add spatial gate:** Both downs must land within 50 px of each other
+   (Kobo Libra Colour is ~227 DPI → 50 px ≈ 5.6 mm diameter, consistent
+   with a deliberate double-tap).
+3. **Track last-down position:** `self._last_pen_down_sx`, `_last_pen_down_sy`
+   alongside the existing `_last_pen_down_time`.
+4. **Reset position tracking** on menu open (clear both `_sx/_sy`) so a
+   stale position from a previous gesture can't contribute.
+
+```lua
+-- BEFORE (broken):
+local now = time.now()
+if self._last_pen_down_time and
+   (now - self._last_pen_down_time) < time.ms(400) then
+    self._last_pen_down_time = nil
+    self._last_pen_x = nil
+    self._last_pen_y = nil
+    self:_showQuickMenu()
+    return
+end
+self._last_pen_down_time = now
+self._stroke_buf:penDown(...)
+
+-- AFTER (fixed):
+local now = time.now()
+if self._last_pen_down_time and
+   (now - self._last_pen_down_time) < time.ms(300) then
+    local dx = math.abs(sx - (self._last_pen_down_sx or sx))
+    local dy = math.abs(sy - (self._last_pen_down_sy or sy))
+    if dx <= 50 and dy <= 50 then
+        self._last_pen_down_time = nil
+        self._last_pen_down_sx   = nil
+        self._last_pen_down_sy   = nil
+        self._last_pen_x = nil
+        self._last_pen_y = nil
+        self:_showQuickMenu()
+        return
+    end
+end
+self._last_pen_down_time = now
+self._last_pen_down_sx   = sx
+self._last_pen_down_sy   = sy
+self._stroke_buf:penDown(...)
+```
+
+5. **Reset on page navigation:** Clear `_last_pen_down_time/_sx/_sy` in
+   `_navigatePage()`. A tap immediately after page turn should never be half
+   of a double-tap that started before the turn.
+
+### Pitfall: page-change reverses which menu appears
+
+User observed: after changing pages, the colour menu appears instead of
+whatever was appearing before. Root cause: `_last_pen_down_time` is NOT
+cleared on page navigation. If the user tapped once *before* the page
+change (setting the timer), then taps once *after* (within 300 ms), the
+spatial and temporal gate both pass → `_showQuickMenu` fires. Clearing
+the timer in `_navigatePage` prevents this.
+
+### Side-button / dual-menu issue (investigation note)
+
+User observed: pressing the Kobo Stylus 2 side button opens **two menus
+simultaneously** (a "pressure menu" + the colour menu). The colour menu is
+hidden behind the other.
+
+**Hypothesis:** BTN_STYLUS (0x14b) is read by BOTH the plugin (open is
+non-exclusive, O_RDONLY) and KOReader's gesture layer. KOReader maps
+BTN_STYLUS to some gesture (likely a synthetic tap at the pen position).
+Meanwhile our double-tap detector may fire if BTN_STYLUS triggers a
+pressure fluctuation that crosses the contact threshold twice in quick
+succession.
+
+**Deferred to Phase B.1 (eraser phase).** When we add O_RDWR + EVIOCGRAB
+for the exclusive eraser detection, that grab also blocks KOReader from
+seeing BTN_STYLUS events, eliminating the dual-menu race. Until then, the
+spatial gate (Phase A.2) should reduce false triggers.
+
+---
+
+## Phase A — Errata
+
+**Phase A commit:** `32c7523b8` on `origin/master`.
+Status: pushed. Buffer type fixed (BBRGB32 based on hardware). Colour
+display still broken until Phase A.1 (dither) is implemented.
+
+---
 
 ---
 

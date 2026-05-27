@@ -135,6 +135,8 @@ local DrawingCanvas = InputContainer:extend{
     _last_pen_x         = nil,
     _last_pen_y         = nil,
     _last_pen_down_time = nil,  -- fts timestamp of last pen-tip down (double-tap detection)
+    _last_pen_down_sx   = nil,  -- screen X of last pen-tip down (double-tap spatial gate)
+    _last_pen_down_sy   = nil,  -- screen Y of last pen-tip down (double-tap spatial gate)
 
     -- Raw touch tracking (separate from pen to avoid cross-contamination)
     _last_touch_x = nil,
@@ -179,6 +181,10 @@ function DrawingCanvas:init()
                     or  Blitbuffer.TYPE_BB8
     self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bb_type)
     self._bb:fill(self:_bgColor())
+    self._has_color_hw = has_color_hw
+    -- Signal UIManager to use Kaleido colour waveform when refreshing this
+    -- widget (e.g. after a dialog closes on top of the canvas).
+    self.dithered = has_color_hw
 
     self._stroke_buf = StrokeBuffer.new()
 
@@ -751,7 +757,11 @@ function DrawingCanvas:_repaintAll()
         local override = self._dark_mode and Blitbuffer.COLOR_WHITE or nil
         self._stroke_buf:repaintTo(self._bb, override)
     end
-    UIManager:setDirty(self, "partial")
+    if self._has_color_hw then
+        UIManager:setDirty(self, function() return "partial", nil, true end)
+    else
+        UIManager:setDirty(self, "partial")
+    end
 end
 
 --- Return the Blitbuffer color for new live strokes (current ink, mode-aware).
@@ -783,9 +793,7 @@ function DrawingCanvas:_reinitAtRotation(new_mode)
     self.dimen.h = Screen:getHeight()
 
     if self._bb then self._bb:free() end
-    local has_color_hw = (Device.hasKaleidoWfm and Device:hasKaleidoWfm())
-                         or Screen:isColorScreen()
-    local bb_type = has_color_hw
+    local bb_type = self._has_color_hw
                     and Blitbuffer.TYPE_BBRGB32
                     or  Blitbuffer.TYPE_BB8
     self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bb_type)
@@ -867,18 +875,29 @@ function DrawingCanvas:_pollPen()
                     self._last_pen_y = nil
                     return
                 end
-                -- Pen double-tap: two pen-tip downs within 400 ms opens quick menu.
-                -- Eraser-end downs are excluded (already returned via eraser path).
+                -- Pen double-tap: two pen-tip downs within 300 ms AND within
+                -- 50 px of each other opens the quick menu.  The spatial gate
+                -- prevents false triggers during rapid handwriting, where the
+                -- pen re-contacts at a different position between letters.
+                -- Eraser-end downs are excluded (already returned above).
                 local now = time.now()
                 if self._last_pen_down_time and
-                   (now - self._last_pen_down_time) < time.ms(400) then
-                    self._last_pen_down_time = nil
-                    self._last_pen_x = nil
-                    self._last_pen_y = nil
-                    self:_showQuickMenu()
-                    return
+                   (now - self._last_pen_down_time) < time.ms(300) then
+                    local ddx = math.abs(sx - (self._last_pen_down_sx or sx))
+                    local ddy = math.abs(sy - (self._last_pen_down_sy or sy))
+                    if ddx <= 50 and ddy <= 50 then
+                        self._last_pen_down_time = nil
+                        self._last_pen_down_sx   = nil
+                        self._last_pen_down_sy   = nil
+                        self._last_pen_x = nil
+                        self._last_pen_y = nil
+                        self:_showQuickMenu()
+                        return
+                    end
                 end
                 self._last_pen_down_time = now
+                self._last_pen_down_sx   = sx
+                self._last_pen_down_sy   = sy
                 self._stroke_buf:penDown(sx, sy, lw, self._current_color)
             else
                 self._stroke_buf:penMove(sx, sy, lw)
@@ -913,7 +932,15 @@ function DrawingCanvas:_pollPen()
             end
             self._last_pen_x = nil
             self._last_pen_y = nil
-            UIManager:setDirty(self, "ui")
+            -- Use partial+dither on Kaleido so the colour waveform (GCC16/GLRC16)
+            -- activates and strokes render in their actual ink colour after pen-up.
+            -- "fast" (A2) during live drawing is greyscale-only; this final
+            -- refresh is where colour "snaps in".
+            if self._has_color_hw then
+                UIManager:setDirty(self, function() return "partial", nil, true end)
+            else
+                UIManager:setDirty(self, "ui")
+            end
         end
     end)
 
@@ -1149,6 +1176,12 @@ function DrawingCanvas:_navigatePage(delta)
     -- Reset stroke buffer and display before loading so a blank new page is clean.
     self._stroke_buf = StrokeBuffer.new()
     if self._bb then self._bb:fill(self:_bgColor()) end
+
+    -- A tap immediately after page navigation must not be half of a double-tap
+    -- that started on the previous page (or before the nav gesture completed).
+    self._last_pen_down_time = nil
+    self._last_pen_down_sx   = nil
+    self._last_pen_down_sy   = nil
 
     self:loadPage(new_path)           -- populates _stroke_buf if SVG exists
 
