@@ -19,6 +19,25 @@ fi
 # we're always starting from our working directory
 cd "${KOREADER_DIR}" || exit
 
+# reMarkable QTFB setup
+if [ -n "${KO_USE_QTFB}" ]; then
+    export KO_DONT_GRAB_INPUT=1
+    export KO_DONT_SET_DEPTH=1
+fi
+
+fbink_wrapped() {
+    if [ -n "${KO_USE_QTFB}" ]; then
+        LD_PRELOAD="/home/root/shims/qtfb-shim.so" \
+            QTFB_SHIM_MODEL="false" \
+            QTFB_SHIM_INPUT_MODE="NATIVE" \
+            QTFB_SHIM_MODE="N_RGB565" \
+            QTFB_SHIM_RESPECT_FULL_REFRESH_REQUESTS="1" \
+            ./fbink "$@"
+    else
+        ./fbink "$@"
+    fi
+}
+
 # reMarkable 2 check
 IFS= read -r MACHINE_TYPE <"/sys/devices/soc0/machine"
 if [ "reMarkable 2.0" = "${MACHINE_TYPE}" ]; then
@@ -38,13 +57,13 @@ ko_update_check() {
             systemctl stop button-listen
         fi
 
-        ./fbink -q -y -7 -pmh "Updating KOReader"
+        fbink_wrapped -q -y -7 -pmh "Updating KOReader"
         # Keep a copy of the old manifest for cleaning leftovers later.
         cp "${KOREADER_DIR}/ota/package.index" /tmp/
         # Setup the FBInk daemon
         export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
         rm -f "${FBINK_NAMED_PIPE}"
-        FBINK_PID="$(./fbink --daemon 1 %KOREADER% -q -y -6 -P 0)"
+        FBINK_PID="$(fbink_wrapped --daemon 1 %KOREADER% -q -y -6 -P 0)"
         # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
         # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
         FILESIZE="$(stat -c %b "${NEWUPDATE}")"
@@ -59,12 +78,12 @@ ko_update_check() {
             mv "${NEWUPDATE}" "${INSTALLED}"
             # Cleanup leftovers from previous install.
             (cd "${UNPACK_DIR}" && grep -xvFf "${KOREADER_DIR}/ota/package.index" /tmp/package.index | xargs -r rm -vf)
-            ./fbink -q -y -6 -pm "Update successful :)"
-            ./fbink -q -y -5 -pm "KOReader will start momentarily . . ."
+            fbink_wrapped -q -y -6 -pm "Update successful :)"
+            fbink_wrapped -q -y -5 -pm "KOReader will start momentarily . . ."
         else
             # Uh oh...
-            ./fbink -q -y -6 -pmh "Update failed :("
-            ./fbink -q -y -5 -pm "KOReader may fail to function properly!"
+            fbink_wrapped -q -y -6 -pmh "Update failed :("
+            fbink_wrapped -q -y -5 -pm "KOReader may fail to function properly!"
         fi
         rm -f /tmp/package.index "${NEWUPDATE}" # always purge newupdate to prevent update loops
         unset CPOINTS FBINK_NAMED_PIPE
@@ -88,30 +107,34 @@ fi
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 
-# We'll want to ensure Portrait rotation to allow us to use faster blitting codepaths @ 8bpp,
-# so remember the current one before fbdepth does its thing.
-ORIG_FB_ROTA="$(./fbdepth -o)"
-# In the same vein, swap to 8bpp,
-# because 16bpp is the worst idea in the history of time, as RGB565 is generally a PITA without hardware blitting,
-# and 32bpp usually gains us nothing except a performance hit (we're not Qt5 with its QPainter constraints).
-# The reduced size & complexity should hopefully make things snappier,
-# (and hopefully prevent the JIT from going crazy on high-density screens...).
-# NOTE: Even though both pickel & Nickel appear to restore their preferred fb setup, we'll have to do it ourselves,
-#       as they fail to flip the grayscale flag properly. Plus, we get to play nice with every launch method that way.
-#       So, remember the current bitdepth, so we can restore it on exit.
-ORIG_FB_BPP="$(./fbdepth -g)"
-echo "Original fb settings: bitdepth = ${ORIG_FB_BPP}, rotation = ${ORIG_FB_ROTA}" >>crash.log 2>&1
+ORIG_FB_BPP=""
+ORIG_FB_ROTA=""
+if [ -z "${KO_DONT_SET_DEPTH}" ] && [ -z "${KO_USE_QTFB}" ]; then
+    # We'll want to ensure Portrait rotation to allow us to use faster blitting codepaths @ 8bpp,
+    # so remember the current one before fbdepth does its thing.
+    ORIG_FB_ROTA="$(./fbdepth -o)"
+    # In the same vein, swap to 8bpp,
+    # because 16bpp is the worst idea in the history of time, as RGB565 is generally a PITA without hardware blitting,
+    # and 32bpp usually gains us nothing except a performance hit (we're not Qt5 with its QPainter constraints).
+    # The reduced size & complexity should hopefully make things snappier,
+    # (and hopefully prevent the JIT from going crazy on high-density screens...).
+    # NOTE: Even though both pickel & Nickel appear to restore their preferred fb setup, we'll have to do it ourselves,
+    #       as they fail to flip the grayscale flag properly. Plus, we get to play nice with every launch method that way.
+    #       So, remember the current bitdepth, so we can restore it on exit.
+    ORIG_FB_BPP="$(./fbdepth -g)"
+    echo "Original fb settings: bitdepth = ${ORIG_FB_BPP}, rotation = ${ORIG_FB_ROTA}" >>crash.log 2>&1
 
-# Sanity check...
-case "${ORIG_FB_BPP}" in
-    8) ;;
-    16) ;;
-    32) ;;
-    *)
-        # Uh oh? Don't do anything...
-        unset ORIG_FB_BPP
-        ;;
-esac
+    # Sanity check...
+    case "${ORIG_FB_BPP}" in
+        8) ;;
+        16) ;;
+        32) ;;
+        *)
+            # Uh oh? Don't do anything...
+            unset ORIG_FB_BPP
+            ;;
+    esac
+fi
 
 # The actual swap is done in a function, because we can disable it in the Developer settings, and we want to honor it on restart.
 ko_do_fbdepth() {
@@ -182,26 +205,26 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         viewWidth=600
         viewHeight=800
         FONTH=16
-        eval "$(./fbink -e | tr ';' '\n' | grep -e viewWidth -e viewHeight -e FONTH | tr '\n' ';')"
+        eval "$(fbink_wrapped -e | tr ';' '\n' | grep -e viewWidth -e viewHeight -e FONTH | tr '\n' ';')"
         # Compute margins & sizes relative to the screen's resolution, so we end up with a similar layout, no matter the device.
         # Height @ ~56.7%, w/ a margin worth 1.5 lines
         bombHeight=$((viewHeight / 2 + viewHeight / 15))
         bombMargin=$((FONTH + FONTH / 2))
         # With a little notice at the top of the screen, on a big gray screen of death ;).
-        ./fbink -q -b -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
+        fbink_wrapped -q -b -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
         if [ ${CRASH_COUNT} -eq 1 ]; then
             # Warn that we're sleeping for a bit...
-            ./fbink -q -b -O -m -y 2 "KOReader will restart in 15 sec."
+            fbink_wrapped -q -b -O -m -y 2 "KOReader will restart in 15 sec."
         fi
         # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
         # shellcheck disable=SC2039,SC3003
-        ./fbink -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -- $'\xf0\x9f\x92\xa3'
+        fbink_wrapped -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -- $'\xf0\x9f\x92\xa3'
         # And then print the tail end of the log on the bottom of the screen...
         crashLog="$(tail -n 25 crash.log | sed -e 's/\t/    /g')"
         # The idea for the margins being to leave enough room for an fbink -Z bar, small horizontal margins, and a font size based on what 6pt looked like @ 265dpi
-        ./fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64)) -- "${crashLog}"
+        fbink_wrapped -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64)) -- "${crashLog}"
         # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
-        ./fbink -q -f -s
+        fbink_wrapped -q -f -s
         # Cue a lemming's faceplant sound effect!
 
         {
@@ -243,12 +266,14 @@ done
 
 # Restore original fb bitdepth if need be...
 # Since we also (almost) always enforce Portrait, we also have to restore the original rotation no matter what ;).
-if [ -n "${ORIG_FB_BPP}" ]; then
-    echo "Restoring original fb bitdepth @ ${ORIG_FB_BPP}bpp & rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
-    ./fbdepth -d "${ORIG_FB_BPP}" -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
-else
-    echo "Restoring original fb rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
-    ./fbdepth -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
+if [ -z "${KO_DONT_SET_DEPTH}" ] && [ -z "${KO_USE_QTFB}" ]; then
+    if [ -n "${ORIG_FB_BPP}" ]; then
+        echo "Restoring original fb bitdepth @ ${ORIG_FB_BPP}bpp & rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
+        ./fbdepth -d "${ORIG_FB_BPP}" -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
+    else
+        echo "Restoring original fb rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
+        ./fbdepth -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
+    fi
 fi
 
 exit ${RETURN_VALUE}

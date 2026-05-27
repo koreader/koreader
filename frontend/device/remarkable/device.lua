@@ -32,6 +32,7 @@ local is_rmpp = rm_model == "reMarkable Ferrari"
 local is_rmppm = rm_model == "reMarkable Chiappa"
 local has_csl = util.which("csl")
 local is_qtfb_shimmed = (os.getenv("LD_PRELOAD") or ""):find("qtfb%-shim") ~= nil
+local is_qtfb_native = os.getenv("KO_USE_QTFB") ~= nil
 
 if is_rmpp then
     screen_width = 1620 -- unscaled_size_check: ignore
@@ -202,13 +203,16 @@ function Remarkable:init()
 
     logger.info(string.format("QTFB shimmed?: %s", is_qtfb_shimmed))
 
+    logger.info(string.format("QTFB native?: %s", is_qtfb_native))
+
     -- experiment
     -- logger.info("PPID:")
     -- local parent_process = os.execute("echo $PPID")
     -- os.execute("ps | grep $PPID")
     -- logger.info(string.format("parent process is oxide?: %s", parent_process_is_oxide))
 
-    self.screen = require("ffi/framebuffer_mxcfb"):new{
+    local fb_module = os.getenv("KO_USE_QTFB") and "ffi/framebuffer_qtfb" or "ffi/framebuffer_mxcfb"
+    self.screen = require(fb_module):new{
         device = self,
         debug = logger.dbg,
         wf_level = G_reader_settings:readSetting("wf_level") or 2,
@@ -222,7 +226,7 @@ function Remarkable:init()
 
     local event_map = dofile("frontend/device/remarkable/event_map.lua")
     -- If we are launched while Oxide or xochitl is running, remove Power from the event map
-    if oxide_running or is_qtfb_shimmed then
+    if oxide_running or is_qtfb_shimmed or is_qtfb_native then
         event_map[116] = nil
         event_map[143] = nil
         event_map[20001] = nil
@@ -460,11 +464,13 @@ function Remarkable:setEventHandlers(UIManager)
 end
 
 if is_rm2 then
+    if is_qtfb_native then return Remarkable2 end
     if not os.getenv("RM2FB_SHIM") and not is_qtfb_shimmed then
         error("reMarkable 2 requires a RM2FB server and client to work (https://github.com/ddvk/remarkable2-framebuffer or https://github.com/asivery/rmpp-qtfb-shim)")
     end
     return Remarkable2
 elseif is_rmpp then
+    if is_qtfb_native then return RemarkablePaperPro end
     if not is_qtfb_shimmed then
         error("reMarkable Paper Pro requires a RM2FB server and client to work (https://github.com/asivery/rm-appload)")
     end
@@ -473,6 +479,7 @@ elseif is_rmpp then
     end
     return RemarkablePaperPro
 elseif is_rmppm then
+    if is_qtfb_native then return RemarkablePaperProMove end
     if not is_qtfb_shimmed then
         error("reMarkable Paper Pro Move requires a RM2FB server and client to work (https://github.com/asivery/rm-appload)")
     end
