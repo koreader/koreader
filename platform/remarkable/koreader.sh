@@ -12,6 +12,7 @@ UNPACK_DIR="${KOREADER_DIR%/*}"
 # from the parent launcher).
 if [ "$(dirname "${0}")" != '/tmp' ]; then
     cp -pf "${0}" '/tmp/koreader.sh'
+    cp -pf "${KOREADER_DIR}/external.manifest.json" '/tmp/external.manifest.json'
     chmod 777 '/tmp/koreader.sh'
     exec '/tmp/koreader.sh' "$@"
 fi
