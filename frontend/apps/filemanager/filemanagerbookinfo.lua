@@ -762,6 +762,7 @@ function BookInfo:editSummary(doc_settings_or_file, book_props)
                         local note = input_dialog:getInputText()
                         summary.note = note ~= "" and note or nil
                         doc_settings_or_file = filemanagerutil.saveSummary(doc_settings_or_file, summary)
+                        BookList.setBookInfoCacheProperty(doc_settings_or_file:readSetting("doc_path"), "been_opened", true)
                         self.summary_updated = true
                         self.kvp_widget:onClose()
                         self:show(doc_settings_or_file, book_props)

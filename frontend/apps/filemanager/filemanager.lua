@@ -1142,8 +1142,11 @@ function FileManager:showDeleteFileDialog(filepath, post_delete_callback, pre_de
             end
         end,
     }
-    if not is_file or BookList.hasBookBeenOpened(file) then
-        self.addMetadataArcCheckButton(confirmbox)
+    if is_file then
+        local doc_settings = BookList.hasBookBeenOpened(file) and BookList.getDocSettings(file)
+        if doc_settings and doc_settings:has("doc_props") and doc_settings:has("partial_md5_checksum") then
+            self.addMetadataArcCheckButton(confirmbox)
+        end
     end
     UIManager:show(confirmbox)
 end

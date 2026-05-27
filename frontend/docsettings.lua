@@ -624,6 +624,7 @@ function DocSettings.saveSettingsArcFile(doc_settings, custom_metadata_file, on_
         end
         custom_metadata_file = DocSettings:findCustomMetadataFile(doc_settings:readSetting("doc_path"))
     end
+    if doc_settings:hasNot("doc_props") or doc_settings:hasNot("partial_md5_checksum") then return end
     local arc_file = DocSettings.getSettingsArcFile(doc_settings:readSetting("partial_md5_checksum"))
     if not on_closing then -- on deletion, called by DocSettings.updateLocation()
         if G_reader_settings:hasNot("document_metadata_arc_on_deletion") then
