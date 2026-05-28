@@ -118,6 +118,7 @@ describe("ReaderLink module", function()
                         h = 800, w = 566,
                     },
                     rotation = 0,
+                    saturation = 1,
                     visible_area = {
                         x = 0, y = 694,
                         h = 106, w = 566,
@@ -133,6 +134,7 @@ describe("ReaderLink module", function()
                         x = 0, y = 0,
                     },
                     rotation = 0,
+                    saturation = 1,
                     visible_area = {
                         h = 686, w = 566,
                         x = 0, y = 0,

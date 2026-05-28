@@ -391,7 +391,7 @@ function KoptInterface:getCoverPageImage(doc)
     local native_size = Document.getNativePageDimensions(doc, 1)
     local canvas_size = CanvasContext:getSize()
     local zoom = math.min(canvas_size.w / native_size.w, canvas_size.h / native_size.h)
-    local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1.0, false)
+    local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1.0, 1.0, false)
     if tile then
         return tile.bb:copy()
     end
@@ -401,13 +401,13 @@ function KoptInterface:is_optimizing_page(doc)
     return doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 or doc.configurable.white_threshold ~= 255
 end
 
-function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, hinting)
+function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, saturation, hinting)
     if doc.configurable.text_wrap == 1 then
         return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, hinting)
     elseif self:is_optimizing_page(doc) then
         return self:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hinting)
     else
-        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, hinting)
+        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, saturation, hinting)
     end
 end
 
@@ -545,7 +545,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hi
     end
 end
 
-function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma)
+function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, saturation)
     --- @note: Crappy safeguard around memory issues like in #7627: if we're eating too much RAM, drop half the cache...
     DocCache:memoryPressureCheck()
 
@@ -554,7 +554,7 @@ function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma)
     elseif self:is_optimizing_page(doc) then
         self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, true)
     else
-        Document.hintPage(doc, pageno, zoom, rotation, gamma)
+        Document.hintPage(doc, pageno, zoom, rotation, gamma, saturation)
     end
 end
 
@@ -587,16 +587,16 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, hinting)
     end
 end
 
-function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
+function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, saturation)
     local nightmode_invert = doc.configurable.nightmode_document == 1 and Screen.night_mode
     if doc.configurable.text_wrap == 1 then
         self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
     elseif self:is_optimizing_page(doc) then
         self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
     elseif nightmode_invert then
-        Document.drawPageInverted(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
+        Document.drawPageInverted(doc, target, x, y, rect, pageno, zoom, rotation, gamma, saturation)
     else
-        Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
+        Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, saturation)
     end
 end
 
@@ -606,7 +606,7 @@ Draw cached tile pixels into target blitbuffer.
 Inherited from common document interface.
 --]]
 function KoptInterface:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
-    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 1.0, false)
+    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 1.0, 1.0, false)
     target:blitFrom(tile.bb,
         x, y,
         rect.x - tile.excerpt.x,

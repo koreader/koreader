@@ -23,6 +23,7 @@ function ReaderKoptListener:onReadSettings(config)
     self.normal_zoom_mode = normal_zoom_mode
     self:setZoomMode(normal_zoom_mode)
     self.ui:handleEvent(Event:new("GammaUpdate", self.document.configurable.contrast, true)) -- no notification
+    self.ui:handleEvent(Event:new("SaturationUpdate", self.document.configurable.saturation, true)) -- no notification
     -- since K2pdfopt v2.21 negative value of word spacing is also used, for config
     -- compatibility we should manually change previous -1 to a more reasonable -0.2
     if self.document.configurable.word_spacing == -1 then
