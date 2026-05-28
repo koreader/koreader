@@ -179,9 +179,6 @@ function DrawingCanvas:init()
     self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bb_type)
     self._bb:fill(self:_bgColor())
     self._has_color_hw = has_color_hw
-    -- Signal UIManager to use Kaleido colour waveform when refreshing this
-    -- widget (e.g. after a dialog closes on top of the canvas).
-    self.dithered = has_color_hw
 
     self._stroke_buf = StrokeBuffer.new()
 
@@ -900,13 +897,16 @@ function DrawingCanvas:_pollPen()
                 self._eraser_mode = false
             end
             self._stroke_buf:penUp()
-            if self._last_pen_x then
+            -- Only refresh if a stroke was actually drawn (not just hover).  Gating
+            -- setDirty prevents visible refreshes on every pen proximity cycle.
+            local had_stroke = self._last_pen_x ~= nil
+            if had_stroke then
                 self._page_dirty = true
                 self:_scheduleIdleSave()
+                UIManager:setDirty(self, "ui")
             end
             self._last_pen_x = nil
             self._last_pen_y = nil
-            UIManager:setDirty(self, "ui")
         end
     end)
 
