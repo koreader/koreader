@@ -12,7 +12,6 @@ update-prepare: all
 	# ensure that the binaries were built for ARM
 	file --dereference $(INSTALL_DIR)/koreader/luajit | grep ARM
 	# Remarkable scripts
-	$(SYMLINK) $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader/
 	$(SYMLINK) $(REMARKABLE_DIR)/koreader.sh $(INSTALL_DIR)/koreader/
 	$(SYMLINK) resources/koreader.png $(INSTALL_DIR)/koreader/icon.png
 	$(SYMLINK) $(REMARKABLE_DIR)/external.manifest.json $(INSTALL_DIR)/koreader/
