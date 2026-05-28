@@ -926,20 +926,26 @@ function DrawingCanvas:_pollPen()
                 self._eraser_mode = false
             end
             self._stroke_buf:penUp()
-            if self._last_pen_x then
+            -- Capture had_stroke BEFORE clearing _last_pen_x so we can gate the
+            -- post-stroke refresh correctly.  _last_pen_x is set only when a stroke
+            -- was actually drawn (not for pure hover-approach-retreat cycles).
+            local had_stroke = self._last_pen_x ~= nil
+            if had_stroke then
                 self._page_dirty = true
                 self:_scheduleIdleSave()
             end
             self._last_pen_x = nil
             self._last_pen_y = nil
-            -- Use partial+dither on Kaleido so the colour waveform (GCC16/GLRC16)
-            -- activates and strokes render in their actual ink colour after pen-up.
-            -- "fast" (A2) during live drawing is greyscale-only; this final
-            -- refresh is where colour "snaps in".
-            if self._has_color_hw then
-                UIManager:setDirty(self, function() return "partial", nil, true end)
-            else
-                UIManager:setDirty(self, "ui")
+            -- Only refresh when a stroke was actually drawn.  The Kaleido GCC16/GLRC16
+            -- waveform used by partial+dither is visually pronounced — firing it on
+            -- every pen proximity release (hover → contact → hover) caused a full-screen
+            -- flash even when nothing was drawn.
+            if had_stroke then
+                if self._has_color_hw then
+                    UIManager:setDirty(self, function() return "partial", nil, true end)
+                else
+                    UIManager:setDirty(self, "ui")
+                end
             end
         end
     end)
