@@ -883,8 +883,13 @@ function DrawingCanvas:_pollPen()
                         self:_strokeColor())
                     local dirty = utils.compute_dirty_rect(
                         self._last_pen_x, self._last_pen_y, sx, sy, lw)
+                    -- NOTE: "fast" (HWTCON_WAVEFORM_MODE_DU) is broken on MTK
+                    -- Kaleido at 32bpp — the driver mishandles CFA buffer
+                    -- selection (see koreader-base framebuffer_mxcfb.lua,
+                    -- refresh_kobo_mtk).  Use "partial" (GLR16/REAGL) on
+                    -- colour HW so live strokes render correctly.
                     UIManager:setDirty(self, function()
-                        return "fast", Geom:new(dirty)
+                        return self._has_color_hw and "partial" or "fast", Geom:new(dirty)
                     end)
                 end
                 self._last_pen_x = sx
@@ -953,7 +958,7 @@ function DrawingCanvas:_pollTouch()
                         self._last_touch_x, self._last_touch_y,
                         fx, fy, DEFAULT_LINE_WIDTH)
                     UIManager:setDirty(self, function()
-                        return "fast", Geom:new(dirty)
+                        return self._has_color_hw and "partial" or "fast", Geom:new(dirty)
                     end)
                 end
                 self._last_touch_x = fx
