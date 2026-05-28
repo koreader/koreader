@@ -25,7 +25,7 @@ while [ ${RETURN_VALUE} -eq 85 ]; do
     ./reader.lua "$@"
     RETURN_VALUE=$?
     # Do not restart with saved arguments.
-    set -- "${HOME}"
+    set --
 done
 
 exit ${RETURN_VALUE}
