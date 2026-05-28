@@ -134,9 +134,6 @@ local DrawingCanvas = InputContainer:extend{
     -- Raw pen tracking (raw input path)
     _last_pen_x         = nil,
     _last_pen_y         = nil,
-    _last_pen_down_time = nil,  -- fts timestamp of last pen-tip down (double-tap detection)
-    _last_pen_down_sx   = nil,  -- screen X of last pen-tip down (double-tap spatial gate)
-    _last_pen_down_sy   = nil,  -- screen Y of last pen-tip down (double-tap spatial gate)
 
     -- Raw touch tracking (separate from pen to avoid cross-contamination)
     _last_touch_x = nil,
@@ -875,29 +872,6 @@ function DrawingCanvas:_pollPen()
                     self._last_pen_y = nil
                     return
                 end
-                -- Pen double-tap: two pen-tip downs within 300 ms AND within
-                -- 50 px of each other opens the quick menu.  The spatial gate
-                -- prevents false triggers during rapid handwriting, where the
-                -- pen re-contacts at a different position between letters.
-                -- Eraser-end downs are excluded (already returned above).
-                local now = time.now()
-                if self._last_pen_down_time and
-                   (now - self._last_pen_down_time) < time.ms(300) then
-                    local ddx = math.abs(sx - (self._last_pen_down_sx or sx))
-                    local ddy = math.abs(sy - (self._last_pen_down_sy or sy))
-                    if ddx <= 50 and ddy <= 50 then
-                        self._last_pen_down_time = nil
-                        self._last_pen_down_sx   = nil
-                        self._last_pen_down_sy   = nil
-                        self._last_pen_x = nil
-                        self._last_pen_y = nil
-                        self:_showQuickMenu()
-                        return
-                    end
-                end
-                self._last_pen_down_time = now
-                self._last_pen_down_sx   = sx
-                self._last_pen_down_sy   = sy
                 self._stroke_buf:penDown(sx, sy, lw, self._current_color)
             else
                 self._stroke_buf:penMove(sx, sy, lw)
@@ -926,27 +900,13 @@ function DrawingCanvas:_pollPen()
                 self._eraser_mode = false
             end
             self._stroke_buf:penUp()
-            -- Capture had_stroke BEFORE clearing _last_pen_x so we can gate the
-            -- post-stroke refresh correctly.  _last_pen_x is set only when a stroke
-            -- was actually drawn (not for pure hover-approach-retreat cycles).
-            local had_stroke = self._last_pen_x ~= nil
-            if had_stroke then
+            if self._last_pen_x then
                 self._page_dirty = true
                 self:_scheduleIdleSave()
             end
             self._last_pen_x = nil
             self._last_pen_y = nil
-            -- Only refresh when a stroke was actually drawn.  The Kaleido GCC16/GLRC16
-            -- waveform used by partial+dither is visually pronounced — firing it on
-            -- every pen proximity release (hover → contact → hover) caused a full-screen
-            -- flash even when nothing was drawn.
-            if had_stroke then
-                if self._has_color_hw then
-                    UIManager:setDirty(self, function() return "partial", nil, true end)
-                else
-                    UIManager:setDirty(self, "ui")
-                end
-            end
+            UIManager:setDirty(self, "ui")
         end
     end)
 
@@ -1182,12 +1142,6 @@ function DrawingCanvas:_navigatePage(delta)
     -- Reset stroke buffer and display before loading so a blank new page is clean.
     self._stroke_buf = StrokeBuffer.new()
     if self._bb then self._bb:fill(self:_bgColor()) end
-
-    -- A tap immediately after page navigation must not be half of a double-tap
-    -- that started on the previous page (or before the nav gesture completed).
-    self._last_pen_down_time = nil
-    self._last_pen_down_sx   = nil
-    self._last_pen_down_sy   = nil
 
     self:loadPage(new_path)           -- populates _stroke_buf if SVG exists
 
