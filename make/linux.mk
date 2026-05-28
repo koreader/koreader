@@ -1,5 +1,6 @@
 LINUX_DIR = $(PLATFORM_DIR)/linux
 LINUX_PACKAGE = koreader-linux-$(LINUX_ARCH)$(KODEDUG_SUFFIX)-$(VERSION).tar.xz
+LINUX_PACKAGE_COMPRESSION =  --block-list=0
 
 DIST_DIR = $(INSTALL_DIR)/dist
 DIST_APPID = rocks.koreader.KOReader
