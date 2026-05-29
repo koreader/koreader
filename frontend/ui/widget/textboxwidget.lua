@@ -1249,9 +1249,9 @@ function TextBoxWidget:getCharPos()
     return self.charpos, self.virtual_line_num, self.current_line_num
 end
 
-function TextBoxWidget:getCharPageTopLineNumber(charpos)
+function TextBoxWidget:getCharPageTopLineNumber(charpos, ln)
     -- returns top line number of the page containing charpos
-    local ln = 1
+    ln = ln or 1
     while true do
         local lend = ln + self.lines_per_page - 1
         if lend >= #self.vertical_string_list -- last page
@@ -2046,13 +2046,14 @@ function TextBoxWidget:_buildMatchPageList()
 
     local cache = self._text_cache
     local seen_pages = {}
+    local page_line = 1
     local match_byte, match_end = cache.lower:find(self._search_lower, 1, true)
 
     while match_byte do
         -- Convert lower char index -> original char index before page lookup
         local char_start = cache.byte_to_char[match_byte]
         table.insert(self._match_char_list, char_start)
-        local page_line = self:getCharPageTopLineNumber(char_start)
+        page_line = self:getCharPageTopLineNumber(char_start, page_line)
         if not seen_pages[page_line] then
             seen_pages[page_line] = true
             table.insert(self._match_page_list, page_line)
