@@ -108,8 +108,7 @@ function ReaderHighlight:init()
                 text = _("Highlight"),
                 enabled = this.hold_pos ~= nil,
                 callback = function()
-                    this:saveHighlight(true)
-                    this:onClose()
+                    this:showHighlightPrompt()
                 end,
             }
         end,
@@ -135,7 +134,6 @@ function ReaderHighlight:init()
                 enabled = this.hold_pos ~= nil,
                 callback = function()
                     this:addNote()
-                    this:onClose()
                 end,
             }
         end,
@@ -377,6 +375,13 @@ local long_press_action = {
 -- we need to expose this table to readerkeyselection
 -- as here it is hidden under a isTouchDevice cap
 ReaderHighlight.long_press_action = long_press_action
+
+local highlight_prompt = {
+    {_("none"), nil},
+    {_("style"), "style"},
+    {_("color"), "color"},
+    {_("style, color"), "all"},
+}
 
 local highlight_dialog_position = {
     {_("Top"), "top"},
@@ -750,6 +755,31 @@ If you wish your highlights to be saved in the document, just move it to a writa
             end
         end,
         sub_item_table = sub_item_table,
+    })
+    -- highlight prompt
+    local prompt_sub_item_table = {}
+    for i, v in ipairs(highlight_prompt) do
+        prompt_sub_item_table[i] = {
+            text = v[1],
+            checked_func = function()
+                return G_reader_settings:readSetting("highlight_prompt") == v[2]
+            end,
+            radio = true,
+            callback = function()
+                G_reader_settings:saveSetting("highlight_prompt", v[2])
+            end,
+        }
+    end
+    table.insert(menu_items.long_press.sub_item_table, {
+        text_func = function()
+            local prompt = G_reader_settings:readSetting("highlight_prompt")
+            for __, v in ipairs(highlight_prompt) do
+                if v[2] == prompt then
+                    return T(_("Highlight prompt: %1"), v[1])
+                end
+            end
+        end,
+        sub_item_table = prompt_sub_item_table,
     })
     if Device:isTouchDevice() then
         -- highlight very-long-press interval
@@ -1971,7 +2001,9 @@ function ReaderHighlight:onHoldRelease()
         if self.selected_text then
             self.select_mode = false
             self:extendSelection()
-            if default_highlight_action == "select" or self.selected_text.is_extended then
+            if default_highlight_action == "select" then
+                self:showHighlightPrompt()
+            elseif self.selected_text.is_extended then
                 self:saveHighlight(true)
                 self:clear()
             else
@@ -1995,8 +2027,7 @@ function ReaderHighlight:onHoldRelease()
                 -- bypass default action and show popup if long final hold
                 self:onShowHighlightMenu()
             elseif default_highlight_action == "highlight" then
-                self:saveHighlight(true)
-                self:onClose()
+                self:showHighlightPrompt()
             elseif default_highlight_action == "select" then
                 self:startSelection()
                 self:onClose()
@@ -2219,11 +2250,12 @@ function ReaderHighlight:deleteHighlight(index)
 end
 
 function ReaderHighlight:addNote(text)
-    local index = self:saveHighlight(true)
-    if text then -- called from Translator to save translation to note
-        self:clear()
-    end
-    self:editNote(index, true, text)
+    self:showHighlightPrompt(function(index)
+        if text then -- called from Translator to save translation to note
+            self:clear()
+        end
+        self:editNote(index, true, text)
+    end)
 end
 
 function ReaderHighlight:editNote(index, is_new_note, text)
@@ -2274,6 +2306,63 @@ function ReaderHighlight:editHighlightColor(index)
             self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
         end,
     })
+end
+
+function ReaderHighlight:showHighlightPrompt(caller_callback, prompt)
+    if self.highlight_dialog then
+        UIManager:close(self.highlight_dialog)
+        self.highlight_dialog = nil
+    end
+    if self.hold_pos and not self.selected_text then
+        self:highlightFromHoldPos()
+    end
+    if not (self.selected_text and self.selected_text.pos0 and self.selected_text.pos1) then return end
+
+    local do_highlight = function(select_color)
+        if select_color then
+            self:showHighlightPrompt(caller_callback, "color")
+        else
+            local index = self:saveHighlight(true)
+            self:clear()
+            if caller_callback then
+                caller_callback(index)
+            end
+        end
+    end
+
+    prompt = prompt or G_reader_settings:readSetting("highlight_prompt")
+    if prompt then
+        if prompt == "color" then
+            UIManager:show(ButtonSelector:new{
+                current_value = self.view.highlight.saved_color,
+                values = self.highlight_colors,
+                bg_colors = self:getHighlightColorList(),
+                apply_current_value = true,
+                callback = function(value)
+                    self.selected_text.color = value
+                    do_highlight()
+                end,
+                tap_close_callback = function()
+                    do_highlight()
+                end,
+            })
+        else -- "style", "all"
+            UIManager:show(ButtonSelector:new{
+                current_value = self.view.highlight.saved_drawer,
+                values = highlight_style,
+                apply_current_value = true,
+                callback = function(value)
+                    self.selected_text.drawer = value
+                    do_highlight(prompt == "all" and self.selected_text.drawer ~= "invert")
+                end,
+                tap_close_callback = function()
+                    do_highlight(prompt == "all" and self.selected_text.drawer ~= "invert")
+                end,
+            })
+        end
+    else
+        do_highlight()
+    end
 end
 
 function ReaderHighlight:startSelection(index)
