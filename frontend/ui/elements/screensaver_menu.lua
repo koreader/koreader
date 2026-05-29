@@ -43,7 +43,7 @@ end
 
 local exit_help_text = _("The 'Exit sleep screen' action is located in the Device group of the Taps and gestures settings")
 
-return {
+local sub_item_table = {
     {
         text = _("Wallpaper"),
         sub_item_table = {
@@ -102,9 +102,8 @@ return {
             {
                 text = _("Border fill, rotation, and fit"),
                 enabled_func = function()
-                    return G_reader_settings:readSetting("screensaver_type") == "cover"
-                           or G_reader_settings:readSetting("screensaver_type") == "document_cover"
-                           or G_reader_settings:readSetting("screensaver_type") == "random_image"
+                    local screensaver_type = G_reader_settings:readSetting("screensaver_type")
+                    return screensaver_type == "cover" or screensaver_type == "document_cover" or screensaver_type == "random_image"
                 end,
                 sub_item_table = {
                     genMenuItem(_("Black fill"), "screensaver_img_background", "black"),
@@ -131,9 +130,8 @@ return {
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_rotate_auto_for_best_fit")
                         end,
-                        callback = function(touchmenu_instance)
+                        callback = function()
                             G_reader_settings:flipNilOrFalse("screensaver_rotate_auto_for_best_fit")
-                            touchmenu_instance:updateItems()
                         end,
                     }
                 },
@@ -298,3 +296,21 @@ return {
         },
     },
 }
+
+if ui.document then
+    table.insert(sub_item_table, {
+        text = _("Do not show this book cover on sleep screen"),
+        enabled_func = function()
+            local screensaver_type = G_reader_settings:readSetting("screensaver_type")
+            return screensaver_type == "cover" or screensaver_type == "disable"
+        end,
+        checked_func = function()
+            return ui.doc_settings:isTrue("exclude_screensaver")
+        end,
+        callback = function()
+            ui.doc_settings:flipNilOrFalse("exclude_screensaver")
+        end,
+    })
+end
+
+return sub_item_table

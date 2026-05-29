@@ -5,7 +5,6 @@ local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local PluginLoader = require("pluginloader")
-local Screensaver = require("ui/screensaver")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local dbg = require("dbg")
@@ -288,28 +287,9 @@ Useful when used alongside 'Invert page turn taps and swipes'.]]),
     end
 
     if Device:supportsScreensaver() then
-        local screensaver_sub_item_table = dofile("frontend/ui/elements/screensaver_menu.lua")
-        table.insert(screensaver_sub_item_table, {
-            text = _("Do not show this book cover on sleep screen"),
-            enabled_func = function()
-                local screensaver_type = G_reader_settings:readSetting("screensaver_type")
-                return screensaver_type == "cover" or screensaver_type == "disable"
-            end,
-            checked_func = function()
-                return self.ui.doc_settings:isTrue("exclude_screensaver")
-            end,
-            callback = function()
-                if Screensaver.isExcluded(self.ui) then
-                    self.ui.doc_settings:makeFalse("exclude_screensaver")
-                else
-                    self.ui.doc_settings:makeTrue("exclude_screensaver")
-                end
-                self.ui:saveSettings()
-            end,
-        })
         self.menu_items.screensaver = {
             text = _("Sleep screen"),
-            sub_item_table = screensaver_sub_item_table,
+            sub_item_table = dofile("frontend/ui/elements/screensaver_menu.lua"),
         }
     end
 
