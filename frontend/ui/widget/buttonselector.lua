@@ -8,6 +8,7 @@ local ButtonSelector = ButtonDialog:extend{
     current_value = nil, -- value; or for multi_choice: hash table { value_key = true }
     values = nil, -- array { { value_text, value_key } } - buttons in order
     bg_colors = nil, -- array { color }, corresponding to values
+    apply_current_value = nil, -- set to true to apply the callback when value == current_value
     keep_open_on_apply = nil,
     width_factor = 0.4,
 }
@@ -41,7 +42,7 @@ function ButtonSelector:init()
                     curr_values[value_key] = not curr_values[value_key] or nil
                 else
                     UIManager:close(self)
-                    if self.current_value ~= value_key then
+                    if self.apply_current_value or self.current_value ~= value_key then
                         self.callback(value_key)
                     end
                     if self.keep_open_on_apply then
