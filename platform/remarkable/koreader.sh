@@ -169,15 +169,7 @@ fi
 # since AppLoad unloads framebuffer when first launched app using QTFB exits, run a keep-alive process to prevent this from happening.
 BG_KEEP_ALIVE_PID=""
 if [ -n "${KO_USE_QTFB}" ] && [ -n "${QTFB_KEY}" ]; then
-    SHM_TYPE=0
-    IFS= read -r MACHINE_TYPE <"/sys/devices/soc0/machine"
-    if [ "reMarkable Ferrari" = "${MACHINE_TYPE}" ]; then
-        SHM_TYPE=3
-    elif [ "reMarkable Chiappa" = "${MACHINE_TYPE}" ]; then
-        SHM_TYPE=6
-    fi
-
-    ./luajit -e "local ffi=require('ffi');ffi.cdef[[typedef int FBKey;struct InitMessageContents{FBKey framebufferKey;uint8_t framebufferType;};struct ClientMessage{uint8_t type;union{struct InitMessageContents init;};};int socket(int,int,int);int connect(int,const void*,int);int send(int,const void*,size_t,int);int close(int);unsigned int sleep(unsigned int);]];local C=ffi.C;local addr=ffi.new('char[110]','\x01\x00/tmp/qtfb.sock');local sock=C.socket(1,5,0);if sock>=0 then while C.connect(sock,addr,110)~=0 do C.sleep(1) end;local msg=ffi.new('struct ClientMessage');msg.type=0;msg.init.framebufferKey=tonumber(os.getenv('QTFB_KEY'));msg.init.framebufferType=${SHM_TYPE};C.send(sock,msg,ffi.sizeof(msg),0);while true do C.sleep(86400) end;C.close(sock);end" >/dev/null 2>&1 &
+    ./luajit qtfb_keep_alive.lua >/dev/null 2>&1 &
     BG_KEEP_ALIVE_PID=$!
 fi
 

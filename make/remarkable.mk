@@ -14,6 +14,7 @@ update-prepare: all
 	# Remarkable scripts
 	$(SYMLINK) $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader/
 	$(SYMLINK) $(REMARKABLE_DIR)/koreader.sh $(INSTALL_DIR)/koreader/
+	$(SYMLINK) $(REMARKABLE_DIR)/qtfb_keep_alive.lua $(INSTALL_DIR)/koreader/
 	$(SYMLINK) resources/koreader.png $(INSTALL_DIR)/koreader/icon.png
 	$(SYMLINK) $(REMARKABLE_DIR)/external.manifest.json $(INSTALL_DIR)/koreader/
 	$(SYMLINK) $(REMARKABLE_DIR)/external.manifest.shim.json $(INSTALL_DIR)/koreader/
