@@ -1389,7 +1389,7 @@ function TextBoxWidget:onTapImage(arg, ges)
     end
 end
 
-function TextBoxWidget:_postScrollHighlight()
+function TextBoxWidget:_postScrollFixup()
     if self.search_term then
         self._match_page_index = nil
     end
@@ -1413,7 +1413,7 @@ function TextBoxWidget:scrollDown()
         end
         self:_updateLayout()
     end
-    self:_postScrollHighlight()
+    self:_postScrollFixup()
     if self.editable then
         -- move cursor to first line of visible area
         local ln = self.height == nil and 1 or self.virtual_line_num
@@ -1432,7 +1432,7 @@ function TextBoxWidget:scrollUp()
         end
         self:_updateLayout()
     end
-    self:_postScrollHighlight()
+    self:_postScrollFixup()
     if self.editable then
         -- move cursor to first line of visible area
         local ln = self.height == nil and 1 or self.virtual_line_num
@@ -1456,7 +1456,7 @@ function TextBoxWidget:scrollLines(nb_lines)
     self.virtual_line_num = new_line_num
     self:free(false)
     self:_updateLayout()
-    self:_postScrollHighlight()
+    self:_postScrollFixup()
     if self.editable then
         local x, y = self:_getXYForCharPos() -- luacheck: no unused
         if y < 0 or y >= self.text_height then
@@ -1474,7 +1474,7 @@ function TextBoxWidget:scrollToTop()
         self.virtual_line_num = 1
         self:_updateLayout()
     end
-    self:_postScrollHighlight()
+    self:_postScrollFixup()
     if self.editable then
         -- move cursor to first char
         self:moveCursorToCharPos(1)
@@ -1493,7 +1493,7 @@ function TextBoxWidget:scrollToBottom()
         self.virtual_line_num = ln
         self:_updateLayout()
     end
-    self:_postScrollHighlight()
+    self:_postScrollFixup()
     if self.editable then
         -- move cursor to last char
         self:moveCursorToCharPos(#self.charlist + 1)
@@ -1525,7 +1525,7 @@ function TextBoxWidget:scrollToRatio(ratio, force_to_page)
         self.virtual_line_num = line_num
         self:_updateLayout()
     end
-    self:_postScrollHighlight()
+    self:_postScrollFixup()
     if self.editable then
         -- move cursor to first line of visible area
         local ln = self.height == nil and 1 or self.virtual_line_num
