@@ -13,7 +13,7 @@ full-screen hand-drawn note-taking canvas. Features (planned/implemented):
 - Multi-page notebooks with a notebook browser
 - Wacom EMR pen input with pressure-sensitive line width
 - Palm rejection via two-device gating (pen + capacitive touch streams)
-- Eraser (physical eraser end of the stylus, stroke-level delete)
+- Eraser (physical eraser end of the stylus, stroke-level delete) — hardware detection via `ABS_MT_TOOL_TYPE`
 - Undo / redo
 - Dark mode
 - 6-color ink palette (Kaleido 3 panel) — infrastructure in place, Phase A
@@ -44,19 +44,18 @@ are documented there. Check before re-opening settled questions.
 Use descriptive commit messages — the commit log is the record of what changed and why.
 
 The macOS CI workflow (`.github/workflows/build.yml`) is disabled for auto-triggers.
-Local `busted spec/` is the test gate (183 tests, ~2s).
+Local `busted spec/` is the test gate (187 tests, ~2s).
 
 ---
 
 ## Current State
 
-**Stages 0–8, 10–11 complete** (183/183 busted tests passing).
+**Stages 0–11 complete** (187/187 busted tests passing).
 
-**Stage 6 and Stage 8** code is complete but needs on-device validation:
+**Stages 6, 8, 9** code is complete but needs on-device validation:
 - Stage 6: notebooks should appear at `<datadir>/fastnote/notebooks/<uuid>/`
 - Stage 8: RPgFwd/RPgBack hardware buttons should turn pages
-
-**Stage 9** (notebook browser) is next.
+- Stage 9: notebook browser list/create/rename/delete
 
 Completed work:
 - Config system (`lib/config.lua`) with `finger_draw` toggle and `rotation_mode`
@@ -114,7 +113,7 @@ fastnote.koplugin/
 │   ├── notebook.lua           One notebook: ordered page list + metadata
 │   └── library.lua            All notebooks + app-wide state
 ├── ui/
-│   ├── browser.lua            [Stage 9] Notebook list widget
+│   ├── browser.lua            Notebook list widget (Stage 9)
 │   ├── colorpicker.lua        [Stage 12] Color palette overlay
 │   └── chrome.lua             [Stage 7†] Always-visible canvas chrome
 ├── spec/
@@ -200,7 +199,7 @@ The `input/` modules do (they use FFI) and are not unit-testable; test them on d
 ## Stage Checklist
 
 ```
-0 ✅ → 1 ✅ → 2 ✅ → 4 ✅ → 5 ✅ → 6* → 9
+0 ✅ → 1 ✅ → 2 ✅ → 4 ✅ → 5 ✅ → 6* → 9*
                 ↓                    ↓
                 3 ✅                  7 ✅ → 8*
                                      ↓
@@ -215,7 +214,7 @@ The `input/` modules do (they use FFI) and are not unit-testable; test them on d
 |-------|------|--------|
 | 6 | Notebook model (`model/*.lua`, `main.lua` routing) | code done, needs device test |
 | 8 | Hardware page buttons — prev/next page | code done, needs device test |
-| 9 | Notebook browser UI — list/create/rename/delete | not started |
+| 9 | Notebook browser UI — list/create/rename/delete | code done, needs device test |
 | 12 | Color picker — 6-color palette overlay | not started |
 | 13 | Optional polish — thumbnails, PDF export | not started |
 
@@ -267,6 +266,20 @@ put `ffi.cdef` inside a function that may be called more than once.
 ### Chrome zone
 The top 56 px of the canvas is reserved for UI chrome (exit button, page
 indicator, tools icon). Pen strokes in this zone are ignored.
+
+### Input path architecture
+Two mutually exclusive code paths exist, selected by `use_raw_input = Device:isKobo()`:
+
+| Path | When active | Entry point | Notes |
+|------|------------|-------------|-------|
+| **Gesture layer** | `use_raw_input = false` (emulator) | `onDrawStroke` / `onDrawStrokeEnd` | Receives KOReader gesture objects |
+| **Raw evdev** | `use_raw_input = true` (Kobo device) | `_pollPen` / `_pollTouch` | Reads `/dev/input/eventX` via FFI |
+
+**Flag scope:** `finger_draw` is checked on **both** paths — gesture-path guard at `onDrawStroke:5` and `_pollTouch` filter on `if filtered and self.finger_draw`. `_eraser_locked` (menu toggle) is honored on both paths. Hardware eraser detection (`ev.tool == "eraser"`) is raw-path only.
+
+**Stroke color invariant:** Strokes are always stored with a canonical `"#rrggbb"` hex string in `Stroke.color`. `penDown` always receives `self._current_color` (hex), never `self:_strokeColor()` (Blitbuffer object). Dark mode is a **display-only transform**: `_repaintAll` passes `COLOR_WHITE` as `color_override` to `repaintTo`/`paintTo`; stroke data is never mutated. See ADR for dark mode.
+
+**Eraser detection (hardware):** `pendev.lua` reads `ABS_MT_TOOL_TYPE` (0=finger, 1=pen, 2=eraser) and synthesizes `BTN_TOOL_PEN` / `BTN_TOOL_RUBBER` into `pen_statemachine`, which sets `sm.tool = "eraser"`. The `_pollPen` callback routes on `ev.tool == "eraser"` to `eraseAt`.
 
 ### Undo stack scope
 Undo is per-page. Crossing a page boundary clears the undo stack. See ADR-005.

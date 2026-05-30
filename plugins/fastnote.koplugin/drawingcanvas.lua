@@ -41,7 +41,7 @@ local time              = require("ui/time")
 local utils             = require("lib/canvas_utils")
 
 -- Chrome strip (Stage 7)
-local CHROME_HEIGHT     = 56   -- top strip height in pixels
+local CHROME_HEIGHT     = 75   -- top strip height in pixels
 local CHROME_EXIT_W     = 80   -- width of exit tap area (left)
 local CHROME_TOOLS_W    = 80   -- width of tools tap area (right)
 

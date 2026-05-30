@@ -55,8 +55,9 @@ local MT_TOOL_PEN        = 1     -- ABS_MT_TOOL_TYPE value for pen
 local MT_TOOL_ERASER     = 2     -- ABS_MT_TOOL_TYPE value for eraser end
 
 -- EV_KEY codes
-local BTN_TOOL_PEN = 0x140  -- 320
-local BTN_TOUCH    = 0x14a  -- 330
+local BTN_TOOL_PEN    = 0x140  -- 320
+local BTN_TOOL_RUBBER = 0x141  -- 321
+local BTN_TOUCH       = 0x14a  -- 330
 
 -- Pressure at or above this value is treated as physical contact.
 -- The Elan chip reports 0 (or near-0) for hover and measurable pressure
@@ -302,10 +303,12 @@ function PenDev:poll(cb)
                     if ev == MT_TOOL_PEN then
                         self._mt_pen_slot = s
                         self._has_mt_pen  = true  -- mark device as MT pen
+                        self.sm:feed_key(BTN_TOOL_PEN, 1, nil)  -- tell SM tool is pen
                         logger.dbg("FastNote pendev: pen identified at MT slot", s)
                     elseif ev == MT_TOOL_ERASER then
                         self._mt_pen_slot = s
-                        self._has_mt_pen  = true  -- same slot tracking, BTN_TOOL_RUBBER sets tool in SM
+                        self._has_mt_pen  = true  -- mark device as MT pen (same slot tracking)
+                        self.sm:feed_key(BTN_TOOL_RUBBER, 1, nil)  -- tell SM tool is eraser
                         logger.dbg("FastNote pendev: eraser identified at MT slot", s)
                     end
 
