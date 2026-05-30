@@ -38,7 +38,8 @@ local bytes_sent = C.send(sock, initMsg, ffi.sizeof(initMsg), 0)
 assert(bytes_sent >= 0, "Failed to send init message to QTFB server")
 
 -- Keep the socket open indefinitely until killed by the parent process.
--- C.sleep is wrapped in a loop because signals (e.g. SIGCHLD) interrupt C.sleep.
+-- pause() blocks the process indefinitely until a signal is received.
+ffi.cdef[[int pause(void);]]
 while true do
-    C.sleep(86400)
+    C.pause()
 end
