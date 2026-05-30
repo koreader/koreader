@@ -115,6 +115,18 @@ local function has_abs_pressure(abs_hex)
     return digit ~= nil and bit.band(digit, 1) ~= 0
 end
 
+--- Check if an ABS= bitmask hex string has ABS_MT_TOOL_TYPE (0x37 = bit 55) set.
+-- Identifies Elan combo chips (pen + touch + eraser) that use ABS_MT_TOOL_TYPE
+-- instead of BTN_TOOL_PEN + ABS_PRESSURE for tool-type detection.
+local function has_abs_mt_tool_type(abs_hex)
+    abs_hex = abs_hex:gsub("%s", "")
+    -- bit 55: nibble 13 from the right (55/4 = 13), bit position 55 % 4 = 3 → mask = 8
+    local idx = #abs_hex - 13
+    if idx < 1 then return false end
+    local digit = tonumber(abs_hex:sub(idx, idx), 16)
+    return digit ~= nil and bit.band(digit, 8) ~= 0
+end
+
 --- Scan /proc/bus/input/devices for the pen digitizer.
 -- @treturn string|nil  Path like "/dev/input/event1", or nil if not found.
 function PenDev.find()
@@ -143,6 +155,7 @@ function PenDev.find()
         local is_pen = name_match
                     or (cur_key and has_btn_tool_pen(cur_key))
                     or (cur_abs and has_abs_pressure(cur_abs))
+                    or (cur_abs and has_abs_mt_tool_type(cur_abs))
         if is_pen then
             local ev = cur_handlers:match("(event%d+)")
             if ev then
@@ -310,12 +323,25 @@ function PenDev:poll(cb)
                         self._has_mt_pen  = true  -- mark device as MT pen (same slot tracking)
                         self.sm:feed_key(BTN_TOOL_RUBBER, 1, nil)  -- tell SM tool is eraser
                         logger.dbg("FastNote pendev: eraser identified at MT slot", s)
+                    elseif s == self._mt_pen_slot then
+                        -- Tool changed away from pen/eraser on the pen slot
+                        -- (e.g. finger on same slot after pen lifted without a
+                        -- TRACKING_ID=-1 on this slot first).  Clear so finger
+                        -- events don't bleed through the pen path.
+                        self._mt_pen_slot = nil
                     end
 
                 elseif ec == ABS_MT_TRACKING_ID then
                     local s = self._mt_cur
                     if not self._mt_slots[s] then self._mt_slots[s] = {} end
                     self._mt_slots[s].id = ev
+                    -- When the pen slot is released, stop routing its future
+                    -- contacts as pen input.  Without this, a finger touching
+                    -- in the same MT slot re-uses the old _mt_pen_slot index
+                    -- and bypasses the finger_draw guard entirely.
+                    if ev == -1 and s == self._mt_pen_slot then
+                        self._mt_pen_slot = nil
+                    end
 
                 elseif ec == ABS_MT_POSITION_X then
                     local s = self._mt_cur

@@ -646,7 +646,12 @@ function DrawingCanvas:onDrawStroke(_, ges)
     self._stroke_y     = y
 
     local dirty = utils.compute_dirty_rect(prev_x, prev_y, x, y, DEFAULT_LINE_WIDTH)
-    UIManager:setDirty(self, function() return "fast", Geom:new(dirty) end)
+    -- NOTE: "fast" (HWTCON_WAVEFORM_MODE_DU) sets HWTCON_FLAG_CFA_SKIP on MTK Kaleido,
+    -- bypassing Kaleido colour-filter rendering and causing strokes to appear white.
+    -- Use "partial" (GLR16/REAGL) on colour HW, as _pollPen does.
+    UIManager:setDirty(self, function()
+        return self._has_color_hw and "partial" or "fast", Geom:new(dirty)
+    end)
     return true
 end
 
@@ -677,7 +682,9 @@ function DrawingCanvas:onDrawStrokeEnd(_, ges)
             self._stroke_min_x, self._stroke_min_y,
             self._stroke_max_x, self._stroke_max_y,
             DEFAULT_LINE_WIDTH)
-        UIManager:setDirty(self, function() return "ui", Geom:new(stroke_rect) end)
+        UIManager:setDirty(self, function()
+            return "ui", Geom:new(stroke_rect), self._has_color_hw
+        end)
     end
 
     self._stroke_x     = nil
@@ -1016,7 +1023,8 @@ function DrawingCanvas:loadPage(path)
 
     if self._bb then
         self._bb:fill(self:_bgColor())
-        self._stroke_buf:repaintTo(self._bb)
+        local override = self._dark_mode and Blitbuffer.COLOR_WHITE or nil
+        self._stroke_buf:repaintTo(self._bb, override)
         UIManager:setDirty(self, "full")
     end
 
