@@ -34,11 +34,11 @@ Use descriptive commit messages — the commit log is the record of what changed
 
 ## Current State
 
-**Stages 0–5 complete** (147/147 busted tests passing; on-device pen drawing verified).
+**Stages 0–8, 10–11 complete** (185/185 busted tests passing; on-device pen drawing verified).
 
 Completed work:
 - Config system (`lib/config.lua`) with `finger_draw` toggle and `rotation_mode`
-- Hamburger menu button (bottom-right) with portrait/landscape rotation + keep/close
+- Hamburger menu: portrait/landscape, undo/redo, eraser toggle, dark/light mode, finger-draw, save, clear-page, keep/close
 - Orientation lock — canvas locks rotation on open; re-locks on system rotation events
 - Stroke model (`lib/stroke.lua`, `lib/strokebuffer.lua`) — source of truth for all drawing
 - SVG persistence (`lib/svg.lua`) — `svg.write`/`svg.read` with lossless `<metadata>` JSON round-trip
@@ -46,15 +46,26 @@ Completed work:
 - Capacitive touch input (`input/touchdev.lua`) — MT protocol B, non-blocking poll
 - `drawingcanvas.lua` rewritten for Stages 3+4: StrokeBuffer integration, `_digToScreen` rotation-aware coordinate translation, finger-draw toggle in canvas menu, SVG save
 - Stage 5 SVG round-trip: `loadPage(path)`, auto-save on close, `on_save_callback`, `main.lua` persists `last_page_path` in `fastnote/state.lua`
-- On-device fixes: Elan combo chip MT protocol, coordinate axis mapping (`_dig_rot_base`), gyroscope auto-rotation lock, hover-writes-on-screen (removed MT BTN_TOUCH synthesis)
+- On-device fixes: Elan combo chip MT protocol, coordinate axis mapping (`_dig_rot_base`), gyroscope auto-rotation lock, hover-writes-on-screen (pressure threshold for contact detection)
+- Stage 6 notebook model (`model/page.lua`, `model/notebook.lua`, `model/library.lua`) — code complete, needs on-device validation
+- Stage 7 chrome strip (56 px top): exit button, page indicator, tools hamburger
+- Stage 8 hardware page buttons (`input/buttondev.lua`) — prev/next page via physical buttons
+- Stage 10 eraser: `ERASER_RADIUS`, `StrokeBuffer:eraseAt`, menu toggle (`_eraser_locked`)
+- Stage 11 undo/redo: undo stack in StrokeBuffer, hamburger menu Undo/Redo buttons
+- Dark mode: per-stroke color storage (`"#000000"` / `"#ffffff"`); `_toggleDarkMode` inverts all committed stroke colors so existing content remains readable after the switch
 
-**Stage 6 (Notebook model) is next.**
+**Stage 9 (Notebook browser UI) is next.**
 
 ### Known hardware notes (Kobo Libra Colour / KoboMonza)
 - The Elan combo chip on event1 handles **both** pen and touch in the same device node
   (MT protocol: ABS_MT_TOOL_TYPE 1=pen, 0=finger). The separate "capacitive touch" device
   described in dev-plan-v2.md may not exist as a separate node. If `TouchDev.find()` fails,
   the canvas still works — palm rejection is simply disabled.
+- **Hardware eraser detection** depends on whether the stylus fires `BTN_TOOL_RUBBER`
+  (EV_KEY 0x141) when the eraser end enters proximity. EMR pens typically do; Elan combo
+  chip pens may not. The menu eraser toggle (`_eraser_locked`) is the reliable fallback.
+  If `BTN_TOOL_RUBBER` IS fired, the state machine propagates `tool="eraser"` on both
+  "down" and "move" events so `_pollPen` can detect mid-stroke tool flips.
 
 ---
 
@@ -127,6 +138,18 @@ Never treat BlitBuffer as the source of truth for stroke data.
 layer (`onDrawStroke`/`onDrawStrokeEnd`). Device always uses raw evdev poll loop (`_pollPen`).
 Both paths must keep working. Do not break the emulator path when adding device features.
 
+**`finger_draw` flag:** honored on **both** paths.
+- Gesture path (`onDrawStroke`): early-returns if `use_raw_input and not finger_draw`.
+- Raw path (`_pollTouch`): inner `if filtered and self.finger_draw then` gate.
+Toggling the flag takes effect immediately on the next poll tick — no restart required.
+
+**Dark mode / color invariant:** strokes store their *actual display color*
+(`"#000000"` in light mode, `"#ffffff"` in dark mode). `_toggleDarkMode` inverts all
+committed stroke colors in memory so they remain visible after the switch. The SVG
+round-trip is lossless because `stroke.color` is always a valid hex string.
+Never pass `_strokeColor()` (a BlitBuffer object) as the `penDown` color argument —
+always pass `_current_color` (the hex string).
+
 ---
 
 ## Development Loop
@@ -176,25 +199,32 @@ until all criteria pass. The stages in execution order:
 ```
 0 ✅ → 1 ✅ → 2 ✅ → 4 ✅ → 5 ✅ → 6* → 9
                 ↓                    ↓
-                3 ✅                  7 ✅ → 8
+                3 ✅                  7 ✅ → 8 ✅
                                      ↓
                                      10 ✅ → 11 ✅ → 12 → 13
 ```
 
 `*` Stage 6 code is complete; needs on-device validation.
 
-Current position: **Stage 8** (hardware page buttons) and **Stage 9** (browser)
-can be worked in parallel once Stage 6 is validated on device.
+Current position: **Stage 9** (notebook browser UI) is the main remaining feature.
 
 ### What each remaining stage adds
 
 | Stage | What | Status |
 |-------|------|--------|
 | 6 | Notebook model (`model/*.lua`, `main.lua` routing) | code done, needs device test |
-| 8 | Hardware page buttons — prev/next page | not started |
+| 8 | Hardware page buttons — prev/next page | code done, needs device test |
 | 9 | Notebook browser UI — list/create/rename/delete | not started |
 | 12 | Color picker — 6-color palette overlay | not started |
 | 13 | Optional polish — thumbnails, PDF export | not started |
+
+### Stage 9 implementation notes
+
+When building `ui/browser.lua`, use KOReader's `Menu` widget (not `ButtonDialog`).
+**Critical API:** `Menu:new{}` requires `item_table = {}` (the row list) — NOT
+`items = {}`. The `items` field is a *number* (items per page). Using `items =` for
+the row table causes an arithmetic crash in Menu's init. Each row should have
+`{text=, callback=, hold_callback=}` shape — `Menu` fires these via `onMenuSelect`.
 
 ---
 

@@ -601,7 +601,7 @@ function DrawingCanvas:_repaintAll()
     if not self._bb then return end
     self._bb:fill(self:_bgColor())
     if self._stroke_buf then self._stroke_buf:repaintTo(self._bb) end
-    UIManager:setDirty(self, "ui")
+    UIManager:setDirty(self, "full")
 end
 
 --- Return the Blitbuffer color for drawing strokes (mode-dependent).
@@ -672,7 +672,9 @@ function DrawingCanvas:_pollPen()
 
             -- ── Eraser mode ───────────────────────────────────────────────
             -- Activated by hardware BTN_TOOL_RUBBER OR the menu eraser lock.
-            if ev.type == "down" then
+            -- Check on both "down" and "move" so a mid-stroke tool flip (user
+            -- flips the stylus while the pen is touching) activates eraser mode.
+            if not self._eraser_mode then
                 if ev.tool == "eraser" or self._eraser_locked then
                     self._eraser_mode = true
                     self._stroke_buf:penUp()
