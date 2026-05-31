@@ -166,6 +166,14 @@ if [ -e crash.log ]; then
     mv -f crash.log.new crash.log
 fi
 
+# since AppLoad unloads framebuffer when first launched app using QTFB exits, run a keep-alive process to prevent this from happening.
+BG_KEEP_ALIVE_PID=""
+if [ -n "${KO_USE_QTFB}" ] && [ -n "${QTFB_KEY}" ]; then
+    echo "Starting QTFB connection keep-alive..." >>crash.log 2>&1
+    ./luajit qtfb_keep_alive.lua >/dev/null 2>&1 &
+    BG_KEEP_ALIVE_PID=$!
+fi
+
 CRASH_COUNT=0
 CRASH_TS=0
 CRASH_PREV_TS=0
@@ -275,6 +283,11 @@ if [ -z "${KO_DONT_SET_DEPTH}" ] && [ -z "${KO_USE_QTFB}" ]; then
         echo "Restoring original fb rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
         ./fbdepth -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
     fi
+fi
+
+if [ -n "${BG_KEEP_ALIVE_PID}" ]; then
+    echo "Stopping QTFB connection keep-alive..." >>crash.log 2>&1
+    kill "${BG_KEEP_ALIVE_PID}" >>crash.log 2>&1
 fi
 
 exit ${RETURN_VALUE}
