@@ -1998,11 +1998,11 @@ function ReaderHighlight:onHoldRelease()
         if self.selected_text then
             self.select_mode = false
             self:extendSelection()
-            if default_highlight_action == "select" then
-                self:showHighlightPrompt()
-            elseif self.selected_text.is_extended then
+            if self.selected_text.is_extended then
                 self:saveHighlight(true)
                 self:clear()
+            elseif default_highlight_action == "select" then
+                self:showHighlightPrompt()
             else
                 self:onShowHighlightMenu()
             end
