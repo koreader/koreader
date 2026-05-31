@@ -257,6 +257,31 @@ describe("pen_statemachine", function()
             assert.equals(300,    evs[1].pressure)
         end)
 
+        it("'move' event carries the current tool ('pen' default)", function()
+            local sm = SM:new()
+            sm:feed_key(BTN_TOOL_PEN, 1)
+            sm:feed_key(BTN_TOUCH, 1)
+            sm:feed_syn()   -- "down"
+            local evs = collect(function(cb) sm:feed_syn(cb) end)
+            assert.equals("move", evs[1].type)
+            assert.equals("pen",  evs[1].tool)
+        end)
+
+        it("'move' tool reflects BTN_TOOL_RUBBER fired mid-stroke", function()
+            local sm = SM:new()
+            -- Start a pen stroke
+            sm:feed_key(BTN_TOOL_PEN, 1)
+            sm:feed_key(BTN_TOUCH, 1)
+            sm:feed_syn()   -- "down" with tool="pen"
+
+            -- Stylus flipped while touching: hardware fires RUBBER without BTN_TOUCH
+            sm:feed_key(BTN_TOOL_RUBBER, 1)
+
+            local evs = collect(function(cb) sm:feed_syn(cb) end)
+            assert.equals("move",   evs[1].type)
+            assert.equals("eraser", evs[1].tool)
+        end)
+
         it("emits 'hover' when in_proximity but not pen_down", function()
             local sm = SM:new()
             sm:feed_key(BTN_TOOL_PEN, 1)

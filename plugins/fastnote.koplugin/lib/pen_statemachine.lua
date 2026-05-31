@@ -122,7 +122,8 @@ function M:feed_syn(cb)
             cb({type     = "move",
                 x        = self.raw_x,
                 y        = self.raw_y,
-                pressure = self.raw_p})
+                pressure = self.raw_p,
+                tool     = self.tool})
         end
     elseif self.in_proximity then
         if cb then
