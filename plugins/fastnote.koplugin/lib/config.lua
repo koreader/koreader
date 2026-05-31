@@ -31,6 +31,19 @@ Config.DEFAULTS = {
     -- 0 = portrait upright, 1 = landscape CW, 2 = portrait inverted,
     -- 3 = landscape CCW (buttons at bottom on Kobo Libra — recommended landscape).
     rotation_mode = "auto",
+
+    --- Enable raw + decoded pen event logging to fastnote/input.log.
+    -- false (default) = off.  Also toggleable live via the hamburger menu.
+    debug_input_log = false,
+
+    --- Seconds of pen inactivity after which a deferred colour develop refresh fires.
+    -- Only takes effect on colour hardware (Kaleido 3).  Default: 5.
+    develop_delay = 5,
+
+    --- Whether to perform the deferred colour develop refresh at all.
+    -- true (default) = refresh strokes in full colour ~5 s after the pen lifts.
+    -- false = draw-time A2 only (no deferred colour bloom).
+    develop_enabled = true,
 }
 
 --- Load a config file and return the merged result.

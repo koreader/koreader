@@ -47,4 +47,42 @@ return {
     --
     rotation_mode = "auto",
 
+    -- debug_input_log
+    -- ---------------
+    -- Write a timestamped raw + decoded event log to fastnote/input.log.
+    -- Useful for diagnosing eraser detection, hover glitches, and other
+    -- hardware input issues.  Tail the log over SSH:
+    --
+    --   tail -F /mnt/onboard/.adds/koreader/fastnote/input.log
+    --
+    -- Also togglable live from the hamburger menu ("Debug log: off/on")
+    -- without restarting KOReader.
+    --
+    --   false  (default) — logging off.  No overhead at runtime.
+    --   true   — log enabled on canvas open.
+    --
+    debug_input_log = false,
+
+    -- develop_delay
+    -- -------------
+    -- Seconds of pen inactivity after which a deferred colour develop
+    -- refresh fires.  The develop refresh renders strokes in their chosen
+    -- ink colour via a full colour-capable partial refresh (Kaleido 3).
+    -- Only active on colour hardware; ignored on monochrome / emulator.
+    --
+    --   5  (default) — fire 5 seconds after the last pen-up.
+    --
+    develop_delay = 5,
+
+    -- develop_enabled
+    -- ---------------
+    -- Whether to perform the deferred colour develop refresh.
+    --
+    --   true   (default) — A2 strokes "bloom" into colour ~develop_delay
+    --              seconds after the pen lifts.
+    --   false  — draw-time A2 only; no deferred colour refresh.
+    --              Use if you find the periodic refresh distracting.
+    --
+    develop_enabled = true,
+
 }

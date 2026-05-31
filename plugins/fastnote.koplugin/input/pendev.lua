@@ -90,6 +90,12 @@ local BATCH_SIZE = 64
 local PenDev = {}
 PenDev.__index = PenDev
 
+--- Optional raw event logger hook.
+-- Set to a function(level, type_name, code_name, value) to capture every
+-- input_event before decoding.  Nil by default (zero overhead when unset).
+-- Assigned by DrawingCanvas:_toggleInputLog(); cleared on canvas close.
+PenDev.raw_log_fn = nil
+
 -- Pen device name fragments (case-insensitive) to match against N: lines.
 local PEN_NAME_PATTERNS = {"wacom", "elan", "digitizer", "pen", "stylus", "tablet"}
 
@@ -286,6 +292,17 @@ function PenDev:poll(cb)
             local ev_type = event.type
             local ec      = event.code
             local ev      = event.value
+
+            -- Raw event tap: log every event before decoding (debug only).
+            -- PenDev.raw_log_fn is nil by default; no overhead unless enabled.
+            if PenDev.raw_log_fn then
+                local type_name = (ev_type == C.EV_KEY) and "EV_KEY"
+                               or (ev_type == C.EV_ABS) and "EV_ABS"
+                               or (ev_type == C.EV_SYN) and "EV_SYN"
+                               or tostring(ev_type)
+                local code_name = codes.name_of(ec) or tostring(ec)
+                PenDev.raw_log_fn("RAW", type_name, code_name, ev)
+            end
 
             if ev_type == C.EV_KEY then
                 -- For MT pen devices the Elan fires EV_KEY BTN_TOUCH=1 at

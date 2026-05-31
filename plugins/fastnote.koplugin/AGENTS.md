@@ -44,13 +44,21 @@ are documented there. Check before re-opening settled questions.
 Use descriptive commit messages — the commit log is the record of what changed and why.
 
 The macOS CI workflow (`.github/workflows/build.yml`) is disabled for auto-triggers.
-Local `busted spec/` is the test gate (187 tests, ~2s).
+Local `busted spec/` is the test gate (208 tests, ~0.5s).
 
 ---
 
 ## Current State
 
-**Stages 0–11 complete** (187/187 busted tests passing).
+**Stages 0–12 partially complete** (208/208 busted tests passing).
+
+Stage 12 progress:
+- ✅ Input event debug logger (`lib/eventlog.lua`, `PenDev.raw_log_fn`, hamburger toggle)
+- ✅ Color model (`lib/color.lua`): 6-color PALETTE with light/dark variants, `Color.resolve`, `Color.is_achromatic`
+- ✅ `StrokeBuffer:repaintTo` accepts a per-stroke `function(hex) → BlitBuffer color` (backward-compatible)
+- ✅ Deferred colour develop refresh: `_scheduleDevelop` / `_developColor`, `utils.union_rect`
+- ⏳ Eraser diagnosis: blocked on device SSH access (see Part 2 in plan)
+- ⏳ Device validation of develop refresh and colour palette on-device
 
 **Stages 6, 8, 9** code is complete but needs on-device validation:
 - Stage 6: notebooks should appear at `<datadir>/fastnote/notebooks/<uuid>/`
@@ -116,7 +124,9 @@ fastnote.koplugin/
 │   └── chrome.lua             [Stage 7†] Always-visible canvas chrome
 ├── spec/
 │   ├── canvas_utils_spec.lua
+│   ├── color_spec.lua
 │   ├── config_spec.lua
+│   ├── eventlog_spec.lua
 │   ├── library_spec.lua
 │   ├── notebook_spec.lua
 │   ├── palmreject_spec.lua
@@ -200,10 +210,11 @@ The `input/` modules do (they use FFI) and are not unit-testable; test them on d
                 ↓                    ↓
                 3 ✅                  7 ✅ → 8*
                                      ↓
-                                     10 ✅ → 11 ✅ → 12 → 13
+                                     10 ✅ → 11 ✅ → 12▶ → 13
 ```
 
-`*` Code complete; needs on-device validation.
+`*` Code complete; needs on-device validation.  
+`▶` In progress — logger + color + develop done; eraser fix blocked on device.
 
 ### Remaining stages
 
@@ -212,7 +223,7 @@ The `input/` modules do (they use FFI) and are not unit-testable; test them on d
 | 6 | Notebook model (`model/*.lua`, `main.lua` routing) | code done, needs device test |
 | 8 | Hardware page buttons — prev/next page | code done, needs device test |
 | 9 | Notebook browser UI — list/create/rename/delete | code done, needs device test |
-| 12 | Color picker — 6-color palette overlay | not started |
+| 12 | Color picker + deferred develop refresh | logger/color/develop done; eraser fix pending device |
 | 13 | Optional polish — thumbnails, PDF export | not started |
 
 ---
@@ -307,12 +318,31 @@ Two mutually exclusive code paths exist, selected by `use_raw_input = Device:isK
 
 **Flag scope:** `finger_draw` is checked on **both** paths — gesture-path guard at `onDrawStroke:5` and `_pollTouch` filter on `if filtered and self.finger_draw`. `_eraser_locked` (menu toggle) is honored on both paths. Hardware eraser detection (`ev.tool == "eraser"`) is raw-path only.
 
-**Stroke color invariant:** Strokes are always stored with a canonical `"#rrggbb"` hex string in `Stroke.color`. `penDown` always receives `self._current_color` (hex), never `self:_strokeColor()` (Blitbuffer object). Dark mode is a **display-only transform**: `_repaintAll` passes `COLOR_WHITE` as `color_override` to `repaintTo`/`paintTo`; stroke data is never mutated. See ADR for dark mode.
+**Stroke color invariant (updated Stage 12):** Strokes are always stored with the **light-mode hex** as the canonical `Stroke.color` (e.g. `"#cc2222"`). `penDown` always receives `self._current_color` (hex). Dark mode is a **display-only transform**: `_repaintAll` now passes a `function(stored_hex) → BlitBuffer color` resolver (using `Color.resolve`) to `repaintTo`; stroke data is never mutated. Live strokes use `_strokeColor()` → `Color.resolve(_current_color, _dark_mode)`. See ADR-006.
 
 **Eraser detection (hardware):** `pendev.lua` reads `ABS_MT_TOOL_TYPE` (0=finger, 1=pen, 2=eraser) and synthesizes `BTN_TOOL_PEN` / `BTN_TOOL_RUBBER` into `pen_statemachine`, which sets `sm.tool = "eraser"`. The `_pollPen` callback routes on `ev.tool == "eraser"` to `eraseAt`.
 
 ### Undo stack scope
 Undo is per-page. Crossing a page boundary clears the undo stack. See ADR-005.
+
+### Input event debug logger (Stage 12c+)
+`lib/eventlog.lua` is a standalone line-buffered append log. `DrawingCanvas:_toggleInputLog()` (hamburger menu row) opens/closes it and wires/clears `PenDev.raw_log_fn` — a module-level hook on `input/pendev.lua` that captures every raw `input_event` before decoding. Decoded events are logged separately inside the `_pollPen` callback.
+
+To diagnose eraser issues on device:
+```bash
+ssh root@<device-ip> "tail -F /mnt/onboard/.adds/koreader/fastnote/input.log"
+```
+Then press the eraser tip and look for `RAW EV_ABS ABS_MT_TOOL_TYPE 2`. If that line fires but `DEC down tool=eraser` never appears, there's a latch race in `pendev.lua`. See Part 2 of the plan.
+
+### Color model (Stage 12)
+`lib/color.lua` owns the 6-color palette with light/dark Kaleido 3 variants. Key invariant: **stored hex is always the light variant** (canonical on-disk form). Use `Color.resolve(hex, dark_mode)` to get the display color.
+
+`StrokeBuffer:repaintTo(bb, color_fn)` now accepts a `function(stored_hex) → BlitBuffer color` as the second argument in addition to a flat BlitBuffer color (nil = use stored color). Backward-compatible: all existing callers passing nil or a flat color still work.
+
+### Deferred colour develop refresh (Stage 12)
+After each pen-up, `_scheduleDevelop()` arms a `DEFAULT_DEVELOP_DELAY` (5 s) timer. When it fires, `_developColor()` triggers `UIManager:setDirty(self, function() return "partial", rect, true end)` over the accumulated dirty region. The `allow_color=true` third arg tells KOReader's waveform selector to use the Kaleido colour refresh instead of the A2 greyscale waveform.
+
+`_dirty_since_develop` is a `{x,y,w,h}` accumulator; `utils.union_rect(a,b)` merges it per segment. Cleared after each develop. No-op on monochrome hardware or when `_develop_enabled = false`.
 
 ### Orientation lock
 `drawingcanvas.lua` stores `self._rotation_mode` (the locked mode). On

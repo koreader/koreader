@@ -138,4 +138,48 @@ describe("canvas_utils", function()
 
     end)
 
+    describe("union_rect", function()
+
+        it("returns the bounding rect of two non-overlapping rects", function()
+            local a = { x = 10, y = 10, w = 20, h = 20 }
+            local b = { x = 50, y = 50, w = 10, h = 10 }
+            local u = utils.union_rect(a, b)
+            assert.are.equal(10, u.x)
+            assert.are.equal(10, u.y)
+            assert.are.equal(50, u.w)  -- 10 to 60 = 50 wide
+            assert.are.equal(50, u.h)
+        end)
+
+        it("returns the bounding rect of two overlapping rects", function()
+            local a = { x = 0, y = 0, w = 30, h = 30 }
+            local b = { x = 20, y = 20, w = 30, h = 30 }
+            local u = utils.union_rect(a, b)
+            assert.are.equal(0, u.x)
+            assert.are.equal(0, u.y)
+            assert.are.equal(50, u.w)
+            assert.are.equal(50, u.h)
+        end)
+
+        it("returns the same rect when both args are identical", function()
+            local a = { x = 5, y = 7, w = 100, h = 40 }
+            local u = utils.union_rect(a, a)
+            assert.are.equal(5,   u.x)
+            assert.are.equal(7,   u.y)
+            assert.are.equal(100, u.w)
+            assert.are.equal(40,  u.h)
+        end)
+
+        it("returns the larger rect when one contains the other", function()
+            local outer = { x = 0, y = 0, w = 100, h = 100 }
+            local inner = { x = 10, y = 10, w = 20, h = 20 }
+            local u = utils.union_rect(outer, inner)
+            assert.are.equal(0,   u.x)
+            assert.are.equal(0,   u.y)
+            assert.are.equal(100, u.w)
+            assert.are.equal(100, u.h)
+        end)
+
+    end)
+
 end)
+
