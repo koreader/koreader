@@ -81,7 +81,22 @@ Drawing in real-time with colour waveforms is too slow (~200 ms). Drawing A2 the
 
 ---
 
-## 4. Deferred / Out of Scope
+## 4. Eraser Detection — Hardware Finding (Part 2 Complete)
 
-- **Eraser diagnosis (Stage 12 Part 2):** blocked on device SSH access. Requires tailing `fastnote/input.log` with the eraser tip pressed to determine whether `ABS_MT_TOOL_TYPE=2` fires. Not resolved in this ADR.
+**Device log analysis result (KoboMonza, Elan combo chip):**
+
+`ABS_MT_TOOL_TYPE=2` is **never emitted**. The chip always reports `TOOL_TYPE=1` (pen) for both pen tip and eraser tip, making the `MT_TOOL_ERASER` branch in the original pendev.lua unreachable dead code.
+
+**Actual eraser signal:** `EV_KEY BTN_STYLUS (0x14B)`:
+- Value=1 fires when eraser tip contacts screen
+- Value=0 fires when eraser tip lifts
+
+**Fix implemented:** In `pendev.lua` EV_KEY handler, BTN_STYLUS is intercepted before reaching `sm:feed_key()` and translated to BTN_TOOL_RUBBER=1 (eraser on) or BTN_TOOL_PEN=1 (pen restored). The BTN_STYLUS=1 override fires after ABS_MT_TOOL_TYPE=1 has already fed BTN_TOOL_PEN=1 to the SM in the same frame — the override correctly wins because EV_KEY events follow EV_ABS events within a sync frame.
+
+**Unknown code 236 (0xEC = KEY_COFFEE):** A vendor-specific Elan code that fires a 0→1 toggle at eraser lift. Not used in the fix (BTN_STYLUS is sufficient and unambiguous).
+
+---
+
+## 5. Deferred / Out of Scope
+
 - **`develop_delay` user config wiring:** `lib/config.lua` declares `develop_delay` and `develop_enabled` defaults. `drawingcanvas.lua` uses hardcoded constants (`DEFAULT_DEVELOP_DELAY`, `_develop_enabled = true`). Full config wiring deferred to Stage 13 or a follow-up.

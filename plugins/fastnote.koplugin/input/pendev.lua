@@ -46,6 +46,7 @@ local bor = bit.bor
 local BTN_TOOL_PEN       = codes.BTN_TOOL_PEN
 local BTN_TOOL_RUBBER    = codes.BTN_TOOL_RUBBER
 local BTN_TOUCH          = codes.BTN_TOUCH
+local BTN_STYLUS         = codes.BTN_STYLUS
 local ABS_MT_SLOT        = codes.ABS_MT_SLOT
 local ABS_MT_POSITION_X  = codes.ABS_MT_POSITION_X
 local ABS_MT_POSITION_Y  = codes.ABS_MT_POSITION_Y
@@ -305,13 +306,34 @@ function PenDev:poll(cb)
             end
 
             if ev_type == C.EV_KEY then
+                -- Elan combo chip eraser detection:
+                -- ABS_MT_TOOL_TYPE=2 is never sent on KoboMonza — the chip
+                -- always reports TOOL_TYPE=1 (pen) even for the eraser tip.
+                -- Instead, BTN_STYLUS=1 fires when the eraser tip contacts
+                -- the screen and BTN_STYLUS=0 fires when it lifts.
+                -- Translate to BTN_TOOL_RUBBER/PEN so the SM sees the correct
+                -- tool type when building the "down" event.
+                if ec == BTN_STYLUS then
+                    if ev == 1 then
+                        -- Override: eraser tip is now the active tool.
+                        -- (ABS_MT_TOOL_TYPE=1 already fed BTN_TOOL_PEN=1 this
+                        -- frame; this call corrects it before EV_SYN fires.)
+                        self.sm:feed_key(BTN_TOOL_RUBBER, 1, nil)
+                        logger.dbg("FastNote pendev: eraser via BTN_STYLUS=1")
+                    else
+                        -- Eraser lifted: restore pen mode for next contact.
+                        -- No cb — the pressure-based BTN_TOUCH=0 in the same
+                        -- frame already emitted "up"; this just resets tool.
+                        self.sm:feed_key(BTN_TOOL_PEN, 1, nil)
+                    end
+
                 -- For MT pen devices the Elan fires EV_KEY BTN_TOUCH=1 at
                 -- hover distance (not contact).  Once we've seen an MT pen
                 -- slot (_has_mt_pen), ignore this key — contact state is
                 -- derived from ABS_MT_PRESSURE in the EV_SYN handler instead.
                 -- BTN_TOOL_PEN/RUBBER still pass through so the SM tracks
                 -- proximity and tool type correctly.
-                if ec == BTN_TOUCH and self._has_mt_pen then
+                elseif ec == BTN_TOUCH and self._has_mt_pen then
                     -- deliberately ignored for MT pen devices
                 else
                     self.sm:feed_key(ec, ev, cb)

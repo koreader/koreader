@@ -11,6 +11,7 @@ local M = {}
 M.BTN_TOOL_PEN    = 0x140   -- pen tip entered proximity
 M.BTN_TOOL_RUBBER = 0x141   -- eraser tip entered proximity
 M.BTN_TOUCH       = 0x14a   -- pen tip physically contacting screen
+M.BTN_STYLUS      = 0x14b   -- Elan combo chip: 1=eraser tip contacting, 0=eraser lifted
 
 -- EV_ABS single-touch axes (Wacom EMR protocol / pen_statemachine fallback)
 M.ABS_X        = 0
@@ -37,6 +38,7 @@ M._names = {
     [0x140] = "BTN_TOOL_PEN",
     [0x141] = "BTN_TOOL_RUBBER",
     [0x14a] = "BTN_TOUCH",
+    [0x14b] = "BTN_STYLUS",
     [0]     = "ABS_X",
     [1]     = "ABS_Y",
     [24]    = "ABS_PRESSURE",

@@ -320,7 +320,16 @@ Two mutually exclusive code paths exist, selected by `use_raw_input = Device:isK
 
 **Stroke color invariant (updated Stage 12):** Strokes are always stored with the **light-mode hex** as the canonical `Stroke.color` (e.g. `"#cc2222"`). `penDown` always receives `self._current_color` (hex). Dark mode is a **display-only transform**: `_repaintAll` now passes a `function(stored_hex) → BlitBuffer color` resolver (using `Color.resolve`) to `repaintTo`; stroke data is never mutated. Live strokes use `_strokeColor()` → `Color.resolve(_current_color, _dark_mode)`. See ADR-006.
 
-**Eraser detection (hardware):** `pendev.lua` reads `ABS_MT_TOOL_TYPE` (0=finger, 1=pen, 2=eraser) and synthesizes `BTN_TOOL_PEN` / `BTN_TOOL_RUBBER` into `pen_statemachine`, which sets `sm.tool = "eraser"`. The `_pollPen` callback routes on `ev.tool == "eraser"` to `eraseAt`.
+**Eraser detection (hardware — KoboMonza/Elan combo chip):**
+`ABS_MT_TOOL_TYPE=2` is **never emitted** on this device — the Elan chip always reports `TOOL_TYPE=1` (pen) for both pen tip and eraser tip. The eraser is identified via `EV_KEY BTN_STYLUS (0x14B)` instead:
+- `BTN_STYLUS=1` fires when the eraser tip contacts the screen
+- `BTN_STYLUS=0` fires when the eraser tip lifts
+
+`pendev.lua` intercepts BTN_STYLUS in the EV_KEY handler and translates:
+- `BTN_STYLUS=1` → `sm:feed_key(BTN_TOOL_RUBBER, 1, nil)` (overrides the BTN_TOOL_PEN=1 that TOOL_TYPE=1 already fed in the same frame)
+- `BTN_STYLUS=0` → `sm:feed_key(BTN_TOOL_PEN, 1, nil)` (restore pen mode for next contact)
+
+Diagnosed via the input event logger (Stage 12c+). See ADR-006.
 
 ### Undo stack scope
 Undo is per-page. Crossing a page boundary clears the undo stack. See ADR-005.
