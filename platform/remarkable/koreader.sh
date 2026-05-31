@@ -169,6 +169,7 @@ fi
 # since AppLoad unloads framebuffer when first launched app using QTFB exits, run a keep-alive process to prevent this from happening.
 BG_KEEP_ALIVE_PID=""
 if [ -n "${KO_USE_QTFB}" ] && [ -n "${QTFB_KEY}" ]; then
+    echo "Starting QTFB connection keep-alive..." >>crash.log 2>&1
     ./luajit qtfb_keep_alive.lua >/dev/null 2>&1 &
     BG_KEEP_ALIVE_PID=$!
 fi
@@ -286,7 +287,7 @@ fi
 
 if [ -n "${BG_KEEP_ALIVE_PID}" ]; then
     echo "Stopping QTFB connection keep-alive..." >>crash.log 2>&1
-    kill "${BG_KEEP_ALIVE_PID}" 2>/dev/null
+    kill "${BG_KEEP_ALIVE_PID}" >>crash.log 2>&1
 fi
 
 exit ${RETURN_VALUE}
