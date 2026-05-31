@@ -16,6 +16,15 @@ local M = {}
 -- Encoder
 -- ---------------------------------------------------------------------------
 
+local function _escape_string(s)
+    return s
+        :gsub('\\', '\\\\')
+        :gsub('"',  '\\"')
+        :gsub('\n', '\\n')
+        :gsub('\r', '\\r')
+        :gsub('\t', '\\t')
+end
+
 local function _encode(val)
     local t = type(val)
     if t == "nil" then
@@ -31,13 +40,7 @@ local function _encode(val)
         end
         return string.format("%.14g", val)
     elseif t == "string" then
-        return '"' .. val
-            :gsub('\\', '\\\\')
-            :gsub('"',  '\\"')
-            :gsub('\n', '\\n')
-            :gsub('\r', '\\r')
-            :gsub('\t', '\\t')
-            .. '"'
+        return '"' .. _escape_string(val) .. '"'
     elseif t == "table" then
         -- Array: consecutive integer keys starting at 1 with no gaps
         local n = #val
@@ -66,8 +69,7 @@ local function _encode(val)
             local parts = {}
             for k, v in pairs(val) do
                 if type(k) == "string" then
-                    local ek = k:gsub('\\','\\\\'):gsub('"','\\"')
-                    parts[#parts + 1] = '"' .. ek .. '":' .. _encode(v)
+                    parts[#parts + 1] = '"' .. _escape_string(k) .. '":' .. _encode(v)
                 end
             end
             table.sort(parts)

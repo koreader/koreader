@@ -52,6 +52,11 @@ local DEFAULT_COLOR      = "#000000"
 -- Eraser (Stage 10)
 local ERASER_RADIUS = 24       -- stroke-erase hit radius in pixels
 
+-- Poll intervals and idle-save delay
+local PEN_POLL_INTERVAL   = 0.008  -- ~120 Hz pen sampling
+local TOUCH_POLL_INTERVAL = 0.016  -- ~60 Hz touch sampling
+local IDLE_SAVE_DELAY     = 30     -- seconds of inactivity before auto-save
+
 -- 6-color ink palette (Kaleido 3).  Stored as hex; rendered via colorFromString.
 local PALETTE = {
     { name = "Black",  hex = "#000000" },
@@ -286,7 +291,7 @@ function DrawingCanvas:init()
             local pd, err = PenDev.open(pen_path)
             if pd then
                 self._pendev = pd
-                UIManager:scheduleIn(0.008, function() self:_pollPen() end)
+                UIManager:scheduleIn(PEN_POLL_INTERVAL, function() self:_pollPen() end)
                 logger.dbg("FastNote canvas: raw pen enabled:", pen_path)
             else
                 logger.warn("FastNote canvas: pendev open failed:", err,
@@ -308,7 +313,7 @@ function DrawingCanvas:init()
                     self._touchdev = td
                     local PalmReject = require("lib/palmreject")
                     self._palmreject = PalmReject.new()
-                    UIManager:scheduleIn(0.016, function() self:_pollTouch() end)
+                    UIManager:scheduleIn(TOUCH_POLL_INTERVAL, function() self:_pollTouch() end)
                     logger.dbg("FastNote canvas: touch + palm rejection enabled:", touch_path)
                 else
                     logger.warn("FastNote canvas: touchdev open failed:", err)
@@ -599,11 +604,7 @@ function DrawingCanvas:onDrawStroke(_, ges)
 
     -- Eraser mode via menu toggle
     if self._eraser_locked then
-        local removed = self._stroke_buf:eraseAt(x, y, ERASER_RADIUS)
-        if #removed > 0 then
-            self._page_dirty = true
-            self:_repaintAll()
-        end
+        self:_doEraseAt(x, y)
         return true
     end
 
@@ -635,7 +636,7 @@ function DrawingCanvas:onDrawStroke(_, ges)
     end
     self._stroke_buf:penMove(x, y, DEFAULT_LINE_WIDTH)
 
-    utils.drawLine(self._bb, prev_x, prev_y, x, y, DEFAULT_LINE_WIDTH, self:_strokeColor())
+    self:_drawSegment(prev_x, prev_y, x, y, DEFAULT_LINE_WIDTH)
 
     self._stroke_min_x = math.min(self._stroke_min_x or x, prev_x, x)
     self._stroke_min_y = math.min(self._stroke_min_y or y, prev_y, y)
@@ -643,9 +644,6 @@ function DrawingCanvas:onDrawStroke(_, ges)
     self._stroke_max_y = math.max(self._stroke_max_y or y, prev_y, y)
     self._stroke_x     = x
     self._stroke_y     = y
-
-    local dirty = utils.compute_dirty_rect(prev_x, prev_y, x, y, DEFAULT_LINE_WIDTH)
-    UIManager:setDirty(self, function() return "a2", Geom:new(dirty) end)
     return true
 end
 
@@ -658,8 +656,7 @@ function DrawingCanvas:onDrawStrokeEnd(_, ges)
         local y = math.floor(ges.pos.y)
         if self._stroke_x and self._stroke_y then
             self._stroke_buf:penMove(x, y, DEFAULT_LINE_WIDTH)
-            utils.drawLine(self._bb, self._stroke_x, self._stroke_y,
-                           x, y, DEFAULT_LINE_WIDTH, self:_strokeColor())
+            self:_drawSegment(self._stroke_x, self._stroke_y, x, y, DEFAULT_LINE_WIDTH)
         end
         self._stroke_max_x = math.max(self._stroke_max_x or x, x)
         self._stroke_max_y = math.max(self._stroke_max_y or y, y)
@@ -672,11 +669,10 @@ function DrawingCanvas:onDrawStrokeEnd(_, ges)
     self:_scheduleIdleSave()
 
     if self._stroke_min_x then
-        local stroke_rect = utils.compute_dirty_rect(
+        self:_refreshRect(utils.compute_dirty_rect(
             self._stroke_min_x, self._stroke_min_y,
             self._stroke_max_x, self._stroke_max_y,
-            DEFAULT_LINE_WIDTH)
-        UIManager:setDirty(self, function() return "a2", Geom:new(stroke_rect) end)
+            DEFAULT_LINE_WIDTH))
     end
 
     self._stroke_x     = nil
@@ -773,6 +769,31 @@ function DrawingCanvas:_bgColor()
     return self._dark_mode and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE
 end
 
+--- Schedule an a2 e-ink refresh for the given rect table {x,y,w,h}.
+-- @table rect  dirty rectangle (from utils.compute_dirty_rect or Geom)
+function DrawingCanvas:_refreshRect(rect)
+    UIManager:setDirty(self, function() return "a2", Geom:new(rect) end)
+end
+
+--- Draw a live segment from (x0,y0) to (x1,y1) into _bb and schedule an a2 refresh.
+-- @int x0, y0  start point (screen coords)
+-- @int x1, y1  end point
+-- @int lw      line width in pixels
+function DrawingCanvas:_drawSegment(x0, y0, x1, y1, lw)
+    utils.drawLine(self._bb, x0, y0, x1, y1, lw, self:_strokeColor())
+    self:_refreshRect(utils.compute_dirty_rect(x0, y0, x1, y1, lw))
+end
+
+--- Erase strokes at (x, y) within ERASER_RADIUS, repaint if any were removed.
+-- @int x, y  screen coordinates
+function DrawingCanvas:_doEraseAt(x, y)
+    local removed = self._stroke_buf:eraseAt(x, y, ERASER_RADIUS)
+    if #removed > 0 then
+        self._page_dirty = true
+        self:_repaintAll()
+    end
+end
+
 --- Apply a rotation change from the canvas menu.
 -- After Stage 4: strokes are preserved via repaintTo.
 function DrawingCanvas:_reinitAtRotation(new_mode)
@@ -846,11 +867,7 @@ function DrawingCanvas:_pollPen()
             end
 
             if self._eraser_mode then
-                local removed = self._stroke_buf:eraseAt(sx, sy, ERASER_RADIUS)
-                if #removed > 0 then
-                    self._page_dirty = true
-                    self:_repaintAll()
-                end
+                self:_doEraseAt(sx, sy)
                 return
             end
 
@@ -879,12 +896,7 @@ function DrawingCanvas:_pollPen()
             -- so hover events that slipped through can't leave marks in the BB.
             if self._stroke_buf.current then
                 if self._last_pen_x then
-                    utils.drawLine(self._bb,
-                        self._last_pen_x, self._last_pen_y, sx, sy, lw,
-                        self:_strokeColor())
-                    local dirty = utils.compute_dirty_rect(
-                        self._last_pen_x, self._last_pen_y, sx, sy, lw)
-                    UIManager:setDirty(self, function() return "a2", Geom:new(dirty) end)
+                    self:_drawSegment(self._last_pen_x, self._last_pen_y, sx, sy, lw)
                 end
                 self._last_pen_x = sx
                 self._last_pen_y = sy
@@ -910,7 +922,7 @@ function DrawingCanvas:_pollPen()
     end)
 
     if self._pendev then
-        UIManager:scheduleIn(0.008, function() self:_pollPen() end)
+        UIManager:scheduleIn(PEN_POLL_INTERVAL, function() self:_pollPen() end)
     end
 end
 
@@ -930,11 +942,7 @@ function DrawingCanvas:_pollTouch()
 
             -- Eraser mode via menu toggle
             if self._eraser_locked and filtered.type ~= "up" then
-                local removed = self._stroke_buf:eraseAt(fx, fy, ERASER_RADIUS)
-                if #removed > 0 then
-                    self._page_dirty = true
-                    self:_repaintAll()
-                end
+                self:_doEraseAt(fx, fy)
             elseif filtered.type == "down" then
                 -- Clear stale touch tracking to avoid a line from the previous
                 -- gesture if the "up" event was dropped by palm rejection.
@@ -946,12 +954,8 @@ function DrawingCanvas:_pollTouch()
             elseif filtered.type == "move" then
                 self._stroke_buf:penMove(fx, fy, DEFAULT_LINE_WIDTH)
                 if self._last_touch_x then
-                    utils.drawLine(self._bb, self._last_touch_x, self._last_touch_y,
-                                   fx, fy, DEFAULT_LINE_WIDTH, self:_strokeColor())
-                    local dirty = utils.compute_dirty_rect(
-                        self._last_touch_x, self._last_touch_y,
-                        fx, fy, DEFAULT_LINE_WIDTH)
-                    UIManager:setDirty(self, function() return "a2", Geom:new(dirty) end)
+                    self:_drawSegment(self._last_touch_x, self._last_touch_y,
+                                      fx, fy, DEFAULT_LINE_WIDTH)
                 end
                 self._last_touch_x = fx
                 self._last_touch_y = fy
@@ -968,7 +972,7 @@ function DrawingCanvas:_pollTouch()
     end)
 
     if self._touchdev then
-        UIManager:scheduleIn(0.016, function() self:_pollTouch() end)
+        UIManager:scheduleIn(TOUCH_POLL_INTERVAL, function() self:_pollTouch() end)
     end
 end
 
@@ -1115,7 +1119,7 @@ function DrawingCanvas:_scheduleIdleSave()
         self._idle_save_fn = nil
         self:_autoSave()
     end
-    UIManager:scheduleIn(30, self._idle_save_fn)
+    UIManager:scheduleIn(IDLE_SAVE_DELAY, self._idle_save_fn)
 end
 
 --- Save before the device suspends so work is never lost to a sleep-induced shutdown.

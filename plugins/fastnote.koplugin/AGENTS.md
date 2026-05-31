@@ -106,10 +106,8 @@ fastnote.koplugin/
 │   └── palmreject.lua         Proximity-gated palm rejection state machine
 ├── input/
 │   ├── pendev.lua             FFI: finds Wacom/Elan, opens fd, polls events → pen_statemachine
-│   ├── touchdev.lua           FFI: MT protocol B reader for capacitive touch
-│   └── buttondev.lua          [Stage 8†] FFI: hardware page button reader
+│   └── touchdev.lua           FFI: MT protocol B reader for capacitive touch
 ├── model/
-│   ├── page.lua               One page: StrokeBuffer + load/save path
 │   ├── notebook.lua           One notebook: ordered page list + metadata
 │   └── library.lua            All notebooks + app-wide state
 ├── ui/
@@ -121,7 +119,6 @@ fastnote.koplugin/
 │   ├── config_spec.lua
 │   ├── library_spec.lua
 │   ├── notebook_spec.lua
-│   ├── page_spec.lua
 │   ├── palmreject_spec.lua
 │   ├── pen_statemachine_spec.lua
 │   ├── stroke_spec.lua
@@ -223,9 +220,42 @@ The `input/` modules do (they use FFI) and are not unit-testable; test them on d
 ## Coding Conventions
 
 - **Lua dialect:** LuaJIT / Lua 5.1. See `.github/instructions/lua.instructions.md` for the full rules.
-- **KOReader patterns:** See `.github/skills/koreader-plugin/SKILL.md` for widget hierarchy, BlitBuffer usage, raw evdev, coordinate translation, setDirty modes, and SVG persistence.
+- **KOReader patterns:** See `.github/skills/koreader-plugin/SKILL.md` for widget hierarchy, BlitBuffer usage, raw evdev, coordinate translation, setDirty modes, and SVG persistence. *(Skill file not yet added — coming from the author's skill library.)*
+
+### Rules that have already caused real bugs — read these first
+
+**`_` is gettext, not a throwaway.** Every KOReader plugin starts with
+`local _ = require("gettext")`. Using `_` as a loop variable shadows it and
+crashes any `_("string")` call in the same scope:
+
+```lua
+-- WRONG — crashes with "attempt to call a number"
+for _, item in ipairs(list) do
+    label = _("Name")
+end
+
+-- RIGHT — use __ (double underscore; .luacheckrc already suppresses warnings for it)
+for __, item in ipairs(list) do
+    label = _("Name")
+end
+```
+
+**No cryptic single-letter names.** `t`, `s`, `pd`, `e` have all introduced real bugs
+in this codebase. Use full words (`pressure_ratio`, `slot`, `pen_data`, `event`).
+See `lua.instructions.md` → "Variable naming" for the acceptable exceptions.
+
+**Extract repeated blocks.** Three copies of the same code need a named helper.
+See the `_doEraseAt` / `_drawSegment` / `_refreshRect` helpers in `drawingcanvas.lua`
+for recent examples.
+
+**Named constants for magic numbers.** File-top `local UPPER_CASE = value`.
+`PEN_POLL_INTERVAL`, `TOUCH_POLL_INTERVAL`, `IDLE_SAVE_DELAY` in `drawingcanvas.lua`
+show the pattern.
+
+### General
+
 - **`local` everything.** Global leaks in a long-running KOReader process are hard to debug.
-- **GC discipline in hot paths.** The pen poll loop runs at ~120 Hz. Do not allocate new tables per poll tick — use persistent scratch tables (see `lua.instructions.md` → Tables).
+- **GC discipline in hot paths.** The pen poll loop runs at ~120 Hz. Do not allocate new tables per poll tick — use persistent scratch tables (see `lua.instructions.md` → GC pressure).
 - **Error handling:** Wrap file I/O and JSON decode in `pcall`. A corrupt page file should degrade gracefully, not crash the plugin.
 
 ---

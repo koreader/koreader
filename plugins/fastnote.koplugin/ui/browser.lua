@@ -169,21 +169,20 @@ local function _build_items(lib, on_open)
 
     -- Notebook rows
     local nbs = _sorted_nbs(lib)
-    for _, nb in ipairs(nbs) do
-        local pc   = nb:pageCount()
-        local pstr = pc == 1 and _("1 page") or string.format(_("%d pages"), pc)
+    for __, nb in ipairs(nbs) do
+        local page_count = nb:pageCount()
+        local pstr = page_count == 1 and _("1 page") or string.format(_("%d pages"), page_count)
         local dstr = _date_str(nb.last_edited)
         local text = nb.name .. "   " .. pstr
         if dstr ~= "" then text = text .. "   \xc2\xb7 " .. dstr end
-        local nb_ref = nb
         items[#items + 1] = {
             text          = text,
             callback      = function()
                 _close_menu()
-                on_open(nb_ref)
+                on_open(nb)
             end,
             hold_callback = function()
-                _context_menu(nb_ref, lib, on_open)
+                _context_menu(nb, lib, on_open)
             end,
         }
     end

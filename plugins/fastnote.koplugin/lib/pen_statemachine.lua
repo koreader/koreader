@@ -20,16 +20,18 @@ immediately on the key event. This ensures x/y/pressure are fully latched
 ASSUMES: events arrive in kernel order (ABS/KEY before SYN in each frame).
 --]]--
 
+local codes = require("lib/input_codes")
+
 local M = {}
 M.__index = M
 
--- linux input.h constants
-local BTN_TOOL_PEN    = 0x140
-local BTN_TOOL_RUBBER = 0x141
-local BTN_TOUCH       = 0x14a
-local ABS_X           = 0
-local ABS_Y           = 1
-local ABS_PRESSURE    = 24
+-- Aliases from shared constants (see lib/input_codes.lua)
+local BTN_TOOL_PEN    = codes.BTN_TOOL_PEN
+local BTN_TOOL_RUBBER = codes.BTN_TOOL_RUBBER
+local BTN_TOUCH       = codes.BTN_TOUCH
+local ABS_X           = codes.ABS_X
+local ABS_Y           = codes.ABS_Y
+local ABS_PRESSURE    = codes.ABS_PRESSURE
 
 --- Create a new state machine instance.
 -- @treturn table State machine with clean initial state.

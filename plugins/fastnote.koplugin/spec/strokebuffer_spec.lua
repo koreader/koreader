@@ -72,9 +72,9 @@ describe("StrokeBuffer", function()
         end)
     end)
 
-    -- ── isEmpty / isDirty ───────────────────────────────────────────────────
+    -- ── isEmpty / hasStrokes ────────────────────────────────────────────────
 
-    describe("isEmpty / isDirty", function()
+    describe("isEmpty / hasStrokes", function()
         it("isEmpty is false after committing a stroke", function()
             local sb = StrokeBuffer.new()
             sb:penDown(0, 0, 2)
@@ -83,16 +83,16 @@ describe("StrokeBuffer", function()
             assert.is_false(sb:isEmpty())
         end)
 
-        it("isDirty is false when empty", function()
-            assert.is_false(StrokeBuffer.new():isDirty())
+        it("hasStrokes is false when empty", function()
+            assert.is_false(StrokeBuffer.new():hasStrokes())
         end)
 
-        it("isDirty is true after committing", function()
+        it("hasStrokes is true after committing", function()
             local sb = StrokeBuffer.new()
             sb:penDown(0, 0, 2)
             sb:penMove(5, 5, 2)
             sb:penUp()
-            assert.is_true(sb:isDirty())
+            assert.is_true(sb:hasStrokes())
         end)
     end)
 
