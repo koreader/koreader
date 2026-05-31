@@ -104,8 +104,7 @@ local DrawingCanvas = InputContainer:extend{
     _eraser_mode   = false,        -- true while eraser end of stylus is active (per-stroke)
     _eraser_locked = false,        -- true when menu eraser toggle is ON (persistent)
 
-    -- Dark mode: purely a display transform — stroke data is always canonical #000000.
-    -- Toggling inverts bg/fg colors in _repaintAll; no stroke color mutation.
+    -- Dark mode
     _dark_mode = false,
 
     -- Auto-save idle timer (30 s after last stroke change)
@@ -646,12 +645,7 @@ function DrawingCanvas:onDrawStroke(_, ges)
     self._stroke_y     = y
 
     local dirty = utils.compute_dirty_rect(prev_x, prev_y, x, y, DEFAULT_LINE_WIDTH)
-    -- NOTE: "fast" (HWTCON_WAVEFORM_MODE_DU) sets HWTCON_FLAG_CFA_SKIP on MTK Kaleido,
-    -- bypassing Kaleido colour-filter rendering and causing strokes to appear white.
-    -- Use "partial" (GLR16/REAGL) on colour HW, as _pollPen does.
-    UIManager:setDirty(self, function()
-        return self._has_color_hw and "partial" or "fast", Geom:new(dirty)
-    end)
+    UIManager:setDirty(self, function() return "a2", Geom:new(dirty) end)
     return true
 end
 
@@ -682,9 +676,7 @@ function DrawingCanvas:onDrawStrokeEnd(_, ges)
             self._stroke_min_x, self._stroke_min_y,
             self._stroke_max_x, self._stroke_max_y,
             DEFAULT_LINE_WIDTH)
-        UIManager:setDirty(self, function()
-            return "ui", Geom:new(stroke_rect), self._has_color_hw
-        end)
+        UIManager:setDirty(self, function() return "a2", Geom:new(stroke_rect) end)
     end
 
     self._stroke_x     = nil
@@ -842,7 +834,9 @@ function DrawingCanvas:_pollPen()
 
             -- ── Eraser mode ───────────────────────────────────────────────
             -- Activated by hardware BTN_TOOL_RUBBER OR the menu eraser lock.
-            if ev.type == "down" then
+            -- Check on both "down" and "move" so a mid-stroke tool flip (user
+            -- flips the stylus while the pen is touching) activates eraser mode.
+            if not self._eraser_mode then
                 if ev.tool == "eraser" or self._eraser_locked then
                     self._eraser_mode = true
                     self._stroke_buf:penUp()
@@ -890,14 +884,7 @@ function DrawingCanvas:_pollPen()
                         self:_strokeColor())
                     local dirty = utils.compute_dirty_rect(
                         self._last_pen_x, self._last_pen_y, sx, sy, lw)
-                    -- NOTE: "fast" (HWTCON_WAVEFORM_MODE_DU) is broken on MTK
-                    -- Kaleido at 32bpp — the driver mishandles CFA buffer
-                    -- selection (see koreader-base framebuffer_mxcfb.lua,
-                    -- refresh_kobo_mtk).  Use "partial" (GLR16/REAGL) on
-                    -- colour HW so live strokes render correctly.
-                    UIManager:setDirty(self, function()
-                        return self._has_color_hw and "partial" or "fast", Geom:new(dirty)
-                    end)
+                    UIManager:setDirty(self, function() return "a2", Geom:new(dirty) end)
                 end
                 self._last_pen_x = sx
                 self._last_pen_y = sy
@@ -915,7 +902,7 @@ function DrawingCanvas:_pollPen()
             if had_stroke then
                 self._page_dirty = true
                 self:_scheduleIdleSave()
-                UIManager:setDirty(self, "ui")
+                UIManager:setDirty(self, "a2")
             end
             self._last_pen_x = nil
             self._last_pen_y = nil
@@ -964,9 +951,7 @@ function DrawingCanvas:_pollTouch()
                     local dirty = utils.compute_dirty_rect(
                         self._last_touch_x, self._last_touch_y,
                         fx, fy, DEFAULT_LINE_WIDTH)
-                    UIManager:setDirty(self, function()
-                        return self._has_color_hw and "partial" or "fast", Geom:new(dirty)
-                    end)
+                    UIManager:setDirty(self, function() return "a2", Geom:new(dirty) end)
                 end
                 self._last_touch_x = fx
                 self._last_touch_y = fy
@@ -977,7 +962,7 @@ function DrawingCanvas:_pollTouch()
                 end
                 self._last_touch_x = nil
                 self._last_touch_y = nil
-                UIManager:setDirty(self, "ui")
+                UIManager:setDirty(self, "a2")
             end
         end
     end)
