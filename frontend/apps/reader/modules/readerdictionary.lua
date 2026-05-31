@@ -1,5 +1,7 @@
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
+local ButtonSelector = require("ui/widget/buttonselector")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -958,7 +960,7 @@ function ReaderDictionary:_genDownloadDictionariesMenu()
             keep_menu_open = true,
             text = lang_key,
             callback = function()
-                self:showDownload(available_langs)
+                self:showDownload(lang_key, available_langs)
             end
         })
     end
@@ -1635,34 +1637,78 @@ function ReaderDictionary:showNoResultsDialog(word, dict_names, fuzzy_search, bo
     return true
 end
 
-function ReaderDictionary:showDownload(downloadable_dicts)
-    local kv_pairs = {}
-    for dummy, dict in ipairs(downloadable_dicts) do
-        table.insert(kv_pairs, {dict.name, "",
-            callback = function()
-                local connect_callback = function()
-                    self:downloadDictionaryPrep(dict)
-                end
-                NetworkMgr:runWhenOnline(connect_callback)
-            end})
-        local lang
-        if dict.lang_in == dict.lang_out then
-            lang = string.format("    %s", dict.lang_in)
-        else
-            lang = string.format("    %s–%s", dict.lang_in, dict.lang_out)
-        end
-        table.insert(kv_pairs, {lang, ""})
-        table.insert(kv_pairs, {"    ".._("License"), dict.license})
-        table.insert(kv_pairs, {"    ".._("Entries"), dict.entries, separator = true})
-    end
-    self.download_window = KeyValuePage:new{
-        title = _("Tap dictionary name to download"),
-        kv_pairs = kv_pairs,
+function ReaderDictionary:showDownload(lang, downloadable_dicts)
+    self.dl_dict_list = BookList:new{
+        lang = lang,
+        dicts = downloadable_dicts,
+        filter = nil,
+        _manager = self,
+        title_bar_left_icon = "appbar.menu",
+        onLeftButtonTap = function()
+            self:filterDownloadDict()
+        end,
+        onMenuSelect = self.onTapDownloadDict,
     }
-    UIManager:show(self.download_window)
+    self:updateDownloadDictItemTable()
+    UIManager:show(self.dl_dict_list)
 end
 
-function ReaderDictionary:downloadDictionaryPrep(dict, size)
+function ReaderDictionary:updateDownloadDictItemTable()
+    local item_table = {}
+    for _, dict in ipairs(self.dl_dict_list.dicts) do
+        if self.dl_dict_list.filter == nil or self.dl_dict_list.filter == (dict.lang_in == dict.lang_out) then
+            table.insert(item_table, {
+                text = dict.name,
+                mandatory = dict.entries,
+                dict = dict,
+            })
+        end
+    end
+    local title = T(_("Available dictionaries (%1)"), #item_table)
+    local subtitle = T(_("Language: %1"), self.dl_dict_list.lang)
+    if self.dl_dict_list.filter ~= nil then
+        subtitle = subtitle .. " \u{F0B0}"
+    end
+    self.dl_dict_list:switchItemTable(title, item_table, nil, nil, subtitle)
+end
+
+function ReaderDictionary:filterDownloadDict()
+    UIManager:show(ButtonSelector:new{
+        current_value = self.dl_dict_list.filter,
+        values = {
+            { _("all"), nil },
+            { self.dl_dict_list.lang, true },
+            { _("bilingual"), false },
+        },
+        callback = function(value)
+            self.dl_dict_list.filter = value
+            self:updateDownloadDictItemTable()
+        end,
+    })
+end
+
+function ReaderDictionary:onTapDownloadDict(item)
+    local dict = item.dict
+    local t = {
+        dict.name,
+        "",
+        T(_("Language: %1–%2"), dict.lang_in, dict.lang_out),
+        T(_("Entries: %1"), dict.entries),
+        T(_("License: %1"), dict.license),
+        "",
+    }
+    UIManager:show(ConfirmBox:new{
+        text = table.concat(t, "\n"),
+        ok_text = _("Download"),
+        ok_callback = function()
+            NetworkMgr:runWhenOnline(function()
+                self._manager:downloadDictionaryPrep(dict)
+            end)
+        end,
+    })
+end
+
+function ReaderDictionary:downloadDictionaryPrep(dict)
     local dummy, filename = util.splitFilePathName(dict.url)
     local download_location = string.format("%s/%s", self.data_dir, filename)
 

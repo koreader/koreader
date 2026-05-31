@@ -148,7 +148,6 @@ TARGET:
     remarkable
     remarkable-aarch64
     sony-prstux
-    ubuntu-touch
     win32
 "
 # shellcheck disable=2155
@@ -181,7 +180,6 @@ function setup_target() {
         remarkable) ;;
         remarkable-aarch64) ;;
         sony-prstux) ;;
-        ubuntu-touch) ;;
         # Invalid.
         *)
             valid=0

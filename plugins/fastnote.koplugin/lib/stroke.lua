@@ -101,14 +101,21 @@ end
 
 --- Replay this stroke onto a BlitBuffer.
 -- KOReader runtime required; not busted-testable.
--- @param bb  BlitBuffer  the destination buffer
-function Stroke:paintTo(bb)
+-- @param bb              BlitBuffer  the destination buffer
+-- @param color_override  optional BlitBuffer color; when set, overrides self.color.
+--   Used by dark-mode rendering so the display transform is a pure rendering
+--   concern and stroke data stays canonical (#000000 on disk always).
+function Stroke:paintTo(bb, color_override)
     local Blitbuffer   = require("ffi/blitbuffer")
     local canvas_utils = require("lib/canvas_utils")
-    local c = self.color
-    local color = (c and (c == "#ffffff" or c == "#FFFFFF"))
-                  and Blitbuffer.COLOR_WHITE
-                  or  Blitbuffer.COLOR_BLACK
+    local color
+    if color_override then
+        color = color_override
+    else
+        -- colorFromString handles any #rrggbb hex; fall back to black on bad input.
+        color = Blitbuffer.colorFromString(self.color or "#000000")
+                or Blitbuffer.COLOR_BLACK
+    end
     local pts = self.pts
     for i = 4, #pts, 3 do
         local x1, y1     = pts[i-3], pts[i-2]

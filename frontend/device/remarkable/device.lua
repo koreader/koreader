@@ -10,7 +10,7 @@ require("ffi/linux_input_h")
 local function yes() return true end
 local function no() return false end
 
--- returns is_rm2, device_model
+-- returns device_model
 local function getModel()
     local f = io.open("/sys/devices/soc0/machine")
     if not f then
@@ -30,8 +30,10 @@ local rm_model = getModel()
 local is_rm2 = rm_model == "reMarkable 2.0"
 local is_rmpp = rm_model == "reMarkable Ferrari"
 local is_rmppm = rm_model == "reMarkable Chiappa"
+local is_rmppure = rm_model == "reMarkable Tatsu"
 local has_csl = util.which("csl")
 local is_qtfb_shimmed = (os.getenv("LD_PRELOAD") or ""):find("qtfb%-shim") ~= nil
+local is_qtfb_native = os.getenv("KO_USE_QTFB") ~= nil
 
 if is_rmpp then
     screen_width = 1620 -- unscaled_size_check: ignore
@@ -45,6 +47,11 @@ if is_rmppm then
     screen_height = 1696 -- unscaled_size_check: ignore
     wacom_width = 6760 -- unscaled_size_check: ignore
     wacom_height = 11960 -- unscaled_size_check: ignore
+end
+
+if is_rmppure then
+    wacom_width = 9620 -- unscaled_size_check: ignore
+    wacom_height = 13000 -- unscaled_size_check: ignore
 end
 
 local wacom_scale_x = screen_width / wacom_width
@@ -157,6 +164,20 @@ local RemarkablePaperProMove = RemarkablePaperPro:extend{
     status_path = "/sys/class/power_supply/max77818_battery/status"
 }
 
+local RemarkablePaperPure = Remarkable:extend{
+    mt_width = 1776, -- unscaled_size_check: ignore
+    mt_height = 2400, -- unscaled_size_check: ignore
+    ota_model = "remarkable-aarch64",
+    input_wacom = "/dev/input/event2",
+    input_ts = "/dev/input/event3",
+    input_buttons = "/dev/input/event0",
+    input_hall = "/dev/input/event1",
+    battery_path = "/sys/class/power_supply/max77818_battery/capacity",
+    status_path = "/sys/class/power_supply/max77818_battery/status",
+    canSuspend = no,
+    canStandby = no
+}
+
 function RemarkablePaperPro:adjustTouchEvent(ev, by)
     if ev.type == C.EV_ABS then
         -- Mirror X and Y and scale up both X & Y as touch input is different res from display
@@ -170,6 +191,7 @@ function RemarkablePaperPro:adjustTouchEvent(ev, by)
 end
 
 RemarkablePaperProMove.adjustTouchEvent = RemarkablePaperPro.adjustTouchEvent
+RemarkablePaperPure.adjustTouchEvent = RemarkablePaperPro.adjustTouchEvent
 
 local adjustAbsEvt = function(self, ev)
     if ev.type == C.EV_ABS then
@@ -183,7 +205,7 @@ local adjustAbsEvt = function(self, ev)
     end
 end
 
-if is_rmpp or is_rmppm then
+if is_rmpp or is_rmppm or is_rmppure then
     adjustAbsEvt = function(self, ev)
         if ev.type == C.EV_ABS then
             if ev.code == C.ABS_X then
@@ -202,13 +224,16 @@ function Remarkable:init()
 
     logger.info(string.format("QTFB shimmed?: %s", is_qtfb_shimmed))
 
+    logger.info(string.format("QTFB native?: %s", is_qtfb_native))
+
     -- experiment
     -- logger.info("PPID:")
     -- local parent_process = os.execute("echo $PPID")
     -- os.execute("ps | grep $PPID")
     -- logger.info(string.format("parent process is oxide?: %s", parent_process_is_oxide))
 
-    self.screen = require("ffi/framebuffer_mxcfb"):new{
+    local fb_module = os.getenv("KO_USE_QTFB") and "ffi/framebuffer_qtfb" or "ffi/framebuffer_mxcfb"
+    self.screen = require(fb_module):new{
         device = self,
         debug = logger.dbg,
         wf_level = G_reader_settings:readSetting("wf_level") or 2,
@@ -217,12 +242,12 @@ function Remarkable:init()
         device = self,
         capacity_file = self.battery_path,
         status_file = self.status_path,
-        hall_file = (is_rmpp or is_rmppm) and "/sys/class/input/input1/inhibited" or nil,
+        hall_file = (is_rmpp or is_rmppm or is_rmppure) and "/sys/class/input/input1/inhibited" or nil,
     }
 
     local event_map = dofile("frontend/device/remarkable/event_map.lua")
     -- If we are launched while Oxide or xochitl is running, remove Power from the event map
-    if oxide_running or is_qtfb_shimmed then
+    if oxide_running or is_qtfb_shimmed or is_qtfb_native then
         event_map[116] = nil
         event_map[143] = nil
         event_map[20001] = nil
@@ -318,7 +343,7 @@ function Remarkable:init()
     self.screen.native_rotation_mode = rotation_mode
     self.screen.cur_rotation_mode = rotation_mode
 
-    if oxide_running or is_qtfb_shimmed then
+    if oxide_running or is_qtfb_shimmed or is_qtfb_native then
         -- Disable autosuspend on this device
         PluginShare.pause_auto_suspend = true
     end
@@ -428,8 +453,10 @@ end
 
 function Remarkable:isStartupScriptUpToDate()
     local md5 = require("ffi/MD5")
-    -- Compare the hash of the *active* script to the *potential* one.
-    return md5.sumFile("/tmp/koreader.sh") == md5.sumFile("koreader.sh")
+    -- Compare the hash of the *active* script and manifest to the *potential* one.
+    local script_utd = md5.sumFile("/tmp/koreader.sh") == md5.sumFile("koreader.sh")
+    local manifest_utd = md5.sumFile("/tmp/external.manifest.json") == md5.sumFile("external.manifest.json")
+    return script_utd and manifest_utd
 end
 
 function Remarkable:setEventHandlers(UIManager)
@@ -460,11 +487,13 @@ function Remarkable:setEventHandlers(UIManager)
 end
 
 if is_rm2 then
+    if is_qtfb_native then return Remarkable2 end
     if not os.getenv("RM2FB_SHIM") and not is_qtfb_shimmed then
         error("reMarkable 2 requires a RM2FB server and client to work (https://github.com/ddvk/remarkable2-framebuffer or https://github.com/asivery/rmpp-qtfb-shim)")
     end
     return Remarkable2
 elseif is_rmpp then
+    if is_qtfb_native then return RemarkablePaperPro end
     if not is_qtfb_shimmed then
         error("reMarkable Paper Pro requires a RM2FB server and client to work (https://github.com/asivery/rm-appload)")
     end
@@ -473,6 +502,7 @@ elseif is_rmpp then
     end
     return RemarkablePaperPro
 elseif is_rmppm then
+    if is_qtfb_native then return RemarkablePaperProMove end
     if not is_qtfb_shimmed then
         error("reMarkable Paper Pro Move requires a RM2FB server and client to work (https://github.com/asivery/rm-appload)")
     end
@@ -480,6 +510,12 @@ elseif is_rmppm then
         error("You must set QTFB_SHIM_MODE to N_RGB565")
     end
     return RemarkablePaperProMove
+elseif is_rmppure then
+    if is_qtfb_native then return RemarkablePaperPure end
+    if not is_qtfb_shimmed then
+        error("reMarkable Paper Pure requires a RM2FB server and client to work (https://github.com/asivery/rm-appload)")
+    end
+    return RemarkablePaperPure
 else
     return Remarkable1
 end

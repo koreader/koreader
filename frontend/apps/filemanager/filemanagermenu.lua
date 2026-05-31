@@ -155,6 +155,11 @@ function FileManagerMenu:setUpdateItemTable()
         text = _("Settings"),
         sub_item_table = {
             {
+                text = _("Show all files from subfolders"),
+                checked_func = function() return FileChooser.show_flat_view end,
+                callback = function() FileChooser:toggleShowFilesMode("show_flat_view") end,
+            },
+            {
                 text = _("Show hidden files"),
                 checked_func = function() return FileChooser.show_hidden end,
                 callback = function() FileChooser:toggleShowFilesMode("show_hidden") end,

@@ -37,10 +37,11 @@ local Screen            = Device.screen
 local StrokeBuffer      = require("lib/strokebuffer")
 local UIManager         = require("ui/uimanager")
 local logger            = require("logger")
+local time              = require("ui/time")
 local utils             = require("lib/canvas_utils")
 
 -- Chrome strip (Stage 7)
-local CHROME_HEIGHT     = 56   -- top strip height in pixels
+local CHROME_HEIGHT     = 75   -- top strip height in pixels
 local CHROME_EXIT_W     = 80   -- width of exit tap area (left)
 local CHROME_TOOLS_W    = 80   -- width of tools tap area (right)
 
@@ -50,6 +51,16 @@ local DEFAULT_COLOR      = "#000000"
 
 -- Eraser (Stage 10)
 local ERASER_RADIUS = 24       -- stroke-erase hit radius in pixels
+
+-- 6-color ink palette (Kaleido 3).  Stored as hex; rendered via colorFromString.
+local PALETTE = {
+    { name = "Black",  hex = "#000000" },
+    { name = "Red",    hex = "#cc2222" },
+    { name = "Blue",   hex = "#2244cc" },
+    { name = "Green",  hex = "#22aa44" },
+    { name = "Orange", hex = "#cc7700" },
+    { name = "Purple", hex = "#8822bb" },
+}
 
 -- Hover-prevention: minimum digitizer pressure to accept a "down" event.
 -- The Elan chip can send BTN_TOUCH=1 a few mm above the screen; real contact
@@ -62,9 +73,16 @@ local ROT_LANDSCAPE = 3  -- DEVICE_ROTATED_COUNTER_CLOCKWISE
 
 ---@class DrawingCanvas : InputContainer
 local DrawingCanvas = InputContainer:extend{
-    on_close_callback  = nil,
-    on_save_callback   = nil,      -- called with path after each save (Stage 5)
-    load_path          = nil,      -- if set, load this SVG on init (Stage 5)
+    on_close_callback    = nil,
+    on_save_callback     = nil,    -- called with path after each save (Stage 5)
+    on_dark_mode_change  = nil,    -- called with (bool) when dark mode toggles; persist in state
+    on_color_change      = nil,    -- called with (hex) when ink color changes; persist in state
+    on_pressure_change   = nil,    -- called with (number) when pressure floor changes; persist in state
+    on_show_browser      = nil,    -- called when user picks "Notebooks" from hamburger (Stage 9)
+    load_path            = nil,    -- if set, load this SVG on init (Stage 5)
+    dark_mode            = false,  -- initial dark mode state (from persisted state)
+    current_color        = nil,    -- initial ink color hex (from persisted state; nil = default black)
+    pressure_floor       = nil,    -- initial pressure floor (from persisted state; nil = default 200)
 
     -- Page navigation callbacks (Stage 8).
     -- Each returns (new_page_idx, total_pages, path) or nil at boundary.
@@ -73,7 +91,7 @@ local DrawingCanvas = InputContainer:extend{
 
     _bb           = nil,           -- BlitBuffer (display cache)
     _stroke_buf   = nil,           -- StrokeBuffer (source of truth, Stage 4)
-    _current_color = DEFAULT_COLOR,
+    _current_color = DEFAULT_COLOR, -- canonical ink color (#000000 always for now)
 
     _page_path  = nil,             -- path of the current page SVG (Stage 5)
     _page_dirty = false,           -- true when strokes added since last save
@@ -86,8 +104,16 @@ local DrawingCanvas = InputContainer:extend{
     _eraser_mode   = false,        -- true while eraser end of stylus is active (per-stroke)
     _eraser_locked = false,        -- true when menu eraser toggle is ON (persistent)
 
-    -- Dark mode
+    -- Dark mode: purely a display transform — stroke data is always canonical #000000.
+    -- Toggling inverts bg/fg colors in _repaintAll; no stroke color mutation.
     _dark_mode = false,
+
+    -- Auto-save idle timer (30 s after last stroke change)
+    _idle_save_fn = nil,
+
+    -- Minimum pressure floor applied before pressure_to_width.
+    -- Ensures a light touch produces a readable stroke; hardware hover stays below.
+    _pressure_floor = 200,
 
     -- Stage 8: hardware page buttons (Kobo right-side rocker: 193=RPgBack, 194=RPgFwd)
     key_events = {
@@ -106,8 +132,8 @@ local DrawingCanvas = InputContainer:extend{
     _palmreject = nil,             -- PalmReject instance (Stage 3)
 
     -- Raw pen tracking (raw input path)
-    _last_pen_x   = nil,
-    _last_pen_y   = nil,
+    _last_pen_x         = nil,
+    _last_pen_y         = nil,
 
     -- Raw touch tracking (separate from pen to avoid cross-contamination)
     _last_touch_x = nil,
@@ -120,6 +146,11 @@ local DrawingCanvas = InputContainer:extend{
     _stroke_min_y = nil,
     _stroke_max_x = nil,
     _stroke_max_y = nil,
+
+    -- Tracks ges.start_pos of the current pan gesture to detect new finger-downs
+    -- even when pan_release was missed (straight-line bug prevention).
+    _ges_start_x  = nil,
+    _ges_start_y  = nil,
 }
 
 -- ---------------------------------------------------------------------------
@@ -130,16 +161,30 @@ function DrawingCanvas:init()
     self.dimen = Geom:new{x=0, y=0,
                           w=Screen:getWidth(), h=Screen:getHeight()}
 
-    -- Always use 8-bit buffer: paintLine is only implemented for BB8 in
-    -- KOReader's blitbuffer library. blitFrom handles the BB8→screen conversion
-    -- (including BBRGB32 on color e-ink). Stage 12 will revisit for color ink.
-    self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, Blitbuffer.TYPE_BB8)
+    -- Restore persisted preferences from caller.
+    self._dark_mode      = self.dark_mode == true
+    self._current_color  = self.current_color or DEFAULT_COLOR
+    self._pressure_floor = self.pressure_floor or 200
+
+    -- Use BBRGB32 on colour e-ink panels so ink renders in the chosen colour.
+    -- Screen:isColorEnabled() is a user toggle (reads G_reader_settings) and
+    -- can be off even on a Kaleido 3 device.  Use the hardware capability
+    -- queries instead: hasKaleidoWfm() is set for all MTK Kobo colour panels;
+    -- isColorScreen() is the broader fallback for other colour e-ink devices.
+    local has_color_hw = (Device.hasKaleidoWfm and Device:hasKaleidoWfm())
+                         or Screen:isColorScreen()
+    local bb_type = has_color_hw
+                    and Blitbuffer.TYPE_BBRGB32
+                    or  Blitbuffer.TYPE_BB8
+    self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bb_type)
     self._bb:fill(self:_bgColor())
+    self._has_color_hw = has_color_hw
 
     self._stroke_buf = StrokeBuffer.new()
 
     logger.dbg("FastNote canvas: init", self.dimen.w, "x", self.dimen.h,
-               "color=", Screen:isColorEnabled())
+               "has_color_hw=", has_color_hw,
+               "isColorEnabled=", Screen:isColorEnabled())
 
     self.use_raw_input = Device:isKobo()
 
@@ -211,6 +256,20 @@ function DrawingCanvas:init()
     }
     self.ges_events.DrawStrokeEnd = {
         GestureRange:new{ges="pan_release", range=self.dimen},
+    }
+
+    -- Double-tap anywhere below the chrome strip opens the quick-access overlay
+    -- (color picker + sensitivity).  Chrome tap zones take priority for the top strip.
+    self.ges_events.QuickDoubleTap = {
+        GestureRange:new{
+            ges   = "double_tap",
+            range = Geom:new{
+                x = 0,
+                y = CHROME_HEIGHT,
+                w = self.dimen.w,
+                h = self.dimen.h - CHROME_HEIGHT,
+            },
+        },
     }
 
     -- ── Stage 5: load existing page ───────────────────────────────────────
@@ -410,7 +469,7 @@ function DrawingCanvas:onMenuTap()
                      self:_toggleDarkMode()
                  end},
             },
-            -- Row 4: finger draw / save / clear page
+            -- Row 4: finger draw / clear page
             {
                 {text = finger_lbl,
                  callback = function()
@@ -418,21 +477,22 @@ function DrawingCanvas:onMenuTap()
                      self.finger_draw = not self.finger_draw
                      logger.dbg("FastNote canvas: finger_draw =", self.finger_draw)
                  end},
-                {text = "Save",
-                 callback = function()
-                     UIManager:close(menu)
-                     self:_saveDrawing()
-                 end},
                 {text = "Clear page",
                  callback = function()
                      UIManager:close(menu)
                      self:_confirmClearPage()
                  end},
             },
-            -- Row 5: keep / close
+            -- Row 5: notebooks browser
             {
-                {text = "Keep drawing",
-                 callback = function() UIManager:close(menu) end},
+                {text = "Notebooks",
+                 callback = function()
+                     UIManager:close(menu)
+                     self:_doClose()
+                     if self.on_show_browser then
+                         self.on_show_browser()
+                     end
+                 end},
                 {text = "Close canvas",
                  callback = function()
                      UIManager:close(menu)
@@ -443,6 +503,76 @@ function DrawingCanvas:onMenuTap()
     }
     UIManager:show(menu)
     return true
+end
+
+function DrawingCanvas:onQuickDoubleTap()
+    self:_showQuickMenu()
+    return true
+end
+
+--- Compact overlay: ink color palette + contact sensitivity.
+-- Opens on double-tap anywhere on the drawing area.
+function DrawingCanvas:_showQuickMenu()
+    -- Dismiss any previously-open quick menu (e.g. user double-tapped again
+    -- without selecting, or tapped outside which leaves _quick_menu stale).
+    if self._quick_menu then
+        UIManager:close(self._quick_menu)
+        self._quick_menu = nil
+    end
+
+    local function color_btn(entry)
+        local lbl = (entry.hex == self._current_color)
+                    and (entry.name .. " \xE2\x9C\x93")  -- ✓
+                    or  entry.name
+        return {
+            text = lbl,
+            callback = function()
+                UIManager:close(self._quick_menu)
+                self._quick_menu = nil
+                self._current_color = entry.hex
+                if self.on_color_change then self.on_color_change(entry.hex) end
+                logger.dbg("FastNote canvas: ink color =", entry.hex)
+            end,
+        }
+    end
+
+    self._quick_menu = ButtonDialogTitle:new{
+        title = "Ink & Pressure",
+        buttons = {
+            -- Color row 1: Black / Red / Blue
+            { color_btn(PALETTE[1]), color_btn(PALETTE[2]), color_btn(PALETTE[3]) },
+            -- Color row 2: Green / Orange / Purple
+            { color_btn(PALETTE[4]), color_btn(PALETTE[5]), color_btn(PALETTE[6]) },
+            -- Sensitivity row
+            {
+                {
+                    text = string.format("Contact Sensitivity: %d / 512", self._pressure_floor),
+                    callback = function()
+                        UIManager:close(self._quick_menu)
+                        self._quick_menu = nil
+                        local ok_sw, SpinWidget = pcall(require, "ui/widget/spinwidget")
+                        if not ok_sw then return end
+                        UIManager:show(SpinWidget:new{
+                            title_text   = "Contact Sensitivity",
+                            value        = self._pressure_floor,
+                            value_min    = 0,
+                            value_max    = 512,
+                            value_step   = 25,
+                            default_value = 200,
+                            callback     = function(spin)
+                                self._pressure_floor = spin.value
+                                if self.on_pressure_change then
+                                    self.on_pressure_change(spin.value)
+                                end
+                                logger.dbg("FastNote canvas: pressure_floor =", spin.value)
+                            end,
+                        })
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(self._quick_menu)
 end
 
 --- Block accelerometer auto-rotation while the canvas is open.
@@ -478,11 +608,23 @@ function DrawingCanvas:onDrawStroke(_, ges)
         return true
     end
 
-    -- If there is no current stroke (e.g. pan_release was missed), discard any
-    -- stale position so we don't draw a line from the previous gesture's endpoint.
-    if not self._stroke_buf.current then
-        self._stroke_x = nil
-        self._stroke_y = nil
+    -- Detect a new gesture via ges.start_pos (the initial touch-down point, constant
+    -- throughout one pan sequence).  When start_pos changes, a new finger-down occurred.
+    -- If the previous pan_release was missed, the old stroke is still open in the buffer
+    -- and _stroke_x/y are stale.  Close and reset before starting the new stroke so we
+    -- never draw a line from the previous gesture's last point to the new start point.
+    local gsx = ges.start_pos and math.floor(ges.start_pos.x) or x
+    local gsy = ges.start_pos and math.floor(ges.start_pos.y) or y
+    if gsx ~= self._ges_start_x or gsy ~= self._ges_start_y then
+        if self._stroke_buf.current then
+            self._stroke_buf:penUp()
+            self._page_dirty = true
+        end
+        self._stroke_x     = nil; self._stroke_y     = nil
+        self._stroke_min_x = nil; self._stroke_max_x = nil
+        self._stroke_min_y = nil; self._stroke_max_y = nil
+        self._ges_start_x  = gsx
+        self._ges_start_y  = gsy
     end
 
     local prev_x = self._stroke_x or x
@@ -504,7 +646,12 @@ function DrawingCanvas:onDrawStroke(_, ges)
     self._stroke_y     = y
 
     local dirty = utils.compute_dirty_rect(prev_x, prev_y, x, y, DEFAULT_LINE_WIDTH)
-    UIManager:setDirty(self, function() return "fast", Geom:new(dirty) end)
+    -- NOTE: "fast" (HWTCON_WAVEFORM_MODE_DU) sets HWTCON_FLAG_CFA_SKIP on MTK Kaleido,
+    -- bypassing Kaleido colour-filter rendering and causing strokes to appear white.
+    -- Use "partial" (GLR16/REAGL) on colour HW, as _pollPen does.
+    UIManager:setDirty(self, function()
+        return self._has_color_hw and "partial" or "fast", Geom:new(dirty)
+    end)
     return true
 end
 
@@ -528,13 +675,16 @@ function DrawingCanvas:onDrawStrokeEnd(_, ges)
 
     self._stroke_buf:penUp()
     self._page_dirty = true
+    self:_scheduleIdleSave()
 
     if self._stroke_min_x then
         local stroke_rect = utils.compute_dirty_rect(
             self._stroke_min_x, self._stroke_min_y,
             self._stroke_max_x, self._stroke_max_y,
             DEFAULT_LINE_WIDTH)
-        UIManager:setDirty(self, function() return "ui", Geom:new(stroke_rect) end)
+        UIManager:setDirty(self, function()
+            return "ui", Geom:new(stroke_rect), self._has_color_hw
+        end)
     end
 
     self._stroke_x     = nil
@@ -543,6 +693,8 @@ function DrawingCanvas:onDrawStrokeEnd(_, ges)
     self._stroke_min_y = nil
     self._stroke_max_x = nil
     self._stroke_max_y = nil
+    self._ges_start_x  = nil   -- allow next gesture to be fresh even if startPos repeats
+    self._ges_start_y  = nil
     return true
 end
 
@@ -600,13 +752,28 @@ end
 function DrawingCanvas:_repaintAll()
     if not self._bb then return end
     self._bb:fill(self:_bgColor())
-    if self._stroke_buf then self._stroke_buf:repaintTo(self._bb) end
-    UIManager:setDirty(self, "full")
+    if self._stroke_buf then
+        -- Dark mode: override all strokes to white (bg inversion).
+        -- Light mode: nil = each stroke uses its stored #rrggbb color.
+        local override = self._dark_mode and Blitbuffer.COLOR_WHITE or nil
+        self._stroke_buf:repaintTo(self._bb, override)
+    end
+    if self._has_color_hw then
+        UIManager:setDirty(self, function() return "partial", nil, true end)
+    else
+        UIManager:setDirty(self, "partial")
+    end
 end
 
---- Return the Blitbuffer color for drawing strokes (mode-dependent).
+--- Return the Blitbuffer color for new live strokes (current ink, mode-aware).
+-- In dark mode always returns white (ink inverts with background).
+-- In light mode returns a color derived from _current_color.
 function DrawingCanvas:_strokeColor()
-    return self._dark_mode and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_BLACK
+    if self._dark_mode then
+        return Blitbuffer.COLOR_WHITE
+    end
+    return Blitbuffer.colorFromString(self._current_color or DEFAULT_COLOR)
+           or Blitbuffer.COLOR_BLACK
 end
 
 --- Return the Blitbuffer color for the page background (mode-dependent).
@@ -627,7 +794,10 @@ function DrawingCanvas:_reinitAtRotation(new_mode)
     self.dimen.h = Screen:getHeight()
 
     if self._bb then self._bb:free() end
-    self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, Blitbuffer.TYPE_BB8)
+    local bb_type = self._has_color_hw
+                    and Blitbuffer.TYPE_BBRGB32
+                    or  Blitbuffer.TYPE_BB8
+    self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bb_type)
     self._bb:fill(self:_bgColor())
 
     -- Replay strokes into the new buffer (Stage 4: preserve on rotate)
@@ -672,9 +842,7 @@ function DrawingCanvas:_pollPen()
 
             -- ── Eraser mode ───────────────────────────────────────────────
             -- Activated by hardware BTN_TOOL_RUBBER OR the menu eraser lock.
-            -- Check on both "down" and "move" so a mid-stroke tool flip (user
-            -- flips the stylus while the pen is touching) activates eraser mode.
-            if not self._eraser_mode then
+            if ev.type == "down" then
                 if ev.tool == "eraser" or self._eraser_locked then
                     self._eraser_mode = true
                     self._stroke_buf:penUp()
@@ -693,12 +861,17 @@ function DrawingCanvas:_pollPen()
             end
 
             -- ── Pen drawing ───────────────────────────────────────────────
-            local lw = utils.pressure_to_width(ev.pressure, self._pendev.p_max, 1, 8)
+            -- Apply pressure floor: boosts light-touch pressure to a minimum
+            -- so a gentle stroke still produces a readable line, while hover
+            -- (pressure near 0) remains below MIN_PEN_PRESSURE and is rejected.
+            local raw_p     = ev.pressure or 0
+            local floored_p = math.max(self._pressure_floor, raw_p)
+            local lw        = utils.pressure_to_width(floored_p, self._pendev.p_max, 1, 8)
 
             if ev.type == "down" then
                 -- Guard against hover: Elan BTN_TOUCH fires before contact on
                 -- some firmware.  Real contact has significantly higher pressure.
-                if (ev.pressure or 0) < MIN_PEN_PRESSURE then
+                if raw_p < MIN_PEN_PRESSURE then
                     self._last_pen_x = nil
                     self._last_pen_y = nil
                     return
@@ -717,8 +890,13 @@ function DrawingCanvas:_pollPen()
                         self:_strokeColor())
                     local dirty = utils.compute_dirty_rect(
                         self._last_pen_x, self._last_pen_y, sx, sy, lw)
+                    -- NOTE: "fast" (HWTCON_WAVEFORM_MODE_DU) is broken on MTK
+                    -- Kaleido at 32bpp — the driver mishandles CFA buffer
+                    -- selection (see koreader-base framebuffer_mxcfb.lua,
+                    -- refresh_kobo_mtk).  Use "partial" (GLR16/REAGL) on
+                    -- colour HW so live strokes render correctly.
                     UIManager:setDirty(self, function()
-                        return "fast", Geom:new(dirty)
+                        return self._has_color_hw and "partial" or "fast", Geom:new(dirty)
                     end)
                 end
                 self._last_pen_x = sx
@@ -731,12 +909,16 @@ function DrawingCanvas:_pollPen()
                 self._eraser_mode = false
             end
             self._stroke_buf:penUp()
-            if self._last_pen_x then
+            -- Only refresh if a stroke was actually drawn (not just hover).  Gating
+            -- setDirty prevents visible refreshes on every pen proximity cycle.
+            local had_stroke = self._last_pen_x ~= nil
+            if had_stroke then
                 self._page_dirty = true
+                self:_scheduleIdleSave()
+                UIManager:setDirty(self, "ui")
             end
             self._last_pen_x = nil
             self._last_pen_y = nil
-            UIManager:setDirty(self, "ui")
         end
     end)
 
@@ -783,7 +965,7 @@ function DrawingCanvas:_pollTouch()
                         self._last_touch_x, self._last_touch_y,
                         fx, fy, DEFAULT_LINE_WIDTH)
                     UIManager:setDirty(self, function()
-                        return "fast", Geom:new(dirty)
+                        return self._has_color_hw and "partial" or "fast", Geom:new(dirty)
                     end)
                 end
                 self._last_touch_x = fx
@@ -841,7 +1023,8 @@ function DrawingCanvas:loadPage(path)
 
     if self._bb then
         self._bb:fill(self:_bgColor())
-        self._stroke_buf:repaintTo(self._bb)
+        local override = self._dark_mode and Blitbuffer.COLOR_WHITE or nil
+        self._stroke_buf:repaintTo(self._bb, override)
         UIManager:setDirty(self, "full")
     end
 
@@ -850,65 +1033,12 @@ function DrawingCanvas:loadPage(path)
     return true
 end
 
---- Save current drawing.
--- If _page_path is set, saves back to that file (round-trip).
--- Otherwise creates a timestamped file and sets _page_path to it.
-function DrawingCanvas:_saveDrawing()
-    if self._stroke_buf:isEmpty() then
-        logger.dbg("FastNote canvas: nothing to save")
-        return
-    end
-
-    local ok_svg, svg_module = pcall(require, "lib/svg")
-    if not ok_svg then
-        logger.warn("FastNote canvas: svg module unavailable:", svg_module)
-        return
-    end
-
-    local DataStorage = require("datastorage")
-    local save_dir    = DataStorage:getDataDir() .. "/fastnote/"
-    os.execute("mkdir -p " .. save_dir)
-
-    local path = self._page_path
-    if not path then
-        local filename = os.date("fastnote_%Y-%m-%d_%H-%M-%S.svg")
-        path = save_dir .. filename
-    end
-
-    local f = io.open(path, "w")
-    if not f then
-        logger.warn("FastNote canvas: cannot write to", path)
-        return
-    end
-    f:write(svg_module.write(self._stroke_buf, self.dimen.w, self.dimen.h))
-    f:close()
-
-    self._page_path  = path
-    self._page_dirty = false
-    if self.on_save_callback then self.on_save_callback(path) end
-
-    local InfoMessage = require("ui/widget/infomessage")
-    UIManager:show(InfoMessage:new{text = "Saved:\n" .. path, timeout = 3})
-    logger.dbg("FastNote canvas: saved to", path)
-end
-
 function DrawingCanvas:_doClose()
-    -- Auto-save back to _page_path if there are new strokes since last save.
-    if self._page_path and self._page_dirty and not self._stroke_buf:isEmpty() then
-        local ok_svg, svg_module = pcall(require, "lib/svg")
-        if ok_svg then
-            local f = io.open(self._page_path, "w")
-            if f then
-                f:write(svg_module.write(self._stroke_buf, self.dimen.w, self.dimen.h))
-                f:close()
-                self._page_dirty = false
-                if self.on_save_callback then
-                    self.on_save_callback(self._page_path)
-                end
-                logger.dbg("FastNote canvas: auto-saved to", self._page_path)
-            end
-        end
+    if self._idle_save_fn then
+        UIManager:unschedule(self._idle_save_fn)
+        self._idle_save_fn = nil
     end
+    self:_autoSave()
     -- Close the canvas, then schedule a full e-ink refresh on the next tick
     -- so the underlying UI gets a complete paint cycle without ghosting.
     UIManager:close(self)
@@ -925,23 +1055,17 @@ end
 -- ---------------------------------------------------------------------------
 
 --- Toggle between dark (black bg, white ink) and light (white bg, black ink) mode.
--- Inverts all existing stroke colors so they remain visible after the switch.
+-- Dark mode is a pure display transform: stroke data (#000000 canonical) is
+-- never mutated.  _repaintAll passes _strokeColor() as a color_override to
+-- paintTo, so all strokes flip visually without changing their stored color.
 function DrawingCanvas:_toggleDarkMode()
     self._dark_mode = not self._dark_mode
-    self._current_color = self._dark_mode and "#ffffff" or "#000000"
-
-    -- Invert every committed stroke's color so existing content stays readable.
-    for _, s in ipairs(self._stroke_buf.strokes) do
-        if s.color == "#ffffff" or s.color == "#FFFFFF" then
-            s.color = "#000000"
-        else
-            s.color = "#ffffff"
-        end
-    end
-
     self._page_dirty = true
     self:_repaintAll()
     UIManager:setDirty(self, "full")
+    if self.on_dark_mode_change then
+        self.on_dark_mode_change(self._dark_mode)
+    end
     logger.dbg("FastNote canvas: dark_mode =", self._dark_mode)
 end
 
@@ -975,7 +1099,7 @@ function DrawingCanvas:_clearPage()
 end
 
 -- ---------------------------------------------------------------------------
--- Stage 8: hardware page-button navigation
+-- Save / close / navigation
 -- ---------------------------------------------------------------------------
 
 --- Save the current page silently if dirty (no InfoMessage).
@@ -993,6 +1117,26 @@ function DrawingCanvas:_autoSave()
     self._page_dirty = false
     if self.on_save_callback then self.on_save_callback(self._page_path) end
     logger.dbg("FastNote canvas: auto-saved to", self._page_path)
+end
+
+--- Schedule a silent save 30 s after the last stroke change.
+-- Cancels any previously pending timer so only one fires per idle period.
+function DrawingCanvas:_scheduleIdleSave()
+    if self._idle_save_fn then
+        UIManager:unschedule(self._idle_save_fn)
+        self._idle_save_fn = nil
+    end
+    self._idle_save_fn = function()
+        self._idle_save_fn = nil
+        self:_autoSave()
+    end
+    UIManager:scheduleIn(30, self._idle_save_fn)
+end
+
+--- Save before the device suspends so work is never lost to a sleep-induced shutdown.
+function DrawingCanvas:onSuspend()
+    self:_autoSave()
+    return false  -- propagate; do not consume the suspend event
 end
 
 --- Navigate to a neighbouring page (+1 forward, -1 back).

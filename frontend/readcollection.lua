@@ -191,7 +191,7 @@ function ReadCollection:removeItem(file, collection_name, no_write) -- FM: delet
         if self.coll[collection_name][file] then
             self.coll[collection_name][file] = nil
             if not no_write then
-                self:write({ collection_name = true })
+                self:write({ [collection_name] = true })
             end
             return true
         end

@@ -1,6 +1,6 @@
 project = 'KOReader'
 description = 'Multi-platform ebook reader'
-full_description = 'An ebook reader application supports PDF, DJVU, EPUB, FB2 and many more formats, running on Kindle, Kobo, PocketBook, Ubuntu Touch and Android devices.'
+full_description = 'An ebook reader application supports PDF, DJVU, EPUB, FB2 and many more formats, running on Kindle, Kobo, PocketBook and Android devices.'
 title = 'KOReader Documentation'
 dir = 'html'
 style = '!fixed'

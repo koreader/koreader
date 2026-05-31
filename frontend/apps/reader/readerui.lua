@@ -41,6 +41,7 @@ local ReaderHandMade = require("apps/reader/modules/readerhandmade")
 local ReaderHinting = require("apps/reader/modules/readerhinting")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local ReaderScrolling = require("apps/reader/modules/readerscrolling")
+local ReaderKeySelection = require("apps/reader/modules/readerkeyselection")
 local ReaderKoptListener = require("apps/reader/modules/readerkoptlistener")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local ReaderMenu = require("apps/reader/modules/readermenu")
@@ -223,6 +224,13 @@ function ReaderUI:init()
     })
     -- wikipedia
     self:registerModule("wikipedia", ReaderWikipedia:new{
+        dialog = self.dialog,
+        view = self.view,
+        ui = self,
+        document = self.document,
+    })
+    -- text selection with cursor keys
+    self:registerModule("keyselection", ReaderKeySelection:new{
         dialog = self.dialog,
         view = self.view,
         ui = self,
@@ -542,9 +550,6 @@ function ReaderUI:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.Home = { { "Home" } }
         self.key_events.Reload = { { "F5" } }
-        if Device:hasDPad() and Device:useDPadAsActionKeys() then
-            self.key_events.StartHighlightIndicator = { { { "Up", "Down" } } }
-        end
     end
 end
 
