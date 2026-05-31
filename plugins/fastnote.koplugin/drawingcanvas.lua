@@ -825,7 +825,19 @@ end
 -- @int x1, y1  end point
 -- @int lw      line width in pixels
 function DrawingCanvas:_drawSegment(x0, y0, x1, y1, lw)
-    utils.drawLine(self._bb, x0, y0, x1, y1, lw, self:_strokeColor())
+    -- On colour hw: A2 waveform thresholds luminance to B/W.  Saturated ink
+    -- colours can map to the same as the background (invisible preview).
+    -- Draw the mode-foreground colour — black in light mode, white in dark mode —
+    -- so every stroke is immediately visible regardless of selected ink colour.
+    -- _developColor() restores all strokes to their stored colours after pen idle.
+    -- On grayscale hw: draw stroke colour directly (no develop step needed).
+    local live_color
+    if self._has_color_hw then
+        live_color = self._dark_mode and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_BLACK
+    else
+        live_color = self:_strokeColor()
+    end
+    utils.drawLine(self._bb, x0, y0, x1, y1, lw, live_color)
     local r = utils.compute_dirty_rect(x0, y0, x1, y1, lw)
     self:_refreshRect(r)
     -- Accumulate dirty rect for deferred colour develop (colour hw only)
@@ -1194,6 +1206,9 @@ end
 -- re-arms so only one develop fires per idle period.
 function DrawingCanvas:_scheduleDevelop()
     if not self._has_color_hw or not self._develop_enabled then return end
+    -- Achromatic ink (black / white) is already correctly rendered by A2 —
+    -- no GC16 refresh needed.  Skip entirely to avoid any screen flash.
+    if Color.is_achromatic(self._current_color or DEFAULT_COLOR) then return end
     if self._develop_fn then
         UIManager:unschedule(self._develop_fn)
         self._develop_fn = nil
@@ -1205,21 +1220,35 @@ function DrawingCanvas:_scheduleDevelop()
     UIManager:scheduleIn(self._develop_delay, self._develop_fn)
 end
 
---- Perform the colour-capable partial refresh over the accumulated dirty region.
--- Clears _dirty_since_develop; no-op if nothing has been drawn since the last
--- develop or if colour hardware is absent.
--- The "partial" + allow_color=true waveform triggers the Kaleido bloom refresh
--- which renders strokes in their chosen ink colour.
+--- Perform the colour develop refresh after pen inactivity.
+-- Rebuilds the full BB with all strokes in their stored colours, then fires a
+-- GC16 (Kaleido colour) refresh scoped to the accumulated dirty rect only.
+-- Full BB rebuild is required for pixel consistency; rect-bounded setDirty
+-- limits the visible GC16 flash to the area that was actually drawn —
+-- no whole-screen flash.  Each stroke renders its own stored colour;
+-- the current ink selection does not affect already-committed strokes.
 function DrawingCanvas:_developColor()
-    if not self._has_color_hw then return end
     local dirty = self._dirty_since_develop
     if not dirty then return end
     self._dirty_since_develop = nil
+    if not self._bb then return end
+    -- Rebuild BB: fill background, then repaint every stroke in its stored colour.
+    self._bb:fill(self:_bgColor())
+    if self._stroke_buf then
+        local color_fn
+        if self._dark_mode then
+            color_fn = function(stored_hex)
+                local display_hex = Color.resolve(stored_hex or DEFAULT_COLOR, true)
+                return Blitbuffer.colorFromString(display_hex) or Blitbuffer.COLOR_WHITE
+            end
+        end
+        self._stroke_buf:repaintTo(self._bb, color_fn)
+    end
+    -- Rect-bounded GC16: only the drawn region flashes, not the full canvas.
     UIManager:setDirty(self, function()
         return "partial", Geom:new(dirty), true
     end)
-    logger.dbg("FastNote canvas: colour develop refresh",
-               dirty.x, dirty.y, dirty.w, dirty.h)
+    logger.dbg("FastNote canvas: colour develop", dirty.x, dirty.y, dirty.w, dirty.h)
 end
 
 --- Toggle the input event debug logger on/off.

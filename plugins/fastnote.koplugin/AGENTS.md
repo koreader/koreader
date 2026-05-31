@@ -341,17 +341,40 @@ To diagnose eraser issues on device:
 ```bash
 ssh root@<device-ip> "tail -F /mnt/onboard/.adds/koreader/fastnote/input.log"
 ```
-Then press the eraser tip and look for `RAW EV_ABS ABS_MT_TOOL_TYPE 2`. If that line fires but `DEC down tool=eraser` never appears, there's a latch race in `pendev.lua`. See Part 2 of the plan.
+Then press the eraser tip and look for `RAW EV_KEY BTN_STYLUS 1`. Note: `ABS_MT_TOOL_TYPE=2` is **never emitted** on KoboMonza — see Eraser detection note above.
+
+### E-Ink waveforms (Kobo Libra Colour)
+
+| Waveform | KOReader arg | Speed | Ghosting | Colour? | Use case |
+|----------|-------------|-------|----------|---------|----------|
+| **A2** | `"a2"` | ~120 ms | High (accumulates) | **No — luminance threshold to B/W only** | Active pen draw, every segment |
+| **DU** | `"ui"` or `"partial"` (no flag) | ~260 ms | Low | No | Menu/UI interactions, button taps |
+| **GC16** | `"partial", nil, true` (allow\_color) | ~450 ms | Very low | **Yes — full Kaleido CFA colour** | Colour develop refresh after pen idle |
+| **Full flash** | `"full"` | ~600 ms | Clears all | No | Page clear, major layout changes |
+
+**A2 visibility constraint:** A2 maps luminance to pure black or white — there is no middle ground. Saturated ink colours have medium luminance and may threshold to the same value as the background:
+- **Light mode** (white bg): red `#cc2222` ≈ luma 0.33 → may render as **white on white = invisible**
+- **Dark mode** (black bg): same colour would render as black on black = invisible
+
+**Fix applied in `_drawSegment`:** On colour hw, live strokes always draw in the **mode-foreground colour** (black in light mode, white in dark mode) for immediate A2 visibility. True ink colour is restored by `_developColor()` after pen idle.
+
+**Partial+rect Kaleido:** `_developColor` uses `"partial", Geom:new(dirty_rect), true` — GC16 colour refresh scoped to the accumulated dirty region only. No whole-screen flash; only the area you drew in flickers with the colour waveform.
 
 ### Color model (Stage 12)
-`lib/color.lua` owns the 6-color palette with light/dark Kaleido 3 variants. Key invariant: **stored hex is always the light variant** (canonical on-disk form). Use `Color.resolve(hex, dark_mode)` to get the display color.
+`lib/color.lua` owns the 6-color palette with light/dark Kaleido 3 variants. Key invariant: **stored hex is always the light variant** (canonical on-disk form). Use `Color.resolve(hex, dark_mode)` to get the display color. Dark mode automatically uses brighter variants (e.g. red: `#cc2222` light → `#ff5555` dark) — this is purely a display transform, stored hex is never mutated.
 
 `StrokeBuffer:repaintTo(bb, color_fn)` now accepts a `function(stored_hex) → BlitBuffer color` as the second argument in addition to a flat BlitBuffer color (nil = use stored color). Backward-compatible: all existing callers passing nil or a flat color still work.
 
 ### Deferred colour develop refresh (Stage 12)
-After each pen-up, `_scheduleDevelop()` arms a `DEFAULT_DEVELOP_DELAY` (5 s) timer. When it fires, `_developColor()` triggers `UIManager:setDirty(self, function() return "partial", rect, true end)` over the accumulated dirty region. The `allow_color=true` third arg tells KOReader's waveform selector to use the Kaleido colour refresh instead of the A2 greyscale waveform.
+After each pen-up, `_scheduleDevelop()` arms a `DEFAULT_DEVELOP_DELAY` (5 s) timer — **but only if the current ink colour is chromatic** (`Color.is_achromatic` gate). Drawing black or white ink never schedules a develop; A2 already renders those correctly at full resolution with no GC16 flash.
 
-`_dirty_since_develop` is a `{x,y,w,h}` accumulator; `utils.union_rect(a,b)` merges it per segment. Cleared after each develop. No-op on monochrome hardware or when `_develop_enabled = false`.
+When the timer fires, `_developColor()`:
+1. Rebuilds the full BB: `fill(bgColor)` + `repaintTo(bb, color_fn)` — all strokes rendered in their stored colours
+2. Fires `UIManager:setDirty(self, "partial", Geom:new(dirty_rect), true)` — GC16 colour waveform scoped to the accumulated dirty region only
+
+**Important:** develop restores each stroke to *its own stored colour*, not the current ink selection. A previously-drawn black stroke stays black; a previously-drawn red stroke becomes red. The current selection only affects strokes drawn after it was chosen.
+
+`_dirty_since_develop` is a `{x,y,w,h}` accumulator (union_rect per segment) used both as a "did anything get drawn?" guard and as the rect for the GC16 refresh. Cleared after each develop. No-op when `_develop_enabled = false`.
 
 ### Orientation lock
 `drawingcanvas.lua` stores `self._rotation_mode` (the locked mode). On
