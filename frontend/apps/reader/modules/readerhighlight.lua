@@ -464,7 +464,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
             return self.view.highlight.saved_drawer == "lighten"
         end,
         callback = function(touchmenu_instance)
-            local spin_widget = SpinWidget:new{
+            UIManager:show(SpinWidget:new{
                 value = G_reader_settings:readSetting("highlight_lighten_factor"),
                 value_min = 0,
                 value_max = 1,
@@ -481,8 +481,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
                     UIManager:setDirty(self.dialog, "ui")
                     touchmenu_instance:updateItems()
                 end,
-            }
-            UIManager:show(spin_widget)
+            })
         end,
     })
     table.insert(hl_sub_item_table, {
@@ -493,7 +492,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
             return self.view.highlight.saved_drawer == "lighten" or self.view.highlight.saved_drawer == "invert"
         end,
         callback = function(touchmenu_instance)
-            local spin_widget = SpinWidget:new{
+            UIManager:show(SpinWidget:new{
                 value = G_reader_settings:readSetting("highlight_height_pct") or 100,
                 value_min = 0,
                 value_max = 100,
@@ -510,8 +509,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
                     UIManager:setDirty(self.dialog, "ui")
                     touchmenu_instance:updateItems()
                 end,
-            }
-            UIManager:show(spin_widget)
+            })
         end,
     })
     table.insert(hl_sub_item_table, {
@@ -732,9 +730,9 @@ If you wish your highlights to be saved in the document, just move it to a writa
         })
     end
     -- highlight dialog position
-    local sub_item_table = {}
+    local position_sub_item_table = {}
     for i, v in ipairs(highlight_dialog_position) do
-        table.insert(sub_item_table, {
+        position_sub_item_table[i] = {
             text = v[1],
             checked_func = function()
                 return G_reader_settings:readSetting("highlight_dialog_position", "center") == v[2]
@@ -743,7 +741,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
             callback = function()
                 G_reader_settings:saveSetting("highlight_dialog_position", v[2])
             end,
-        })
+        }
     end
     table.insert(menu_items.long_press.sub_item_table, {
         text_func = function()
@@ -754,7 +752,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
                 end
             end
         end,
-        sub_item_table = sub_item_table,
+        sub_item_table = position_sub_item_table,
     })
     -- highlight prompt
     local prompt_sub_item_table = {}
@@ -790,7 +788,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
             end,
             keep_menu_open = true,
             callback = function(touchmenu_instance)
-                local items = SpinWidget:new{
+                UIManager:show(SpinWidget:new{
                     title_text = _("Highlight very-long-press interval"),
                     info_text = _("If a long-press is not released in this interval, it is considered a very-long-press. On document text, single word selection will not be triggered."),
                     width = math.floor(self.screen_w * 0.75),
@@ -809,8 +807,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
                         G_reader_settings:saveSetting("highlight_long_hold_threshold_s", value)
                         touchmenu_instance:updateItems()
                     end,
-                }
-                UIManager:show(items)
+                })
             end,
         })
     end
@@ -2269,7 +2266,8 @@ end
 
 function ReaderHighlight:editHighlightStyle(index)
     local item = self.ui.annotation.annotations[index]
-    UIManager:show(ButtonSelector:new{
+    local style_selector
+    style_selector = ButtonSelector:new{
         current_value = item.drawer,
         values = highlight_style,
         callback = function(value)
@@ -2284,12 +2282,17 @@ function ReaderHighlight:editHighlightStyle(index)
             UIManager:setDirty(self.dialog, "ui")
             self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
         end,
-    })
+        anchor = function()
+            return self:_getDialogAnchor(style_selector, index)
+        end,
+    }
+    UIManager:show(style_selector)
 end
 
 function ReaderHighlight:editHighlightColor(index)
     local item = self.ui.annotation.annotations[index]
-    UIManager:show(ButtonSelector:new{
+    local color_selector
+    color_selector = ButtonSelector:new{
         current_value = item.color,
         values = self.highlight_colors,
         bg_colors = self:getHighlightColorList(),
@@ -2305,7 +2308,11 @@ function ReaderHighlight:editHighlightColor(index)
             UIManager:setDirty(self.dialog, "ui")
             self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
         end,
-    })
+        anchor = function()
+            return self:_getDialogAnchor(color_selector, index)
+        end,
+    }
+    UIManager:show(color_selector)
 end
 
 function ReaderHighlight:showHighlightPrompt(caller_callback, prompt)
@@ -2333,7 +2340,8 @@ function ReaderHighlight:showHighlightPrompt(caller_callback, prompt)
     prompt = prompt or G_reader_settings:readSetting("highlight_prompt")
     if prompt then
         if prompt == "color" then
-            UIManager:show(ButtonSelector:new{
+            local color_selector
+            color_selector = ButtonSelector:new{
                 current_value = self.view.highlight.saved_color,
                 values = self.highlight_colors,
                 bg_colors = self:getHighlightColorList(),
@@ -2345,9 +2353,14 @@ function ReaderHighlight:showHighlightPrompt(caller_callback, prompt)
                 tap_close_callback = function()
                     do_highlight()
                 end,
-            })
+                anchor = function()
+                    return self:_getDialogAnchor(color_selector)
+                end,
+            }
+            UIManager:show(color_selector)
         else -- "style", "all"
-            UIManager:show(ButtonSelector:new{
+            local style_selector
+            style_selector = ButtonSelector:new{
                 current_value = self.view.highlight.saved_drawer,
                 values = highlight_style,
                 apply_current_value = true,
@@ -2358,7 +2371,11 @@ function ReaderHighlight:showHighlightPrompt(caller_callback, prompt)
                 tap_close_callback = function()
                     do_highlight(prompt == "all" and self.selected_text.drawer ~= "invert")
                 end,
-            })
+                anchor = function()
+                    return self:_getDialogAnchor(style_selector)
+                end,
+            }
+            UIManager:show(style_selector)
         end
     else
         do_highlight()
