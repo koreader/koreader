@@ -106,10 +106,8 @@ fastnote.koplugin/
 │   └── palmreject.lua         Proximity-gated palm rejection state machine
 ├── input/
 │   ├── pendev.lua             FFI: finds Wacom/Elan, opens fd, polls events → pen_statemachine
-│   ├── touchdev.lua           FFI: MT protocol B reader for capacitive touch
-│   └── buttondev.lua          [Stage 8†] FFI: hardware page button reader
+│   └── touchdev.lua           FFI: MT protocol B reader for capacitive touch
 ├── model/
-│   ├── page.lua               One page: StrokeBuffer + load/save path
 │   ├── notebook.lua           One notebook: ordered page list + metadata
 │   └── library.lua            All notebooks + app-wide state
 ├── ui/
@@ -121,7 +119,6 @@ fastnote.koplugin/
 │   ├── config_spec.lua
 │   ├── library_spec.lua
 │   ├── notebook_spec.lua
-│   ├── page_spec.lua
 │   ├── palmreject_spec.lua
 │   ├── pen_statemachine_spec.lua
 │   ├── stroke_spec.lua

@@ -126,8 +126,8 @@ function StrokeBuffer:isEmpty()
     return #self.strokes == 0 and self.current == nil
 end
 
---- True if there are committed strokes (unsaved changes may exist).
-function StrokeBuffer:isDirty()
+--- True if there are committed strokes.
+function StrokeBuffer:hasStrokes()
     return #self.strokes > 0
 end
 

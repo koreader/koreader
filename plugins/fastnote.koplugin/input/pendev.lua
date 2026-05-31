@@ -37,27 +37,23 @@ local ffi      = require("ffi")
 local bit      = require("bit")
 local logger   = require("logger")
 local SM       = require("lib/pen_statemachine")
+local codes    = require("lib/input_codes")
 
 local C   = ffi.C
 local bor = bit.bor
 
--- ---------------------------------------------------------------------------
--- MT protocol constants (linux/input-event-codes.h)
--- Hardcoded to avoid dependency on whether linux_input_h.lua exports them.
--- ---------------------------------------------------------------------------
-local ABS_MT_SLOT        = 0x2f  -- 47  Switch to MT slot N
-local ABS_MT_POSITION_X  = 0x35  -- 53  X for current MT slot
-local ABS_MT_POSITION_Y  = 0x36  -- 54  Y for current MT slot
-local ABS_MT_TOOL_TYPE   = 0x37  -- 55  Tool: 0=finger, 1=pen, 2=eraser
-local ABS_MT_TRACKING_ID = 0x39  -- 57  Contact ID; -1 = lifted
-local ABS_MT_PRESSURE    = 0x3a  -- 58  Pressure for current MT slot
-local MT_TOOL_PEN        = 1     -- ABS_MT_TOOL_TYPE value for pen
-local MT_TOOL_ERASER     = 2     -- ABS_MT_TOOL_TYPE value for eraser end
-
--- EV_KEY codes
-local BTN_TOOL_PEN    = 0x140  -- 320
-local BTN_TOOL_RUBBER = 0x141  -- 321
-local BTN_TOUCH       = 0x14a  -- 330
+-- Aliases from lib/input_codes (single source of truth for all BTN_*/ABS_* values)
+local BTN_TOOL_PEN       = codes.BTN_TOOL_PEN
+local BTN_TOOL_RUBBER    = codes.BTN_TOOL_RUBBER
+local BTN_TOUCH          = codes.BTN_TOUCH
+local ABS_MT_SLOT        = codes.ABS_MT_SLOT
+local ABS_MT_POSITION_X  = codes.ABS_MT_POSITION_X
+local ABS_MT_POSITION_Y  = codes.ABS_MT_POSITION_Y
+local ABS_MT_TOOL_TYPE   = codes.ABS_MT_TOOL_TYPE
+local ABS_MT_TRACKING_ID = codes.ABS_MT_TRACKING_ID
+local ABS_MT_PRESSURE    = codes.ABS_MT_PRESSURE
+local MT_TOOL_PEN        = codes.MT_TOOL_PEN
+local MT_TOOL_ERASER     = codes.MT_TOOL_ERASER
 
 -- Pressure at or above this value is treated as physical contact.
 -- The Elan chip reports 0 (or near-0) for hover and measurable pressure
@@ -286,12 +282,12 @@ function PenDev:poll(cb)
 
         local count = math.floor(n / ev_sz)
         for i = 0, count - 1 do
-            local e  = buf[i]
-            local t  = e.type
-            local ec = e.code
-            local ev = e.value
+            local event   = buf[i]
+            local ev_type = event.type
+            local ec      = event.code
+            local ev      = event.value
 
-            if t == C.EV_KEY then
+            if ev_type == C.EV_KEY then
                 -- For MT pen devices the Elan fires EV_KEY BTN_TOUCH=1 at
                 -- hover distance (not contact).  Once we've seen an MT pen
                 -- slot (_has_mt_pen), ignore this key — contact state is
@@ -304,26 +300,26 @@ function PenDev:poll(cb)
                     self.sm:feed_key(ec, ev, cb)
                 end
 
-            elseif t == C.EV_ABS then
+            elseif ev_type == C.EV_ABS then
                 -- ── MT protocol ──────────────────────────────────────────
                 if ec == ABS_MT_SLOT then
                     self._mt_cur = ev
 
                 elseif ec == ABS_MT_TOOL_TYPE then
-                    local s = self._mt_cur
-                    if not self._mt_slots[s] then self._mt_slots[s] = {} end
-                    self._mt_slots[s].tool = ev
+                    local slot = self._mt_cur
+                    if not self._mt_slots[slot] then self._mt_slots[slot] = {} end
+                    self._mt_slots[slot].tool = ev
                     if ev == MT_TOOL_PEN then
-                        self._mt_pen_slot = s
-                        self._has_mt_pen  = true  -- mark device as MT pen
-                        self.sm:feed_key(BTN_TOOL_PEN, 1, nil)  -- tell SM tool is pen
-                        logger.dbg("FastNote pendev: pen identified at MT slot", s)
+                        self._mt_pen_slot = slot
+                        self._has_mt_pen  = true
+                        self.sm:feed_key(BTN_TOOL_PEN, 1, nil)
+                        logger.dbg("FastNote pendev: pen identified at MT slot", slot)
                     elseif ev == MT_TOOL_ERASER then
-                        self._mt_pen_slot = s
-                        self._has_mt_pen  = true  -- mark device as MT pen (same slot tracking)
-                        self.sm:feed_key(BTN_TOOL_RUBBER, 1, nil)  -- tell SM tool is eraser
-                        logger.dbg("FastNote pendev: eraser identified at MT slot", s)
-                    elseif s == self._mt_pen_slot then
+                        self._mt_pen_slot = slot
+                        self._has_mt_pen  = true
+                        self.sm:feed_key(BTN_TOOL_RUBBER, 1, nil)
+                        logger.dbg("FastNote pendev: eraser identified at MT slot", slot)
+                    elseif slot == self._mt_pen_slot then
                         -- Tool changed away from pen/eraser on the pen slot
                         -- (e.g. finger on same slot after pen lifted without a
                         -- TRACKING_ID=-1 on this slot first).  Clear so finger
@@ -332,31 +328,31 @@ function PenDev:poll(cb)
                     end
 
                 elseif ec == ABS_MT_TRACKING_ID then
-                    local s = self._mt_cur
-                    if not self._mt_slots[s] then self._mt_slots[s] = {} end
-                    self._mt_slots[s].id = ev
+                    local slot = self._mt_cur
+                    if not self._mt_slots[slot] then self._mt_slots[slot] = {} end
+                    self._mt_slots[slot].id = ev
                     -- When the pen slot is released, stop routing its future
                     -- contacts as pen input.  Without this, a finger touching
                     -- in the same MT slot re-uses the old _mt_pen_slot index
                     -- and bypasses the finger_draw guard entirely.
-                    if ev == -1 and s == self._mt_pen_slot then
+                    if ev == -1 and slot == self._mt_pen_slot then
                         self._mt_pen_slot = nil
                     end
 
                 elseif ec == ABS_MT_POSITION_X then
-                    local s = self._mt_cur
-                    if not self._mt_slots[s] then self._mt_slots[s] = {} end
-                    self._mt_slots[s].x = ev
+                    local slot = self._mt_cur
+                    if not self._mt_slots[slot] then self._mt_slots[slot] = {} end
+                    self._mt_slots[slot].x = ev
 
                 elseif ec == ABS_MT_POSITION_Y then
-                    local s = self._mt_cur
-                    if not self._mt_slots[s] then self._mt_slots[s] = {} end
-                    self._mt_slots[s].y = ev
+                    local slot = self._mt_cur
+                    if not self._mt_slots[slot] then self._mt_slots[slot] = {} end
+                    self._mt_slots[slot].y = ev
 
                 elseif ec == ABS_MT_PRESSURE then
-                    local s = self._mt_cur
-                    if not self._mt_slots[s] then self._mt_slots[s] = {} end
-                    self._mt_slots[s].p = ev
+                    local slot = self._mt_cur
+                    if not self._mt_slots[slot] then self._mt_slots[slot] = {} end
+                    self._mt_slots[slot].p = ev
 
                 else
                     -- ── Single-touch (Wacom / fallback) ──────────────────
@@ -364,20 +360,20 @@ function PenDev:poll(cb)
                     self.sm:feed_abs(ec, ev)
                 end
 
-            elseif t == C.EV_SYN then
+            elseif ev_type == C.EV_SYN then
                 local pen_slot = self._mt_pen_slot
                 if pen_slot then
-                    local pd = self._mt_slots[pen_slot]
-                    if pd then
+                    local pen_data = self._mt_slots[pen_slot]
+                    if pen_data then
                         -- Feed MT coordinates into the SM's single-touch axes.
-                        if pd.x then self.sm:feed_abs(0,  pd.x) end  -- ABS_X
-                        if pd.y then self.sm:feed_abs(1,  pd.y) end  -- ABS_Y
-                        if pd.p then self.sm:feed_abs(24, pd.p) end  -- ABS_PRESSURE
+                        if pen_data.x then self.sm:feed_abs(0,  pen_data.x) end  -- ABS_X
+                        if pen_data.y then self.sm:feed_abs(1,  pen_data.y) end  -- ABS_Y
+                        if pen_data.p then self.sm:feed_abs(24, pen_data.p) end  -- ABS_PRESSURE
 
                         -- Synthesize BTN_TOUCH from pressure (Elan hover fix).
                         -- The Elan fires EV_KEY BTN_TOUCH for proximity; we
                         -- ignore that and use pressure to detect real contact.
-                        local pressure = pd.p or 0
+                        local pressure = pen_data.p or 0
                         if pressure >= PRESSURE_CONTACT_THRESHOLD then
                             if not self.sm.pen_down then
                                 -- Pen just touched: prime "down" for next SYN.
