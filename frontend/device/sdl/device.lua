@@ -6,6 +6,7 @@ local SDL = require("ffi/SDL3")
 local ffi = require("ffi")
 local logger = require("logger")
 local time = require("ui/time")
+local util = require("util")
 
 -- SDL computes WM_CLASS on X11/Wayland based on process's binary name.
 -- Some desktop environments rely on WM_CLASS to name the app and/or to assign the proper icon.
@@ -87,7 +88,7 @@ local Device = Generic:extend{
     openLink = function(self, link)
         local enabled, tool = getLinkOpener()
         if not enabled or not tool or not link or type(link) ~= "string" then return end
-        return runCommand(tool .. " '" .. link .. "'")
+        return runCommand(util.shell_escape({tool, link}))
     end,
     canExternalDictLookup = yes,
     getExternalDictLookupList = function() return external.dicts end,
@@ -98,7 +99,7 @@ local Device = Generic:extend{
             if isUrl(app) and getLinkOpener() then
                 ok = self:openLink(app..text)
             elseif isCommand(app) then
-                ok = runCommand(app .. " " .. text .. " &")
+                ok = runCommand(util.shell_escape({app, text}) .. " &")
             end
         end
         if ok and external.when_back_callback then
