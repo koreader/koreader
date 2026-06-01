@@ -526,7 +526,7 @@ end
 
 function ReaderView:drawTempHighlight(bb, x, y)
     local color = self.highlight.saved_drawer ~= "invert"
-        and G_reader_settings:isTrue("highlight_temp_use_main_color")
+        and G_reader_settings:isTrue("highlight_selection_use_highlight_color")
         and Blitbuffer.colorFromName(self.highlight.saved_color) or nil
     for page, boxes in pairs(self.highlight.temp) do
         for i = 1, #boxes do
@@ -689,7 +689,7 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
     end
     if drawer == "lighten" then
         local lighten_factor = self.highlight.temp and next(self.highlight.temp)
-            and (G_reader_settings:readSetting("highlight_temp_lighten_factor") or 0.2) or self.highlight.lighten_factor
+            and (G_reader_settings:readSetting("highlight_selection_lighten_factor") or 0.2) or self.highlight.lighten_factor
         if not color then
             bb:darkenRect(x, y, w, h, lighten_factor)
         else
