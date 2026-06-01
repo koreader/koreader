@@ -179,10 +179,11 @@ function ReaderStatus:onOpenNextOrPreviousFileInFolder(prev)
     local fc = FileChooser:new{ ui = self.ui }
     local file = fc:getNextOrPreviousFileInFolder(self.document.file, prev)
     if file then
+        local filemanagerutil = require("apps/filemanager/filemanagerutil")
         -- Delay until the next tick, as this will destroy the Document instance,
         -- but we may not be the final Event caught by said Document...
         UIManager:nextTick(function()
-            self.ui:switchDocument(file)
+            filemanagerutil.openFile(self.ui, file)
         end)
     else
         UIManager:show(InfoMessage:new{
