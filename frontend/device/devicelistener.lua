@@ -18,7 +18,7 @@ function DeviceListener:onToggleNightMode()
     if self.ui and self.ui.document and self.ui.document.provider == "crengine" then
         self.ui.document:resetCallCache()
         if self.ui.highlight then
-            self.ui.highlight:setTempHighlightColor()
+            self.ui.highlight:setSelectionColor()
         end
     end
     UIManager:setDirty("all", "full")
