@@ -1822,6 +1822,19 @@ function DictQuickLookup:lookupInputWord(hint)
     local buttons = {
         {
             {
+                text = _("Find in definition"),
+                callback = function()
+                    local text = self.input_dialog:getInputText()
+                    if text ~= "" and not text:match("^%s*$") then
+                        UIManager:close(self.input_dialog)
+                        self:searchInDefinition(text)
+                    end
+                end,
+            },
+            -- 'Search with preset' will be inserted here
+        },
+        {
+            {
                 text = _("Translate"),
                 callback = function()
                     local text = self.input_dialog:getInputText()
@@ -1843,19 +1856,6 @@ function DictQuickLookup:lookupInputWord(hint)
                     end
                 end,
             },
-        },
-        {
-            {
-                text = _("Find in definition"),
-                callback = function()
-                    local text = self.input_dialog:getInputText()
-                    if text ~= "" and not text:match("^%s*$") then
-                        UIManager:close(self.input_dialog)
-                        self:searchInDefinition(text)
-                    end
-                end,
-            },
-            -- 'Search with preset' will be inserted here
         },
         {
             {
@@ -1881,7 +1881,7 @@ function DictQuickLookup:lookupInputWord(hint)
     }
     local preset_names = Presets.getPresets(self.ui.dictionary.preset_obj)
     if preset_names and #preset_names > 0 then
-        table.insert(buttons[2], {
+        table.insert(buttons[1], {
             text = _("Search with preset"),
             callback = function()
                 local text = self.input_dialog:getInputText()
