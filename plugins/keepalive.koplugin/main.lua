@@ -35,9 +35,11 @@ if Device:isCervantes() or Device:isKobo() then
     disable = function() PluginShare.pause_auto_suspend = false end
 elseif Device:isKindle() then
     disable = function()
+        PluginShare.pause_auto_suspend = false
         os.execute("lipc-set-prop com.lab126.powerd preventScreenSaver 0")
     end
     enable = function()
+        PluginShare.pause_auto_suspend = true
         os.execute("lipc-set-prop com.lab126.powerd preventScreenSaver 1")
     end
 elseif Device:isSDL() then
