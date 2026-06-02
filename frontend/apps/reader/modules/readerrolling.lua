@@ -576,7 +576,7 @@ function ReaderRolling:onPan(_, ges)
             -- Mouse wheel generates a Pan event: in page mode, move one
             -- page per event. Scroll mode is handled in the 'else' branch
             -- and use the wheeled distance.
-            UIManager:broadcastEvent(Event:new("GotoViewRel", -1 * ges.mousewheel_direction))
+            self:onGotoViewRel(-1 * ges.mousewheel_direction)
         elseif self.view.view_mode == "scroll" then
             if not self._pan_started then
                 self._pan_started = true
@@ -953,7 +953,7 @@ end
 function ReaderRolling:onPanning(args, _)
     local _, dy = unpack(args)
     if self.view.view_mode ~= "scroll" then
-        UIManager:broadcastEvent(Event:new("GotoViewRel", dy))
+        self:onGotoViewRel(dy)
         return
     end
     self:_gotoPos(self.current_pos + dy * self.panning_steps.normal)
