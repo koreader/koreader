@@ -249,6 +249,7 @@ function MyClipping:getImage(image)
 end
 
 function MyClipping:doesHighlightMatch(item)
+    if not item.drawer then return end
     local filter = self.settings.filter
     if filter then
         if filter.style and not filter.style[item.drawer] then return end
