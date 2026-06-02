@@ -143,8 +143,7 @@ function FileManagerMenu:onOpenLastDoc()
         self:onCloseFileManagerMenu()
     end
 
-    local ReaderUI = require("apps/reader/readerui")
-    ReaderUI:showReader(last_file)
+    self.ui:openFile(last_file)
 end
 
 function FileManagerMenu:setUpdateItemTable()
