@@ -339,7 +339,13 @@ function DictQuickLookup:init()
         title = self.displaydictname,
         with_bottom_line = true,
         bottom_v_padding = 0, -- padding handled below
-        close_callback = function() self:onClose() end,
+        close_callback = function()
+            if self.in_definition_search then
+                self:endFindInDefinition()
+                return true
+            end
+            self:onClose()
+        end,
         close_hold_callback = function() self:onHoldClose() end,
         -- visual hint: title left aligned for dict, centered for Wikipedia
         align = self.is_wiki and "center" or "left",
@@ -1643,10 +1649,7 @@ end
 
 function DictQuickLookup:onCloseWithKeys(no_clear)
     if self.in_definition_search then
-        local _, content_widget = self:_getScrollAndContentWidgets()
-        if content_widget and content_widget.clearSearch then
-            content_widget:clearSearch(true)
-        end
+        self:endFindInDefinition()
         return true
     end
     if self.allow_key_text_selection and self.nt_text_selector_indicator then
@@ -1769,6 +1772,16 @@ function DictQuickLookup:findInDefinitionNextOrPreviousPage(direction)
     return false
 end
 
+function DictQuickLookup:endFindInDefinition(content_widget)
+    if not content_widget then
+        local _
+        _, content_widget = self:_getScrollAndContentWidgets()
+    end
+    if content_widget and content_widget.clearSearch then
+        content_widget:clearSearch(true)
+    end
+end
+
 function DictQuickLookup:searchInDefinition(text)
     if not text then return end
 
@@ -1790,7 +1803,7 @@ function DictQuickLookup:searchInDefinition(text)
             timeout = 2,
         })
         if self.in_definition_search then
-            content_widget:clearSearch(true)
+            self:endFindInDefinition(content_widget)
         end
     end
 end
