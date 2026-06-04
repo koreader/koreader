@@ -22,7 +22,6 @@ local TextWidget = require("ui/widget/textwidget")
 local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
-local Utf8Proc = require("ffi/utf8proc")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -801,6 +800,7 @@ function Menu:init()
                 callback = function()
                     local search_string = self.page_info_text.input_dialog:getInputText()
                     if search_string ~= "" then
+                        self.search_index = nil
                         self:goToMenuItemMatching(search_string, true)
                         self.page_info_text:closeInputDialog()
                     end
@@ -812,6 +812,7 @@ function Menu:init()
                 text = _("Cancel"),
                 id = "close",
                 callback = function()
+                    self.search_index = nil
                     self.page_info_text:closeInputDialog()
                 end,
             },
@@ -820,6 +821,7 @@ function Menu:init()
                 callback = function()
                     local page = tonumber(self.page_info_text.input_dialog:getInputText())
                     if page and page >= 1 and page <= self.page_num then
+                        self.search_index = nil
                         self:onGotoPage(page)
                         self.page_info_text:closeInputDialog()
                     end
@@ -834,6 +836,9 @@ function Menu:init()
         call_hold_input_on_tap = true,
         hold_input = {
             title = _("Enter text, letter or page number"),
+            input_func = function()
+                return self.search_index and self.search_string
+            end,
             hint_func = function()
                 -- @translators First group is the standard range for alphabetic searches, second group is a page number range
                 return T(_("(a - z) or (1 - %1)"), self.page_num)
@@ -1176,6 +1181,7 @@ function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch, 
     local no_recalculate_dimen = true
 
     if new_item_table then
+        self.search_index = nil
         self.item_table = new_item_table
         no_recalculate_dimen = false
     end
@@ -1322,12 +1328,21 @@ function Menu:onSelectByShortCut(_, keyevent)
 end
 
 function Menu:goToMenuItemMatching(search_string, goto_letter)
-    search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
-    for i, item in ipairs(self.item_table) do
+    search_string = util.stringLower(search_string)
+    local start_index = 1
+    if self.search_index and self.search_string == search_string then
+        start_index = self.search_index + 1
+    end
+    for i = start_index, #self.item_table do
+        local item = self.item_table[i]
         if not item.is_go_up then
-            local item_text = Utf8Proc.lowercase(util.fixUtf8(item.text, "?"))
+            local item_text = util.stringLower(item.text)
             local idx = item_text:find(search_string)
             if idx and (idx == 1 or not goto_letter) then
+                if not goto_letter then
+                    self.search_string = search_string
+                    self.search_index = i
+                end
                 self.itemnumber = i -- draw focus
                 self:onGotoPage(self:getPageNumber(i))
                 break
