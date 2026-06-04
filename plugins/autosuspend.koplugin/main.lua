@@ -130,12 +130,16 @@ if Device:isKindle() then
             return
         end
 
-        -- KeepAlive on Kindles work by disabling screensaver in powerd. As this makes the t1 timeout behave wackily,
-        -- we must not reset it, as it causes a crash.
-        if PluginShare.keepalive then
-            logger.dbg("AutoSuspend: KeepAlive is active, skipping t1 timeout reset")
+        -- Allows suspend to be disabled temporarly on Kindle
+        -- Disable screensaver in powerd and skip t1 timeout reset to avoid crash
+        if PluginShare.pause_auto_suspend then
+            logger.dbg("AutoSuspend: keeping device alive, suppressing screensaver instead of resetting t1 timeout")
+            self:_keepAlive(true)
+            -- Keep polling so we notice when pause_auto_suspend is cleared
+            UIManager:scheduleIn(default_kindle_t1_timeout_reset_seconds, self.kindle_task)
             return
         end
+        self:_keepAlive(false)
 
         -- Also causes problems when charging.
         if PowerD:isCharging() and not PowerD:isCharged() then
@@ -175,11 +179,22 @@ if Device:isKindle() then
             self:_schedule_kindle()
         end
     end
+
+    -- Toggles screensaver in powerd, this causes t1 timeout to behave wackily;
+    -- when preventScreenSaver is set to 1, you must skip t1 timeout reset to avoid crash
+    function AutoSuspend:_keepAlive(shouldKeepAlive)
+        -- Making sure we never set the same prop value twice...
+        if shouldKeepAlive == self.keep_alive then return end
+        logger.dbg("AutoSuspend: keep alive", shouldKeepAlive)
+        os.execute("lipc-set-prop com.lab126.powerd preventScreenSaver " .. (shouldKeepAlive and "1" or "0"))
+        self.keep_alive = shouldKeepAlive
+    end
 else
     -- NOP these on other platforms to avoid a proliferation of Device:isKindle() checks everywhere
     function AutoSuspend:_schedule_kindle() end
     function AutoSuspend:_unschedule_kindle() end
     function AutoSuspend:_start_kindle() end
+    function AutoSuspend:_keepAlive() end
 end
 
 function AutoSuspend:init()
@@ -194,6 +209,7 @@ function AutoSuspend:init()
     -- We only want those to exist as *instance* members
     self.is_standby_scheduled = false
     self.going_to_suspend = false
+    self.keep_alive = false
 
     UIManager.event_hook:registerWidget("InputEvent", self)
     -- We need an instance-specific function reference to schedule, because in some rare cases,
@@ -223,6 +239,8 @@ function AutoSuspend:init()
     self:_start()
     self:_start_kindle()
     self:_start_standby()
+    -- Disable Kindle screensaver in powerd if autosuspend is disabled or paused
+    self:_keepAlive(not self:_enabled() or PluginShare.pause_auto_suspend == true)
 
     -- self.ui is nil in the testsuite
     if not self.ui or not self.ui.menu then return end
@@ -382,6 +400,8 @@ function AutoSuspend:onResume()
     -- We should always follow an InputEvent, so last_action_time is already up to date :).
     self:_start()
     self:_start_kindle()
+    -- Disable Kindle screensaver in powerd if autosuspend is disabled or paused
+    self:_keepAlive(not self:_enabled() or PluginShare.pause_auto_suspend == true)
     self:_unschedule_standby()
     -- Use a default value for first scheduled standby after a suspend here.
     -- This avoids screen glitches after a full suspend
@@ -475,6 +495,11 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
             else
                 self:_unschedule()
                 self:_start()
+                if setting == "auto_suspend_timeout_seconds" then
+                    -- Restart the Kindle t1 timer, which also re-evaluates keep alive.
+                    self:_unschedule_kindle()
+                    self:_start_kindle()
+                end
             end
             if touchmenu_instance then touchmenu_instance:updateItems() end
             local time_string = datetime.secondsToClockDuration("letters", self[setting],
@@ -510,6 +535,11 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
                 self:toggleStandbyHandler(false)
             else
                 self:_unschedule()
+                if setting == "auto_suspend_timeout_seconds" then
+                    -- Autosuspend is now disabled; keep the device alive.
+                    self:_unschedule_kindle()
+                    self:_keepAlive(true)
+                end
             end
             if touchmenu_instance then touchmenu_instance:updateItems() end
             UIManager:show(InfoMessage:new{
