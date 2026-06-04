@@ -45,6 +45,8 @@ local TextViewer = InputContainer:extend{
     width = nil,
     height = nil,
     buttons_table = nil,
+    page_turn_callback_prev = nil,
+    page_turn_callback_next = nil,
     -- See TextBoxWidget for details about these options
     -- We default to justified and auto_para_direction to adapt
     -- to any kind of text we are given (book descriptions,
@@ -118,6 +120,13 @@ function TextViewer:init(reinit)
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.ShowMenu = { { "Menu" } }
+        self.key_events.ScrollOrPrev = { { Device.input.group.PgBack }, event = "ScrollOrNavigate", args = -1 }
+        self.key_events.ScrollOrNext = { { Device.input.group.PgFwd  }, event = "ScrollOrNavigate", args =  1 }
+        if Device:hasScreenKB() or Device:hasKeyboard() then
+            local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            self.key_events.PrevItem = { { modifier, Device.input.group.PgBack } }
+            self.key_events.NextItem = { { modifier, Device.input.group.PgFwd  } }
+        end
     end
 
     if Device:isTouchDevice() then
@@ -516,6 +525,40 @@ function TextViewer:onSwipe(arg, ges)
     end
     -- Let our MovableContainer handle swipe outside of text
     return self.movable:onMovableSwipe(arg, ges)
+end
+
+function TextViewer:onScrollOrNavigate(direction)
+    if not self.scroll_text_w then return false end
+    if direction > 0 then
+        if self.scroll_text_w:onScrollDown() then
+            return true
+        end
+        if self.page_turn_callback_next then
+            self.page_turn_callback_next()
+            return true
+        end
+    else
+        if self.scroll_text_w:onScrollUp() then
+            return true
+        end
+        if self.page_turn_callback_prev then
+            self.page_turn_callback_prev()
+            return true
+        end
+    end
+    return false
+end
+
+function TextViewer:onNextItem()
+    if not self.page_turn_callback_next then return false end
+    self.page_turn_callback_next()
+    return true
+end
+
+function TextViewer:onPrevItem()
+    if not self.page_turn_callback_prev then return false end
+    self.page_turn_callback_prev()
+    return true
 end
 
 -- The following handlers are similar to the ones in DictQuickLookup:
