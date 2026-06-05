@@ -20,6 +20,14 @@ local WebDav = {
     base = nil, -- CloudStorage self, will be filled in Cloud:onShowCloudStorageList()
 }
 
+local function normalizeUrl(url)
+    if not url then return url end
+    if url:match("^davs?://") then
+        url = url:gsub("^dav", "http", 1)
+    end
+    return url
+end
+
 local WebDavApi = {}
 
 -- Trim leading & trailing slashes from string `s` (based on util.trim)
@@ -39,6 +47,7 @@ end
 
 -- Append path to address with a slash separator, trimming any unwanted slashes in the process.
 function WebDavApi.getJoinedPath(address, path)
+    address = normalizeUrl(address)
     local path_encoded = util.urlEncode(path, "/") or ""
     -- Strip leading & trailing slashes from `path`
     local sane_path = WebDavApi.trim_slashes(path_encoded)
@@ -49,6 +58,7 @@ function WebDavApi.getJoinedPath(address, path)
 end
 
 function WebDavApi.listFolder(address, user, pass, folder_path, include_folders)
+    address = normalizeUrl(address)
     local path = folder_path or ""
     path = WebDavApi.trim_slashes(path)
     address = WebDavApi.rtrim_slashes(address)
@@ -316,7 +326,7 @@ The start folder is appended to the server path.]])
                             fields[5] = fields[5]:gsub("/$", "")
                         end
                         item.name     = fields[1]
-                        item.address  = fields[2]
+                        item.address  = normalizeUrl(fields[2])
                         item.username = fields[3]
                         item.password = fields[4]
                         item.url      = fields[5]
