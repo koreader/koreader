@@ -332,6 +332,13 @@ function Device:init()
     -- Wrap setRotationMode on Screen for auto-rotation awareness
     local origSetRotationMode = self.screen.setRotationMode
     function self.screen:setRotationMode(mode)
+        -- Sentinel -1: "Auto" selected from bottom menu icon row
+        if mode == -1 then
+            G_reader_settings:saveSetting("android_auto_rotation", true)
+            android.orientation.setAuto(true)
+            return
+        end
+
         -- FULL_SENSOR is a mode signal, not a real rotation — delegate to auto mode
         if mode == C.ASCREEN_ORIENTATION_FULL_SENSOR then
             android.orientation.setAuto(true)

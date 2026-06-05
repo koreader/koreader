@@ -51,62 +51,57 @@ local CreOptions = {
     {
         icon = "appbar.rotation",
         options = {
-            {   -- "Auto" toggle for Android auto-rotation
-                name = "auto_rotation",
-                name_text = _("Auto"),
-                toggle = true,
-                values = { false, true },
-                default_value = true,
-                current_func = function() return G_reader_settings:isTrue("android_auto_rotation") end,
-                event = "ToggleAutoRotation",
-                show_func = function() return Device:hasAutoRotation() end,
-                separator = true,
-            },
             {   -- ReaderView
                 name = "rotation_mode",
                 name_text = _("Rotation"),
                 item_icons_func = function()
-                    if Screen:getRotationMode() == Screen.DEVICE_ROTATED_UPRIGHT then
-                        -- P, 0UR
-                        return {
-                            "rotation.P.90CCW",
-                            "rotation.P.0UR",
-                            "rotation.P.90CW",
-                            "rotation.P.180UD",
-                        }
-                    elseif Screen:getRotationMode() == Screen.DEVICE_ROTATED_UPSIDE_DOWN then
-                        -- P, 180UD
-                        return {
-                            "rotation.P.90CW",
-                            "rotation.P.180UD",
-                            "rotation.P.90CCW",
-                            "rotation.P.0UR",
-                        }
-                    elseif Screen:getRotationMode() == Screen.DEVICE_ROTATED_CLOCKWISE then
-                        -- L, 90CW
-                        return {
-                            "rotation.L.90CCW",
-                            "rotation.L.0UR",
-                            "rotation.L.90CW",
-                            "rotation.L.180UD",
-                        }
+                    local icons, values, labels
+                    local current_rotation = Screen:getRotationMode()
+
+                    if Device:hasAutoRotation() then
+                        -- Android: prepend "Auto" icon at the start
+                        -- Icon order: Auto, 90CCW, 0UR, 90CW, 180UD (depending on current rotation)
+                        if current_rotation == Screen.DEVICE_ROTATED_UPRIGHT then
+                            icons = { "rotation.auto", "rotation.P.90CCW", "rotation.P.0UR", "rotation.P.90CW", "rotation.P.180UD" }
+                        elseif current_rotation == Screen.DEVICE_ROTATED_UPSIDE_DOWN then
+                            icons = { "rotation.auto", "rotation.P.90CW", "rotation.P.180UD", "rotation.P.90CCW", "rotation.P.0UR" }
+                        elseif current_rotation == Screen.DEVICE_ROTATED_CLOCKWISE then
+                            icons = { "rotation.auto", "rotation.L.90CCW", "rotation.L.0UR", "rotation.L.90CW", "rotation.L.180UD" }
+                        else
+                            icons = { "rotation.auto", "rotation.L.90CW", "rotation.L.180UD", "rotation.L.90CCW", "rotation.L.0UR" }
+                        end
                     else
-                        -- L, 90CCW
-                        return {
-                            "rotation.L.90CW",
-                            "rotation.L.180UD",
-                            "rotation.L.90CCW",
-                            "rotation.L.0UR",
-                        }
+                        -- Non-Android: original 4 icons
+                        if current_rotation == Screen.DEVICE_ROTATED_UPRIGHT then
+                            return { "rotation.P.90CCW", "rotation.P.0UR", "rotation.P.90CW", "rotation.P.180UD" }
+                        elseif current_rotation == Screen.DEVICE_ROTATED_UPSIDE_DOWN then
+                            return { "rotation.P.90CW", "rotation.P.180UD", "rotation.P.90CCW", "rotation.P.0UR" }
+                        elseif current_rotation == Screen.DEVICE_ROTATED_CLOCKWISE then
+                            return { "rotation.L.90CCW", "rotation.L.0UR", "rotation.L.90CW", "rotation.L.180UD" }
+                        else
+                            return { "rotation.L.90CW", "rotation.L.180UD", "rotation.L.90CCW", "rotation.L.0UR" }
+                        end
                     end
+
+                    return icons
                 end,
-                -- For Dispatcher & onMakeDefault's sake
-                labels = optionsutil.rotation_labels,
+                labels = Device:hasAutoRotation() and
+                    { _("Auto"), C_("Rotation", "⤹ 90°"), C_("Rotation", "↑ 0°"), C_("Rotation", "⤸ 90°"), C_("Rotation", "↓ 180°") } or
+                    optionsutil.rotation_labels,
                 alternate = false,
-                values = optionsutil.rotation_modes,
+                values = Device:hasAutoRotation() and
+                    { -1, Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE, Screen.DEVICE_ROTATED_UPRIGHT, Screen.DEVICE_ROTATED_CLOCKWISE, Screen.DEVICE_ROTATED_UPSIDE_DOWN } or
+                    optionsutil.rotation_modes,
                 default_value = Screen.DEVICE_ROTATED_UPRIGHT,
-                args = optionsutil.rotation_modes,
-                current_func = function() return Screen:getRotationMode() end,
+                args = Device:hasAutoRotation() and
+                    { -1, Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE, Screen.DEVICE_ROTATED_UPRIGHT, Screen.DEVICE_ROTATED_CLOCKWISE, Screen.DEVICE_ROTATED_UPSIDE_DOWN } or
+                    optionsutil.rotation_modes,
+                current_func = function()
+                    if Device:hasAutoRotation() and G_reader_settings:isTrue("android_auto_rotation") then
+                        return -1 -- "Auto" selected
+                    end
+                    return Screen:getRotationMode()
+                end,
                 event = "SetRotationMode",
                 name_text_hold_callback = optionsutil.showValues,
             },
