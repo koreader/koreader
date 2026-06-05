@@ -51,6 +51,17 @@ local CreOptions = {
     {
         icon = "appbar.rotation",
         options = {
+            {   -- "Auto" toggle for Android auto-rotation
+                name = "auto_rotation",
+                name_text = _("Auto"),
+                toggle = true,
+                values = { false, true },
+                default_value = true,
+                current_func = function() return G_reader_settings:isTrue("android_auto_rotation") end,
+                event = "ToggleAutoRotation",
+                show_func = function() return Device:hasAutoRotation() end,
+                separator = true,
+            },
             {   -- ReaderView
                 name = "rotation_mode",
                 name_text = _("Rotation"),
