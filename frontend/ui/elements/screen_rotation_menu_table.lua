@@ -33,26 +33,18 @@ return {
 
         if Device:hasAutoRotation() then
             table.insert(rotation_table, {
-                text = _("Auto-rotate (follow device orientation)"),
-                help_text = _([[
-When checked, the screen will automatically rotate to follow your device's physical orientation.
-When unchecked, you can manually select a specific orientation from the options below.]]),
+                text = _("Auto"),
                 checked_func = function()
                     return G_reader_settings:isTrue("android_auto_rotation")
                 end,
+                radio = true,
                 callback = function()
-                    local new_state = not G_reader_settings:isTrue("android_auto_rotation")
-                    G_reader_settings:saveSetting("android_auto_rotation", new_state)
-                    if new_state then
-                        local _, android = pcall(require, "android")
-                        if android then
-                            android.orientation.setAuto(true)
-                        end
-                    else
-                        Screen:setRotationMode(Screen:getRotationMode())
+                    G_reader_settings:saveSetting("android_auto_rotation", true)
+                    local _, android = pcall(require, "android")
+                    if android then
+                        android.orientation.setAuto(true)
                     end
                 end,
-                separator = true,
             })
         end
 
@@ -104,8 +96,36 @@ When unchecked, the default rotation of the file browser and the default/saved r
 
         if FileManager.instance then
             local optionsutil = require("ui/data/optionsutil")
-            for i, mode in ipairs(optionsutil.rotation_modes) do
-                table.insert(rotation_table, genMenuItem(optionsutil.rotation_labels[i], mode))
+            if Device:hasAutoRotation() then
+                -- Android: manual rotation items are radio peers of "Auto",
+                -- selecting one disables auto-rotation
+                for i, mode in ipairs(optionsutil.rotation_modes) do
+                    local text = optionsutil.rotation_labels[i]
+                    table.insert(rotation_table, {
+                        text_func = function()
+                            return G_reader_settings:readSetting("fm_rotation_mode") == mode
+                                and text .. "   ★" or text
+                        end,
+                        checked_func = function()
+                            return not G_reader_settings:isTrue("android_auto_rotation")
+                                and Screen:getRotationMode() == mode
+                        end,
+                        radio = true,
+                        callback = function(touchmenu_instance)
+                            G_reader_settings:saveSetting("android_auto_rotation", false)
+                            UIManager:broadcastEvent(Event:new("SetRotationMode", mode))
+                            touchmenu_instance:closeMenu()
+                        end,
+                        hold_callback = function(touchmenu_instance)
+                            G_reader_settings:saveSetting("fm_rotation_mode", mode)
+                            touchmenu_instance:updateItems()
+                        end,
+                    })
+                end
+            else
+                for i, mode in ipairs(optionsutil.rotation_modes) do
+                    table.insert(rotation_table, genMenuItem(optionsutil.rotation_labels[i], mode))
+                end
             end
         end
 
