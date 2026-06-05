@@ -31,23 +31,6 @@ return {
     sub_item_table_func = function()
         local rotation_table = {}
 
-        if Device:hasAutoRotation() then
-            table.insert(rotation_table, {
-                text = _("Auto"),
-                checked_func = function()
-                    return G_reader_settings:isTrue("android_auto_rotation")
-                end,
-                radio = true,
-                callback = function()
-                    G_reader_settings:saveSetting("android_auto_rotation", true)
-                    local _, android = pcall(require, "android")
-                    if android then
-                        android.orientation.setAuto(true)
-                    end
-                end,
-            })
-        end
-
         if Device:hasGSensor() then
             table.insert(rotation_table, {
                 text = _("Ignore accelerometer rotation events"),
@@ -97,8 +80,22 @@ When unchecked, the default rotation of the file browser and the default/saved r
         if FileManager.instance then
             local optionsutil = require("ui/data/optionsutil")
             if Device:hasAutoRotation() then
-                -- Android: manual rotation items are radio peers of "Auto",
-                -- selecting one disables auto-rotation
+                -- Android: "Auto" and manual rotation items form a radio group,
+                -- selecting a manual orientation disables auto-rotation.
+                table.insert(rotation_table, {
+                    text = _("Auto"),
+                    checked_func = function()
+                        return G_reader_settings:isTrue("android_auto_rotation")
+                    end,
+                    radio = true,
+                    callback = function()
+                        G_reader_settings:saveSetting("android_auto_rotation", true)
+                        local _, android = pcall(require, "android")
+                        if android then
+                            android.orientation.setAuto(true)
+                        end
+                    end,
+                })
                 for i, mode in ipairs(optionsutil.rotation_modes) do
                     local text = optionsutil.rotation_labels[i]
                     table.insert(rotation_table, {
