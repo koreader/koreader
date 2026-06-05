@@ -12,6 +12,14 @@ local lfs = require("libs/libkoreader-lfs")
 local WebDavApi = {
 }
 
+function WebDavApi:normalizeUrl(url)
+    if not url then return url end
+    if url:match("^davs?://") then
+        url = url:gsub("^dav", "http", 1)
+    end
+    return url
+end
+
 -- Trim leading & trailing slashes from string `s` (based on util.trim)
 function WebDavApi.trim_slashes(s)
     local from = s:match"^/*()"
@@ -29,6 +37,7 @@ end
 
 -- Append path to address with a slash separator, trimming any unwanted slashes in the process.
 function WebDavApi:getJoinedPath(address, path)
+    address = self:normalizeUrl(address)
     local path_encoded = util.urlEncode(path, "/") or ""
     -- Strip leading & trailing slashes from `path`
     local sane_path = self.trim_slashes(path_encoded)
@@ -39,6 +48,7 @@ function WebDavApi:getJoinedPath(address, path)
 end
 
 function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
+    address = self:normalizeUrl(address)
     local path = folder_path or ""
     local webdav_list = {}
     local webdav_file = {}
@@ -152,6 +162,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
 end
 
 function WebDavApi:downloadFile(file_url, user, pass, local_path, progress_callback)
+    file_url = self:normalizeUrl(file_url)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     logger.dbg("WebDavApi: downloading file: ", file_url)
 
@@ -174,6 +185,7 @@ function WebDavApi:downloadFile(file_url, user, pass, local_path, progress_callb
 end
 
 function WebDavApi:uploadFile(file_url, user, pass, local_path, etag)
+    file_url = self:normalizeUrl(file_url)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     local code, _, status = socket.skip(1, http.request{
         url      = file_url,
@@ -194,6 +206,7 @@ function WebDavApi:uploadFile(file_url, user, pass, local_path, etag)
 end
 
 function WebDavApi:createFolder(folder_url, user, pass, folder_name)
+    folder_url = self:normalizeUrl(folder_url)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     local code, _, status = socket.skip(1, http.request{
         url      = folder_url,

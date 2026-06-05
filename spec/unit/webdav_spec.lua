@@ -1,10 +1,11 @@
 describe("WebDAV URL normalization", function()
-    local WebDav, socket_http
+    local WebDavApi, WebDav, socket_http
     local old_path = package.path
 
     setup(function()
         require("commonrequire")
         package.path = "plugins/cloudstorage.koplugin/providers/?.lua;" .. package.path
+        WebDavApi = require("apps/cloudstorage/webdavapi")
         WebDav = require("webdav")
         socket_http = require("socket.http")
     end)
@@ -22,6 +23,28 @@ describe("WebDAV URL normalization", function()
             error(err)
         end
     end
+
+    describe("frontend WebDAV API", function()
+        it("normalizes dav:// and davs:// in listFolder", function()
+            local cases = {
+                { input = "dav://example.com/dav", expected = "http://example.com/dav/" },
+                { input = "davs://example.com/dav", expected = "https://example.com/dav/" },
+                { input = "http://example.com/dav", expected = "http://example.com/dav/" },
+                { input = "https://example.com/dav", expected = "https://example.com/dav/" },
+            }
+
+            for _, case in ipairs(cases) do
+                local requested_url
+                with_mock(socket_http, "request", function(request)
+                    requested_url = request.url
+                    return nil, "mock error to abort request"
+                end, function()
+                    WebDavApi:listFolder(case.input, "user", "pass", "", false)
+                end)
+                assert.equals(case.expected, requested_url)
+            end
+        end)
+    end)
 
     describe("plugin WebDAV provider", function()
         it("normalizes dav:// and davs:// in listFolder", function()
