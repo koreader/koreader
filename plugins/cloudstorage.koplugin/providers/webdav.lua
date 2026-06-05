@@ -326,7 +326,7 @@ The start folder is appended to the server path.]])
                             fields[5] = fields[5]:gsub("/$", "")
                         end
                         item.name     = fields[1]
-                        item.address  = normalizeUrl(fields[2])
+                        item.address  = fields[2]
                         item.username = fields[3]
                         item.password = fields[4]
                         item.url      = fields[5]
