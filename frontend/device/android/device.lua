@@ -77,6 +77,7 @@ local Device = Generic:extend{
     model = android.prop.product,
     hasKeys = yes,
     hasDPad = no,
+    hasAutoRotation = yes,
     hasSeamlessWifiToggle = no, -- Requires losing focus to the sytem's network settings and user interaction
     hasExitOptions = no,
     hasEinkScreen = function() return android.isEink() end,
@@ -159,8 +160,11 @@ function Device:init()
                 this.device.input:resetState()
             elseif ev.code == C.APP_CMD_CONFIG_CHANGED then
                 -- orientation and size changes
-                if android.screen.width ~= android.getScreenWidth()
-                or android.screen.height ~= android.getScreenHeight() then
+                local old_rotation = this.device.screen:getRotationMode()
+                local old_width = android.screen.width
+                local old_height = android.screen.height
+                if old_width ~= android.getScreenWidth()
+                    or old_height ~= android.getScreenHeight() then
                     this.device.screen:resize()
                     local new_size = this.device.screen:getSize()
                     logger.info("Resizing screen to", new_size)
@@ -172,6 +176,10 @@ function Device:init()
                         FileManager.instance:reinit(FileManager.instance.path,
                             FileManager.instance.focused_file)
                     end
+                end
+                local new_rotation = this.device.screen:getRotationMode()
+                if old_rotation ~= new_rotation then
+                    UIManager:broadcastEvent(Event:new("SetRotationMode", new_rotation))
                 end
                 -- to-do: keyboard connected, disconnected
             elseif ev.code == C.APP_CMD_RESUME then
@@ -303,6 +311,46 @@ function Device:init()
     -- check if we ignore the back button completely
     if G_reader_settings:isTrue("android_ignore_back_button") then
         android.setBackButtonIgnored(true)
+    end
+
+    -- Auto-rotation: default ON for new installs, OFF for upgrades
+    if G_reader_settings:has("android_auto_rotation") then
+        if G_reader_settings:isTrue("android_auto_rotation") then
+            android.orientation.setAuto(true)
+        end
+    else
+        -- First launch: check if this is an upgrade with existing rotation settings
+        if G_reader_settings:has("fm_rotation_mode")
+            or G_reader_settings:has("closed_rotation_mode") then
+            G_reader_settings:saveSetting("android_auto_rotation", false)
+        else
+            G_reader_settings:saveSetting("android_auto_rotation", true)
+            android.orientation.setAuto(true)
+        end
+    end
+
+    -- Wrap setRotationMode on Screen for auto-rotation awareness
+    local origSetRotationMode = self.screen.setRotationMode
+    function self.screen:setRotationMode(mode)
+        -- FULL_SENSOR is a mode signal, not a real rotation — delegate to auto mode
+        if mode == C.ASCREEN_ORIENTATION_FULL_SENSOR then
+            android.orientation.setAuto(true)
+            return
+        end
+
+        if G_reader_settings:isTrue("android_auto_rotation") then
+            local current = android.orientation.get()
+            if mode == current then
+                -- Same rotation from system event — don't lock, stay in auto mode
+                return
+            else
+                -- Explicit different orientation requested — exit auto mode
+                G_reader_settings:saveSetting("android_auto_rotation", false)
+            end
+        end
+
+        -- Manual mode: lock to specific orientation
+        origSetRotationMode(self, mode)
     end
 
     Generic.init(self)

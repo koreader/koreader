@@ -31,6 +31,31 @@ return {
     sub_item_table_func = function()
         local rotation_table = {}
 
+        if Device:hasAutoRotation() then
+            table.insert(rotation_table, {
+                text = _("Auto-rotate (follow device orientation)"),
+                help_text = _([[
+When checked, the screen will automatically rotate to follow your device's physical orientation.
+When unchecked, you can manually select a specific orientation from the options below.]]),
+                checked_func = function()
+                    return G_reader_settings:isTrue("android_auto_rotation")
+                end,
+                callback = function()
+                    local new_state = not G_reader_settings:isTrue("android_auto_rotation")
+                    G_reader_settings:saveSetting("android_auto_rotation", new_state)
+                    if new_state then
+                        local _, android = pcall(require, "android")
+                        if android then
+                            android.orientation.setAuto(true)
+                        end
+                    else
+                        Screen:setRotationMode(Screen:getRotationMode())
+                    end
+                end,
+                separator = true,
+            })
+        end
+
         if Device:hasGSensor() then
             table.insert(rotation_table, {
                 text = _("Ignore accelerometer rotation events"),
