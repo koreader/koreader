@@ -108,7 +108,6 @@ local settingsList = {
     invert_rotation = {category="none", event="InvertRotation", title=_("Invert rotation"), device=true},
     iterate_rotation = {category="none", event="IterateRotation", title=_("Rotate by 90° CW"), device=true},
     iterate_rotation_ccw = {category="none", event="IterateRotation", arg=true, title=_("Rotate by 90° CCW"), device=true, separator=true},
-    toggle_auto_rotation = {category="none", event="ToggleAutoRotation", title=_("Toggle auto-rotation"), device=true, condition=Device:hasAutoRotation()},
     ----
     wifi_on = {category="none", event="InfoWifiOn", title=_("Turn on Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
     wifi_off = {category="none", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
@@ -367,7 +366,6 @@ local dispatcher_menu_order = {
     "rotation_mode",
     "toggle_rotation",
     "invert_rotation",
-    "toggle_auto_rotation",
     "iterate_rotation",
     "iterate_rotation_ccw",
     ----

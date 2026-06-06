@@ -286,23 +286,6 @@ function DeviceListener:onSwapRotation()
     return true
 end
 
-function DeviceListener:onToggleAutoRotation()
-    if not Device:hasAutoRotation() then return end
-    local new_state = not G_reader_settings:isTrue("android_auto_rotation")
-    G_reader_settings:saveSetting("android_auto_rotation", new_state)
-    if new_state then
-        local _, android = pcall(require, "android")
-        if android then
-            android.orientation.setAuto(true)
-        end
-        Notification:notify(_("Auto-rotation enabled."))
-    else
-        Screen:setRotationMode(Screen:getRotationMode())
-        Notification:notify(_("Auto-rotation disabled."))
-    end
-    return true
-end
-
 function DeviceListener:onSetRefreshRates(day, night)
     UIManager:setRefreshRate(day, night)
 end
