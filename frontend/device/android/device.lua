@@ -317,11 +317,11 @@ function Device:init()
     -- Wrap setRotationMode on Screen for auto-rotation awareness
     local origSetRotationMode = self.screen.setRotationMode
     function self.screen:setRotationMode(mode)
-        logger.info("AROT setRotationMode wrapper mode=", mode)
+        logger.dbg("AROT setRotationMode wrapper mode=", mode)
 
         -- Sentinel -1: "Auto" selected from bottom menu icon row
         if mode == -1 then
-            logger.info("AROT setRotationMode: enabling auto")
+            logger.dbg("AROT setRotationMode: enabling auto")
             G_reader_settings:saveSetting("android_auto_rotation", true)
             android.orientation.setAuto(true)
             return
@@ -334,13 +334,13 @@ function Device:init()
         end
 
         if G_reader_settings:isTrue("android_auto_rotation") then
-            logger.info("AROT setRotationMode: disabling auto")
+            logger.dbg("AROT setRotationMode: disabling auto")
             G_reader_settings:saveSetting("android_auto_rotation", false)
         end
 
         -- Manual mode: lock to specific orientation
         origSetRotationMode(self, mode)
-        logger.info("AROT setRotationMode done, Screen:getRotationMode()=", self:getRotationMode())
+        logger.dbg("AROT setRotationMode done, Screen:getRotationMode()=", self:getRotationMode())
     end
 
     Generic.init(self)

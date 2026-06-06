@@ -729,7 +729,6 @@ function Input:handleKeyBoardEv(ev)
     -- take device rotation into account
     local rota = self.device.screen:getRotationMode()
     if self.rotation_map[rota][keycode] then
-        logger.info("AROT key rotation_map rota=", rota, "keycode=", keycode, "->", self.rotation_map[rota][keycode])
         keycode = self.rotation_map[rota][keycode]
     end
 

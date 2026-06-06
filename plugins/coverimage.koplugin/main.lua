@@ -232,7 +232,7 @@ function CoverImage:onReaderReady(doc_settings)
 end
 
 function CoverImage:onSetRotationMode(rotation)
-    logger.info("AROT CoverImage:onSetRotationMode rotation=", rotation)
+    logger.dbg("CoverImage: onSetRotationMode", rotation)
     if self.cover_image_rotate then
         self:createCoverImage(self.ui.doc_settings)
     end
