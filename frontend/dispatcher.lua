@@ -367,6 +367,7 @@ local dispatcher_menu_order = {
     "rotation_mode",
     "toggle_rotation",
     "invert_rotation",
+    "toggle_auto_rotation",
     "iterate_rotation",
     "iterate_rotation_ccw",
     ----
