@@ -88,6 +88,192 @@ local KoptOptions = {
                 end,
                 event = "SetRotationMode",
                 name_text_hold_callback = optionsutil.showValues,
+            }
+        }
+    },
+    {
+        icon = "appbar.crop",
+        options = {
+            {
+                name = "trim_page",
+                name_text = _("Page Crop"),
+                -- manual=0, auto=1, semi-auto=2, none=3
+                -- ordered from least to max cropping done or possible
+                toggle = {C_("Page crop", "none"), C_("Page crop", "auto"), C_("Page crop", "semi-auto"), C_("Page crop", "manual")},
+                alternate = false,
+                values = {3, 1, 2, 0},
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_TRIM_PAGE"),
+                enabled_func = function()
+                    return Device:isTouchDevice() or Device:hasDPad()
+                end,
+                event = "PageCrop",
+                args = {"none", "auto", "semi-auto", "manual"},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Allows cropping blank page margins in the original document.
+This might be needed on scanned documents, that may have speckles or fingerprints in the margins, to be able to use zoom to fit content width.
+- 'none' does not cut the original document margins.
+- 'auto' finds content area automatically.
+- 'semi-auto" finds content area automatically, inside some larger area defined manually.
+- 'manual" uses the area defined manually as-is.
+
+In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd page number, and once on an even page number (these areas will then be used for all odd, or even, page numbers).]]),
+            },
+            {
+                name = "page_margin",
+                name_text = _("Margin"),
+                buttonprogress = true,
+                values = {0.05, 0.10, 0.25, 0.40, 0.55, 0.70, 0.85, 1.00},
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_PAGE_MARGIN"),
+                event = "MarginUpdate",
+                args = {0.05, 0.10, 0.25, 0.40, 0.55, 0.70, 0.85, 1.00},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set margins to be applied after page-crop and zoom modes are applied.]]),
+                more_options = true,
+                more_options_param = {
+                    value_step = 0.01, value_hold_step = 0.10,
+                    value_min = 0, value_max = 1.50,
+                    precision = "%.2f",
+                },
+            },
+            {
+                name = "auto_straighten",
+                name_text = _("Auto Straighten"),
+                toggle = {_("0°"), _("5°"), _("10°"), _("15°"), _("25°")},
+                values = {0, 5, 10, 15, 25},
+                event = "DummyEvent",
+                args = {0, 5, 10, 15, 25},
+                more_options = true,
+                more_options_param = {
+                    unit = "°",
+                },
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_AUTO_STRAIGHTEN"),
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Attempt to automatically straighten tilted source pages.
+Will rotate up to specified value.]]),
+            },
+        }
+    },
+    {
+        icon = "appbar.pagefit",
+        options = {
+            {
+                name = "zoom_overlap_h",
+                name_text = _("Horizontal overlap"),
+                enabled_func = function(configurable)
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
+                buttonprogress = true,
+                more_options = true,
+                values = {0, 12, 24, 36, 48, 60, 72, 84},
+                default_pos = 4,
+                default_value = 36,
+                show_func = function(configurable)
+                    return configurable.zoom_mode_genus < 3
+                end,
+                event = "DefineZoom",
+                args =   {0, 12, 24, 36, 48, 60, 72, 84},
+                labels = {0, 12, 24, 36, 48, 60, 72, 84},
+                hide_on_apply = true,
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set horizontal zoom overlap (between columns).]]),
+            },
+            {
+                name = "zoom_overlap_v",
+                name_text = _("Vertical overlap"),
+                enabled_func = function(configurable)
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
+                buttonprogress = true,
+                more_options = true,
+                values = {0, 12, 24, 36, 48, 60, 72, 84},
+                default_pos = 4,
+                default_value = 36,
+                show_func = function(configurable)
+                    return configurable.zoom_mode_genus < 3
+                end,
+                event = "DefineZoom",
+                args =   {0, 12, 24, 36, 48, 60, 72, 84},
+                labels = {0, 12, 24, 36, 48, 60, 72, 84},
+                hide_on_apply = true,
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set vertical zoom overlap (between lines).]]),
+            },
+            {
+                name = "zoom_mode_type",
+                name_text = _("Fit"),
+                enabled_func = function(configurable)
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
+                toggle = {C_("Fit mode", "full"), C_("Fit mode", "width"), C_("Fit mode", "height")},
+                alternate = false,
+                values = {2, 1, 0},
+                default_value = 1,
+                show_func = function(configurable)
+                    return configurable.zoom_mode_genus > 2
+                end,
+                event = "DefineZoom",
+                args = {"full", "width", "height"},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set how the page should be resized to fit the screen.]]),
+            },
+            {
+                name = "zoom_range_number",
+                name_text_func = function(configurable)
+                    return ({_("Rows"), _("Columns")})[configurable.zoom_mode_genus]
+                end,
+                name_text_true_values = true,
+                enabled_func = function(configurable)
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
+                show_true_value_func = function(str)
+                    return string.format("%.1f", str)
+                end,
+                toggle =  {"1", "2", "3", "4", "5", "6", "7", "8"},
+                more_options = true,
+                more_options_param = {
+                    value_step = 0.1, value_hold_step = 1,
+                    value_min = 0.1, value_max = 8,
+                    precision = "%.1f",
+                },
+                values = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
+                default_pos = 2,
+                default_value = 2,
+                show_func = function(configurable)
+                    return configurable.zoom_mode_genus == 1 or configurable.zoom_mode_genus == 2
+                end,
+                event = "DefineZoom",
+                args =   {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
+                hide_on_apply = true,
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set the number of columns or rows into which to split the page.]]),
+            },
+            {
+                name = "zoom_factor",
+                name_text = _("Zoom factor"),
+                name_text_true_values = true,
+                enabled_func = function(configurable)
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
+                show_true_value_func = function(str)
+                    return string.format("%.1f", str)
+                end,
+                toggle =  {"0.7", "1", "1.5", "2", "3", "5", "10", "20"},
+                more_options = true,
+                more_options_param = {
+                    value_step = 0.1, value_hold_step = 1,
+                    value_min = 0.1, value_max = 20,
+                    precision = "%.1f",
+                },
+                values = {0.7, 1.0, 1.5, 2.0, 3.0, 5.0, 10.0, 20.0},
+                default_pos = 3,
+                default_value = 1.5,
+                show_func = function(configurable)
+                    return configurable.zoom_mode_genus == 0
+                end,
+                event = "DefineZoom",
+                args = {0.7, 1.0, 1.5, 2.0, 3.0, 5.0, 10.0, 20.0},
+                hide_on_apply = true,
+                name_text_hold_callback = optionsutil.showValues,
             },
             {
                 name = "zoom_mode_genus",
