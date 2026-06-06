@@ -160,7 +160,6 @@ function Device:init()
                 this.device.input:resetState()
             elseif ev.code == C.APP_CMD_CONFIG_CHANGED then
                 -- orientation and size changes
-                local old_rotation = this.device.screen:getRotationMode()
                 local old_width = android.screen.width
                 local old_height = android.screen.height
                 if old_width ~= android.getScreenWidth()
@@ -176,10 +175,6 @@ function Device:init()
                         FileManager.instance:reinit(FileManager.instance.path,
                             FileManager.instance.focused_file)
                     end
-                end
-                local new_rotation = this.device.screen:getRotationMode()
-                if old_rotation ~= new_rotation then
-                    UIManager:broadcastEvent(Event:new("SetRotationMode", new_rotation))
                 end
                 -- to-do: keyboard connected, disconnected
             elseif ev.code == C.APP_CMD_RESUME then
@@ -332,8 +327,11 @@ function Device:init()
     -- Wrap setRotationMode on Screen for auto-rotation awareness
     local origSetRotationMode = self.screen.setRotationMode
     function self.screen:setRotationMode(mode)
+        logger.info("AROT setRotationMode wrapper mode=", mode)
+
         -- Sentinel -1: "Auto" selected from bottom menu icon row
         if mode == -1 then
+            logger.info("AROT setRotationMode: enabling auto")
             G_reader_settings:saveSetting("android_auto_rotation", true)
             android.orientation.setAuto(true)
             return
@@ -346,18 +344,13 @@ function Device:init()
         end
 
         if G_reader_settings:isTrue("android_auto_rotation") then
-            local current = android.orientation.get()
-            if mode == current then
-                -- Same rotation from system event — don't lock, stay in auto mode
-                return
-            else
-                -- Explicit different orientation requested — exit auto mode
-                G_reader_settings:saveSetting("android_auto_rotation", false)
-            end
+            logger.info("AROT setRotationMode: disabling auto")
+            G_reader_settings:saveSetting("android_auto_rotation", false)
         end
 
         -- Manual mode: lock to specific orientation
         origSetRotationMode(self, mode)
+        logger.info("AROT setRotationMode done, Screen:getRotationMode()=", self:getRotationMode())
     end
 
     Generic.init(self)

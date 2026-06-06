@@ -985,6 +985,7 @@ function ConfigDialog:onConfigChoice(option_name, option_value)
 end
 
 function ConfigDialog:onConfigEvent(option_event, option_arg, when_applied_callback)
+    logger.info("AROT ConfigDialog:onConfigEvent event=", option_event, "arg=", option_arg)
     self.ui:handleEvent(Event:new(option_event, option_arg, when_applied_callback))
     return true
 end

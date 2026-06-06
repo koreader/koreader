@@ -70,7 +70,9 @@ end
 
 function FileManager:onSetRotationMode(mode)
     local old_mode = Screen:getRotationMode()
-    if mode ~= nil and mode ~= old_mode then
+    logger.info("AROT FileManager:onSetRotationMode mode=", mode, "old_mode=", old_mode)
+    if mode ~= nil and (mode ~= old_mode
+        or (Device:hasAutoRotation() and G_reader_settings:isTrue("android_auto_rotation"))) then
         Screen:setRotationMode(mode)
         if FileManager.instance then
             self:rotate()
