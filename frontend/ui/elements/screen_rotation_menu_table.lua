@@ -1,6 +1,5 @@
 local Device = require("device")
 local Event = require("ui/event")
-local FileManager = require("apps/filemanager/filemanager")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -77,11 +76,9 @@ When unchecked, the default rotation of the file browser and the default/saved r
             separator = true,
         })
 
-        if FileManager.instance then
-            local optionsutil = require("ui/data/optionsutil")
-            for i, mode in ipairs(optionsutil.rotation_modes) do
-                table.insert(rotation_table, genMenuItem(optionsutil.rotation_labels[i], mode))
-            end
+        local optionsutil = require("ui/data/optionsutil")
+        for i, mode in ipairs(optionsutil.rotation_modes) do
+            table.insert(rotation_table, genMenuItem(optionsutil.rotation_labels[i], mode))
         end
 
         rotation_table[#rotation_table].separator = true
