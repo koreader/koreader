@@ -257,6 +257,7 @@ function Device:init()
     }
 
     if models[android.prop.model] then
+        logger.info("AROT key disableRotationMap for model", android.prop.model)
         self.input:disableRotationMap()
     end
 
