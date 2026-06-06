@@ -75,6 +75,7 @@ local Device = {
     canImportFiles = no,
     canShareText = no,
     hasGSensor = no,
+    hasAutoRotation = no,
     isGSensorLocked = no,
     canToggleMassStorage = no,
     canToggleChargingLED = no,

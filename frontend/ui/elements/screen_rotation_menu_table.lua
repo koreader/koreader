@@ -88,12 +88,13 @@ When unchecked, the default rotation of the file browser and the default/saved r
                         return G_reader_settings:isTrue("android_auto_rotation")
                     end,
                     radio = true,
-                    callback = function()
+                    callback = function(touchmenu_instance)
                         G_reader_settings:saveSetting("android_auto_rotation", true)
                         local _, android = pcall(require, "android")
                         if android then
                             android.orientation.setAuto(true)
                         end
+                        touchmenu_instance:closeMenu()
                     end,
                 })
                 for i, mode in ipairs(optionsutil.rotation_modes) do

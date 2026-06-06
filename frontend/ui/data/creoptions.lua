@@ -55,7 +55,6 @@ local CreOptions = {
                 name = "rotation_mode",
                 name_text = _("Rotation"),
                 item_icons_func = function()
-                    local icons, values, labels
                     local current_rotation = Screen:getRotationMode()
 
                     if Device:hasAutoRotation() then

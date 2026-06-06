@@ -298,22 +298,6 @@ function Device:init()
         android.setBackButtonIgnored(true)
     end
 
-    -- Auto-rotation: default ON for new installs, OFF for upgrades
-    if G_reader_settings:has("android_auto_rotation") then
-        if G_reader_settings:isTrue("android_auto_rotation") then
-            android.orientation.setAuto(true)
-        end
-    else
-        -- First launch: check if this is an upgrade with existing rotation settings
-        if G_reader_settings:has("fm_rotation_mode")
-            or G_reader_settings:has("closed_rotation_mode") then
-            G_reader_settings:saveSetting("android_auto_rotation", false)
-        else
-            G_reader_settings:saveSetting("android_auto_rotation", true)
-            android.orientation.setAuto(true)
-        end
-    end
-
     -- Wrap setRotationMode on Screen for auto-rotation awareness
     local origSetRotationMode = self.screen.setRotationMode
     function self.screen:setRotationMode(mode)
@@ -329,6 +313,7 @@ function Device:init()
 
         -- FULL_SENSOR is a mode signal, not a real rotation — delegate to auto mode
         if mode == C.ASCREEN_ORIENTATION_FULL_SENSOR then
+            G_reader_settings:saveSetting("android_auto_rotation", true)
             android.orientation.setAuto(true)
             return
         end
@@ -344,6 +329,29 @@ function Device:init()
     end
 
     Generic.init(self)
+
+    -- Auto-rotation: default ON for new installs, OFF for upgrades.
+    -- Placed after Generic.init() so startup rotation restore doesn't
+    -- inadvertently disable auto-rotation via the wrapper above.
+    if G_reader_settings:has("android_auto_rotation") then
+        if G_reader_settings:isTrue("android_auto_rotation") then
+            android.orientation.setAuto(true)
+        end
+    else
+        if G_reader_settings:has("fm_rotation_mode")
+            or G_reader_settings:has("closed_rotation_mode") then
+            G_reader_settings:saveSetting("android_auto_rotation", false)
+        else
+            -- New install: default to auto ON
+            G_reader_settings:saveSetting("android_auto_rotation", true)
+            android.orientation.setAuto(true)
+        end
+    end
+    -- If auto is OFF, lock to the current orientation (manifest is fullSensor).
+    -- If Generic.init already locked via setRotationMode, this is a no-op.
+    if not G_reader_settings:isTrue("android_auto_rotation") then
+        origSetRotationMode(self.screen, self.screen:getRotationMode())
+    end
 end
 
 function Device:UIManagerReady(uimgr)
