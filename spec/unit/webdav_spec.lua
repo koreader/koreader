@@ -71,5 +71,18 @@ describe("WebDAV URL normalization", function()
                 assert.equals(case.expected, requested_url)
             end
         end)
+
+        it("handles invalid URL schemes without crashing", function()
+            WebDav.base = {
+                address = "htp://example.com/dav",
+                username = "user",
+                password = "pass",
+            }
+            local success, res = pcall(function()
+                return WebDav.listFolder("", true)
+            end)
+            assert.is_true(success)
+            assert.is_nil(res)
+        end)
     end)
 end)

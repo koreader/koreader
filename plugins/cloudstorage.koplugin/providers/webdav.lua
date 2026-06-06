@@ -28,6 +28,14 @@ local function normalizeUrl(url)
     return url
 end
 
+local function pRequest(request)
+    local ok, body, code, headers, status = pcall(http.request, request)
+    if not ok then
+        return nil, nil, body
+    end
+    return body, code, headers, status
+end
+
 local WebDavApi = {}
 
 -- Trim leading & trailing slashes from string `s` (based on util.trim)
@@ -88,7 +96,7 @@ function WebDavApi.listFolder(address, user, pass, folder_path, include_folders)
         source   = ltn12.source.string(data),
         sink     = ltn12.sink.table(sink),
     }
-    local code, headers, status = socket.skip(1, http.request(request))
+    local code, headers, status = socket.skip(1, pRequest(request))
     socketutil:reset_timeout()
     if headers == nil then
         logger.dbg("WebDavApi:listFolder: No response:", status or code)
@@ -156,7 +164,7 @@ function WebDavApi.downloadFile(file_url, user, pass, local_path, progress_callb
     if progress_callback then
         handle = socketutil.chainSinkWithProgressCallback(handle, progress_callback)
     end
-    local code, headers, status = socket.skip(1, http.request {
+    local code, headers, status = socket.skip(1, pRequest {
         url      = file_url,
         method   = "GET",
         sink     = handle,
@@ -173,7 +181,7 @@ end
 
 function WebDavApi.uploadFile(file_url, user, pass, local_path, etag)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local code, _, status = socket.skip(1, http.request{
+    local code, _, status = socket.skip(1, pRequest{
         url      = file_url,
         method   = "PUT",
         source   = ltn12.source.file(io.open(local_path, "r")),
@@ -195,7 +203,7 @@ end
 
 function WebDavApi.deleteFile(file_url, user, pass)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local code, _, status = socket.skip(1, http.request{
+    local code, _, status = socket.skip(1, pRequest{
         url      = file_url,
         method   = "DELETE",
         user     = user,
@@ -210,7 +218,7 @@ end
 
 function WebDavApi.createFolder(folder_url, user, pass)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local code, _, status = socket.skip(1, http.request{
+    local code, _, status = socket.skip(1, pRequest{
         url      = folder_url,
         method   = "MKCOL",
         user     = user,
