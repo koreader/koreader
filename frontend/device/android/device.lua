@@ -246,20 +246,9 @@ function Device:init()
         end,
     }
 
-    -- disable translation for specific models, where media keys follow gravity, see https://github.com/koreader/koreader/issues/12423
-    local models = {
-        go7 = true,
-        gocolor7 = true,
-        gocolor7_2 = true,
-        hibreak = true,
-        moaanmix7 = true,
-        xiaomi_reader = true,
-    }
-
-    if models[android.prop.model] then
-        logger.info("AROT key disableRotationMap for model", android.prop.model)
-        self.input:disableRotationMap()
-    end
+    -- With fullSensor, Android manages screen rotation and key mapping.
+    -- Disable KOReader's own rotation_map to avoid double-mapping physical keys.
+    self.input:disableRotationMap()
 
     -- check if we have a keyboard
     if android.lib.AConfiguration_getKeyboard(android.app.config)
