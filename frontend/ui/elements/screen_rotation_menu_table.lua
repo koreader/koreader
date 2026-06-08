@@ -1,6 +1,5 @@
 local Device = require("device")
 local Event = require("ui/event")
-local FileManager = require("apps/filemanager/filemanager")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -77,54 +76,9 @@ When unchecked, the default rotation of the file browser and the default/saved r
             separator = true,
         })
 
-        if FileManager.instance then
-            local optionsutil = require("ui/data/optionsutil")
-            if Device:hasAutoRotation() then
-                -- Android: "Auto" and manual rotation items form a radio group,
-                -- selecting a manual orientation disables auto-rotation.
-                table.insert(rotation_table, {
-                    text = _("Auto"),
-                    checked_func = function()
-                        return G_reader_settings:isTrue("android_auto_rotation")
-                    end,
-                    radio = true,
-                    callback = function(touchmenu_instance)
-                        G_reader_settings:saveSetting("android_auto_rotation", true)
-                        local _, android = pcall(require, "android")
-                        if android then
-                            android.orientation.setAuto(true)
-                        end
-                        touchmenu_instance:closeMenu()
-                    end,
-                })
-                for i, mode in ipairs(optionsutil.rotation_modes) do
-                    local text = optionsutil.rotation_labels[i]
-                    table.insert(rotation_table, {
-                        text_func = function()
-                            return G_reader_settings:readSetting("fm_rotation_mode") == mode
-                                and text .. "   ★" or text
-                        end,
-                        checked_func = function()
-                            return not G_reader_settings:isTrue("android_auto_rotation")
-                                and Screen:getRotationMode() == mode
-                        end,
-                        radio = true,
-                        callback = function(touchmenu_instance)
-                            G_reader_settings:saveSetting("android_auto_rotation", false)
-                            UIManager:broadcastEvent(Event:new("SetRotationMode", mode))
-                            touchmenu_instance:closeMenu()
-                        end,
-                        hold_callback = function(touchmenu_instance)
-                            G_reader_settings:saveSetting("fm_rotation_mode", mode)
-                            touchmenu_instance:updateItems()
-                        end,
-                    })
-                end
-            else
-                for i, mode in ipairs(optionsutil.rotation_modes) do
-                    table.insert(rotation_table, genMenuItem(optionsutil.rotation_labels[i], mode))
-                end
-            end
+        local optionsutil = require("ui/data/optionsutil")
+        for i, mode in ipairs(optionsutil.rotation_modes) do
+            table.insert(rotation_table, genMenuItem(optionsutil.rotation_labels[i], mode))
         end
 
         rotation_table[#rotation_table].separator = true

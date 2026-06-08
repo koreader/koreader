@@ -46,44 +46,22 @@ local KoptOptions = {
                 name_text = _("Rotation"),
                 item_icons_func = function()
                     local current_rotation = Screen:getRotationMode()
-
-                    if Device:hasAutoRotation() then
-                        if current_rotation == Screen.DEVICE_ROTATED_UPRIGHT then
-                            return { "rotation.auto", "rotation.P.90CCW", "rotation.P.0UR", "rotation.P.90CW", "rotation.P.180UD" }
-                        elseif current_rotation == Screen.DEVICE_ROTATED_UPSIDE_DOWN then
-                            return { "rotation.auto", "rotation.P.90CW", "rotation.P.180UD", "rotation.P.90CCW", "rotation.P.0UR" }
-                        elseif current_rotation == Screen.DEVICE_ROTATED_CLOCKWISE then
-                            return { "rotation.auto", "rotation.L.90CCW", "rotation.L.0UR", "rotation.L.90CW", "rotation.L.180UD" }
-                        else
-                            return { "rotation.auto", "rotation.L.90CW", "rotation.L.180UD", "rotation.L.90CCW", "rotation.L.0UR" }
-                        end
+                    if current_rotation == Screen.DEVICE_ROTATED_UPRIGHT then
+                        return { "rotation.P.90CCW", "rotation.P.0UR", "rotation.P.90CW", "rotation.P.180UD" }
+                    elseif current_rotation == Screen.DEVICE_ROTATED_UPSIDE_DOWN then
+                        return { "rotation.P.90CW", "rotation.P.180UD", "rotation.P.90CCW", "rotation.P.0UR" }
+                    elseif current_rotation == Screen.DEVICE_ROTATED_CLOCKWISE then
+                        return { "rotation.L.90CCW", "rotation.L.0UR", "rotation.L.90CW", "rotation.L.180UD" }
                     else
-                        if current_rotation == Screen.DEVICE_ROTATED_UPRIGHT then
-                            return { "rotation.P.90CCW", "rotation.P.0UR", "rotation.P.90CW", "rotation.P.180UD" }
-                        elseif current_rotation == Screen.DEVICE_ROTATED_UPSIDE_DOWN then
-                            return { "rotation.P.90CW", "rotation.P.180UD", "rotation.P.90CCW", "rotation.P.0UR" }
-                        elseif current_rotation == Screen.DEVICE_ROTATED_CLOCKWISE then
-                            return { "rotation.L.90CCW", "rotation.L.0UR", "rotation.L.90CW", "rotation.L.180UD" }
-                        else
-                            return { "rotation.L.90CW", "rotation.L.180UD", "rotation.L.90CCW", "rotation.L.0UR" }
-                        end
+                        return { "rotation.L.90CW", "rotation.L.180UD", "rotation.L.90CCW", "rotation.L.0UR" }
                     end
                 end,
-                labels = Device:hasAutoRotation() and
-                    { _("Auto"), C_("Rotation", "⤹ 90°"), C_("Rotation", "↑ 0°"), C_("Rotation", "⤸ 90°"), C_("Rotation", "↓ 180°") } or
-                    optionsutil.rotation_labels,
+                labels = optionsutil.rotation_labels,
                 alternate = false,
-                values = Device:hasAutoRotation() and
-                    { -1, Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE, Screen.DEVICE_ROTATED_UPRIGHT, Screen.DEVICE_ROTATED_CLOCKWISE, Screen.DEVICE_ROTATED_UPSIDE_DOWN } or
-                    optionsutil.rotation_modes,
+                values = optionsutil.rotation_modes,
                 default_value = Screen.DEVICE_ROTATED_UPRIGHT,
-                args = Device:hasAutoRotation() and
-                    { -1, Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE, Screen.DEVICE_ROTATED_UPRIGHT, Screen.DEVICE_ROTATED_CLOCKWISE, Screen.DEVICE_ROTATED_UPSIDE_DOWN } or
-                    optionsutil.rotation_modes,
+                args = optionsutil.rotation_modes,
                 current_func = function()
-                    if Device:hasAutoRotation() and G_reader_settings:isTrue("android_auto_rotation") then
-                        return -1
-                    end
                     return Screen:getRotationMode()
                 end,
                 event = "SetRotationMode",

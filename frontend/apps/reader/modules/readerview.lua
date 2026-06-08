@@ -908,13 +908,9 @@ end
 
 function ReaderView:onSetRotationMode(mode)
     local old_mode = Screen:getRotationMode()
-    if mode ~= nil and (mode ~= old_mode
-        or (Device:hasAutoRotation() and G_reader_settings:isTrue("android_auto_rotation"))) then
+    if mode ~= nil and mode ~= old_mode then
         Screen:setRotationMode(mode)
-        -- Skip rotate() for the -1 sentinel (Auto icon) — it is not a real rotation
-        if mode ~= -1 then
-            self:rotate(mode, old_mode)
-        end
+        self:rotate(mode, old_mode)
     end
 end
 

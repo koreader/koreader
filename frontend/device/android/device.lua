@@ -76,8 +76,8 @@ local Device = Generic:extend{
     isAndroid = yes,
     model = android.prop.product,
     hasKeys = yes,
+    hasGSensor = yes,
     hasDPad = no,
-    hasAutoRotation = yes,
     hasSeamlessWifiToggle = no, -- Requires losing focus to the sytem's network settings and user interaction
     hasExitOptions = no,
     hasEinkScreen = function() return android.isEink() end,
@@ -147,6 +147,11 @@ function Device:init()
         event_map = event_map,
         handleMiscEv = function(this, ev)
             logger.dbg("Android application event", ev.code)
+            -- Bridge Android orientation changes to KOReader's G-Sensor pipeline (c.f., Kobo/Kindle).
+            -- Synthesized by APP_CMD_CONFIG_CHANGED handler below on orientation changes.
+            if ev.code == C.MSC_GYRO then
+                return this:handleGyroEv(ev)
+            end
             if ev.code == C.APP_CMD_SAVE_STATE then
                 UIManager:broadcastEvent(Event:new("FlushSettings"))
             elseif ev.code == C.APP_CMD_DESTROY then
@@ -160,10 +165,12 @@ function Device:init()
                 this.device.input:resetState()
             elseif ev.code == C.APP_CMD_CONFIG_CHANGED then
                 -- orientation and size changes
-                local old_width = android.screen.width
-                local old_height = android.screen.height
-                if old_width ~= android.getScreenWidth()
-                    or old_height ~= android.getScreenHeight() then
+                local old_w = android.screen.width
+                local old_h = android.screen.height
+                local new_w = android.getScreenWidth()
+                local new_h = android.getScreenHeight()
+
+                if old_w ~= new_w or old_h ~= new_h then
                     this.device.screen:resize()
                     local new_size = this.device.screen:getSize()
                     logger.info("Resizing screen to", new_size)
@@ -174,6 +181,45 @@ function Device:init()
                     if FileManager.instance then
                         FileManager.instance:reinit(FileManager.instance.path,
                             FileManager.instance.focused_file)
+                    end
+
+                    -- Bridge Android system rotation to KOReader's G-Sensor pipeline.
+                    -- On Android, we detect orientation changes via aspect-ratio flip
+                    -- (portrait ↔ landscape), synthesizing a standard MSC_GYRO event.
+                    -- Note: this cannot reliably detect 180° flips (e.g., UPRIGHT ↔ UPSIDE_DOWN),
+                    -- as width/height doesn't change in that case.
+                    -- For 180° detection, a JNI call to Display.getRotation() would be needed.
+                    local old_is_landscape = old_w > old_h
+                    local new_is_landscape = new_w > new_h
+                    local orientation_changed = old_is_landscape ~= new_is_landscape
+
+                    if orientation_changed and this.device:hasGSensor() then
+                        local gyro_rotation
+                        if new_w > new_h then
+                            -- Landscape: inherit landscape parity from current mode if applicable
+                            local old_mode = this.device.screen:getRotationMode()
+                            if bit.band(old_mode, 1) == 1 then
+                                gyro_rotation = old_mode
+                            else
+                                gyro_rotation = C.DEVICE_ROTATED_CLOCKWISE
+                            end
+                        else
+                            -- Portrait: inherit portrait parity from current mode if applicable
+                            local old_mode = this.device.screen:getRotationMode()
+                            if bit.band(old_mode, 1) == 0 then
+                                gyro_rotation = old_mode
+                            else
+                                gyro_rotation = C.DEVICE_ROTATED_UPRIGHT
+                            end
+                        end
+
+                        logger.dbg("Android orientation changed, synthesized gyro event:", gyro_rotation)
+                        local gyro_ev = {
+                            type = C.EV_MSC,
+                            code = C.MSC_GYRO,
+                            value = gyro_rotation,
+                        }
+                        this:handleGyroEv(gyro_ev)
                     end
                 end
                 -- to-do: keyboard connected, disconnected
@@ -298,60 +344,13 @@ function Device:init()
         android.setBackButtonIgnored(true)
     end
 
-    -- Wrap setRotationMode on Screen for auto-rotation awareness
-    local origSetRotationMode = self.screen.setRotationMode
-    function self.screen:setRotationMode(mode)
-        logger.dbg("AROT setRotationMode wrapper mode=", mode)
-
-        -- Sentinel -1: "Auto" selected from bottom menu icon row
-        if mode == -1 then
-            logger.dbg("AROT setRotationMode: enabling auto")
-            G_reader_settings:saveSetting("android_auto_rotation", true)
-            android.orientation.setAuto(true)
-            return
-        end
-
-        -- FULL_SENSOR is a mode signal, not a real rotation — delegate to auto mode
-        if mode == C.ASCREEN_ORIENTATION_FULL_SENSOR then
-            G_reader_settings:saveSetting("android_auto_rotation", true)
-            android.orientation.setAuto(true)
-            return
-        end
-
-        if G_reader_settings:isTrue("android_auto_rotation") then
-            logger.dbg("AROT setRotationMode: disabling auto")
-            G_reader_settings:saveSetting("android_auto_rotation", false)
-        end
-
-        -- Manual mode: lock to specific orientation
-        origSetRotationMode(self, mode)
-        logger.dbg("AROT setRotationMode done, Screen:getRotationMode()=", self:getRotationMode())
-    end
-
     Generic.init(self)
 
-    -- Auto-rotation: default ON for new installs, OFF for upgrades.
-    -- Placed after Generic.init() so startup rotation restore doesn't
-    -- inadvertently disable auto-rotation via the wrapper above.
-    if G_reader_settings:has("android_auto_rotation") then
-        if G_reader_settings:isTrue("android_auto_rotation") then
-            android.orientation.setAuto(true)
-        end
-    else
-        if G_reader_settings:has("fm_rotation_mode")
-            or G_reader_settings:has("closed_rotation_mode") then
-            G_reader_settings:saveSetting("android_auto_rotation", false)
-        else
-            -- New install: default to auto ON
-            G_reader_settings:saveSetting("android_auto_rotation", true)
-            android.orientation.setAuto(true)
-        end
-    end
-    -- If auto is OFF, lock to the current orientation (manifest is fullSensor).
-    -- If Generic.init already locked via setRotationMode, this is a no-op.
-    if not G_reader_settings:isTrue("android_auto_rotation") then
-        origSetRotationMode(self.screen, self.screen:getRotationMode())
-    end
+    -- With fullSensor manifest, let Android manage system auto-rotation natively.
+    -- KOReader's G-Sensor pipeline (hasGSensor) bridges APP_CMD_CONFIG_CHANGED
+    -- orientation events to the standard MSC_GYRO → handleMiscGyroEv flow,
+    -- so users get ignore/lock controls via the existing rotation menu.
+    android.orientation.setAuto(true)
 end
 
 function Device:UIManagerReady(uimgr)
