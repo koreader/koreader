@@ -95,7 +95,7 @@ function ReaderView:init()
         visible_boxes = nil, -- array; visible boxes in the current page, used by ReaderHighlight:onTap()
         lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
         note_mark = G_reader_settings:readSetting("highlight_note_marker"),
-        temp_drawer = "invert",
+        temp_drawer = "lighten",
         temp = {},
         saved_drawer = "lighten",
         -- NOTE: Unfortunately, yellow tends to look like absolute ass on Kaleido panels...
@@ -241,7 +241,7 @@ function ReaderView:paintTo(bb, x, y)
         colorful = self:drawSavedHighlight(bb, x, y)
     end
     -- draw temporary highlight
-    if self.highlight.temp then
+    if self.highlight.temp and next(self.highlight.temp) then
         self:drawTempHighlight(bb, x, y)
     end
     -- draw highlight position indicator for non-touch
@@ -525,11 +525,14 @@ function ReaderView:drawHighlightIndicator(bb, x, y)
 end
 
 function ReaderView:drawTempHighlight(bb, x, y)
+    local color = self.highlight.saved_drawer ~= "invert"
+        and G_reader_settings:isTrue("highlight_selection_use_highlight_color")
+        and Blitbuffer.colorFromName(self.highlight.saved_color) or nil
     for page, boxes in pairs(self.highlight.temp) do
         for i = 1, #boxes do
             local rect = self:pageToScreenTransform(page, boxes[i])
             if rect then
-                self:drawHighlightRect(bb, x, y, rect, self.highlight.temp_drawer)
+                self:drawHighlightRect(bb, x, y, rect, self.highlight.temp_drawer, color)
             end
         end
     end
@@ -685,15 +688,17 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
         end
     end
     if drawer == "lighten" then
+        local lighten_factor = self.highlight.temp and next(self.highlight.temp)
+            and (G_reader_settings:readSetting("highlight_selection_lighten_factor") or 0.2) or self.highlight.lighten_factor
         if not color then
-            bb:darkenRect(x, y, w, h, self.highlight.lighten_factor)
+            bb:darkenRect(x, y, w, h, lighten_factor)
         else
             if bb:getInverse() == 1 then
                 -- MUL doesn't really work on a black background, so, switch to OVER if we're in software nightmode...
                 -- NOTE: If we do *not* invert the color here, it *will* get inverted by the blitter given that the target bb is inverted.
                 --       While not particularly pretty, this (roughly) matches with hardware nightmode, *and* how MuPDF renders highlights...
                 --       But it's *really* not pretty (https://github.com/koreader/koreader/pull/11044#issuecomment-1902886069), so we'll fix it ;p.
-                local c = Blitbuffer.ColorRGB32(color.r, color.g, color.b, 0xFF * self.highlight.lighten_factor):invert()
+                local c = Blitbuffer.ColorRGB32(color.r, color.g, color.b, 0xFF * lighten_factor):invert()
                 bb:blendRectRGB32(x, y, w, h, c)
             else
                 bb:multiplyRectRGB(x, y, w, h, color)

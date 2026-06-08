@@ -1,6 +1,8 @@
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
+local Gamepad = require("device/sdl/gamepad")
 local Generic = require("device/generic/device")
+local Key = require("device/key")
 local UIManager
 local SDL = require("ffi/SDL3")
 local ffi = require("ffi")
@@ -72,6 +74,7 @@ local Device = Generic:extend{
     hasSymKey = os.getenv("DISABLE_TOUCH") == "1" and yes or no,
     hasDPad = yes,
     useDPadAsActionKeys = os.getenv("DISABLE_TOUCH") == "1" and yes or no,
+    supportsGamepad = yes,
     hasWifiToggle = no,
     hasSeamlessWifiToggle = no,
     isTouchDevice = yes,
@@ -201,6 +204,53 @@ function Device:init()
     local ok, re = pcall(self.screen.setWindowIcon, self.screen, "resources/koreader.png")
     if not ok then logger.warn(re) end
 
+    local function makeKeyPressEvent(keycode)
+        if not keycode then
+            return nil
+        end
+        return Event:new("KeyPress", Key:new(keycode, {}))
+    end
+
+    local function dispatchGamepadAxisMotion(axis, value, event_time)
+        local axis_ev = {
+            axis = axis,
+            value = value,
+            time = event_time,
+        }
+        if not UIManager:broadcastEvent(Event:new("GamepadAxisMotion", axis_ev)) then
+            local key_ev = makeKeyPressEvent(Gamepad:getAxisKeyName(axis, value))
+            if key_ev then
+                UIManager:sendEvent(key_ev)
+            end
+        end
+    end
+
+    local function unscheduleAxisRepeat(clear_state)
+        if self._axis_repeat_action then
+            UIManager:unschedule(self._axis_repeat_action)
+            self._axis_repeat_action = nil
+        end
+        if clear_state ~= false then
+            Gamepad:clearRepeatingAxis()
+        end
+    end
+
+    local function scheduleAxisRepeat(axis, delay_s)
+        unscheduleAxisRepeat(false)
+        Gamepad:setRepeatingAxis(axis)
+        self._axis_repeat_action = function()
+            local axis_ev = Gamepad:getHeldAxisEvent()
+            if not axis_ev then
+                Gamepad:clearRepeatingAxis()
+                self._axis_repeat_action = nil
+                return
+            end
+            dispatchGamepadAxisMotion(axis_ev.axis, axis_ev.value, time.now())
+            UIManager:scheduleIn(Gamepad.axis_repeat_interval_s, self._axis_repeat_action)
+        end
+        UIManager:scheduleIn(delay_s, self._axis_repeat_action)
+    end
+
     self.input = require("device/input"):new{
         device = self,
         event_map = dofile("frontend/device/sdl/event_map_sdl2.lua"),
@@ -275,6 +325,29 @@ function Device:init()
             elseif ev.code == SDL.SDL.SDL_EVENT_WINDOW_MOVED then
                 self.window.left = ev.value.data1
                 self.window.top = ev.value.data2
+            elseif ev.code == SDL.SDL.SDL_EVENT_GAMEPAD_AXIS_MOTION then
+                local should_process = Gamepad:shouldProcessAxisMotion(ev.value.axis, ev.value.value)
+                local held_direction = Gamepad:getHeldDirection(ev.value.axis)
+
+                if not held_direction then
+                    if Gamepad.repeating_axis == ev.value.axis then
+                        unscheduleAxisRepeat()
+                    end
+                    return
+                end
+
+                if should_process then
+                    scheduleAxisRepeat(ev.value.axis, Gamepad.axis_repeat_delay_s)
+                    dispatchGamepadAxisMotion(ev.value.axis, ev.value.value, time.timeval(ev.time))
+                end
+                return
+            elseif ev.code == SDL.SDL.SDL_EVENT_GAMEPAD_BUTTON_DOWN then
+                -- Broadcast for plugins; if not handled, emit default key events
+                if not UIManager:broadcastEvent(Event:new("GamepadButtonDown", ev.value)) then
+                    return makeKeyPressEvent(Gamepad:getButtonKeyName(ev.value.button))
+                end
+            elseif ev.code == SDL.SDL.SDL_EVENT_GAMEPAD_BUTTON_UP then
+                UIManager:broadcastEvent(Event:new("GamepadButtonUp", ev.value))
             elseif ev.code == SDL.SDL.SDL_EVENT_TEXT_INPUT then
                 UIManager:sendEvent(Event:new("TextInput", tostring(ev.value)))
             end

@@ -411,6 +411,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
             radio = true,
             callback = function()
                 self.view.highlight.saved_drawer = style
+                self:setSelectionColor()
             end,
             hold_callback = function(touchmenu_instance)
                 G_reader_settings:saveSetting("highlight_drawing_style", style)
@@ -447,6 +448,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 bg_colors = self:getHighlightColorList(),
                 callback = function(value)
                     self.view.highlight.saved_color = value
+                    self:setSelectionColor()
                     touchmenu_instance:updateItems()
                 end,
             })
@@ -470,10 +472,10 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 value_max = 1,
                 precision = "%.2f",
                 value_step = 0.1,
-                value_hold_step = 0.2,
+                value_hold_step = 0.05,
                 default_value = 0.2,
                 keep_shown_on_apply = true,
-                title_text =  _("Gray highlight opacity"),
+                title_text = _("Gray highlight opacity"),
                 info_text = _("The higher the value, the darker the gray."),
                 callback = function(spin)
                     G_reader_settings:saveSetting("highlight_lighten_factor", spin.value)
@@ -483,6 +485,45 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 end,
             })
         end,
+    })
+    table.insert(hl_sub_item_table, {
+        text = _("Use highlight color for selection"),
+        enabled_func = function()
+            return self.view.highlight.saved_drawer ~= "invert"
+        end,
+        checked_func = function()
+            return self.view.highlight.saved_drawer ~= "invert" and G_reader_settings:isTrue("highlight_selection_use_highlight_color")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("highlight_selection_use_highlight_color")
+            self:setSelectionColor()
+        end,
+    })
+    table.insert(hl_sub_item_table, {
+        text_func = function()
+            return T(_("Gray selection opacity: %1"), G_reader_settings:readSetting("highlight_selection_lighten_factor") or 0.2)
+        end,
+        keep_menu_open = true,
+        callback = function(touchmenu_instance)
+            UIManager:show(SpinWidget:new{
+                value = G_reader_settings:readSetting("highlight_selection_lighten_factor") or 0.2,
+                value_min = 0,
+                value_max = 1,
+                precision = "%.2f",
+                value_step = 0.1,
+                value_hold_step = 0.05,
+                default_value = 0.2,
+                title_text = _("Gray selection opacity"),
+                info_text = _("The higher the value, the darker the gray."),
+                callback = function(spin)
+                    local value = spin.value ~= 0.2 and spin.value or nil
+                    G_reader_settings:saveSetting("highlight_selection_lighten_factor", value)
+                    self:setSelectionColor()
+                    touchmenu_instance:updateItems()
+                end,
+            })
+        end,
+        separator = true,
     })
     table.insert(hl_sub_item_table, {
         text_func = function()
@@ -501,7 +542,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 default_value = 100,
                 unit = "%",
                 keep_shown_on_apply = true,
-                title_text =  _("Highlight line height"),
+                title_text = _("Highlight line height"),
                 info_text = _("Percentage of the text line height."),
                 callback = function(spin)
                     local value = spin.value ~= 100 and spin.value or nil
@@ -2652,7 +2693,7 @@ function ReaderHighlight:onReadSettings(config)
     self.view.highlight.saved_color = config:readSetting("highlight_color")
         or G_reader_settings:readSetting("highlight_color") or self.view.highlight.saved_color
     self.view.highlight.disabled = G_reader_settings:readSetting("default_highlight_action") == "nothing"
-
+    self:setSelectionColor()
     self.allow_corner_scroll = G_reader_settings:nilOrTrue("highlight_corner_scroll")
 
     -- panel zoom settings isn't supported in EPUB
@@ -2678,6 +2719,30 @@ function ReaderHighlight:onReadSettings(config)
             self.panel_zoom_fallback_to_text_selection = G_reader_settings:getSettingForExt("panel_zoom_fallback_to_text_selection", ext) or false
         end
     end
+end
+
+function ReaderHighlight:setSelectionColor()
+    if self.ui.paging then return end
+    local color = self.view.highlight.saved_drawer ~= "invert"
+        and G_reader_settings:isTrue("highlight_selection_use_highlight_color")
+        and Blitbuffer.HIGHLIGHT_COLORS[self.view.highlight.saved_color]
+    if color then
+        if Screen.night_mode then
+            local r, g, b = color:match("#(..)(..)(..)")
+            color = string.format("#%02x%02x%02x", 255 - tonumber(r, 16), 255 - tonumber(g, 16), 255 - tonumber(b, 16))
+        end
+    else -- gray
+        local lighten_factor = G_reader_settings:readSetting("highlight_selection_lighten_factor") or 0.2
+        if lighten_factor == 0 then
+            color = "#FFFFFF"
+        elseif lighten_factor == 1 then
+            color = "#000000"
+        else
+            color = string.format("%X", math.floor(256 * (1 - lighten_factor)))
+            color = "#" .. color:rep(3)
+        end
+    end
+    self.document._document:setStringProperty("crengine.highlight.selection.color", color)
 end
 
 function ReaderHighlight:onUpdateHoldPanRate()

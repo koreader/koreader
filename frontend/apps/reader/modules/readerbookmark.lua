@@ -1229,6 +1229,16 @@ function ReaderBookmark:showBookmarkDetails(item_or_index)
             self:showBookmarkDetails(idx)
         end
     end
+    local function _showPrevBookmarkDetails()
+        if item_idx > 1 then
+            _showBookmarkDetails(item_idx - 1)
+        end
+    end
+    local function _showNextBookmarkDetails()
+        if item_idx < items_nb then
+            _showBookmarkDetails(item_idx + 1)
+        end
+    end
     local function edit_details_callback()
         self.details_updated = true
         UIManager:close(textviewer)
@@ -1268,14 +1278,14 @@ function ReaderBookmark:showBookmarkDetails(item_or_index)
                 text = label_prev,
                 enabled = item_idx > 1,
                 callback = function()
-                    _showBookmarkDetails(item_idx - 1)
+                    _showPrevBookmarkDetails()
                 end,
             },
             {
                 text = label_next,
                 enabled = item_idx < items_nb,
                 callback = function()
-                    _showBookmarkDetails(item_idx + 1)
+                    _showNextBookmarkDetails()
                 end,
             },
             {
@@ -1355,6 +1365,8 @@ function ReaderBookmark:showBookmarkDetails(item_or_index)
         text_type = "bookmark",
         buttons_table = buttons_table,
         close_callback = close_callback,
+        page_turn_callback_prev = items_nb > 1 and _showPrevBookmarkDetails or nil,
+        page_turn_callback_next = items_nb > 1 and _showNextBookmarkDetails or nil,
     }
     UIManager:show(textviewer)
     return true

@@ -47,6 +47,7 @@ local Device = {
     canKeyRepeat = no,
     hasDPad = no,
     useDPadAsActionKeys = no,
+    supportsGamepad = no,
     hasExitOptions = yes,
     hasFewKeys = no,
     hasWifiToggle = yes,

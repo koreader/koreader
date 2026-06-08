@@ -17,6 +17,9 @@ function DeviceListener:onToggleNightMode()
     -- Make sure CRe will bypass the call cache
     if self.ui and self.ui.document and self.ui.document.provider == "crengine" then
         self.ui.document:resetCallCache()
+        if self.ui.highlight then
+            self.ui.highlight:setSelectionColor()
+        end
     end
     UIManager:setDirty("all", "full")
     UIManager:ToggleNightMode(not night_mode)
