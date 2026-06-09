@@ -73,7 +73,7 @@ function CloudStorage:init(re_init)
         self.paths = {}
         self:switchItemTable(self.title, self.item_table, self.item_idx, nil, "")
         self.item_idx = nil -- set item_idx before opening a server to keep the page when reopening the root list
-        self.remote_selected_files = nil -- select mode off 
+        self.remote_selected_files = nil -- select mode off
         self:setTitleBarLeftIcon("plus")
     else
         self.title_bar_left_icon = "plus"
