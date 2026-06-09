@@ -57,23 +57,46 @@ local CreOptions = {
                 item_icons_func = function()
                     local current_rotation = Screen:getRotationMode()
                     if current_rotation == Screen.DEVICE_ROTATED_UPRIGHT then
-                        return { "rotation.P.90CCW", "rotation.P.0UR", "rotation.P.90CW", "rotation.P.180UD" }
+                        -- P, 0UR
+                        return {
+                            "rotation.P.90CCW",
+                            "rotation.P.0UR",
+                            "rotation.P.90CW",
+                            "rotation.P.180UD",
+                        }
                     elseif current_rotation == Screen.DEVICE_ROTATED_UPSIDE_DOWN then
-                        return { "rotation.P.90CW", "rotation.P.180UD", "rotation.P.90CCW", "rotation.P.0UR" }
+                        -- P, 180UD
+                        return {
+                            "rotation.P.90CW",
+                            "rotation.P.180UD",
+                            "rotation.P.90CCW",
+                            "rotation.P.0UR",
+                        }
                     elseif current_rotation == Screen.DEVICE_ROTATED_CLOCKWISE then
-                        return { "rotation.L.90CCW", "rotation.L.0UR", "rotation.L.90CW", "rotation.L.180UD" }
+                        -- L, 90CW
+                        return {
+                            "rotation.L.90CCW",
+                            "rotation.L.0UR",
+                            "rotation.L.90CW",
+                            "rotation.L.180UD",
+                        }
                     else
-                        return { "rotation.L.90CW", "rotation.L.180UD", "rotation.L.90CCW", "rotation.L.0UR" }
+                        -- L, 90CCW
+                        return {
+                            "rotation.L.90CW",
+                            "rotation.L.180UD",
+                            "rotation.L.90CCW",
+                            "rotation.L.0UR",
+                        }
                     end
                 end,
+                -- For Dispatcher & onMakeDefault's sake
                 labels = optionsutil.rotation_labels,
                 alternate = false,
                 values = optionsutil.rotation_modes,
                 default_value = Screen.DEVICE_ROTATED_UPRIGHT,
                 args = optionsutil.rotation_modes,
-                current_func = function()
-                    return Screen:getRotationMode()
-                end,
+                current_func = function() return Screen:getRotationMode() end,
                 event = "SetRotationMode",
                 name_text_hold_callback = optionsutil.showValues,
             },
