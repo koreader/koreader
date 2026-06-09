@@ -48,7 +48,7 @@ function BookShortcuts:onBookShortcut(path)
                     self.ui.file_chooser:changeToPath(path)
                 else -- called from Reader
                     self.ui:onClose()
-                    self.ui:showFileManager(path)
+                    self.ui:showFileManager(path .. "/")
                 end
             else
                 local real_path = ffiUtil.realpath(path)
