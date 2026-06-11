@@ -361,7 +361,23 @@ function Device:init()
     -- KOReader's G-Sensor pipeline (hasGSensor) bridges APP_CMD_CONFIG_CHANGED
     -- orientation events to the standard MSC_GYRO → handleMiscGyroEv flow,
     -- so users get ignore/lock controls via the existing rotation menu.
-    android.orientation.setAuto(true)
+    -- Honor the existing ignore_gsensor setting so that auto-rotation state
+    -- survives across app restarts.
+    android.orientation.setAuto(G_reader_settings:nilOrFalse("input_ignore_gsensor"))
+end
+
+--- Override to also toggle Android's native auto-rotation (fullSensor),
+--- not just the internal gyro event pipeline.
+function Device:toggleGSensor(toggle)
+    if not self:hasGSensor() then
+        return
+    end
+    if self.input then
+        self.input:toggleGyroEvents(toggle)
+    end
+    if android.hasNativeRotation() then
+        android.orientation.setAuto(toggle)
+    end
 end
 
 function Device:UIManagerReady(uimgr)
