@@ -195,7 +195,6 @@ function Device:init()
 
                     if orientation_changed and this.device:hasGSensor() then
                         local old_mode = this.device.screen:getRotationMode()
-                        local new_is_landscape = new_w > new_h
                         local gyro_rotation
                         if new_is_landscape then
                             -- Landscape: inherit landscape parity from current mode if applicable
