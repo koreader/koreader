@@ -194,10 +194,11 @@ function Device:init()
                     local orientation_changed = old_is_landscape ~= new_is_landscape
 
                     if orientation_changed and this.device:hasGSensor() then
+                        local old_mode = this.device.screen:getRotationMode()
+                        local new_is_landscape = new_w > new_h
                         local gyro_rotation
-                        if new_w > new_h then
+                        if new_is_landscape then
                             -- Landscape: inherit landscape parity from current mode if applicable
-                            local old_mode = this.device.screen:getRotationMode()
                             if bit.band(old_mode, 1) == 1 then
                                 gyro_rotation = old_mode
                             else
@@ -205,7 +206,6 @@ function Device:init()
                             end
                         else
                             -- Portrait: inherit portrait parity from current mode if applicable
-                            local old_mode = this.device.screen:getRotationMode()
                             if bit.band(old_mode, 1) == 0 then
                                 gyro_rotation = old_mode
                             else
@@ -213,7 +213,7 @@ function Device:init()
                             end
                         end
 
-                        logger.dbg("Android orientation changed, synthesized gyro event:", gyro_rotation)
+                        logger.dbg("AROT configChanged: old_mode=" .. old_mode .. " new_w=" .. new_w .. " new_h=" .. new_h .. " new_is_landscape=" .. tostring(new_is_landscape) .. " gyro_rotation=" .. gyro_rotation)
                         local gyro_ev = {
                             type = C.EV_MSC,
                             code = C.MSC_GYRO,
@@ -363,7 +363,18 @@ function Device:init()
     -- so users get ignore/lock controls via the existing rotation menu.
     -- Honor the existing ignore_gsensor setting so that auto-rotation state
     -- survives across app restarts.
-    android.orientation.setAuto(G_reader_settings:nilOrFalse("input_ignore_gsensor"))
+    if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
+        android.orientation.setAuto(true)
+    else
+        -- Lock to the current orientation.
+        -- NOTE: We avoid android.orientation.setAuto(false) here because it
+        -- goes through setScreenOrientation(getScreenOrientation()) in Kotlin,
+        -- which mixes LINUX constants (from getOrientationCompat) with ANDROID
+        -- constants (in setOrientationCompat), causing the screen to lock to
+        -- the wrong orientation (e.g., always REVERSE_LANDSCAPE on native
+        -- portrait devices).
+        self.screen:setRotationMode(self.screen:getRotationMode())
+    end
 end
 
 --- Override to also toggle Android's native auto-rotation (fullSensor),
@@ -376,7 +387,16 @@ function Device:toggleGSensor(toggle)
         self.input:toggleGyroEvents(toggle)
     end
     if android.hasNativeRotation() then
-        android.orientation.setAuto(toggle)
+        if toggle then
+            logger.dbg("AROT toggleGSensor: enabling native auto-rotation")
+            android.orientation.setAuto(true)
+        else
+            -- Lock to the current orientation.
+            -- See NOTE above about avoiding setAuto(false).
+            local current_mode = self.screen:getRotationMode()
+            logger.dbg("AROT toggleGSensor: locking to current orientation", current_mode)
+            self.screen:setRotationMode(current_mode)
+        end
     end
 end
 
