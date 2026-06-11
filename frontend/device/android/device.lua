@@ -436,7 +436,7 @@ function Device:lockGSensor(toggle)
     -- Also update Android's native rotation mode so that the OS itself
     -- enforces the lock, rather than relying on Lua-level gyro filtering
     -- which runs after Android has already rotated the screen.
-    if android.hasNativeRotation() and not G_reader_settings:nilOrFalse("input_ignore_gsensor") then
+    if android.hasNativeRotation() and G_reader_settings:nilOrFalse("input_ignore_gsensor") then
         if self:isGSensorLocked() then
             local current_mode = self.screen:getRotationMode()
             logger.dbg("AROT lockGSensor: locking to axis, mode=", current_mode)
