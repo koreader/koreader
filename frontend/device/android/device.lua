@@ -6,6 +6,7 @@ local UIManager
 local ffi = require("ffi")
 local C = ffi.C
 local FFIUtil = require("ffi/util")
+local Framebuffer = require("ffi/framebuffer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -197,13 +198,16 @@ function Device:init()
                     if orientation_changed and this.device:hasGSensor() then
                         local gyro_rotation = android.orientation.get()
                         logger.dbg("AROT configChanged: old_w=" .. old_w .. " old_h=" .. old_h .. " new_w=" .. new_w .. " new_h=" .. new_h .. " new_is_landscape=" .. tostring(new_is_landscape) .. " gyro_rotation=" .. gyro_rotation)
-                        -- With fullSensor, Android has already rotated the window buffer.
-                        -- The resize above rebuilt the BB at the new dimensions; it must
-                        -- NOT be rotated further (or we'd get double-rotation). Just update
-                        -- cur_rotation_mode so getRotationMode() reflects the new state.
-                        -- Existing SetDimensions/ScreenResize/RedrawCurrentPage broadcasts
-                        -- already handle the UI re-layout for the new dimensions.
-                        this.device.screen.cur_rotation_mode = gyro_rotation
+                        -- Use the base framebuffer's setRotationMode to rotate the BB
+                        -- to match Android's window orientation. We cannot use the Android
+                        -- override (screen:setRotationMode) because it calls
+                        -- android.orientation.set() which would lock the orientation,
+                        -- cancelling FULL_SENSOR.
+                        -- The resize above already provided new dimensions; the existing
+                        -- SetDimensions/ScreenResize/RedrawCurrentPage broadcasts handle
+                        -- UI re-layout. We do NOT broadcast SetRotationMode here because
+                        -- that would trigger the Android override's screen:setRotationMode().
+                        Framebuffer.setRotationMode(this.device.screen, gyro_rotation)
                     end
                 end
                 -- to-do: keyboard connected, disconnected
