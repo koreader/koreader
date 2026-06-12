@@ -197,7 +197,10 @@ function Device:init()
 
                     if orientation_changed and this.device:hasGSensor() then
                         local gyro_rotation = android.orientation.get()
-                        logger.dbg("AROT configChanged: old_w=" .. old_w .. " old_h=" .. old_h .. " new_w=" .. new_w .. " new_h=" .. new_h .. " new_is_landscape=" .. tostring(new_is_landscape) .. " gyro_rotation=" .. gyro_rotation)
+                        local old_cur = this.device.screen.cur_rotation_mode
+                        local old_bb = this.device.screen.bb and this.device.screen.bb:getRotation() or -1
+                        logger.dbg("AROT_DIAG configChanged: old_w=" .. old_w .. " old_h=" .. old_h .. " new_w=" .. new_w .. " new_h=" .. new_h)
+                        logger.dbg("AROT_DIAG configChanged: old_cur_rotation=" .. tostring(old_cur) .. " old_bb_rotation=" .. old_bb .. " gyro_rotation=" .. gyro_rotation)
                         -- Rotate the BB to match Android's window orientation. For
                         -- 90° flips the resize above already rebuilt the BB at the
                         -- correct dimensions; for 180° flips (e.g. upright ↔ upside-
@@ -206,6 +209,8 @@ function Device:init()
                         -- Use base framebuffer (not Android override) to avoid
                         -- calling android.orientation.set() and locking FULL_SENSOR.
                         Framebuffer.setRotationMode(this.device.screen, gyro_rotation)
+                        local new_bb = this.device.screen.bb and this.device.screen.bb:getRotation() or -1
+                        logger.dbg("AROT_DIAG configChanged: after setRotationMode new_cur_rotation=" .. tostring(this.device.screen.cur_rotation_mode) .. " new_bb_rotation=" .. new_bb)
                     end
                 end
                 -- to-do: keyboard connected, disconnected
@@ -349,6 +354,8 @@ function Device:init()
     -- so users get ignore/lock controls via the existing rotation menu.
     -- Honor the existing ignore_gsensor setting so that auto-rotation state
     -- survives across app restarts.
+    local init_mode = self.screen:getRotationMode()
+    logger.dbg("AROT_DIAG init: initial rotation mode=", init_mode, "screen_size=", self.screen:getSize())
     if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
         -- Respect the lock_gsensor setting: if locked, restrict native
         -- rotation to the same axis (portrait or landscape) so that Android
