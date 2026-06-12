@@ -6,7 +6,6 @@ local UIManager
 local ffi = require("ffi")
 local C = ffi.C
 local FFIUtil = require("ffi/util")
-local Framebuffer = require("ffi/framebuffer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -201,16 +200,17 @@ function Device:init()
                         local old_bb = this.device.screen.bb and this.device.screen.bb:getRotation() or -1
                         logger.dbg("AROT_DIAG configChanged: old_w=" .. old_w .. " old_h=" .. old_h .. " new_w=" .. new_w .. " new_h=" .. new_h)
                         logger.dbg("AROT_DIAG configChanged: old_cur_rotation=" .. tostring(old_cur) .. " old_bb_rotation=" .. old_bb .. " gyro_rotation=" .. gyro_rotation)
-                        -- Rotate the BB to match Android's window orientation. For
-                        -- 90° flips the resize above already rebuilt the BB at the
-                        -- correct dimensions; for 180° flips (e.g. upright ↔ upside-
-                        -- down via landscape→portrait with parity change), this is
-                        -- the only way the BB rotation gets updated.
-                        -- Use base framebuffer (not Android override) to avoid
-                        -- calling android.orientation.set() and locking FULL_SENSOR.
-                        Framebuffer.setRotationMode(this.device.screen, gyro_rotation)
+                        -- With fullSensor, Android has already rotated the window
+                        -- buffer. The resize above rebuilt the BB at the correct
+                        -- dimensions; it must NOT be rotated further (or we get
+                        -- double-rotation that misaligns touch coordinates).
+                        -- Just update cur_rotation_mode so getRotationMode() and
+                        -- the rotation menu reflect the current state.
+                        -- Note: 180° flips (aspect ratio unchanged) don't trigger
+                        -- this block, so they won't be affected either way.
+                        this.device.screen.cur_rotation_mode = gyro_rotation
                         local new_bb = this.device.screen.bb and this.device.screen.bb:getRotation() or -1
-                        logger.dbg("AROT_DIAG configChanged: after setRotationMode new_cur_rotation=" .. tostring(this.device.screen.cur_rotation_mode) .. " new_bb_rotation=" .. new_bb)
+                        logger.dbg("AROT_DIAG configChanged: after update new_cur_rotation=" .. tostring(this.device.screen.cur_rotation_mode) .. " bb_rotation=" .. new_bb)
                     end
                 end
                 -- to-do: keyboard connected, disconnected
