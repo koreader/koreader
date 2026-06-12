@@ -184,35 +184,19 @@ function Device:init()
                     end
 
                     -- Bridge Android system rotation to KOReader's G-Sensor pipeline.
-                    -- On Android, we detect orientation changes via aspect-ratio flip
-                    -- (portrait ↔ landscape), synthesizing a standard MSC_GYRO event.
-                    -- Note: this cannot reliably detect 180° flips (e.g., UPRIGHT ↔ UPSIDE_DOWN),
-                    -- as width/height doesn't change in that case.
-                    -- For 180° detection, a JNI call to Display.getRotation() would be needed.
-                    local old_is_landscape = old_w > old_h
+                    -- android.orientation.get() uses Display.getRotation() under the hood
+                    -- to resolve the exact 4-way orientation (c.f., getOrientationCompat in
+                    -- ActivityExtensions.kt), eliminating the CW vs CCW ambiguity that a
+                    -- simple aspect-ratio flip cannot distinguish.
+                    -- Note: 180° flips (e.g., UPRIGHT ↔ UPSIDE_DOWN) may still be missed
+                    -- if the screen dimensions don't change, as this block only fires on
+                    -- resize. For full parity, polling Display.getRotation() would be needed.
                     local new_is_landscape = new_w > new_h
-                    local orientation_changed = old_is_landscape ~= new_is_landscape
+                    local orientation_changed = (old_w > old_h) ~= new_is_landscape
 
                     if orientation_changed and this.device:hasGSensor() then
-                        local old_mode = this.device.screen:getRotationMode()
-                        local gyro_rotation
-                        if new_is_landscape then
-                            -- Landscape: inherit landscape parity from current mode if applicable
-                            if bit.band(old_mode, 1) == 1 then
-                                gyro_rotation = old_mode
-                            else
-                                gyro_rotation = C.DEVICE_ROTATED_CLOCKWISE
-                            end
-                        else
-                            -- Portrait: inherit portrait parity from current mode if applicable
-                            if bit.band(old_mode, 1) == 0 then
-                                gyro_rotation = old_mode
-                            else
-                                gyro_rotation = C.DEVICE_ROTATED_UPRIGHT
-                            end
-                        end
-
-                        logger.dbg("AROT configChanged: old_mode=" .. old_mode .. " new_w=" .. new_w .. " new_h=" .. new_h .. " new_is_landscape=" .. tostring(new_is_landscape) .. " gyro_rotation=" .. gyro_rotation)
+                        local gyro_rotation = android.orientation.get()
+                        logger.dbg("AROT configChanged: old_w=" .. old_w .. " old_h=" .. old_h .. " new_w=" .. new_w .. " new_h=" .. new_h .. " new_is_landscape=" .. tostring(new_is_landscape) .. " gyro_rotation=" .. gyro_rotation)
                         local gyro_ev = {
                             type = C.EV_MSC,
                             code = C.MSC_GYRO,
