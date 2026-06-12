@@ -6,6 +6,7 @@ local UIManager
 local ffi = require("ffi")
 local C = ffi.C
 local FFIUtil = require("ffi/util")
+local Framebuffer = require("ffi/framebuffer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -197,12 +198,14 @@ function Device:init()
                     if orientation_changed and this.device:hasGSensor() then
                         local gyro_rotation = android.orientation.get()
                         logger.dbg("AROT configChanged: old_w=" .. old_w .. " old_h=" .. old_h .. " new_w=" .. new_w .. " new_h=" .. new_h .. " new_is_landscape=" .. tostring(new_is_landscape) .. " gyro_rotation=" .. gyro_rotation)
-                        -- Bypass the gyro pipeline (handleMiscGyroEv) because it compares
-                        -- rotation != old_rotation via getRotationMode(), which already
-                        -- returns the post-rotation value after the config change. Update
-                        -- the BB rotation directly, then broadcast SetRotationMode so the
-                        -- UI re-layouts properly.
-                        this.device.screen:setRotationMode(gyro_rotation)
+                        -- Bypass both the gyro pipeline (handleMiscGyroEv, which compares
+                        -- rotation != old_rotation via getRotationMode() that already returns
+                        -- the post-rotation value) AND the Android setRotationMode() override
+                        -- (which calls android.orientation.set(), locking orientation out of
+                        -- FULL_SENSOR, and doesn't rotate the blitbuffer).
+                        -- Use the base framebuffer's setRotationMode directly to rotate the BB
+                        -- while keeping Android's native auto-rotation active.
+                        Framebuffer.setRotationMode(this.device.screen, gyro_rotation)
                         UIManager:broadcastEvent(Event:new("SetRotationMode", gyro_rotation))
                     end
                 end
