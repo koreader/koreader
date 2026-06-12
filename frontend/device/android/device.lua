@@ -6,11 +6,18 @@ local UIManager
 local ffi = require("ffi")
 local C = ffi.C
 local FFIUtil = require("ffi/util")
+local Framebuffer = require("ffi/framebuffer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
+
+-- Cache the current orientation axis to avoid a JNI call on every touch event.
+-- With fullSensor, Android's touch coordinates already match the display orientation,
+-- so we only need to swap X/Y in portrait mode (where the kernel touch driver
+-- reports X=long edge, Y=short edge, but the display is portrait).
+local is_portrait = true
 
 local function yes() return true end
 local function no() return false end
@@ -197,15 +204,16 @@ function Device:init()
                     if orientation_changed and this.device:hasGSensor() then
                         local gyro_rotation = android.orientation.get()
                         logger.dbg("AROT configChanged: old_w=" .. old_w .. " old_h=" .. old_h .. " new_w=" .. new_w .. " new_h=" .. new_h .. " new_is_landscape=" .. tostring(new_is_landscape) .. " gyro_rotation=" .. gyro_rotation)
-                        -- With fullSensor, Android's SurfaceFlinger handles physical
-                        -- rotation after ANativeWindow_lock. The window buffer we
-                        -- receive is already in the logical coordinate space matching
-                        -- the new orientation. The resize above rebuilt the BB at the
-                        -- correct dimensions; rotating the BB would misalign it with
-                        -- the touch coordinate system. Just update cur_rotation_mode
-                        -- so getRotationMode() and the rotation menu reflect the
-                        -- current state.
-                        this.device.screen.cur_rotation_mode = gyro_rotation
+                        -- Update cached orientation axis for conditional X/Y swap.
+                        is_portrait = bit.band(gyro_rotation, 1) == 0
+                        -- Rotate the BB to match Android's window orientation. For
+                        -- 90° flips the resize above already rebuilt the BB at the
+                        -- correct dimensions; for 180° flips (e.g. upright ↔ upside-
+                        -- down via landscape→portrait with parity change), this is
+                        -- the only way the BB rotation gets updated.
+                        -- Use base framebuffer (not Android override) to avoid
+                        -- calling android.orientation.set() and locking FULL_SENSOR.
+                        Framebuffer.setRotationMode(this.device.screen, gyro_rotation)
                     end
                 end
                 -- to-do: keyboard connected, disconnected
@@ -545,7 +553,13 @@ function Device:_toggleStatusBarVisibility()
         -- reset touchTranslate to normal
         -- (since we don't setup any hooks besides the viewport one,
         -- (we can just reset the hook to the default NOP instead of piling on +/- translations...)
-        self.input.eventAdjustHook = Input.eventAdjustHook
+        -- With fullSensor, Android's touch coordinates match the display
+        -- orientation. Only swap X/Y in portrait mode (is_portrait=true).
+        self.input.eventAdjustHook = function(ev)
+            if is_portrait then
+                Input.eventAdjustHook(ev)
+            end
+        end
     end
 
     local viewport = Geom:new{x=0, y=statusbar_height, w=width, h=new_height}
