@@ -197,12 +197,13 @@ function Device:init()
                     if orientation_changed and this.device:hasGSensor() then
                         local gyro_rotation = android.orientation.get()
                         logger.dbg("AROT configChanged: old_w=" .. old_w .. " old_h=" .. old_h .. " new_w=" .. new_w .. " new_h=" .. new_h .. " new_is_landscape=" .. tostring(new_is_landscape) .. " gyro_rotation=" .. gyro_rotation)
-                        local gyro_ev = {
-                            type = C.EV_MSC,
-                            code = C.MSC_GYRO,
-                            value = gyro_rotation,
-                        }
-                        this:handleGyroEv(gyro_ev)
+                        -- Bypass the gyro pipeline (handleMiscGyroEv) because it compares
+                        -- rotation != old_rotation via getRotationMode(), which already
+                        -- returns the post-rotation value after the config change. Update
+                        -- the BB rotation directly, then broadcast SetRotationMode so the
+                        -- UI re-layouts properly.
+                        this.device.screen:setRotationMode(gyro_rotation)
+                        UIManager:broadcastEvent(Event:new("SetRotationMode", gyro_rotation))
                     end
                 end
                 -- to-do: keyboard connected, disconnected
