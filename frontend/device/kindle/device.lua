@@ -483,7 +483,7 @@ function Kindle:initNetworkManager(NetworkMgr)
 
         local network_list = {}
         local saved_profiles = kindleGetSavedNetworks()
-        local current_profile = kindleGetCurrentProfile()
+        local current_profile = kindleGetCurrentProfile() or {}
         for _, network in ipairs(scan_list) do
             local password = nil
             if network.known == "yes" then
