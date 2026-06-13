@@ -309,6 +309,7 @@ function VocabularyBuilder:hasWord(word)
     stmt:bind(word)
     local result = stmt:step()
     stmt:close()
+    conn:close()
     if result then
         return {
             book_title = result[1],
@@ -426,6 +427,7 @@ function VocabularyBuilder.onSync(local_path, cached_path, income_path)
     if not ok1 or tonumber(v1) == 0 then
         -- no income db or wrong db, first time sync
         logger.dbg("vocabbuilder open income DB failed", v1)
+        conn_income:close()
         return true
     end
 
@@ -466,6 +468,7 @@ function VocabularyBuilder.onSync(local_path, cached_path, income_path)
     if not ok3 or tonumber(v3) == 0 then
         -- no local db, this is an error
         logger.err("vocabbuilder open local DB", v3)
+        conn:close()
         return false
     end
 
