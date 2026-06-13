@@ -309,8 +309,9 @@ function VocabularyBuilder:hasWord(word)
     stmt:bind(word)
     local result = stmt:step()
     stmt:close()
+    local item
     if result then
-        return {
+        item = {
             book_title = result[1],
             word = result[2],
             create_time = tonumber(result[3]),
@@ -322,9 +323,9 @@ function VocabularyBuilder:hasWord(word)
             next_context = result[9],
             highlight = result[10],
         }
-    else
-        return nil
     end
+    conn:close()
+    return item
 end
 
 function VocabularyBuilder:toggleBookFilter(ids)
@@ -426,6 +427,7 @@ function VocabularyBuilder.onSync(local_path, cached_path, income_path)
     if not ok1 or tonumber(v1) == 0 then
         -- no income db or wrong db, first time sync
         logger.dbg("vocabbuilder open income DB failed", v1)
+        conn_income:close()
         return true
     end
 
@@ -466,6 +468,7 @@ function VocabularyBuilder.onSync(local_path, cached_path, income_path)
     if not ok3 or tonumber(v3) == 0 then
         -- no local db, this is an error
         logger.err("vocabbuilder open local DB", v3)
+        conn:close()
         return false
     end
 
