@@ -76,6 +76,7 @@ local Device = Generic:extend{
     isAndroid = yes,
     model = android.prop.product,
     hasKeys = yes,
+    hasGSensor = yes,
     hasDPad = no,
     hasSeamlessWifiToggle = no, -- Requires losing focus to the sytem's network settings and user interaction
     hasExitOptions = no,
@@ -146,6 +147,11 @@ function Device:init()
         event_map = event_map,
         handleMiscEv = function(this, ev)
             logger.dbg("Android application event", ev.code)
+            -- Bridge Android orientation changes to KOReader's G-Sensor pipeline (c.f., Kobo/Kindle).
+            -- Synthesized by APP_CMD_CONFIG_CHANGED handler below on orientation changes.
+            if ev.code == C.MSC_GYRO then
+                return this:handleGyroEv(ev)
+            end
             if ev.code == C.APP_CMD_SAVE_STATE then
                 UIManager:broadcastEvent(Event:new("FlushSettings"))
             elseif ev.code == C.APP_CMD_DESTROY then
@@ -159,8 +165,12 @@ function Device:init()
                 this.device.input:resetState()
             elseif ev.code == C.APP_CMD_CONFIG_CHANGED then
                 -- orientation and size changes
-                if android.screen.width ~= android.getScreenWidth()
-                or android.screen.height ~= android.getScreenHeight() then
+                local old_w = android.screen.width
+                local old_h = android.screen.height
+                local new_w = android.getScreenWidth()
+                local new_h = android.getScreenHeight()
+
+                if old_w ~= new_w or old_h ~= new_h then
                     this.device.screen:resize()
                     local new_size = this.device.screen:getSize()
                     logger.info("Resizing screen to", new_size)
@@ -171,6 +181,36 @@ function Device:init()
                     if FileManager.instance then
                         FileManager.instance:reinit(FileManager.instance.path,
                             FileManager.instance.focused_file)
+                    end
+
+                    -- Bridge Android system rotation to KOReader's G-Sensor pipeline.
+                    -- android.orientation.get() uses Display.getRotation() under the hood
+                    -- to resolve the exact 4-way orientation (c.f., getOrientationCompat in
+                    -- ActivityExtensions.kt), eliminating the CW vs CCW ambiguity that a
+                    -- simple aspect-ratio flip cannot distinguish.
+                    -- Note: 180° flips (e.g., UPRIGHT ↔ UPSIDE_DOWN) may still be missed
+                    -- if the screen dimensions don't change, as this block only fires on
+                    -- resize. For full parity, polling Display.getRotation() would be needed.
+                    local new_is_landscape = new_w > new_h
+                    local orientation_changed = (old_w > old_h) ~= new_is_landscape
+
+                    if orientation_changed and this.device:hasGSensor() then
+                        local gyro_rotation = android.orientation.get()
+                        local old_cur = this.device.screen.cur_rotation_mode
+                        local old_bb = this.device.screen.bb and this.device.screen.bb:getRotation() or -1
+                        logger.dbg("AROT_DIAG configChanged: old_w=" .. old_w .. " old_h=" .. old_h .. " new_w=" .. new_w .. " new_h=" .. new_h)
+                        logger.dbg("AROT_DIAG configChanged: old_cur_rotation=" .. tostring(old_cur) .. " old_bb_rotation=" .. old_bb .. " gyro_rotation=" .. gyro_rotation)
+                        -- With fullSensor, Android has already rotated the window
+                        -- buffer. The resize above rebuilt the BB at the correct
+                        -- dimensions; it must NOT be rotated further (or we get
+                        -- double-rotation that misaligns touch coordinates).
+                        -- Just update cur_rotation_mode so getRotationMode() and
+                        -- the rotation menu reflect the current state.
+                        -- Note: 180° flips (aspect ratio unchanged) don't trigger
+                        -- this block, so they won't be affected either way.
+                        this.device.screen.cur_rotation_mode = gyro_rotation
+                        local new_bb = this.device.screen.bb and this.device.screen.bb:getRotation() or -1
+                        logger.dbg("AROT_DIAG configChanged: after update new_cur_rotation=" .. tostring(this.device.screen.cur_rotation_mode) .. " bb_rotation=" .. new_bb)
                     end
                 end
                 -- to-do: keyboard connected, disconnected
@@ -249,6 +289,7 @@ function Device:init()
         gocolor7 = true,
         gocolor7_2 = true,
         hibreak = true,
+        Leaf5 = true,
         moaanmix7 = true,
         xiaomi_reader = true,
     }
@@ -306,6 +347,98 @@ function Device:init()
     end
 
     Generic.init(self)
+
+    -- With fullSensor manifest, let Android manage system auto-rotation natively.
+    -- KOReader's G-Sensor pipeline (hasGSensor) bridges APP_CMD_CONFIG_CHANGED
+    -- orientation events to the standard MSC_GYRO → handleMiscGyroEv flow,
+    -- so users get ignore/lock controls via the existing rotation menu.
+    -- Honor the existing ignore_gsensor setting so that auto-rotation state
+    -- survives across app restarts.
+    local init_mode = self.screen:getRotationMode()
+    logger.dbg("AROT_DIAG init: initial rotation mode=", init_mode, "screen_size=", self.screen:getSize())
+    if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
+        -- Respect the lock_gsensor setting: if locked, restrict native
+        -- rotation to the same axis (portrait or landscape) so that Android
+        -- itself enforces the lock, rather than relying on the Lua-level
+        -- gyro filter which runs after Android has already rotated the screen.
+        if G_reader_settings:isTrue("input_lock_gsensor") then
+            local current_mode = self.screen:getRotationMode()
+            logger.dbg("AROT init: locked auto-rotation, mode=", current_mode)
+            android.orientation.setAutoLocked(current_mode)
+        else
+            android.orientation.setAuto(true)
+        end
+    else
+        -- Lock to the current orientation.
+        -- NOTE: We avoid android.orientation.setAuto(false) here because it
+        -- goes through setScreenOrientation(getScreenOrientation()) in Kotlin,
+        -- which mixes LINUX constants (from getOrientationCompat) with ANDROID
+        -- constants (in setOrientationCompat), causing the screen to lock to
+        -- the wrong orientation (e.g., always REVERSE_LANDSCAPE on native
+        -- portrait devices).
+        self.screen:setRotationMode(self.screen:getRotationMode())
+    end
+end
+
+--- Override to also toggle Android's native auto-rotation (fullSensor),
+--- not just the internal gyro event pipeline.
+function Device:toggleGSensor(toggle)
+    if not self:hasGSensor() then
+        return
+    end
+    if self.input then
+        self.input:toggleGyroEvents(toggle)
+    end
+    if android.hasNativeRotation() then
+        if toggle then
+            -- Respect the lock_gsensor setting: if locked, restrict to
+            -- the same axis instead of full sensor rotation.
+            if self:isGSensorLocked() then
+                local current_mode = self.screen:getRotationMode()
+                logger.dbg("AROT toggleGSensor: enabling locked auto-rotation, mode=", current_mode)
+                android.orientation.setAutoLocked(current_mode)
+            else
+                logger.dbg("AROT toggleGSensor: enabling native auto-rotation")
+                android.orientation.setAuto(true)
+            end
+        else
+            -- Lock to the current orientation.
+            -- See NOTE above about avoiding setAuto(false).
+            local current_mode = self.screen:getRotationMode()
+            logger.dbg("AROT toggleGSensor: locking to current orientation", current_mode)
+            self.screen:setRotationMode(current_mode)
+        end
+    end
+end
+
+--- Override to also toggle Android's native axis-locked rotation mode,
+--- not just the internal gyro event filtering.
+function Device:lockGSensor(toggle)
+    if not self:hasGSensor() then
+        return
+    end
+    -- Generic implementation: toggles the isGSensorLocked flag.
+    if toggle == true then
+        self.isGSensorLocked = yes
+    elseif toggle == false then
+        self.isGSensorLocked = no
+    else
+        -- toggle
+        self.isGSensorLocked = not self:isGSensorLocked()
+    end
+    -- Also update Android's native rotation mode so that the OS itself
+    -- enforces the lock, rather than relying on Lua-level gyro filtering
+    -- which runs after Android has already rotated the screen.
+    if android.hasNativeRotation() and G_reader_settings:nilOrFalse("input_ignore_gsensor") then
+        if self:isGSensorLocked() then
+            local current_mode = self.screen:getRotationMode()
+            logger.dbg("AROT lockGSensor: locking to axis, mode=", current_mode)
+            android.orientation.setAutoLocked(current_mode)
+        else
+            logger.dbg("AROT lockGSensor: unlocking, restoring full sensor")
+            android.orientation.setAuto(true)
+        end
+    end
 end
 
 function Device:UIManagerReady(uimgr)

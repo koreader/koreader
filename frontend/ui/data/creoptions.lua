@@ -55,7 +55,8 @@ local CreOptions = {
                 name = "rotation_mode",
                 name_text = _("Rotation"),
                 item_icons_func = function()
-                    if Screen:getRotationMode() == Screen.DEVICE_ROTATED_UPRIGHT then
+                    local mode = Screen:getRotationMode()
+                    if mode == Screen.DEVICE_ROTATED_UPRIGHT then
                         -- P, 0UR
                         return {
                             "rotation.P.90CCW",
@@ -63,7 +64,7 @@ local CreOptions = {
                             "rotation.P.90CW",
                             "rotation.P.180UD",
                         }
-                    elseif Screen:getRotationMode() == Screen.DEVICE_ROTATED_UPSIDE_DOWN then
+                    elseif mode == Screen.DEVICE_ROTATED_UPSIDE_DOWN then
                         -- P, 180UD
                         return {
                             "rotation.P.90CW",
@@ -71,7 +72,7 @@ local CreOptions = {
                             "rotation.P.90CCW",
                             "rotation.P.0UR",
                         }
-                    elseif Screen:getRotationMode() == Screen.DEVICE_ROTATED_CLOCKWISE then
+                    elseif mode == Screen.DEVICE_ROTATED_CLOCKWISE then
                         -- L, 90CW
                         return {
                             "rotation.L.90CCW",
