@@ -499,7 +499,13 @@ function WordInfoDialog:init()
     self.layout = {}
     if self.dismissable then
         if Device:hasKeys() then
-            self.key_events.Close = { { Device.input.group.Back } }
+            local back_group = util.tableDeepCopy(Device.input.group.Back)
+            if Device:hasFewKeys() then
+                table.insert(back_group, "Left")
+            else
+                table.insert(back_group, "Menu")
+            end
+            self.key_events.Close = { { back_group } }
         end
         if Device:isTouchDevice() then
             self.ges_events.Tap = {
@@ -543,17 +549,18 @@ function WordInfoDialog:init()
         end
     }
 
-    local cancel_button = {
-        text = _("Cancel"),
-        callback = function()
-            UIManager:close(self)
-        end
-    }
-
     local forgot_button = {
         text = _("Forgot"),
         callback = function()
             self.forgot_callback()
+            UIManager:close(self)
+        end
+    }
+
+    local got_it_button = {
+        text = _("Got it"),
+        callback = function()
+            self.got_it_callback()
             UIManager:close(self)
         end
     }
@@ -566,7 +573,7 @@ function WordInfoDialog:init()
         end
     }
 
-    local buttons = self.update_callback and {{cancel_button, forgot_button, update_button}} or {{reset_button, remove_button}}
+    local buttons = self.update_callback and {{got_it_button, forgot_button, update_button}} or {{reset_button, remove_button}}
     if self.vocabbuilder and self.vocabbuilder.item.last_due_time then
         table.insert(buttons, {{
             text = _("Undo study status"),
@@ -2128,6 +2135,10 @@ function VocabBuilder:onWordLookedUp(word, title, is_manual)
             update_callback = update,
             forgot_callback = function()
                 DB:gotOrForgot(item, false)
+                DB:batchUpdateItems({ item })
+            end,
+            got_it_callback = function()
+                DB:gotOrForgot(item, true)
                 DB:batchUpdateItems({ item })
             end,
         }
