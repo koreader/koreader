@@ -125,21 +125,25 @@ end
 
 function CloudStorage:sortItemTable(tbl, url)
     tbl = tbl or self.item_table
-    if #tbl == 0 then return end
+
     local folder_mode_item
-    if self.choose_folder_callback and tbl[1].is_folder_long_press then
+    if self.choose_folder_callback and #tbl > 0 and tbl[1].is_folder_long_press then
         folder_mode_item = table.remove(tbl, 1)
     end
-    local sort_func = self.collates[self.collate].sort_func
-    table.sort(tbl, function(a, b)
-        if a.is_file and b.is_file then
-            return sort_func(a, b)
-        elseif a.is_folder and b.is_folder then
-            return ffiUtil.strcoll(a.text, b.text)
-        else -- folders first
-            return a.is_folder
-        end
-    end)
+
+    if #tbl > 1 then
+        local sort_func = self.collates[self.collate].sort_func
+        table.sort(tbl, function(a, b)
+            if a.is_file and b.is_file then
+                return sort_func(a, b)
+            elseif a.is_folder and b.is_folder then
+                return ffiUtil.strcoll(a.text, b.text)
+            else -- folders first
+                return a.is_folder
+            end
+        end)
+    end
+
     if self.choose_folder_callback then
         table.insert(tbl, 1, folder_mode_item or {
             is_folder_long_press = true,
