@@ -95,13 +95,13 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
             local item_name = ffiUtil.basename(util.htmlEntitiesToUtf8(util.urlDecode(item_fullpath)))
             local is_current_dir = self.trim_slashes(item_fullpath) == webdav_url_path
             local is_not_collection = item:find("<[^:]*:resourcetype%s*/>") or
-                                      item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
+                                      item:find("<[^:]*:resourcetype>%s*</[^:]*:resourcetype>")
             local item_path = path .. "/" .. item_name
 
             -- only available for files, not directories/collections
             local item_filesize = item:match("<[^:]*:getcontentlength[^>]*>(%d+)</[^:]*:getcontentlength>")
 
-            if item:find("<[^:]*:collection[^<]*/>") then
+            if item:find("<[^:]*:collection[^<]*/>") or item:find("<[^:]*:collection>%s*</[^:]*:collection>") then
                 item_name = item_name .. "/"
                 if not is_current_dir then
                     table.insert(webdav_list, {
