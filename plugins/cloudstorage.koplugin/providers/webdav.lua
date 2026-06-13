@@ -102,7 +102,7 @@ function WebDavApi.listFolder(address, user, pass, folder_path, include_folders)
         local item_fullpath = util.urlDecode(item:match("<[^:]*:href[^>]*>(.*)</[^:]*:href>"))
         local item_name = ffiUtil.basename(util.htmlEntitiesToUtf8(item_fullpath))
         local is_not_collection = item:find("<[^:]*:resourcetype%s*/>") or
-                                  item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
+                                  item:find("<[^:]*:resourcetype>%s*</[^:]*:resourcetype>")
         if is_not_collection then
             if show_unsupported or DocumentRegistry:hasProvider(item_name) then
                 local file_size = tonumber(item:match("<[^:]*:getcontentlength[^>]*>(%d+)</[^:]*:getcontentlength>"))
@@ -123,7 +123,7 @@ function WebDavApi.listFolder(address, user, pass, folder_path, include_folders)
                     mandatory = mandatory,
                 })
             end
-        elseif item:find("<[^:]*:collection[^<]*/>") then
+        elseif item:find("<[^:]*:collection[^<]*/>") or item:find("<[^:]*:collection>%s*</[^:]*:collection>") then
             if include_folders then
                 local is_not_current_dir = WebDavApi.trim_slashes(item_fullpath) ~= webdav_url_path
                 if is_not_current_dir then
