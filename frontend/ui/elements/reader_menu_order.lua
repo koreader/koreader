@@ -194,7 +194,6 @@ local order = {
         "battery_statistics",
         "book_shortcuts",
         "synchronize_time",
-        "keep_alive",
         "doc_setting_tweak",
         "terminal",
         "----------------------------",
