@@ -123,6 +123,34 @@ describe("Readerrolling module", function()
             assert.is.truthy(called)
             readerui:onClose()
         end)
+
+        it("should update furthest_xpointer only when advancing", function()
+            rolling.furthest_xpointer = nil
+            rolling.ui.doc_settings:delSetting("furthest_xpointer")
+            rolling:onGotoPage(1)
+            rolling:onSaveSettings()
+
+            -- go forward some
+            rolling:onGotoPage(12)
+            local xp_mid = rolling.ui.document:getXPointer()
+            rolling:onSaveSettings()
+            -- check that pointer was updated
+            assert.are.same(xp_mid, rolling.ui.doc_settings:readSetting("furthest_xpointer"))
+
+            -- go back some
+            rolling:onGotoPage(3)
+            rolling:onSaveSettings()
+            -- check that pointer is STILL on furthest page read so far
+            assert.are.same(xp_mid, rolling.ui.doc_settings:readSetting("furthest_xpointer"))
+
+            -- go to page 30
+            rolling:onGotoPage(30)
+            local xp_far = rolling.ui.document:getXPointer()
+            rolling:onSaveSettings()
+
+            -- furthest should now be page 30
+            assert.are.same(xp_far, rolling.ui.doc_settings:readSetting("furthest_xpointer"))
+        end)
     end)
 
     describe("test in landscape screen mode", function()
