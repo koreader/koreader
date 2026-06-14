@@ -12,7 +12,7 @@ local function probeDevice()
         return require("device/kindle/device")
     end
 
-    local kobo_test_stat = lfs.attributes("/bin/kobo_config.sh")
+    local kobo_test_stat = lfs.attributes("/bin/kobo_config.sh") or lfs.attributes("/usr/bin/hwdetect.sh")
     if kobo_test_stat then
         return require("device/kobo/device")
     end
