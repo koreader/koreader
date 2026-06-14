@@ -607,6 +607,9 @@ end
 function KOSync:logout(menu)
     self.settings.userkey = nil
     self.settings.auto_sync = true
+    -- Clear any queued progress for the old account
+    local KOSyncQueue = require("KOSyncQueue")
+    KOSyncQueue:clear()
     if menu then
         menu:updateItems()
     end
@@ -704,6 +707,14 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
     local progress = self:getLastProgress()
     local percentage = self:getLastPercent()
     local chosen_device_name = self.settings.kosync_hostname or Device.model
+    local queue_item = {
+        document = doc_digest,
+        metadata = metadata,
+        progress = progress,
+        percentage = percentage,
+        device = chosen_device_name,
+        device_id = self.device_id,
+    }
     local ok, err = pcall(client.update_progress,
         client,
         self.settings.username,
@@ -714,23 +725,31 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
         percentage,
         chosen_device_name,
         self.device_id,
-        function(ok, body)
+        function(ok, status, body)
             logger.dbg("KOSync: [Push] progress to", percentage * 100, "% =>", progress, "for", self.view.document.file)
             logger.dbg("KOSync: ok:", ok, "body:", body)
-            if interactive then
-                if ok then
+            if ok then
+                if interactive then
                     UIManager:show(InfoMessage:new{
                         text = _("Progress has been pushed."),
                         timeout = 3,
                     })
-                else
-                    showSyncError()
                 end
+            else
+                -- Queue for retry unless it's an auth failure
+                if status ~= 401 then
+                    local KOSyncQueue = require("KOSyncQueue")
+                    KOSyncQueue:push(queue_item)
+                end
+                if interactive then showSyncError() end
             end
         end)
     if not ok then
         if interactive then showSyncError() end
         if err then logger.dbg("err:", err) end
+        -- Network unreachable: queue for retry
+        local KOSyncQueue = require("KOSyncQueue")
+        KOSyncQueue:push(queue_item)
     else
         -- This is solely for onSuspend's sake, to clear the ghosting left by the "Connected" InfoMessage
         if on_suspend then
@@ -894,14 +913,24 @@ function KOSync:_onCloseDocument()
     --       and we handle those system focus events via... Suspend & Resume events, so we need to neuter those handlers early.
     self.onResume = nil
     self.onSuspend = nil
-    -- NOTE: Because we'll lose the document instance on return, we need to *block* until the connection is actually up here,
-    --       we cannot rely on willRerunWhenOnline, because if we're not currently online,
-    --       it *will* return early, and that means the actual callback *will* run *after* teardown of the document instance
-    --       (and quite likely ours, too).
-    NetworkMgr:goOnlineToRun(function()
-        -- Drop the inner willRerunWhenOnline ;).
+    -- If we're already online, push normally.
+    -- Otherwise, queue progress for later instead of blocking with goOnlineToRun.
+    if NetworkMgr:isOnline() then
         self:updateProgress(false, false)
-    end)
+    else
+        local doc_digest = self:getDocumentDigest()
+        if doc_digest then
+            local KOSyncQueue = require("KOSyncQueue")
+            KOSyncQueue:push({
+                document = doc_digest,
+                metadata = self:getMetadata(),
+                progress = self:getLastProgress(),
+                percentage = self:getLastPercent(),
+                device = self.settings.kosync_hostname or Device.model,
+                device_id = self.device_id,
+            })
+        end
+    end
 end
 
 function KOSync:schedulePeriodicPush()
@@ -951,8 +980,36 @@ end
 function KOSync:_onNetworkConnected()
     logger.dbg("KOSync: onNetworkConnected")
     UIManager:scheduleIn(0.5, function()
-        -- Network is supposed to be on already, don't wrap this in willRerunWhenOnline
+        -- Drain any queued progress updates first
+        self:drainQueue()
+        -- Then pull as normal
         self:getProgress(false, false)
+    end)
+end
+
+function KOSync:drainQueue()
+    local KOSyncQueue = require("KOSyncQueue")
+    if KOSyncQueue:count() == 0 then return end
+
+    local KOSyncClient = require("KOSyncClient")
+    local client = KOSyncClient:new{
+        custom_url = self.settings.custom_server,
+        service_spec = self.path .. "/api.json"
+    }
+
+    KOSyncQueue:drain(function(item)
+        local ok = pcall(client.update_progress,
+            client,
+            self.settings.username,
+            self.settings.userkey,
+            item.document,
+            item.metadata,
+            item.progress,
+            item.percentage,
+            item.device,
+            item.device_id,
+            function() end)
+        return ok
     end)
 end
 
