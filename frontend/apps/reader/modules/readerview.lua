@@ -219,7 +219,7 @@ function ReaderView:paintTo(bb, x, y)
         if self.page_overlap_style == "dim" then
             -- NOTE: "dim", as in make black text fainter, e.g., lighten the rect
             bb:lightenRect(self.dim_area.x, self.dim_area.y, self.dim_area.w, self.dim_area.h)
-        else
+        elseif self.page_overlap_style ~= "none" then
             -- Paint at the proper y origin depending on whether we paged forward (dim_area.y == 0) or backward
             local paint_y = self.dim_area.y == 0 and self.dim_area.h or self.dim_area.y
             if self.page_overlap_style == "arrow" then
@@ -1318,13 +1318,43 @@ function ReaderView:checkAutoSaveSettings()
 end
 
 function ReaderView:isOverlapAllowed()
-    if self.ui.paging then
-        return not self.page_scroll
-            and (self.ui.paging.zoom_mode ~= "page"
-                or (self.ui.paging.zoom_mode == "page" and self.document.configurable.text_wrap == 1))
-            and not self.ui.paging.zoom_mode:find("height")
-    else
+    if self.ui.rolling then
         return self.view_mode ~= "page"
+    end
+    -- paging
+    if self.page_scroll then -- continuous mode
+        return false
+    end
+    if self.ui.paging.zoom_mode == "page" then -- page full
+        return self.document.configurable.text_wrap == 1 -- reflow on
+    end
+    if self.ui.paging.zoom_mode:find("height") then -- page/content fit to height
+        return false
+    end
+    return true
+end
+
+local overlap_styles = { "none", "dim", "arrow", "line", "dashed_line" }
+local overlap_style_texts = { _("No indicator"), _("Gray out"), _("Arrow"), _("Solid line"), _("Dashed line") }
+function ReaderView.getOverlapStyles()
+    return overlap_styles, overlap_style_texts
+end
+
+function ReaderView:onSetOverlapStyle(style, no_notification)
+    if self.page_overlap_style ~= style then
+        self.page_overlap_style = style
+        UIManager:setDirty(self.dialog, "ui")
+        if not no_notification then
+            local index = util.arrayContains(overlap_styles, style)
+            Notification:notify(T(_("Page overlap style set to: %1"), overlap_style_texts[index]))
+        end
+    end
+end
+
+function ReaderView:onCycleOverlapStyle()
+    local index = util.arrayContains(overlap_styles, self.page_overlap_style)
+    if index then
+        self:onSetOverlapStyle(overlap_styles[index + 1] or overlap_styles[1])
     end
 end
 
