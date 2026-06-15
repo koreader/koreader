@@ -76,6 +76,7 @@ local LANGUAGES = {
     { "lv",               {"lav"},   "H   ",   _("Latvian"),                "Latvian.pattern" },
     { "lt",               {"lit"},   "H   ",   _("Lithuanian"),             "Lithuanian.pattern" },
     { "mk",                  {""},   "H   ",   _("Macedonian"),             "Macedonian.pattern" },
+    { "ml",               {"mal"},   "H   ",   _("Malayalam"),              "Malayalam.pattern" },
     { "no",               {"nor"},   "H   ",   _("Norwegian"),              "Norwegian.pattern" },
     { "oc",               {"oci"},   "H   ",   _("Occitan"),                "Occitan.pattern" },
     { "pl",               {"pol"},   "HB  ",   _("Polish"),                 "Polish.pattern" },
