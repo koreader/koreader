@@ -23,6 +23,28 @@ local ReaderSearch = InputContainer:extend{
     direction = 0, -- 0 for search forward, 1 for search backward
     case_insensitive = true, -- default to case insensitive
 
+    -- For CreDocuments, different search features are available:
+    -- Enhanced search flags:
+    --   MATCH_ACROSS_TEXT_NODES     = 0x0001
+    --   COLLAPSE_CONSECUTIVE_SPACES = 0x0002
+    --   NORMALIZE_CANONICAL         = 0x0004
+    --   NORMALIZE_COMPATIBILITY     = 0x0008
+    --   IGNORE_FORMAT_CONTROL_CHARS = 0x0010
+    --   FOLD_SPACES                 = 0x0020
+    --   FOLD_APOSTROPHES            = 0x0040
+    --   FOLD_HYPHENS                = 0x0080
+    --   IGNORE_DIACRITICS           = 0x0100
+    -- Make a few types of search available as radion buttons
+    -- (These are available to be updated/extended by user-patches)
+    search_types = {
+        -- Title of the radio button , search_flags, use_regex
+        { _("Ignore accents / stress marks"), 0x01FF, false },
+        -- { _("As typed"), 0x0017, false },
+        -- { _("Legacy search"), 0x0000, false },
+        { _("Regular expression (long-press for help)"), 0x0001, true },
+    },
+    default_search_type = { "", 0x00FF, false }, -- Most except IGNORE_DIACRITICS
+
     -- For a regex like [a-z\. ] many many hits are found, maybe the number of chars on a few pages.
     -- We don't try to catch them all as this is a reader and not a computer science playground. ;)
     -- So if some regex gets more than max_hits a notification will be shown.
@@ -46,10 +68,12 @@ function ReaderSearch:init()
     self.findall_results_per_page = G_reader_settings:readSetting("fulltext_search_results_per_page") or 10
     self.findall_results_max_lines = G_reader_settings:readSetting("fulltext_search_results_max_lines")
 
+    self.current_search_type = self.default_search_type
+
     self.ui.menu:registerToMainMenu(self)
 end
 
-local help_text = _([[
+local regex_help_text = _([[
 Regular expressions allow you to search for a matching pattern in a text. The simplest pattern is a simple sequence of characters, such as `James Bond`. There are many different varieties of regular expressions, but we support the ECMAScript syntax. The basics will be explained below.
 
 If you want to search for all occurrences of 'Mister Moore', 'Sir Moore' or 'Alfons Moore' but not for 'Lady Moore'.
@@ -226,21 +250,21 @@ function ReaderSearch:searchCallback(reverse, text)
     self.last_search_text = search_text
     self.start_page = self.ui.paging and self.view.state.page or self.ui.document:getXPointer()
 
-    local regex_error
     if text then -- from highlight dialog
-        self.use_regex = false
         self.case_insensitive = true
+        self.current_search_type = self.default_search_type
     else -- from input dialog
         -- search_text comes from our keyboard, and may contain multiple diacritics ordered
         -- in any order: we'd rather have them normalized, and expect the book content to
         -- be proper and normalized text.
         search_text = Utf8Proc.normalize_NFC(search_text)
-        self.use_regex = self.check_button_regex.checked
         self.case_insensitive = not self.check_button_case.checked
-        regex_error = self.use_regex and self.ui.document:checkRegex(search_text)
+        -- self.current_search_type is used as it is (from previous search, or updated by the radio buttons)
     end
+    local use_regex = self.current_search_type[3]
+    local regex_error = use_regex and self.ui.document:checkRegex(search_text)
 
-    if self.use_regex and regex_error ~= 0 then
+    if use_regex and regex_error ~= 0 then
         logger.dbg("ReaderSearch: regex error", regex_error, SRELL_ERROR_CODES[regex_error])
         local error_message
         if SRELL_ERROR_CODES[regex_error] then
@@ -251,9 +275,9 @@ function ReaderSearch:searchCallback(reverse, text)
         UIManager:show(InfoMessage:new{ text = error_message })
     else
         UIManager:close(self.input_dialog)
-        if reverse then
+        if reverse then -- provided as 0 or 1
             self.last_search_hash = nil
-            self:onShowSearchDialog(search_text, reverse, self.use_regex, self.case_insensitive)
+            self:onShowSearchDialog(search_text, reverse, self.current_search_type, self.case_insensitive)
         else
             local Trapper = require("ui/trapper")
             Trapper:wrap(function()
@@ -308,26 +332,54 @@ function ReaderSearch:onShowFulltextSearchInput(search_string)
         parent = self.input_dialog,
     }
     self.input_dialog:addWidget(self.check_button_case)
-    self.check_button_regex = CheckButton:new{
-        text = _("Regular expression (long-press for help)"),
-        checked = self.use_regex,
-        parent = self.input_dialog,
-        hold_callback = function()
-            UIManager:show(InfoMessage:new{
-                text = help_text,
-                width = Screen:getWidth() * 0.9,
-            })
-        end,
-    }
+
     if self.ui.rolling then
-        self.input_dialog:addWidget(self.check_button_regex)
+        -- Add buttons to select one of our search types (or none and use the defaults)
+        local radio_buttons = {}
+        local radio_buttons_refresh = function()
+            for _, button in ipairs(radio_buttons) do
+                button.checked = button.checked_func()
+                button:enable() -- this updates its state
+            end
+        end
+        for _, search_type in ipairs(self.search_types) do
+            local button = CheckButton:new{
+                text = search_type[1],
+                radio = true,
+                checked_func = function()
+                    return search_type == self.current_search_type
+                end,
+                callback = function()
+                    -- Our radio buttons are mutually exclusive, but
+                    -- we can have none of them checked
+                    if self.current_search_type == search_type then
+                        -- All unchecked: back to default search type
+                        self.current_search_type = self.default_search_type
+                    else
+                        self.current_search_type = search_type
+                    end
+                    radio_buttons_refresh()
+                end,
+                hold_callback = search_type[3] and function() -- use_regex
+                    UIManager:show(InfoMessage:new{
+                        text = regex_help_text,
+                        width = Screen:getWidth() * 0.9,
+                    })
+                end,
+                parent = self.input_dialog,
+            }
+            button.checked = button.checked_func()
+            table.insert(radio_buttons, button)
+            self.input_dialog:addWidget(button)
+        end
+        radio_buttons_refresh() -- update all buttons states
     end
 
     UIManager:show(self.input_dialog)
     self.input_dialog:onShowKeyboard()
 end
 
-function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitive)
+function ReaderSearch:onShowSearchDialog(text, direction, search_type, case_insensitive)
     local zoom_to_page = G_reader_settings:isTrue("fulltext_search_zoom_to_page")
     local neglect_current_location = false
     local current_page
@@ -345,7 +397,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                 self.ui.paging:enterSkimMode() -- "page" view
             end
             local no_results = true -- for notification
-            local res = search_func(self, search_term, param, regex, case_insensitive)
+            local res = search_func(self, search_term, param, search_type, case_insensitive)
             if res then
                 if self.ui.paging then
                     if not current_page then -- initial search
@@ -453,6 +505,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
     self.wait_button = ButtonDialog:new{
         buttons = {{{ text = "⌛" }}},
     }
+    local regex = search_type[3]
     local function search(func, pattern, param)
         if regex and isSlowRegex(pattern) then
             return function()
@@ -537,24 +590,27 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
     return true
 end
 
--- if regex == true, use regular expression in pattern
 -- if case == true or nil, the search is case insensitive
-function ReaderSearch:search(pattern, origin, regex, case_insensitive)
+function ReaderSearch:search(pattern, origin, search_type, case_insensitive)
     logger.dbg("search pattern", pattern)
     local direction = self.direction
     local page = self.view.state.page
     if case_insensitive == nil then
         case_insensitive = true
     end
+    -- (search_type should be provided all along this module, but
+    -- unit tests don't: fallback for them to legacy search)
+    local search_flags = search_type and search_type[2] or 0x0000
+    local regex = search_type and search_type[3] or false
     Device:setIgnoreInput(true)
-    local retval, words_found = self.ui.document:findText(pattern, origin, direction, case_insensitive, page, regex, self.max_hits)
+    local retval, words_found = self.ui.document:findText(pattern, origin, direction, case_insensitive, page, regex, self.max_hits, search_flags)
     Device:setIgnoreInput(false)
     self:showErrorNotification(words_found, regex, self.max_hits)
     return retval
 end
 
 function ReaderSearch:showErrorNotification(words_found, regex, max_hits)
-    regex = regex or self.use_regex
+    regex = regex or self.current_search_type[3]
     max_hits = max_hits or self.findall_max_hits
     local regex_retval = regex and self.ui.document:getAndClearRegexSearchError()
     if regex and regex_retval ~= 0 then
@@ -576,33 +632,36 @@ function ReaderSearch:showErrorNotification(words_found, regex, max_hits)
     end
 end
 
-function ReaderSearch:searchFromStart(pattern, _, regex, case_insensitive)
+function ReaderSearch:searchFromStart(pattern, _, search_type, case_insensitive)
     self.direction = 0
     self._expect_back_results = true
-    return self:search(pattern, -1, regex, case_insensitive)
+    return self:search(pattern, -1, search_type, case_insensitive)
 end
 
-function ReaderSearch:searchFromEnd(pattern, _, regex, case_insensitive)
+function ReaderSearch:searchFromEnd(pattern, _, search_type, case_insensitive)
     self.direction = 1
     self._expect_back_results = false
-    return self:search(pattern, -1, regex, case_insensitive)
+    return self:search(pattern, -1, search_type, case_insensitive)
 end
 
-function ReaderSearch:searchFromCurrent(pattern, direction, regex, case_insensitive)
+function ReaderSearch:searchFromCurrent(pattern, direction, search_type, case_insensitive)
     self.direction = direction
     self._expect_back_results = direction == 1
-    return self:search(pattern, 0, regex, case_insensitive)
+    return self:search(pattern, 0, search_type, case_insensitive)
 end
 
 -- ignore current page and search next occurrence
-function ReaderSearch:searchNext(pattern, direction, regex, case_insensitive)
+function ReaderSearch:searchNext(pattern, direction, search_type, case_insensitive)
     self.direction = direction
     self._expect_back_results = direction == 1
-    return self:search(pattern, 1, regex, case_insensitive)
+    return self:search(pattern, 1, search_type, case_insensitive)
 end
 
 function ReaderSearch:findAllText(search_text)
-    local last_search_hash = (self.last_search_text or "") .. tostring(self.case_insensitive) .. tostring(self.use_regex)
+    local search_flags = self.current_search_type[2]
+    local use_regex = self.current_search_type[3]
+    local last_search_hash = (self.last_search_text or "") .. tostring(self.case_insensitive) ..
+                                tostring(search_flags) .. tostring(use_regex)
     local not_cached = self.last_search_hash ~= last_search_hash
     if not_cached then
         local Trapper = require("ui/trapper")
@@ -611,7 +670,7 @@ function ReaderSearch:findAllText(search_text)
         UIManager:forceRePaint()
         local completed, res = Trapper:dismissableRunInSubprocess(function()
             return self.ui.document:findAllText(search_text,
-                self.case_insensitive, self.findall_nb_context_words, self.findall_max_hits, self.use_regex)
+                self.case_insensitive, self.findall_nb_context_words, self.findall_max_hits, use_regex, search_flags)
         end, info)
         if not completed then return end
         UIManager:close(info)
