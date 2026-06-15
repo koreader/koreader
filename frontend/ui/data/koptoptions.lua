@@ -516,7 +516,8 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 event = "SaturationUpdate",
                 args =   {0.2, 0.5, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0},
                 labels = {0.2, 0.5, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0},
-                show_func = function()
+                show = Device:hasColorScreen(),
+                enabled_func = function()
                     return G_reader_settings:isTrue("color_rendering")
                 end,
                 name_text_hold_callback = optionsutil.showValues,
