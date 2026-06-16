@@ -75,7 +75,8 @@ function IndicatorOverlay:handleEvent(event)
         onKeyPress = true,
         onKeyRepeat = true,
         onKeyRelease = true,
-        -- onGesture = true,
+        onGesture = true,
+        onPan = true, -- mouse wheel pan via sendEvent
     }
     if input_events[event.handler] and self.parent_ui then
         return self.parent_ui:handleEvent(event)
