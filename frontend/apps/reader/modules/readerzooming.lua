@@ -384,6 +384,7 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     end
     settings.right_to_left = nil
 
+    local old_zoom_mode = self.zoom_mode -- self.zoom_mode is changed in onSetZoomPan()
     if zoom_mode == "columns" or zoom_mode == "rows" then
         if btn ~= "columns" and btn ~= "rows" then
             self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
@@ -406,6 +407,7 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
             self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
         end
     end
+    self.zoom_mode = old_zoom_mode -- self.zoom_mode is updated in onSetZoomMode()
     self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode))
     if btn == "columns" or btn == "rows" then
         config.zoom_range_number = self:getNumberOf(
