@@ -1896,8 +1896,8 @@ function ReaderHighlight:onHoldPan(_, ges)
         self.view.highlight.temp[self.hold_pos.page] = self.selected_text.sboxes
     end
     -- Ensure indicator overlay does not restore stale background over updated highlights.
-    if self.ui.keyselection._indicator_overlay then
-        self.ui.keyselection._indicator_overlay:freeSavedBB()
+    if self.ui.keyselection:isActive() then
+        self.ui.keyselection:clearOverlay()
     end
     UIManager:setDirty(self.dialog, "ui")
 end

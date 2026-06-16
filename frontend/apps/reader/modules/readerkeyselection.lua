@@ -356,6 +356,11 @@ function ReaderKeySelection:isActive()
     return self._current_indicator_pos ~= nil
 end
 
+function ReaderKeySelection:clearOverlay()
+    if not self._indicator_overlay then return end
+    self._indicator_overlay:freeSavedBB()
+end
+
 function ReaderKeySelection:startHighlightIndicator()
     -- disable long-press icon (poke-ball), as it is triggered constantly due to NT devices needing a workaround for text selection to work.
     self.ui.highlight.long_hold_reached_action = function() end
