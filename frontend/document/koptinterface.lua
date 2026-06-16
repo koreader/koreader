@@ -33,10 +33,6 @@ local KoptInterface = {
 
 local ContextCacheItem = CacheItem:new{}
 
-local RenderOptions = {
-    isolate_smask = 0,
-}
-
 function ContextCacheItem:onFree()
     KoptInterface:waitForContext(self.kctx)
     logger.dbg("ContextCacheItem: free KOPTContext", self.kctx)
