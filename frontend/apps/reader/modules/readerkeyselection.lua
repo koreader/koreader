@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local DoubleSpinWidget = require("ui/widget/doublespinwidget")
 local Geom = require("ui/geometry")
@@ -21,6 +22,127 @@ local math_abs = math.abs
 local math_max = math.max
 local math_min = math.min
 local math_floor = math.floor
+
+-- Minimal overlay that draws the crosshairs without touching the document
+-- render layer. Captures the page as its background on first paint, then
+-- restores only the previous indicator region before drawing the new one.
+local IndicatorOverlay = InputContainer:extend{
+    parent_ui = nil,
+    handleEvent = true,
+    indicator_rect = nil,
+    _prev_rect     = nil,
+    _saved_bb      = nil,
+    covers_fullscreen = false,
+}
+
+local function getIndicatorSaveRect(rect, max_w, max_h)
+    if not rect then return nil end
+    local save_r = rect:copy()
+    local bt2 = math_floor(Size.border.thick / 2)
+    save_r.x = math_floor(save_r.x - bt2)
+    save_r.y = math_floor(save_r.y - bt2)
+    save_r.w = save_r.w + Size.border.thick * 2
+    save_r.h = save_r.h + Size.border.thick * 2
+    save_r = save_r:intersect(Geom:new{ x = 0, y = 0, w = max_w, h = max_h })
+    if not save_r or save_r.w <= 0 or save_r.h <= 0 then
+        return nil
+    end
+    return save_r
+end
+
+local function getIndicatorDirtyRect(old_rect, new_rect, max_w, max_h)
+    local old_save = getIndicatorSaveRect(old_rect, max_w, max_h)
+    local new_save = getIndicatorSaveRect(new_rect, max_w, max_h)
+    if old_save and new_save then
+        return Geom.boundingBox({ old_save, new_save })
+    end
+    return old_save or new_save
+end
+
+function IndicatorOverlay:freeSavedBB()
+    if self._saved_bb then
+        self._saved_bb:free()
+        self._saved_bb = nil
+    end
+    self._prev_rect = nil
+end
+
+function IndicatorOverlay:handleEvent(event)
+    if not event or not event.handler then return false end
+    -- Only forward input events that would otherwise be swallowed by us, being
+    -- the topmost layer. Broadcast events reach parent_ui directly via UIManager.
+    local input_events = {
+        onKeyPress = true,
+        onKeyRepeat = true,
+        onKeyRelease = true,
+        -- onGesture = true,
+    }
+    if input_events[event.handler] and self.parent_ui then
+        return self.parent_ui:handleEvent(event)
+    end
+    return false
+end
+
+function IndicatorOverlay:drawCrosshairs(bb, rect)
+    if not rect then return end
+    bb:invertRect(
+        rect.x,
+        math.floor(rect.y + rect.h / 2 - Size.border.thick / 2),
+        rect.w,
+        Size.border.thick
+    )
+    bb:invertRect(
+        math.floor(rect.x + rect.w / 2 - Size.border.thick / 2),
+        rect.y,
+        Size.border.thick,
+        rect.h
+    )
+end
+
+function IndicatorOverlay:getSize()
+    return self.dimen or Screen:getSize()
+end
+
+function IndicatorOverlay:paintTo(bb, x, y, is_dirty)
+    -- If is_dirty is nil, the parent ReaderUI painted over us with new content.
+    -- The background we saved is now invalid, so we clear it.
+    if is_dirty == nil then
+        self:freeSavedBB()
+    end
+
+    -- Restore previous unblemished page background
+    if self._prev_rect and self._saved_bb then
+        local r = self._prev_rect
+        bb:blitFrom(self._saved_bb, r.x, r.y, 0, 0, r.w, r.h)
+    end
+
+    if self.indicator_rect then
+        local r = self.indicator_rect
+        local save_r = getIndicatorSaveRect(r, bb:getWidth(), bb:getHeight())
+        if save_r and self.dimen then
+            save_r = save_r:intersect(self.dimen)
+        end
+        if not save_r or save_r.w <= 0 or save_r.h <= 0 then
+            self._prev_rect = nil
+            return
+        end
+
+        -- Resize the saved Blitbuffer if necessary
+        if not self._saved_bb or self._saved_bb:getWidth() < save_r.w or self._saved_bb:getHeight() < save_r.h then
+            self:freeSavedBB()
+            self._saved_bb = Blitbuffer.new(save_r.w, save_r.h, bb:getType())
+        end
+
+        -- Copy clean background from screen
+        self._saved_bb:blitFrom(bb, 0, 0, save_r.x, save_r.y, save_r.w, save_r.h)
+
+        -- Draw the crosshair natively overriding the background
+        self:drawCrosshairs(bb, self.indicator_rect)
+        self._prev_rect = save_r
+    else
+        self._prev_rect = nil
+    end
+end
 
 local ReaderKeySelection = InputContainer:extend{}
 
@@ -48,6 +170,11 @@ end
 
 function ReaderKeySelection:onSetDimensions(dimen)
     self.screen_w, self.screen_h = dimen.w, dimen.h
+    if self._indicator_overlay then
+        local overlay_rect = getIndicatorSaveRect(self._current_indicator_pos, dimen.w, dimen.h)
+        self._indicator_overlay.dimen = overlay_rect or Geom:new{ x = 0, y = 0, w = dimen.w, h = dimen.h }
+        self._indicator_overlay:freeSavedBB()
+    end
 end
 
 function ReaderKeySelection:registerKeyEvents()
@@ -243,10 +370,24 @@ function ReaderKeySelection:startHighlightIndicator()
             rect.h = rect.w
         end
         self._current_indicator_pos = rect
+
+        -- Compute padded saved region (match paintTo padding)
+        local max_w = self.screen_w or Screen:getWidth()
+        local max_h = self.screen_h or Screen:getHeight()
+        local save_r = getIndicatorSaveRect(rect, max_w, max_h)
+        -- Fallback to minimal rect if intersection collapsed
+        if not save_r then
+            save_r = Geom:new{ x = math.floor(rect.x), y = math.floor(rect.y), w = rect.w, h = rect.h }
+        end
+        self._indicator_overlay = IndicatorOverlay:new{
+            dimen = Geom:new{ x = save_r.x, y = save_r.y, w = save_r.w, h = save_r.h },
+            parent_ui = self.ui,
+        }
+        UIManager:show(self._indicator_overlay)
         if self.ui.paging then
             self._last_indicator_move_args = {dx = 0, dy = 0, distance = 0, time = time:now()}
-            self.view.highlight.indicator = rect
-            UIManager:setDirty(self.dialog, "ui", rect)
+            self._indicator_overlay.indicator_rect = rect
+            UIManager:setDirty(self._indicator_overlay, "ui", rect)
             return true
         end
         local center_x = rect.x + rect.w * 0.5
@@ -285,6 +426,11 @@ function ReaderKeySelection:stopHighlightIndicator(need_clear_selection)
     self._edge_dx, self._edge_dy = nil, nil
     self._last_move_was_quick_move = nil
     self._previous_indicator_word = nil
+    if self._indicator_overlay then
+        self._indicator_overlay:freeSavedBB()
+        UIManager:close(self._indicator_overlay)
+        self._indicator_overlay = nil
+    end
     self._last_indicator_move_args = nil
     UIManager:setDirty(self.dialog, "ui", rect)
     if need_clear_selection then
@@ -421,6 +567,14 @@ function ReaderKeySelection:pageTurnDuringSelection()
     self._edge_dx, self._edge_dy = nil, nil
     self._previous_indicator_word = nil
     local last_pos = self._current_indicator_pos
+    if self._indicator_overlay then
+        local old_dirty = getIndicatorSaveRect(last_pos, self.screen_w, self.screen_h)
+        self._indicator_overlay:freeSavedBB()
+        self._indicator_overlay.indicator_rect = nil
+        if old_dirty then
+            UIManager:setDirty(self.dialog, "ui", old_dirty)
+        end
+    end
     local target_x = last_pos.x + last_pos.w * 0.5
     local target_y = last_pos.y + last_pos.h * 0.5
 
@@ -577,10 +731,21 @@ function ReaderKeySelection:_setIndicatorToWord(word)
 end
 
 function ReaderKeySelection:_setIndicatorRect(rect)
-    UIManager:setDirty(self.dialog, "fast", self._current_indicator_pos)
+    local old_rect = self._current_indicator_pos
     self._current_indicator_pos = rect
-    self.view.highlight.indicator = self._current_indicator_pos
-    UIManager:setDirty(self.dialog, "fast", self._current_indicator_pos)
+    if not self._indicator_overlay then
+        logger.warn("ReaderKeySelection: _setIndicatorRect: no overlay")
+        return
+    end
+    logger.dbg("ReaderKeySelection: _setIndicatorRect: dirtying overlay, rect=", rect)
+    self._indicator_overlay.indicator_rect = rect
+    local dirty = getIndicatorDirtyRect(old_rect, rect, self.screen_w, self.screen_h)
+    if dirty then
+        self._indicator_overlay.dimen = dirty
+        UIManager:setDirty(self._indicator_overlay, "fast", dirty)
+    else
+        UIManager:setDirty(self._indicator_overlay, "fast", rect)
+    end
 end
 
 function ReaderKeySelection:_getWordAnchorCoordinates(word)
