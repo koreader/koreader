@@ -405,7 +405,6 @@ return {
         "ൺ",
         north = "ണ",
     },
-    
     -- others
     _1_ = { "1", north = "!", alt_label = "!", south = "൧",},
     _1p = { "!", north = "1", alt_label = "1", south = "൧", },
