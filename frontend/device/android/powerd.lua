@@ -4,6 +4,9 @@ local _, android = pcall(require, "android")
 local AndroidPowerD = BasePowerD:new{
     fl_min = 0,
     fl_max = 100,
+    -- Set to true on devices whose sysfs warmth node resets on every app start/resume
+    -- (e.g. Nook GL4 Plus). Enables restore-on-init and per-change flush for crash safety.
+    volatile_warmth = false,
 }
 
 function AndroidPowerD:frontlightIntensityHW()
@@ -34,11 +37,25 @@ function AndroidPowerD:init()
         self.fl_warmth_min = android.getScreenMinWarmth()
         self.fl_warmth_max = android.getScreenMaxWarmth()
         self.warm_diff = self.fl_warmth_max - self.fl_warmth_min
+        if self.volatile_warmth then
+            -- Warmth node resets on every app start; restore the saved value now
+            -- so frontlightWarmthHW() returns the correct state immediately.
+            local saved = G_reader_settings:readSetting("frontlight_warmth") or 0
+            if saved > 0 then
+                android.setScreenWarmth(math.floor(saved * self.warm_diff / 100))
+            end
+        end
     end
 end
 
 function AndroidPowerD:setWarmthHW(warmth)
     android.setScreenWarmth(warmth)
+    if self.volatile_warmth and self.fl_warmth then
+        -- Flush immediately so the value survives a process kill before the
+        -- normal settings flush on exit (needed for the restore-on-init path).
+        G_reader_settings:saveSetting("frontlight_warmth", self.fl_warmth)
+        G_reader_settings:flush()
+    end
 end
 
 function AndroidPowerD:frontlightWarmthHW()
