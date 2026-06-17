@@ -821,6 +821,7 @@ local VirtualKeyboard = FocusManager:extend{
         ja = "ja_keyboard",
         ka = "ka_keyboard",
         ko_KR = "ko_KR_keyboard",
+        ml = "ml_keyboard",
         nb_NO = "no_keyboard",
         pl = "pl_keyboard",
         pt_BR = "pt_keyboard",
