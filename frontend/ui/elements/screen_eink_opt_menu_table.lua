@@ -22,6 +22,14 @@ local eink_settings_table = {
                 G_reader_settings:flipNilOrFalse("avoid_flashing_ui")
             end,
         },
+        {
+            text = _("Extra sleep screen refresh to reduce ghosting"),
+            help_text = _("After the sleep screen is shown, refresh it twice more to reduce ghosting (useful on some devices)."),
+            checked_func = function() return G_reader_settings:isTrue("screensaver_extra_flash") end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("screensaver_extra_flash")
+            end,
+        },
     },
 }
 
