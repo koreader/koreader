@@ -484,12 +484,18 @@ function Screensaver:show()
         end
 
         -- On eInk, if we're using a screensaver mode that shows an image,
-        -- flash the screen to white first, to eliminate ghosting.
+        -- flash black then white to eliminate ghosting (matching native Kobo behavior).
         if Device:hasEinkScreen() and self:modeIsImage() then
-            if self:withBackground() then
-                Screen:clear()
-            end
+            -- Flash to black
+            Screen.bb:paintRect(0, 0, screen_w, screen_h, Blitbuffer.COLOR_BLACK)
             Screen:refreshFull(0, 0, screen_w, screen_h)
+            -- Wait for refresh to complete before next flash
+            ffiUtil.usleep(150 * 1000)
+            -- Flash to white
+            Screen:clear()
+            Screen:refreshFull(0, 0, screen_w, screen_h)
+            -- Wait before cover is drawn
+            ffiUtil.usleep(150 * 1000)
 
             -- On Kobo, on sunxi SoCs with a recent kernel, wait a tiny bit more to avoid weird refresh glitches...
             if Device:isKobo() and Device:isSunxi() then
