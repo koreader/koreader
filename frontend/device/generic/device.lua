@@ -36,6 +36,8 @@ local Device = {
     -- For Kobo, wait at least 15 seconds before calling suspend script. Otherwise, suspend might
     -- fail and the battery will be drained while we are in screensaver mode
     suspend_wait_timeout = 15,
+    -- Bumped when screensaver_extra_flash is enabled, to account for ~2s of extra refresh activity
+    suspend_wait_timeout_extra_flash = 17,
 
     -- hardware feature tests: (these are functions!)
     hasBattery = yes,

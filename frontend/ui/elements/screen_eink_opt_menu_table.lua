@@ -22,6 +22,14 @@ local eink_settings_table = {
                 G_reader_settings:flipNilOrFalse("avoid_flashing_ui")
             end,
         },
+        {
+            text = _("Double flash sleep screen"),
+            help_text = _("Flash the sleep screen twice after it is shown to reduce ghosting. May not be needed on all devices."),
+            checked_func = function() return G_reader_settings:isTrue("screensaver_extra_flash") end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("screensaver_extra_flash")
+            end,
+        },
     },
 }
 
