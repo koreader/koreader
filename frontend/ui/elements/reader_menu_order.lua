@@ -61,6 +61,7 @@ local order = {
         "speed_reading_module_perception_expander",
         "----------------------------",
         "highlight_options",
+        "notes_full_screen",
         "selection_text", -- if Device:hasDPad()
         "panel_zoom_options",
         "djvu_render_mode",

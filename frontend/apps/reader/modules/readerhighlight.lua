@@ -578,6 +578,17 @@ function ReaderHighlight:addToMainMenu(menu_items)
         separator = true,
     })
     table.insert(hl_sub_item_table, {
+        text = _("Full-screen markdown notes"),
+        help_text = _("When enabled, notes open in a full-screen dialog with markdown rendering. When disabled, notes open in the default small text viewer."),
+        checked_func = function()
+            return G_reader_settings:isTrue("notes_full_screen")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("notes_full_screen")
+        end,
+        separator = true,
+    })
+    table.insert(hl_sub_item_table, {
         text = _("Apply current style and color to all highlights"),
         callback = function()
             UIManager:show(ConfirmBox:new{
@@ -737,6 +748,17 @@ If you wish your highlights to be saved in the document, just move it to a writa
             sub_item_table = self:genPanelZoomMenu(),
         }
     end
+
+    menu_items.notes_full_screen = {
+        text = _("Full-screen markdown notes"),
+        help_text = _("When enabled, notes are displayed in a full-screen dialog with markdown rendering (bold, headers, lists, tables). When disabled, notes open in the default small text viewer."),
+        checked_func = function()
+            return G_reader_settings:isTrue("notes_full_screen")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("notes_full_screen")
+        end,
+    }
 
     -- main menu Settings
     menu_items.long_press = {
@@ -1284,9 +1306,138 @@ function ReaderHighlight:showChooseHighlightDialog(highlights)
     return true
 end
 
+local NOTE_CSS = [[
+@page { margin: 0; }
+body { margin: 0.5em; line-height: 1.3; }
+h1, h2, h3 { margin: 0.3em 0; }
+p { margin: 0.3em 0; }
+ul, ol { margin: 0; padding-left: 1.5em; }
+pre, code { font-family: monospace; }
+blockquote { margin: 0 1em; }
+table { border-collapse: collapse; margin: 0.3em 0; }
+td, th { border: 1px solid; padding: 0.2em 0.4em; }
+]]
+
+function ReaderHighlight:showHighlightNoteOrDialogFullScreen(index)
+    local bookmark_note = self.ui.annotation.annotations[index].note
+    local ok, MD = pcall(require, "apps/filemanager/lib/md")
+    if not ok then return false end
+    local html, err = MD(bookmark_note)
+    if err or not html then return false end
+
+    local VerticalGroup = require("ui/widget/verticalgroup")
+    local FrameContainer = require("ui/widget/container/framecontainer")
+    local CenterContainer = require("ui/widget/container/centercontainer")
+    local WidgetContainer = require("ui/widget/container/widgetcontainer")
+    local TitleBar = require("ui/widget/titlebar")
+    local ButtonTable = require("ui/widget/buttontable")
+    local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
+
+    local sw, sh = Screen:getWidth(), Screen:getHeight()
+    local width  = sw - Screen:scaleBySize(30)
+    local height = sh - Screen:scaleBySize(30)
+    local text_padding = Size.padding.large
+    local text_margin  = Size.margin.small
+    local btn_padding  = Size.padding.default
+
+    local dialog = InputContainer:new{ covers_fullscreen = true }
+    local function close()
+        UIManager:close(dialog)
+        UIManager:setDirty(self.dialog, "partial")
+    end
+
+    local button_table = ButtonTable:new{
+        width = width - 2 * btn_padding,
+        buttons = {
+            {
+                { text = _("Delete note"), callback = function()
+                    close()
+                    local ann = self.ui.annotation.annotations[index]
+                    ann.note = nil
+                    self.ui:handleEvent(Event:new("AnnotationsModified",
+                        { ann, nb_highlights_added = 1, nb_notes_added = -1 }))
+                    self:writePdfAnnotation("content", ann, "")
+                    if self.view.highlight.note_mark then
+                        UIManager:setDirty(self.dialog, "ui")
+                    end
+                end },
+                { text = _("Edit note"), callback = function()
+                    close(); self:editNote(index)
+                end },
+            },
+            {
+                { text = _("Delete highlight"), callback = function()
+                    close(); self:deleteHighlight(index)
+                end },
+                { text = _("Highlight menu"), callback = function()
+                    close(); self:showHighlightDialog(index)
+                end },
+            },
+        },
+        show_parent = dialog,
+    }
+
+    local titlebar = TitleBar:new{
+        width = width,
+        align = "left",
+        with_bottom_line = true,
+        title = _("Note"),
+        close_callback = close,
+        show_parent = dialog,
+    }
+
+    local textw_height = height - titlebar:getHeight() - button_table:getSize().h
+    local scroll_w = ScrollHtmlWidget:new{
+        html_body = html,
+        css = NOTE_CSS,
+        default_font_size = Screen:scaleBySize(20),
+        width  = width - 2 * text_padding - 2 * text_margin,
+        height = textw_height - 2 * text_padding - 2 * text_margin,
+        dialog = dialog,
+    }
+    local textw = FrameContainer:new{
+        padding   = text_padding,
+        margin    = text_margin,
+        bordersize = 0,
+        scroll_w,
+    }
+
+    dialog[1] = WidgetContainer:new{
+        align = "center",
+        dimen = Geom:new{ w = sw, h = sh },
+        FrameContainer:new{
+            radius     = Size.radius.window,
+            padding    = 0,
+            margin     = 0,
+            background = Blitbuffer.COLOR_WHITE,
+            VerticalGroup:new{
+                align = "left",
+                titlebar,
+                CenterContainer:new{
+                    dimen = Geom:new{ w = width, h = textw:getSize().h },
+                    textw,
+                },
+                CenterContainer:new{
+                    dimen = Geom:new{ w = width, h = button_table:getSize().h },
+                    button_table,
+                },
+            },
+        },
+    }
+
+    UIManager:show(dialog)
+    UIManager:setDirty(dialog, function()
+        return "partial", dialog[1][1].dimen
+    end)
+    return true
+end
+
 function ReaderHighlight:showHighlightNoteOrDialog(index)
     local bookmark_note = self.ui.annotation.annotations[index].note
     if bookmark_note then
+        if G_reader_settings:isTrue("notes_full_screen") then
+            if self:showHighlightNoteOrDialogFullScreen(index) then return end
+        end
         local textviewer
         textviewer = TextViewer:new{
             title = _("Note"),
