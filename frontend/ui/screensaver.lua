@@ -659,6 +659,14 @@ function Screensaver:show()
         self.screensaver_widget.dithered = true
 
         UIManager:show(self.screensaver_widget, "full")
+        if G_reader_settings:isTrue("screensaver_extra_flash") then
+            local screen_w2, screen_h2 = Screen:getWidth(), Screen:getHeight()
+            UIManager:scheduleIn(0.5, function()
+                Screen:refreshFull(0, 0, screen_w2, screen_h2)
+                ffiUtil.usleep(1000 * 1000)
+                Screen:refreshFull(0, 0, screen_w2, screen_h2)
+            end)
+        end
     end
 
     -- Setup the gesture lock through an additional invisible widget, so that it works regardless of the configuration.
