@@ -362,6 +362,13 @@ function ReaderKeySelection:clearOverlay()
     self._indicator_overlay:freeSavedBB()
 end
 
+function ReaderKeySelection:clearFlashHighlight()
+    if not self._flashing_nearest_word then return end
+    self.ui.highlight:clear()
+    self:clearOverlay()
+    self._flashing_nearest_word = nil
+end
+
 function ReaderKeySelection:startHighlightIndicator()
     -- disable long-press icon (poke-ball), as it is triggered constantly due to NT devices needing a workaround for text selection to work.
     self.ui.highlight.long_hold_reached_action = function() end
@@ -402,6 +409,14 @@ function ReaderKeySelection:startHighlightIndicator()
         local nearest_word = self:_getNearestWordFromScreenPoint(center_x, center_y)
         if nearest_word then
             self:_setIndicatorToWord(nearest_word)
+            -- Flash nearest_word in case the crosshairs if hard to find.
+            local coor = nearest_word.sbox
+            if self.ui.highlight:highlightWordAtCoordinates(coor.x + coor.w * 0.5, coor.y + coor.h * 0.5) then
+                self._flashing_nearest_word = true
+                UIManager:scheduleIn(G_defaults:readSetting("DELAY_CLEAR_HIGHLIGHT_S"), function()
+                    self:clearFlashHighlight()
+                end)
+            end
         else
             self:stopHighlightIndicator()
         end
@@ -447,6 +462,7 @@ end
 
 function ReaderKeySelection:highlightPress(skip_tap_check)
     if not self._current_indicator_pos then return false end
+    self:clearFlashHighlight() -- delay may not have cleared it yet
     if self._start_indicator_highlight then
         self.ui.highlight:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
         self:stopHighlightIndicator()
@@ -479,6 +495,7 @@ end
 
 function ReaderKeySelection:highlightModifierPress()
     if not self._current_indicator_pos then return false end -- let event propagate to hotkeys
+    self:clearFlashHighlight() -- delay may not have cleared it yet
     if not self._start_indicator_highlight then
         self:highlightPress(true)
         return true -- don't trigger hotkeys during text selection
@@ -492,6 +509,7 @@ end
 
 function ReaderKeySelection:moveHighlightIndicator(args)
     if not (self.view.visible_area and self._current_indicator_pos) then return false end
+    self:clearFlashHighlight() -- delay may not have cleared it yet
     local dx, dy, quick_move = unpack(args)
     if dx == self._edge_dx and dy == self._edge_dy and self._last_move_was_quick_move == quick_move then
         -- don't waste resources trying to move in a direction that we know is blocked
@@ -570,6 +588,7 @@ function ReaderKeySelection:moveHighlightIndicator(args)
 end
 
 function ReaderKeySelection:pageTurnDuringSelection()
+    self:clearFlashHighlight() -- delay may not have cleared it yet
     self._edge_dx, self._edge_dy = nil, nil
     self._previous_indicator_word = nil
     local last_pos = self._current_indicator_pos
