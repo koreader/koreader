@@ -801,6 +801,7 @@ function Dispatcher._removeFromOrder(location, settings, item)
         end
     end
     util.tableRemoveValue(actions, "settings", "quickmenu_separators", item)
+    util.tableRemoveValue(actions, "settings", "quickmenu_action_names", item)
 end
 
 -- Get a textual representation of the enabled actions to display in a menu item.
@@ -1103,7 +1104,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
                             caller.updated = true
                         end
                     end
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                    touchmenu_instance:updateItems()
                 end
             end,
             sub_item_table = submenu,
@@ -1118,7 +1119,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
         enabled_func = function()
             return location[settings] and Dispatcher:_itemsCount(location[settings]) > 1 or false
         end,
-        callback = function(touchmenu_instance)
+        callback = function()
             Dispatcher._sortActions(caller, location[settings])
         end,
         keep_menu_open = true,
@@ -1204,6 +1205,82 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             end
         end,
     })
+    table.insert(menu, {
+        text = _("Rename QuickMenu actions"),
+        enabled_func = function()
+            return util.tableGetValue(location[settings], "settings", "show_as_quickmenu") or false
+        end,
+        checked_func = function()
+            return util.tableGetValue(location[settings], "settings", "quickmenu_action_names")
+        end,
+        check_callback_updates_menu = true,
+        callback = function(touchmenu_instance)
+            local function rename_update_func()
+                caller.updated = true
+                touchmenu_instance:updateItems()
+            end
+            Dispatcher.renameQuickMenuActions(location[settings], rename_update_func)
+        end,
+        hold_callback = function(touchmenu_instance) -- reset all custom names
+            util.tableRemoveValue(location[settings], "settings", "quickmenu_action_names")
+            caller.updated = true
+            touchmenu_instance:updateItems()
+        end,
+    })
+end
+
+function Dispatcher.renameQuickMenuActions(actions, rename_update_func)
+    local rename_callback, rename_hold_callback
+    rename_callback = function(action, quickmenu)
+        local InputDialog = require("ui/widget/inputdialog")
+        local name_input
+        name_input = InputDialog:new{
+            title = _("Enter action name"),
+            description = T(_("Action: %1"), action.text),
+            input = util.tableGetValue(actions, "settings", "quickmenu_action_names", action.key) or action.text,
+            buttons = {{
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(name_input)
+                    end,
+                },
+                {
+                    text = _("Default"),
+                    callback = function()
+                        name_input:setInputText(action.text, nil, false)
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    callback = function()
+                        local new_name = name_input:getInputText()
+                        if new_name == "" or new_name == action.text then -- reset custom name
+                            util.tableRemoveValue(actions, "settings", "quickmenu_action_names", action.key)
+                        else
+                            util.tableSetValue(actions, new_name, "settings", "quickmenu_action_names", action.key)
+                        end
+                        UIManager:close(name_input)
+                        UIManager:close(quickmenu)
+                        rename_update_func()
+                        Dispatcher._showAsMenu(actions, nil, rename_callback, rename_hold_callback)
+                    end,
+                },
+            }},
+        }
+        UIManager:show(name_input)
+        name_input:onShowKeyboard()
+    end
+    rename_hold_callback = function(action, quickmenu) -- reset custom name
+        if util.tableGetValue(actions, "settings", "quickmenu_action_names", action.key) then
+            util.tableRemoveValue(actions, "settings", "quickmenu_action_names", action.key)
+            UIManager:close(quickmenu)
+            rename_update_func()
+            Dispatcher._showAsMenu(actions, nil, rename_callback, rename_hold_callback)
+        end
+    end
+    Dispatcher._showAsMenu(actions, nil, rename_callback, rename_hold_callback)
 end
 
 function Dispatcher:isActionEnabled(action)
@@ -1222,7 +1299,7 @@ function Dispatcher:isActionEnabled(action)
     return not disabled
 end
 
-function Dispatcher._showAsMenu(settings, exec_props)
+function Dispatcher._showAsMenu(settings, exec_props, rename_callback, rename_hold_callback)
     local title = settings.settings.name
     local keep_open_on_apply = settings.settings.keep_open_on_apply
     local display_list = Dispatcher.getDisplayList(settings)
@@ -1241,22 +1318,34 @@ function Dispatcher._showAsMenu(settings, exec_props)
         }})
     end
     for _, v in ipairs(display_list) do
+        local text = util.tableGetValue(settings, "settings", "quickmenu_action_names", v.key) -- custom name
+        if text and rename_callback then -- rename mode
+            text = "\u{F040} " .. text -- "pen" symbol
+        end
         table.insert(buttons, {{
-            text = v.text,
-            enabled = Dispatcher:isActionEnabled(settingsList[v.key]),
+            text = text or v.text,
+            enabled = rename_callback ~= nil or Dispatcher:isActionEnabled(settingsList[v.key]),
             menu_style = true,
             callback = function()
-                UIManager:close(quickmenu)
-                Dispatcher:execute({[v.key] = settings[v.key]})
-                if keep_open_on_apply and not util.stringStartsWith(v.key, "touch_input") then
-                    quickmenu:setTitle(title)
-                    UIManager:show(quickmenu)
+                if rename_callback then
+                    rename_callback(v, quickmenu)
+                else
+                    UIManager:close(quickmenu)
+                    Dispatcher:execute({[v.key] = settings[v.key]})
+                    if keep_open_on_apply and not util.stringStartsWith(v.key, "touch_input") then
+                        quickmenu:setTitle(title)
+                        UIManager:show(quickmenu)
+                    end
                 end
             end,
             hold_callback = function()
-                if v.key:sub(1, 13) == "profile_exec_" then
-                    UIManager:close(quickmenu)
-                    UIManager:sendEvent(Event:new(settingsList[v.key].event, settingsList[v.key].arg, { qm_show = true }))
+                if rename_hold_callback then
+                    rename_hold_callback(v, quickmenu)
+                else
+                    if v.key:sub(1, 13) == "profile_exec_" then
+                        UIManager:close(quickmenu)
+                        UIManager:sendEvent(Event:new(settingsList[v.key].event, settingsList[v.key].arg, { qm_show = true }))
+                    end
                 end
             end,
         }})
