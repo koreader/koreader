@@ -1454,7 +1454,7 @@ function FileManagerCollection:sortCollections()
         title = _("Arrange collections"),
         item_table = self.coll_list.item_table,
         callback = function()
-            self.updated_collections = { true } -- all
+            self.updated_collections[1] = true -- all
             ReadCollection:updateCollectionListOrder(sort_widget.item_table)
             self:updateCollListItemTable(true) -- init
         end,
@@ -1650,9 +1650,7 @@ function FileManagerCollection:genAddToCollectionButton(file_or_files, caller_pr
                 caller_pre_callback()
             end
             local caller_callback = function(selected_collections)
-                for name in pairs(selected_collections) do
-                    self.updated_collections[name] = true
-                end
+                self.updated_collections[1] = true -- all, include unchecked collections to remove books from them
                 if is_single_file then
                     ReadCollection:addRemoveItemMultiple(file_or_files, selected_collections)
                 else -- selected files
