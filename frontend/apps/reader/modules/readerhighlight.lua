@@ -2162,6 +2162,27 @@ function ReaderHighlight:onCycleHighlightStyle()
     return true
 end
 
+function ReaderHighlight:highlightWordAtCoordinates(x, y)
+    if not self.ui.rolling then return end
+    if not (x and y) then return end
+    self.hold_pos = { x = x, y = y }
+    local word = self.ui.document:getWordFromPosition(self.hold_pos)
+    if not (word and word.sbox) then
+        return false
+    end
+    self.is_word_selection = true
+    local pos = word.pos
+    self.selected_text = {
+        text = word.word or "",
+        pos0 = word.pos0 or pos,
+        pos1 = word.pos1 or pos,
+        sboxes = { word.sbox },
+        pboxes = word.pbox and { word.pbox },
+    }
+    UIManager:setDirty(self.dialog, "ui", Geom.boundingBox(self.selected_text.sboxes))
+    return true
+end
+
 function ReaderHighlight:highlightFromHoldPos()
     if self.hold_pos then
         if not self.selected_text then
