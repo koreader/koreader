@@ -280,7 +280,6 @@ local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra
         return false, nil, status or code
     end
 
-
     if add_to_cache then
         logger.dbg("Adding to cache", url)
         FeedCache:insert(url, {
