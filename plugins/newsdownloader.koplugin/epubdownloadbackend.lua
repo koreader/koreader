@@ -279,7 +279,7 @@ local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra
         logger.warn("HTTP error:", status or code)
         return false, nil, status or code
     end
-    
+
 
     if add_to_cache then
         logger.dbg("Adding to cache", url)
