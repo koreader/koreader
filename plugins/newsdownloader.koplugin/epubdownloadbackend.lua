@@ -264,10 +264,6 @@ local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra
         logger.warn("request interrupted:", status or code)
         return false, nil, code
     end
-    if type(code) == "number" and code >= 400 and code < 500 then
-        logger.warn("HTTP error:", status or code)
-        return false, nil, status or code
-    end
     if headers == nil then
         logger.warn("No HTTP headers:", status or code or "network unreachable")
         return false, nil, "Network or remote server unavailable"
@@ -279,6 +275,11 @@ local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra
             return false, nil, "Incomplete content received"
         end
     end
+    if code >= 400 and code < 500 then
+        logger.warn("HTTP error:", status or code)
+        return false, nil, status or code
+    end
+    
 
     if add_to_cache then
         logger.dbg("Adding to cache", url)
