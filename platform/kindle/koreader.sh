@@ -2,11 +2,11 @@
 
 export LC_ALL="en_US.UTF-8"
 
-if [ ! -n "${UNPACK_DIR+x}" ]; then
-    UNPACK_DIR='/mnt/us'
-fi
-# KOReader's working directory.
-KOREADER_DIR="${UNPACK_DIR}/koreader"
+# Compute our working directory in an extremely defensive manner
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
+# NOTE: We need to remember the *actual* KOREADER_DIR, not the relocalized version in /tmp...
+export KOREADER_DIR="${KOREADER_DIR:-${SCRIPT_DIR}}"
+UNPACK_DIR="${KOREADER_DIR%/*}"
 
 # NOTE: Stupid workaround to make sure the script we end up running is a *copy*,
 # living in a magical land that doesn't suffer from gross filesystem deficiencies.
