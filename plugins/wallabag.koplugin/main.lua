@@ -45,7 +45,6 @@ local T = ffiUtil.template
 -- constants
 local article_id_prefix = "[w-id_"
 local article_id_postfix = "] "
-local failed, skipped, downloaded = 1, 2, 3
 
 local Wallabag = WidgetContainer:extend{
     name = "wallabag",
@@ -789,10 +788,10 @@ function Wallabag:filterIgnoredTags(article_list)
 end
 
 --- Download a single article from the Wallabag server given by id in the article table.
--- @tparam table A list of article tables, see https://doc.wallabag.org/developer/api/methods/#getting-existing-entries
--- @treturn int 1 failed, 2 skipped, 3 downloaded
+-- @tparam table An article table, see https://doc.wallabag.org/developer/api/methods/#getting-existing-entries
+-- @treturn string Full path to local article file.
+-- @treturn nil Failed to download the article.
 function Wallabag:downloadArticle(article)
-    local skip_article = false
     logger.dbg("Wallabag:downloadArticle: article.title =", article.title)
     local title = util.getSafeFilename(article.title, self.directory, 230, 0)
     logger.dbg("Wallabag:downloadArticle: local title =", title)
@@ -837,32 +836,37 @@ function Wallabag:downloadArticle(article)
     local local_path = ffiUtil.joinPath(self.directory, article_id_prefix..article.id..article_id_postfix..title..file_ext)
     logger.dbg("Wallabag:downloadArticle: downloading", article.id, "to", local_path)
 
-    local attr = lfs.attributes(local_path)
-    if attr then
-        -- File already exists, skip it. Preferably only skip if the date of local file is newer than server's.
-        -- newsdownloader.koplugin has a date parser but it is available only if the plugin is activated.
-        --- @todo find a better solution
-        if self.is_dateparser_available then
-            local server_date = self.dateparser.parse(article.updated_at)
-            if server_date < attr.modification then
-                skip_article = true
-                logger.dbg("Wallabag:downloadArticle: skipping download because local copy at", local_path, "is newer")
+    if self:callAPI("GET", item_url, nil, nil, local_path) then
+        return local_path
+    end
+    return nil
+end
+
+--- Check if we already have the article locally.
+-- @tparam table local_articles Full paths of all articles, keyed by Wallabag ID.
+-- @tparam table remote_article An article table, see https://doc.wallabag.org/developer/api/methods/#getting-existing-entries
+-- @treturn bool Need to download the article
+function Wallabag:needToDownload(local_articles, remote_article)
+    local local_path = local_articles[ tostring(remote_article.id) ]
+    if local_path ~= nil then
+        local attr = lfs.attributes(local_path)
+        if attr then
+            -- File already exists, skip it. Preferably only skip if the date of local file is newer than server's.
+            -- newsdownloader.koplugin has a date parser but it is available only if the plugin is activated.
+            --- @todo find a better solution
+            if self.is_dateparser_available then
+                local server_date = self.dateparser.parse(remote_article.updated_at)
+                if server_date < attr.modification then
+                    logger.dbg("Wallabag:needToDownload: skipping download because local copy at", local_path, "is newer")
+                    return false
+                end
+            else
+                logger.dbg("Wallabag:needToDownload: skipping download because local copy exists at", local_path)
+                return false
             end
-        else
-            skip_article = true
-            logger.dbg("Wallabag:downloadArticle: skipping download because local copy exists at", local_path)
         end
     end
-
-    if skip_article == false then
-        if self:callAPI("GET", item_url, nil, nil, local_path) then
-            return downloaded -- = 3
-        else
-            return failed -- = 1
-        end
-    end
-
-    return skipped -- = 2
+    return true
 end
 
 --- Call the Wallabag API.
@@ -978,8 +982,9 @@ end
 
 --- Add articles from local queue to Wallabag, then download new articles.
 -- If self.auto_archive is true, then local article statuses are uploaded before downloading.
+-- @tparam table local_articles Full paths of all articles, keyed by Wallabag ID.
 -- @treturn bool Whether the synchronization process reached the end (with or without errors)
-function Wallabag:downloadArticles()
+function Wallabag:downloadArticles(local_articles)
     local info = InfoMessage:new{ text = _("Connecting to Wallabag server…") }
     UIManager:show(info)
 
@@ -1000,7 +1005,7 @@ function Wallabag:downloadArticles()
     -- Upload local article statuses to remote
     if self.auto_archive == true then
         logger.dbg("Wallabag:downloadArticles: uploading statuses automatically")
-        del_count_remote, del_count_local = self:uploadStatuses()
+        del_count_remote, del_count_local = self:uploadStatuses(local_articles)
     else
         logger.dbg("Wallabag:downloadArticles: skipping status upload")
     end
@@ -1030,25 +1035,27 @@ function Wallabag:downloadArticles()
             logger.dbg("Wallabag:downloadArticles: downloading", article.id)
             remote_article_ids[ tostring(article.id) ] = true
 
-            local res = self:downloadArticle(article)
-
-            if res == downloaded then
-                logger.dbg("Wallabag:downloadArticles: downloading", article.id, "succeeded")
-                download_count = download_count + 1
-                info = InfoMessage:new{
-                    text = T(
-                        _("Downloaded article %1 of %2…"),
-                        download_count,
-                        #articles
-                    ),
-                    timeout = 3
-                }
-                UIManager:show(info)
-                UIManager:forceRePaint()
-            elseif res == failed then
-                logger.err("Wallabag:downloadArticles: downloading", article.id, "failed")
-                fail_count = fail_count + 1
-            else -- res == skipped
+            if self:needToDownload(local_articles, article) then
+                local local_path = self:downloadArticle(article)
+                if local_path ~= nil then
+                    logger.dbg("Wallabag:downloadArticles: downloading", article.id, "succeeded")
+                    local_articles[ tostring(article.id) ] = local_path
+                    download_count = download_count + 1
+                    info = InfoMessage:new{
+                        text = T(
+                            _("Downloaded article %1 of %2…"),
+                            download_count,
+                            #articles
+                        ),
+                        timeout = 3
+                    }
+                    UIManager:show(info)
+                    UIManager:forceRePaint()
+                else
+                    logger.err("Wallabag:downloadArticles: downloading", article.id, "failed")
+                    fail_count = fail_count + 1
+                end
+            else -- skipped
                 logger.err("Wallabag:downloadArticles: downloading", article.id, "skipped")
                 skip_count = skip_count + 1
             end
@@ -1057,7 +1064,7 @@ function Wallabag:downloadArticles()
         -- Synchronize remote deletions to local
         if self.sync_remote_archive then
             logger.dbg("Wallabag:downloadArticles: processing remote deletes…")
-            del_count_local = del_count_local + self:processRemoteDeletes(remote_article_ids)
+            del_count_local = del_count_local + self:processRemoteDeletes(local_articles, remote_article_ids)
         else
             logger.dbg("Wallabag:downloadArticles: processing remote deletes skipped")
         end
@@ -1144,9 +1151,10 @@ function Wallabag:uploadQueue(quiet)
 end
 
 --- Compare local IDs with remote_article_ids and delete or archive any that are missing.
+-- @tparam table local_articles Full paths of all articles, keyed by Wallabag ID.
 -- @tparam table remote_article_ids Article IDs of articles downloaded this sync run
 -- @treturn int Number of locally deleted or archived articles
-function Wallabag:processRemoteDeletes(remote_ids)
+function Wallabag:processRemoteDeletes(local_articles, remote_ids)
     logger.dbg("Wallabag:processRemoteDeletes: remote_ids =", remote_ids)
 
     local info = InfoMessage:new{ text = _("Synchronizing remote archivals and deletions…") }
@@ -1155,23 +1163,23 @@ function Wallabag:processRemoteDeletes(remote_ids)
 
     local count = 0
 
-    for entry in lfs.dir(self.directory) do
-        local entry_path = ffiUtil.joinPath(self.directory, entry)
-
-        if entry ~= "." and entry ~= ".." and lfs.attributes(entry_path, "mode") == "file" then
-            local local_id = self:getArticleID(entry_path)
-
-            if not remote_ids[ local_id ] then
-                if self.use_local_archive then
-                    logger.dbg("Wallabag:processRemoteDeletes: archiving", local_id, "at", entry_path)
-                    count = count + self:archiveLocalArticle(entry_path)
-                else
-                    logger.dbg("Wallabag:processRemoteDeletes: deleting", local_id, "at", entry_path)
-                    count = count + self:deleteLocalArticle(entry_path)
+    for local_id, entry_path in pairs(local_articles) do
+        if not remote_ids[ local_id ] then
+            if self.use_local_archive then
+                logger.dbg("Wallabag:processRemoteDeletes: archiving", local_id, "at", entry_path)
+                if self:archiveLocalArticle(entry_path) then
+                    count = count + 1
+                    local_articles[local_id] = nil
                 end
             else
-                logger.dbg("Wallabag:processRemoteDeletes: local_id", local_id, "found in remote_ids; not archiving/deleting")
+                logger.dbg("Wallabag:processRemoteDeletes: deleting", local_id, "at", entry_path)
+                if self:deleteLocalArticle(entry_path) then
+                    count = count + 1
+                    local_articles[local_id] = nil
+                end
             end
+        else
+            logger.dbg("Wallabag:processRemoteDeletes: local_id", local_id, "found in remote_ids; not archiving/deleting")
         end
     end
 
@@ -1197,8 +1205,9 @@ function Wallabag:shouldUploadStatus(entry_path)
 end
 
 --- Archive (or delete) locally finished articles on the Wallabag server.
+-- @tparam table local_articles Full paths of all articles, keyed by Wallabag ID.
 -- @tparam[opt] bool quiet Whether to supress the info message or not
-function Wallabag:uploadStatuses(quiet)
+function Wallabag:uploadStatuses(local_articles, quiet)
     if quiet == nil then
         quiet = true
     end
@@ -1218,46 +1227,48 @@ function Wallabag:uploadStatuses(quiet)
         UIManager:show(info)
         UIManager:forceRePaint()
 
-        for entry in lfs.dir(self.directory) do
-            local skip = false
+        for local_id, entry_path in pairs(local_articles) do
+            if DocSettings:hasSidecarFile(entry_path) then
+                logger.dbg("Wallabag:uploadStatuses:", entry_path, "has sidecar file")
 
-            if entry ~= "." and entry ~= ".." then
-                local entry_path = ffiUtil.joinPath(self.directory, entry)
+                if self.send_review_as_tags then
+                    self:addTagsFromReview(entry_path)
+                end
 
-                if DocSettings:hasSidecarFile(entry_path) then
-                    logger.dbg("Wallabag:uploadStatuses:", entry_path, "has sidecar file")
+                local skip = false
+                if self:shouldUploadStatus(entry_path) then
+                    logger.dbg("Wallabag:uploadStatuses: - archiving/deleting on remote…")
 
-                    if self.send_review_as_tags then
-                        self:addTagsFromReview(entry_path)
+                    if self:archiveArticle(entry_path) then
+                        local_articles[local_id] = nil
+                        count_remote = count_remote + 1
+                        logger.dbg("Wallabag:uploadStatuses: - archived/deleted on remote")
+                    else
+                        logger.warn("Wallabag:uploadStatuses: - could not archive/delete on remote")
+                        skip = true
                     end
 
-                    if self:shouldUploadStatus(entry_path) then
-                        logger.dbg("Wallabag:uploadStatuses: - archiving/deleting on remote…")
-
-                        if self:archiveArticle(entry_path) then
-                            count_remote = count_remote + 1
-                            logger.dbg("Wallabag:uploadStatuses: - archived/deleted on remote")
+                    if skip then
+                        logger.dbg("Wallabag:uploadStatuses: - skipping local archiving/deleting")
+                    else
+                        if self.use_local_archive then
+                            logger.dbg("Wallabag:uploadStatuses: - archiving locally as well")
+                            if self:archiveLocalArticle(entry_path) then
+                                local_articles[local_id] = nil
+                                count_local = count_local + 1
+                            end
                         else
-                            logger.warn("Wallabag:uploadStatuses: - could not archive/delete on remote")
-                            skip = true
-                        end
-
-                        if skip then
-                            logger.dbg("Wallabag:uploadStatuses: - skipping local archiving/deleting")
-                        else
-                            if self.use_local_archive then
-                                logger.dbg("Wallabag:uploadStatuses: - archiving locally as well")
-                                count_local = count_local + self:archiveLocalArticle(entry_path)
-                            else
-                                logger.dbg("Wallabag:uploadStatuses: - deleting locally as well")
-                                count_local = count_local + self:deleteLocalArticle(entry_path)
-                            end -- if use local archive
-                        end -- if not skip
-                    else -- not shouldUploadStatus
-                        logger.dbg("Wallabag:uploadStatuses: - but has not been finished yet")
-                    end -- if finished
-                end -- if has sidecar
-            end -- if not . or ..
+                            logger.dbg("Wallabag:uploadStatuses: - deleting locally as well")
+                            if self:deleteLocalArticle(entry_path) then
+                                local_articles[local_id] = nil
+                                count_local = count_local + 1
+                            end
+                        end -- if use local archive
+                    end -- if not skip
+                else -- not shouldUploadStatus
+                    logger.dbg("Wallabag:uploadStatuses: - but has not been finished yet")
+                end -- if finished
+            end -- if has sidecar
         end -- for entry
 
         UIManager:close(info)
@@ -1391,10 +1402,8 @@ end
 
 --- Move an article and its sidecar to archive_directory.
 -- @tparam string path Local path of the article
--- @treturn int 1 if successful, 0 if not
+-- @treturn bool Successfully archived or not.
 function Wallabag:archiveLocalArticle(path)
-    local result = 0
-
     -- Check if the archive directory is valid
     local dir_mode = lfs.attributes(self.archive_directory, "mode")
     if dir_mode == nil then
@@ -1404,17 +1413,23 @@ function Wallabag:archiveLocalArticle(path)
         UIManager:show(InfoMessage:new{
             text = _("The archive folder is not valid.\nPlease configure it in the settings."),
         })
-        return result
+        return false
     end
+
+    local result = false
 
     if lfs.attributes(path, "mode") == "file" then
         local _, file = util.splitFilePathName(path)
         local new_path = ffiUtil.joinPath(self.archive_directory, file)
-        if FileManager:moveFile(path, new_path) then
-            result = 1
+        if path == new_path then -- Already archived
+            result = true
+        else
+            if FileManager:moveFile(path, new_path) then
+                result = true
+            end
+            DocSettings.updateLocation(path, new_path, false) -- move sdr
+            --- @todo Why is sdr copied instead of moved?
         end
-        DocSettings.updateLocation(path, new_path, false) -- move sdr
-        --- @todo Why is sdr copied instead of moved?
     end
 
     return result
@@ -1422,13 +1437,13 @@ end
 
 --- Delete an article and its sidecar locally.
 -- @tparam string path Local path of the article
--- @treturn int 1 if successful, 0 if not
+-- @treturn bool Successfully deleted or not.
 function Wallabag:deleteLocalArticle(path)
-    local result = 0
+    local result = false
 
     if lfs.attributes(path, "mode") == "file" then
         FileManager:deleteFile(path, true)
-        result = 1
+        result = true
     end
 
     return result
@@ -1459,6 +1474,37 @@ function Wallabag:getArticleID(path)
     logger.dbg("Wallabag:getArticleID: got id", id, "from", filename)
 
     return id
+end
+
+--- Find all files that represent Wallabag articles in specified directory and subdirectories.
+-- @tparam[opt=true] string Directory to search (defaults to base self.directory)
+-- @tparam[opt=true] table The table that's passed through recursively (nil to start)
+-- @treturn table Full paths of all articles, keyed by Wallabag ID.
+function Wallabag:getLocalArticles(dir, map)
+    if dir == nil then
+        dir = self.directory
+    end
+
+    if map == nil then
+        map = {}
+    end
+
+    for entry in lfs.dir(dir) do
+        if entry ~= "." and entry ~= ".." then
+            local entry_path = ffiUtil.joinPath(dir, entry)
+            local mode = lfs.attributes(entry_path, "mode")
+            if mode == "file" then
+                local local_id = self:getArticleID(entry)
+                if local_id ~= nil then
+                    map[local_id] = entry_path
+                end
+            elseif mode == "directory" and string.match(entry, "%.sdr$") == nil then
+                self:getLocalArticles(entry_path, map)
+            end
+        end
+    end
+
+    return map
 end
 
 function Wallabag:refreshFileManager()
@@ -1712,7 +1758,7 @@ end
 function Wallabag:onSynchronizeWallabag()
     local connect_callback = function()
         logger.dbg("Wallabag:onSynchronizeWallabag:connect_callback: downloading articles…")
-        self:downloadArticles()
+        self:downloadArticles(self:getLocalArticles())
         logger.dbg("Wallabag:onSynchronizeWallabag:connect_callback: refreshing file manager…")
         self:refreshFileManager()
     end
@@ -1733,7 +1779,7 @@ end
 
 function Wallabag:onUploadWallabagStatuses()
     local connect_callback = function()
-        self:uploadStatuses(false)
+        self:uploadStatuses(self:getLocalArticles(), false)
         self:refreshFileManager()
     end
 
