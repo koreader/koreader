@@ -2,7 +2,9 @@
 
 export LC_ALL="en_US.UTF-8"
 
-UNPACK_DIR='/mnt/us'
+if [ ! -n "${UNPACK_DIR+x}" ]; then
+    UNPACK_DIR='/mnt/us'
+fi
 # KOReader's working directory.
 KOREADER_DIR="${UNPACK_DIR}/koreader"
 
@@ -260,9 +262,9 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
                 # FIXME: There's apparently a nasty side-effect on FW >= 5.12.4 which somehow softlocks the UI on exit (despite wmctrl succeeding). Don't have the HW to investigate, so, just drop it. (#6117)
                 if [ "$(version "${FW_VERSION}")" -lt "$(version "5.12.4")" ]; then
                     logmsg "Hiding the title bar . . ."
-                    TITLEBAR_GEOMETRY="$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')"
-                    ${KOREADER_DIR}/wmctrl -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY%,*},1"
-                    logmsg "Title bar geometry: '${TITLEBAR_GEOMETRY}' -> '$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')'"
+                    TITLEBAR_GEOMETRY="$("${KOREADER_DIR}/wmctrl" -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')"
+                    "${KOREADER_DIR}/wmctrl" -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY%,*},1"
+                    logmsg "Title bar geometry: '${TITLEBAR_GEOMETRY}' -> '$("${KOREADER_DIR}/wmctrl" -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')'"
                     USED_WMCTRL="yes"
                 fi
                 if [ "${FROM_KUAL}" = "yes" ]; then
@@ -396,17 +398,17 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
         # NOTE: Wait and retry for a bit, because apparently there may be timing issues (c.f., #5990)?
         usleep 250000
         WMCTRL_COUNT=0
-        until [ "$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')" = "${TITLEBAR_GEOMETRY}" ]; do
+        until [ "$("${KOREADER_DIR}/wmctrl" -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')" = "${TITLEBAR_GEOMETRY}" ]; do
             # Abort after 5s
             if [ ${WMCTRL_COUNT} -gt 20 ]; then
                 log "Giving up on restoring the title bar geometry!"
                 break
             fi
-            ${KOREADER_DIR}/wmctrl -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY}"
+            "${KOREADER_DIR}/wmctrl" -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY}"
             usleep 250000
             WMCTRL_COUNT=$((WMCTRL_COUNT + 1))
         done
-        logmsg "Title bar geometry restored to '$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')' (ought to be: '${TITLEBAR_GEOMETRY}') [after ${WMCTRL_COUNT} attempts]"
+        logmsg "Title bar geometry restored to '$("${KOREADER_DIR}/wmctrl" -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')' (ought to be: '${TITLEBAR_GEOMETRY}') [after ${WMCTRL_COUNT} attempts]"
     fi
 fi
 
