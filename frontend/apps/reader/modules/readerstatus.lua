@@ -149,7 +149,7 @@ function ReaderStatus:onEndOfBook()
     elseif settings == "mark_read" then
         self:markBook(true)
         UIManager:show(InfoMessage:new{
-            text = _("You've reached the end of the document.\nThe current book is marked as finished."),
+            text = _("You've reached the end of the document.\nThe current book has been marked as finished."),
             timeout = 3
         })
     elseif settings == "book_status_file_browser" then
