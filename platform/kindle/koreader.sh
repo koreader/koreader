@@ -21,6 +21,8 @@ if [ "$(dirname "${0}")" != "/var/tmp" ]; then
     exec /var/tmp/koreader.sh "$@"
 fi
 
+cd "${KOREADER_DIR:-/dev/null}" || exit
+
 PROC_KEYPAD="/proc/keypad"
 PROC_FIVEWAY="/proc/fiveway"
 [ -e "${PROC_KEYPAD}" ] && echo unlock >"${PROC_KEYPAD}"
