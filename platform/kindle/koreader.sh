@@ -21,6 +21,7 @@ if [ "$(dirname "${0}")" != "/var/tmp" ]; then
     exec /var/tmp/koreader.sh "$@"
 fi
 
+# We rely on starting from our working directory, and it needs to be set, sane and absolute.
 cd "${KOREADER_DIR:-/dev/null}" || exit
 
 PROC_KEYPAD="/proc/keypad"
