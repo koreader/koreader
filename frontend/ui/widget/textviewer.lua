@@ -696,7 +696,8 @@ function TextViewer:findDialog()
         },
     }
     if self.is_txt then
-        local check_button_case = CheckButton:new{
+        local check_button_case
+        check_button_case = CheckButton:new{
             text = _("Case sensitive"),
             checked = self.case_sensitive,
             parent = input_dialog,
