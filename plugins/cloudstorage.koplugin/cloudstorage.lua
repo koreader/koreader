@@ -536,7 +536,7 @@ function CloudStorage:showPlusRootDialog()
                         self._manager.updated = true
                         local max_order = #self.servers
                         for _, item in ipairs(self.servers) do
-                            if max_order < item.order then
+                            if item.order and max_order < item.order then
                                 max_order = item.order
                             end
                         end
