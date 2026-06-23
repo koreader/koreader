@@ -1,9 +1,11 @@
 local ConfirmBox = require("ui/widget/confirmbox")
+local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
+local LuaSettings = require("luasettings")
 local Math = require("optmath")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
@@ -63,6 +65,15 @@ KOSync.default_settings = {
     send_metadata = false,
 }
 
+function KOSync:readSettings()
+    self.kosync_setting = LuaSettings:open(DataStorage:getSettingsDir() .. "/kosync.lua")
+    return self.kosync_setting
+end
+
+function KOSync:flushSettings()
+    self.kosync_setting:flush()
+end
+
 function KOSync:init()
     self.push_timestamp = 0
     self.pull_timestamp = 0
@@ -79,11 +90,11 @@ function KOSync:init()
         self:updateProgress(false, false)
     end
 
-    self.settings = G_reader_settings:readSetting(self.settings_key, self.default_settings)
+    self.settings = self:readSettings():readSetting("settings")
     self.device_id = G_reader_settings:readSetting("device_id")
 
     -- Disable auto-sync if beforeWifiAction was reset to "prompt" behind our back...
-    if self.settings.auto_sync and Device:hasSeamlessWifiToggle() and G_reader_settings:readSetting("wifi_enable_action") ~= "turn_on" then
+    if self.settings.auto_sync and Device:hasSeamlessWifiToggle() and self.kosync_settings:readSetting("wifi_enable_action") ~= "turn_on" then
         self.settings.auto_sync = false
         logger.warn("KOSync: Automatic sync has been disabled because wifi_enable_action is *not* turn_on")
     end
@@ -200,6 +211,7 @@ function KOSync:addToMainMenu(menu_items)
                         input = self.settings.custom_server or "https://",
                         callback = function(input)
                             self:setCustomServer(input)
+                            self:flushSettings()
                         end,
                     }
                 end,
@@ -230,6 +242,7 @@ function KOSync:addToMainMenu(menu_items)
                                         local hostname = dialog:getInputText()
                                         logger.dbg("KOSync: Setting custom hostname to:", hostname)
                                         self.settings.kosync_hostname = hostname ~= "" and hostname or nil
+                                        self:flushSettings()
                                         UIManager:close(dialog)
                                     end,
                                 },
@@ -250,10 +263,12 @@ function KOSync:addToMainMenu(menu_items)
                     if self.settings.userkey then
                         return function(menu)
                             self:logout(menu)
+                            self:flushSettings()
                         end
                     else
                         return function(menu)
                             self:login(menu)
+                            self:flushSettings()
                         end
                     end
                 end,
@@ -265,6 +280,7 @@ function KOSync:addToMainMenu(menu_items)
                 help_text = _([[This may lead to nagging about toggling WiFi on document close and suspend/resume, depending on the device's connectivity.]]),
                 callback = function()
                     self:onKOSyncToggleAutoSync(nil, true)
+                    self:flushSettings()
                 end,
             },
             {
@@ -291,6 +307,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                         callback = function(spin)
                             self:setPagesBeforeUpdate(spin.value)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
+                            self:flushSettings()
                         end
                     }
                     UIManager:show(items)
@@ -313,6 +330,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                                 end,
                                 callback = function()
                                     self:setSyncForward(SYNC_STRATEGY.SILENT)
+                                    self:flushSettings()
                                 end,
                             },
                             {
@@ -322,6 +340,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                                 end,
                                 callback = function()
                                     self:setSyncForward(SYNC_STRATEGY.PROMPT)
+                                    self:flushSettings()
                                 end,
                             },
                             {
@@ -331,6 +350,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                                 end,
                                 callback = function()
                                     self:setSyncForward(SYNC_STRATEGY.DISABLE)
+                                    self:flushSettings()
                                 end,
                             },
                         }
@@ -347,6 +367,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                                 end,
                                 callback = function()
                                     self:setSyncBackward(SYNC_STRATEGY.SILENT)
+                                    self:flushSettings()
                                 end,
                             },
                             {
@@ -356,6 +377,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                                 end,
                                 callback = function()
                                     self:setSyncBackward(SYNC_STRATEGY.PROMPT)
+                                    self:flushSettings()
                                 end,
                             },
                             {
@@ -365,6 +387,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                                 end,
                                 callback = function()
                                     self:setSyncBackward(SYNC_STRATEGY.DISABLE)
+                                    self:flushSettings()
                                 end,
                             },
                         }
@@ -401,6 +424,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                         end,
                         callback = function()
                             self:setChecksumMethod(CHECKSUM_METHOD.BINARY)
+                            self:flushSettings()
                         end,
                     },
                     {
@@ -410,6 +434,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                         end,
                         callback = function()
                             self:setChecksumMethod(CHECKSUM_METHOD.FILENAME)
+                            self:flushSettings()
                         end,
                     },
                 }
@@ -420,6 +445,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                 help_text = _([[When enabled, document metadata (filename, title, and authors) will be sent along with progress sync requests. This data is ignored by the official sync server but may be used by custom sync servers.]]),
                 callback = function()
                     self.settings.send_metadata = not self.settings.send_metadata
+                    self:flushSettings()
                 end,
             },
         }
