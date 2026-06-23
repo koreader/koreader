@@ -331,7 +331,7 @@ function ArchiveViewer:viewFile(filepath)
         viewer:switchToImageNum(curr_index)
     else
         local viewer = TextViewer:new{
-            title = filepath,
+            file = filepath,
             title_multilines = true,
             text = self:extractContent(filepath),
             text_type = "file_content",
