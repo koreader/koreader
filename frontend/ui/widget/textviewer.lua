@@ -718,9 +718,9 @@ function TextViewer:findCallback(input_dialog)
         UIManager:close(input_dialog)
     end
     if self.is_txt then
-        self:findTxt()
+        self:findInText()
     else
-        self:findHtml()
+        self:findInHtml()
     end
     if self._find_next_button ~= self._find_next then
         self._find_next_button = self._find_next
@@ -734,7 +734,7 @@ function TextViewer:findCallback(input_dialog)
     end
 end
 
-function TextViewer:findTxt()
+function TextViewer:findInText()
     local start_pos = 1
     if self._find_next then
         local charpos, new_virtual_line_num = self.scroll_widget:getCharPos()
@@ -759,7 +759,7 @@ function TextViewer:findTxt()
     end
 end
 
-function TextViewer:findHtml()
+function TextViewer:findInHtml()
     local curr_page = self.box_widget.page_number
     local found
     if self._find_next then
@@ -806,7 +806,7 @@ function TextViewer:reinit()
         local low, high = self.box_widget:getVisibleHeightRatios()
         ratio = low == 0 and 0 or (low + high) / 2 -- if we are at the beginning, keep the first line visible
     else
-        ratio = (self.box_widget.page_number - 1) / self.box_widget.page_count
+        ratio = self.scroll_widget:getCurrentRatio()
     end
     self:init(true) -- do not add default buttons once more
     UIManager:setDirty("all", "partial", self.frame.dimen)
