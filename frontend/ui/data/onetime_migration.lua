@@ -1013,6 +1013,7 @@ if last_migration_date < 20260517 then
 end
 
 -- 20260623, Move Kosync plugin settings into a separate file
+-- https://github.com/koreader/koreader/pull/15591
 if last_migration_date < 20260623 then
     logger.info("Performing one-time migration for 20260623")
     -- c.f., PluginLoader
