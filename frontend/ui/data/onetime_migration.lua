@@ -1016,24 +1016,13 @@ end
 -- https://github.com/koreader/koreader/pull/15591
 if last_migration_date < 20260623 then
     logger.info("Performing one-time migration for 20260623")
-    -- c.f., PluginLoader
-    local package_path = package.path
-    package.path = string.format("%s/?.lua;%s", "plugins/kosync.koplugin", package_path)
-    local ok, KOSync = pcall(dofile, "plugins/kosync.koplugin/main.lua")
-    package.path = package_path
-    if not ok or not KOSync then
-        logger.warn("Error when loading plugins/kosync.koplugin/main.lua:", KOSync)
-        return
-    end
     local kosync_setting = G_reader_settings:readSetting("kosync")
     if kosync_setting then
+        local settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/kosync.lua")
+        settings:saveSetting("settings" , kosync_setting)
+        settings:flush()
         G_reader_settings:delSetting("kosync")
-    else
-        kosync_setting = KOSync.default_settings
     end
-    local settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/kosync.lua")
-    settings:saveSetting("settings" , kosync_setting)
-    settings:flush()
 end
 
 -- We're done, store the current migration date
