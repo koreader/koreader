@@ -70,9 +70,6 @@ KOSync.default_settings = {
 function KOSync:loadSettings()
     if not KOSync.settings_obj then
         KOSync.settings_obj = LuaSettings:open(self.settings_file)
-        if not next(KOSync.settings_obj.data) then
-            self.updated = true -- first run, force flush
-        end
     end
     self.settings = KOSync.settings_obj:readSetting(KOSync.settings_key, KOSync.default_settings)
 end
