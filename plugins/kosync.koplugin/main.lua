@@ -23,6 +23,7 @@ local KOSync = WidgetContainer:extend{
     name = "kosync",
     is_doc_only = true,
     title = _("Register/login to KOReader server"),
+    settings_file = DataStorage:getSettingsDir() .. "/kosync.lua",
     settings_key = "kosync",
     updated = nil,
 
@@ -66,9 +67,19 @@ KOSync.default_settings = {
     send_metadata = false,
 }
 
+function KOSync:loadSettings()
+    if not KOSync.settings then
+        KOSync.settings = LuaSettings:open(self.settings_file)
+        if not next(KOSync.settings.data) then
+            self.updated = true -- first run, force flush
+        end
+    end
+    self.settings = KOSync.settings:readSetting(KOSync.settings_key, KOSync.default_settings)
+end
+
 function KOSync:onFlushSettings()
     if self.updated then
-        self.kosync_setting:flush()
+        KOSync.settings:flush()
         self.updated = nil
     end
 end
@@ -88,8 +99,7 @@ function KOSync:init()
         -- We do *NOT* want to make sure networking is up here, as the nagging would be extremely annoying; we're leaving that to the network activity check...
         self:updateProgress(false, false)
     end
-    self.kosync_setting = LuaSettings:open(DataStorage:getSettingsDir() .. "/kosync.lua")
-    self.settings = self.kosync_setting:readSetting(KOSync.settings_key, KOSync.default_settings)
+    self:loadSettings()
     self.device_id = G_reader_settings:readSetting("device_id")
 
     -- Disable auto-sync if beforeWifiAction was reset to "prompt" behind our back...
