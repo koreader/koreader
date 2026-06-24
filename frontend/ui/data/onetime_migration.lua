@@ -1019,7 +1019,7 @@ if last_migration_date < 20260623 then
     local kosync_setting = G_reader_settings:readSetting("kosync")
     if kosync_setting then
         local settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/kosync.lua")
-        settings:saveSetting("kosync" , kosync_setting)
+        settings:saveSetting("settings" , kosync_setting)
         settings:flush()
         G_reader_settings:delSetting("kosync")
     end

@@ -24,7 +24,6 @@ local KOSync = WidgetContainer:extend{
     is_doc_only = true,
     title = _("Register/login to KOReader server"),
     settings_file = DataStorage:getSettingsDir() .. "/kosync.lua",
-    settings_key = "kosync",
     updated = nil,
 
     push_timestamp = nil,
@@ -71,7 +70,7 @@ function KOSync:loadSettings()
     if not KOSync.settings_obj then
         KOSync.settings_obj = LuaSettings:open(self.settings_file)
     end
-    self.settings = KOSync.settings_obj:readSetting(KOSync.settings_key, KOSync.default_settings)
+    self.settings = KOSync.settings_obj:readSetting("settings", KOSync.default_settings)
 end
 
 function KOSync:onFlushSettings()
