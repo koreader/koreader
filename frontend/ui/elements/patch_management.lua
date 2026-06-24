@@ -1,8 +1,9 @@
 local DataStorage = require("datastorage")
 local lfs = require("libs/libkoreader-lfs")
 
-local patch_dir = DataStorage:getDataDir() .. "/patches"
+local patch_dir = DataStorage:getPatchesDir()
 if lfs.attributes(patch_dir, "mode") ~= "directory" then return end
+local patches_enabled = lfs.attributes(DataStorage:getPatchesDisabledFlag(), "mode") ~= "file"
 
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
@@ -57,8 +58,11 @@ local function genSubMenu(priority)
         local patch_name = patch:sub(1, patch:find(ext, 1, true) + ext:len() - 1)
         sub_menu[i] = {
             text = patch_name:sub(1, -5) .. (userPatch.execution_status[patch_name] == false and " ⚠" or ""),
+            enabled_func = function()
+                return patches_enabled
+            end,
             checked_func = function()
-                return patch:find("%.lua$") ~= nil
+                return patches_enabled and patch:find("%.lua$") ~= nil
             end,
             callback = function()
                 local extension_pos = patch:find(ext, 1, true)

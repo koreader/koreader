@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
+local DataStorage = require("datastorage")
 local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
@@ -10,6 +11,9 @@ local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local T = require("ffi/util").template
+
+local patches_dir = DataStorage:getPatchesDir()
+local patches_disabled_flag = DataStorage:getPatchesDisabledFlag()
 
 local common_info = {}
 
@@ -102,6 +106,26 @@ common_info.report_bug = {
             }},
         })
     end
+}
+common_info.plugins_disable_external = {
+    text = _("Disable external plugins and user-patches"),
+    checked_func = function()
+        return G_reader_settings:isTrue("plugins_disable_external")
+    end,
+    callback = function()
+        G_reader_settings:flipNilOrFalse("plugins_disable_external")
+        if lfs.attributes(patches_dir, "mode") == "directory" then
+            if lfs.attributes(patches_disabled_flag, "mode") == "file" then
+                os.remove(patches_disabled_flag)
+            else
+                local file = io.open(patches_disabled_flag, "w")
+                if file then
+                    file:close()
+                end
+            end
+        end
+        UIManager:askForRestart()
+    end,
 }
 common_info.version = {
     text = T(_("Version: %1"), Version:getShortVersion()),

@@ -35,8 +35,8 @@ local DataStorage = require("datastorage")
 
 -- the directory KOReader is installed in (and runs from)
 local package_dir = lfs.currentdir()
--- the directory where KOReader stores user data
-local data_dir = DataStorage:getDataDir()
+local patch_dir = DataStorage:getPatchesDir()
+local patches_disabled = lfs.attributes(DataStorage:getPatchesDisabledFlag(), "mode") == "file"
 
 --- Run lua patches
 -- Execution order order is alphanum-sort for humans version 4: `1-patch.lua` is executed before `10-patch.lua`
@@ -90,7 +90,7 @@ end
 --- This function applies lua patches from `/koreader/patches`
 ---- @string priority ... one of the defined priorities in the userpatch hashtable
 function userpatch.applyPatches(priority)
-    local patch_dir = data_dir .. "/patches"
+    if patches_disabled then return end
     local update_once_marker = package_dir .. "/update_once.marker"
     local update_once_pending = lfs.attributes(update_once_marker, "mode") == "file"
 

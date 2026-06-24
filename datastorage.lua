@@ -76,6 +76,14 @@ function DataStorage:getDocSettingsHashDir()
     return self:getDataDir() .. "/hashdocsettings"
 end
 
+function DataStorage:getPatchesDir()
+    return self:getDataDir() .. "/patches"
+end
+
+function DataStorage:getPatchesDisabledFlag()
+    return self:getPatchesDir() .. "/.patches_disabled"
+end
+
 --- Gets the full configuration/data path.
 -- @treturn string Directory path (e.g., /mnt/onboard/.adds/koreader)
 function DataStorage:getFullDataDir()
