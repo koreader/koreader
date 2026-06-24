@@ -24,6 +24,7 @@ local KOSync = WidgetContainer:extend{
     is_doc_only = true,
     title = _("Register/login to KOReader server"),
     settings_key = "kosync",
+    updated = nil,
 
     push_timestamp = nil,
     pull_timestamp = nil,
@@ -65,13 +66,11 @@ KOSync.default_settings = {
     send_metadata = false,
 }
 
-function KOSync:readSettings()
-    self.kosync_setting = LuaSettings:open(DataStorage:getSettingsDir() .. "/kosync.lua")
-    return self.kosync_setting
-end
-
-function KOSync:flushSettings()
-    self.kosync_setting:flush()
+function KOSync:onFlushSettings()
+    if self.updated then
+        self.kosync_setting:flush()
+        self.updated = nil
+    end
 end
 
 function KOSync:init()
@@ -89,8 +88,8 @@ function KOSync:init()
         -- We do *NOT* want to make sure networking is up here, as the nagging would be extremely annoying; we're leaving that to the network activity check...
         self:updateProgress(false, false)
     end
-
-    self.settings = self:readSettings():readSetting("settings")
+    self.kosync_setting = LuaSettings:open(DataStorage:getSettingsDir() .. "/kosync.lua")
+    self.settings = self.kosync_setting:readSetting(KOSync.settings_key, KOSync.default_settings)
     self.device_id = G_reader_settings:readSetting("device_id")
 
     -- Disable auto-sync if beforeWifiAction was reset to "prompt" behind our back...
@@ -211,7 +210,7 @@ function KOSync:addToMainMenu(menu_items)
                         input = self.settings.custom_server or "https://",
                         callback = function(input)
                             self:setCustomServer(input)
-                            self:flushSettings()
+                            self.updated = true
                         end,
                     }
                 end,
@@ -242,7 +241,7 @@ function KOSync:addToMainMenu(menu_items)
                                         local hostname = dialog:getInputText()
                                         logger.dbg("KOSync: Setting custom hostname to:", hostname)
                                         self.settings.kosync_hostname = hostname ~= "" and hostname or nil
-                                        self:flushSettings()
+                                        self.updated = true
                                         UIManager:close(dialog)
                                     end,
                                 },
@@ -263,12 +262,11 @@ function KOSync:addToMainMenu(menu_items)
                     if self.settings.userkey then
                         return function(menu)
                             self:logout(menu)
-                            self:flushSettings()
+                            self.updated = true
                         end
                     else
                         return function(menu)
                             self:login(menu)
-                            self:flushSettings()
                         end
                     end
                 end,
@@ -280,7 +278,7 @@ function KOSync:addToMainMenu(menu_items)
                 help_text = _([[This may lead to nagging about toggling WiFi on document close and suspend/resume, depending on the device's connectivity.]]),
                 callback = function()
                     self:onKOSyncToggleAutoSync(nil, true)
-                    self:flushSettings()
+                    self.updated = true
                 end,
             },
             {
@@ -307,7 +305,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                         callback = function(spin)
                             self:setPagesBeforeUpdate(spin.value)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
-                            self:flushSettings()
+                            self.updated = true
                         end
                     }
                     UIManager:show(items)
@@ -330,7 +328,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                                 end,
                                 callback = function()
                                     self:setSyncForward(SYNC_STRATEGY.SILENT)
-                                    self:flushSettings()
+                                    self.updated = true
                                 end,
                             },
                             {
@@ -340,7 +338,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                                 end,
                                 callback = function()
                                     self:setSyncForward(SYNC_STRATEGY.PROMPT)
-                                    self:flushSettings()
+                                    self.updated = true
                                 end,
                             },
                             {
@@ -350,7 +348,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                                 end,
                                 callback = function()
                                     self:setSyncForward(SYNC_STRATEGY.DISABLE)
-                                    self:flushSettings()
+                                    self.updated = true
                                 end,
                             },
                         }
@@ -367,7 +365,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                                 end,
                                 callback = function()
                                     self:setSyncBackward(SYNC_STRATEGY.SILENT)
-                                    self:flushSettings()
+                                    self.updated = true
                                 end,
                             },
                             {
@@ -377,7 +375,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                                 end,
                                 callback = function()
                                     self:setSyncBackward(SYNC_STRATEGY.PROMPT)
-                                    self:flushSettings()
+                                    self.updated = true
                                 end,
                             },
                             {
@@ -387,7 +385,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                                 end,
                                 callback = function()
                                     self:setSyncBackward(SYNC_STRATEGY.DISABLE)
-                                    self:flushSettings()
+                                    self.updated = true
                                 end,
                             },
                         }
@@ -424,7 +422,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                         end,
                         callback = function()
                             self:setChecksumMethod(CHECKSUM_METHOD.BINARY)
-                            self:flushSettings()
+                            self.updated = true
                         end,
                     },
                     {
@@ -434,7 +432,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                         end,
                         callback = function()
                             self:setChecksumMethod(CHECKSUM_METHOD.FILENAME)
-                            self:flushSettings()
+                            self.updated = true
                         end,
                     },
                 }
@@ -445,7 +443,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                 help_text = _([[When enabled, document metadata (filename, title, and authors) will be sent along with progress sync requests. This data is ignored by the official sync server but may be used by custom sync servers.]]),
                 callback = function()
                     self.settings.send_metadata = not self.settings.send_metadata
-                    self:flushSettings()
+                    self.updated = true
                 end,
             },
         }
@@ -580,6 +578,7 @@ function KOSync:doRegister(username, password, menu)
         if menu then
             menu:updateItems()
         end
+        self.updated = true
         UIManager:show(InfoMessage:new{
             text = _("Registered to KOReader server."),
         })
@@ -616,6 +615,7 @@ function KOSync:doLogin(username, password, menu)
     elseif status then
         self.settings.username = username
         self.settings.userkey = userkey
+        self.updated = true
         if menu then
             menu:updateItems()
         end
@@ -1009,6 +1009,7 @@ function KOSync:onKOSyncToggleAutoSync(toggle, from_menu)
         return true
     end
     self.settings.auto_sync = not self.settings.auto_sync
+    self.updated = true
     self:registerEvents()
 
     if self.settings.auto_sync then

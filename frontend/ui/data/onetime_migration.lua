@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 202606023
+local CURRENT_MIGRATION_DATE = 20260623
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -1019,7 +1019,7 @@ if last_migration_date < 20260623 then
     local kosync_setting = G_reader_settings:readSetting("kosync")
     if kosync_setting then
         local settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/kosync.lua")
-        settings:saveSetting("settings" , kosync_setting)
+        settings:saveSetting("kosync" , kosync_setting)
         settings:flush()
         G_reader_settings:delSetting("kosync")
     end
