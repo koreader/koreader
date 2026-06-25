@@ -422,6 +422,13 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     local seen_images = {}
     local imagenum = 1
     local cover_imgid = nil -- best candidate for cover among our images
+    local function is_relative(url_string)
+        -- Parse the URL into its constituent components
+        local parsed = socket_url.parse(url_string)
+        
+        -- If there is no scheme component, it is a relative URL
+        return parsed and parsed.scheme == nil
+    end
     local processImg = function(img_tag)
         local src = img_tag:match([[src="([^"]*)"]])
         if src == nil or src == "" then
@@ -434,7 +441,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
         end
         if src:sub(1,2) == "//" then
             src = "https:" .. src -- Wikipedia redirects from http to https, so use https
-        elseif src:sub(1,1) == "/" then -- non absolute url
+        elseif is_relative(src) then -- non absolute url
             src = socket_url.absolute(base_url, src)
         end
         local cur_image
@@ -688,7 +695,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 src = img.src2x
             end
             logger.dbg("Getting img ", src)
-            local success, _, content = getUrlContent(src)
+            local success, _content_type, content = getUrlContent(src)
             -- success, _, content = getUrlContent(src..".unexistant") -- to simulate failure
             if success then
                 logger.dbg("success, size:", #content)
