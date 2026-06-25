@@ -9,11 +9,9 @@ local UIManager = require("ui/uimanager")
 local Version = require("version")
 local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
+local userpatch = require("userpatch")
 local _ = require("gettext")
 local T = require("ffi/util").template
-
-local patches_dir = DataStorage:getPatchesDir()
-local patches_disabled_flag = DataStorage:getPatchesDisabledFlag()
 
 local common_info = {}
 
@@ -113,16 +111,7 @@ common_info.plugins_disable_external = {
     end,
     callback = function()
         G_reader_settings:flipNilOrFalse("plugins_disable_external")
-        if lfs.attributes(patches_dir, "mode") == "directory" then
-            if lfs.attributes(patches_disabled_flag, "mode") == "file" then
-                os.remove(patches_disabled_flag)
-            else
-                local file = io.open(patches_disabled_flag, "w")
-                if file then
-                    file:close()
-                end
-            end
-        end
+        userpatch.togglePatchesDisabled()
         UIManager:askForRestart()
     end,
 }
