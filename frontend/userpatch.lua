@@ -36,7 +36,25 @@ local DataStorage = require("datastorage")
 -- the directory KOReader is installed in (and runs from)
 local package_dir = lfs.currentdir()
 local patch_dir = DataStorage:getPatchesDir()
-local patches_disabled = lfs.attributes(DataStorage:getPatchesDisabledFlag(), "mode") == "file"
+local patches_disabled_path = patch_dir .. "/.patches_disabled"
+local patches_disabled = lfs.attributes(patches_disabled_path, "mode") == "file"
+
+function userpatch.arePatchesDisabled()
+    return patches_disabled
+end
+
+function userpatch.togglePatchesDisabled()
+    if patches_disabled then
+        os.remove(patches_disabled_path)
+        patches_disabled = false
+    else
+        local file = io.open(patches_disabled_path, "w")
+        if file then
+            file:close()
+            patches_disabled = true
+        end
+    end
+end
 
 --- Run lua patches
 -- Execution order order is alphanum-sort for humans version 4: `1-patch.lua` is executed before `10-patch.lua`
