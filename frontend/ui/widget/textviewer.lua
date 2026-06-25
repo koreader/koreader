@@ -87,8 +87,12 @@ local TextViewer = InputContainer:extend{
         lookup       = { monospace_font = false, font_size = 20, justified = false },
         code         = { monospace_font =  true, font_size = 16, justified = false },
     },
-    text_format = nil, -- plain text. Supported formats: "html", "md".
-                       -- If not passed by the caller, a file extension is used when viewing files.
+    text_format = nil, -- if not passed by the caller, a file extension is used when viewing files
+    text_formats = {
+        html = true,
+        htm = true,
+        md = true,
+    },
 }
 
 function TextViewer:init(reinit)
@@ -406,8 +410,8 @@ function TextViewer:init(reinit)
     end
 
     local textw_height = self.height - self.titlebar:getHeight() - self.button_table:getSize().h
-    self.text_format = self.text_format or (self.file and string.lower(util.getFileNameSuffix(self.file)))
-    self.is_txt = self.force_txt or not (self.text_format == "md" or self.text_format == "html")
+    self.text_format = self.text_format or (self.file and string.lower(util.getFileNameSuffix(self.file))) or ""
+    self.is_txt = self.force_txt or not self.text_formats[self.text_format]
     if self.is_txt then
         self.scroll_widget = ScrollTextWidget:new{
             text = self.text,
@@ -427,11 +431,11 @@ function TextViewer:init(reinit)
         self.box_widget = self.scroll_widget.text_widget -- TextBoxWidget
     else
         local text
-        if self.text_format == "html" then
-            text = self.text
-        elseif self.text_format == "md" then
+        if self.text_format == "md" then
             local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
             text = FileManagerConverter:mdToHtml(self.text, "")
+        else -- "html", "htm"
+            text = self.text
         end
         self.scroll_widget = ScrollHtmlWidget:new{
             html_body = text,
@@ -882,9 +886,10 @@ function TextViewer:onShowMenu()
                 self:reinit()
             end,
         }},
-        {{
+    }
+    if self.text_formats[self.text_format] then
+        table.insert(buttons, {{
             text = _("Plain text"),
-            enabled = self.text_format == "md" or self.text_format == "html",
             checked_func = function()
                 return self.is_txt
             end,
@@ -893,8 +898,8 @@ function TextViewer:onShowMenu()
                 self.force_txt = not self.force_txt
                 self:reinit()
             end,
-        }},
-    }
+        }})
+    end
     dialog = ButtonDialog:new{
         shrink_unneeded_width = true,
         buttons = buttons,
