@@ -425,7 +425,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     local function is_relative(url_string)
         -- Parse the URL into its constituent components
         local parsed = socket_url.parse(url_string)
-        
+
         -- If there is no scheme component, it is a relative URL
         return parsed and parsed.scheme == nil
     end
@@ -695,7 +695,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 src = img.src2x
             end
             logger.dbg("Getting img ", src)
-            local success, _content_type, content = getUrlContent(src)
+            local success, __, content = getUrlContent(src)
             -- success, _, content = getUrlContent(src..".unexistant") -- to simulate failure
             if success then
                 logger.dbg("success, size:", #content)
