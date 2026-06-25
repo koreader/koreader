@@ -693,7 +693,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 src = img.src2x
             end
             logger.dbg("Getting img ", src)
-            local success, _, content = getUrlContent(src)
+            local success, __, content = getUrlContent(src)
             -- success, _, content = getUrlContent(src..".unexistant") -- to simulate failure
             if success then
                 logger.dbg("success, size:", #content)
