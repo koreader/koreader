@@ -88,7 +88,7 @@ local TextViewer = InputContainer:extend{
         code         = { monospace_font =  true, font_size = 16, justified = false },
     },
     text_format = nil, -- if not passed by the caller, a file extension is used when viewing files
-    text_formats = {
+    html_text_formats = {
         html = true,
         htm = true,
         md = true,
@@ -411,7 +411,7 @@ function TextViewer:init(reinit)
 
     local textw_height = self.height - self.titlebar:getHeight() - self.button_table:getSize().h
     self.text_format = self.text_format or (self.file and string.lower(util.getFileNameSuffix(self.file))) or ""
-    self.is_txt = self.force_txt or not self.text_formats[self.text_format]
+    self.is_txt = self.force_txt or not self.html_text_formats[self.text_format]
     if self.is_txt then
         self.scroll_widget = ScrollTextWidget:new{
             text = self.text,
@@ -887,7 +887,7 @@ function TextViewer:onShowMenu()
             end,
         }},
     }
-    if self.text_formats[self.text_format] then
+    if self.html_text_formats[self.text_format] then
         table.insert(buttons, {{
             text = _("Plain text"),
             checked_func = function()
