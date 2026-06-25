@@ -3,7 +3,6 @@ local lfs = require("libs/libkoreader-lfs")
 
 local patch_dir = DataStorage:getPatchesDir()
 if lfs.attributes(patch_dir, "mode") ~= "directory" then return end
-local patches_enabled = lfs.attributes(DataStorage:getPatchesDisabledFlag(), "mode") ~= "file"
 
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
@@ -51,6 +50,7 @@ local function done_callback()
 end
 
 local function genSubMenu(priority)
+    local patches_enabled = not userPatch.arePatchesDisabled()
     local sub_menu = {}
     for i, patch in ipairs(patches[priority]) do
         local ext = ".lua"
