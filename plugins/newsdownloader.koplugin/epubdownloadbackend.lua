@@ -422,7 +422,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     local seen_images = {}
     local imagenum = 1
     local cover_imgid = nil -- best candidate for cover among our images
-    local function is_relative(url_string)
+    local function isRelative(url_string)
         local parsed = socket_url.parse(url_string)
         -- If there is no scheme component, it is a relative URL.
         return parsed and parsed.scheme == nil
@@ -439,7 +439,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
         end
         if src:sub(1,2) == "//" then
             src = "https:" .. src -- Wikipedia redirects from http to https, so use https
-        elseif is_relative(src) then -- non absolute url
+        elseif isRelative(src) then -- non absolute url
             src = socket_url.absolute(base_url, src)
         end
         local cur_image
