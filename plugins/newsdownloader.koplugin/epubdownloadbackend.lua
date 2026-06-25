@@ -423,10 +423,8 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     local imagenum = 1
     local cover_imgid = nil -- best candidate for cover among our images
     local function is_relative(url_string)
-        -- Parse the URL into its constituent components
         local parsed = socket_url.parse(url_string)
-
-        -- If there is no scheme component, it is a relative URL
+        -- If there is no scheme component, it is a relative URL.
         return parsed and parsed.scheme == nil
     end
     local processImg = function(img_tag)
