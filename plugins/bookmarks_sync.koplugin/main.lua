@@ -1,64 +1,193 @@
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local LuaSettings = require("luasettings")
+local Event = require("ui/event")
+local InfoMessage = require("ui/widget/infomessage")
+local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local util = require("util")
+local _ = require("gettext")
 
-local MyBackupPlugin = WidgetContainer:extend{
-    name = "my_bookmark_backup",
+local Anchoring = require("anchoring")
+local SyncDB = require("sync_db")
+
+local BookmarkSync = WidgetContainer:extend{
+    name = "bookmarks_sync",
+    title = _("Bookmarks Sync"),
+    is_doc_only = true,
 }
 
-function MyBackupPlugin:init()
-    -- Регистрируем плагин в главном меню
+function BookmarkSync:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
--- Событие 1: Срабатывает при любом изменении закладок/выделений в интерфейсе
-function MyBackupPlugin:onAnnotationsModified(event)
-    logger.info("MyBackupPlugin: Аннотации изменились!", event)
-    
-    -- Пример: получить текущий список всех аннотаций книги
-    local annotations = self.ui.annotation.annotations
-    
-    -- Здесь можно вызвать вашу функцию нормализации и записи
-    self:updateMyCustomBackup(annotations)
+function BookmarkSync:addToMainMenu(menu_items)
+    menu_items.bookmarks_sync = {
+        text = self.title,
+        sub_item_table = {
+            {
+                text = _("Sync highlights and bookmarks now"),
+                keep_menu_open = false,
+                callback = function()
+                    self:exportLocalBookmarks()
+                    self:importExternalBookmarks()
+                    UIManager:show(InfoMessage:new{
+                        text = _("Bookmarks sync completed successfully."),
+                        timeout = 3,
+                    })
+                end,
+            }
+        }
+    }
 end
 
--- Событие 2: Срабатывает при сохранении настроек книги на флешку
-function MyBackupPlugin:onSaveSettings()
-    logger.info("MyBackupPlugin: Настройки книги сохраняются.")
-    
-    -- Получаем доступ к стандартному хранилищу настроек текущей книги (.sdr)
-    local doc_settings = self.ui.doc_settings
-    local annotations = doc_settings:readSetting("annotations")
-    
-    self:updateMyCustomBackup(annotations)
+-- Срабатывает, когда книга полностью готова к чтению
+function BookmarkSync:onReaderReady()
+    -- Проверяем переименование текущей книги и инициализируем файл bookmarks_sync.lua
+    local doc = self.ui.document
+    if doc and doc.file then
+        local sync_data = SyncDB.loadBookSync(doc.file)
+        local base_name = SyncDB.getBaseName(doc.file)
+        
+        if sync_data then
+            -- Если открытый файл переименован
+            if sync_data.current_basename ~= base_name then
+                self:exportLocalBookmarks()
+            end
+        else
+            -- Первичный экспорт, если файла синхронизации еще нет
+            self:exportLocalBookmarks()
+        end
+        
+        -- Автоматический импорт закладок из других форматов при открытии книги
+        UIManager:nextTick(function()
+            self:importExternalBookmarks()
+        end)
+    end
 end
 
--- Ваша функция для обработки и бэкапа
-function MyBackupPlugin:updateMyCustomBackup(annotations)
-    if not annotations then return end
+-- Срабатывает при сохранении настроек книги (обычно при закрытии или выходе в меню)
+function BookmarkSync:onSaveSettings()
+    self:exportLocalBookmarks()
+end
+
+-- Срабатывает при добавлении/удалении/изменении закладок в интерфейсе
+function BookmarkSync:onAnnotationsModified(event)
+    -- Небольшая задержка перед экспортом, чтобы KOReader успел применить изменения к сессии
+    UIManager:nextTick(function()
+        self:exportLocalBookmarks()
+    end)
+end
+
+-- Экспорт локальных закладок в bookmarks_sync.lua
+function BookmarkSync:exportLocalBookmarks()
+    local doc = self.ui.document
+    if not doc or not doc.file then return end
     
-    -- 1. Нормализуем данные (вытаскиваем текст, контекст, прогресс)
-    local export_data = {}
-    for i, item in ipairs(annotations) do
-        table.insert(export_data, {
-            id = item.datetime .. "_" .. i, -- Уникальный локальный ID
-            progress = item.pageno / self.ui.document:getPageCount(), -- Относительный прогресс
-            exact = item.text, -- Выделенный текст
-            note = item.note, -- Заметка пользователя
-            deleted = item.deleted or false
-        })
+    local total_pages = doc:getPageCount()
+    if not total_pages or total_pages <= 0 then return end
+    
+    local annotations = self.ui.annotation.annotations or {}
+    local sync_bookmarks = {}
+    
+    for _, item in ipairs(annotations) do
+        if not item.deleted then
+            local exact, prefix, suffix = Anchoring.getAnchorContext(doc, item, 5)
+            
+            -- Вычисляем прогресс
+            local pageno = item.pageno or (self.ui.rolling and doc:getPageFromXPointer(item.page) or item.page)
+            local progress = pageno / total_pages
+            
+            table.insert(sync_bookmarks, {
+                datetime = item.datetime,
+                progress = progress,
+                exact = exact,
+                prefix = prefix,
+                suffix = suffix,
+                drawer = item.drawer,
+                color = item.color,
+                note = item.note or item.notes
+            })
+        end
     end
     
-    -- 2. Записываем в свой собственный файл (например, в общую папку бэкапов)
-    local backup_filepath = "/sdcard/koreader/my_sync_bookmarks.lua"
-    local my_db = LuaSettings:open(backup_filepath)
-    
-    -- Используем имя книги в качестве ключа
-    local book_title = self.ui.document.info.title or "unknown_book"
-    my_db:saveSetting(book_title, export_data)
-    my_db:flush() -- Запись на диск
-    
-    logger.info("MyBackupPlugin: Бэкап обновлен для книги: " .. book_title)
+    SyncDB.saveBookSync(doc.file, sync_bookmarks)
 end
 
-return MyBackupPlugin
+-- Импорт закладок из других форматов
+function BookmarkSync:importExternalBookmarks()
+    local doc = self.ui.document
+    if not doc or not doc.file then return end
+    
+    local matches = SyncDB.findMatchingSyncFiles(doc.file)
+    if #matches == 0 then
+        logger.info("bookmarks_sync: Нет подходящих файлов для синхронизации.")
+        return
+    end
+    
+    local local_annotations = self.ui.annotation.annotations or {}
+    local imported_count = 0
+    
+    for _, match in ipairs(matches) do
+        for _, ext_bm in ipairs(match.bookmarks) do
+            -- Проверяем, нет ли уже этой закладки локально (по совпадению текста или времени)
+            local exists = false
+            for _, local_bm in ipairs(local_annotations) do
+                if local_bm.datetime == ext_bm.datetime or 
+                   (ext_bm.exact ~= "" and local_bm.text == ext_bm.exact) then
+                    exists = true
+                    break
+                end
+            end
+            
+            if not exists and not ext_bm.deleted then
+                -- Ищем позицию текста в текущем документе
+                local pos0, pos1, page = Anchoring.findAnchor(doc, ext_bm, self.ui)
+                if pos0 and page then
+                    -- Добавляем закладку/выделение локально
+                    if ext_bm.drawer then
+                        -- Это выделение (highlight)
+                        local item = {
+                            page = self.ui.paging and page or pos0,
+                            pos0 = pos0,
+                            pos1 = pos1,
+                            text = ext_bm.exact,
+                            datetime = ext_bm.datetime or os.date("%Y-%m-%d %H:%M:%S"),
+                            drawer = ext_bm.drawer,
+                            color = ext_bm.color,
+                            note = ext_bm.note,
+                            chapter = self.ui.toc:getTocTitleByPage(page),
+                        }
+                        if self.ui.paging then
+                            -- Для PDF вычисляем pboxes
+                            item.pboxes = doc:getPageBoxesFromPositions(page, pos0, pos1)
+                            pcall(function() self.ui.highlight:writePdfAnnotation("save", item) end)
+                        end
+                        
+                        local index = self.ui.annotation:addItem(item)
+                        self.ui:handleEvent(Event:new("AnnotationsModified", {
+                            item, 
+                            nb_highlights_added = 1, 
+                            index_modified = index
+                        }))
+                        imported_count = imported_count + 1
+                    else
+                        -- Это простая закладка (bookmark)
+                        if not self.ui.bookmark:isPageBookmarked(page) then
+                            self.ui.bookmark:toggleBookmark(page)
+                            imported_count = imported_count + 1
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    if imported_count > 0 then
+        logger.info("bookmarks_sync: Импортировано закладок из других форматов:", imported_count)
+        self.view.footer:maybeUpdateFooter()
+        if self.ui.bookmark.bookmark_menu then
+            self.ui.bookmark:updateBookmarkList()
+        end
+    end
+end
+
+return BookmarkSync
