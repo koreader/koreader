@@ -85,6 +85,7 @@ if [ "${1}" = "--kual" ]; then
     REEXEC_FLAGS="${REEXEC_FLAGS} --kual"
 else
     FROM_KUAL="no"
+    export EIPS_NO_SLEEP="yes"
 fi
 
 # By default, don't stop the framework.
@@ -98,8 +99,7 @@ elif [ "${1}" = "--asap" ]; then
     shift 1
     NO_SLEEP="yes"
     REEXEC_FLAGS="${REEXEC_FLAGS} --asap"
-    # Don't sleep during eips calls either...
-    export EIPS_NO_SLEEP="true"
+    export EIPS_NO_SLEEP="yes"
 else
     NO_SLEEP="no"
 fi
@@ -149,7 +149,7 @@ ko_update_check() {
         #       which we cannot use because it's been mounted noexec for a few years now...
         cp -pf "${KOREADER_DIR}/tar" /var/tmp/gnutar
         # shellcheck disable=SC2016
-        /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='printf "%s" $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}' -C "/mnt/us" -xf "${NEWUPDATE}"
+        /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='printf "%s" $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}' -C "${UNPACK_DIR}" -xf "${NEWUPDATE}"
         fail=$?
         kill -TERM "${FBINK_PID}"
         # And remove our temporary tar binary...
