@@ -370,14 +370,12 @@ end
 function FileChooser:onHome()
     local FileManager = require("apps/filemanager/filemanager")
     if FileManager.instance then
-        print("FileChooser:onHome() called, redirecting to FileManager:onHome()")
         -- FileChooser is a Booklist (which in turn is a Menu), we need
         -- to redirect Home calls otherwise we will unalive ourselves,
         -- taking the whole application down with us.
         return FileManager.instance:onHome()
     end
     self:onClose()
-    print("FileChooser:onHome() called, but no FileManager instance found. Closing FileChooser.")
     UIManager:sendEvent(Event:new("Home"))
     return true
 end
