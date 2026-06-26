@@ -20,10 +20,11 @@ fi
 # we're always starting from our working directory
 cd "${KOREADER_DIR}" || exit
 
-# reMarkable QTFB setup
-if [ -n "${KO_USE_QTFB}" ]; then
+# reMarkable QTFB/Blight setup
+if [ -n "${KO_USE_QTFB}" ] || [ -n "${KO_USE_BLIGHT}" ]; then
     export KO_DONT_GRAB_INPUT=1
     export KO_DONT_SET_DEPTH=1
+    export LD_LIBRARY_PATH="/home/root/.vellum/lib:${LD_LIBRARY_PATH}"
 fi
 
 fbink_wrapped() {
@@ -34,6 +35,8 @@ fbink_wrapped() {
             QTFB_SHIM_MODE="N_RGB565" \
             QTFB_SHIM_RESPECT_FULL_REFRESH_REQUESTS="1" \
             ./fbink "$@"
+    elif [ -n "${KO_USE_BLIGHT}" ]; then
+        blight-client ./fbink "$@"
     else
         ./fbink "$@"
     fi
@@ -110,7 +113,7 @@ export STARDICT_DATA_DIR="data/dict"
 
 ORIG_FB_BPP=""
 ORIG_FB_ROTA=""
-if [ -z "${KO_DONT_SET_DEPTH}" ] && [ -z "${KO_USE_QTFB}" ]; then
+if [ -z "${KO_DONT_SET_DEPTH}" ] && [ -z "${KO_USE_QTFB}" ] && [ -z "${KO_USE_BLIGHT}" ]; then
     # We'll want to ensure Portrait rotation to allow us to use faster blitting codepaths @ 8bpp,
     # so remember the current one before fbdepth does its thing.
     ORIG_FB_ROTA="$(./fbdepth -o)"
@@ -275,7 +278,7 @@ done
 
 # Restore original fb bitdepth if need be...
 # Since we also (almost) always enforce Portrait, we also have to restore the original rotation no matter what ;).
-if [ -z "${KO_DONT_SET_DEPTH}" ] && [ -z "${KO_USE_QTFB}" ]; then
+if [ -z "${KO_DONT_SET_DEPTH}" ] && [ -z "${KO_USE_QTFB}" ] && [ -z "${KO_USE_BLIGHT}" ]; then
     if [ -n "${ORIG_FB_BPP}" ]; then
         echo "Restoring original fb bitdepth @ ${ORIG_FB_BPP}bpp & rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
         ./fbdepth -d "${ORIG_FB_BPP}" -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
