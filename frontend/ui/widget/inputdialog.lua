@@ -522,9 +522,11 @@ function InputDialog:reinit()
     UIManager:setDirty("all", "flashui")
 end
 
-function InputDialog:addWidget(widget, re_init)
+function InputDialog:addWidget(widget, re_init, skip_fm_layout)
     local is_text_height_adjustable = self.fullscreen or self.use_available_height
-    table.insert(self.layout, #self.layout, {widget})
+    if not skip_fm_layout then
+        table.insert(self.layout, #self.layout, {widget})
+    end
     if not re_init then -- backup widget for re-init
         widget = CenterContainer:new{
             dimen = Geom:new{
