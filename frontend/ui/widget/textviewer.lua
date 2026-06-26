@@ -23,6 +23,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local Notification = require("ui/widget/notification")
+local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -85,6 +86,12 @@ local TextViewer = InputContainer:extend{
         bookmark     = { monospace_font = false, font_size = 20, justified =  true },
         lookup       = { monospace_font = false, font_size = 20, justified = false },
         code         = { monospace_font =  true, font_size = 16, justified = false },
+    },
+    text_format = nil, -- if not passed by the caller, a file extension is used when viewing files
+    html_text_formats = {
+        html = true,
+        htm = true,
+        md = true,
     },
 }
 
@@ -239,7 +246,7 @@ function TextViewer:init(reinit)
                         pin_button:enable()
                         pin_button:refresh()
                     end
-                    self.pinned_page = self.scroll_text_w.text_widget:getCharPosAtXY(0, 0)
+                    self.pinned_page = self.is_txt and self.box_widget:getCharPosAtXY(0, 0) or self.scroll_widget:getCurrentRatio()
                     local pinned_pages = G_reader_settings:readSetting("textviewer_pinned_pages", {})
                     pinned_pages[self.file] = self.pinned_page
                     UIManager:show(Notification:new{ text = _("Page pinned") })
@@ -319,12 +326,16 @@ function TextViewer:init(reinit)
                     return self.pinned_page ~= nil
                 end,
                 callback = function()
-                    local new_virtual_line_num = self.scroll_text_w.text_widget:getCharPageTopLineNumber(self.pinned_page)
-                    if self.scroll_text_w.text_widget.virtual_line_num ~= new_virtual_line_num then
-                        self.scroll_text_w.text_widget.virtual_line_num = new_virtual_line_num
-                        self.scroll_text_w.text_widget:free(false)
-                        self.scroll_text_w.text_widget:_updateLayout()
-                        self.scroll_text_w:updateScrollBar(true)
+                    if self.is_txt then
+                        local new_virtual_line_num = self.box_widget:getCharPageTopLineNumber(self.pinned_page)
+                        if self.box_widget.virtual_line_num ~= new_virtual_line_num then
+                            self.box_widget.virtual_line_num = new_virtual_line_num
+                            self.box_widget:free(false)
+                            self.box_widget:_updateLayout()
+                            self.scroll_widget:updateScrollBar(true)
+                        end
+                    else
+                        self.scroll_widget:scrollToRatio(self.pinned_page)
                     end
                 end,
             },
@@ -355,7 +366,7 @@ function TextViewer:init(reinit)
                 text = "⇱",
                 id = "top",
                 callback = function()
-                    self.scroll_text_w:scrollToTop()
+                    self.scroll_widget:scrollToTop()
                 end,
                 hold_callback = self.default_hold_callback,
                 allow_hold_when_disabled = true,
@@ -364,7 +375,7 @@ function TextViewer:init(reinit)
                 text = "⇲",
                 id = "bottom",
                 callback = function()
-                    self.scroll_text_w:scrollToBottom()
+                    self.scroll_widget:scrollToBottom()
                 end,
                 hold_callback = self.default_hold_callback,
                 allow_hold_when_disabled = true,
@@ -399,26 +410,61 @@ function TextViewer:init(reinit)
     end
 
     local textw_height = self.height - self.titlebar:getHeight() - self.button_table:getSize().h
-    self.scroll_text_w = ScrollTextWidget:new{
-        text = self.text,
-        face = Font:getFace(text_font_face, self.text_font_size),
-        fgcolor = self.fgcolor,
-        width = self.width - 2*self.text_padding - 2*self.text_margin,
-        height = textw_height - 2*self.text_padding -2*self.text_margin,
-        dialog = self,
-        alignment = self.alignment,
-        justified = self.justified,
-        lang = self.lang,
-        para_direction_rtl = self.para_direction_rtl,
-        auto_para_direction = self.auto_para_direction,
-        alignment_strict = self.alignment_strict,
-        scroll_callback = self._buttons_scroll_callback,
-    }
+    self.text_format = self.text_format or (self.file and string.lower(util.getFileNameSuffix(self.file))) or ""
+    self.is_txt = self.force_txt or not self.html_text_formats[self.text_format]
+    if self.is_txt then
+        self.scroll_widget = ScrollTextWidget:new{
+            text = self.text,
+            face = Font:getFace(text_font_face, self.text_font_size),
+            fgcolor = self.fgcolor,
+            width = self.width - 2*self.text_padding - 2*self.text_margin,
+            height = textw_height - 2*self.text_padding -2*self.text_margin,
+            dialog = self,
+            alignment = self.alignment,
+            justified = self.justified,
+            lang = self.lang,
+            para_direction_rtl = self.para_direction_rtl,
+            auto_para_direction = self.auto_para_direction,
+            alignment_strict = self.alignment_strict,
+            scroll_callback = self._buttons_scroll_callback,
+        }
+        self.box_widget = self.scroll_widget.text_widget -- TextBoxWidget
+    else
+        local text
+        if self.text_format == "md" then
+            local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
+            text = FileManagerConverter:mdToHtml(self.text, "")
+        else -- "html", "htm"
+            text = self.text
+        end
+        self.scroll_widget = ScrollHtmlWidget:new{
+            html_body = text,
+            html_resource_directory = self.file and util.splitFilePathName(self.file),
+            css = [[
+                @page {
+                    margin: 0;
+                }
+                body {
+                    margin: 0;
+                    line-height: 1.3;
+                    ]]..(self.justified and "text-align: justify;" or "")..[[
+                    ]]..(self.monospace_font and "font-family: monospace;" or "")..[[
+                }
+            ]],
+            default_font_size = Screen:scaleBySize(self.text_font_size),
+            width = self.width - 2*self.text_padding - 2*self.text_margin,
+            height = textw_height - 2*self.text_padding -2*self.text_margin,
+            dialog = self,
+            highlight_text_selection = true,
+            scroll_callback = self._buttons_scroll_callback,
+        }
+        self.box_widget = self.scroll_widget.htmlbox_widget -- HtmlBoxWidget
+    end
     self.textw = FrameContainer:new{
         padding = self.text_padding,
         margin = self.text_margin,
         bordersize = 0,
-        self.scroll_text_w
+        self.scroll_widget
     }
 
     self.frame = FrameContainer:new{
@@ -510,10 +556,10 @@ function TextViewer:onSwipe(arg, ges)
     if ges.pos:intersectWith(self.textw.dimen) then
         local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
         if direction == "west" then
-            self.scroll_text_w:scrollText(1)
+            self.scroll_widget:scrollText(1)
             return true
         elseif direction == "east" then
-            self.scroll_text_w:scrollText(-1)
+            self.scroll_widget:scrollText(-1)
             return true
         else
             -- trigger a full-screen HQ flashing refresh
@@ -528,9 +574,9 @@ function TextViewer:onSwipe(arg, ges)
 end
 
 function TextViewer:onScrollOrNavigate(direction)
-    if not self.scroll_text_w then return false end
+    if not self.scroll_widget then return false end
     if direction > 0 then
-        if self.scroll_text_w:onScrollDown() then
+        if self.scroll_widget:onScrollDown() then
             return true
         end
         if self.page_turn_callback_next then
@@ -538,7 +584,7 @@ function TextViewer:onScrollOrNavigate(direction)
             return true
         end
     else
-        if self.scroll_text_w:onScrollUp() then
+        if self.scroll_widget:onScrollUp() then
             return true
         end
         if self.page_turn_callback_prev then
@@ -611,9 +657,9 @@ function TextViewer:onForwardingPanRelease(arg, ges)
     -- Allow scrolling with the mousewheel
     if ges.from_mousewheel and ges.relative and ges.relative.y then
         if ges.relative.y < 0 then
-            self.scroll_text_w:scrollText(1)
+            self.scroll_widget:scrollText(1)
         elseif ges.relative.y > 0 then
-            self.scroll_text_w:scrollText(-1)
+            self.scroll_widget:scrollText(-1)
         end
         return true
     end
@@ -622,7 +668,7 @@ function TextViewer:onForwardingPanRelease(arg, ges)
 end
 
 function TextViewer:findDialog()
-    local input_dialog, check_button_case
+    local input_dialog
     input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
         input = self.search_value,
@@ -653,16 +699,18 @@ function TextViewer:findDialog()
             },
         },
     }
-    check_button_case = CheckButton:new{
-        text = _("Case sensitive"),
-        checked = self.case_sensitive,
-        parent = input_dialog,
-        callback = function()
-            self.case_sensitive = check_button_case.checked
-        end,
-    }
-    input_dialog:addWidget(check_button_case)
-
+    if self.is_txt then
+        local check_button_case
+        check_button_case = CheckButton:new{
+            text = _("Case sensitive"),
+            checked = self.case_sensitive,
+            parent = input_dialog,
+            callback = function()
+                self.case_sensitive = check_button_case.checked
+            end,
+        }
+        input_dialog:addWidget(check_button_case)
+    end
     UIManager:show(input_dialog)
     input_dialog:onShowKeyboard(true)
 end
@@ -673,11 +721,29 @@ function TextViewer:findCallback(input_dialog)
         if self.search_value == "" then return end
         UIManager:close(input_dialog)
     end
+    if self.is_txt then
+        self:findInText()
+    else
+        self:findInHtml()
+    end
+    if self._find_next_button ~= self._find_next then
+        self._find_next_button = self._find_next
+        local button_text = self._find_next and _("Find next") or _("Find")
+        local find_button = self.button_table:getButtonById("find")
+        find_button:setText(button_text, find_button.width)
+        find_button:refresh()
+    end
+    if not self._find_next then
+        UIManager:show(Notification:new{ text = _("Not found.") })
+    end
+end
+
+function TextViewer:findInText()
     local start_pos = 1
     if self._find_next then
-        local charpos, new_virtual_line_num = self.scroll_text_w:getCharPos()
+        local charpos, new_virtual_line_num = self.scroll_widget:getCharPos()
         if math.abs(new_virtual_line_num - self._old_virtual_line_num) > self.find_centered_lines_count then
-            start_pos = self.scroll_text_w:getCharPosAtXY(0, 0) -- first char of the top line
+            start_pos = self.scroll_widget:getCharPosAtXY(0, 0) -- first char of the top line
         else
             start_pos = (charpos or 0) + 1 -- previous search result
         end
@@ -685,27 +751,40 @@ function TextViewer:findCallback(input_dialog)
     local char_pos, search_charlist
     char_pos, self.charlist, search_charlist =
         util.stringSearch(self.charlist or self.text, self.search_value, self.case_sensitive, start_pos)
-    local msg
     if char_pos > 0 then
         self:setTextBold(char_pos, #search_charlist)
-        self.scroll_text_w:moveCursorToCharPos(char_pos, self.find_centered_lines_count)
-        msg = T(_("Found, screen line %1."), self.scroll_text_w:getCharPosLineNum())
+        self.scroll_widget:moveCursorToCharPos(char_pos, self.find_centered_lines_count)
         self._find_next = true
-        self._old_virtual_line_num = select(2, self.scroll_text_w:getCharPos())
+        self._old_virtual_line_num = select(2, self.scroll_widget:getCharPos())
+        UIManager:show(Notification:new{ text = T(_("Found, screen line %1."), self.scroll_widget:getCharPosLineNum()) })
     else
-        msg = _("Not found.")
         self._find_next = false
         self._old_virtual_line_num = 1
     end
-    UIManager:show(Notification:new{
-        text = msg,
-    })
-    if self._find_next_button ~= self._find_next then
-        self._find_next_button = self._find_next
-        local button_text = self._find_next and _("Find next") or _("Find")
-        local find_button = self.button_table:getButtonById("find")
-        find_button:setText(button_text, find_button.width)
-        find_button:refresh()
+end
+
+function TextViewer:findInHtml()
+    local curr_page = self.box_widget.page_number
+    local found
+    if self._find_next then
+        if self.box_widget._match_page_list and self.box_widget.search_term == self.search_value then -- find next
+            found = self.box_widget:findTextNextPage(1)
+        else -- search forward
+            found = self.box_widget:findText(self.search_value)
+        end
+    else -- find first
+        self.box_widget.page_number = 1
+        found = self.box_widget:findText(self.search_value)
+    end
+    if found then
+        self._find_next = true
+        if curr_page ~= self.box_widget.page_number then
+            self.scroll_widget:_updateScrollBar(true)
+        end
+    else
+        self._find_next = false
+        self.box_widget.page_number = curr_page
+        self.box_widget:clearSearch(true)
     end
 end
 
@@ -726,11 +805,16 @@ end
 function TextViewer:reinit()
     local text_settings = G_reader_settings:readSetting("textviewer_text_types", {})
     text_settings[self.text_type] = { monospace_font = self.monospace_font, font_size = self.text_font_size, justified = self.justified }
-    local low, high = self.scroll_text_w.text_widget:getVisibleHeightRatios() -- try to keep position
-    local ratio = low == 0 and 0 or (low + high) / 2 -- if we are at the beginning, keep the first line visible
+    local ratio -- try to keep position
+    if self.is_txt then
+        local low, high = self.box_widget:getVisibleHeightRatios()
+        ratio = low == 0 and 0 or (low + high) / 2 -- if we are at the beginning, keep the first line visible
+    else
+        ratio = self.scroll_widget:getCurrentRatio()
+    end
     self:init(true) -- do not add default buttons once more
     UIManager:setDirty("all", "partial", self.frame.dimen)
-    self.scroll_text_w:scrollToRatio(ratio, ratio == 0)
+    self.scroll_widget:scrollToRatio(ratio, ratio == 0)
 end
 
 function TextViewer:setTextBold(start_pos, len)
@@ -803,6 +887,19 @@ function TextViewer:onShowMenu()
             end,
         }},
     }
+    if self.html_text_formats[self.text_format] then
+        table.insert(buttons, {{
+            text = _("Plain text"),
+            checked_func = function()
+                return self.is_txt
+            end,
+            align = "left",
+            callback = function()
+                self.force_txt = not self.force_txt
+                self:reinit()
+            end,
+        }})
+    end
     dialog = ButtonDialog:new{
         shrink_unneeded_width = true,
         buttons = buttons,

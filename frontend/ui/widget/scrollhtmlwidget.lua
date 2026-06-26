@@ -93,12 +93,27 @@ end
 
 -- Not to be confused with ScrollTextWidget's updateScrollBar, which has user-visible effects.
 -- This simply updates the scroll bar's internal state according to the current page & page count.
-function ScrollHtmlWidget:_updateScrollBar()
-    self.v_scroll_bar:set((self.htmlbox_widget.page_number-1) / self.htmlbox_widget.page_count, self.htmlbox_widget.page_number / self.htmlbox_widget.page_count)
+function ScrollHtmlWidget:_updateScrollBar(draw)
+    -- mimic TextBoxWidget:getVisibleHeightRatios()
+    local low = (self.htmlbox_widget.page_number - 1) / self.htmlbox_widget.page_count
+    local high = self.htmlbox_widget.page_number / self.htmlbox_widget.page_count
+    self.v_scroll_bar:set(low, high)
+    if draw then
+        UIManager:setDirty(self, function()
+            return "partial", self.v_scroll_bar.dimen
+        end)
+    end
+    if self.scroll_callback then
+        self.scroll_callback(low, high)
+    end
 end
 
 function ScrollHtmlWidget:getSinglePageHeight()
     return self.htmlbox_widget:getSinglePageHeight()
+end
+
+function ScrollHtmlWidget:getCurrentRatio()
+    return (self.htmlbox_widget.page_number - 1) / self.htmlbox_widget.page_count
 end
 
 -- Reset the scrolling *state* to the top of the document, but don't actually re-render/refresh anything.
@@ -217,6 +232,14 @@ function ScrollHtmlWidget:onScrollDown()
     end
     -- if we couldn't scroll (because we're already at top or bottom),
     -- let it propagate up (e.g. for quickdictlookup to go to next/prev result)
+end
+
+function ScrollHtmlWidget:scrollToTop()
+    self:scrollToRatio(0)
+end
+
+function ScrollHtmlWidget:scrollToBottom()
+    self:scrollToRatio(1)
 end
 
 return ScrollHtmlWidget
