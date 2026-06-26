@@ -49,6 +49,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local dbg = require("dbg")
 local time = require("ui/time")
+local util = require("util")
 local Input = Device.input
 local Screen = Device.screen
 local _ = require("gettext")
@@ -68,7 +69,10 @@ function ProgressbarDialog:init()
 
     if self.dismissable then
         if Device:hasKeys() then
-            self.key_events.AnyKeyPressed = { { Input.group.Any } }
+            local any_key_but_home = util.tableDeepCopy(Input.group.Any)
+            util.arrayRemove(any_key_but_home, function(t, i) return t[i] ~= "Home" end)
+            self.key_events.AnyKeyPressed = { { any_key_but_home } }
+            self.key_events.Home = { { "Home" } }
         end
         if Device:isTouchDevice() then
             self.ges_events.TapClose = {
@@ -220,19 +224,36 @@ function ProgressbarDialog:onDismiss()
             cancel_callback = function()
                 self.dismiss_box = nil
                 UIManager:close(self)
+                if self._home_pending then
+                    self._home_pending = nil
+                    local Event = require("ui/event")
+                    UIManager:sendEvent(Event:new("Home"))
+                end
             end,
             ok_text = _("Continue"),
             ok_callback = function()
                 self.dismiss_box = nil
+                self._home_pending = nil
             end,
             dismissable = false,
         }
         UIManager:show(self.dismiss_box)
     else
         UIManager:close(self)
+        if self._home_pending then
+            self._home_pending = nil
+            local Event = require("ui/event")
+            UIManager:sendEvent(Event:new("Home"))
+        end
     end
 end
 ProgressbarDialog.onAnyKeyPressed = ProgressbarDialog.onDismiss
 ProgressbarDialog.onTapClose = ProgressbarDialog.onDismiss
+
+function ProgressbarDialog:onHome()
+    self._home_pending = true
+    self:onDismiss()
+    return true
+end
 
 return ProgressbarDialog

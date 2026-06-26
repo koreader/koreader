@@ -671,6 +671,14 @@ local sym_key_map = {
     ["Z"] = "{", ["X"] = "}", ["C"] = "[", ["V"] = "]", ["B"] = "1", ["N"] = "2", ["M"] = "3", ["."] = ":", ["AA"] = ";",
 }
 
+function InputText:keyBack()
+    if self.parent.onCloseDialog then
+        self.parent:onCloseDialog()
+    else
+        UIManager:close(self.parent)
+    end
+end
+
 -- Handle real keypresses from a physical keyboard, even if the virtual keyboard
 -- is shown. Mostly likely to be in the emulator, but could be Android + BT
 -- keyboard, or a "coder's keyboard" Android input method.
@@ -718,17 +726,19 @@ function InputText:onKeyPress(key)
         elseif key["End"] then
             self:goToEnd()
         elseif key["Home"] then
-            self:goToHome()
+            if Device:hasScreenKB() or Device:hasSymKey() then
+                self:keyBack()
+                local Event = require("ui/event")
+                UIManager:sendEvent(Event:new("Home"))
+            else
+                self:goToHome()
+            end
         elseif key["Press"] then
             self:addChars("\n")
         elseif key["Tab"] then
             self:addChars("    ")
         elseif key["Back"] then
-            if self.parent.onCloseDialog then
-                self.parent:onCloseDialog()
-            else
-                UIManager:close(self.parent)
-            end
+            self:keyBack()
         else
             handled = false
         end

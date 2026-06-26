@@ -66,6 +66,7 @@ function SpinWidget:init()
     end
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.Home = { { "Home" } }
         self.key_events.WidgetValueUp    = { { Device.input.group.PgFwd  }, event = "SpinButtonPressed", args = {  1, false } }
         self.key_events.WidgetValueDown  = { { Device.input.group.PgBack }, event = "SpinButtonPressed", args = { -1, false } }
         if Device:hasScreenKB() or Device:hasKeyboard() then
@@ -360,6 +361,13 @@ function SpinWidget:onClose()
     if self.close_callback then
         self.close_callback()
     end
+    return true
+end
+
+function SpinWidget:onHome()
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 

@@ -205,6 +205,7 @@ function FootnoteWidget:init()
     if Device:hasKeys() then
         self.key_events = {
             Close = { { Device.input.group.Back } },
+            Home = { { "Home" } },
             Follow = { { "Press" } },
         }
     end
@@ -399,6 +400,12 @@ function FootnoteWidget:onClose()
     if self.close_callback then
         self.close_callback(self.height)
     end
+    return true
+end
+
+function FootnoteWidget:onHome()
+    self:onClose()
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 

@@ -29,6 +29,7 @@ local UIManager = require("ui/uimanager")
 local Input = Device.input
 local Screen = Device.screen
 local Size = require("ui/size")
+local util = require("util")
 
 local QRMessage = InputContainer:extend{
     modal = true,
@@ -44,7 +45,10 @@ local QRMessage = InputContainer:extend{
 
 function QRMessage:init()
     if Device:hasKeys() then
-        self.key_events.AnyKeyPressed = { { Input.group.Any } }
+        local any_key_but_home = util.tableDeepCopy(Input.group.Any)
+        util.arrayRemove(any_key_but_home, function(t, i) return t[i] ~= "Home" end)
+        self.key_events.AnyKeyPressed = { { any_key_but_home } }
+        self.key_events.Home = { { "Home" } }
     end
     if Device:isTouchDevice() then
         self.ges_events.TapClose = {
@@ -108,6 +112,13 @@ function QRMessage:onShow()
         end
         UIManager:scheduleIn(self.timeout, self._timeout_func)
     end
+    return true
+end
+
+function QRMessage:onHome()
+    self:onTapClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 

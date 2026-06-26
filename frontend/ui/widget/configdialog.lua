@@ -906,6 +906,7 @@ function ConfigDialog:init()
             table.insert(back_group, "AA")
             self.key_events.Close = { { back_group } }
         end
+        self.key_events.Home = { { "Home" } }
     end
 end
 
@@ -1519,6 +1520,12 @@ end
 
 function ConfigDialog:onClose()
     self:closeDialog()
+    return true
+end
+
+function ConfigDialog:onHome()
+    self:onClose()
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 
