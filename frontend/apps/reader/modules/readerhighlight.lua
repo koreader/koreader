@@ -1285,10 +1285,10 @@ function ReaderHighlight:showChooseHighlightDialog(highlights)
 end
 
 function ReaderHighlight:showHighlightNoteOrDialog(index)
-    local annotation = self.ui.annotation.annotations[index]
-    local bookmark_note = annotation.note
+    local anno = self.ui.annotation.annotations[index]
+    local bookmark_note = anno.note
     if bookmark_note then
-        local note_format = annotation.note_format
+        local note_format = anno.note_format
         if not note_format then -- try simple heuristics
             local s = bookmark_note:gsub("^%s*", ""):sub(1, 1)
             if s == "<" then
