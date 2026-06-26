@@ -19,6 +19,8 @@ local logger = require("logger")
 local util = require("util")
 local ffi = require("ffi")
 
+require "ffi/posix_h"
+
 local KoptInterface = {
     ocrengine = "ocrengine",
     -- If `$TESSDATA_PREFIX` is set, don't override it: let libk2pdfopt honor it
@@ -291,7 +293,6 @@ local function get_pthread()
     for _, libname in ipairs(candidates) do
         ok, cached_pthread = pcall(ffi.load, libname)
         if ok then
-            require("ffi/pthread_h")
             return cached_pthread
         end
     end
