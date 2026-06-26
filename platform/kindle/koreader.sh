@@ -83,7 +83,6 @@ if [ "${1}" = "--kual" ]; then
     shift 1
     FROM_KUAL="yes"
     REEXEC_FLAGS="${REEXEC_FLAGS} --kual"
-    export EIPS_NO_SLEEP="no"
 else
     FROM_KUAL="no"
     export EIPS_NO_SLEEP="yes"
