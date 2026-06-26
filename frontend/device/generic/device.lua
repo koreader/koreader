@@ -1053,7 +1053,7 @@ function Device:unpackArchive(archive, extract_to, with_stripped_root)
     end
     if not ok then
         return false, T(_("Extracting archive failed:\n\n%1"), BD.filepath(archive))..string.format("\n\n(%s)", arc.err)
-end
+    end
     arc:close()
     os.remove(archive)
     return true
