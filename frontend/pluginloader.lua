@@ -209,7 +209,8 @@ function PluginLoader:_discover()
                 local metafile = plugin_root.."/_meta.lua"
                 local plugin_name = entry:sub(1, -10)
                 local disabled = false
-                if plugins_disabled and plugins_disabled[plugin_name] then
+                if (plugins_disabled and plugins_disabled[plugin_name]) or
+                        (G_reader_settings:isTrue("plugins_disable_external") and not BUILTIN_PLUGINS[plugin_name]) then
                     mainfile = metafile
                     disabled = true
                 end
@@ -312,6 +313,9 @@ function PluginLoader:genPluginManagerSubItem()
     for _, plugin in ipairs(self.all_plugins) do
         local item = {
             text = plugin.fullname,
+            enabled_func = function()
+                return BUILTIN_PLUGINS[plugin.name] or G_reader_settings:nilOrFalse("plugins_disable_external")
+            end,
             checked_func = function()
                 return plugin.enable
             end,

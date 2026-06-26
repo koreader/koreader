@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
+local DataStorage = require("datastorage")
 local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
@@ -8,6 +9,7 @@ local UIManager = require("ui/uimanager")
 local Version = require("version")
 local dbg = require("dbg")
 local lfs = require("libs/libkoreader-lfs")
+local userpatch = require("userpatch")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -52,7 +54,6 @@ common_info.report_bug = {
     end,
     keep_menu_open = true,
     callback = function(touchmenu_instance)
-        local DataStorage = require("datastorage")
         local log_path = string.format("%s/%s", DataStorage:getDataDir(), "crash.log")
         local common_msg = T(_("Please report bugs to \nhttps://github.com/koreader/koreader/issues\n\nVersion:\n%1\n\nDetected device:\n%2"),
             Version:getCurrentRevision(), Device:info())
@@ -102,6 +103,17 @@ common_info.report_bug = {
             }},
         })
     end
+}
+common_info.plugins_disable_external = {
+    text = _("Disable external plugins and user-patches"),
+    checked_func = function()
+        return G_reader_settings:isTrue("plugins_disable_external")
+    end,
+    callback = function()
+        G_reader_settings:flipNilOrFalse("plugins_disable_external")
+        userpatch.togglePatchesDisabled()
+        UIManager:askForRestart()
+    end,
 }
 common_info.version = {
     text = T(_("Version: %1"), Version:getShortVersion()),
