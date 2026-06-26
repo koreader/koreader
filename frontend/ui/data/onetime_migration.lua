@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20260517
+local CURRENT_MIGRATION_DATE = 20260623
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -1009,6 +1009,19 @@ if last_migration_date < 20260517 then
             recursive_directory = recursive_directory,
         })
         settings:flush()
+    end
+end
+
+-- 20260623, Move Kosync plugin settings into a separate file
+-- https://github.com/koreader/koreader/pull/15591
+if last_migration_date < 20260623 then
+    logger.info("Performing one-time migration for 20260623")
+    local kosync_setting = G_reader_settings:readSetting("kosync")
+    if kosync_setting then
+        local settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/kosync.lua")
+        settings:saveSetting("settings" , kosync_setting)
+        settings:flush()
+        G_reader_settings:delSetting("kosync")
     end
 end
 
