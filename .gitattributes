@@ -1,3 +1,0 @@
-# Declare files that will always have LF line endings on checkout.
-# This is the default for most text files, but explicitly setting it ensures consistency.
-* text=false
