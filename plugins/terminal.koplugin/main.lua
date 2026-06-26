@@ -12,20 +12,6 @@ local ffi = require("ffi")
 local C = ffi.C
 require("ffi/posix_h")
 
--- for terminal emulator
-ffi.cdef[[
-static const int SIGTERM = 15;
-
-int grantpt(int fd) __attribute__((nothrow, leaf));
-int unlockpt(int fd) __attribute__((nothrow, leaf));
-char *ptsname(int fd) __attribute__((nothrow, leaf));
-pid_t setsid(void) __attribute__((nothrow, leaf));
-
-static const int TCIFLUSH = 0;
-int tcdrain(int fd) __attribute__((nothrow, leaf));
-int tcflush(int fd, int queue_selector) __attribute__((nothrow, leaf));
-]]
-
 local function check_prerequisites()
     -- We of course need to be able to manipulate pseudoterminals,
     -- but Kobo's init scripts fail to set this up...
