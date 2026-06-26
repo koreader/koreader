@@ -185,4 +185,11 @@ function PathChooser:showPlusMenu()
     UIManager:show(button_dialog)
 end
 
+function PathChooser:onHome()
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
+    return true
+end
+
 return PathChooser

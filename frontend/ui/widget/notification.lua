@@ -16,6 +16,7 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local time = require("ui/time")
+local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 local Input = Device.input
@@ -89,7 +90,10 @@ function Notification:init()
     if not self.toast then
         -- If not toast, closing is handled in here
         if Device:hasKeys() then
-            self.key_events.AnyKeyPressed = { { Input.group.Any } }
+            local any_key_but_home = util.tableDeepCopy(Input.group.Any)
+            util.arrayRemove(any_key_but_home, function(t, i) return t[i] ~= "Home" end)
+            self.key_events.AnyKeyPressed = { { any_key_but_home } }
+            self.key_events.Home = { { "Home" } }
         end
         if Device:isTouchDevice() then
             self.ges_events.TapClose = {
@@ -239,6 +243,13 @@ function Notification:onTapClose()
     return true
 end
 Notification.onAnyKeyPressed = Notification.onTapClose
+
+function Notification:onHome()
+    self:onTapClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
+    return true
+end
 
 -- Toasts should go bye-bye on user input, without stopping the event's propagation.
 function Notification:onKeyPress(key)

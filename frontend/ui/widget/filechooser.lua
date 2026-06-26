@@ -96,6 +96,9 @@ function FileChooser:show_file(filename, fullpath)
 end
 
 function FileChooser:init()
+    if Device:hasKeys() then
+        self.key_events.Home = { { "Home" } }
+    end
     self.path_items = {}
     if lfs.attributes(self.path, "mode") ~= "directory" then
         self.path = filemanagerutil.getHomeFolder()
@@ -362,6 +365,21 @@ function FileChooser:changeToPath(path, focused_path)
     if self.name == "filemanager" then
         self.ui:handleEvent(Event:new("PathChanged", path))
     end
+end
+
+function FileChooser:onHome()
+    local FileManager = require("apps/filemanager/filemanager")
+    if FileManager.instance then
+        print("FileChooser:onHome() called, redirecting to FileManager:onHome()")
+        -- FileChooser is a Booklist (which in turn is a Menu), we need
+        -- to redirect Home calls otherwise we will unalive ourselves,
+        -- taking the whole application down with us.
+        return FileManager.instance:onHome()
+    end
+    self:onClose()
+    print("FileChooser:onHome() called, but no FileManager instance found. Closing FileChooser.")
+    UIManager:sendEvent(Event:new("Home"))
+    return true
 end
 
 function FileChooser:goHome()

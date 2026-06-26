@@ -966,6 +966,7 @@ function Menu:init()
         -- set up keyboard events
         self.key_events.Close = { { Input.group.Back } }
         self.key_events.LeftButtonTap = { { "Menu" } }
+        self.key_events.Home = { { "Home" } }
         if Device:hasFewKeys() then
             self.key_events.Close = { { "Left" } }
         end
@@ -1526,6 +1527,13 @@ function Menu:onMultiSwipe(arg, ges_ev)
         -- closed), allow easier closing with swipe south.
         self:onClose()
     end
+    return true
+end
+
+function Menu:onHome()
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 
