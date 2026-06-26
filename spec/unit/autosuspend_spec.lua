@@ -60,6 +60,68 @@ describe("AutoSuspend", function()
         end)
     end)
 
+    describe("keep alive (Kindle)", function()
+        local keepalive_cmd_enable = "lipc-set-prop com.lab126.powerd preventScreenSaver 1"
+        local keepalive_cmd_disable = "lipc-set-prop com.lab126.powerd preventScreenSaver 0"
+
+        before_each(function()
+            local Device = require("device")
+            stub(Device, "isKindle")
+            Device.isKindle.returns(true)
+            Device.input.waitEvent = function() end
+            stub(Device:getPowerDevice(), "resetT1Timeout")
+            stub(os, "execute")
+            local UIManager = require("ui/uimanager")
+            UIManager:setRunForeverMode()
+            require("mock_time"):install()
+            UIManager:handleInput()
+        end)
+
+        after_each(function()
+            local Device = require("device")
+            Device.isKindle:revert()
+            Device:getPowerDevice().resetT1Timeout:revert()
+            os.execute:revert() -- luacheck: ignore
+            require("pluginshare").pause_auto_suspend = nil
+            G_reader_settings:delSetting("auto_suspend_timeout_seconds")
+            require("mock_time"):uninstall()
+        end)
+
+        it("should suppress the screensaver when autosuspend is disabled", function()
+            G_reader_settings:saveSetting("auto_suspend_timeout_seconds", -1)
+            local widget_class = dofile("plugins/autosuspend.koplugin/main.lua")
+            local widget = widget_class:new() --luacheck: ignore
+            assert.stub(os.execute).was.called_with(keepalive_cmd_enable)
+        end)
+
+        it("should suppress the screensaver when pause_auto_suspend is set", function()
+            G_reader_settings:saveSetting("auto_suspend_timeout_seconds", 10)
+            require("pluginshare").pause_auto_suspend = true
+            local widget_class = dofile("plugins/autosuspend.koplugin/main.lua")
+            local widget = widget_class:new() --luacheck: ignore
+            assert.stub(os.execute).was.called_with(keepalive_cmd_enable)
+        end)
+
+        it("should not suppress the screensaver when enabled and not paused", function()
+            G_reader_settings:saveSetting("auto_suspend_timeout_seconds", 10)
+            local widget_class = dofile("plugins/autosuspend.koplugin/main.lua")
+            local widget = widget_class:new()
+            assert.is_false(widget.keep_alive)
+            assert.stub(os.execute).was_not.called_with(keepalive_cmd_enable)
+        end)
+
+        it("should release the screensaver when re-enabling autosuspend", function()
+            G_reader_settings:saveSetting("auto_suspend_timeout_seconds", -1)
+            local widget_class = dofile("plugins/autosuspend.koplugin/main.lua")
+            local widget = widget_class:new()
+            assert.stub(os.execute).was.called_with(keepalive_cmd_enable)
+            widget.auto_suspend_timeout_seconds = 10
+            widget:_unschedule_kindle()
+            widget:_start_kindle()
+            assert.stub(os.execute).was.called_with(keepalive_cmd_disable)
+        end)
+    end)
+
     describe("shutdown", function()
         --- @todo duplicate with above, elegant way to DRY?
         before_each(function()

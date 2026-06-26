@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20260517
+local CURRENT_MIGRATION_DATE = 20260605
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -1010,6 +1010,14 @@ if last_migration_date < 20260517 then
         })
         settings:flush()
     end
+end
+
+-- 20260605, Remove keepalive plugin: logic merged into autosuspend
+-- https://github.com/koreader/koreader/pull/15494
+-- The keepalive plugin setting was session based so it doesn't needs to be moved
+if last_migration_date < 20260605 then
+    logger.info("Performing one-time migration for 20260605")
+    ffiUtil.purgeDir(DataStorage:getDataDir() .. "/plugins/keepalive.koplugin")
 end
 
 -- We're done, store the current migration date
