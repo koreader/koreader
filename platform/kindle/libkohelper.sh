@@ -57,7 +57,7 @@ eips_print_bottom_centered() {
     # Sleep a tiny bit to workaround the logic in the 'new' (K4+) eInk controllers that tries to bundle updates,
     # otherwise it may drop part of our messages because of other screen updates from KUAL...
     # Unless we really don't want to sleep, for special cases...
-    if [ -z "${EIPS_NO_SLEEP}" ]; then
+    if [ "${EIPS_NO_SLEEP}" = "no" ]; then
         usleep 150000 # 150ms
     fi
 

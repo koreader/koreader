@@ -83,8 +83,10 @@ if [ "${1}" = "--kual" ]; then
     shift 1
     FROM_KUAL="yes"
     REEXEC_FLAGS="${REEXEC_FLAGS} --kual"
+    export EIPS_NO_SLEEP="no"
 else
     FROM_KUAL="no"
+    export EIPS_NO_SLEEP="yes"
 fi
 
 # By default, don't stop the framework.
@@ -98,8 +100,7 @@ elif [ "${1}" = "--asap" ]; then
     shift 1
     NO_SLEEP="yes"
     REEXEC_FLAGS="${REEXEC_FLAGS} --asap"
-    # Don't sleep during eips calls either...
-    export EIPS_NO_SLEEP="true"
+    export EIPS_NO_SLEEP="yes"
 else
     NO_SLEEP="no"
 fi
