@@ -1272,17 +1272,21 @@ function VirtualKeyboard:_buildCandidateBarContent()
     return vgroup
 end
 
--- Rebuild the bar content and queue a (non-flashing) repaint of the bar region.
--- A queued setDirty avoids racing with other pending refreshes (an immediate
--- widgetRepaint here can fail to show on the dialog's first paint).
+-- Rebuild the bar content and repaint ONLY the bar region (not the whole keyboard,
+-- which would rewrite the keys' framebuffer and race with an in-flight a2 key flash,
+-- leaving a key stuck highlighted). Same pattern VirtualKey uses for its own flash.
 function VirtualKeyboard:_refreshCandidateBar()
     if not (self.has_candidate_bar and self.candidate_bar_inner) then return end
     local old = self.candidate_bar_inner[1]
     self.candidate_bar_inner[1] = self:_buildCandidateBarContent()
     if old and old.free then old:free() end
-    UIManager:setDirty(self, function()
-        return "ui", self.candidate_bar and self.candidate_bar.dimen or self.dimen
-    end)
+    local bar = self.candidate_bar
+    if bar and bar.dimen then
+        UIManager:widgetRepaint(bar, bar.dimen.x, bar.dimen.y)
+        UIManager:setDirty(nil, "ui", bar.dimen)
+    else
+        self:_refresh(false)
+    end
 end
 
 function VirtualKeyboard:setCandidates(list, callback, composing)
