@@ -621,7 +621,9 @@ function WordInfoDialog:init()
     }
 
     table.insert(self.layout, {copy_button})
-    table.insert(self.layout, {self.book_title_button})
+    if self.vocabbuilder then
+        table.insert(self.layout, {self.book_title_button})
+    end
     self:mergeLayoutInVertical(focus_button)
 
     local has_context = self.prev_context or self.next_context

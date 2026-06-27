@@ -2,9 +2,11 @@
 
 export LC_ALL="en_US.UTF-8"
 
-UNPACK_DIR='/mnt/us'
-# KOReader's working directory.
-KOREADER_DIR="${UNPACK_DIR}/koreader"
+# Compute our working directory in an extremely defensive manner
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
+# NOTE: We need to remember the *actual* KOREADER_DIR, not the relocalized version in /tmp...
+export KOREADER_DIR="${KOREADER_DIR:-${SCRIPT_DIR}}"
+UNPACK_DIR="${KOREADER_DIR%/*}"
 
 # NOTE: Stupid workaround to make sure the script we end up running is a *copy*,
 # living in a magical land that doesn't suffer from gross filesystem deficiencies.
@@ -18,6 +20,9 @@ if [ "$(dirname "${0}")" != "/var/tmp" ]; then
     chmod 777 /var/tmp/koreader.sh
     exec /var/tmp/koreader.sh "$@"
 fi
+
+# We rely on starting from our working directory, and it needs to be set, sane and absolute.
+cd "${KOREADER_DIR:-/dev/null}" || exit
 
 PROC_KEYPAD="/proc/keypad"
 PROC_FIVEWAY="/proc/fiveway"
@@ -80,6 +85,7 @@ if [ "${1}" = "--kual" ]; then
     REEXEC_FLAGS="${REEXEC_FLAGS} --kual"
 else
     FROM_KUAL="no"
+    export EIPS_NO_SLEEP="yes"
 fi
 
 # By default, don't stop the framework.
@@ -93,8 +99,7 @@ elif [ "${1}" = "--asap" ]; then
     shift 1
     NO_SLEEP="yes"
     REEXEC_FLAGS="${REEXEC_FLAGS} --asap"
-    # Don't sleep during eips calls either...
-    export EIPS_NO_SLEEP="true"
+    export EIPS_NO_SLEEP="yes"
 else
     NO_SLEEP="no"
 fi
@@ -144,7 +149,7 @@ ko_update_check() {
         #       which we cannot use because it's been mounted noexec for a few years now...
         cp -pf "${KOREADER_DIR}/tar" /var/tmp/gnutar
         # shellcheck disable=SC2016
-        /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='printf "%s" $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}' -C "/mnt/us" -xf "${NEWUPDATE}"
+        /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='printf "%s" $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}' -C "${UNPACK_DIR}" -xf "${NEWUPDATE}"
         fail=$?
         kill -TERM "${FBINK_PID}"
         # And remove our temporary tar binary...
@@ -260,9 +265,9 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
                 # FIXME: There's apparently a nasty side-effect on FW >= 5.12.4 which somehow softlocks the UI on exit (despite wmctrl succeeding). Don't have the HW to investigate, so, just drop it. (#6117)
                 if [ "$(version "${FW_VERSION}")" -lt "$(version "5.12.4")" ]; then
                     logmsg "Hiding the title bar . . ."
-                    TITLEBAR_GEOMETRY="$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')"
-                    ${KOREADER_DIR}/wmctrl -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY%,*},1"
-                    logmsg "Title bar geometry: '${TITLEBAR_GEOMETRY}' -> '$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')'"
+                    TITLEBAR_GEOMETRY="$("${KOREADER_DIR}/wmctrl" -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')"
+                    "${KOREADER_DIR}/wmctrl" -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY%,*},1"
+                    logmsg "Title bar geometry: '${TITLEBAR_GEOMETRY}' -> '$("${KOREADER_DIR}/wmctrl" -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')'"
                     USED_WMCTRL="yes"
                 fi
                 if [ "${FROM_KUAL}" = "yes" ]; then
@@ -396,17 +401,17 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
         # NOTE: Wait and retry for a bit, because apparently there may be timing issues (c.f., #5990)?
         usleep 250000
         WMCTRL_COUNT=0
-        until [ "$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')" = "${TITLEBAR_GEOMETRY}" ]; do
+        until [ "$("${KOREADER_DIR}/wmctrl" -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')" = "${TITLEBAR_GEOMETRY}" ]; do
             # Abort after 5s
             if [ ${WMCTRL_COUNT} -gt 20 ]; then
                 log "Giving up on restoring the title bar geometry!"
                 break
             fi
-            ${KOREADER_DIR}/wmctrl -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY}"
+            "${KOREADER_DIR}/wmctrl" -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY}"
             usleep 250000
             WMCTRL_COUNT=$((WMCTRL_COUNT + 1))
         done
-        logmsg "Title bar geometry restored to '$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')' (ought to be: '${TITLEBAR_GEOMETRY}') [after ${WMCTRL_COUNT} attempts]"
+        logmsg "Title bar geometry restored to '$("${KOREADER_DIR}/wmctrl" -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')' (ought to be: '${TITLEBAR_GEOMETRY}') [after ${WMCTRL_COUNT} attempts]"
     fi
 fi
 

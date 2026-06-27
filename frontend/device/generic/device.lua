@@ -8,6 +8,7 @@ local Archiver = require("ffi/archiver")
 local DataStorage = require("datastorage")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
+local NetInfo = require("ffi/netinfo")
 local UIManager -- Updated on UIManager init
 local logger = require("logger")
 local ffi = require("ffi")
@@ -20,6 +21,52 @@ local T = ffiUtil.template
 
 -- We'll need a bunch of stuff for getifaddrs & co in Device:retrieveNetworkInfo
 require("ffi/posix_h")
+
+ffi.cdef[[
+struct icmp_echo {
+  uint8_t type;
+  uint8_t code;
+  uint16_t checksum;
+  uint16_t id;
+  uint16_t sequence;
+};
+]]
+
+if ffi.abi("le") then
+    ffi.cdef[[
+struct ip_header
+{
+    unsigned int ihl:4;
+    unsigned int version:4;
+    uint8_t tos;
+    uint16_t tot_len;
+    uint16_t id;
+    uint16_t frag_off;
+    uint8_t ttl;
+    uint8_t protocol;
+    uint16_t check;
+    uint32_t saddr;
+    uint32_t daddr;
+  };
+]]
+else
+    ffi.cdef[[
+struct ip_header
+{
+    unsigned int version:4;
+    unsigned int ihl:4;
+    uint8_t tos;
+    uint16_t tot_len;
+    uint16_t id;
+    uint16_t frag_off;
+    uint8_t ttl;
+    uint8_t protocol;
+    uint16_t check;
+    uint32_t saddr;
+    uint32_t daddr;
+  };
+]]
+end
 
 local function yes() return true end
 local function no() return false end
@@ -36,6 +83,8 @@ local Device = {
     -- For Kobo, wait at least 15 seconds before calling suspend script. Otherwise, suspend might
     -- fail and the battery will be drained while we are in screensaver mode
     suspend_wait_timeout = 15,
+    -- Bumped when screensaver_extra_flash is enabled, to account for ~2s of extra refresh activity
+    suspend_wait_timeout_extra_flash = 17,
 
     -- hardware feature tests: (these are functions!)
     hasBattery = yes,
@@ -681,10 +730,10 @@ function Device:ping4(ip)
 
     -- Setup the packet
     local packet = ffi.new("char[?]", DEFDATALEN + MAXIPLEN + MAXICMPLEN)
-    local pkt = ffi.cast("struct icmphdr *", packet)
+    local pkt = ffi.cast("struct icmp_echo *", packet)
     pkt.type = C.ICMP_ECHO
-    pkt.un.echo.id = myid
-    pkt.un.echo.sequence = C.htons(1)
+    pkt.id = myid
+    pkt.sequence = C.htons(1)
     pkt.checksum = inet_cksum(ffi.cast("const void *", pkt), ffi.sizeof(packet))
 
     -- Set the destination address
@@ -739,7 +788,7 @@ function Device:ping4(ip)
                 -- Do some minimal verification of the reply's validity.
                 -- This is mostly based on busybox's ping,
                 -- with some extra inspiration from iputils's ping, especially as far as SOCK_DGRAM is concerned.
-                local iphdr = ffi.cast("struct iphdr *", packet) -- ip + icmp
+                local iphdr = ffi.cast("struct ip_header *", packet) -- ip + icmp
                 local hlen
                 if socket_type == C.SOCK_RAW then
                     hlen = bit.lshift(iphdr.ihl, 2)
@@ -752,11 +801,11 @@ function Device:ping4(ip)
                     hlen = 0
                 end
                 -- Skip ip hdr to get at the ICMP part
-                local icp = ffi.cast("struct icmphdr *", packet + hlen)
+                local icp = ffi.cast("struct icmp_echo *", packet + hlen)
                 -- Check that we got a *reply* to *our* ping
                 -- NOTE: The reply's ident is defined by the kernel for SOCK_DGRAM, so we can't do anything with it!
                 if icp.type == C.ICMP_ECHOREPLY and
-                   (socket_type == C.SOCK_DGRAM or icp.un.echo.id == myid) then
+                   (socket_type == C.SOCK_DGRAM or icp.id == myid) then
                     break
                 end
             end
@@ -826,129 +875,42 @@ function Device:getDefaultRoute(interface)
 end
 
 function Device:retrieveNetworkInfo()
-    -- We're going to need a random socket for the network & wireless ioctls...
-    local socket = C.socket(C.PF_INET, C.SOCK_DGRAM, C.IPPROTO_IP);
-    if socket == -1 then
-        local errno = ffi.errno()
-        logger.err("Device:retrieveNetworkInfo: socket:", ffi.string(C.strerror(errno)))
-        return
-    end
-
-    local ifaddr = ffi.new("struct ifaddrs *[1]")
-    if C.getifaddrs(ifaddr) == -1 then
-        local errno = ffi.errno()
-        logger.err("Device:retrieveNetworkInfo: getifaddrs:", ffi.string(C.strerror(errno)))
-        return false
-    end
 
     -- Build a string rope to format the results
     local results = {}
-    local interfaces = {}
-    local prev_ifname, default_gw
+    local default_gw
 
-    -- Loop over all the network interfaces
-    local ifa = ifaddr[0]
-    while ifa ~= nil do
-        -- Skip over loopback or downed interfaces
-        if ifa.ifa_addr ~= nil and
-           bit.band(ifa.ifa_flags, C.IFF_UP) ~= 0 and
-           bit.band(ifa.ifa_flags, C.IFF_LOOPBACK) == 0 then
-            local family = ifa.ifa_addr.sa_family
-            if family == C.AF_INET or family == C.AF_INET6 then
-                local host = ffi.new("char[?]", C.NI_MAXHOST)
-                local s = C.getnameinfo(ifa.ifa_addr,
-                                        family == C.AF_INET and ffi.sizeof("struct sockaddr_in") or ffi.sizeof("struct sockaddr_in6"),
-                                        host, C.NI_MAXHOST,
-                                        nil, 0,
-                                        C.NI_NUMERICHOST)
-                if s ~= 0 then
-                    logger.err("Device:retrieveNetworkInfo: getnameinfo:", ffi.string(C.gai_strerror(s)))
-                else
-                    -- Only print the ifname once
-                    local ifname = ffi.string(ifa.ifa_name)
-                    if not interfaces[ifname] then
-                        if prev_ifname and ifname ~= prev_ifname then
-                            -- Add a linebreak between interfaces
-                            table.insert(results, "")
-                        end
-                        prev_ifname = ifname
-                        table.insert(results, T(_("Interface: %1"), ifname))
-                        interfaces[ifname] = true
-                        -- Get its MAC address
-                        local ifr = ffi.new("struct ifreq")
-                        ffi.copy(ifr.ifr_ifrn.ifrn_name, ifa.ifa_name, C.IFNAMSIZ)
-                        if C.ioctl(socket, C.SIOCGIFHWADDR, ifr) == -1 then
-                            local errno = ffi.errno()
-                            logger.err("Device:retrieveNetworkInfo: SIOCGIFHWADDR ioctl:", ffi.string(C.strerror(errno)))
-                        else
-                            local mac = string.format("%02X:%02X:%02X:%02X:%02X:%02X",
-                                                      bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[0], 0xFF),
-                                                      bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[1], 0xFF),
-                                                      bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[2], 0xFF),
-                                                      bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[3], 0xFF),
-                                                      bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[4], 0xFF),
-                                                      bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[5], 0xFF))
-                            table.insert(results, T(_("MAC: %1"), mac))
-                        end
-
-                        -- Check if it's a wireless interface (c.f., wireless-tools)
-                        local iwr = ffi.new("struct iwreq")
-                        ffi.copy(iwr.ifr_ifrn.ifrn_name, ifa.ifa_name, C.IFNAMSIZ)
-                        if C.ioctl(socket, C.SIOCGIWNAME, iwr) ~= -1 then
-                            interfaces[ifname] = "wireless"
-                            -- Get its ESSID
-                            local essid = ffi.new("char[?]", C.IW_ESSID_MAX_SIZE + 1)
-                            iwr.u.essid.pointer = ffi.cast("caddr_t", essid)
-                            iwr.u.essid.length = C.IW_ESSID_MAX_SIZE + 1
-                            iwr.u.essid.flags = 0
-                            if C.ioctl(socket, C.SIOCGIWESSID, iwr) == -1 then
-                                local errno = ffi.errno()
-                                logger.err("Device:retrieveNetworkInfo: SIOCGIWESSID ioctl:", ffi.string(C.strerror(errno)))
-                            else
-                                local essid_on = iwr.u.data.flags
-                                if essid_on ~= 0 then
-                                    -- Knowing the token index may be fun, bit it isn't in fact, super interesting...
-                                    --[[
-                                    local token_index = bit.band(essid_on, C.IW_ENCODE_INDEX)
-                                    if token_index > 1 then
-                                        table.insert(results, T(_("SSID: \"%1\" [%2]"), ffi.string(essid), token_index))
-                                    else
-                                        table.insert(results, T(_("SSID: \"%1\""), ffi.string(essid)))
-                                    end
-                                    --]]
-                                    table.insert(results, T(_("SSID: \"%1\""), ffi.string(essid)))
-                                else
-                                    table.insert(results, _("SSID: off/any"))
-                                end
-                            end
-                        end
-                    end
-
-                    if family == C.AF_INET then
-                        table.insert(results, T(_("IP: %1"), ffi.string(host)))
-                        local gw = self:getDefaultRoute(ifname)
-                        if gw then
-                            table.insert(results, T(_("Default gateway: %1"), gw))
-                            -- If that's a wireless interface, use *that* one for the ping test
-                            if interfaces[ifname] == "wireless" then
-                                default_gw = gw
-                            end
-                        end
-                    else
-                        table.insert(results, T(_("IPv6: %1"), ffi.string(host)))
-                        --- @todo: Build an IPv6 variant of getDefaultRoute that parses /proc/net/ipv6_route
-                    end
+    local ni = NetInfo:new()
+    for __, iface in ipairs(ni:retrieve()) do
+        table.insert(results, T(_("Interface: %1"), iface.name))
+        table.insert(results, T(_("MAC: %1"), iface.mac))
+        if iface.wireless then
+            if iface.ssid then
+                table.insert(results, T(_("SSID: \"%1\""), iface.ssid))
+            else
+                table.insert(results, _("SSID: off/any"))
+            end
+        end
+        if iface.ipv4 then
+            table.insert(results, T(_("IPv4: %1"), iface.ipv4))
+            local gw = self:getDefaultRoute(iface.name)
+            if gw then
+                table.insert(results, T(_("Default gateway: %1"), gw))
+                -- If that's a wireless interface, use *that* one for the ping test
+                if iface.wireless == "wireless" then
+                    default_gw = gw
                 end
             end
         end
-        ifa = ifa.ifa_next
-    end
-    C.freeifaddrs(ifaddr[0])
-    C.close(socket)
-
-    if prev_ifname then
+        if iface.ipv6 then
+            table.insert(results, T(_("IPv6: %1"), iface.ipv6))
+            --- @todo: Build an IPv6 variant of getDefaultRoute that parses /proc/net/ipv6_route
+        end
+        -- Add a linebreak between interfaces
         table.insert(results, "")
     end
+    ni:free()
+
     -- Only ping a single gateway (if we found a wireless interface earlier, we've kept its gateway address around)
     if not default_gw then
         -- If not, we'll simply use the last one in the list...
@@ -1051,7 +1013,7 @@ function Device:unpackArchive(archive, extract_to, with_stripped_root)
     end
     if not ok then
         return false, T(_("Extracting archive failed:\n\n%1"), BD.filepath(archive))..string.format("\n\n(%s)", arc.err)
-end
+    end
     arc:close()
     os.remove(archive)
     return true

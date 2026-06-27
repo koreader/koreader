@@ -100,7 +100,6 @@ function ReaderView:init()
         saved_drawer = "lighten",
         -- NOTE: Unfortunately, yellow tends to look like absolute ass on Kaleido panels...
         saved_color = Screen:isColorEnabled() and "yellow" or "gray",
-        indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
     }
     self.page_states = {}
     self.page_gap = {
@@ -219,7 +218,7 @@ function ReaderView:paintTo(bb, x, y)
         if self.page_overlap_style == "dim" then
             -- NOTE: "dim", as in make black text fainter, e.g., lighten the rect
             bb:lightenRect(self.dim_area.x, self.dim_area.y, self.dim_area.w, self.dim_area.h)
-        else
+        elseif self.page_overlap_style ~= "none" then
             -- Paint at the proper y origin depending on whether we paged forward (dim_area.y == 0) or backward
             local paint_y = self.dim_area.y == 0 and self.dim_area.h or self.dim_area.y
             if self.page_overlap_style == "arrow" then
@@ -243,10 +242,6 @@ function ReaderView:paintTo(bb, x, y)
     -- draw temporary highlight
     if self.highlight.temp and next(self.highlight.temp) then
         self:drawTempHighlight(bb, x, y)
-    end
-    -- draw highlight position indicator for non-touch
-    if self.highlight.indicator then
-        self:drawHighlightIndicator(bb, x, y)
     end
     -- paint dogear
     if self.dogear_visible then
@@ -505,23 +500,6 @@ function ReaderView:drawScrollView(bb, x, y)
         y + self.state.offset.y,
         self.visible_area,
         self.state.pos)
-end
-
-function ReaderView:drawHighlightIndicator(bb, x, y)
-    local rect = self.highlight.indicator
-    -- paint big cross line +
-    bb:paintRect(
-        rect.x,
-        rect.y + rect.h / 2 - Size.border.thick / 2,
-        rect.w,
-        Size.border.thick
-    )
-    bb:paintRect(
-        rect.x + rect.w / 2 - Size.border.thick / 2,
-        rect.y,
-        Size.border.thick,
-        rect.h
-    )
 end
 
 function ReaderView:drawTempHighlight(bb, x, y)
@@ -1318,13 +1296,43 @@ function ReaderView:checkAutoSaveSettings()
 end
 
 function ReaderView:isOverlapAllowed()
-    if self.ui.paging then
-        return not self.page_scroll
-            and (self.ui.paging.zoom_mode ~= "page"
-                or (self.ui.paging.zoom_mode == "page" and self.document.configurable.text_wrap == 1))
-            and not self.ui.paging.zoom_mode:find("height")
-    else
+    if self.ui.rolling then
         return self.view_mode ~= "page"
+    end
+    -- paging
+    if self.page_scroll then -- continuous mode
+        return false
+    end
+    if self.ui.paging.zoom_mode == "page" then -- page full
+        return self.document.configurable.text_wrap == 1 -- reflow on
+    end
+    if self.ui.paging.zoom_mode:find("height") then -- page/content fit to height
+        return false
+    end
+    return true
+end
+
+local overlap_styles = { "none", "dim", "arrow", "line", "dashed_line" }
+local overlap_style_texts = { _("No indicator"), _("Gray out"), _("Arrow"), _("Solid line"), _("Dashed line") }
+function ReaderView.getOverlapStyles()
+    return overlap_styles, overlap_style_texts
+end
+
+function ReaderView:onSetOverlapStyle(style, no_notification)
+    if self.page_overlap_style ~= style then
+        self.page_overlap_style = style
+        UIManager:setDirty(self.dialog, "ui")
+        if not no_notification then
+            local index = util.arrayContains(overlap_styles, style)
+            Notification:notify(T(_("Page overlap style set to: %1"), overlap_style_texts[index]))
+        end
+    end
+end
+
+function ReaderView:onCycleOverlapStyle()
+    local index = util.arrayContains(overlap_styles, self.page_overlap_style)
+    if index then
+        self:onSetOverlapStyle(overlap_styles[index + 1] or overlap_styles[1])
     end
 end
 

@@ -1895,6 +1895,10 @@ function ReaderHighlight:onHoldPan(_, ges)
     if self.ui.paging and self.selected_text then
         self.view.highlight.temp[self.hold_pos.page] = self.selected_text.sboxes
     end
+    -- Ensure indicator overlay does not restore stale background over updated highlights.
+    if self.ui.keyselection:isActive() then
+        self.ui.keyselection:clearOverlay()
+    end
     UIManager:setDirty(self.dialog, "ui")
 end
 
@@ -2158,6 +2162,27 @@ function ReaderHighlight:onCycleHighlightStyle()
     return true
 end
 
+function ReaderHighlight:highlightWordAtCoordinates(x, y)
+    if not self.ui.rolling then return end
+    if not (x and y) then return end
+    self.hold_pos = { x = x, y = y }
+    local word = self.ui.document:getWordFromPosition(self.hold_pos)
+    if not (word and word.sbox) then
+        return false
+    end
+    self.is_word_selection = true
+    local pos = word.pos
+    self.selected_text = {
+        text = word.word or "",
+        pos0 = word.pos0 or pos,
+        pos1 = word.pos1 or pos,
+        sboxes = { word.sbox },
+        pboxes = word.pbox and { word.pbox },
+    }
+    UIManager:setDirty(self.dialog, "ui", Geom.boundingBox(self.selected_text.sboxes))
+    return true
+end
+
 function ReaderHighlight:highlightFromHoldPos()
     if self.hold_pos then
         if not self.selected_text then
@@ -2258,7 +2283,7 @@ function ReaderHighlight:onHighlightSearch()
     end
     self:highlightFromHoldPos()
     if self.selected_text then
-        local text = util.stripPunctuation(util.cleanupSelectedText(self.selected_text.text))
+        local text = util.cleanupSelectedText(self.selected_text.text)
         self.ui.search:searchText(text)
     end
 end

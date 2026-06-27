@@ -264,10 +264,6 @@ local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra
         logger.warn("request interrupted:", status or code)
         return false, nil, code
     end
-    if code >= 400 and code < 500 then
-        logger.warn("HTTP error:", status or code)
-        return false, nil, status or code
-    end
     if headers == nil then
         logger.warn("No HTTP headers:", status or code or "network unreachable")
         return false, nil, "Network or remote server unavailable"
@@ -278,6 +274,10 @@ local function getUrlContent(url, cookies, timeout, maxtime, add_to_cache, extra
         if #content ~= content_length then
             return false, nil, "Incomplete content received"
         end
+    end
+    if code >= 400 and code < 500 then
+        logger.warn("HTTP error:", status or code)
+        return false, nil, status or code
     end
 
     if add_to_cache then
@@ -422,6 +422,11 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     local seen_images = {}
     local imagenum = 1
     local cover_imgid = nil -- best candidate for cover among our images
+    local function isRelative(url_string)
+        local parsed = socket_url.parse(url_string)
+        -- If there is no scheme component, it is a relative URL.
+        return parsed and parsed.scheme == nil
+    end
     local processImg = function(img_tag)
         local src = img_tag:match([[src="([^"]*)"]])
         if src == nil or src == "" then
@@ -434,7 +439,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
         end
         if src:sub(1,2) == "//" then
             src = "https:" .. src -- Wikipedia redirects from http to https, so use https
-        elseif src:sub(1,1) == "/" then -- non absolute url
+        elseif isRelative(src) then -- non absolute url
             src = socket_url.absolute(base_url, src)
         end
         local cur_image
@@ -688,7 +693,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 src = img.src2x
             end
             logger.dbg("Getting img ", src)
-            local success, _, content = getUrlContent(src)
+            local success, __, content = getUrlContent(src)
             -- success, _, content = getUrlContent(src..".unexistant") -- to simulate failure
             if success then
                 logger.dbg("success, size:", #content)

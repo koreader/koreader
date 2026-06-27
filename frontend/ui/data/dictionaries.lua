@@ -2908,6 +2908,14 @@ local dictionaries = {
         url = "https://www.reader-dict.com/file/de/dict-de-de.zip"
     },
     {
+        name = "reader.dict Dutch",
+        lang_in = "nld",
+        lang_out = "nld",
+        entries = 579600,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/nl/dict-nl-nl.zip"
+    },
+    {
         name = "reader.dict Greek",
         lang_in = "ell",
         lang_out = "ell",
