@@ -902,6 +902,11 @@ function InputDialog:_addSaveCloseButtons()
                 UIManager:show(MultiConfirmBox:new{
                     text = self.close_unsaved_confirm_text or _("You have unsaved changes."),
                     cancel_text = self.close_cancel_button_text or _("Cancel"),
+                    cancel_callback = function()
+                        if self._home_pending then
+                            self._home_pending = nil
+                        end
+                    end,
                     choice1_text = self.close_discard_button_text or _("Discard"),
                     choice1_callback = function()
                         if self.close_callback then self.close_callback(false) end
