@@ -88,9 +88,11 @@ local wrappedAddChars = function(inputbox, char)
     ime:wrappedAddChars(inputbox, char)
 end
 
+-- While composing, ← / → page the candidate bar; otherwise move the cursor.
 local wrappedRightChar = function(inputbox)
-    if ime:hasCandidates() then
-        ime:wrappedAddChars(inputbox, "→")
+    local kb = inputbox.keyboard
+    if ime:hasComposing() and kb and kb.pageCandidates then
+        kb:pageCandidates(1)
     else
         ime:separate(inputbox)
         inputbox.rightChar:raw_method_call()
@@ -98,8 +100,9 @@ local wrappedRightChar = function(inputbox)
 end
 
 local wrappedLeftChar = function(inputbox)
-    if ime:hasCandidates() then
-        ime:wrappedAddChars(inputbox, "←")
+    local kb = inputbox.keyboard
+    if ime:hasComposing() and kb and kb.pageCandidates then
+        kb:pageCandidates(-1)
     else
         ime:separate(inputbox)
         inputbox.leftChar:raw_method_call()

@@ -1302,6 +1302,27 @@ function VirtualKeyboard:clearCandidates()
     self:setCandidates({}, nil, nil)
 end
 
+-- Display-list index of the first candidate on the currently-shown page.
+function VirtualKeyboard:getFirstVisibleCandidateIndex()
+    if self.candidate_pages and self.candidates_page then
+        return self.candidate_pages[self.candidates_page] or 1
+    end
+    return 1
+end
+
+-- Page the candidate bar (delta = -1 previous / +1 next), clamped. No-op when
+-- there's a single page. candidate_pages is set by the last _computeCandidatePages.
+function VirtualKeyboard:pageCandidates(delta)
+    if not self.has_candidate_bar then return end
+    local n = self.candidate_pages and #self.candidate_pages or 0
+    if n <= 1 then return end
+    local page = math.max(1, math.min((self.candidates_page or 1) + delta, n))
+    if page ~= self.candidates_page then
+        self.candidates_page = page
+        self:_refreshCandidateBar()
+    end
+end
+
 function VirtualKeyboard:setLayer(key)
     if key == "Shift" then
         self.shiftmode = not self.shiftmode

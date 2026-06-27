@@ -415,6 +415,17 @@ function IME:commitRaw(inputbox)
     self:clearCandidateBar(inputbox)
 end
 
+-- Commit the first candidate of the bar's currently-shown page (Space/punctuation).
+-- Returns false when there is no candidate to commit.
+function IME:commitFirstCandidate(inputbox)
+    if not self._bar_actions then return false end
+    local kb = inputbox and inputbox.keyboard
+    local idx = (kb and kb.getFirstVisibleCandidateIndex and kb:getFirstVisibleCandidateIndex()) or 1
+    local act = self._bar_actions[idx]
+    if act then act(); return true end
+    return false
+end
+
 function IME:tweak_case(new_candi, old_imex, new_stroke_upper)
     if self.has_case then
         local old_chars = util.splitToChars(old_imex.char)
@@ -485,11 +496,9 @@ function IME:wrappedAddChars(inputbox, char, orig_char)
             end
             return
         elseif char == " " then
-            -- Space commits the first candidate when composing, else a space.
+            -- Space commits the first candidate of the shown page, else a space.
             if self:hasComposing() then
-                if self._bar_actions and self._bar_actions[1] then
-                    self._bar_actions[1]()
-                else
+                if not self:commitFirstCandidate(inputbox) then
                     self:commitRaw(inputbox)
                 end
             else
@@ -589,9 +598,7 @@ function IME:wrappedAddChars(inputbox, char, orig_char)
         else
             -- A non-input char (e.g. punctuation): commit the current candidate first.
             if self.candidate_bar and self:hasComposing() then
-                if self._bar_actions and self._bar_actions[1] then
-                    self._bar_actions[1]()
-                else
+                if not self:commitFirstCandidate(inputbox) then
                     self:commitRaw(inputbox)
                 end
             else
