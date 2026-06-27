@@ -270,11 +270,9 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
                     logmsg "Title bar geometry: '${TITLEBAR_GEOMETRY}' -> '$("${KOREADER_DIR}/wmctrl" -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')'"
                     USED_WMCTRL="yes"
                 fi
-                if [ "${FROM_KUAL}" = "yes" ]; then
-                    logmsg "Stopping awesome . . ."
-                    killall -STOP awesome
-                    AWESOME_STOPPED="yes"
-                fi
+                logmsg "Stopping awesome . . ."
+                killall -STOP awesome
+                AWESOME_STOPPED="yes"
             fi
         else
             logmsg "Hiding the status bar . . ."
