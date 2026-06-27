@@ -522,9 +522,9 @@ function InputDialog:reinit()
     UIManager:setDirty("all", "flashui")
 end
 
-function InputDialog:addWidget(widget, re_init, skip_fm_layout)
+function InputDialog:addWidget(widget, re_init, skip_focus_layout)
     local is_text_height_adjustable = self.fullscreen or self.use_available_height
-    if not skip_fm_layout then
+    if not skip_focus_layout then
         table.insert(self.layout, #self.layout, {widget})
     end
     if not re_init then -- backup widget for re-init
