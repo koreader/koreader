@@ -62,7 +62,10 @@ local IME = {
     local_del = "",  -- default
     has_case = false,
     exact_match = false,
-    W = nil -- default no wildcard
+    W = nil, -- default no wildcard
+    candidate_bar = false, -- show composing code and candidates in the keyboard's candidate bar
+    phrase_map = nil, -- candidate_bar mode: { full = {code=>{words}}, abbr = {initials=>{words}} }
+    phrase_limit = 10, -- max phrase candidates shown in the bar
 }
 
 function IME:new(new_o)
@@ -235,6 +238,15 @@ function IME:delOnStageAndHintChars(inputbox)
     end
 end
 
+-- The composing code (pinyin letters) shown in the candidate bar.
+function IME:getComposingCode()
+    local composing = ""
+    for i=1, #_stack do
+        composing = composing .. _stack[i].code
+    end
+    return composing
+end
+
 function IME:getHintChars()
     self.hint_char_count = 0
     self.on_stage_char_count = 0
@@ -283,15 +295,124 @@ function IME:getHintChars()
 end
 
 function IME:refreshHintChars(inpuxbox)
+    if self.candidate_bar then
+        -- Nothing goes into the text box; everything lives in the candidate bar.
+        self:refreshCandidateBar(inpuxbox)
+        return
+    end
     self:delOnStageAndHintChars(inpuxbox)
     inpuxbox.addChars:raw_method_call(self:getHintChars())
 end
 
 function IME:separate(inputbox)
+    if self.candidate_bar then
+        -- Commit pending code (if any); avoid a redundant bar repaint otherwise.
+        if self:hasComposing() then self:commitRaw(inputbox) end
+        return
+    end
     if self.hint_char_count then
         self:delHintChars(inputbox)
     end
     self:clear_stack()
+end
+
+--- Candidate bar mode ---
+
+function IME:hasComposing()
+    return _stack[1].code ~= "" or #_stack > 1
+end
+
+function IME:clearCandidateBar(inputbox)
+    self._bar_actions = nil
+    local kb = inputbox and inputbox.keyboard
+    if kb and kb.setCandidates then
+        kb:setCandidates({}, nil, nil)
+    end
+end
+
+-- Phrase / 简拼 candidates for the whole composing code, de-duplicated, capped.
+function IME:getPhraseCandidates(code)
+    if not self.phrase_map then return {} end
+    local out, seen = {}, {}
+    local function add(list)
+        if not list then return end
+        for _, w in ipairs(list) do
+            if not seen[w] then
+                seen[w] = true
+                out[#out+1] = w
+                if #out >= self.phrase_limit then return end
+            end
+        end
+    end
+    add(self.phrase_map.full and self.phrase_map.full[code])
+    add(self.phrase_map.abbr and self.phrase_map.abbr[code])
+    return out
+end
+
+-- Commit an explicit string (a phrase candidate) and finish composing.
+function IME:commitText(inputbox, text)
+    if text and text ~= "" then
+        inputbox.addChars:raw_method_call(text)
+    end
+    self:clear_stack()
+    self:clearCandidateBar(inputbox)
+end
+
+function IME:refreshCandidateBar(inputbox)
+    local kb = inputbox and inputbox.keyboard
+    if not (kb and kb.setCandidates) then return end
+    local composing = self:getComposingCode()
+    if composing == "" then
+        self._bar_actions = nil
+        kb:setCandidates({}, nil, nil)
+        return
+    end
+    local display, actions, seen = {}, {}, {}
+    if self:show_candi_callback() then
+        -- 简拼 phrases first, then per-syllable/full-pinyin char candidates.
+        for _, w in ipairs(self:getPhraseCandidates(composing)) do
+            if not seen[w] then
+                seen[w] = true
+                display[#display+1] = w
+                actions[#actions+1] = function() self:commitText(inputbox, w) end
+            end
+        end
+        local imex = _stack[#_stack]
+        if imex and imex.candi then
+            for i = 1, #imex.candi do
+                local w = imex.candi[i]
+                if not seen[w] then
+                    seen[w] = true
+                    display[#display+1] = w
+                    local idx = i -- index into imex.candi (not the display list)
+                    actions[#actions+1] = function() self:selectCandidate(inputbox, idx) end
+                end
+            end
+        end
+    end
+    self._bar_actions = actions
+    kb:setCandidates(display, function(index)
+        local act = self._bar_actions and self._bar_actions[index]
+        if act then act() end
+    end, composing)
+end
+
+-- Commit only the tapped candidate (not the whole multi-syllable stage, which
+-- would prepend auto-resolved earlier syllables, e.g. "zhr"+然 -> "炸然").
+function IME:selectCandidate(inputbox, index)
+    local imex = _stack[#_stack]
+    if not (imex and imex.candi and imex.candi[index]) then return end
+    self:commitText(inputbox, imex.candi[index])
+end
+
+-- Enter: commit the raw composing code (the pinyin letters) to the text box.
+function IME:commitRaw(inputbox)
+    local code = self:getComposingCode()
+    if code ~= "" then
+        inputbox.addChars:raw_method_call(code)
+    end
+    self:clear_stack()
+    self:clearCandidateBar(inputbox)
 end
 
 function IME:tweak_case(new_candi, old_imex, new_stroke_upper)
@@ -340,8 +461,13 @@ function IME:wrappedDelChar(inputbox)
         self:refreshHintChars(inputbox)
     elseif #imex.code == 1 then
         -- one char with one stroke
-        self:delOnStageAndHintChars(inputbox)
-        self:clear_stack()
+        if self.candidate_bar then
+            self:clear_stack()
+            self:clearCandidateBar(inputbox)
+        else
+            self:delOnStageAndHintChars(inputbox)
+            self:clear_stack()
+        end
     else
         inputbox.delChar:raw_method_call()
     end
@@ -349,6 +475,29 @@ end
 
 function IME:wrappedAddChars(inputbox, char, orig_char)
     local imex = _stack[#_stack]
+    if self.candidate_bar then
+        if char == "\n" then
+            -- Enter commits the raw pinyin when composing, else submits/newlines.
+            if self:hasComposing() then
+                self:commitRaw(inputbox)
+            else
+                inputbox.addChars:raw_method_call("\n")
+            end
+            return
+        elseif char == " " then
+            -- Space commits the first candidate when composing, else a space.
+            if self:hasComposing() then
+                if self._bar_actions and self._bar_actions[1] then
+                    self._bar_actions[1]()
+                else
+                    self:commitRaw(inputbox)
+                end
+            else
+                inputbox.addChars:raw_method_call(" ")
+            end
+            return
+        end
+    end
     if char == self.switch_char then
         imex.index = imex.index + 1
         if self.W and imex.code:find(self.W) then
@@ -438,7 +587,16 @@ function IME:wrappedAddChars(inputbox, char, orig_char)
                 self:refreshHintChars(inputbox)
             end
         else
-            self:separate(inputbox)
+            -- A non-input char (e.g. punctuation): commit the current candidate first.
+            if self.candidate_bar and self:hasComposing() then
+                if self._bar_actions and self._bar_actions[1] then
+                    self._bar_actions[1]()
+                else
+                    self:commitRaw(inputbox)
+                end
+            else
+                self:separate(inputbox)
+            end
             inputbox.addChars:raw_method_call(orig_char or char)
         end
     end

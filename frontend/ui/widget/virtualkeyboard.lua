@@ -1,5 +1,6 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
+local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local FocusManager = require("ui/widget/focusmanager")
@@ -12,6 +13,9 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local KeyboardLayoutDialog = require("ui/widget/keyboardlayoutdialog")
+local LeftContainer = require("ui/widget/container/leftcontainer")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -81,6 +85,13 @@ function VirtualKey:init()
         self.callback = function ()
             self.keyboard:onSwitchingKeyboardLayout()
             local current = G_reader_settings:readSetting("keyboard_layout")
+            -- Toggle back to the previously-used layout (like phone IMEs); long-press
+            -- opens the full picker. Works even when the cycle list is empty.
+            local previous = keyboard_state.previous_layout
+            if previous and previous ~= current then
+                self.keyboard:setKeyboardLayout(previous)
+                return
+            end
             local default = G_reader_settings:readSetting("keyboard_layout_default")
             local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
             local next_layout = nil
@@ -230,7 +241,6 @@ function VirtualKey:init()
     end
 
     if self.alt_label then
-        local OverlapGroup = require("ui/widget/overlapgroup")
         local alt_label_widget = TextWidget:new{
             text = self.alt_label,
             face = Font:getFace(self.face.orig_font, label_font_size - 4),
@@ -858,9 +868,12 @@ function VirtualKeyboard:init()
     self.symbolmode_keys = keyboard.symbolmode_keys or {}
     self.utf8mode_keys = keyboard.utf8mode_keys or {}
     self.umlautmode_keys = keyboard.umlautmode_keys or {}
+    -- Some layouts (e.g. pinyin) reserve an always-present IME candidate bar row on top.
+    self.has_candidate_bar = keyboard.has_candidate_bar
     self.width = Screen:getWidth()
     local keys_height = G_reader_settings:isTrue("keyboard_key_compact") and 48 or 64
-    self.height = Screen:scaleBySize(keys_height * #self.KEYS)
+    local visual_rows = #self.KEYS + (self.has_candidate_bar and 1 or 0)
+    self.height = Screen:scaleBySize(keys_height * visual_rows)
     self.min_layer = keyboard.min_layer
     self.max_layer = keyboard.max_layer
     self:initLayer(self.keyboard_layer)
@@ -906,6 +919,11 @@ end
 
 function VirtualKeyboard:setKeyboardLayout(layout)
     keyboard_state.force_current_layout = true
+    -- Remember the layout we're leaving, so the globe key can toggle back to it.
+    local leaving = G_reader_settings:readSetting("keyboard_layout")
+    if leaving and leaving ~= layout then
+        keyboard_state.previous_layout = leaving
+    end
     local prev_keyboard_height = self.dimen and self.dimen.h
     G_reader_settings:saveSetting("keyboard_layout", layout)
     self:init()
@@ -1010,11 +1028,43 @@ end
 function VirtualKeyboard:addKeys()
     self:free() -- free previous keys' TextWidgets
     self.layout = {}
+    -- The candidate bar (if any) counts as one extra row when dividing height.
+    local n_cells = #self.KEYS + (self.has_candidate_bar and 1 or 0)
     local base_key_width = math.floor((self.width - (#self.KEYS[1] + 1)*self.key_padding - 2*self.padding)/#self.KEYS[1])
-    local base_key_height = math.floor((self.height - (#self.KEYS + 1)*self.key_padding - 2*self.padding)/#self.KEYS)
+    local base_key_height = math.floor((self.height - (n_cells + 1)*self.key_padding - 2*self.padding)/n_cells)
     local h_key_padding = HorizontalSpan:new{width = self.key_padding}
     local v_key_padding = VerticalSpan:new{width = self.key_padding}
     local vertical_group = VerticalGroup:new{ allow_mirroring = false }
+    if self.has_candidate_bar then
+        self.bar_width = self.width - 2*Size.border.default - 2*self.padding
+        self.bar_height = base_key_height
+        -- Split the one-row bar into a thin composing strip + candidate row (no extra
+        -- height), so candidates keep a fixed position and don't shift on e-ink.
+        local cand_font_size = G_reader_settings:readSetting("keyboard_key_font_size", DEFAULT_LABEL_SIZE)
+        self.candidate_face = Font:getFace("cfont", cand_font_size)
+        self.composing_face = Font:getFace("cfont", math.max(14, cand_font_size - 6))
+        self.composing_h = math.max(1, math.floor(self.bar_height * 0.34))
+        self.cand_h = math.max(1, self.bar_height - self.composing_h)
+        self.candidates = self.candidates or {}
+        self.candidates_page = self.candidates_page or 1
+        self.candidate_bar_inner = LeftContainer:new{
+            dimen = Geom:new{ w = self.bar_width, h = self.bar_height },
+            self:_buildCandidateBarContent(),
+        }
+        self.candidate_bar = FrameContainer:new{
+            margin = 0,
+            bordersize = 0,
+            padding = 0,
+            background = Blitbuffer.COLOR_WHITE,
+            allow_mirroring = false,
+            self.candidate_bar_inner,
+        }
+        table.insert(vertical_group, self.candidate_bar)
+        table.insert(vertical_group, v_key_padding)
+    else
+        self.candidate_bar = nil
+        self.candidate_bar_inner = nil
+    end
     for i = 1, #self.KEYS do
         local horizontal_group = HorizontalGroup:new{ allow_mirroring = false }
         local layout_horizontal = {}
@@ -1091,6 +1141,161 @@ function VirtualKeyboard:addKeys()
     -- Point our top-level dimen to the relevant widget, keyboard_frame
     keyboard_frame.dimen = keyboard_frame:getSize()
     self.dimen = keyboard_frame.dimen
+end
+
+-- IME candidate bar. An IME calls setCandidates(list, callback, composing); the
+-- callback is invoked with the 1-based index of the tapped candidate.
+
+function VirtualKeyboard:_candidateWidth(text)
+    local tw = TextWidget:new{ text = text, face = self.candidate_face }
+    local w = tw:getWidth()
+    tw:free()
+    return w + 2*Size.padding.large
+end
+
+-- Split the candidate list into pages that each fit one row (reserved_right is
+-- kept free for the collapse button).
+function VirtualKeyboard:_computeCandidatePages(reserved_right)
+    self.candidate_pages = {}
+    local list = self.candidates or {}
+    if #list == 0 then return end
+    local reserve = (#list > 1) and (2 * self.cand_h) or 0 -- room for ◂ / ▸
+    local budget = self.bar_width - (reserved_right or 0) - reserve
+    if budget < self.cand_h then budget = self.cand_h end -- safety floor
+    local i = 1
+    while i <= #list do
+        local start = i
+        local used = 0
+        while i <= #list do
+            local w = self:_candidateWidth(list[i])
+            if used > 0 and used + w > budget then break end
+            used = used + w
+            i = i + 1
+        end
+        if i == start then i = start + 1 end -- safety: always advance
+        table.insert(self.candidate_pages, start)
+    end
+end
+
+function VirtualKeyboard:_makeCandidateButton(text, width, callback)
+    return Button:new{
+        text = text,
+        callback = callback,
+        bordersize = 0,
+        radius = 0,
+        margin = 0,
+        padding_h = Size.padding.large,
+        padding_v = 0,
+        height = self.cand_h,
+        width = width, -- nil: auto-size to the text
+        text_font_face = "cfont",
+        text_font_size = G_reader_settings:readSetting("keyboard_key_font_size", DEFAULT_LABEL_SIZE),
+        text_font_bold = false,
+        show_parent = self,
+    }
+end
+
+-- Thin composing (pinyin) strip on top of the candidate row, on the bar's opaque
+-- white background (fully repainted each update, so old pinyin is erased cleanly).
+function VirtualKeyboard:_buildComposingLine()
+    local hgroup = HorizontalGroup:new{ allow_mirroring = false }
+    table.insert(hgroup, HorizontalSpan:new{ width = Size.padding.large })
+    table.insert(hgroup, TextWidget:new{
+        text = self.composing or "",
+        face = self.composing_face,
+        max_width = self.bar_width - 2*Size.padding.large,
+        padding = 0,
+    })
+    return LeftContainer:new{
+        dimen = Geom:new{ w = self.bar_width, h = self.composing_h },
+        hgroup,
+    }
+end
+
+-- The candidate row (paged), with a collapse-keyboard button pinned to the right.
+function VirtualKeyboard:_buildCandidateRow()
+    local collapse_w = self.cand_h
+    local collapse_btn = self:_makeCandidateButton("▽", collapse_w, function()
+        -- Defer, so we don't close the keyboard while still handling this tap.
+        UIManager:scheduleIn(0, function()
+            if self.inputbox and self.inputbox.onCloseKeyboard then
+                self.inputbox:onCloseKeyboard() -- hide; tapping the field re-shows it
+            else
+                self:hideKeyboard()
+            end
+        end)
+    end)
+
+    local hgroup = HorizontalGroup:new{ allow_mirroring = false }
+    local list = self.candidates or {}
+    if #list > 0 then
+        self:_computeCandidatePages(collapse_w)
+        local pages = self.candidate_pages
+        local n_pages = #pages
+        local page = math.max(1, math.min(self.candidates_page or 1, n_pages))
+        self.candidates_page = page
+        local start_idx = pages[page]
+        local stop_idx = (page < n_pages) and (pages[page + 1] - 1) or #list
+        local arrow_w = self.cand_h
+        if page > 1 then
+            table.insert(hgroup, self:_makeCandidateButton("◂", arrow_w, function()
+                self.candidates_page = page - 1
+                self:_refreshCandidateBar()
+            end))
+        end
+        for i = start_idx, stop_idx do
+            local idx = i -- capture for the closure
+            table.insert(hgroup, self:_makeCandidateButton(list[idx], nil, function()
+                if self.candidates_callback then self.candidates_callback(idx) end
+            end))
+        end
+        if page < n_pages then
+            table.insert(hgroup, self:_makeCandidateButton("▸", arrow_w, function()
+                self.candidates_page = page + 1
+                self:_refreshCandidateBar()
+            end))
+        end
+    end
+
+    return OverlapGroup:new{
+        dimen = Geom:new{ w = self.bar_width, h = self.cand_h },
+        allow_mirroring = false,
+        LeftContainer:new{ dimen = Geom:new{ w = self.bar_width, h = self.cand_h }, hgroup },
+        RightContainer:new{ dimen = Geom:new{ w = self.bar_width, h = self.cand_h }, collapse_btn },
+    }
+end
+
+function VirtualKeyboard:_buildCandidateBarContent()
+    local vgroup = VerticalGroup:new{ align = "left", allow_mirroring = false }
+    table.insert(vgroup, self:_buildComposingLine())
+    table.insert(vgroup, self:_buildCandidateRow())
+    return vgroup
+end
+
+-- Rebuild the bar content and queue a (non-flashing) repaint of the bar region.
+-- A queued setDirty avoids racing with other pending refreshes (an immediate
+-- widgetRepaint here can fail to show on the dialog's first paint).
+function VirtualKeyboard:_refreshCandidateBar()
+    if not (self.has_candidate_bar and self.candidate_bar_inner) then return end
+    local old = self.candidate_bar_inner[1]
+    self.candidate_bar_inner[1] = self:_buildCandidateBarContent()
+    if old and old.free then old:free() end
+    UIManager:setDirty(self, function()
+        return "ui", self.candidate_bar and self.candidate_bar.dimen or self.dimen
+    end)
+end
+
+function VirtualKeyboard:setCandidates(list, callback, composing)
+    if not self.has_candidate_bar then return end
+    self.candidates = list or {}
+    self.candidates_callback = callback
+    self.composing = composing
+    self.candidates_page = 1
+    self:_refreshCandidateBar()
+end
+
+function VirtualKeyboard:clearCandidates()
+    self:setCandidates({}, nil, nil)
 end
 
 function VirtualKeyboard:setLayer(key)
