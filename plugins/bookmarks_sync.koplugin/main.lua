@@ -92,8 +92,16 @@ function BookmarkSync:exportLocalBookmarks()
         if not item.deleted then
             local exact, prefix, suffix = Anchoring.getAnchorContext(doc, item, 5)
             
-            -- Вычисляем прогресс
-            local pageno = item.pageno or (self.ui.rolling and doc:getPageFromXPointer(item.page) or item.page)
+            -- Вычисляем прогресс.
+            -- Для PDF/DjVu (paging) у нас есть item.pageno.
+            -- Для EPUB/FB2 (reflowable) у нас есть item.page, который является xpointer-ом.
+            -- Нам нужно получить номер страницы из xpointer-а в любом режиме (rolling или paging).
+            local pageno
+            if doc.configurable and doc.configurable.text_wrap == 1 then -- Reflowable
+                pageno = doc:getPageFromXPointer(item.page)
+            else -- Fixed-layout
+                pageno = item.pageno
+            end
             local progress = pageno / total_pages
             
             table.insert(sync_bookmarks, {

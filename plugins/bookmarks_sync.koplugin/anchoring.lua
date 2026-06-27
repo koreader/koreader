@@ -25,7 +25,7 @@ end
 -- @param nb_words - количество слов контекста (по умолчанию 5)
 -- @return exact, prefix, suffix
 function Anchoring.getAnchorContext(doc, item, nb_words)
-    nb_words = nb_words or 5
+    nb_words = nb_words or 10
     local exact, prefix, suffix = "", "", ""
     
     if item.drawer then
@@ -34,6 +34,16 @@ function Anchoring.getAnchorContext(doc, item, nb_words)
         
         -- Пытаемся извлечь контекст средствами KOReader
         if doc.getSelectedWordContext and item.pos0 and item.pos1 then
+            -- HACK: Для PDF/DjVu getSelectedWordContext зависит от глобального состояния
+            -- koptinterface.last_text_boxes. Мы должны принудительно заполнить его
+            -- перед вызовом, чтобы получить контекст для уже существующих закладок.
+            -- Для CreDocument (EPUB) это не требуется, т.к. у него своя реализация.
+            local koptinterface
+            if doc.is_pdf or doc.is_djvu then
+                koptinterface = require("document/koptinterface")
+                koptinterface.last_text_boxes = doc:getTextBoxes(item.page)
+            end
+
             local ok, p, s = pcall(doc.getSelectedWordContext, doc, exact, nb_words, item.pos0, item.pos1)
             if ok and p and s then
                 prefix = p
@@ -41,6 +51,11 @@ function Anchoring.getAnchorContext(doc, item, nb_words)
             else
                 logger.warn("bookmarks_sync: Не удалось извлечь контекст для выделения через getSelectedWordContext")
             end
+            if koptinterface then
+                koptinterface.last_text_boxes = nil -- Очищаем состояние после себя
+            end
+        else
+            logger.warn("bookmarks_sync: Не выполнены условия для getSelectedWordContext")
         end
     else
         -- Это простая закладка страницы (dogear)
@@ -143,16 +158,24 @@ function Anchoring.findAnchor(doc, anchor, ui)
         local actual_prefix_norm = Anchoring.normalizeText(match.prev_text)
         local actual_suffix_norm = Anchoring.normalizeText(match.next_text)
         
+        -- Функция для безопасной проверки окончания строки
+        local function endsWith(str, ending)
+            return str:sub(-#ending) == ending
+        end
+
+        -- Функция для безопасной проверки начала строки
+        local function startsWith(str, starting)
+            return str:sub(1, #starting) == starting
+        end
+
         if target_prefix_norm ~= "" and actual_prefix_norm ~= "" then
-            if actual_prefix_norm:sub(-#target_prefix_norm) == target_prefix_norm or
-               target_prefix_norm:sub(-#actual_prefix_norm) == actual_prefix_norm then
+            if endsWith(actual_prefix_norm, target_prefix_norm) then
                 score = score + 50
             end
         end
         
         if target_suffix_norm ~= "" and actual_suffix_norm ~= "" then
-            if actual_suffix_norm:sub(1, #target_suffix_norm) == target_suffix_norm or
-               target_suffix_norm:sub(1, #actual_suffix_norm) == actual_suffix_norm then
+            if startsWith(actual_suffix_norm, target_suffix_norm) then
                 score = score + 50
             end
         end
