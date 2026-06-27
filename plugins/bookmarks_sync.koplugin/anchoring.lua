@@ -35,6 +35,21 @@ function Anchoring.getAnchorContext(doc, item, nb_words)
         -- Пытаемся извлечь контекст средствами KOReader
         if doc.getSelectedWordContext and item.pos0 and item.pos1 then
             -- HACK: Для PDF/DjVu getSelectedWordContext зависит от глобального состояния
+
+            -- Для PDF/DjVu, основная функция getSelectedWordContext является хрупкой при работе с длинным текстом.
+            -- Она пытается сопоставить полный текст пословно, чтобы найти конец выделения.
+            -- Одно несоответствие (например, лишний пробел, дефис) приводит к сбою.
+            -- Мы будем использовать укороченную версию текста, чтобы повысить вероятность успешного совпадения.
+            local text_for_context = exact
+            if (doc.is_pdf or doc.is_djvu) and #exact > 250 then -- Эвристическая длина, после которой текст считается "длинным"
+                local words = {}
+                for w in exact:gmatch("%S+") do
+                    table.insert(words, w)
+                    if #words >= 30 then break end -- Используем первые 30 слов, этого достаточно
+                end
+                text_for_context = table.concat(words, " ")
+            end
+
             -- koptinterface.last_text_boxes. Мы должны принудительно заполнить его
             -- перед вызовом, чтобы получить контекст для уже существующих закладок.
             -- Для CreDocument (EPUB) это не требуется, т.к. у него своя реализация.
@@ -44,12 +59,12 @@ function Anchoring.getAnchorContext(doc, item, nb_words)
                 koptinterface.last_text_boxes = doc:getTextBoxes(item.page)
             end
 
-            local ok, p, s = pcall(doc.getSelectedWordContext, doc, exact, nb_words, item.pos0, item.pos1)
+            local ok, p, s = pcall(doc.getSelectedWordContext, doc, text_for_context, nb_words, item.pos0, item.pos1)
             if ok and p and s then
                 prefix = p
                 suffix = s
             else
-                logger.warn("bookmarks_sync: Не удалось извлечь контекст для выделения через getSelectedWordContext")
+                logger.warn("bookmarks_sync: Не удалось извлечь контекст для выделения через getSelectedWordContext. Возможно, текст слишком длинный или содержит неточности.")
             end
             if koptinterface then
                 koptinterface.last_text_boxes = nil -- Очищаем состояние после себя
@@ -60,7 +75,7 @@ function Anchoring.getAnchorContext(doc, item, nb_words)
     else
         -- Это простая закладка страницы (dogear)
         -- Для закладки у нас нет выделенного текста. Нам нужно извлечь
-        -- первые 50-60 символов текста с начала страницы/экрана.
+        -- текст с начала страницы/экрана.
         if doc.configurable and doc.configurable.text_wrap == 1 then
             -- EPUB / FB2 (Reflowable)
             if doc.getTextFromXPointer and item.page then
@@ -74,9 +89,14 @@ function Anchoring.getAnchorContext(doc, item, nb_words)
             if doc.getTextFromPositions and item.page then
                 local screen_w = doc.width or 800
                 local screen_h = doc.height or 1024
+                -- Смещаем начальную точку Y примерно на 10%, чтобы пропустить возможные колонтитулы (номера страниц).
+                local y_offset = math.floor(screen_h * 0.1)
                 local ok, res = pcall(doc.getTextFromPositions, doc, 
-                    { x = 0, y = 0, page = item.page }, 
-                    { x = screen_w, y = screen_h, page = item.page }, 
+                    -- Запрашиваем текст из небольшой горизонтальной полосы вверху страницы,
+                    -- чтобы избежать потенциальных ошибок при обработке большого прямоугольника.
+                    { x = 0, y = y_offset, page = item.page },
+                    -- Высоты в 150 пикселей должно быть достаточно, чтобы захватить несколько строк текста.
+                    { x = screen_w, y = y_offset + 150, page = item.page },
                     true
                 )
                 if ok and res and res.text and res.text ~= "" then
@@ -85,17 +105,27 @@ function Anchoring.getAnchorContext(doc, item, nb_words)
             end
         end
         
-        -- Если удалось извлечь начало страницы как exact, берем контекст справа
+        -- Если удалось извлечь начало страницы, формируем якорь
         if exact ~= "" then
             exact = exact:gsub("^%s+", "") -- убираем ведущие пробелы
-            -- Ограничим до 5 слов
+            
+            -- Для простых закладок, используем первые несколько слов как якорь.
+            -- Чтобы сделать якорь надежнее, разделим его на 'exact' (первое слово)
+            -- и 'suffix' (следующие несколько слов).
             local words = {}
             for w in exact:gmatch("%S+") do
                 table.insert(words, w)
-                if #words >= 6 then break end
+                if #words >= 5 then break end -- Берем до 5 слов для якоря
             end
+            
             if #words > 0 then
-                exact = table.concat(words, " ", 1, math.min(#words, 5))
+                exact = words[1]
+                if #words > 1 then
+                    -- Остальные слова (до 4) идут в суффикс для более точного поиска
+                    suffix = table.concat(words, " ", 2)
+                end
+            else
+                exact = "" -- если слов не найдено, сбрасываем exact
             end
         end
     end

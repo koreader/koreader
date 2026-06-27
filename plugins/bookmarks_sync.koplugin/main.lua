@@ -164,7 +164,9 @@ function BookmarkSync:importExternalBookmarks()
                             note = ext_bm.note,
                             chapter = self.ui.toc:getTocTitleByPage(page),
                         }
-                        if self.ui.paging then
+                       -- pboxes и запись аннотаций в PDF нужны только для документов с фиксированной версткой (PDF/DjVu),
+                        -- независимо от режима отображения (постраничный или скроллинг).
+                        if doc.is_pdf or doc.is_djvu then
                             -- Для PDF вычисляем pboxes
                             item.pboxes = doc:getPageBoxesFromPositions(page, pos0, pos1)
                             pcall(function() self.ui.highlight:writePdfAnnotation("save", item) end)
