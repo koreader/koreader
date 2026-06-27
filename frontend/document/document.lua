@@ -508,7 +508,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, saturation, hi
         dc:setSaturation(saturation)
     end
 
-    dc:setIsolateSMask(self.configurable.background_cleanup)
+    dc:setBackgroundCleanup(self.configurable.background_cleanup ~= 0)
 
     -- And finally, render the page in our BB
     local page = self._document:openPage(pageno)

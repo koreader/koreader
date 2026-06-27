@@ -221,7 +221,7 @@ function KoptInterface:getAutoBBox(doc, pageno)
     if not cached then
         local page = doc._document:openPage(pageno)
         local kc = self:createContext(doc, pageno, bbox)
-        page:getPagePix(kc, doc.render_mode)
+        page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
         local x0, y0, x1, y1 = kc:getAutoBBox()
         local w, h = native_size.w, native_size.h
         if (x1 - x0)/w > 0.1 or (y1 - y0)/h > 0.1 then
@@ -252,7 +252,7 @@ function KoptInterface:getSemiAutoBBox(doc, pageno)
         local page = doc._document:openPage(pageno)
         local kc = self:createContext(doc, pageno, bbox)
         local auto_bbox = {}
-        page:getPagePix(kc, doc.render_mode)
+        page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
         auto_bbox.x0, auto_bbox.y0, auto_bbox.x1, auto_bbox.y1 = kc:getAutoBBox()
         auto_bbox.x0 = auto_bbox.x0 + bbox.x0
         auto_bbox.y0 = auto_bbox.y0 + bbox.y0
@@ -309,7 +309,7 @@ function KoptInterface:reflowPage(doc, pageno, bbox, background)
     kc.zoom = (1.5 * kc.zoom * kc.quality * kc.dev_width) / bbox.x1
     -- Generate pixmap.
     local page = doc._document:openPage(pageno)
-    page:getPagePix(kc, doc.render_mode)
+    page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
     page:close()
     -- Reflow.
     if background then
@@ -456,7 +456,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hi
         local kc = self:createContext(doc, pageno, bbox)
         local page = doc._document:openPage(pageno)
         kc:setZoom(zoom)
-        page:getPagePix(kc, doc.render_mode)
+        page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
         page:close()
         logger.dbg("optimizing page", pageno)
         kc:optimizePage()
@@ -751,7 +751,7 @@ function KoptInterface:getPanelFromPage(doc, pageno, ges)
     local kc = self:createContext(doc, pageno, bbox)
     kc:setZoom(1.0)
     local page = doc._document:openPage(pageno)
-    page:getPagePix(kc, doc.render_mode)
+    page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
     local panel = kc:getPanelFromPage(ges)
     page:close()
     kc:free()
@@ -776,7 +776,7 @@ function KoptInterface:getNativeTextBoxesFromScratch(doc, pageno)
         local kc = self:createContext(doc, pageno, bbox)
         kc:setZoom(1.0)
         local page = doc._document:openPage(pageno)
-        page:getPagePix(kc, doc.render_mode)
+        page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
         local boxes, nr_word = kc:getNativeWordBoxes("src", 0, 0, page_size.w, page_size.h)
         if boxes then
             DocCache:insert(hash, CacheItem:new{ scratchnativepgboxes = boxes, size = 192 * nr_word }) -- estimation
@@ -810,7 +810,7 @@ function KoptInterface:getPageBlock(doc, pageno, x, y)
         -- leptonica needs a source image of at least 300dpi
         kc:setZoom(CanvasContext:getWidth() / page_size.w * 300 / CanvasContext:getDPI())
         local page = doc._document:openPage(pageno)
-        page:getPagePix(kc, doc.render_mode)
+        page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
         kc:findPageBlocks()
         DocCache:insert(hash, CacheItem:new{ kctx = kc, size = 3072 }) -- estimation
         page:close()
@@ -889,7 +889,7 @@ function KoptInterface:getNativeOCRWord(doc, pageno, rect)
         local kc = self:createContext(doc, pageno, bbox)
         kc:setZoom(30/rect.h)
         local page = doc._document:openPage(pageno)
-        page:getPagePix(kc, doc.render_mode)
+        page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
         --kc:exportSrcPNGFile({rect}, nil, "ocr-word.png")
         local word_w, word_h = kc:getPageDim()
         local _, word = pcall(
@@ -941,7 +941,7 @@ function KoptInterface:getClipPageContext(doc, pos0, pos1, pboxes, drawer)
     }
     local kc = self:createContext(doc, pos0.page, bbox)
     local page = doc._document:openPage(pos0.page)
-    page:getPagePix(kc, doc.render_mode)
+    page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
     page:close()
     return kc, rect
 end
