@@ -66,14 +66,15 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
     return { -- annotation
         datetime         = bm.datetime, -- creation time, not changeable
         datetime_updated = nil,         -- last modification time
-        drawer           = hl.drawer,   -- highlight drawer
+        drawer           = hl.drawer,   -- highlight style
         color            = hl.color,    -- highlight color
         text             = bm.notes,    -- highlighted text, editable
         text_edited      = hl.edited,   -- true if highlighted text has been edited
         note             = note,        -- user's note, editable
+        note_format      = nil,         -- plain text, or "html" or "md"
         chapter          = chapter,     -- book chapter title
         pageno           = pageno,      -- book page number (continuous numbering, used by KOHighlights)
-        pageref          = pageref,     -- book page number (iff: reference pages or hidden flows)
+        pageref          = pageref,     -- book page number (iff: stable pages or hidden flows)
         page             = bm.page,     -- highlight location, xPointer or number (pdf)
         pos0             = bm.pos0,     -- highlight start position, xPointer (== page) or table (pdf)
         pos1             = bm.pos1,     -- highlight end position, xPointer or table (pdf)
