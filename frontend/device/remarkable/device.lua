@@ -234,9 +234,9 @@ function Remarkable:init()
     -- logger.info(string.format("parent process is oxide?: %s", parent_process_is_oxide))
 
     local fb_module
-    if os.getenv("KO_USE_QTFB") then
+    if is_qtfb_native then
         fb_module = "ffi/framebuffer_qtfb"
-    elseif os.getenv("KO_USE_BLIGHT") then
+    elseif is_blight_native then
         fb_module = "ffi/framebuffer_blight"
     else
         fb_module = "ffi/framebuffer_mxcfb"
