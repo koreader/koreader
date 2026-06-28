@@ -24,7 +24,7 @@ cd "${KOREADER_DIR}" || exit
 if [ -n "${KO_USE_QTFB}" ] || [ -n "${KO_USE_BLIGHT}" ]; then
     export KO_DONT_GRAB_INPUT=1
     export KO_DONT_SET_DEPTH=1
-    export LD_LIBRARY_PATH="/home/root/.vellum/lib:${LD_LIBRARY_PATH}"
+    export LD_LIBRARY_PATH="${KOREADER_DIR}/libs:/home/root/.vellum/lib:${LD_LIBRARY_PATH}"
 fi
 
 fbink_wrapped() {
