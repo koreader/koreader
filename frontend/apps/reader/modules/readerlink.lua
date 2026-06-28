@@ -1368,7 +1368,7 @@ end
 
 function ReaderLink:onPageUpdate()
     if self.cur_selected_link then
-        self:clearSelectedPageLink(true)
+        self:clearSelectedPageLink()
     end
 end
 ReaderLink.onPosUpdate = ReaderLink.onPageUpdate
