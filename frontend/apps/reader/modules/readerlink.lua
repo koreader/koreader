@@ -1288,6 +1288,7 @@ function ReaderLink:isPageLinkSelected()
 end
 
 function ReaderLink:clearSelectedPageLink(dirty_ui)
+    if self.ui.paging then return end
     self.cur_selected_page_link_num = nil
     self.cur_selected_link = nil
     self.document:highlightXPointer()
