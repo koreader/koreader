@@ -140,6 +140,36 @@ end
 function Anchoring.findAnchor(doc, anchor, ui)
     if not anchor.exact or anchor.exact == "" then return nil end
     
+    -- Очищаем искомый текст, чтобы сделать поиск более надежным между форматами.
+    -- Это решает проблемы, когда в одном формате есть мягкие переносы или другое
+    -- форматирование пробелов, отсутствующее в другом.
+    local search_text = anchor.exact
+    -- Заменяем мягкие переносы (U+00AD) на пустую строку
+    search_text = search_text:gsub("\194\173", "")
+    -- Нормализуем пробельные символы (несколько пробелов/переносов -> один пробел)
+    search_text = search_text:gsub("%s+", " ")
+    -- Убираем пробелы в начале и конце строки
+    search_text = search_text:gsub("^%s*(.-)%s*$", "%1")
+
+    -- Для PDF-подобных форматов стандартный поиск по последовательности слов очень хрупкий.
+    -- Мы применим "нечеткий" поиск: найдем самое длинное слово в искомой фразе,
+    -- а после найдем его и проверим окружение на полное совпадение.
+    local is_pdf_like = not (doc.configurable and doc.configurable.text_wrap == 1)
+    local original_search_text = search_text
+    local is_fuzzy_search = false
+
+    if is_pdf_like then
+        local longest_word = ""
+        for word in search_text:gmatch("%S+") do
+            if #word > #longest_word then longest_word = word end
+        end
+        if #longest_word > 4 and #longest_word < #search_text then -- Применяем эвристику
+            search_text = longest_word
+            is_fuzzy_search = true
+            logger.info("bookmarks_sync: PDF fuzzy search enabled. Searching for:", search_text)
+        end
+    end
+
     local total_pages = doc:getPageCount()
     if not total_pages or total_pages <= 0 then return nil end
     
@@ -157,10 +187,10 @@ function Anchoring.findAnchor(doc, anchor, ui)
     local ok, res
     if doc.configurable and doc.configurable.text_wrap == 1 then
         -- EPUB / FB2 (CreDocument)
-        ok, res = pcall(doc.findAllText, doc, anchor.exact, case_insensitive, nb_context_words, max_hits, false, search_flags)
+        ok, res = pcall(doc.findAllText, doc, original_search_text, case_insensitive, nb_context_words, max_hits, false, search_flags)
     else
         -- PDF (PdfDocument)
-        ok, res = pcall(doc.findAllText, doc, anchor.exact, case_insensitive, nb_context_words, max_hits)
+        ok, res = pcall(doc.findAllText, doc, search_text, case_insensitive, nb_context_words, max_hits)
     end
     
     if not ok or not res or #res == 0 then
@@ -172,6 +202,14 @@ function Anchoring.findAnchor(doc, anchor, ui)
     
     local target_prefix_norm = Anchoring.normalizeText(anchor.prefix)
     local target_suffix_norm = Anchoring.normalizeText(anchor.suffix)
+
+    local normalized_original_search = nil
+    if is_fuzzy_search then
+        normalized_original_search = original_search_text:gsub("%s+", " ")
+        if case_insensitive then
+            normalized_original_search = Utf8Proc.lowercase(normalized_original_search)
+        end
+    end
     
     for _, match in ipairs(res) do
         -- Вычисляем страницу для этого совпадения
@@ -184,28 +222,41 @@ function Anchoring.findAnchor(doc, anchor, ui)
         
         local score = 0
         
-        -- Проверяем совпадение префиксов и суффиксов
-        local actual_prefix_norm = Anchoring.normalizeText(match.prev_text)
-        local actual_suffix_norm = Anchoring.normalizeText(match.next_text)
-        
-        -- Функция для безопасной проверки окончания строки
-        local function endsWith(str, ending)
-            return str:sub(-#ending) == ending
-        end
+        -- Если был нечеткий поиск, сначала проверяем полное совпадение
+        if is_fuzzy_search then
+            local full_context = table.concat({match.prev_text or "", match.matched_text or "", match.next_text or ""}, " ")
+            local normalized_full_context = full_context:gsub("%s+", " ")
+            if case_insensitive then
+                normalized_full_context = Utf8Proc.lowercase(normalized_full_context)
+            end
 
-        -- Функция для безопасной проверки начала строки
-        local function startsWith(str, starting)
-            return str:sub(1, #starting) == starting
-        end
-
-        if target_prefix_norm ~= "" and actual_prefix_norm ~= "" then
-            if endsWith(actual_prefix_norm, target_prefix_norm) then
-                score = score + 50
+            if normalized_full_context:find(normalized_original_search, 1, true) then
+                score = score + 100 -- Это реальное совпадение
+            else
+                score = -2000 -- Это ложное срабатывание, сильно штрафуем
             end
         end
-        
-        if target_suffix_norm ~= "" and actual_suffix_norm ~= "" then
-            if startsWith(actual_suffix_norm, target_suffix_norm) then
+
+        if score > -1000 then
+            -- Проверяем совпадение префиксов и суффиксов
+            local actual_prefix_norm = Anchoring.normalizeText(match.prev_text)
+            local actual_suffix_norm = Anchoring.normalizeText(match.next_text)
+            
+            -- Функция для безопасной проверки окончания строки
+            local function endsWith(str, ending)
+                return #str >= #ending and str:sub(-#ending) == ending
+            end
+
+            -- Функция для безопасной проверки начала строки
+            local function startsWith(str, starting)
+                return #str >= #starting and str:sub(1, #starting) == starting
+            end
+
+            if target_prefix_norm ~= "" and actual_prefix_norm ~= "" and endsWith(actual_prefix_norm, target_prefix_norm) then
+                score = score + 50
+            end
+            
+            if target_suffix_norm ~= "" and actual_suffix_norm ~= "" and startsWith(actual_suffix_norm, target_suffix_norm) then
                 score = score + 50
             end
         end

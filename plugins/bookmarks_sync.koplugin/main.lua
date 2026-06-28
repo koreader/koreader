@@ -2,6 +2,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
+local ButtonDialog = require("ui/widget/buttondialog")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -34,9 +35,63 @@ function BookmarkSync:addToMainMenu(menu_items)
                         timeout = 3,
                     })
                 end,
-            }
+            },
+            {
+                text = _("Settings"),
+                sub_item_table_func = function()
+                    return self:getSettingsMenu()
+                end,
+            },
         }
     }
+end
+
+function BookmarkSync:getSettingsMenu()
+    local menu = {}
+    table.insert(menu, {
+        text = _("Search scope"),
+        sub_text_func = function()
+            local scope = G_reader_settings:readSetting("bookmarks_sync_search_scope") or "all"
+            if scope == "known" then
+                return _("Known books only (History/Cache)")
+            elseif scope == "folder" then
+                return _("Current folder and subfolders")
+            else
+                return _("All sources (recommended)")
+            end
+        end,
+        callback = function() self:showSearchScopeDialog() end,
+    })
+    return menu
+end
+
+function BookmarkSync:showSearchScopeDialog()
+    local current_scope = G_reader_settings:readSetting("bookmarks_sync_search_scope") or "all"
+    local dialog
+    local buttons = {}
+    local scopes = {
+        { key = "all",    text = _("All sources"),    sub_text = _("Both of the above. Most reliable.") },
+        { key = "known",  text = _("Known books only"),  sub_text = _("History and cache. Fastest.") },
+        { key = "folder", text = _("Current folder only"), sub_text = _("Scans current book's folder and subfolders.") },
+    }
+    for _, scope_info in ipairs(scopes) do
+        table.insert(buttons, {{
+            text = scope_info.text,
+            sub_text = scope_info.sub_text,
+            checked = current_scope == scope_info.key,
+            radio = true,
+            callback = function()
+                G_reader_settings:saveSetting("bookmarks_sync_search_scope", scope_info.key)
+                if dialog then UIManager:close(dialog) end
+            end,
+        }})
+    end
+
+    dialog = ButtonDialog:new{
+        title = _("Select search scope for sync"),
+        buttons = buttons,
+    }
+    UIManager:show(dialog)
 end
 
 -- Срабатывает, когда книга полностью готова к чтению
@@ -112,7 +167,7 @@ function BookmarkSync:exportLocalBookmarks()
                 suffix = suffix,
                 drawer = item.drawer,
                 color = item.color,
-                note = item.note or item.notes
+                notes = item.note or item.notes
             })
         end
     end
@@ -123,6 +178,8 @@ end
 -- Импорт закладок из других форматов
 function BookmarkSync:importExternalBookmarks()
     local doc = self.ui.document
+    logger.dbg("bookmarks_sync: importExternalBookmarks()")
+    logger.dbg("file = " .. doc.file)
     if not doc or not doc.file then return end
     
     local matches = SyncDB.findMatchingSyncFiles(doc.file)
@@ -135,68 +192,76 @@ function BookmarkSync:importExternalBookmarks()
     local imported_count = 0
     
     for _, match in ipairs(matches) do
-        for _, ext_bm in ipairs(match.bookmarks) do
-            -- Проверяем, нет ли уже этой закладки локально (по совпадению текста или времени)
-            local exists = false
-            for _, local_bm in ipairs(local_annotations) do
-                if local_bm.datetime == ext_bm.datetime or 
-                   (ext_bm.exact ~= "" and local_bm.text == ext_bm.exact) then
-                    exists = true
-                    break
+        pcall(function() -- Обертка для безопасности, чтобы ошибка в одном файле не сломала все
+            for _, ext_bm in ipairs(match.bookmarks) do
+                -- Проверяем, нет ли уже этой закладки локально
+                local exists = false
+                for _, local_bm in ipairs(local_annotations) do
+                    if local_bm.datetime == ext_bm.datetime or (ext_bm.exact ~= "" and local_bm.text == ext_bm.exact) then
+                        exists = true
+                        break
+                    end
                 end
-            end
-            
-            if not exists and not ext_bm.deleted then
-                -- Ищем позицию текста в текущем документе
-                local pos0, pos1, page = Anchoring.findAnchor(doc, ext_bm, self.ui)
-                if pos0 and page then
-                    -- Добавляем закладку/выделение локально
-                    if ext_bm.drawer then
-                        -- Это выделение (highlight)
-                        local item = {
-                            page = self.ui.paging and page or pos0,
-                            pos0 = pos0,
-                            pos1 = pos1,
-                            text = ext_bm.exact,
-                            datetime = ext_bm.datetime or os.date("%Y-%m-%d %H:%M:%S"),
-                            drawer = ext_bm.drawer,
-                            color = ext_bm.color,
-                            note = ext_bm.note,
-                            chapter = self.ui.toc:getTocTitleByPage(page),
-                        }
-                       -- pboxes и запись аннотаций в PDF нужны только для документов с фиксированной версткой (PDF/DjVu),
-                        -- независимо от режима отображения (постраничный или скроллинг).
-                        if doc.is_pdf or doc.is_djvu then
-                            -- Для PDF вычисляем pboxes
-                            item.pboxes = doc:getPageBoxesFromPositions(page, pos0, pos1)
-                            pcall(function() self.ui.highlight:writePdfAnnotation("save", item) end)
-                        end
-                        
-                        local index = self.ui.annotation:addItem(item)
-                        self.ui:handleEvent(Event:new("AnnotationsModified", {
-                            item, 
-                            nb_highlights_added = 1, 
-                            index_modified = index
-                        }))
-                        imported_count = imported_count + 1
-                    else
-                        -- Это простая закладка (bookmark)
-                        if not self.ui.bookmark:isPageBookmarked(page) then
-                            self.ui.bookmark:toggleBookmark(page)
+                
+                if not exists and not ext_bm.deleted then
+                    local pos0, pos1, page = Anchoring.findAnchor(doc, ext_bm, self.ui)
+                    if pos0 and page then
+                        if ext_bm.drawer then
+                            -- Это выделение (highlight)
+                            local item = {
+                                pos0 = pos0, pos1 = pos1, text = ext_bm.exact,
+                                datetime = ext_bm.datetime or os.date("%Y-%m-%d %H:%M:%S"),
+                                drawer = ext_bm.drawer, color = ext_bm.color, notes = ext_bm.notes,
+                                chapter = self.ui.toc:getTocTitleByPage(page),
+                            }
+                            if doc.configurable and doc.configurable.text_wrap == 1 then
+                                -- Для EPUB 'page' должен быть xpointer-ом на начало страницы
+                                item.page = doc:getXPointerFromPage(page)
+                            else
+                                -- Для PDF/DjVu 'page' - это всегда номер страницы.
+                                item.page = page
+                                item.pboxes = doc:getPageBoxesFromPositions(page, pos0, pos1)
+                                pcall(function() self.ui.highlight:writePdfAnnotation("save", item) end)
+                            end
+                            local index = self.ui.annotation:addItem(item)
+                            self.ui:handleEvent(Event:new("AnnotationsModified", {
+                                item, nb_highlights_added = 1, index_modified = index
+                            }))
                             imported_count = imported_count + 1
+                        else
+                            -- Это простая закладка (bookmark)
+                            local bm_page = page
+                            if doc.configurable and doc.configurable.text_wrap == 1 then
+                                -- Для EPUB-документов нужно передавать xpointer, а не номер страницы.
+                                bm_page = doc:getXPointerFromPage(page)
+                            end
+                            if not self.ui.bookmark:isPageBookmarked(bm_page) then
+                                self.ui.bookmark:toggleBookmark(bm_page)
+                                imported_count = imported_count + 1
+                            end
                         end
                     end
                 end
             end
-        end
+        end)
     end
     
     if imported_count > 0 then
         logger.info("bookmarks_sync: Импортировано закладок из других форматов:", imported_count)
-        self.view.footer:maybeUpdateFooter()
-        if self.ui.bookmark.bookmark_menu then
-            self.ui.bookmark:updateBookmarkList()
-        end
+        local T = require("ffi/util").template
+        local N_ = _.ngettext
+        UIManager:show(InfoMessage:new{
+            text = T(N_("Synced 1 bookmark from another format", "Synced %1 bookmarks from other formats", imported_count), imported_count),
+            timeout = 3,
+        })
+        -- Принудительно обновляем весь интерфейс, чтобы гарантированно отобразить все новые закладки
+        self.ui:handleEvent(Event:new("ForceRepaint"))
+    elseif #matches > 0 then
+        logger.info("bookmarks_sync: No new bookmarks to import from other formats.")
+        UIManager:show(InfoMessage:new{
+            text = _("Bookmarks are already up to date."),
+            timeout = 2,
+        })
     end
 end
 
