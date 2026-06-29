@@ -249,9 +249,13 @@ function OPDSBrowser:genItemTableFromRoot()
     return item_table
 end
 
+function OPDSBrowser:getServerFromRootItem(item)
+    return item and item.idx and self.servers[item.idx - 1]
+end
+
 -- Shows dialog to edit properties of the new/existing catalog
 function OPDSBrowser:addEditCatalog(item)
-    local server = item and self.servers[item.idx - 1]
+    local server = self:getServerFromRootItem(item)
     local fields = {
         {
             hint = _("Catalog name"),
@@ -357,7 +361,7 @@ end
 
 -- Saves catalog properties from input dialog
 function OPDSBrowser:editCatalogFromInput(fields, item, no_refresh)
-    local old_server = item and self.servers[item.idx - 1]
+    local old_server = self:getServerFromRootItem(item)
     local new_server = {
         title     = fields[1],
         url       = fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2],
@@ -1442,7 +1446,7 @@ function OPDSBrowser:downloadDownloadList()
 end
 
 function OPDSBrowser:showSyncSettingsDialog(item)
-    local server = self.servers[item.idx - 1]
+    local server = self:getServerFromRootItem(item)
     local sync_dialog
     local catalog_sync_dir = server.sync_dir and BD.dirpath(server.sync_dir) or _("not set")
     local default_sync_dir = self.settings.sync_dir and BD.dirpath(self.settings.sync_dir) or _("not set")
