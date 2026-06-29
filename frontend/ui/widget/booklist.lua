@@ -69,8 +69,8 @@ BookList.collates = {
         menu_order = 45,
         can_collate_mixed = true,
         item_func = function(item)
-            -- created_at from the sidecar (e.g. Wallabag); fall back to file mtime.
-            item.date_added = BookList.getBookInfo(item.path or item.file).date_added
+            -- created_at from custom metadata (e.g. Wallabag); fall back to file mtime.
+            item.date_added = BookList.getDateAdded(item.path or item.file)
                 or item.attr.modification
         end,
         init_sort_func = function()
@@ -299,7 +299,6 @@ function BookList.setBookInfoCache(file, doc_settings)
         pages            = nil,
         has_annotations  = nil,
         percent_finished = doc_settings:readSetting("percent_finished"),
-        date_added       = doc_settings:readSetting("date_added"),
     }
     local summary = doc_settings:readSetting("summary")
     book_info.status = summary and summary.status
@@ -355,6 +354,16 @@ function BookList.getBookInfo(file)
         end
     end
     return BookList.book_info_cache[file]
+end
+
+-- Reads the "date added" timestamp from a book's custom metadata, if any.
+-- Stored in custom_metadata.lua (not the regular sidecar) so reading it does not
+-- mark the book as opened. Returns nil when absent.
+function BookList.getDateAdded(file)
+    local custom_metadata_file = DocSettings:findCustomMetadataFile(file)
+    if not custom_metadata_file then return nil end
+    local custom_props = DocSettings.openSettingsFile(custom_metadata_file):readSetting("custom_props")
+    return custom_props and custom_props.date_added
 end
 
 function BookList.hasBookBeenOpened(file)

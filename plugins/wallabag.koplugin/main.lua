@@ -845,7 +845,8 @@ end
 
 --- Apply the Wallabag server dates to a freshly downloaded article file.
 -- mtime = updated_at (drives the "date modified" sort and needToDownload dedup);
--- created_at is stored in the sidecar to drive the "date added" sort.
+-- created_at is stored in custom metadata to drive the "date added" sort without
+-- creating a regular sidecar (which would mark the article as "opened").
 function Wallabag:setArticleDates(local_path, article)
     if not self.is_dateparser_available then return end
 
@@ -858,9 +859,15 @@ function Wallabag:setArticleDates(local_path, article)
 
     local created_date = article.created_at and self.dateparser.parse(article.created_at)
     if not created_date then return end
-    local doc_settings = DocSettings:open(local_path)
-    doc_settings:saveSetting("date_added", created_date)
-    doc_settings:flush()
+    -- Store created_at inside custom_props (not at the root) so the file always
+    -- has a custom_props table — other code indexes it without a nil guard. This
+    -- writes only custom_metadata.lua, so the article is not marked as "opened".
+    local custom_file = DocSettings:findCustomMetadataFile(local_path)
+    local doc_settings = DocSettings.openSettingsFile(custom_file)
+    local custom_props = doc_settings:readSetting("custom_props", {})
+    custom_props.date_added = created_date
+    doc_settings:saveSetting("custom_props", custom_props)
+    doc_settings:flushCustomMetadata(local_path)
 end
 
 --- Check if we already have the article locally.
