@@ -836,10 +836,31 @@ function Wallabag:downloadArticle(article)
     local local_path = ffiUtil.joinPath(self.directory, article_id_prefix..article.id..article_id_postfix..title..file_ext)
     logger.dbg("Wallabag:downloadArticle: downloading", article.id, "to", local_path)
 
-    if self:callAPI("GET", item_url, nil, nil, local_path) then
-        return local_path
+    if not self:callAPI("GET", item_url, nil, nil, local_path) then
+        return nil
     end
-    return nil
+    self:setArticleDates(local_path, article)
+    return local_path
+end
+
+--- Apply the Wallabag server dates to a freshly downloaded article file.
+-- mtime = updated_at (drives the "date modified" sort and needToDownload dedup);
+-- created_at is stored in the sidecar to drive the "date added" sort.
+function Wallabag:setArticleDates(local_path, article)
+    if not self.is_dateparser_available then return end
+
+    local updated_date = article.updated_at and self.dateparser.parse(article.updated_at)
+    if updated_date then
+        -- Keep the existing access time, only move the modification time.
+        local access_time = lfs.attributes(local_path, "access") or updated_date
+        lfs.touch(local_path, access_time, updated_date)
+    end
+
+    local created_date = article.created_at and self.dateparser.parse(article.created_at)
+    if not created_date then return end
+    local doc_settings = DocSettings:open(local_path)
+    doc_settings:saveSetting("date_added", created_date)
+    doc_settings:flush()
 end
 
 --- Check if we already have the article locally.
@@ -856,7 +877,7 @@ function Wallabag:needToDownload(local_articles, remote_article)
             --- @todo find a better solution
             if self.is_dateparser_available then
                 local server_date = self.dateparser.parse(remote_article.updated_at)
-                if server_date < attr.modification then
+                if server_date <= attr.modification then
                     logger.dbg("Wallabag:needToDownload: skipping download because local copy at", local_path, "is newer")
                     return false
                 end

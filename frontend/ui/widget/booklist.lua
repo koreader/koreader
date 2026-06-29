@@ -64,6 +64,24 @@ BookList.collates = {
             return datetime.secondsToDateTime(item.attr.modification)
         end,
     },
+    date_added = {
+        text = _("date added"),
+        menu_order = 45,
+        can_collate_mixed = true,
+        item_func = function(item)
+            -- created_at from the sidecar (e.g. Wallabag); fall back to file mtime.
+            item.date_added = BookList.getBookInfo(item.path or item.file).date_added
+                or item.attr.modification
+        end,
+        init_sort_func = function()
+            return function(a, b)
+                return a.date_added > b.date_added
+            end
+        end,
+        mandatory_func = function(item)
+            return datetime.secondsToDateTime(item.date_added)
+        end,
+    },
     size = {
         text = _("size"),
         menu_order = 50,
@@ -281,6 +299,7 @@ function BookList.setBookInfoCache(file, doc_settings)
         pages            = nil,
         has_annotations  = nil,
         percent_finished = doc_settings:readSetting("percent_finished"),
+        date_added       = doc_settings:readSetting("date_added"),
     }
     local summary = doc_settings:readSetting("summary")
     book_info.status = summary and summary.status
