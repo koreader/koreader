@@ -30,6 +30,10 @@ local NetworkMgr = {
     pending_connectivity_check = false,
     pending_connection = false,
     _before_action_tripped = nil,
+
+    -- SSID for which the current DHCP lease was obtained.
+    -- Used by hasLeaseForCurrentNetwork() to detect stale leases after a network switch (#14790).
+    lease_ssid = nil,
 }
 
 function NetworkMgr:readNWSettings()
@@ -43,6 +47,8 @@ function NetworkMgr:_abortWifiConnection()
 
     self.wifi_was_on = false
     G_reader_settings:makeFalse("wifi_was_on")
+    -- The connection never completed, so any DHCP lease we may have had is no longer valid.
+    self.lease_ssid = nil
     -- Murder Wi-Fi and the async script (if any) first...
     if Device:hasWifiRestore() and not Device:isKindle() then
         os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
@@ -92,6 +98,14 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
         self.wifi_was_on = true
         G_reader_settings:makeTrue("wifi_was_on")
         logger.info("Wi-Fi successfully restored (after", iter * 0.25, "seconds)!")
+        -- Update lease_ssid from wpa_supplicant's current association.
+        -- restoreWifiAsync() re-DHCPs in shell but never touches Lua state, so we sync
+        -- here to avoid falsely flagging a valid post-restore lease as stale (#14790).
+        local nw = self:getCurrentNetwork()
+        if nw and nw.ssid then
+            self.lease_ssid = nw.ssid
+            logger.dbg("NetworkMgr: lease_ssid set to", nw.ssid, "after async restore")
+        end
         UIManager:broadcastEvent(Event:new("NetworkConnected"))
 
         -- Handle the UI & callback if it's from a beforeWifiAction...
@@ -278,6 +292,26 @@ function NetworkMgr:ifHasAnAddress()
     return ok
 end
 
+-- Returns true if the current DHCP lease was obtained for the network we are presently
+-- associated with.  Detects the stale-lease case that occurs after a network switch:
+-- wpa_supplicant has already roamed to the new SSID at L2, but the old IP/gateway are
+-- still assigned, so every outbound connection is routed to the wrong subnet (#14790).
+--
+-- When the backend cannot report the current SSID (non-wpa_supplicant platforms, or when
+-- wpa_supplicant is not yet fully associated) we return true so as not to churn a
+-- connection we cannot reliably assess.
+function NetworkMgr:hasLeaseForCurrentNetwork()
+    if not self:isConnected() then
+        return false
+    end
+    local nw = self:getCurrentNetwork()   -- wpa_supplicant's currently associated network
+    if not nw or not nw.ssid then
+        -- Backend can't tell us the SSID; don't disrupt the connection on uncertainty.
+        return true
+    end
+    return self.lease_ssid ~= nil and self.lease_ssid == nw.ssid
+end
+
 -- The socket API equivalent of "ip route get 203.0.113.1 || ip route get 2001:db8::1".
 --
 -- These addresses are from special ranges reserved for documentation
@@ -368,6 +402,8 @@ function NetworkMgr:enableWifi(wifi_cb, interactive)
 end
 
 function NetworkMgr:disableWifi(cb, interactive)
+    -- DHCP lease is released when Wi-Fi goes down, so the tracked SSID is no longer valid.
+    self.lease_ssid = nil
     local complete_callback = function()
         UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
         if cb then
@@ -479,15 +515,26 @@ function NetworkMgr:promptWifi(complete_callback, long_press, interactive)
 end
 
 function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
-    -- Just run the callback if WiFi is already up...
+    -- Just run the callback if WiFi is already up *and* the lease is for the current network.
     if self:isWifiOn() and self:isConnected() then
-        --- @note: beforeWifiAction only guarantees isConnected, not isOnline.
-        --         In the rare cases we're isConnected but !isOnline, if we're called via a *runWhenOnline wrapper,
-        --         we don't get a callback at all to avoid infinite recursion, so we need to check it.
-        if callback then
-            callback()
+        if self:hasLeaseForCurrentNetwork() then
+            --- @note: beforeWifiAction only guarantees isConnected, not isOnline.
+            --         In the rare cases we're isConnected but !isOnline, if we're called via a *runWhenOnline wrapper,
+            --         we don't get a callback at all to avoid infinite recursion, so we need to check it.
+            if callback then
+                callback()
+            end
+            return
         end
-        return
+        -- The DHCP lease belongs to a different network than the one wpa_supplicant is
+        -- currently associated with (stale lease after a network switch, #14790).
+        -- Release the old address and fall through to the normal reconnect path, which
+        -- will re-associate and re-run obtainIP() for the current network.
+        logger.info("NetworkMgr: stale DHCP lease detected (lease_ssid=", self.lease_ssid,
+                    "), forcing re-DHCP for current network")
+        self:releaseIP()
+        self.lease_ssid = nil
+        -- fall through — no return
     end
 
     local info = InfoMessage:new{ text = _("Connecting to Wi-Fi…") }
@@ -522,10 +569,18 @@ end
 -- This is only used on Android, the intent being we assume the system will eventually turn on WiFi on its own in the background...
 function NetworkMgr:doNothingAndWaitForConnection(callback)
     if self:isWifiOn() and self:isConnected() then
-        if callback then
-            callback()
+        if self:hasLeaseForCurrentNetwork() then
+            if callback then
+                callback()
+            end
+            return
         end
-        return
+        -- Stale lease after a network switch; drop it and fall through (#14790).
+        logger.info("NetworkMgr: stale DHCP lease detected (lease_ssid=", self.lease_ssid,
+                    "), forcing re-DHCP for current network")
+        self:releaseIP()
+        self.lease_ssid = nil
+        -- fall through — no return
     end
 
     self:scheduleConnectivityCheck(callback)
@@ -1162,6 +1217,10 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
 
     if success then
         self:obtainIP()
+        -- Record the SSID we just obtained a lease for, so hasLeaseForCurrentNetwork()
+        -- can detect a future network switch without triggering unnecessary re-DHCPs (#14790).
+        self.lease_ssid = ssid
+        logger.dbg("NetworkMgr: lease_ssid set to", ssid)
         if complete_callback then
             complete_callback()
         end
