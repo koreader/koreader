@@ -1474,6 +1474,14 @@ function OPDSBrowser:showSyncSettingsDialog(item)
                     end,
                 },
             },
+            {
+                {
+                    text = _("OK"),
+                    callback = function()
+                        UIManager:close(sync_dialog)
+                    end,
+                },
+            },
         },
     }
     UIManager:show(sync_dialog)
