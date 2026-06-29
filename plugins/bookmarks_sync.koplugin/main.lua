@@ -96,31 +96,38 @@ end
 
 -- Срабатывает, когда книга полностью готова к чтению
 function BookmarkSync:onReaderReady()
+    logger.dbg("bookmarks_sync: onReaderReady triggered")
     -- Проверяем переименование текущей книги и инициализируем файл bookmarks_sync.lua
     local doc = self.ui.document
     if doc and doc.file then
         local sync_data = SyncDB.loadBookSync(doc.file)
+        logger.dbg("bookmarks_sync: onReaderReady processing for", doc.file, sync_data)
         local base_name = SyncDB.getBaseName(doc.file)
-        
+
         if sync_data then
             -- Если открытый файл переименован
             if sync_data.current_basename ~= base_name then
                 self:exportLocalBookmarks()
             end
         else
+            logger.dbg("bookmarks_sync: No sync data found. Doing initial export.")
             -- Первичный экспорт, если файла синхронизации еще нет
             self:exportLocalBookmarks()
         end
-        
+
         -- Автоматический импорт закладок из других форматов при открытии книги
         UIManager:nextTick(function()
+            logger.dbg("bookmarks_sync: Scheduling importExternalBookmarks")
             self:importExternalBookmarks()
         end)
+    else
+        logger.dbg("bookmarks_sync: onReaderReady: no document or file.")
     end
 end
 
 -- Срабатывает при сохранении настроек книги (обычно при закрытии или выходе в меню)
 function BookmarkSync:onSaveSettings()
+    logger.dbg("bookmarks_sync: onSaveSettings triggered. Exporting local bookmarks.")
     self:exportLocalBookmarks()
 end
 
@@ -128,6 +135,7 @@ end
 function BookmarkSync:onAnnotationsModified(event)
     -- Небольшая задержка перед экспортом, чтобы KOReader успел применить изменения к сессии
     UIManager:nextTick(function()
+        logger.dbg("bookmarks_sync: onAnnotationsModified triggered. Scheduling export.")
         self:exportLocalBookmarks()
     end)
 end
@@ -135,24 +143,30 @@ end
 -- Экспорт локальных закладок в bookmarks_sync.lua
 function BookmarkSync:exportLocalBookmarks()
     local doc = self.ui.document
-    if not doc or not doc.file then return end
+    logger.dbg("bookmarks_sync: exportLocalBookmarks started.")
+    if not doc or not doc.file then
+        logger.dbg("bookmarks_sync: exportLocalBookmarks: no document or file. Aborting.")
+        return
+    end
     
     local total_pages = doc:getPageCount()
-    if not total_pages or total_pages <= 0 then return end
+    if not total_pages or total_pages <= 0 then
+        logger.dbg("bookmarks_sync: exportLocalBookmarks: invalid page count. Aborting.")
+        return
+    end
     
     local annotations = self.ui.annotation.annotations or {}
+    logger.dbg("bookmarks_sync: Found", #annotations, "total local annotations.")
     local sync_bookmarks = {}
     
-    for _, item in ipairs(annotations) do
+    for i, item in ipairs(annotations) do
         if not item.deleted then
+            logger.dbg("bookmarks_sync: Exporting annotation #", i, item.datetime)
             local exact, prefix, suffix = Anchoring.getAnchorContext(doc, item, 5)
-            
-            -- Вычисляем прогресс.
-            -- Для PDF/DjVu (paging) у нас есть item.pageno.
-            -- Для EPUB/FB2 (reflowable) у нас есть item.page, который является xpointer-ом.
-            -- Нам нужно получить номер страницы из xpointer-а в любом режиме (rolling или paging).
+            logger.dbg("bookmarks_sync: Anchor context:", {exact=exact, prefix=prefix, suffix=suffix})
+            local is_reflowable = not (doc.is_pdf or doc.is_djvu)
             local pageno
-            if doc.configurable and doc.configurable.text_wrap == 1 then -- Reflowable
+            if is_reflowable then -- Reflowable
                 pageno = doc:getPageFromXPointer(item.page)
             else -- Fixed-layout
                 pageno = item.pageno
@@ -172,28 +186,33 @@ function BookmarkSync:exportLocalBookmarks()
         end
     end
     
+    logger.dbg("bookmarks_sync: Saving", #sync_bookmarks, "bookmarks to sync file.")
     SyncDB.saveBookSync(doc.file, sync_bookmarks)
+    logger.dbg("bookmarks_sync: exportLocalBookmarks finished.")
 end
 
 -- Импорт закладок из других форматов
 function BookmarkSync:importExternalBookmarks()
     local doc = self.ui.document
-    logger.dbg("bookmarks_sync: importExternalBookmarks()")
-    logger.dbg("file = " .. doc.file)
+    logger.dbg("bookmarks_sync: importExternalBookmarks started for", doc and doc.file or "nil")
     if not doc or not doc.file then return end
     
     local matches = SyncDB.findMatchingSyncFiles(doc.file)
     if #matches == 0 then
-        logger.info("bookmarks_sync: Нет подходящих файлов для синхронизации.")
+        logger.dbg("bookmarks_sync: No matching files found for sync.")
         return
     end
     
+    logger.dbg("bookmarks_sync: Found", #matches, "matching files for sync.")
     local local_annotations = self.ui.annotation.annotations or {}
     local imported_count = 0
+    local is_reflowable = not (doc.is_pdf or doc.is_djvu)
     
     for _, match in ipairs(matches) do
+        logger.dbg("bookmarks_sync: Processing match file:", match.filepath)
         pcall(function() -- Обертка для безопасности, чтобы ошибка в одном файле не сломала все
-            for _, ext_bm in ipairs(match.bookmarks) do
+            for i, ext_bm in ipairs(match.bookmarks) do
+                logger.dbg("bookmarks_sync: Checking external bookmark #", i, ext_bm.datetime)
                 -- Проверяем, нет ли уже этой закладки локально
                 local exists = false
                 for _, local_bm in ipairs(local_annotations) do
@@ -204,8 +223,11 @@ function BookmarkSync:importExternalBookmarks()
                 end
                 
                 if not exists and not ext_bm.deleted then
+                    logger.dbg("bookmarks_sync: Bookmark does not exist locally. Attempting to find anchor.")
                     local pos0, pos1, page = Anchoring.findAnchor(doc, ext_bm, self.ui)
+                    logger.dbg("bookmarks_sync: findAnchor result:", {pos0=pos0, pos1=pos1, page=page})
                     if pos0 and page then
+                        logger.dbg("bookmarks_sync: Anchor found on page", page, ". Importing.")
                         if ext_bm.drawer then
                             -- Это выделение (highlight)
                             local item = {
@@ -214,40 +236,51 @@ function BookmarkSync:importExternalBookmarks()
                                 drawer = ext_bm.drawer, color = ext_bm.color, notes = ext_bm.notes,
                                 chapter = self.ui.toc:getTocTitleByPage(page),
                             }
-                            if doc.configurable and doc.configurable.text_wrap == 1 then
-                                -- Для EPUB 'page' должен быть xpointer-ом на начало страницы
-                                item.page = doc:getXPointerFromPage(page)
+                            logger.dbg("item (1) = ", item)
+                            if is_reflowable then
+                                -- For EPUB, the 'page' field must be the starting xpointer of the highlight,
+                                -- which is what findAnchor returns in pos0.
+                                item.page = pos0
                             else
                                 -- Для PDF/DjVu 'page' - это всегда номер страницы.
                                 item.page = page
                                 item.pboxes = doc:getPageBoxesFromPositions(page, pos0, pos1)
                                 pcall(function() self.ui.highlight:writePdfAnnotation("save", item) end)
                             end
+                            logger.dbg("item (2) = ", item)
                             local index = self.ui.annotation:addItem(item)
                             self.ui:handleEvent(Event:new("AnnotationsModified", {
                                 item, nb_highlights_added = 1, index_modified = index
                             }))
                             imported_count = imported_count + 1
+                            logger.dbg("bookmarks_sync: Imported a highlight.")
                         else
                             -- Это простая закладка (bookmark)
                             local bm_page = page
-                            if doc.configurable and doc.configurable.text_wrap == 1 then
+                            if is_reflowable then
                                 -- Для EPUB-документов нужно передавать xpointer, а не номер страницы.
                                 bm_page = doc:getXPointerFromPage(page)
                             end
                             if not self.ui.bookmark:isPageBookmarked(bm_page) then
                                 self.ui.bookmark:toggleBookmark(bm_page)
                                 imported_count = imported_count + 1
+                                logger.dbg("bookmarks_sync: Imported a bookmark.")
+                            else
+                                logger.dbg("bookmarks_sync: Page already bookmarked, skipping.")
                             end
                         end
+                    else
+                        logger.dbg("bookmarks_sync: Anchor not found for this bookmark. Skipping.")
                     end
+                else
+                    logger.dbg("bookmarks_sync: Bookmark already exists or is deleted. Skipping.")
                 end
             end
         end)
     end
     
     if imported_count > 0 then
-        logger.info("bookmarks_sync: Импортировано закладок из других форматов:", imported_count)
+        logger.dbg("bookmarks_sync: Imported a total of", imported_count, "bookmarks.")
         local T = require("ffi/util").template
         local N_ = _.ngettext
         UIManager:show(InfoMessage:new{
@@ -257,7 +290,7 @@ function BookmarkSync:importExternalBookmarks()
         -- Принудительно обновляем весь интерфейс, чтобы гарантированно отобразить все новые закладки
         self.ui:handleEvent(Event:new("ForceRepaint"))
     elseif #matches > 0 then
-        logger.info("bookmarks_sync: No new bookmarks to import from other formats.")
+        logger.dbg("bookmarks_sync: No new bookmarks to import from other formats.")
         UIManager:show(InfoMessage:new{
             text = _("Bookmarks are already up to date."),
             timeout = 2,

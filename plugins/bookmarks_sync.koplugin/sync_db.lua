@@ -68,7 +68,7 @@ function SyncDB.saveBookSync(doc_path, bookmarks)
             end
             if not found then
                 table.insert(history, existing.current_basename)
-                logger.info("bookmarks_sync: Обнаружено переименование книги. Старое имя добавлено в историю:", existing.current_basename)
+                logger.dbg("bookmarks_sync: Book renamed. Adding old name to history:", existing.current_basename)
             end
         end
     end
@@ -79,6 +79,7 @@ function SyncDB.saveBookSync(doc_path, bookmarks)
     settings:saveSetting("basenames_history", history)
     settings:saveSetting("bookmarks", bookmarks)
     settings:flush()
+    logger.dbg("bookmarks_sync: Saved", #bookmarks, "bookmarks to sync file for", doc_path)
     
     return true
 end
@@ -89,10 +90,10 @@ end
 -- @return массив найденных наборов закладок из других форматов
 function SyncDB.findMatchingSyncFiles(doc_path)
     local base_name = SyncDB.getBaseName(doc_path)
-    logger.info("bookmarks_sync: Searching for matches for base_name: '", base_name, "'")
+    logger.dbg("bookmarks_sync: Searching for matches for base_name: '", base_name, "'")
     local matching_bookmarks = {}
     local search_scope = G_reader_settings:readSetting("bookmarks_sync_search_scope") or "all"
-    logger.info("bookmarks_sync: Using search scope:", search_scope)
+    logger.dbg("bookmarks_sync: Using search scope:", search_scope)
 
     local candidate_files = {}
 
@@ -116,7 +117,7 @@ function SyncDB.findMatchingSyncFiles(doc_path)
         -- 3. Книги из папки текущей книги и ее подпапок (по вашему предложению)
         -- Это найдет книги, которые еще не были открыты, но могут иметь файлы синхронизации.
         local book_dir, _ = util.splitFilePathName(doc_path)
-        logger.info("bookmarks_sync: Also scanning the current book's directory:", book_dir)
+        logger.dbg("bookmarks_sync: Also scanning the current book's directory:", book_dir)
 
         local function scan_directory_for_books(dir)
             logger.dbg("bookmarks_sync: [SCAN] Attempting to scan directory:", dir)
@@ -143,9 +144,9 @@ function SyncDB.findMatchingSyncFiles(doc_path)
                     local full_path = dir:gsub("/$", "") .. "/" .. item
                     local attr = lfs.attributes(full_path)
                     if attr and attr.mode == "directory" then
-                        scan_directory_for_books(full_path) -- recursive call
+                        pcall(scan_directory_for_books, full_path) -- recursive call, wrapped in pcall for safety
                     elseif attr and attr.mode == "file" and item:lower():match("%.(epub|pdf|fb2|mobi|djvu|xps|cbz|cbt|cbr|txt|html|rtf)$") then
-                        logger.info("bookmarks_sync: [SCAN] Found candidate book file:", full_path)
+                        logger.dbg("bookmarks_sync: [SCAN] Found candidate book file:", full_path)
                         candidate_files[full_path] = true
                     end
                 end
@@ -160,7 +161,7 @@ function SyncDB.findMatchingSyncFiles(doc_path)
         end
     end
 
-    logger.info("bookmarks_sync: Total unique candidate books for sync check:", util.tableSize(candidate_files))
+    logger.dbg("bookmarks_sync: Total unique candidate books for sync check:", util.tableSize(candidate_files))
 
     for filepath, _ in pairs(candidate_files) do
         -- Пропускаем текущий открытый документ
@@ -196,7 +197,7 @@ function SyncDB.findMatchingSyncFiles(doc_path)
             if is_match then
                 local other_bookmarks = sync_settings:readSetting("bookmarks") or {}
                 if #other_bookmarks > 0 then
-                    logger.info("bookmarks_sync: Found a match with book:", filepath)
+                    logger.dbg("bookmarks_sync: Found a match with book:", filepath)
                     table.insert(matching_bookmarks, {
                         filepath = filepath,
                         bookmarks = other_bookmarks

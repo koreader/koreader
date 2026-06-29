@@ -76,7 +76,8 @@ function Anchoring.getAnchorContext(doc, item, nb_words)
         -- Это простая закладка страницы (dogear)
         -- Для закладки у нас нет выделенного текста. Нам нужно извлечь
         -- текст с начала страницы/экрана.
-        if doc.configurable and doc.configurable.text_wrap == 1 then
+        local is_reflowable = not (doc.is_pdf or doc.is_djvu)
+        if is_reflowable then
             -- EPUB / FB2 (Reflowable)
             if doc.getTextFromXPointer and item.page then
                 local t = doc:getTextFromXPointer(item.page)
@@ -151,24 +152,8 @@ function Anchoring.findAnchor(doc, anchor, ui)
     -- Убираем пробелы в начале и конце строки
     search_text = search_text:gsub("^%s*(.-)%s*$", "%1")
 
-    -- Для PDF-подобных форматов стандартный поиск по последовательности слов очень хрупкий.
-    -- Мы применим "нечеткий" поиск: найдем самое длинное слово в искомой фразе,
-    -- а после найдем его и проверим окружение на полное совпадение.
-    local is_pdf_like = not (doc.configurable and doc.configurable.text_wrap == 1)
+    -- The original_search_text is the cleaned full text we want to find.
     local original_search_text = search_text
-    local is_fuzzy_search = false
-
-    if is_pdf_like then
-        local longest_word = ""
-        for word in search_text:gmatch("%S+") do
-            if #word > #longest_word then longest_word = word end
-        end
-        if #longest_word > 4 and #longest_word < #search_text then -- Применяем эвристику
-            search_text = longest_word
-            is_fuzzy_search = true
-            logger.info("bookmarks_sync: PDF fuzzy search enabled. Searching for:", search_text)
-        end
-    end
 
     local total_pages = doc:getPageCount()
     if not total_pages or total_pages <= 0 then return nil end
@@ -185,13 +170,27 @@ function Anchoring.findAnchor(doc, anchor, ui)
     local search_flags = 0x01FF -- IGNORE_DIACRITICS + NORMALIZE_COMPATIBILITY
     
     local ok, res
-    if doc.configurable and doc.configurable.text_wrap == 1 then
+
+    -- Let's add detailed logging to understand why the wrong branch is being taken.
+    -- The check `doc.configurable.text_wrap == 1` can be unreliable depending on when it's called.
+    -- A more direct check is to see if the document is an EPUB or other reflowable format.
+    -- CreDocument handles EPUB, FB2, etc. and is always reflowable.
+    local is_reflowable = not (doc.is_pdf or doc.is_djvu)
+    logger.dbg("bookmarks_sync: Checking document type. Is reflowable? ->", is_reflowable)
+
+    if is_reflowable then
         -- EPUB / FB2 (CreDocument)
-        ok, res = pcall(doc.findAllText, doc, original_search_text, case_insensitive, nb_context_words, max_hits, false, search_flags)
+        logger.dbg("bookmarks_sync: Using EPUB search for text:", original_search_text)
+        -- CreDocument:findAllText(text, case_insensitive, whole_word, max_hits, backward, search_flags)
+        -- We pass `false` for whole_word to perform a substring search.
+        -- The original code was passing nb_context_words (a number) where a boolean (whole_word) was expected.
+        ok, res = pcall(doc.findAllText, doc, original_search_text, case_insensitive, nb_context_words, max_hits, false)
     else
-        -- PDF (PdfDocument)
-        ok, res = pcall(doc.findAllText, doc, search_text, case_insensitive, nb_context_words, max_hits)
+        -- PDF / DjVu (Fixed-layout)
+        logger.dbg("bookmarks_sync: Using PDF search for text:", original_search_text)
+        ok, res = pcall(doc.findAllText, doc, original_search_text, case_insensitive, nb_context_words, max_hits)
     end
+    logger.dbg("bookmarks_sync: findAllText result: ok=", ok, "res=", res)
     
     if not ok or not res or #res == 0 then
         return nil -- Совпадений не найдено
@@ -201,63 +200,47 @@ function Anchoring.findAnchor(doc, anchor, ui)
     local best_score = -1000
     
     local target_prefix_norm = Anchoring.normalizeText(anchor.prefix)
+    logger.dbg("bookmarks_sync: target_prefix_norm = ", target_prefix_norm)
     local target_suffix_norm = Anchoring.normalizeText(anchor.suffix)
-
-    local normalized_original_search = nil
-    if is_fuzzy_search then
-        normalized_original_search = original_search_text:gsub("%s+", " ")
-        if case_insensitive then
-            normalized_original_search = Utf8Proc.lowercase(normalized_original_search)
-        end
-    end
+    logger.dbg("bookmarks_sync: target_suffix_norm = ", target_suffix_norm)
     
     for _, match in ipairs(res) do
         -- Вычисляем страницу для этого совпадения
         local match_page
-        if doc.configurable and doc.configurable.text_wrap == 1 then
+        if is_reflowable then
             match_page = doc:getPageFromXPointer(match.start)
         else
             match_page = match.start
         end
+        logger.dbg("bookmarks_sync: match_page = ", match_page)
         
         local score = 0
         
-        -- Если был нечеткий поиск, сначала проверяем полное совпадение
-        if is_fuzzy_search then
-            local full_context = table.concat({match.prev_text or "", match.matched_text or "", match.next_text or ""}, " ")
-            local normalized_full_context = full_context:gsub("%s+", " ")
-            if case_insensitive then
-                normalized_full_context = Utf8Proc.lowercase(normalized_full_context)
-            end
-
-            if normalized_full_context:find(normalized_original_search, 1, true) then
-                score = score + 100 -- Это реальное совпадение
-            else
-                score = -2000 -- Это ложное срабатывание, сильно штрафуем
+        -- Проверяем совпадение префиксов и суффиксов
+        -- Контекст префикса — это комбинация текста до и начала найденного слова.
+        local full_prev_text = (match.prev_text or "") .. (match.matched_word_prefix or "")
+        local actual_prefix_norm = Anchoring.normalizeText(full_prev_text)
+        -- Контекст суффикса — это комбинация конца найденного слова и текста после него.
+        local full_next_text = (match.matched_word_suffix or "") .. (match.next_text or "")
+        local actual_suffix_norm = Anchoring.normalizeText(full_next_text)
+        logger.dbg("bookmarks_sync: actual_prefix_norm = ", actual_prefix_norm)
+        logger.dbg("bookmarks_sync: actual_suffix_norm = ", actual_suffix_norm)
+        
+        if target_prefix_norm ~= "" and actual_prefix_norm ~= "" then
+            -- Приводим строки к одной (минимальной) длине для сравнения конца строки
+            local len = math.min(#actual_prefix_norm, #target_prefix_norm)
+            if actual_prefix_norm:sub(-len) == target_prefix_norm:sub(-len) then
+                score = score + 50
+                logger.dbg("bookmarks_sync: Prefix match, score +50")
             end
         end
-
-        if score > -1000 then
-            -- Проверяем совпадение префиксов и суффиксов
-            local actual_prefix_norm = Anchoring.normalizeText(match.prev_text)
-            local actual_suffix_norm = Anchoring.normalizeText(match.next_text)
-            
-            -- Функция для безопасной проверки окончания строки
-            local function endsWith(str, ending)
-                return #str >= #ending and str:sub(-#ending) == ending
-            end
-
-            -- Функция для безопасной проверки начала строки
-            local function startsWith(str, starting)
-                return #str >= #starting and str:sub(1, #starting) == starting
-            end
-
-            if target_prefix_norm ~= "" and actual_prefix_norm ~= "" and endsWith(actual_prefix_norm, target_prefix_norm) then
+        
+        if target_suffix_norm ~= "" and actual_suffix_norm ~= "" then
+            -- Приводим строки к одной (минимальной) длине для сравнения начала строки
+            local len = math.min(#actual_suffix_norm, #target_suffix_norm)
+            if actual_suffix_norm:sub(1, len) == target_suffix_norm:sub(1, len) then
                 score = score + 50
-            end
-            
-            if target_suffix_norm ~= "" and actual_suffix_norm ~= "" and startsWith(actual_suffix_norm, target_suffix_norm) then
-                score = score + 50
+                logger.dbg("bookmarks_sync: Suffix match, score +50")
             end
         end
         
@@ -278,7 +261,7 @@ function Anchoring.findAnchor(doc, anchor, ui)
         local match = best_match.match
         local page = best_match.page
         
-        if doc.configurable and doc.configurable.text_wrap == 1 then
+        if is_reflowable then
             -- Для EPUB: pos0 = start (xpointer), pos1 = end (xpointer)
             return match.start, match["end"], page
         else
