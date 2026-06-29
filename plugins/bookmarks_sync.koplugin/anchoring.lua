@@ -114,19 +114,26 @@ function Anchoring.getAnchorContext(doc, item, nb_words)
             -- Чтобы сделать якорь надежнее, разделим его на 'exact' (первое слово)
             -- и 'suffix' (следующие несколько слов).
             local words = {}
-            for w in exact:gmatch("%S+") do
-                table.insert(words, w)
+            -- Заменяем всю пунктуацию на пробелы, чтобы правильно разделить слова
+            local text_for_word_split = exact:gsub("[%p%c%z]", " ")
+            for word in text_for_word_split:gmatch("%S+") do
+                table.insert(words, word)
                 if #words >= 5 then break end -- Берем до 5 слов для якоря
             end
             
-            if #words > 0 then
+            if #words >= 3 then
+                -- Best case: we have prefix, exact, and suffix
+                prefix = words[1]
+                exact = words[2]
+                suffix = table.concat(words, " ", 3)
+            elseif #words == 2 then
+                -- No prefix, but we have exact and suffix
                 exact = words[1]
-                if #words > 1 then
-                    -- Остальные слова (до 4) идут в суффикс для более точного поиска
-                    suffix = table.concat(words, " ", 2)
-                end
+                suffix = words[2]
+            elseif #words == 1 then
+                exact = words[1]
             else
-                exact = "" -- если слов не найдено, сбрасываем exact
+                exact = "" -- No words found
             end
         end
     end
@@ -140,20 +147,9 @@ end
 -- @return pos0, pos1, page (координаты найденного совпадения в текущем документе)
 function Anchoring.findAnchor(doc, anchor, ui)
     if not anchor.exact or anchor.exact == "" then return nil end
-    
-    -- Очищаем искомый текст, чтобы сделать поиск более надежным между форматами.
-    -- Это решает проблемы, когда в одном формате есть мягкие переносы или другое
-    -- форматирование пробелов, отсутствующее в другом.
-    local search_text = anchor.exact
-    -- Заменяем мягкие переносы (U+00AD) на пустую строку
-    search_text = search_text:gsub("\194\173", "")
-    -- Нормализуем пробельные символы (несколько пробелов/переносов -> один пробел)
-    search_text = search_text:gsub("%s+", " ")
-    -- Убираем пробелы в начале и конце строки
-    search_text = search_text:gsub("^%s*(.-)%s*$", "%1")
 
     -- The original_search_text is the cleaned full text we want to find.
-    local original_search_text = search_text
+    local original_search_text = anchor.exact
 
     local total_pages = doc:getPageCount()
     if not total_pages or total_pages <= 0 then return nil end
@@ -170,6 +166,7 @@ function Anchoring.findAnchor(doc, anchor, ui)
     local search_flags = 0x01FF -- IGNORE_DIACRITICS + NORMALIZE_COMPATIBILITY
     
     local ok, res
+    local is_fuzzy_search = false
 
     -- Let's add detailed logging to understand why the wrong branch is being taken.
     -- The check `doc.configurable.text_wrap == 1` can be unreliable depending on when it's called.
@@ -178,23 +175,61 @@ function Anchoring.findAnchor(doc, anchor, ui)
     local is_reflowable = not (doc.is_pdf or doc.is_djvu)
     logger.dbg("bookmarks_sync: Checking document type. Is reflowable? ->", is_reflowable)
 
+    -- Этап 1: Поиск точного совпадения
     if is_reflowable then
         -- EPUB / FB2 (CreDocument)
         logger.dbg("bookmarks_sync: Using EPUB search for text:", original_search_text)
-        -- CreDocument:findAllText(text, case_insensitive, whole_word, max_hits, backward, search_flags)
-        -- We pass `false` for whole_word to perform a substring search.
-        -- The original code was passing nb_context_words (a number) where a boolean (whole_word) was expected.
         ok, res = pcall(doc.findAllText, doc, original_search_text, case_insensitive, nb_context_words, max_hits, false)
     else
         -- PDF / DjVu (Fixed-layout)
         logger.dbg("bookmarks_sync: Using PDF search for text:", original_search_text)
         ok, res = pcall(doc.findAllText, doc, original_search_text, case_insensitive, nb_context_words, max_hits)
     end
-    logger.dbg("bookmarks_sync: findAllText result: ok=", ok, "res=", res)
-    
+
+    -- Этап 2: Если точный поиск не дал результатов, пробуем нечеткий поиск
     if not ok or not res or #res == 0 then
+        logger.dbg("bookmarks_sync: Primary search failed for '"..original_search_text.."'. Attempting fuzzy search.")
+
+        -- Применяем нормализацию только для нечеткого поиска
+        local normalized_text = original_search_text
+        -- Заменяем мягкие переносы (U+00AD) на пустую строку
+        normalized_text = normalized_text:gsub("\194\173", "")
+        -- Нормализуем пробельные символы (несколько пробелов/переносов -> один пробел)
+        normalized_text = normalized_text:gsub("%s+", " ")
+        -- Убираем пробелы в начале и конце строки
+        normalized_text = normalized_text:gsub("^%s*(.-)%s*$", "%1")
+        -- Дополнительная нормализация для повышения шансов на совпадение
+        -- Заменяем "умные" кавычки и апострофы на простые
+        normalized_text = normalized_text:gsub("[“”]", '"')
+        normalized_text = normalized_text:gsub("[‘’]", "'")
+
+        local longest_word = ""
+        -- Заменяем всю пунктуацию на пробелы, чтобы правильно разделить слова
+        local text_for_word_split = normalized_text:gsub("[%p%c%z]", " ")
+        for word in text_for_word_split:gmatch("%S+") do
+            if #word > #longest_word then longest_word = word end
+        end
+
+        -- Эвристика: используем нечеткий поиск, только если есть достаточно длинное слово
+        -- и исходный текст состоит не из одного этого слова.
+        if #longest_word > 4 and #longest_word < #original_search_text then
+            is_fuzzy_search = true
+            local search_text = longest_word
+            logger.dbg("bookmarks_sync: Fuzzy search: using longest word:", search_text)
+
+            if is_reflowable then
+                ok, res = pcall(doc.findAllText, doc, search_text, case_insensitive, nb_context_words, max_hits, false)
+            else
+                ok, res = pcall(doc.findAllText, doc, search_text, case_insensitive, nb_context_words, max_hits)
+            end
+        end
+    end
+
+    if not ok or not res or #res == 0 then
+        logger.dbg("bookmarks_sync: No matches found for search text: " .. original_search_text, "Error (if any):", tostring(res))
         return nil -- Совпадений не найдено
     end
+    logger.dbg("bookmarks_sync: Found", #res, "potential matches.")
     
     local best_match = nil
     local best_score = -1000
@@ -203,6 +238,12 @@ function Anchoring.findAnchor(doc, anchor, ui)
     logger.dbg("bookmarks_sync: target_prefix_norm = ", target_prefix_norm)
     local target_suffix_norm = Anchoring.normalizeText(anchor.suffix)
     logger.dbg("bookmarks_sync: target_suffix_norm = ", target_suffix_norm)
+    
+    local normalized_original_search = nil
+    if is_fuzzy_search then
+        -- Для нечеткого поиска нам нужен нормализованный полный текст для проверки контекста
+        normalized_original_search = Anchoring.normalizeText(original_search_text)
+    end
     
     for _, match in ipairs(res) do
         -- Вычисляем страницу для этого совпадения
@@ -216,6 +257,20 @@ function Anchoring.findAnchor(doc, anchor, ui)
         
         local score = 0
         
+        -- Если использовался нечеткий поиск, сначала проверяем полный контекст
+        if is_fuzzy_search then
+            local full_context = table.concat({match.prev_text or "", match.matched_text or "", match.next_text or ""}, " ")
+            local normalized_full_context = Anchoring.normalizeText(full_context)
+
+            if normalized_full_context:find(normalized_original_search, 1, true) then
+                score = score + 100 -- Это реальное совпадение, даем большой бонус
+                logger.dbg("bookmarks_sync: Fuzzy search: context verified.")
+            else
+                -- Это ложное срабатывание. Сильно штрафуем и пропускаем.
+                score = -2000
+            end
+        end
+        
         -- Проверяем совпадение префиксов и суффиксов
         -- Контекст префикса — это комбинация текста до и начала найденного слова.
         local full_prev_text = (match.prev_text or "") .. (match.matched_word_prefix or "")
@@ -226,21 +281,23 @@ function Anchoring.findAnchor(doc, anchor, ui)
         logger.dbg("bookmarks_sync: actual_prefix_norm = ", actual_prefix_norm)
         logger.dbg("bookmarks_sync: actual_suffix_norm = ", actual_suffix_norm)
         
-        if target_prefix_norm ~= "" and actual_prefix_norm ~= "" then
-            -- Приводим строки к одной (минимальной) длине для сравнения конца строки
-            local len = math.min(#actual_prefix_norm, #target_prefix_norm)
-            if actual_prefix_norm:sub(-len) == target_prefix_norm:sub(-len) then
-                score = score + 50
-                logger.dbg("bookmarks_sync: Prefix match, score +50")
+        if score > -1000 then -- Продолжаем, только если это не явное ложное срабатывание
+            if target_prefix_norm ~= "" and actual_prefix_norm ~= "" then
+                -- Приводим строки к одной (минимальной) длине для сравнения конца строки
+                local len = math.min(#actual_prefix_norm, #target_prefix_norm)
+                if actual_prefix_norm:sub(-len) == target_prefix_norm:sub(-len) then
+                    score = score + 50
+                    logger.dbg("bookmarks_sync: Prefix match, score +50")
+                end
             end
-        end
-        
-        if target_suffix_norm ~= "" and actual_suffix_norm ~= "" then
-            -- Приводим строки к одной (минимальной) длине для сравнения начала строки
-            local len = math.min(#actual_suffix_norm, #target_suffix_norm)
-            if actual_suffix_norm:sub(1, len) == target_suffix_norm:sub(1, len) then
-                score = score + 50
-                logger.dbg("bookmarks_sync: Suffix match, score +50")
+            
+            if target_suffix_norm ~= "" and actual_suffix_norm ~= "" then
+                -- Приводим строки к одной (минимальной) длине для сравнения начала строки
+                local len = math.min(#actual_suffix_norm, #target_suffix_norm)
+                if actual_suffix_norm:sub(1, len) == target_suffix_norm:sub(1, len) then
+                    score = score + 50
+                    logger.dbg("bookmarks_sync: Suffix match, score +50")
+                end
             end
         end
         
@@ -249,6 +306,7 @@ function Anchoring.findAnchor(doc, anchor, ui)
         score = score - (page_diff * 2)
         
         if score > best_score then
+            logger.dbg("bookmarks_sync: New best match found with score", score)
             best_score = score
             best_match = {
                 match = match,
@@ -258,6 +316,7 @@ function Anchoring.findAnchor(doc, anchor, ui)
     end
     
     if best_match then
+        logger.dbg("bookmarks_sync: Final best match:", best_match)
         local match = best_match.match
         local page = best_match.page
         
@@ -278,6 +337,7 @@ function Anchoring.findAnchor(doc, anchor, ui)
         end
     end
     
+    logger.dbg("bookmarks_sync: findAnchor: no suitable match found.")
     return nil
 end
 

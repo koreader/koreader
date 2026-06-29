@@ -142,52 +142,74 @@ end
 
 -- Экспорт локальных закладок в bookmarks_sync.lua
 function BookmarkSync:exportLocalBookmarks()
-    local doc = self.ui.document
     logger.dbg("bookmarks_sync: exportLocalBookmarks started.")
+    local doc = self.ui.document
     if not doc or not doc.file then
         logger.dbg("bookmarks_sync: exportLocalBookmarks: no document or file. Aborting.")
         return
     end
-    
+
     local total_pages = doc:getPageCount()
     if not total_pages or total_pages <= 0 then
         logger.dbg("bookmarks_sync: exportLocalBookmarks: invalid page count. Aborting.")
         return
     end
-    
-    local annotations = self.ui.annotation.annotations or {}
-    logger.dbg("bookmarks_sync: Found", #annotations, "total local annotations.")
-    local sync_bookmarks = {}
-    
-    for i, item in ipairs(annotations) do
-        if not item.deleted then
-            logger.dbg("bookmarks_sync: Exporting annotation #", i, item.datetime)
-            local exact, prefix, suffix = Anchoring.getAnchorContext(doc, item, 5)
-            logger.dbg("bookmarks_sync: Anchor context:", {exact=exact, prefix=prefix, suffix=suffix})
-            local is_reflowable = not (doc.is_pdf or doc.is_djvu)
-            local pageno
-            if is_reflowable then -- Reflowable
-                pageno = doc:getPageFromXPointer(item.page)
-            else -- Fixed-layout
-                pageno = item.pageno
-            end
-            local progress = pageno / total_pages
-            
-            table.insert(sync_bookmarks, {
-                datetime = item.datetime,
-                progress = progress,
-                exact = exact,
-                prefix = prefix,
-                suffix = suffix,
-                drawer = item.drawer,
-                color = item.color,
-                notes = item.note or item.notes
-            })
+
+    -- Загружаем существующие закладки из файла синхронизации, чтобы выполнить слияние, а не перезапись.
+    local sync_data = SyncDB.loadBookSync(doc.file)
+    local existing_sync_bookmarks = (sync_data and sync_data.bookmarks) or {}
+    local sync_bookmarks_map = {}
+    for _, bm in ipairs(existing_sync_bookmarks) do
+        if bm.datetime then
+            sync_bookmarks_map[bm.datetime] = bm
         end
     end
-    
-    logger.dbg("bookmarks_sync: Saving", #sync_bookmarks, "bookmarks to sync file.")
-    SyncDB.saveBookSync(doc.file, sync_bookmarks)
+
+    -- Получаем текущие аннотации из книги
+    local annotations = self.ui.annotation.annotations or {}
+    logger.dbg("bookmarks_sync: Found", #annotations, "total local annotations to process.")
+    local current_datetimes = {}
+
+    -- Обновляем или добавляем закладки на основе текущих аннотаций
+    for i, item in ipairs(annotations) do
+        if item.datetime and not item.deleted then
+            current_datetimes[item.datetime] = true -- Отмечаем, что эта закладка все еще активна
+
+            -- Всегда обновляем якорь и данные, чтобы они были актуальными.
+            -- Это проще и надежнее, чем пытаться отследить изменения.
+            pcall(function()
+                logger.dbg("bookmarks_sync: Exporting/updating annotation #", i, item.datetime)
+                local exact, prefix, suffix = Anchoring.getAnchorContext(doc, item, 5)
+                local is_reflowable = not (doc.is_pdf or doc.is_djvu)
+                local pageno = is_reflowable and doc:getPageFromXPointer(item.page) or item.pageno
+                local progress = pageno / total_pages
+
+                sync_bookmarks_map[item.datetime] = {
+                    datetime = item.datetime, progress = progress,
+                    exact = exact, prefix = prefix, suffix = suffix,
+                    drawer = item.drawer, color = item.color, notes = item.note or item.notes,
+                    deleted = nil -- Явно указываем, что закладка не удалена
+                }
+            end)
+        end
+    end
+
+    -- Отмечаем как удаленные те закладки, которые есть в файле синхронизации, но отсутствуют в книге
+    for datetime, bm in pairs(sync_bookmarks_map) do
+        if not current_datetimes[datetime] then
+            logger.dbg("bookmarks_sync: Marking bookmark as deleted:", datetime)
+            bm.deleted = true
+        end
+    end
+
+    -- Преобразуем карту обратно в список для сохранения
+    local final_sync_bookmarks = {}
+    for _, bm in pairs(sync_bookmarks_map) do
+        table.insert(final_sync_bookmarks, bm)
+    end
+
+    logger.dbg("bookmarks_sync: Saving", #final_sync_bookmarks, "bookmarks to sync file.")
+    SyncDB.saveBookSync(doc.file, final_sync_bookmarks)
     logger.dbg("bookmarks_sync: exportLocalBookmarks finished.")
 end
 
@@ -210,8 +232,8 @@ function BookmarkSync:importExternalBookmarks()
     
     for _, match in ipairs(matches) do
         logger.dbg("bookmarks_sync: Processing match file:", match.filepath)
-        pcall(function() -- Обертка для безопасности, чтобы ошибка в одном файле не сломала все
-            for i, ext_bm in ipairs(match.bookmarks) do
+        for i, ext_bm in ipairs(match.bookmarks) do
+            pcall(function() -- Обертка для безопасности, чтобы ошибка в одной закладке не сломала все
                 logger.dbg("bookmarks_sync: Checking external bookmark #", i, ext_bm.datetime)
                 -- Проверяем, нет ли уже этой закладки локально
                 local exists = false
@@ -258,7 +280,7 @@ function BookmarkSync:importExternalBookmarks()
                             -- Это простая закладка (bookmark)
                             local bm_page = page
                             if is_reflowable then
-                                -- Для EPUB-документов нужно передавать xpointer, а не номер страницы.
+                                -- Для EPUB-документов нужно передавать xpointer на начало страницы.
                                 bm_page = doc:getXPointerFromPage(page)
                             end
                             if not self.ui.bookmark:isPageBookmarked(bm_page) then
@@ -275,8 +297,8 @@ function BookmarkSync:importExternalBookmarks()
                 else
                     logger.dbg("bookmarks_sync: Bookmark already exists or is deleted. Skipping.")
                 end
-            end
-        end)
+            end)
+        end
     end
     
     if imported_count > 0 then
