@@ -251,6 +251,7 @@ end
 
 -- Shows dialog to edit properties of the new/existing catalog
 function OPDSBrowser:addEditCatalog(item)
+    local server = item and self.servers[item.idx - 1]
     local fields = {
         {
             hint = _("Catalog name"),
@@ -269,10 +270,10 @@ function OPDSBrowser:addEditCatalog(item)
     local title
     if item then
         title = _("Edit OPDS catalog")
-        fields[1].text = item.text
-        fields[2].text = item.url
-        fields[3].text = item.username
-        fields[4].text = item.password
+        fields[1].text = server.title
+        fields[2].text = server.url
+        fields[3].text = server.username
+        fields[4].text = server.password
     else
         title = _("Add OPDS catalog")
     end
@@ -305,12 +306,12 @@ function OPDSBrowser:addEditCatalog(item)
     }
     check_button_raw_names = CheckButton:new{
         text = _("Use server filenames"),
-        checked = item and item.raw_names,
+        checked = server and server.raw_names,
         parent = dialog,
     }
     check_button_sync_catalog = CheckButton:new{
         text = _("Sync catalog"),
-        checked = item and item.sync,
+        checked = server and server.sync,
         parent = dialog,
     }
     dialog:addWidget(check_button_raw_names)
@@ -356,6 +357,7 @@ end
 
 -- Saves catalog properties from input dialog
 function OPDSBrowser:editCatalogFromInput(fields, item, no_refresh)
+    local old_server = item and self.servers[item.idx - 1]
     local new_server = {
         title     = fields[1],
         url       = fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2],
@@ -364,6 +366,12 @@ function OPDSBrowser:editCatalogFromInput(fields, item, no_refresh)
         raw_names = fields[5],
         sync      = fields[6],
     }
+    if old_server then
+        new_server.sync_dir = old_server.sync_dir
+        if old_server.url == new_server.url then
+            new_server.last_download = old_server.last_download
+        end
+    end
     local new_item = buildRootEntry(new_server)
     local new_idx, itemnumber
     if item then
@@ -989,10 +997,14 @@ function OPDSBrowser.getFiletype(link)
     return filetype
 end
 
+function OPDSBrowser:getSyncDir(server)
+    return server and server.sync_dir or self.settings.sync_dir
+end
+
 -- Returns user selected or last opened folder
 function OPDSBrowser:getCurrentDownloadDir()
     if self.sync then
-        return self.settings.sync_dir
+        return self:getSyncDir(self.sync_server)
     else
         return G_reader_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
     end
@@ -1136,6 +1148,16 @@ function OPDSBrowser:onMenuHold(item)
                             self.sync_force = false
                             self:checkSyncDownload(item.idx)
                         end)
+                    end,
+                },
+            },
+            {},
+            {
+                {
+                    text = _("Sync settings"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:showSyncSettingsDialog(item)
                     end,
                 },
             },
@@ -1419,6 +1441,44 @@ function OPDSBrowser:downloadDownloadList()
     end
 end
 
+function OPDSBrowser:showSyncSettingsDialog(item)
+    local server = self.servers[item.idx - 1]
+    local sync_dialog
+    local catalog_sync_dir = server.sync_dir and BD.dirpath(server.sync_dir) or _("not set")
+    local default_sync_dir = self.settings.sync_dir and BD.dirpath(self.settings.sync_dir) or _("not set")
+    sync_dialog = ButtonDialog:new{
+        title = server.title .. "\n\n" .. T(_("Catalog sync folder:\n%1\n\nDefault sync folder:\n%2"),
+            catalog_sync_dir, default_sync_dir),
+        title_align = "center",
+        buttons = {
+            {
+                {
+                    text = _("Choose catalog folder"),
+                    callback = function()
+                        UIManager:close(sync_dialog)
+                        self:setSyncDir(server, function()
+                            self:showSyncSettingsDialog(item)
+                        end)
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("Use default folder"),
+                    enabled = server.sync_dir ~= nil,
+                    callback = function()
+                        server.sync_dir = nil
+                        self._manager.updated = true
+                        UIManager:close(sync_dialog)
+                        self:showSyncSettingsDialog(item)
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(sync_dialog)
+end
+
 function OPDSBrowser:setMaxSyncDownload()
     local current_max_dl = self.settings.sync_max_dl or 50
     local spin = SpinWidget:new{
@@ -1440,17 +1500,27 @@ function OPDSBrowser:setMaxSyncDownload()
     UIManager:show(spin)
 end
 
-function OPDSBrowser:setSyncDir()
+function OPDSBrowser:setSyncDir(server, callback)
     local force_chooser_dir
     if Device:isAndroid() then
         force_chooser_dir = Device.home_dir
+    elseif server then
+        force_chooser_dir = self:getSyncDir(server)
     end
 
     require("ui/downloadmgr"):new{
         onConfirm = function(inbox)
-            logger.info("set opds sync folder", inbox)
-            self.settings.sync_dir = inbox
+            if server then
+                logger.info("set opds catalog sync folder", server.title, inbox)
+                server.sync_dir = inbox
+            else
+                logger.info("set opds sync folder", inbox)
+                self.settings.sync_dir = inbox
+            end
             self._manager.updated = true
+            if callback then
+                callback()
+            end
         end,
     }:chooseDir(force_chooser_dir)
 end
@@ -1509,24 +1579,51 @@ function OPDSBrowser:updateFieldInCatalog(item, name, value)
 end
 
 function OPDSBrowser:checkSyncDownload(idx)
-    if self.settings.sync_dir then
-        self.sync = true
-        local info = InfoMessage:new{
+    local servers_to_sync = {}
+    if idx then
+        local server = self.servers[idx-1] -- First item is "Downloads"
+        if server and self:getSyncDir(server) then
+            table.insert(servers_to_sync, server)
+        end
+    else
+        for _, server in ipairs(self.servers) do
+            if server.sync and self:getSyncDir(server) then
+                table.insert(servers_to_sync, server)
+            end
+        end
+    end
+
+    if #servers_to_sync == 0 then
+        UIManager:show(InfoMessage:new{
+            text = idx and _("Please choose a folder for this catalog's sync downloads first")
+                or _("Please choose a folder for sync downloads first"),
+        })
+        return
+    end
+
+    self.sync = true
+    self.sync_server_list = {}
+    local info
+    local ok, err = pcall(function()
+        info = InfoMessage:new{
             text = _("Synchronizing lists…"),
         }
         UIManager:show(info)
         UIManager:forceRePaint()
-        if idx then
-            self:fillPendingSyncs(self.servers[idx-1]) -- First item is "Downloads"
-        else
-            for _, item in ipairs(self.servers) do
-                if item.sync then
-                    self:fillPendingSyncs(item)
-                end
-            end
+        for _, server in ipairs(servers_to_sync) do
+            self:fillPendingSyncs(server)
         end
         UIManager:close(info)
-        if #self.pending_syncs > 0 then
+        info = nil
+
+        local has_pending_syncs = false
+        for _, item in ipairs(self.pending_syncs) do
+            if self.sync_server_list[item.catalog] then
+                has_pending_syncs = true
+                break
+            end
+        end
+        if has_pending_syncs then
             Trapper:wrap(function()
                 self:downloadPendingSyncs()
             end)
@@ -1535,11 +1632,13 @@ function OPDSBrowser:checkSyncDownload(idx)
                 text = _("Up to date!"),
             })
         end
-        self.sync = false
-    else
-        UIManager:show(InfoMessage:new{
-            text = _("Please choose a folder for sync downloads first"),
-        })
+    end)
+    if info then
+        UIManager:close(info)
+    end
+    self.sync = false
+    if not ok then
+        error(err, 0)
     end
 end
 
