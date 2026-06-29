@@ -1586,7 +1586,7 @@ function ReaderBookmark:onSearchBookmark()
             }
         },
     }
-    input_dialog:addWidget(separator)
+    input_dialog:addWidget(separator, nil, true) -- don't add to focus_manager.layout.
     check_button_highlight = CheckButton:new{
         text = " " .. self.display_prefix["highlight"] .. self.display_type["highlight"],
         checked = true,
