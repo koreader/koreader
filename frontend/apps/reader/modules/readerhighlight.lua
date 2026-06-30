@@ -1285,15 +1285,32 @@ function ReaderHighlight:showChooseHighlightDialog(highlights)
 end
 
 function ReaderHighlight:showHighlightNoteOrDialog(index)
-    local bookmark_note = self.ui.annotation.annotations[index].note
+    local anno = self.ui.annotation.annotations[index]
+    local bookmark_note = anno.note
     if bookmark_note then
+        local note_format = anno.note_format
+        if not note_format then -- try simple heuristics
+            local s = bookmark_note:gsub("^%s*", ""):sub(1, 1)
+            if s == "<" then
+                note_format = "html"
+            elseif s == "#" or s == "*" or s == "[" then
+                note_format = "md"
+            end
+        end
+        local ratio_w, ratio_h
+        if note_format then
+            ratio_w, ratio_h = 0.9, 0.8
+        else
+            ratio_w, ratio_h = 0.8, 0.4
+        end
         local textviewer
         textviewer = TextViewer:new{
             title = _("Note"),
-            show_menu = false,
+            show_menu = note_format ~= nil,
             text = bookmark_note,
-            width = math.floor(math.min(self.screen_w, self.screen_h) * 0.8),
-            height = math.floor(math.max(self.screen_w, self.screen_h) * 0.4),
+            text_format = note_format,
+            width = math.floor(math.min(self.screen_w, self.screen_h) * ratio_w),
+            height = math.floor(math.max(self.screen_w, self.screen_h) * ratio_h),
             anchor = function()
                 return self:_getDialogAnchor(textviewer, index)
             end,
