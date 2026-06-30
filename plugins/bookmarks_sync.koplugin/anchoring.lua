@@ -349,7 +349,7 @@ function Anchoring.findAnchor(doc, anchor, view_state)
     end
 
     local nb_context_words = 5
-    local max_hits = 100
+    local max_hits = 200
     local case_insensitive = true
     local search_flags = 0x01FF -- IGNORE_DIACRITICS + NORMALIZE_COMPATIBILITY
 
@@ -363,10 +363,14 @@ function Anchoring.findAnchor(doc, anchor, view_state)
     -- =================================================================
     if is_reflowable then
         logger.dbg("bookmarks_sync: Using EPUB search for text:", original_search_text)
-        ok, res = pcall(doc.findAllText, doc, original_search_text, case_insensitive, false, max_hits, false,
-            search_flags)
+        logger.dbg("bookmarks_sync: findAllText params (exact):", original_search_text, case_insensitive,
+            nb_context_words, max_hits, false)
+        ok, res = pcall(doc.findAllText, doc, original_search_text, case_insensitive, nb_context_words, max_hits, false)
+        logger.dbg("bookmarks_sync: findAllText result (exact): ok=", ok, "res=", res)
     else
         logger.dbg("bookmarks_sync: Using PDF search for text:", original_search_text)
+        logger.dbg("bookmarks_sync: findAllText params (exact):", original_search_text, case_insensitive,
+            nb_context_words, max_hits)
         ok, res = pcall(doc.findAllText, doc, original_search_text, case_insensitive, nb_context_words, max_hits)
     end
 
@@ -386,13 +390,16 @@ function Anchoring.findAnchor(doc, anchor, view_state)
                 local search_text = first_sentence
                 logger.dbg("bookmarks_sync: Sentence search: using first sentence:", search_text)
 
+                -- Запрашиваем гораздо больший контекст, чтобы вместить все длинное выделение
+                local large_context_words = math.floor(#original_search_text / 4) +
+                    10 -- Эвристика: 1 слово ~ 4 символа + запас
                 if is_reflowable then
-                    ok, res = pcall(doc.findAllText, doc, search_text, case_insensitive, false, max_hits, false,
-                        search_flags)
+                    logger.dbg("bookmarks_sync: findAllText params (sentence):", search_text, case_insensitive,
+                        large_context_words, max_hits, false)
+                    ok, res = pcall(doc.findAllText, doc, search_text, case_insensitive, large_context_words, max_hits,
+                        false)
+                    logger.dbg("bookmarks_sync: findAllText result (sentence): ok=", ok, "res=", res)
                 else
-                    -- Запрашиваем гораздо больший контекст, чтобы вместить все длинное выделение
-                    local large_context_words = math.floor(#original_search_text / 4) +
-                    10                                                                     -- Эвристика: 1 слово ~ 4 символа + запас
                     ok, res = pcall(doc.findAllText, doc, search_text, case_insensitive, large_context_words, max_hits)
                 end
             end
@@ -433,7 +440,11 @@ function Anchoring.findAnchor(doc, anchor, view_state)
             logger.dbg("bookmarks_sync: Fuzzy search: using longest word:", search_text)
 
             if is_reflowable then
-                ok, res = pcall(doc.findAllText, doc, search_text, case_insensitive, false, max_hits, false, search_flags)
+                logger.dbg("bookmarks_sync: findAllText params (fuzzy):", search_text, case_insensitive, nb_context_words,
+                    max_hits, false)
+                ok, res = pcall(doc.findAllText, doc, search_text, case_insensitive, nb_context_words, max_hits, false,
+                    true)
+                logger.dbg("bookmarks_sync: findAllText result (fuzzy): ok=", ok, "res=", res)
             else
                 ok, res = pcall(doc.findAllText, doc, search_text, case_insensitive, nb_context_words, max_hits)
             end

@@ -270,8 +270,17 @@ function BookmarkSync:exportLocalBookmarks()
     -- Отмечаем как удаленные те закладки, которые есть в файле синхронизации, но отсутствуют в книге
     for datetime, bm in pairs(sync_bookmarks_map) do
         if not current_datetimes[datetime] then
-            logger.dbg("bookmarks_sync: Marking bookmark as deleted:", datetime)
-            bm.deleted = true
+            -- Проверяем, была ли закладка "мягко удалена" для этого формата во время импорта.
+            -- Если да, то ожидается, что она будет отсутствовать, и мы не должны ее "жестко" удалять.
+            local is_soft_deleted = bm.synced_to and bm.synced_to[self.device_id] and
+            bm.synced_to[self.device_id][self.format]
+            if not is_soft_deleted then
+                logger.dbg("bookmarks_sync: Marking bookmark as deleted:", datetime)
+                bm.deleted = true
+            else
+                logger.dbg("bookmarks_sync: Bookmark was not found in this format, but keeping it for other formats:",
+                    datetime)
+            end
         end
     end
 
@@ -431,7 +440,7 @@ function BookmarkSync:importExternalBookmarks()
                 { item, nb_highlights_added = 1, index_modified = index }))
         else
             -- This is a simple bookmark (dog-ear).
-            local pn_or_xp = is_reflowable and doc:getXPointerFromPage(item_data.page) or item_data.page
+            local pn_or_xp = is_reflowable and doc:getPageXPointer(item_data.page) or item_data.page
             local chapter = self.ui.toc:getTocTitleByPage(pn_or_xp)
             local text = chapter and chapter ~= "" and T(l("in %1"), chapter) or ""
             local item = {
@@ -490,16 +499,28 @@ function BookmarkSync:importExternalBookmarks()
             service_note_text = service_note_text .. "\n• " .. text
         end
 
+        local service_item_page
+        local service_pos0, service_pos1
+        if is_reflowable then
+            service_item_page = doc:getPageXPointer(1)
+            service_pos0 = service_item_page
+            service_pos1 = service_item_page
+        else
+            service_item_page = 1
+            service_pos0 = { page = 1, x = 10, y = 10 } -- Dummy coordinates on page 1
+            service_pos1 = { page = 1, x = 20, y = 20 }
+        end
+
         local service_item = {
-            pos0 = { page = 1, x = 10, y = 10 }, -- Dummy coordinates on page 1
-            pos1 = { page = 1, x = 20, y = 20 },
-            text = service_note_text,            -- "Выделенный" текст, видимый в списке закладок
+            pos0 = service_pos0,
+            pos1 = service_pos1,
+            text = service_note_text, -- "Выделенный" текст, видимый в списке закладок
             datetime = os.date("%Y-%m-%d %H:%M:%S"),
             drawer = "lighten",
             color = "red",             -- Use a distinct color
             notes = service_note_text, -- Содержимое всплывающей заметки
-            chapter = self.ui.toc:getTocTitleByPage(1),
-            page = 1,
+            chapter = self.ui.toc:getTocTitleByPage(service_item_page),
+            page = service_item_page,
             is_service_note = true -- Special flag to prevent export
         }
         -- Add it to the document
