@@ -578,6 +578,33 @@ describe("OPDS module", function()
                 assert.are.same("/catalog", browser.servers[1].sync_dir)
                 assert.is_nil(browser.servers[1].last_download)
             end)
+
+            it("should refresh catalog sync folder on the root item", function()
+                local browser = OPDSBrowser:extend{
+                    servers = {
+                        {
+                            title = "Catalog",
+                            url = "http://example.org/opds",
+                            sync_dir = "/catalog",
+                        },
+                    },
+                    item_table = {
+                        {},
+                        {
+                            idx = 2,
+                            text = "Catalog",
+                            url = "http://example.org/opds",
+                            sync_dir = "/old",
+                        },
+                    },
+                }
+
+                local item = browser:refreshRootItemFromServer(browser.item_table[2], browser.servers[1])
+
+                assert.are.same("/catalog", item.sync_dir)
+                assert.are.same("/catalog", browser.item_table[2].sync_dir)
+                assert.are.same(2, browser.item_table[2].idx)
+            end)
         end)
     end)
 end)

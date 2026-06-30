@@ -254,9 +254,18 @@ function OPDSBrowser:getServerFromRootItem(item)
     return item and item.idx and self.servers[item.idx - 1]
 end
 
+function OPDSBrowser:refreshRootItemFromServer(item, server)
+    if item and item.idx and server then
+        local new_item = buildRootEntry(server)
+        new_item.idx = item.idx
+        self.item_table[item.idx] = new_item
+        return new_item
+    end
+    return item
+end
+
 -- Shows dialog to edit properties of the new/existing catalog
 function OPDSBrowser:addEditCatalog(item)
-    local server = self:getServerFromRootItem(item)
     local fields = {
         {
             hint = _("Catalog name"),
@@ -275,10 +284,10 @@ function OPDSBrowser:addEditCatalog(item)
     local title
     if item then
         title = _("Edit OPDS catalog")
-        fields[1].text = server.title
-        fields[2].text = server.url
-        fields[3].text = server.username
-        fields[4].text = server.password
+        fields[1].text = item.text
+        fields[2].text = item.url
+        fields[3].text = item.username
+        fields[4].text = item.password
     else
         title = _("Add OPDS catalog")
     end
@@ -311,12 +320,12 @@ function OPDSBrowser:addEditCatalog(item)
     }
     check_button_raw_names = CheckButton:new{
         text = _("Use server filenames"),
-        checked = server and server.raw_names,
+        checked = item and item.raw_names,
         parent = dialog,
     }
     check_button_sync_catalog = CheckButton:new{
         text = _("Sync catalog"),
-        checked = server and server.sync,
+        checked = item and item.sync,
         parent = dialog,
     }
     dialog:addWidget(check_button_raw_names)
@@ -1462,6 +1471,7 @@ function OPDSBrowser:showSyncSettingsDialog(item)
                     callback = function()
                         UIManager:close(sync_dialog)
                         self:setSyncDir(server, function()
+                            item = self:refreshRootItemFromServer(item, server)
                             self:showSyncSettingsDialog(item)
                         end)
                     end,
@@ -1473,6 +1483,7 @@ function OPDSBrowser:showSyncSettingsDialog(item)
                     enabled = server.sync_dir ~= nil,
                     callback = function()
                         server.sync_dir = nil
+                        item = self:refreshRootItemFromServer(item, server)
                         self._manager.updated = true
                         UIManager:close(sync_dialog)
                         self:showSyncSettingsDialog(item)
