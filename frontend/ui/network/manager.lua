@@ -530,8 +530,7 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
         -- currently associated with (stale lease after a network switch, #14790).
         -- Release the old address and fall through to the normal reconnect path, which
         -- will re-associate and re-run obtainIP() for the current network.
-        logger.info("NetworkMgr: stale DHCP lease detected (lease_ssid=", self.lease_ssid,
-                    "), forcing re-DHCP for current network")
+        logger.info("NetworkMgr: stale DHCP lease detected (lease_ssid=", self.lease_ssid, "), forcing re-DHCP for current network")
         self:releaseIP()
         self.lease_ssid = nil
         -- fall through — no return
@@ -576,8 +575,7 @@ function NetworkMgr:doNothingAndWaitForConnection(callback)
             return
         end
         -- Stale lease after a network switch; drop it and fall through (#14790).
-        logger.info("NetworkMgr: stale DHCP lease detected (lease_ssid=", self.lease_ssid,
-                    "), forcing re-DHCP for current network")
+        logger.info("NetworkMgr: stale DHCP lease detected (lease_ssid=", self.lease_ssid, "), forcing re-DHCP for current network")
         self:releaseIP()
         self.lease_ssid = nil
         -- fall through — no return
