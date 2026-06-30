@@ -115,6 +115,12 @@ ReaderBack.onViewRecalculate = ReaderBack._onViewPossiblyUpdated
 ReaderBack.onPagePositionUpdated = ReaderBack._onViewPossiblyUpdated
 
 function ReaderBack:onBack()
+    -- If a link is selected, clear it first
+    if self.ui.link:isPageLinkSelected() then
+        self.ui.link:clearSelectedPageLink(true)
+        return true
+    end
+
     local back_in_reader = G_reader_settings:readSetting("back_in_reader", "previous_location")
     local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt")
 

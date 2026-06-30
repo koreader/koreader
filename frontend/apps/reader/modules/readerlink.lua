@@ -1283,6 +1283,21 @@ function ReaderLink:onSelectPrevPageLink()
     return self:selectRelPageLink(-1)
 end
 
+function ReaderLink:isPageLinkSelected()
+    return self.cur_selected_page_link_num ~= nil
+end
+
+function ReaderLink:clearSelectedPageLink(dirty_ui)
+    if self.ui.paging then return end
+    self.cur_selected_page_link_num = nil
+    self.cur_selected_link = nil
+    self.document:highlightXPointer()
+    if dirty_ui then
+        UIManager:setDirty(self.dialog, "ui")
+    end
+    return true
+end
+
 function ReaderLink:selectRelPageLink(rel)
     if self.ui.paging then
         -- not implemented for now (see at doing like in showLinkBox()
@@ -1312,9 +1327,7 @@ function ReaderLink:selectRelPageLink(rel)
         end
     end
     if not self.cur_selected_page_link_num then
-        self.cur_selected_link = nil
-        self.document:highlightXPointer()
-        UIManager:setDirty(self.dialog, "ui")
+        self:clearSelectedPageLink(true)
         return
     end
     local selected_link = links[self.cur_selected_page_link_num]
@@ -1356,19 +1369,10 @@ end
 
 function ReaderLink:onPageUpdate()
     if self.cur_selected_link then
-        self.document:highlightXPointer()
-        self.cur_selected_page_link_num = nil
-        self.cur_selected_link = nil
+        self:clearSelectedPageLink()
     end
 end
-
-function ReaderLink:onPosUpdate()
-    if self.cur_selected_link then
-        self.document:highlightXPointer()
-        self.cur_selected_page_link_num = nil
-        self.cur_selected_link = nil
-    end
-end
+ReaderLink.onPosUpdate = ReaderLink.onPageUpdate
 
 function ReaderLink:onGoToLatestBookmark(ges)
     local latest_bookmark = self.ui.bookmark:getLatestBookmark()
