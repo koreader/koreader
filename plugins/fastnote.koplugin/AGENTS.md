@@ -143,6 +143,11 @@ modes — it renders widgets/BlitBuffer/gestures only. Raw input and refresh
 behavior require on-device testing (`evtest` for event inspection; crash
 log at `<onboard>/.adds/koreader/crash.log`).
 
+**Before adding or fixing anything in `lib/`, `model/`, or `spec/`:** read
+`.github/skills/test-driven-development/SKILL.md` (repo root) — it covers
+when to write the spec first in this codebase and when the raw-evdev /
+widget code genuinely can't be unit-tested.
+
 ---
 
 ## Coding Conventions
@@ -154,6 +159,9 @@ log at `<onboard>/.adds/koreader/crash.log`).
 - Read the Lua instructions file before writing anything — it covers the `_`
   vs `__` gettext gotcha and other rules that have already caused real bugs
   in this codebase.
+- **Documentation changes ride with the code change that needs them** — see
+  `.github/skills/documentation-as-code/SKILL.md` (repo root) for what moves
+  together (doc comments, ADRs, config examples, AGENTS.md's File Map).
 
 ---
 

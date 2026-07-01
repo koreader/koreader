@@ -35,6 +35,8 @@ plugins/fastnote.koplugin/   ← all active development; has its own AGENTS.md i
   instructions/              ← coding guidelines (lua.instructions.md, etc.)
   skills/koreader-plugin/    ← KOReader plugin dev reference (not yet added)
   skills/agents-md-authoring/← how to write/maintain AGENTS.md and .agents/ docs — read before editing either
+  skills/documentation-as-code/  ← keeping all docs (comments, commits, ADRs, config examples) in sync with code
+  skills/test-driven-development/← when to write the spec first in this repo, and when not to
 doc/                         ← upstream KOReader developer docs (not plugin-specific)
 ```
 
