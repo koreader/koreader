@@ -1,5 +1,7 @@
 ---
 applyTo: "plugins/fastnote.koplugin/**/*.lua"
+paths:
+  - "plugins/fastnote.koplugin/**/*.lua"
 ---
 
 # Lua conventions — fastnote.koplugin

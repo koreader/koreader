@@ -42,8 +42,10 @@ Directory layout:
   directory name is immutable.
 - **Deletion is clean:** `Library:deleteNotebook` does `rm -rf dir` — no
   orphaned page files.
-- **`state.lua` persists the UUID**, so KOReader re-opens the last-used notebook
-  and page on next launch, even after renames.
+- **App-wide state persists the UUID**, so KOReader re-opens the last-used
+  notebook and page on next launch, even after renames. (Implemented inside
+  `model/library.lua`, not as the standalone `state.lua` shown in the
+  directory layout above.)
 - **`io.popen("ls -1 ... | sort")`** for scanning — works on Kobo Linux.
   If a future Kobo ships a shell without `ls`, this breaks. Acceptable tradeoff
   for now; `lfs` (LuaFileSystem) would be the alternative.

@@ -4,6 +4,25 @@
 **Branch at time of writing:** `master` @ `b48d58e91`  
 **Goal:** One piece at a time. Each phase has its own commit. No bundling.
 
+> **Status as of 2026-07-01 — several phases below are superseded:**
+> - **Phase A** (color buffer type) — shipped as described.
+> - **Phase A.1** (Kaleido dither) — superseded by a different, better design.
+>   Live drawing is now color-first (not A2-then-promote); see
+>   `.agents/notes/waveform-refresh-research.md` (repo root) for the current
+>   "tighten pass" implementation.
+> - **Phase A.2** (double-tap spatial gate) — moot. Double-tap detection was
+>   removed entirely (commit `3e83fc1af`); see waveform-refresh-research.md.
+> - **Phase B** (eraser hardware detection) — shipped, via a variant of the
+>   sketch below (once-per-contact-start synthesis). See
+>   `.agents/notes/input-path-architecture.md` (repo root) for the current
+>   implementation.
+> - **Phase C** (notebook browser, Stage 9) — shipped (`ui/browser.lua`).
+>
+> The "What We Learned From the Failed Attempt" section below is still
+> load-bearing — it documents two incident root causes that must not be
+> reintroduced. The phase plans after it are historical design sketches,
+> kept for the reasoning, not as an up-to-date to-do list.
+
 ---
 
 ## What We Learned From the Failed Attempt

@@ -39,7 +39,6 @@ local UIManager         = require("ui/uimanager")
 local logger            = require("logger")
 local time              = require("ui/time")
 local utils             = require("lib/canvas_utils")
-local Color             = require("lib/color")
 
 -- Chrome strip (Stage 7)
 local CHROME_HEIGHT     = 75   -- top strip height in pixels
@@ -58,13 +57,20 @@ local PEN_POLL_INTERVAL   = 0.008  -- ~120 Hz pen sampling
 local TOUCH_POLL_INTERVAL = 0.016  -- ~60 Hz touch sampling
 local IDLE_SAVE_DELAY     = 30     -- seconds of inactivity before auto-save
 
--- Deferred colour develop refresh (Stage 12)
--- A2 draw-time strokes "bloom" into full colour this many seconds after pen lifts.
-local DEFAULT_DEVELOP_DELAY = 5    -- seconds of pen inactivity before develop fires
+-- Color tighten: seconds of pen inactivity before a targeted GLRC16 cleanup
+-- refresh fires over the accumulated stroke bounding box.
+-- Cancels on any pen-down so mid-session strokes are never interrupted.
+local COLOR_TIGHTEN_DELAY = 2.5
 
--- 6-color ink palette (Kaleido 3).  Entries have .name/.light/.dark fields.
--- PALETTE is an alias for Color.PALETTE; used by _showQuickMenu.
-local PALETTE = Color.PALETTE
+-- 6-color ink palette (Kaleido 3).  Stored as hex; rendered via colorFromString.
+local PALETTE = {
+    { name = "Black",  hex = "#000000" },
+    { name = "Red",    hex = "#cc2222" },
+    { name = "Blue",   hex = "#2244cc" },
+    { name = "Green",  hex = "#22aa44" },
+    { name = "Orange", hex = "#cc7700" },
+    { name = "Purple", hex = "#8822bb" },
+}
 
 -- Hover-prevention: minimum digitizer pressure to accept a "down" event.
 -- The Elan chip can send BTN_TOUCH=1 a few mm above the screen; real contact
@@ -114,14 +120,9 @@ local DrawingCanvas = InputContainer:extend{
     -- Auto-save idle timer (30 s after last stroke change)
     _idle_save_fn = nil,
 
-    -- Deferred colour develop refresh (Stage 12)
-    -- Accumulated {x,y,w,h} of all draw segments since the last develop; nil = nothing dirty.
-    _dirty_since_develop = nil,
-    -- UIManager timer handle; non-nil while a develop is scheduled.
-    _develop_fn          = nil,
-
-    -- Input event debug logger (nil = logging disabled; enabled via hamburger toggle)
-    _input_log = nil,
+    -- Color tighten: deferred GLRC16 cleanup pass over new strokes (color HW only)
+    _tighten_fn   = nil,   -- scheduled timer function
+    _tighten_rect = nil,   -- accumulated bbox of strokes since last tighten (or nil)
 
     -- Minimum pressure floor applied before pressure_to_width.
     -- Ensures a light touch produces a readable stroke; hardware hover stays below.
@@ -191,8 +192,6 @@ function DrawingCanvas:init()
     self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bb_type)
     self._bb:fill(self:_bgColor())
     self._has_color_hw = has_color_hw
-    self._develop_delay   = DEFAULT_DEVELOP_DELAY
-    self._develop_enabled = true
 
     self._stroke_buf = StrokeBuffer.new()
 
@@ -352,20 +351,6 @@ function DrawingCanvas:onCloseWidget()
         Device:toggleGSensor(true)
         logger.dbg("FastNote canvas: gyroscope auto-rotation restored")
     end
-
-    -- Close debug input log and clear the pendev raw tap
-    if self._input_log then
-        self._input_log:close()
-        self._input_log = nil
-        local ok_pd, PenDev = pcall(require, "input/pendev")
-        if ok_pd then PenDev.raw_log_fn = nil end
-    end
-
-    -- Cancel pending develop timer
-    if self._develop_fn then
-        UIManager:unschedule(self._develop_fn)
-        self._develop_fn = nil
-    end
 end
 
 -- ---------------------------------------------------------------------------
@@ -479,15 +464,7 @@ function DrawingCanvas:onMenuTap()
                      end
                  end},
             },
-            -- Row 3: ink color picker
-            {
-                {text = "Ink color\xE2\x80\xA6",
-                 callback = function()
-                     UIManager:close(menu)
-                     self:_showQuickMenu()
-                 end},
-            },
-            -- Row 4: eraser toggle / dark mode toggle (was Row 3)
+            -- Row 3: eraser toggle / dark mode toggle
             {
                 {text = eraser_lbl,
                  callback = function()
@@ -535,14 +512,6 @@ function DrawingCanvas:onMenuTap()
                      self:_doClose()
                  end},
             },
-            -- Row 6: debug input log
-            {
-                {text = self._input_log and "Debug log: on" or "Debug log: off",
-                 callback = function()
-                     UIManager:close(menu)
-                     self:_toggleInputLog()
-                 end},
-            },
         },
     }
     UIManager:show(menu)
@@ -565,7 +534,7 @@ function DrawingCanvas:_showQuickMenu()
     end
 
     local function color_btn(entry)
-        local lbl = (entry.light == self._current_color)
+        local lbl = (entry.hex == self._current_color)
                     and (entry.name .. " \xE2\x9C\x93")  -- ✓
                     or  entry.name
         return {
@@ -573,9 +542,9 @@ function DrawingCanvas:_showQuickMenu()
             callback = function()
                 UIManager:close(self._quick_menu)
                 self._quick_menu = nil
-                self._current_color = entry.light
-                if self.on_color_change then self.on_color_change(entry.light) end
-                logger.dbg("FastNote canvas: ink color =", entry.light)
+                self._current_color = entry.hex
+                if self.on_color_change then self.on_color_change(entry.hex) end
+                logger.dbg("FastNote canvas: ink color =", entry.hex)
             end,
         }
     end
@@ -660,6 +629,8 @@ function DrawingCanvas:onDrawStroke(_, ges)
             self._stroke_buf:penUp()
             self._page_dirty = true
         end
+        -- New finger-down: cancel any pending tighten (user is still writing).
+        if self._tighten_fn then self:_cancelTighten() end
         self._stroke_x     = nil; self._stroke_y     = nil
         self._stroke_min_x = nil; self._stroke_max_x = nil
         self._stroke_min_y = nil; self._stroke_max_y = nil
@@ -714,6 +685,7 @@ function DrawingCanvas:onDrawStrokeEnd(_, ges)
             self._stroke_max_x, self._stroke_max_y,
             DEFAULT_LINE_WIDTH))
     end
+    self:_scheduleTighten()
 
     self._stroke_x     = nil
     self._stroke_y     = nil
@@ -781,18 +753,13 @@ function DrawingCanvas:_repaintAll()
     if not self._bb then return end
     self._bb:fill(self:_bgColor())
     if self._stroke_buf then
-        -- In dark mode: resolve each stroke's stored light hex to its dark
-        -- variant so coloured ink reads clearly on the inverted background.
-        -- In light mode: nil = each stroke uses its own stored hex directly.
-        local color_fn
-        if self._dark_mode then
-            color_fn = function(stored_hex)
-                local display_hex = Color.resolve(stored_hex or DEFAULT_COLOR, true)
-                return Blitbuffer.colorFromString(display_hex) or Blitbuffer.COLOR_WHITE
-            end
-        end
-        self._stroke_buf:repaintTo(self._bb, color_fn)
+        -- Dark mode: override all strokes to white (bg inversion).
+        -- Light mode: nil = each stroke uses its stored #rrggbb color.
+        local override = self._dark_mode and Blitbuffer.COLOR_WHITE or nil
+        self._stroke_buf:repaintTo(self._bb, override)
     end
+    -- A full repaint already provides color quality — cancel any pending tighten.
+    self:_cancelTighten()
     if self._has_color_hw then
         UIManager:setDirty(self, function() return "partial", nil, true end)
     else
@@ -801,11 +768,14 @@ function DrawingCanvas:_repaintAll()
 end
 
 --- Return the Blitbuffer color for new live strokes (current ink, mode-aware).
--- Uses Color.resolve so dark-mode renders the correct per-palette dark variant.
+-- In dark mode always returns white (ink inverts with background).
+-- In light mode returns a color derived from _current_color.
 function DrawingCanvas:_strokeColor()
-    local display_hex = Color.resolve(
-        self._current_color or DEFAULT_COLOR, self._dark_mode)
-    return Blitbuffer.colorFromString(display_hex) or Blitbuffer.COLOR_BLACK
+    if self._dark_mode then
+        return Blitbuffer.COLOR_WHITE
+    end
+    return Blitbuffer.colorFromString(self._current_color or DEFAULT_COLOR)
+           or Blitbuffer.COLOR_BLACK
 end
 
 --- Return the Blitbuffer color for the page background (mode-dependent).
@@ -813,39 +783,73 @@ function DrawingCanvas:_bgColor()
     return self._dark_mode and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE
 end
 
---- Schedule an a2 e-ink refresh for the given rect table {x,y,w,h}.
--- @table rect  dirty rectangle (from utils.compute_dirty_rect or Geom)
-function DrawingCanvas:_refreshRect(rect)
-    UIManager:setDirty(self, function() return "a2", Geom:new(rect) end)
+--- Cancel any pending color-tighten timer and clear the accumulated rect.
+function DrawingCanvas:_cancelTighten()
+    if self._tighten_fn then
+        UIManager:unschedule(self._tighten_fn)
+        self._tighten_fn = nil
+    end
+    self._tighten_rect = nil
 end
 
---- Draw a live segment from (x0,y0) to (x1,y1) into _bb and schedule an a2 refresh.
--- Also accumulates the dirty region for the deferred colour develop refresh.
+--- Schedule the deferred GLRC16 cleanup pass (color HW only).
+-- Call on pen-up / stroke-end.  Resets the timer so a series of quick
+-- strokes all promote together in one flash after 2.5 s of inactivity.
+function DrawingCanvas:_scheduleTighten()
+    if not self._has_color_hw then return end
+    if not self._tighten_rect then return end
+    if self._tighten_fn then
+        UIManager:unschedule(self._tighten_fn)
+    end
+    self._tighten_fn = function()
+        self._tighten_fn = nil
+        local r = self._tighten_rect
+        self._tighten_rect = nil
+        if r then
+            UIManager:setDirty(self, function() return "partial", Geom:new(r), true end)
+        end
+    end
+    UIManager:scheduleIn(COLOR_TIGHTEN_DELAY, self._tighten_fn)
+end
+
+--- Expand the accumulated tighten bbox to include rect (color HW only).
+-- Called from _drawSegment so every live segment contributes.
+function DrawingCanvas:_expandTightenRect(rect)
+    if not self._has_color_hw then return end
+    local r = self._tighten_rect
+    if r then
+        local x1 = math.min(r.x, rect.x)
+        local y1 = math.min(r.y, rect.y)
+        local x2 = math.max(r.x + r.w, rect.x + rect.w)
+        local y2 = math.max(r.y + r.h, rect.y + rect.h)
+        self._tighten_rect = { x = x1, y = y1, w = x2 - x1, h = y2 - y1 }
+    else
+        self._tighten_rect = { x = rect.x, y = rect.y, w = rect.w, h = rect.h }
+    end
+end
+
+--- Schedule a partial refresh for the given dirty rect.
+-- On color HW: "partial" + dither → GLRC16 (Kaleido color REAGL, shows ink in color).
+-- On mono HW:  "a2" (binary B&W, fastest).
+-- @table rect  dirty rectangle (from utils.compute_dirty_rect)
+function DrawingCanvas:_refreshRect(rect)
+    if self._has_color_hw then
+        UIManager:setDirty(self, function() return "partial", Geom:new(rect), true end)
+    else
+        UIManager:setDirty(self, function() return "a2", Geom:new(rect) end)
+    end
+end
+
+--- Draw a live segment from (x0,y0) to (x1,y1) into _bb and schedule a refresh.
+-- Also expands the tighten bbox so the deferred cleanup covers this segment.
 -- @int x0, y0  start point (screen coords)
 -- @int x1, y1  end point
 -- @int lw      line width in pixels
 function DrawingCanvas:_drawSegment(x0, y0, x1, y1, lw)
-    -- On colour hw: A2 waveform thresholds luminance to B/W.  Saturated ink
-    -- colours can map to the same as the background (invisible preview).
-    -- Draw the mode-foreground colour — black in light mode, white in dark mode —
-    -- so every stroke is immediately visible regardless of selected ink colour.
-    -- _developColor() restores all strokes to their stored colours after pen idle.
-    -- On grayscale hw: draw stroke colour directly (no develop step needed).
-    local live_color
-    if self._has_color_hw then
-        live_color = self._dark_mode and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_BLACK
-    else
-        live_color = self:_strokeColor()
-    end
-    utils.drawLine(self._bb, x0, y0, x1, y1, lw, live_color)
-    local r = utils.compute_dirty_rect(x0, y0, x1, y1, lw)
-    self:_refreshRect(r)
-    -- Accumulate dirty rect for deferred colour develop (colour hw only)
-    if self._has_color_hw and self._develop_enabled then
-        self._dirty_since_develop = self._dirty_since_develop
-            and utils.union_rect(self._dirty_since_develop, r)
-            or  r
-    end
+    utils.drawLine(self._bb, x0, y0, x1, y1, lw, self:_strokeColor())
+    local dirty = utils.compute_dirty_rect(x0, y0, x1, y1, lw)
+    self:_refreshRect(dirty)
+    self:_expandTightenRect(dirty)
 end
 
 --- Erase strokes at (x, y) within ERASER_RADIUS, repaint if any were removed.
@@ -904,14 +908,6 @@ function DrawingCanvas:_pollPen()
             self._palmreject:onPenEvent(ev)
         end
 
-        -- Decoded event tap (debug logger hook; nil = no overhead)
-        if self._input_log then
-            self._input_log:write("DEC", ev.type,
-                string.format("tool=%s", ev.tool or "?"),
-                string.format("x=%d y=%d p=%d",
-                    ev.x or 0, ev.y or 0, ev.pressure or 0))
-        end
-
         if ev.type == "down" or ev.type == "move" then
             local sx, sy = self:_digToScreen(ev.x, ev.y)
 
@@ -952,11 +948,6 @@ function DrawingCanvas:_pollPen()
             local lw        = utils.pressure_to_width(floored_p, self._pendev.p_max, 1, 8)
 
             if ev.type == "down" then
-                -- Cancel any pending develop timer — don't fire mid-stroke.
-                if self._develop_fn then
-                    UIManager:unschedule(self._develop_fn)
-                    self._develop_fn = nil
-                end
                 -- Guard against hover: Elan BTN_TOUCH fires before contact on
                 -- some firmware.  Real contact has significantly higher pressure.
                 if raw_p < MIN_PEN_PRESSURE then
@@ -964,6 +955,9 @@ function DrawingCanvas:_pollPen()
                     self._last_pen_y = nil
                     return
                 end
+                -- New pen contact: cancel any pending tighten so it never fires
+                -- mid-session while the user is still writing.
+                if self._tighten_fn then self:_cancelTighten() end
                 self._stroke_buf:penDown(sx, sy, lw, self._current_color)
             else
                 self._stroke_buf:penMove(sx, sy, lw)
@@ -985,14 +979,19 @@ function DrawingCanvas:_pollPen()
                 self._eraser_mode = false
             end
             self._stroke_buf:penUp()
-            -- Only refresh if a stroke was actually drawn (not just hover).  Gating
-            -- setDirty prevents visible refreshes on every pen proximity cycle.
+            -- Only act if a stroke was actually drawn (not just hover).
             local had_stroke = self._last_pen_x ~= nil
             if had_stroke then
                 self._page_dirty = true
                 self:_scheduleIdleSave()
-                self:_scheduleDevelop()
-                UIManager:setDirty(self, "a2")
+                -- On mono HW: a2 confirms the stroke visually.
+                -- On color HW: the last segment's partial already refreshed the
+                -- display; schedule the deferred tighten instead.
+                if self._has_color_hw then
+                    self:_scheduleTighten()
+                else
+                    UIManager:setDirty(self, "a2")
+                end
             end
             self._last_pen_x = nil
             self._last_pen_y = nil
@@ -1026,6 +1025,7 @@ function DrawingCanvas:_pollTouch()
                 -- gesture if the "up" event was dropped by palm rejection.
                 self._last_touch_x = nil
                 self._last_touch_y = nil
+                if self._tighten_fn then self:_cancelTighten() end
                 self._stroke_buf:penDown(fx, fy, DEFAULT_LINE_WIDTH, self._current_color)
                 self._last_touch_x = fx
                 self._last_touch_y = fy
@@ -1041,10 +1041,14 @@ function DrawingCanvas:_pollTouch()
                 self._stroke_buf:penUp()
                 if self._last_touch_x then
                     self._page_dirty = true
+                    if self._has_color_hw then
+                        self:_scheduleTighten()
+                    else
+                        UIManager:setDirty(self, "a2")
+                    end
                 end
                 self._last_touch_x = nil
                 self._last_touch_y = nil
-                UIManager:setDirty(self, "a2")
             end
         end
     end)
@@ -1092,6 +1096,7 @@ function DrawingCanvas:loadPage(path)
         self._bb:fill(self:_bgColor())
         local override = self._dark_mode and Blitbuffer.COLOR_WHITE or nil
         self._stroke_buf:repaintTo(self._bb, override)
+        self:_cancelTighten()
         UIManager:setDirty(self, "full")
     end
 
@@ -1105,6 +1110,7 @@ function DrawingCanvas:_doClose()
         UIManager:unschedule(self._idle_save_fn)
         self._idle_save_fn = nil
     end
+    self:_cancelTighten()
     self:_autoSave()
     -- Close the canvas, then schedule a full e-ink refresh on the next tick
     -- so the underlying UI gets a complete paint cycle without ghosting.
@@ -1198,98 +1204,6 @@ function DrawingCanvas:_scheduleIdleSave()
         self:_autoSave()
     end
     UIManager:scheduleIn(IDLE_SAVE_DELAY, self._idle_save_fn)
-end
-
---- Schedule a deferred colour develop refresh after pen inactivity.
--- Only active on colour hardware with develop_enabled = true.
--- Mirrors the _scheduleIdleSave pattern: cancels any pending timer, then
--- re-arms so only one develop fires per idle period.
-function DrawingCanvas:_scheduleDevelop()
-    if not self._has_color_hw or not self._develop_enabled then return end
-    -- Achromatic ink (black / white) is already correctly rendered by A2 —
-    -- no GC16 refresh needed.  Skip entirely to avoid any screen flash.
-    if Color.is_achromatic(self._current_color or DEFAULT_COLOR) then return end
-    if self._develop_fn then
-        UIManager:unschedule(self._develop_fn)
-        self._develop_fn = nil
-    end
-    self._develop_fn = function()
-        self._develop_fn = nil
-        self:_developColor()
-    end
-    UIManager:scheduleIn(self._develop_delay, self._develop_fn)
-end
-
---- Perform the colour develop refresh after pen inactivity.
--- Rebuilds the full BB with all strokes in their stored colours, then fires a
--- GC16 (Kaleido colour) refresh scoped to the accumulated dirty rect only.
--- Full BB rebuild is required for pixel consistency; rect-bounded setDirty
--- limits the visible GC16 flash to the area that was actually drawn —
--- no whole-screen flash.  Each stroke renders its own stored colour;
--- the current ink selection does not affect already-committed strokes.
-function DrawingCanvas:_developColor()
-    local dirty = self._dirty_since_develop
-    if not dirty then return end
-    self._dirty_since_develop = nil
-    if not self._bb then return end
-    -- Rebuild BB: fill background, then repaint every stroke in its stored colour.
-    self._bb:fill(self:_bgColor())
-    if self._stroke_buf then
-        local color_fn
-        if self._dark_mode then
-            color_fn = function(stored_hex)
-                local display_hex = Color.resolve(stored_hex or DEFAULT_COLOR, true)
-                return Blitbuffer.colorFromString(display_hex) or Blitbuffer.COLOR_WHITE
-            end
-        end
-        self._stroke_buf:repaintTo(self._bb, color_fn)
-    end
-    -- Rect-bounded GC16: only the drawn region flashes, not the full canvas.
-    UIManager:setDirty(self, function()
-        return "partial", Geom:new(dirty), true
-    end)
-    logger.dbg("FastNote canvas: colour develop", dirty.x, dirty.y, dirty.w, dirty.h)
-end
-
---- Toggle the input event debug logger on/off.
--- When enabling: opens lib/eventlog.lua, wires PenDev.raw_log_fn, stores
--- the log handle in self._input_log.  When disabling: closes and nils both.
-function DrawingCanvas:_toggleInputLog()
-    if self._input_log then
-        -- Disable: close log and clear pendev raw tap
-        self._input_log:close()
-        self._input_log = nil
-        local ok_pd, PenDev = pcall(require, "input/pendev")
-        if ok_pd then PenDev.raw_log_fn = nil end
-        logger.dbg("FastNote canvas: input log disabled")
-    else
-        -- Enable: determine log path, open, wire raw tap
-        local ok_ds, ds = pcall(require, "datastorage")
-        local log_path = ok_ds
-            and (ds.getDataDir() .. "/fastnote/input.log")
-            or  "/tmp/fastnote-input.log"
-        local ok_el, EventLog = pcall(require, "lib/eventlog")
-        if not ok_el then
-            logger.warn("FastNote canvas: lib/eventlog not available")
-            return
-        end
-        local log, err = EventLog.new(log_path)
-        if not log then
-            logger.warn("FastNote canvas: cannot open input log:", err)
-            return
-        end
-        -- Wire the raw tap on the pendev module singleton
-        if self._pendev then
-            local ok_pd, PenDev = pcall(require, "input/pendev")
-            if ok_pd then
-                PenDev.raw_log_fn = function(level, type_name, code_name, value)
-                    log:write(level, type_name, code_name, value)
-                end
-            end
-        end
-        self._input_log = log
-        logger.dbg("FastNote canvas: input log →", log_path)
-    end
 end
 
 --- Save before the device suspends so work is never lost to a sleep-induced shutdown.

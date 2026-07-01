@@ -22,29 +22,11 @@ and the file is silently ignored.
 
 ---
 
-## model/page.lua — superseded, never used
+## Resolved
 
-`model/page.lua` is a `Page` class wrapping a StrokeBuffer + SVG path,
-with `load()`, `save()`, and `isDirty()`. It has a passing spec
-(`spec/page_spec.lua`).
-
-The canvas does all page I/O directly (via `lib/svg` in `loadPage()` /
-`_autoSave()`), so `Page` is never instantiated anywhere outside its
-spec. It's an early-design artefact that got bypassed.
-
-**Options:** delete it and its spec (simplest), or adopt it as the
-official page abstraction and refactor canvas to use it. Deleting is
-probably right unless there's a future stage that would benefit from the
-encapsulation.
-
----
-
-## StrokeBuffer:isDirty() — misleading name
-
-`StrokeBuffer:isDirty()` returns `#self.strokes > 0` (i.e. "has any
-committed strokes"), not "has unsaved changes". The canvas uses its own
-`_page_dirty` boolean for the unsaved-changes concept.
-
-The name implies unsaved-changes semantics (like `Page:isDirty()` which
-correctly tracks `_saved_n`). Should be renamed to `hasStrokes()` to
-avoid confusion. Update `spec/strokebuffer_spec.lua` when doing so.
+- **`model/page.lua`** — deleted along with `spec/page_spec.lua`. Confirmed
+  orphaned (never required outside its own spec); canvas does all page I/O
+  directly via `lib/svg`.
+- **`StrokeBuffer:isDirty()`** — renamed to `hasStrokes()`. The old name
+  implied unsaved-changes semantics; the canvas's own `_page_dirty` boolean
+  is the actual unsaved-changes tracker.
