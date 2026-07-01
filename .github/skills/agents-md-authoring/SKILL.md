@@ -1,91 +1,19 @@
 ---
 name: agents-md-authoring
-description: Use when creating or editing any AGENTS.md, adding an ADR, adding a topic note under .agents/notes/, writing a planning/phase doc under .agents/planning/ or .agents/plans/, or auditing this repo's docs for staleness. Applies to both the repo-root AGENTS.md and plugins/fastnote.koplugin/AGENTS.md.
+description: Provides the checklist, ADR/topic-note templates, and periodic audit procedure for creating or editing AGENTS.md, ADRs, or .agents/ notes and plans in this repo. Use when creating or editing any AGENTS.md file (repo-root or plugins/fastnote.koplugin), adding an ADR or topic note, writing a planning/phase doc under .agents/planning/ or .agents/plans/, or auditing this repo's docs for staleness.
 ---
 
-# Authoring AGENTS.md and .agents/ docs in this repo
+# Authoring AGENTS.md and .agents/ docs in this repo — workflow
 
-This repo's docs went through a restructuring pass (2026-07) after AGENTS.md
-had accumulated inline code examples, full architecture explanations, and
-stage-by-stage prose. That content misled a reading agent into treating
-tangential topics as relevant to whatever task it was actually doing, and
-cost context on every read regardless of relevance. This skill exists so
-that lesson doesn't need to be relearned.
+This skill is the **process**: the checklist to run before finishing an
+edit, templates for new ADRs and notes, and the periodic audit procedure.
 
----
-
-## The core principle
-
-**AGENTS.md is an index, not a reference manual.** It answers "what exists
-and where is it handled" — never "how it works" or "why it was built that
-way." If you're about to write more than one sentence explaining a decision,
-a gotcha, or a piece of behavior inside AGENTS.md, stop — that content
-belongs in a linked file instead, loaded only when the topic is relevant.
-
-Detail files must be **self-contained**: a reader who opens only that one
-file (with no other context) can act on it correctly.
-
----
-
-## Decision tree: where does new content go?
-
-Ask this in order — stop at the first match:
-
-1. **"Where is X handled?" (a location, not an explanation)**
-   → One line in AGENTS.md's File Map or Architecture section. No elaboration
-   beyond a 3-8 word description.
-
-2. **A settled architectural decision — this approach over that, and why**
-   → New ADR: `.agents/ADRs/ADR-NNN-slug.md` (repo root). Use the next
-   sequential number. See "ADR template" below.
-
-3. **A gotcha or invariant scoped to one code area, that causes silent
-   misbehavior (not a crash) if violated**
-   → New note: `.agents/notes/<topic>.md` (repo root). Add one row to
-   AGENTS.md's "Topics" table. See "Topic note template" below.
-
-4. **A multi-step plan, phase breakdown, or research writeup for upcoming
-   or in-progress work**
-   → `.agents/planning/` (design docs, research) or `.agents/plans/`
-   (chunk-level implementation plans with a Status line). Not linked from
-   AGENTS.md's Topics table unless it's a primary reference like the dev
-   plan — most planning docs are found by scanning the directory, not
-   indexed individually.
-
-5. **A language-level convention (naming, syntax gotchas) that applies
-   repo-wide, not to one feature area**
-   → `.github/instructions/<lang>.instructions.md`.
-
-6. **Current status / stage completion**
-   → One line in AGENTS.md's "Current State", pointing to the planning doc
-   for the full breakdown. Never a full stage table or checklist in
-   AGENTS.md itself — those go stale fast and belong in the planning doc,
-   which is expected to be edited as phases complete.
-
-If nothing above fits, it probably doesn't belong in `.agents/` at all —
-consider whether it's just a code comment, or genuinely not worth writing
-down.
-
----
-
-## This repo's specific layout (don't rediscover this)
-
-- **Two `.agents/` directories exist.** The canonical one is at the **repo
-  root** (`/koreader/.agents/`), even though its contents are almost
-  entirely about the fastnote plugin. There's also a smaller, mostly
-  superseded `plugins/fastnote.koplugin/.agents/planning/` — new content
-  goes in the repo-root one unless you have a specific reason to use the
-  plugin-local one.
-- **AGENTS.md files must state paths as repo-root-relative when the
-  AGENTS.md itself isn't at repo root.** `plugins/fastnote.koplugin/AGENTS.md`
-  references `.agents/ADRs/...` — a relative link from that file's own
-  directory would resolve wrong. Say so explicitly ("relative to the repo
-  root") rather than relying on the reader to guess.
-- **`plugins/fastnote.koplugin/dev-plan-v2.md` is a convenience copy** of
-  `.agents/planning/fastnote-dev-plan-v2.md` (repo root). If you edit one,
-  `diff` them and sync the other — don't let them silently drift.
-- Root `AGENTS.md` should stay minimal and route to the plugin's AGENTS.md
-  fast — nearly all active work happens inside the plugin, not at repo root.
+For the **principles** governing what content belongs where — the
+index-not-manual rule, the decision tree for where new content goes, ADRs
+as historical records, and this repo's `.agents/` layout — see
+`.github/instructions/agents.instructions.md`, which applies automatically
+whenever you touch an `AGENTS.md` file or anything under `.agents/`. Read
+that first if you haven't already; this skill assumes it.
 
 ---
 
@@ -136,11 +64,9 @@ if that's the substance of the decision>
 - <a landmine or non-obvious follow-on effect, if any>
 ```
 
-ADRs are **historical records** — once Accepted, don't rewrite the Decision
-to match later implementation drift. If reality diverges from what an ADR
-describes (e.g. a planned file that got folded into another module), add a
-short parenthetical or line in Consequences noting the drift. Don't silently
-edit the original decision text.
+Use the next sequential ADR number. Remember ADRs are historical records
+once Accepted — see `agents.instructions.md` for that rule before editing
+an existing one.
 
 ---
 

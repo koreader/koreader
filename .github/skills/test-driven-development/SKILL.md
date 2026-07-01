@@ -1,6 +1,6 @@
 ---
 name: test-driven-development
-description: Use when adding a new function or module to lib/ or model/, fixing a bug in code covered by spec/, or refactoring already-tested code in this repo. Explains when the red-green-refactor cycle applies and when it doesn't (FFI/device-only code under input/, KOReader widget glue in drawingcanvas.lua, exploratory design work), and follows the busted spec/ conventions already used in plugins/fastnote.koplugin/spec/.
+description: Determines when the red-green-refactor cycle applies in this repo and when it doesn't (FFI/device-only code under input/, KOReader widget glue in drawingcanvas.lua, exploratory design work), following the busted spec/ conventions already used in plugins/fastnote.koplugin/spec/. Use when adding a new function or module to lib/ or model/, fixing a bug in code covered by spec/, or refactoring already-tested code.
 ---
 
 # Test-driven development — where appropriate

@@ -32,11 +32,13 @@ See `.agents/ADRs/ADR-007-direct-to-master-no-prs.md` for the reasoning.
 plugins/fastnote.koplugin/   ← all active development; has its own AGENTS.md index
 .agents/                     ← ADRs, planning, notes, superseded plans (repo root — see below)
 .github/
-  instructions/              ← coding guidelines (lua.instructions.md, etc.)
+  instructions/              ← facts/conventions, applyTo-scoped (lua, agents.md/.agents, doc-architecture)
   skills/koreader-plugin/    ← KOReader plugin dev reference (not yet added)
-  skills/agents-md-authoring/← how to write/maintain AGENTS.md and .agents/ docs — read before editing either
-  skills/documentation-as-code/  ← keeping all docs (comments, commits, ADRs, config examples) in sync with code
-  skills/test-driven-development/← when to write the spec first in this repo, and when not to
+  skills/agents-md-authoring/           ← workflow for AGENTS.md and .agents/ docs
+  skills/documentation-as-code/         ← keeping all docs in sync with code changes
+  skills/test-driven-development/       ← when to write the spec first in this repo, and when not to
+  skills/authoring-instructions-and-skills/  ← how to add new instructions/skills correctly
+.claude/skills/               ← symlinks into .github/skills/ — see doc-architecture.instructions.md
 doc/                         ← upstream KOReader developer docs (not plugin-specific)
 ```
 
@@ -46,3 +48,12 @@ plugin. Subdirectories: `ADRs/` (design decisions), `planning/` (dev plans,
 research), `notes/` (topic references), `plans/` (chunk-level work plans).
 Not exhaustively catalogued here — the plugin's own AGENTS.md links to the
 specific files relevant to each area of the code.
+
+**Adding a new instructions file or skill?** Read
+`.github/instructions/doc-architecture.instructions.md` and
+`.github/skills/authoring-instructions-and-skills/SKILL.md` first — they
+cover the facts-vs-procedures split, Anthropic's Agent Skills authoring
+rules, and the required `.claude/skills/<name>` symlink step (this repo is
+primarily used from a GitHub Copilot / VS Code harness, so `.github/` stays
+the portable source of truth; the symlinks give Claude Code live
+auto-triggering on top of that).

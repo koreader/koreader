@@ -1,6 +1,6 @@
 ---
 name: documentation-as-code
-description: Use whenever you are about to write or change code in this repo — before considering the change done, check whether it invalidates a doc comment, ADR, config example, or AGENTS.md entry, and update it in the same pass. Triggers on the code change itself (new function, changed behavior, new/removed/renamed file, changed config default, new architectural decision), not on a separate "update the docs" request — documentation is part of writing the code, not a follow-up step.
+description: Checks whether a code change invalidates a doc comment, ADR, config example, or AGENTS.md entry, and updates it in the same pass — documentation is part of writing the code, not a follow-up step. Use when writing or changing any code in this repo — a new function, changed behavior, a file added/removed/renamed, a changed config default, or a new architectural decision. Triggers on the code change itself, not on a separate "update the docs" request.
 ---
 
 # Documentation as code
