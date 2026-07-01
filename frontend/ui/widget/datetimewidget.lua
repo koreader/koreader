@@ -147,6 +147,7 @@ end
 function DateTimeWidget:registerKeyEvents()
     if not Device:hasKeys() then return end
     self.key_events.Close = { { Device.input.group.Back } }
+    self.key_events.Home = { { "Home" } }
     if Device:hasDPad() and Device:useDPadAsActionKeys() then
         if self.nb_pickers == 1 then
             self.key_events.CenterWidgetValueUp   = { { Device.input.group.PgFwd  }, event = "DateTimeButtonPressed", args = { "center_widget",  1 } }
@@ -523,6 +524,13 @@ end
 
 function DateTimeWidget:onClose()
     UIManager:close(self)
+    return true
+end
+
+function DateTimeWidget:onHome()
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 

@@ -97,6 +97,7 @@ function ButtonDialog:init()
     end
     if self.dismissable then
         if Device:hasKeys() then
+            self.key_events.Home = { { "Home" } }
             local back_group = util.tableDeepCopy(Device.input.group.Back)
             if Device:hasFewKeys() then
                 table.insert(back_group, "Left")
@@ -348,6 +349,13 @@ function ButtonDialog:onTapClose(arg, ges)
     if ges.pos:notIntersectWith(self.movable.dimen) then
         self:onClose()
     end
+    return true
+end
+
+function ButtonDialog:onHome()
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 

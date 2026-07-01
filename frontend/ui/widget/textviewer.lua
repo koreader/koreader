@@ -127,6 +127,7 @@ function TextViewer:init(reinit)
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.ShowMenu = { { "Menu" } }
+        self.key_events.Home = { { "Home" } }
         self.key_events.ScrollOrPrev = { { Device.input.group.PgBack }, event = "ScrollOrNavigate", args = -1 }
         self.key_events.ScrollOrNext = { { Device.input.group.PgFwd  }, event = "ScrollOrNavigate", args =  1 }
         if Device:hasScreenKB() or Device:hasKeyboard() then
@@ -549,6 +550,13 @@ function TextViewer:onClose()
     if self.close_callback then
         self.close_callback()
     end
+    return true
+end
+
+function TextViewer:onHome()
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 

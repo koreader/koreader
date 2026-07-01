@@ -674,6 +674,7 @@ function DictQuickLookup:registerKeyEvents()
         self.key_events.ReadNextResult = { { Input.group.PgFwd } }
         self.key_events.CloseWithKeys = { { Input.group.Back } }
         self.key_events.MenuKeyPress = { { "Menu" } }
+        self.key_events.Home = { { "Home" } }
         if Device:hasScreenKB() or Device:hasKeyboard() then
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
             self.key_events.ChangeToPrevDict = { { modifier, Input.group.PgBack } }
@@ -1611,6 +1612,12 @@ function DictQuickLookup:onTap(arg, ges_ev)
             self:onReadNextResult()
         end
     end
+    return true
+end
+
+function DictQuickLookup:onHome()
+    self:onHoldClose()
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 
