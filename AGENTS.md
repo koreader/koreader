@@ -34,6 +34,7 @@ plugins/fastnote.koplugin/   ← all active development; has its own AGENTS.md i
 .github/
   instructions/              ← coding guidelines (lua.instructions.md, etc.)
   skills/koreader-plugin/    ← KOReader plugin dev reference (not yet added)
+  skills/agents-md-authoring/← how to write/maintain AGENTS.md and .agents/ docs — read before editing either
 doc/                         ← upstream KOReader developer docs (not plugin-specific)
 ```
 

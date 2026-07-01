@@ -7,6 +7,11 @@ and where — not how it works or why it was built that way. Every linked file
 below is self-contained; open it only when your task touches that topic.
 Don't duplicate linked content back into this file when editing it.
 
+**Editing this file or adding to `.agents/`?** Read
+`.github/skills/agents-md-authoring/SKILL.md` (repo root) first — it has the
+decision tree for where new content goes and the checklist this file is
+held to.
+
 ---
 
 ## What This Plugin Does

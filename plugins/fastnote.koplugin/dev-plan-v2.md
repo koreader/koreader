@@ -10,6 +10,14 @@ source of truth) but the feature set is much larger and the work is
 re-sequenced into smaller, individually verifiable stages so it can be handed
 off to a coding agent stage-by-stage.
 
+> **Implementation drift note:** this plan describes app-wide state
+> (`last_notebook_uuid`, `last_page_index`) as living in a standalone
+> `state.lua` file. As implemented, that state lives inside
+> `model/library.lua` instead — no separate file was created. The rest of
+> this plan (storage layout, coordinate translation, stage sequencing) was
+> implemented as described. This note isn't propagated line-by-line below;
+> treat every `state.lua` reference in this document as `model/library.lua`.
+
 ---
 
 ## Landscape: Existing Alternatives
