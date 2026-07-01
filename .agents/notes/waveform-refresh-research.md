@@ -113,11 +113,13 @@ Fixed the flash issue; strokes still invisible in light mode live drawing.
 
 ## Paths not yet tried / future ideas
 
-### Deferred colour refresh timer
-Use an idle timer (like `_scheduleIdleSave`) to fire a GLRC16 full repaint
-~0.5s after the user stops drawing.  Live drawing uses GLR16 (fast, mono);
-idle timer fires GLRC16 for full colour fidelity.  Potentially better colour
-saturation for non-black palette colours.  **Not implemented — deferred.**
+### ~~Deferred colour refresh timer~~ — IMPLEMENTED (see below)
+Originally proposed as: use an idle timer (like `_scheduleIdleSave`) to fire
+a GLRC16 refresh after the user stops drawing. Shipped as the "tighten pass"
+— see "Current design" below. Delay tuned to 2.5s (not 0.5s) based on
+observed hardware behaviour: on-device testing showed that anything faster
+risked firing mid-multi-stroke-sequence, which briefly locks out drawing
+during the refresh and breaks the user's ability to keep writing.
 
 ### GCC16 on full repaint instead of GLRC16
 `_repaintAll()` currently uses `"partial" + dither=true` → GLRC16.  Using
@@ -162,11 +164,22 @@ waveform behaviour generalises, but device-specific mappings may differ.
 
 ---
 
-## Current fastnote waveform decisions (as of 8fe9ddee8)
+## Current fastnote waveform decisions (color-first + tighten pass)
+
+The design goal, set from direct observation of the stock Kobo notebook app:
+ink appears in its selected color continuously as the user writes — never a
+fast-B&W-then-promote flash mid-stroke, since any refresh while the user is
+actively touching the screen interrupts writing. A single higher-quality
+"tighten" refresh follows, but only after the user visibly pauses.
 
 | Operation | Waveform | Colour HW (KoboMonza) | Non-colour HW |
 |---|---|---|---|
 | Full repaint (`_repaintAll`) | `"partial"` + dither=true | → GLRC16 | → GLR16 |
-| Live pen drawing | `"partial"` | → GLR16 | `"fast"` = DU |
-| Live touch drawing | `"partial"` | → GLR16 | `"fast"` = DU |
-| Pen-up | `"ui"` | → AUTO | → AUTO |
+| Live pen/touch segment (`_drawSegment` → `_refreshRect`) | `"partial"` + dither=true, per segment | → GLRC16 | `"a2"` (unchanged) |
+| Pen-up / touch-up | — (no extra refresh; last segment's partial already covers it) | schedules the tighten timer instead | `"a2"` (unchanged) |
+| Tighten pass (fires `COLOR_TIGHTEN_DELAY` = 2.5s after last pen-up, cancelled on next pen-down) | `"partial"` + dither=true, targeted to accumulated stroke bbox | → GLRC16 | N/A — mono HW never schedules a tighten |
+
+Implementation: `drawingcanvas.lua` — `_scheduleTighten`, `_cancelTighten`,
+`_expandTightenRect`, `COLOR_TIGHTEN_DELAY`. Cancelled on every pen-down
+(never fires mid-session) and on any full-quality refresh path
+(`_repaintAll`, `loadPage`, `_doClose`) that would supersede it.
