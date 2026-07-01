@@ -398,6 +398,39 @@ describe("OPDS module", function()
             assert.are.same(entry.link[1].href, "https://www.gutenberg.org/ebooks/42474.epub.images")
             assert.are.same(entry.link[1].title, "EPUB (with images)")
         end)
+        it("should not desync entries when a content tag is self-closing", function()
+            -- Regression for #15511: a self-closing <content type="text"/> used to make
+            -- the content rewrite over-match into the next entry, dropping entries and
+            -- pairing covers with the wrong titles.
+            local self_closing_content_sample = [[
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>Self-closing content</title>
+<entry>
+<title>First</title>
+<id>urn:first</id>
+<content type="text"/>
+<link type="image/png" rel="http://opds-spec.org/image/thumbnail" href="FIRST_IMG"/>
+</entry>
+<entry>
+<title>Second</title>
+<id>urn:second</id>
+<content type="text">A description.</content>
+<link type="image/png" rel="http://opds-spec.org/image/thumbnail" href="SECOND_IMG"/>
+</entry>
+</feed>
+]]
+            local catalog = OPDSParser:parse(self_closing_content_sample)
+            local feed = catalog.feed
+            assert.truthy(feed)
+            local entries = feed.entry
+            assert.truthy(entries)
+            assert.are.same(#entries, 2)
+            assert.are.same(entries[1].title, "First")
+            assert.are.same(entries[1].link[1].href, "FIRST_IMG")
+            assert.are.same(entries[2].title, "Second")
+            assert.are.same(entries[2].link[1].href, "SECOND_IMG")
+        end)
     end)
 
     describe("OPDS browser module", function()
