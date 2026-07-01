@@ -1,16 +1,48 @@
 ---
 name: documentation-as-code
-description: Use when writing or updating any documentation in this repo — code doc comments, commit messages, ADRs, AGENTS.md/.agents notes, or config examples like fastnote.conf.example — to keep docs versioned, reviewed, and synchronized with the code they describe as tightly as the code itself. Also use when a code change might leave a doc stale, to figure out what needs to move with it.
+description: Use whenever you are about to write or change code in this repo — before considering the change done, check whether it invalidates a doc comment, ADR, config example, or AGENTS.md entry, and update it in the same pass. Triggers on the code change itself (new function, changed behavior, new/removed/renamed file, changed config default, new architectural decision), not on a separate "update the docs" request — documentation is part of writing the code, not a follow-up step.
 ---
 
 # Documentation as code
 
-Documentation is a deliverable of a change, not an afterthought. If a
-commit changes behavior and a doc still describes the old behavior, the
-change is incomplete — not "docs debt for later." This skill covers the
-discipline; for the specific rules governing AGENTS.md and `.agents/`
-content, see the sibling skill `.github/skills/agents-md-authoring/SKILL.md`
-(this skill doesn't duplicate that one).
+Documentation is part of writing the code, not a follow-up step. This skill
+should fire **while you're making a code change**, not after — check it
+before you consider any non-trivial edit finished. If a commit changes
+behavior and a doc still describes the old behavior, the change is
+incomplete, not "docs debt for later." This skill covers the discipline;
+for the specific rules governing AGENTS.md and `.agents/` content, see the
+sibling skill `.github/skills/agents-md-authoring/SKILL.md` (this skill
+doesn't duplicate that one).
+
+---
+
+## "I'm about to finish this code change — what docs move with it?"
+
+Run this list before considering any non-trivial code edit done — it's the
+main reason this skill exists:
+
+- **Changed a function's behavior or signature?** Update its `---` doc
+  comment if one exists (add one if the behavior is now non-obvious from
+  the name/signature alone).
+- **Changed an architectural decision?** Amend the relevant ADR's
+  Consequences with a note — don't rewrite the original Decision text (ADRs
+  are historical; see agents-md-authoring's ADR rule).
+- **Changed a user-facing config default or option?** Update
+  `fastnote.conf.example` in the same commit.
+- **Fixed a bug that a `.agents/notes/*.md` gotcha file describes?** Check
+  whether that note needs updating — a fix can either resolve the gotcha
+  entirely (update the note to say so) or reveal it wasn't fully understood
+  (strengthen the note with what you learned).
+- **Added, removed, or renamed a file?** Update AGENTS.md's File Map. This
+  is the single most common thing that silently goes stale — verify with
+  `ls`/`find`, don't just remember what you think is there.
+- **Changed something a planning doc (`.agents/planning/`,
+  `.agents/plans/`) described as "not yet implemented"?** Update its status
+  line, or add a note pointing to what actually shipped if the final
+  implementation diverged from the plan.
+
+If none of these apply, the change genuinely doesn't need a doc update —
+this list is a check, not a mandate to always touch a doc file.
 
 ---
 
@@ -64,32 +96,6 @@ one surface's content into another:
   diffs are easier to keep accurate over time. A one-line pointer to a
   focused file beats three paragraphs embedded where they'll be read out of
   context.
-
----
-
-## "I just changed code — what docs move with it?"
-
-Walk this list for every non-trivial change:
-
-- **Changed a function's behavior or signature?** Update its `---` doc
-  comment if one exists (add one if the behavior is now non-obvious from
-  the name/signature alone).
-- **Changed an architectural decision?** Amend the relevant ADR's
-  Consequences with a note — don't rewrite the original Decision text (ADRs
-  are historical; see agents-md-authoring's ADR rule).
-- **Changed a user-facing config default or option?** Update
-  `fastnote.conf.example` in the same commit.
-- **Fixed a bug that a `.agents/notes/*.md` gotcha file describes?** Check
-  whether that note needs updating — a fix can either resolve the gotcha
-  entirely (update the note to say so) or reveal it wasn't fully understood
-  (strengthen the note with what you learned).
-- **Added, removed, or renamed a file?** Update AGENTS.md's File Map. This
-  is the single most common thing that silently goes stale — verify with
-  `ls`/`find`, don't just remember what you think is there.
-- **Changed something a planning doc (`.agents/planning/`,
-  `.agents/plans/`) described as "not yet implemented"?** Update its status
-  line, or add a note pointing to what actually shipped if the final
-  implementation diverged from the plan.
 
 ---
 
