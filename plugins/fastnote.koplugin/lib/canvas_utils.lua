@@ -69,6 +69,19 @@ function canvas_utils.pressure_to_width(pressure, max_pressure, min_width, max_w
     return math.floor(width + 0.5)  -- round to nearest integer
 end
 
+--- Return the smallest {x,y,w,h} rect that contains both input rects.
+-- Used to accumulate dirty regions for the deferred colour develop refresh.
+-- @param a  table {x, y, w, h}
+-- @param b  table {x, y, w, h}
+-- @return   table {x, y, w, h}
+function canvas_utils.union_rect(a, b)
+    local x1 = math.min(a.x, b.x)
+    local y1 = math.min(a.y, b.y)
+    local x2 = math.max(a.x + a.w, b.x + b.w)
+    local y2 = math.max(a.y + a.h, b.y + b.h)
+    return { x = x1, y = y1, w = x2 - x1, h = y2 - y1 }
+end
+
 --- Draw a thick line from (x0,y0) to (x1,y1) using Bresenham + paintRect.
 -- KOReader's BlitBuffer has no paintLine method; this is the replacement.
 -- @param bb     BlitBuffer  destination buffer

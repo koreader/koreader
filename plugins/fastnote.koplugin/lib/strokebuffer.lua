@@ -108,12 +108,20 @@ end
 
 --- Replay all committed strokes onto a BlitBuffer.
 -- Used after undo/erase/rotation to rebuild the display cache.
--- @param bb              BlitBuffer  destination (should already be bg-filled)
--- @param color_override  optional BlitBuffer color; passed through to Stroke:paintTo.
---   Pass _strokeColor() here so dark-mode rendering is handled in one place.
-function StrokeBuffer:repaintTo(bb, color_override)
+-- @param bb       BlitBuffer  destination (should already be bg-filled)
+-- @param color_fn optional resolver — one of:
+--   • function(stored_hex) → BlitBuffer color  per-stroke color map (dark mode)
+--   • BlitBuffer color value                    flat override for all strokes
+--   • nil                                       each stroke uses its own stored color
+function StrokeBuffer:repaintTo(bb, color_fn)
     for _, s in ipairs(self.strokes) do
-        s:paintTo(bb, color_override)
+        local override
+        if type(color_fn) == "function" then
+            override = color_fn(s.color)
+        else
+            override = color_fn  -- nil or a flat BlitBuffer color (backward compat)
+        end
+        s:paintTo(bb, override)
     end
 end
 
