@@ -504,5 +504,107 @@ describe("OPDS module", function()
             -- And must NOT have an extra .pdf appended after the query string.
             assert(not href:match("opds%.pdf$"))
         end)
+
+        describe("sync settings", function()
+            it("should prefer a catalog sync folder and fall back to the default sync folder", function()
+                local browser = OPDSBrowser:extend{
+                    settings = {
+                        sync_dir = "/default",
+                    },
+                }
+
+                assert.are.same("/catalog", browser:getSyncDir{
+                    sync_dir = "/catalog",
+                })
+                assert.are.same("/default", browser:getSyncDir{})
+            end)
+
+            it("should preserve sync metadata when editing a catalog", function()
+                local browser = OPDSBrowser:extend{
+                    servers = {
+                        {
+                            title = "Old catalog",
+                            url = "http://example.org/opds",
+                            sync_dir = "/catalog",
+                            last_download = "http://example.org/book.epub",
+                        },
+                    },
+                    item_table = {
+                        {},
+                        {},
+                    },
+                    _manager = {},
+                }
+
+                browser:editCatalogFromInput({
+                    "New catalog",
+                    "http://example.org/opds",
+                    "",
+                    "",
+                    nil,
+                    true,
+                }, { idx = 2 }, true)
+
+                assert.are.same("/catalog", browser.servers[1].sync_dir)
+                assert.are.same("http://example.org/book.epub", browser.servers[1].last_download)
+            end)
+
+            it("should reset last download when editing a catalog URL", function()
+                local browser = OPDSBrowser:extend{
+                    servers = {
+                        {
+                            title = "Old catalog",
+                            url = "http://example.org/opds",
+                            sync_dir = "/catalog",
+                            last_download = "http://example.org/book.epub",
+                        },
+                    },
+                    item_table = {
+                        {},
+                        {},
+                    },
+                    _manager = {},
+                }
+
+                browser:editCatalogFromInput({
+                    "New catalog",
+                    "http://example.com/opds",
+                    "",
+                    "",
+                    nil,
+                    true,
+                }, { idx = 2 }, true)
+
+                assert.are.same("/catalog", browser.servers[1].sync_dir)
+                assert.is_nil(browser.servers[1].last_download)
+            end)
+
+            it("should refresh catalog sync folder on the root item", function()
+                local browser = OPDSBrowser:extend{
+                    servers = {
+                        {
+                            title = "Catalog",
+                            url = "http://example.org/opds",
+                            sync_dir = "/catalog",
+                        },
+                    },
+                    item_table = {
+                        {},
+                        {
+                            idx = 2,
+                            text = "Catalog",
+                            url = "http://example.org/opds",
+                            sync_dir = "/old",
+                        },
+                    },
+                }
+
+                local item = browser:refreshRootItemFromServer(browser.item_table[2], browser.servers[1])
+
+                assert.are.same("/catalog", item.sync_dir)
+                assert.are.same("/catalog", browser.item_table[2].sync_dir)
+                assert.are.same(2, browser.item_table[2].idx)
+            end)
+        end)
     end)
 end)
