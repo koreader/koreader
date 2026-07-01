@@ -429,6 +429,23 @@ function DrawingCanvas:onMenuTap()
     local mode_lbl      = self._dark_mode  and "Light mode"        or "Dark mode"
     local menu
 
+    local function close() UIManager:close(menu) end
+
+    local function color_btn(entry)
+        local lbl = (entry.hex == self._current_color)
+                    and (entry.name .. " \xE2\x9C\x93")
+                    or  entry.name
+        return {
+            text = lbl,
+            callback = function()
+                close()
+                self._current_color = entry.hex
+                if self.on_color_change then self.on_color_change(entry.hex) end
+                logger.dbg("FastNote canvas: ink color =", entry.hex)
+            end,
+        }
+    end
+
     menu = ButtonDialogTitle:new{
         title = "Fast Note",
         buttons = {
@@ -436,12 +453,12 @@ function DrawingCanvas:onMenuTap()
             {
                 {text = portrait_lbl,
                  callback = function()
-                     UIManager:close(menu)
+                     close()
                      self:_reinitAtRotation(ROT_PORTRAIT)
                  end},
                 {text = landscape_lbl,
                  callback = function()
-                     UIManager:close(menu)
+                     close()
                      self:_reinitAtRotation(ROT_LANDSCAPE)
                  end},
             },
@@ -449,7 +466,7 @@ function DrawingCanvas:onMenuTap()
             {
                 {text = "Undo",
                  callback = function()
-                     UIManager:close(menu)
+                     close()
                      if self._stroke_buf:undo() then
                          self._page_dirty = true
                          self:_repaintAll()
@@ -457,7 +474,7 @@ function DrawingCanvas:onMenuTap()
                  end},
                 {text = "Redo",
                  callback = function()
-                     UIManager:close(menu)
+                     close()
                      if self._stroke_buf:redo() then
                          self._page_dirty = true
                          self:_repaintAll()
@@ -468,9 +485,8 @@ function DrawingCanvas:onMenuTap()
             {
                 {text = eraser_lbl,
                  callback = function()
-                     UIManager:close(menu)
+                     close()
                      self._eraser_locked = not self._eraser_locked
-                     -- Sync per-stroke mode immediately
                      if not self._eraser_locked then
                          self._eraser_mode = false
                      end
@@ -478,7 +494,7 @@ function DrawingCanvas:onMenuTap()
                  end},
                 {text = mode_lbl,
                  callback = function()
-                     UIManager:close(menu)
+                     close()
                      self:_toggleDarkMode()
                  end},
             },
@@ -486,21 +502,51 @@ function DrawingCanvas:onMenuTap()
             {
                 {text = finger_lbl,
                  callback = function()
-                     UIManager:close(menu)
+                     close()
                      self.finger_draw = not self.finger_draw
                      logger.dbg("FastNote canvas: finger_draw =", self.finger_draw)
                  end},
                 {text = "Clear page",
                  callback = function()
-                     UIManager:close(menu)
+                     close()
                      self:_confirmClearPage()
                  end},
             },
-            -- Row 5: notebooks browser
+            -- Row 5: ink color (top 3)
+            { color_btn(PALETTE[1]), color_btn(PALETTE[2]), color_btn(PALETTE[3]) },
+            -- Row 6: ink color (bottom 3)
+            { color_btn(PALETTE[4]), color_btn(PALETTE[5]), color_btn(PALETTE[6]) },
+            -- Row 7: contact sensitivity
+            {
+                {
+                    text = string.format("Contact Sensitivity: %d / 512", self._pressure_floor),
+                    callback = function()
+                        close()
+                        local ok_sw, SpinWidget = pcall(require, "ui/widget/spinwidget")
+                        if not ok_sw then return end
+                        UIManager:show(SpinWidget:new{
+                            title_text   = "Contact Sensitivity",
+                            value        = self._pressure_floor,
+                            value_min    = 0,
+                            value_max    = 512,
+                            value_step   = 25,
+                            default_value = 200,
+                            callback     = function(spin)
+                                self._pressure_floor = spin.value
+                                if self.on_pressure_change then
+                                    self.on_pressure_change(spin.value)
+                                end
+                                logger.dbg("FastNote canvas: pressure_floor =", spin.value)
+                            end,
+                        })
+                    end,
+                },
+            },
+            -- Row 8: notebooks browser / close
             {
                 {text = "Notebooks",
                  callback = function()
-                     UIManager:close(menu)
+                     close()
                      self:_doClose()
                      if self.on_show_browser then
                          self.on_show_browser()
@@ -508,7 +554,7 @@ function DrawingCanvas:onMenuTap()
                  end},
                 {text = "Close canvas",
                  callback = function()
-                     UIManager:close(menu)
+                     close()
                      self:_doClose()
                  end},
             },
@@ -828,16 +874,13 @@ function DrawingCanvas:_expandTightenRect(rect)
     end
 end
 
---- Schedule a partial refresh for the given dirty rect.
--- On color HW: "partial" + dither → GLRC16 (Kaleido color REAGL, shows ink in color).
--- On mono HW:  "a2" (binary B&W, fastest).
--- @table rect  dirty rectangle (from utils.compute_dirty_rect)
+--- Schedule an A2 refresh for the given dirty rect.
+-- Always A2 for live drawing — fast 1-bit B&W at pen-move rate.
+-- Color ink appears gray during drawing; the deferred tighten pass
+-- (_scheduleTighten) fires a single GLRC16 after pen inactivity to
+-- reveal true color over the accumulated stroke bbox.
 function DrawingCanvas:_refreshRect(rect)
-    if self._has_color_hw then
-        UIManager:setDirty(self, function() return "partial", Geom:new(rect), true end)
-    else
-        UIManager:setDirty(self, function() return "a2", Geom:new(rect) end)
-    end
+    UIManager:setDirty(self, function() return "a2", Geom:new(rect) end)
 end
 
 --- Draw a live segment from (x0,y0) to (x1,y1) into _bb and schedule a refresh.

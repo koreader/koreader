@@ -173,7 +173,7 @@ skip the rest.
 | Topic | What it covers | File (repo root `.agents/`) |
 |-------|-----------------|------------------------------|
 | Color / dark mode | Canonical hex storage invariant, why dark mode must be display-only | `notes/stroke-color-invariant.md` |
-| E-ink refresh / waveforms | Kaleido color waveform modes, the color-first + tighten-pass drawing design | `notes/waveform-refresh-research.md` |
+| E-ink refresh / waveforms | Kaleido color waveform modes, A2-live + deferred GLRC16 tighten-pass design | `notes/waveform-refresh-research.md` |
 | Input path architecture | Gesture vs. raw-evdev, per-flag scope, hardware eraser detection | `notes/input-path-architecture.md` |
 | Canvas widget lifecycle | `self.dimen` mutation rule, orientation re-lock, gesture zone timing | `notes/canvas-widget-gotchas.md` |
 | Known tech debt | Unwired config.lua, other deferred cleanup | `notes/tech-debt.md` |

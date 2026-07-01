@@ -127,9 +127,13 @@ during the refresh and breaks the user's ability to keep writing.
 cost of a flash.  Reasonable to offer as an optional "refresh now" gesture.
 **Not implemented.**
 
-### waveform_a2 for live drawing
-`HWTCON_WAVEFORM_MODE_A2` is 1-bit, even faster than DU.  Would share the
-same 32bpp CFA issues as DU and likely be worse.  **Not worth trying.**
+### ~~waveform_a2 for live drawing~~ — NOW THE APPROACH
+`HWTCON_WAVEFORM_MODE_A2` is 1-bit, even faster than DU.  Initially assumed
+it would share DU's 32bpp CFA issues, but on-device testing showed A2
+works correctly at 32bpp on KoboMonza — strokes are visible and fast.
+Color ink renders as grayscale during live drawing; the deferred tighten
+pass (GLRC16) reveals true color after pen inactivity.  **Now the default
+for all live drawing.**
 
 ### HWTCON_FLAG_CFA_SKIP for DU/A2
 The commented-out code in `refresh_kobo_mtk` shows this was attempted
@@ -159,25 +163,30 @@ waveform behaviour generalises, but device-specific mappings may differ.
 | `waveform_color` = GCC16, full 4096-colour, heavy flash | ✅ Broadly correct | GCC16 is Kaleido full; it is used for full-page repaints, not live drawing. Not inherently "flashing" in the GC16 sense but it is a full-quality slow mode. |
 | `_isKaleidoWaveFormMode` checks `waveform_color` and `waveform_color_reagl` | ✅ Correct | Confirmed at lines 114-115. |
 | RGB888 @ 32bpp + `waveform_fast` → dithered muted colour lines visible | ❌ Inaccurate for our device | Actual result: strokes are **invisible** (not visible-but-dithered). Driver fails to produce any output, not an output-with-dithering. |
-| Async timer to defer full colour refresh | ✅ Valid technique | Not implemented yet; deferred. |
+| Async timer to defer full colour refresh | ✅ Valid technique | Implemented as the "tighten pass" — GLRC16 fires 2.5s after last pen-up. |
 | `"partial" + dither=true` → GCC16 | ❌ Wrong | REAGL waveform + dither → **GLRC16** (Kaleido REAGL). GCC16 is only reached via `"full"` + dither (confirmed in mxc_update promotion table). |
 
 ---
 
-## Current fastnote waveform decisions (color-first + tighten pass)
+## Current fastnote waveform decisions (A2 live + deferred tighten)
 
-The design goal, set from direct observation of the stock Kobo notebook app:
-ink appears in its selected color continuously as the user writes — never a
-fast-B&W-then-promote flash mid-stroke, since any refresh while the user is
-actively touching the screen interrupts writing. A single higher-quality
-"tighten" refresh follows, but only after the user visibly pauses.
+The design: all live drawing uses A2 (1-bit B&W, fastest possible) regardless
+of ink color. Color ink renders as grayscale during active writing — the user
+sees instant, uninterrupted strokes. After 2.5s of pen inactivity, a single
+targeted GLRC16 refresh fires over the accumulated stroke bounding box to
+reveal true color. This matches the stock Kobo notebook app's observed
+behaviour.
+
+The earlier approach (GLRC16 per live segment) was too slow — GLRC16 takes
+~300-500ms per update, causing visible "chunking" that broke up lines
+mid-stroke and made drawing unusable.
 
 | Operation | Waveform | Colour HW (KoboMonza) | Non-colour HW |
 |---|---|---|---|
 | Full repaint (`_repaintAll`) | `"partial"` + dither=true | → GLRC16 | → GLR16 |
-| Live pen/touch segment (`_drawSegment` → `_refreshRect`) | `"partial"` + dither=true, per segment | → GLRC16 | `"a2"` (unchanged) |
-| Pen-up / touch-up | — (no extra refresh; last segment's partial already covers it) | schedules the tighten timer instead | `"a2"` (unchanged) |
-| Tighten pass (fires `COLOR_TIGHTEN_DELAY` = 2.5s after last pen-up, cancelled on next pen-down) | `"partial"` + dither=true, targeted to accumulated stroke bbox | → GLRC16 | N/A — mono HW never schedules a tighten |
+| Live pen/touch segment (`_drawSegment` → `_refreshRect`) | `"a2"` (fast B&W) | → A2 (color ink shown as grayscale) | → A2 |
+| Pen-up / touch-up | — | schedules the tighten timer | `"a2"` |
+| Tighten pass (fires `COLOR_TIGHTEN_DELAY` = 2.5s after last pen-up, cancelled on next pen-down) | `"partial"` + dither=true, targeted to accumulated stroke bbox | → GLRC16 (reveals true color) | N/A — mono HW never schedules a tighten |
 
 Implementation: `drawingcanvas.lua` — `_scheduleTighten`, `_cancelTighten`,
 `_expandTightenRect`, `COLOR_TIGHTEN_DELAY`. Cancelled on every pen-down
