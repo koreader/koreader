@@ -3,7 +3,7 @@
 export LC_ALL="en_US.UTF-8"
 
 # Compute our working directory in an extremely defensive manner
-SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
+SCRIPT_DIR="$(CDPATH='' cd "$(dirname "$0")" && pwd -P)"
 # NOTE: We need to remember the *actual* KOREADER_DIR, not the relocalized version in /tmp...
 export KOREADER_DIR="${KOREADER_DIR:-${SCRIPT_DIR}}"
 UNPACK_DIR="${KOREADER_DIR%/*}"
