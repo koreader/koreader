@@ -33,6 +33,11 @@ local KOSync = WidgetContainer:extend{
     last_page_turn_timestamp = nil,
     periodic_push_task = nil,
     periodic_push_scheduled = nil,
+    auto_pull_block_until = nil,
+    auto_pull_failed = nil,
+    pull_in_flight = nil,
+    remote_progress_pending = nil,
+    deferred_auto_push = nil,
 
     settings = nil,
 }
@@ -50,6 +55,8 @@ local CHECKSUM_METHOD = {
 
 -- Debounce push/pull attempts
 local API_CALL_DEBOUNCE_DELAY = time.s(25)
+-- keep automatic pushes behind reconnect-triggered pulls; NetworkMgr may wait up to 45s.
+local AUTO_PULL_BLOCK_DELAY = time.s(60)
 
 -- NOTE: This is used in a migration script by ui/data/onetime_migration,
 --       which is why it's public.
@@ -87,6 +94,11 @@ function KOSync:init()
     self.last_page = -1
     self.last_page_turn_timestamp = 0
     self.periodic_push_scheduled = false
+    self.auto_pull_block_until = 0
+    self.auto_pull_failed = false
+    self.pull_in_flight = false
+    self.remote_progress_pending = false
+    self.deferred_auto_push = nil
 
     -- Like AutoSuspend, we need an instance-specific task for scheduling/resource management reasons.
     self.periodic_push_task = function()
@@ -189,9 +201,7 @@ end
 
 function KOSync:onReaderReady()
     if self.settings.auto_sync then
-        UIManager:nextTick(function()
-            self:getProgress(true, false)
-        end)
+        self:scheduleAutoPull(0, true, true)
     end
     -- NOTE: Keep in mind that, on Android, turning on WiFi requires a focus switch, which will trip a Suspend/Resume pair.
     --       NetworkMgr will attempt to hide the damage to avoid a useless pull -> push -> pull dance instead of the single pull requested.
@@ -699,7 +709,29 @@ function KOSync:getMetadata()
     }
 end
 
+function KOSync:scheduleAutoPull(delay, ensure_networking, block_pushes)
+    if block_pushes then
+        -- automatic pulls must win races against suspend/disconnect auto-pushes.
+        self.auto_pull_block_until = UIManager:getElapsedTimeSinceBoot() + AUTO_PULL_BLOCK_DELAY
+    end
+    UIManager:scheduleIn(delay, function()
+        self:getProgress(ensure_networking, false, block_pushes)
+    end)
+end
+
+function KOSync:runDeferredAutoPush()
+    if not self.deferred_auto_push or self.remote_progress_pending then return end
+
+    local deferred_auto_push = self.deferred_auto_push
+    self.deferred_auto_push = nil
+    self:updateProgress(deferred_auto_push.ensure_networking, false, deferred_auto_push.on_suspend)
+end
+
 function KOSync:syncToProgress(progress)
+    self.auto_pull_block_until = 0
+    self.auto_pull_failed = false
+    self.remote_progress_pending = false
+    self.deferred_auto_push = nil
     logger.dbg("KOSync: [Sync] progress to", progress)
     if self.ui.document.info.has_pages then
         self.ui:handleEvent(Event:new("GotoPage", tonumber(progress)))
@@ -717,6 +749,21 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
     end
 
     local now = UIManager:getElapsedTimeSinceBoot()
+    if not interactive and (now < self.auto_pull_block_until or self.remote_progress_pending) then
+        -- do not clobber a newer remote location while a pull or prompt is pending.
+        logger.dbg("KOSync: Skipping automatic progress push while remote progress is pending")
+        if now < self.auto_pull_block_until and not self.remote_progress_pending then
+            self.deferred_auto_push = {
+                ensure_networking = ensure_networking,
+                on_suspend = on_suspend,
+            }
+        end
+        if on_suspend and Device:hasWifiManager() then
+            NetworkMgr:disableWifi()
+        end
+        return
+    end
+
     if not interactive and now - self.push_timestamp <= API_CALL_DEBOUNCE_DELAY then
         logger.dbg("KOSync: We've already pushed progress less than 25s ago!")
         return
@@ -790,21 +837,39 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
     self.push_timestamp = now
 end
 
-function KOSync:getProgress(ensure_networking, interactive)
+function KOSync:getProgress(ensure_networking, interactive, auto_pull)
+    local function finishAutoPull(clear_block)
+        if auto_pull then
+            if clear_block == false then
+                self.auto_pull_failed = true
+            else
+                self.auto_pull_failed = false
+                self.auto_pull_block_until = 0
+                self:runDeferredAutoPush()
+            end
+        end
+    end
+    local function finishPull(clear_block)
+        self.pull_in_flight = false
+        finishAutoPull(clear_block)
+    end
+
     if not self.settings.username or not self.settings.userkey then
         if interactive then
             promptLogin()
         end
+        finishAutoPull()
         return
     end
 
     local now = UIManager:getElapsedTimeSinceBoot()
     if not interactive and now - self.pull_timestamp <= API_CALL_DEBOUNCE_DELAY then
         logger.dbg("KOSync: We've already pulled progress less than 25s ago!")
+        finishAutoPull(not self.pull_in_flight and not self.auto_pull_failed)
         return
     end
 
-    if ensure_networking and NetworkMgr:willRerunWhenOnline(function() self:getProgress(ensure_networking, interactive) end) then
+    if ensure_networking and NetworkMgr:willRerunWhenOnline(function() self:getProgress(ensure_networking, interactive, auto_pull) end) then
         return
     end
 
@@ -814,6 +879,7 @@ function KOSync:getProgress(ensure_networking, interactive)
         service_spec = self.path .. "/api.json"
     }
     local doc_digest = self:getDocumentDigest()
+    self.pull_in_flight = true
     local ok, err = pcall(client.get_progress,
         client,
         self.settings.username,
@@ -826,27 +892,32 @@ function KOSync:getProgress(ensure_networking, interactive)
                 if interactive then
                     showSyncError()
                 end
+                finishPull(false)
                 return
             end
 
             if not body.percentage then
+                self.remote_progress_pending = false
                 if interactive then
                     UIManager:show(InfoMessage:new{
                         text = _("No progress found for this document."),
                         timeout = 3,
                     })
                 end
+                finishPull()
                 return
             end
 
             if body.device == Device.model
             and body.device_id == self.device_id then
+                self.remote_progress_pending = false
                 if interactive then
                     UIManager:show(InfoMessage:new{
                         text = _("Latest progress is coming from this device."),
                         timeout = 3,
                     })
                 end
+                finishPull()
                 return
             end
 
@@ -857,12 +928,14 @@ function KOSync:getProgress(ensure_networking, interactive)
 
             if percentage == body.percentage
             or body.progress == progress then
+                self.remote_progress_pending = false
                 if interactive then
                     UIManager:show(InfoMessage:new{
                         text = _("The progress has already been synchronized."),
                         timeout = 3,
                     })
                 end
+                finishPull()
                 return
             end
 
@@ -872,6 +945,7 @@ function KOSync:getProgress(ensure_networking, interactive)
                 -- we always update the progress without further confirmation.
                 self:syncToProgress(body.progress)
                 showSyncedMessage()
+                finishPull()
                 return
             end
 
@@ -886,17 +960,23 @@ function KOSync:getProgress(ensure_networking, interactive)
                 if self.settings.sync_forward == SYNC_STRATEGY.SILENT then
                     self:syncToProgress(body.progress)
                     showSyncedMessage()
-                elseif self.settings.sync_forward == SYNC_STRATEGY.PROMPT then
-                    UIManager:show(ConfirmBox:new{
-                        text = T(_("Sync to latest location %1% from device '%2'?"),
-                                 Math.round(body.percentage * 100),
-                                 body.device),
-                        ok_callback = function()
-                            self:syncToProgress(body.progress)
-                        end,
-                    })
+                else
+                    -- do not let automatic pushes overwrite a remote location that is
+                    -- further ahead before the user accepts it or makes a new local page turn.
+                    self.remote_progress_pending = body.percentage > percentage
+                    if self.settings.sync_forward == SYNC_STRATEGY.PROMPT then
+                        UIManager:show(ConfirmBox:new{
+                            text = T(_("Sync to latest location %1% from device '%2'?"),
+                                     Math.round(body.percentage * 100),
+                                     body.device),
+                            ok_callback = function()
+                                self:syncToProgress(body.progress)
+                            end,
+                        })
+                    end
                 end
             else -- if not self_older then
+                self.remote_progress_pending = false
                 if self.settings.sync_backward == SYNC_STRATEGY.SILENT then
                     self:syncToProgress(body.progress)
                     showSyncedMessage()
@@ -911,10 +991,12 @@ function KOSync:getProgress(ensure_networking, interactive)
                     })
                 end
             end
+            finishPull()
         end)
     if not ok then
         if interactive then showSyncError() end
         if err then logger.dbg("err:", err) end
+        finishPull(false)
     end
 
     self.pull_timestamp = now
@@ -951,6 +1033,7 @@ function KOSync:_onPageUpdate(page)
     if self.last_page ~= page then
         self.last_page = page
         self.last_page_turn_timestamp = os.time()
+        self.remote_progress_pending = false
         self.page_update_counter = self.page_update_counter + 1
         -- If we've already scheduled a push, regardless of the counter's state, delay it until we're *actually* idle
         if self.periodic_push_scheduled or self.settings.pages_before_update and self.page_update_counter >= self.settings.pages_before_update then
@@ -969,9 +1052,7 @@ function KOSync:_onResume()
 
     -- And if we don't, this *will* (attempt to) trigger a connection and as such a NetworkConnected event,
     -- but only a single pull will happen, since getProgress debounces itself.
-    UIManager:scheduleIn(1, function()
-        self:getProgress(true, false)
-    end)
+    self:scheduleAutoPull(1, true, true)
 end
 
 function KOSync:_onSuspend()
@@ -982,10 +1063,8 @@ end
 
 function KOSync:_onNetworkConnected()
     logger.dbg("KOSync: onNetworkConnected")
-    UIManager:scheduleIn(0.5, function()
-        -- Network is supposed to be on already, don't wrap this in willRerunWhenOnline
-        self:getProgress(false, false)
-    end)
+    -- Network is supposed to be on already, don't wrap this in willRerunWhenOnline
+    self:scheduleAutoPull(0.5, false, true)
 end
 
 function KOSync:_onNetworkDisconnecting()
