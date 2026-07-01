@@ -166,7 +166,10 @@ function GetText_mt.__index.changeLang(new_lang)
     -- the "C" locale disables localization altogether
     -- can be various things such as `en_US` or `en_US:en`
     if new_lang == "C" or new_lang == nil or new_lang == ""
-       or new_lang:match("^en_US") == "en_US" then return end
+       or new_lang:match("^en_US") == "en_US" then
+        GetText.getPlural = getDefaultPlural
+        return
+    end
 
     -- strip encoding suffix in locale like "zh_CN.utf8"
     new_lang = new_lang:sub(1, new_lang:find(".%."))
