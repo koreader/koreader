@@ -20,6 +20,9 @@ fbink_wrapped() {
             QTFB_SHIM_MODE="N_RGB565" \
             QTFB_SHIM_RESPECT_FULL_REFRESH_REQUESTS="1" \
             ./fbink "$@"
+    elif [ -n "${KO_USE_BLIGHT}" ]; then
+        # fbink can't do deferred rendering via blight-client (each invocation creates a separate surface)
+        true
     else
         ./fbink "$@"
     fi
