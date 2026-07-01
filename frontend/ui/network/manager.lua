@@ -22,6 +22,24 @@ require("ffi/posix_h")
 -- We unfortunately don't have that one in ffi/posix_h :/
 local EBUSY = 16
 
+-- Waits one 250ms input-poll slice and returns true if the user tapped (abort signal).
+-- Caller must call Device.input:resetState() after the loop that uses this.
+local function pollInputTap()
+    local now = UIManager:getTime()
+    local input_events = Device.input:waitEvent(now, now + time.ms(250))
+    if input_events then
+        for __, ev in ipairs(input_events) do
+            if ev.handler == "onGesture" then
+                local args = ev.args[1]
+                if args and args.ges == "tap" then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
 local NetworkMgr = {
     is_wifi_on = false,
     is_connected = false,
@@ -74,8 +92,9 @@ end
 -- Used after restoreWifiAsync() and the turn_on beforeWifiAction to make sure we eventually send a NetworkConnected event,
 -- as quite a few things rely on it (KOSync, c.f. #5109; the network activity check, c.f., #6424).
 function NetworkMgr:connectivityCheck(iter, callback, widget)
-    -- Give up after a while (restoreWifiAsync can take over 45s, so, try to cover that)...
-    if iter >= 180 then
+    -- Give up after ~22.5s: restore-wifi-async.sh times out after 15s on Kobo,
+    -- so 90 iterations gives a 7.5s buffer without waiting indefinitely.
+    if iter >= 90 then
         logger.info("Failed to restore Wi-Fi (after", iter * 0.25, "seconds)!")
         self:_abortWifiConnection()
 
@@ -715,9 +734,6 @@ function NetworkMgr:goOnlineToRun(callback)
         return false
     end
 
-    -- We'll do terrible things with this later...
-    local Input = Device.input
-
     -- In case we abort before the beforeWifiAction, we won't pass it the callback, but run it ourselves,
     -- to avoid it firing too late (or at the very least being pinned for too long).
     local info = self:beforeWifiAction()
@@ -774,32 +790,17 @@ function NetworkMgr:goOnlineToRun(callback)
         -- NOTE: This *does* mean that multiple bursts of input events *will*
         --       make this loop run for less than 120 * 250ms, as select could return early.
         --       Assuming we don't actually abort *because* of said input (e.g., not taps) ;).
-        local now = UIManager:getTime()
-        local input_events = Input:waitEvent(now, now + time.ms(250))
-        if input_events then
-            for __, ev in ipairs(input_events) do
-                -- We'll want to abort on actual single taps only, in case there's extra noise from stuff like a gyro or something...
-                if ev.handler == "onGesture" then
-                    local args = unpack(ev.args, 1, ev.args.n)
-                    if args.ges == "tap" then
-                        logger.warn("NetworkMgr:goOnlineToRun: Aborted by user input!")
-                        success = false
-                        -- No need to check further args
-                        break
-                    end
-                end
-            end
-            -- Break out of the actual loop on abort
-            if not success then
-                break
-            end
+        if pollInputTap() then
+            logger.warn("NetworkMgr:goOnlineToRun: Aborted by user input!")
+            success = false
+            break
         end
 
         self:queryNetworkState()
     end
 
     -- To make our previous input shenanigans slightly less crazy, reset the whole input state.
-    Input:resetState()
+    Device.input:resetState()
 
     -- Close the initial "Connecting..." InfoMessage from turnOnWifiAndWaitForConnection via beforeWifiAction,
     -- or our own "Waiting for network connectivity" one.
@@ -1134,16 +1135,30 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
     -- which shouldn't really ever happen since https://github.com/koreader/lj-wpaclient/pull/11
     -- c.f., WpaClient:scanThenGetResults in lj-wpaclient for more details.
     if Device:hasWifiManager() and not success and not ssid then
-        -- Don't bother if wpa_supplicant doesn't actually have any configured networks...
-        local configured_networks = self:getConfiguredNetworks()
-        local has_preferred_networks = configured_networks and #configured_networks > 0
+        -- Only wait if a configured AP was actually visible in this scan.
+        -- wpa_supplicant can auto-connect only when the AP is reachable; waiting when
+        -- nothing known is in range just freezes the UI for 15s with no benefit (#14790-related).
+        local preferred_in_range = false
+        for dummy, network in ipairs(network_list) do
+            if network.password then
+                preferred_in_range = true
+                break
+            end
+        end
 
-        local iter = has_preferred_networks and 0 or 60
-        -- We wait 15s at most (like the restore-wifi-async script)
+        local iter = preferred_in_range and 0 or 60
+        -- We wait 15s at most (like the restore-wifi-async script).
+        -- In interactive mode a tap cancels the wait immediately.
         while not success and iter < 60 do
-            -- Check every 250ms
             iter = iter + 1
-            ffiutil.usleep(250 * 1e+3)
+            if interactive then
+                if pollInputTap() then
+                    logger.dbg("NetworkMgr: background association wait cancelled by user")
+                    break
+                end
+            else
+                ffiutil.usleep(250 * 1e+3)
+            end
 
             local nw = self:getCurrentNetwork()
             if nw then
@@ -1157,6 +1172,9 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback, interactive)
                 end
                 logger.dbg("NetworkMgr: wpa_supplicant automatically connected to network", util.fixUtf8(ssid, "�"), "(after", iter * 0.25, "seconds)")
             end
+        end
+        if interactive then
+            Device.input:resetState()
         end
     end
 
