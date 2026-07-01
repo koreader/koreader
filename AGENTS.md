@@ -32,13 +32,15 @@ See `.agents/ADRs/ADR-007-direct-to-master-no-prs.md` for the reasoning.
 plugins/fastnote.koplugin/   ← all active development; has its own AGENTS.md index
 .agents/                     ← ADRs, planning, notes, superseded plans (repo root — see below)
 .github/
-  instructions/              ← facts/conventions, applyTo-scoped (lua, agents.md/.agents, doc-architecture)
+  instructions/              ← facts/conventions: applyTo (Copilot) + paths (Claude Code) scoped
   skills/koreader-plugin/    ← KOReader plugin dev reference (not yet added)
   skills/agents-md-authoring/           ← workflow for AGENTS.md and .agents/ docs
   skills/documentation-as-code/         ← keeping all docs in sync with code changes
   skills/test-driven-development/       ← when to write the spec first in this repo, and when not to
   skills/authoring-instructions-and-skills/  ← how to add new instructions/skills correctly
-.claude/skills/               ← symlinks into .github/skills/ — see doc-architecture.instructions.md
+.claude/
+  skills → ../.github/skills         (single directory symlink)
+  rules  → ../.github/instructions   (single directory symlink)
 doc/                         ← upstream KOReader developer docs (not plugin-specific)
 ```
 
@@ -53,7 +55,9 @@ specific files relevant to each area of the code.
 `.github/instructions/doc-architecture.instructions.md` and
 `.github/skills/authoring-instructions-and-skills/SKILL.md` first — they
 cover the facts-vs-procedures split, Anthropic's Agent Skills authoring
-rules, and the required `.claude/skills/<name>` symlink step (this repo is
-primarily used from a GitHub Copilot / VS Code harness, so `.github/` stays
-the portable source of truth; the symlinks give Claude Code live
-auto-triggering on top of that).
+rules, and the two directory-level symlinks (`.claude/skills`,
+`.claude/rules`) that make everything under `.github/instructions/` and
+`.github/skills/` visible to Claude Code with zero per-file setup. This
+repo is primarily used from a GitHub Copilot / VS Code harness, so
+`.github/` stays the portable source of truth; the symlinks just give
+Claude Code the same content natively.

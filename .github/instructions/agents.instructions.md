@@ -1,5 +1,8 @@
 ---
 applyTo: "**/AGENTS.md,**/.agents/**"
+paths:
+  - "**/AGENTS.md"
+  - "**/.agents/**"
 ---
 
 # AGENTS.md and .agents/ conventions

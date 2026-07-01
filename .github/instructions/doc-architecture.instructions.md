@@ -1,14 +1,19 @@
 ---
-applyTo: ".github/instructions/**,.github/skills/**,.claude/skills/**"
+applyTo: ".github/instructions/**,.github/skills/**,.claude/skills/**,.claude/rules/**"
+paths:
+  - ".github/instructions/**"
+  - ".github/skills/**"
+  - ".claude/skills/**"
+  - ".claude/rules/**"
 ---
 
 # Instructions vs. Skills: how this repo's agent-facing docs are split
 
 Applies whenever you're authoring or editing anything under
-`.github/instructions/`, `.github/skills/`, or `.claude/skills/`. For the
-step-by-step procedure — deciding which mechanism a new topic needs,
-templates, and the naming/description rules to check before finishing —
-see the sibling skill
+`.github/instructions/`, `.github/skills/`, `.claude/skills/`, or
+`.claude/rules/`. For the step-by-step procedure — deciding which
+mechanism a new topic needs, templates, and the naming/description rules
+to check before finishing — see the sibling skill
 `.github/skills/authoring-instructions-and-skills/SKILL.md`. This file is
 principles; that skill is process. Don't restate one in the other.
 
@@ -70,36 +75,58 @@ topic that's pure procedure with no standing invariant to remember
 
 ---
 
-## Critical: neither mechanism auto-loads the way you might assume
+## Critical: neither `.github/` mechanism auto-loads in Claude Code by name
 
 - **`.github/instructions/*.instructions.md` is a GitHub Copilot
-  convention** (path-scoped custom instructions via `applyTo`). Claude Code
-  does not natively read this directory. It only reaches Claude Code
-  because `AGENTS.md` (which Claude Code *does* read at session start)
-  contains an explicit one-line pointer to the relevant instructions file.
-  If a new instructions file isn't linked from the AGENTS.md section it's
-  most relevant to, Claude Code will never see it.
-- **`.github/skills/<name>/SKILL.md` is not auto-discovered or
-  auto-triggered by Claude Code either.** Per Anthropic's own docs, Claude
-  Code only live-discovers skills from `.claude/skills/<name>/SKILL.md`
-  (project) or `~/.claude/skills/<name>/SKILL.md` (personal) — matching
-  the `description` field against the current task automatically, even
-  mid-session.
-- **This repo's fix: every skill under `.github/skills/<name>/` gets a
-  relative symlink at `.claude/skills/<name>` pointing back to it.**
-  ```bash
-  cd .claude/skills && ln -s ../../.github/skills/<name> <name>
-  ```
-  Relative symlinks survive `git clone` on Linux/macOS (git stores the
-  symlink target as a blob, checked out as a real symlink) and keep
-  `.github/skills/` as the single source of truth — no duplicated content,
-  no drift. This is why every new skill in this repo needs the symlink
-  step; it's part of the skill's own creation procedure, not optional
-  polish. `.github/skills/` stays the portable, cross-tool location (this
-  project is also used from a GitHub Copilot / VS Code harness, where
-  `.github/instructions/` and `.github/skills/` are the paths that matter);
-  `.claude/skills/` exists purely so Claude Code sessions get live
-  auto-triggering on top of that.
+  convention** (path-scoped custom instructions via `applyTo`). Claude
+  Code's native equivalent is `.claude/rules/*.md`, which uses a `paths:`
+  YAML list instead of `applyTo:` — a different key, same idea. Claude Code
+  does not read `.github/instructions/` by that path.
+- **`.github/skills/<name>/SKILL.md` is a hand-rolled convention in this
+  repo**, following the open Agent Skills SKILL.md format. Claude Code's
+  native equivalent is `.claude/skills/<name>/SKILL.md` — live-discovered
+  and `description`-matched against the task automatically, even
+  mid-session. Claude Code does not read `.github/skills/` by that path.
+
+**This repo's fix: two directory-level symlinks, not one per file.**
+
+```bash
+cd .claude && ln -s ../.github/skills skills && ln -s ../.github/instructions rules
+```
+
+`.claude/skills` and `.claude/rules` are each a **single symlink to the
+whole sibling directory** — confirmed supported by Anthropic's docs
+("The `.claude/rules/` directory supports symlinks... resolved and loaded
+normally"). This means:
+
+- A new file dropped into `.github/skills/<name>/` or
+  `.github/instructions/<topic>.instructions.md` needs **no extra symlink
+  step** — it appears under `.claude/skills/`/`.claude/rules/`
+  automatically through the existing directory symlink. (An earlier version
+  of this repo's setup symlinked each skill individually; that's obsolete —
+  don't recreate that pattern.)
+- `.github/` stays the single source of truth and the portable, cross-tool
+  location (this project is primarily used from a GitHub Copilot / VS Code
+  harness). `.claude/skills` and `.claude/rules` exist purely so Claude
+  Code sessions also get live auto-discovery on top of that, with zero
+  duplicated content.
+
+**Every `.instructions.md` file needs both frontmatter keys**, with
+equivalent glob values, so it scopes correctly under both tools from the
+same physical file:
+
+```yaml
+---
+applyTo: "src/**/*.ts"
+paths:
+  - "src/**/*.ts"
+---
+```
+
+Without the `paths` key, Claude Code treats the file as **unconditional**
+(loaded into every session, like a rule with no path scope at all) — it
+does not understand `applyTo` and silently ignores it rather than erroring,
+so a missing `paths` key is easy to overlook. Always add both.
 
 ---
 

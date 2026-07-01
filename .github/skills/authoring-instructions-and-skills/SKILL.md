@@ -1,6 +1,6 @@
 ---
 name: authoring-instructions-and-skills
-description: Creates a new .github/instructions/*.instructions.md file, a new .github/skills/<name>/SKILL.md file, or both together with the required .claude/skills/<name> symlink, following Anthropic's Agent Skills authoring rules and this repo's conventions. Use when adding a new coding convention, gotcha, workflow, checklist, or template to this repo's agent-facing docs, or when deciding whether new content needs an instructions file, a skill, or both.
+description: Creates a new .github/instructions/*.instructions.md file, a new .github/skills/<name>/SKILL.md file, or both, with the dual applyTo/paths frontmatter needed for both GitHub Copilot and Claude Code to scope it correctly, following Anthropic's Agent Skills authoring rules and this repo's conventions. Use when adding a new coding convention, gotcha, workflow, checklist, or template to this repo's agent-facing docs, or when deciding whether new content needs an instructions file, a skill, or both.
 ---
 
 # Authoring instructions and skills — workflow
@@ -9,11 +9,16 @@ This is the **process**: how to decide which mechanism a new piece of
 content needs, and the concrete steps to create it correctly.
 
 For the **principles** — why instructions and skills are split this way,
-where they intersect, and the discovery/symlink mechanics — see
+where they intersect, and the discovery mechanics — see
 `.github/instructions/doc-architecture.instructions.md`, which applies
 automatically whenever you touch `.github/instructions/`, `.github/skills/`,
-or `.claude/skills/`. Read that first if you haven't already; this skill
-assumes it.
+`.claude/skills/`, or `.claude/rules/`. Read that first if you haven't
+already; this skill assumes it.
+
+`.claude/skills` and `.claude/rules` are each a single directory-level
+symlink back to `.github/skills` and `.github/instructions` respectively.
+**A new file needs no symlink step of its own** — it's visible on the
+Claude Code side automatically the moment it exists under `.github/`.
 
 ---
 
@@ -41,6 +46,8 @@ topic across more files than necessary.
 ```markdown
 ---
 applyTo: "<glob pattern(s), comma-separated for multiple>"
+paths:
+  - "<same glob pattern, one per list item>"
 ---
 
 # <Topic> conventions
@@ -65,12 +72,19 @@ pdfplumber to extract text from PDFs").>
 ```
 
 - Name it `.github/instructions/<topic>.instructions.md`.
-- `applyTo` uses glob syntax; comma-separate multiple patterns
-  (`"**/*.lua"`, `"**/AGENTS.md,**/.agents/**"`). This mirrors GitHub
-  Copilot's path-scoped custom instructions format.
+- **Always include both `applyTo` and `paths`**, with equivalent glob
+  values. `applyTo` is GitHub Copilot's key (comma-separated string,
+  matches this repo's primary VS Code / Copilot harness). `paths` is
+  Claude Code's key (YAML list, required for `.claude/rules/` to scope the
+  file — without it Claude Code loads the file unconditionally into every
+  session, silently, since it doesn't understand `applyTo` and won't error
+  on the missing key). One glob per `paths` list item; `applyTo` keeps
+  them comma-joined in a single string.
 - **Link it from AGENTS.md** at the point where it's relevant — an
-  instructions file that nothing points to will never be read by Claude
-  Code (see the "critical" section in the paired instructions file).
+  instructions file that nothing points to won't be discoverable by an
+  agent reading AGENTS.md as its starting point (Claude Code itself will
+  still pick it up automatically via `.claude/rules/` once `paths`
+  matches, but AGENTS.md is how a human or another tool finds it).
 - No length ceremony here — instructions files in this repo are short by
   nature (a page or two); if one is growing past that, some of its content
   is probably actually a procedure that belongs in a skill instead.
@@ -102,14 +116,10 @@ principles here.>
 ...
 ```
 
-Then **immediately** wire the live-discovery symlink — this is not
-optional polish, it's part of creating the skill:
-
-```bash
-cd .claude/skills && ln -s ../../.github/skills/<name> <name>
-```
-
-Verify it resolves before moving on:
+No symlink step needed — `.claude/skills` is a standing directory-level
+symlink to `.github/skills`, so the new skill is live for Claude Code the
+moment the directory exists. Sanity-check it resolves if you want
+confirmation:
 
 ```bash
 cat .claude/skills/<name>/SKILL.md | head -5
@@ -148,22 +158,23 @@ these, don't skip any:
       file that itself references another file).
 - [ ] No time-sensitive claims (dates, test counts, "currently") baked in
       — state the check to run instead of a number that will drift.
-- [ ] The `.claude/skills/<name>` symlink exists and resolves.
+- [ ] If this is an instructions file: both `applyTo` and `paths` are set,
+      with equivalent glob values.
 - [ ] If a paired instructions file exists, both link to each other and
       neither duplicates the other's content.
 - [ ] AGENTS.md (root or plugin, whichever is relevant) has a one-line
-      pointer to the new file — otherwise Claude Code has no path to
-      discovering it exists via the instructions side of the pair, even
-      though the skill side auto-triggers via `.claude/skills/`.
+      pointer to the new file — Claude Code will still auto-discover it via
+      `.claude/rules/`/`.claude/skills/`, but AGENTS.md is how a human or
+      another tool (Copilot, a fresh agent skimming the repo) finds it.
 
 ---
 
 ## Worked example: this pair
 
 `doc-architecture.instructions.md` (facts: the instructions-vs-skills
-distinction, where they intersect, the symlink requirement, Anthropic's
-naming/description rules) paired with this skill (procedure: the decision
-steps, the two templates, the symlink command, this checklist). Neither
-restates the other — the instructions file doesn't include the templates,
-this skill doesn't re-explain *why* the split exists beyond a one-line
-pointer.
+distinction, where they intersect, the two symlinks and dual-frontmatter
+mechanics, Anthropic's naming/description rules) paired with this skill
+(procedure: the decision steps, the two templates, this checklist).
+Neither restates the other — the instructions file doesn't include the
+templates, this skill doesn't re-explain *why* the split exists beyond a
+one-line pointer.
