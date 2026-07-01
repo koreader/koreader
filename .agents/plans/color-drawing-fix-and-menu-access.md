@@ -17,49 +17,73 @@ drawing, the drawing experience is broken:
 
 ---
 
-## Fix A/B: Revert live drawing to A2, keep deferred tighten
+## Fix A/B: Revert live drawing to A2, keep deferred tighten — DONE
 
-**Root cause:** `_refreshRect()` (line ~835) uses `"partial"` + dither on color
-HW for every single segment drawn. GLRC16 is a color REAGL waveform that takes
-hundreds of milliseconds — firing it at pen-move rate makes drawing unusable.
-
-**Fix:**
-
-- [x] Change `_refreshRect()` to use `"a2"` universally for all live drawing —
-  fast binary B&W, works at 120 Hz. Even colored ink draws in grayscale live.
-- [x] Keep `_scheduleTighten()` / `_expandTightenRect()` / `_cancelTighten()`
-  exactly as-is — after `COLOR_TIGHTEN_DELAY` (2.5s) of pen inactivity, a
-  single GLRC16 refresh fires over the accumulated bbox to reveal color.
-- [x] Verify pen-up paths (gesture `onDrawStrokeEnd`, raw evdev pen "up", raw
-  touch "up") all call `_scheduleTighten()` — they already do.
-- [x] Verify pen-down paths cancel any pending tighten — they already do.
-
-**File:** `plugins/fastnote.koplugin/drawingcanvas.lua`
-**Function:** `DrawingCanvas:_refreshRect` (~line 835)
+- [x] Change `_refreshRect()` to use `"a2"` universally for all live drawing.
+- [x] Keep tighten pass for deferred GLRC16 after pen inactivity.
+- [x] Verify pen-up/pen-down paths handle tighten timer correctly.
 
 ---
 
-## Fix C: Surface color picker and pressure in the page menu
+## Fix C: Surface color picker and pressure in the page menu — DONE
 
-**Root cause:** The quick menu (color picker + contact sensitivity) is only
-accessible via double-tap gesture, which is not discoverable. The page menu
-(hamburger tap in chrome strip) doesn't include these controls.
+- [x] Add ink color rows and contact sensitivity to `onMenuTap()`.
+- [x] Keep double-tap quick menu as power-user shortcut.
 
-**Fix:**
+---
 
-- [x] Add ink color row(s) and contact sensitivity to `onMenuTap()`'s
-  `ButtonDialogTitle`, so users can access everything from the menu they
-  already know about.
-- [x] Keep the double-tap shortcut working as-is (it's a power-user shortcut).
+## Fix D: Tighten bbox only covers last stroke — DONE
 
-**File:** `plugins/fastnote.koplugin/drawingcanvas.lua`
-**Function:** `DrawingCanvas:onMenuTap` (~line 422)
+**Root cause:** `_cancelTighten()` clears `_tighten_rect` on pen-down, wiping
+the accumulated bbox from previous strokes. Only the final stroke's region gets
+the GLRC16 refresh.
+
+**Fix:** Split into `_cancelTightenTimer()` (pen-down: timer only, preserves
+rect) and `_cancelTighten()` (full reset: timer + rect). Pen-down calls the
+timer-only variant; `_repaintAll`, `loadPage`, `_doClose` call the full reset.
+
+---
+
+## Fix E: Color not appearing on tighten refresh — DONE
+
+**Root cause:** Missing `self.dithered = has_color_hw` on the DrawingCanvas
+widget. UIManager checks `widget.dithered` to honor dithering hints from the
+refresh stack. Without it, intervening refreshes (e.g. dialog close) can
+overwrite the tighten's GLRC16 color with grayscale.
+
+Also added `hw_dithering` and `isColorEnabled` to the init debug log to help
+diagnose if those gates are false on the device.
+
+---
+
+## Fix F: Eraser end of stylus draws instead of erasing — NEEDS DEVICE TESTING
+
+**Architecture review:** The eraser detection chain
+(`BTN_STYLUS` → `BTN_TOOL_RUBBER` → SM `tool="eraser"` → canvas
+`ev.tool == "eraser"`) is architecturally correct. The code correctly handles:
+- Elan MT path: `BTN_STYLUS=1` → feeds `BTN_TOOL_RUBBER=1` to SM
+- Wacom EMR path: `BTN_TOOL_RUBBER` passes through directly
+- SM sets `tool = "eraser"` on `BTN_TOOL_RUBBER=1`
+- Canvas checks `ev.tool == "eraser"` on both "down" and "move"
+
+**Hypothesis:** The Kobo Stylus 2 eraser end may not send `BTN_STYLUS=1`.
+If the Elan chip doesn't distinguish the eraser tip from the pen tip at the
+evdev level, there's no software fix — we'd need to find an alternative signal.
+
+**Diagnostic:** Added `logger.dbg` on pen "down" events showing `ev.tool`,
+`eraser_mode`, `eraser_locked`, and `pressure`. User should check KOReader logs
+when touching the eraser end to see what `tool` reports.
+
+**Next steps if `tool` reports `"pen"` for the eraser end:**
+- Enable `PenDev.raw_log_fn` to capture raw evdev events
+- Look for any event that differs between pen tip and eraser tip
+- If no distinguishing event exists, consider adding a menu toggle for
+  "eraser end" mode, or detecting via pressure range difference
 
 ---
 
 ## Housekeeping
 
 - [x] Create `CLAUDE.md` symlink → `AGENTS.md`
-- [x] Update `.agents/notes/waveform-refresh-research.md` if the tighten
-  approach changed
+- [x] Update `.agents/notes/waveform-refresh-research.md`
 - [x] Commit and push

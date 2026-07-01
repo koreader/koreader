@@ -192,11 +192,13 @@ function DrawingCanvas:init()
     self._bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bb_type)
     self._bb:fill(self:_bgColor())
     self._has_color_hw = has_color_hw
+    self.dithered = has_color_hw
 
     self._stroke_buf = StrokeBuffer.new()
 
     logger.dbg("FastNote canvas: init", self.dimen.w, "x", self.dimen.h,
                "has_color_hw=", has_color_hw,
+               "hw_dithering=", Screen.hw_dithering,
                "isColorEnabled=", Screen:isColorEnabled())
 
     self.use_raw_input = Device:isKobo()
@@ -675,8 +677,9 @@ function DrawingCanvas:onDrawStroke(_, ges)
             self._stroke_buf:penUp()
             self._page_dirty = true
         end
-        -- New finger-down: cancel any pending tighten (user is still writing).
-        if self._tighten_fn then self:_cancelTighten() end
+        -- New finger-down: cancel the tighten timer but keep the rect so
+        -- new strokes union into the same bbox for a single color refresh.
+        if self._tighten_fn then self:_cancelTightenTimer() end
         self._stroke_x     = nil; self._stroke_y     = nil
         self._stroke_min_x = nil; self._stroke_max_x = nil
         self._stroke_min_y = nil; self._stroke_max_y = nil
@@ -829,12 +832,21 @@ function DrawingCanvas:_bgColor()
     return self._dark_mode and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE
 end
 
---- Cancel any pending color-tighten timer and clear the accumulated rect.
-function DrawingCanvas:_cancelTighten()
+--- Cancel the pending tighten timer but preserve the accumulated rect.
+-- Use on pen-down: the user is still writing and new strokes need to
+-- union into the existing rect.
+function DrawingCanvas:_cancelTightenTimer()
     if self._tighten_fn then
         UIManager:unschedule(self._tighten_fn)
         self._tighten_fn = nil
     end
+end
+
+--- Cancel the tighten timer AND clear the accumulated rect.
+-- Use when a full-quality refresh makes the tighten pass redundant
+-- (e.g. _repaintAll, loadPage, _doClose).
+function DrawingCanvas:_cancelTighten()
+    self:_cancelTightenTimer()
     self._tighten_rect = nil
 end
 
@@ -998,9 +1010,13 @@ function DrawingCanvas:_pollPen()
                     self._last_pen_y = nil
                     return
                 end
-                -- New pen contact: cancel any pending tighten so it never fires
-                -- mid-session while the user is still writing.
-                if self._tighten_fn then self:_cancelTighten() end
+                logger.dbg("FastNote pen down: tool=", ev.tool,
+                           "eraser_mode=", self._eraser_mode,
+                           "eraser_locked=", self._eraser_locked,
+                           "pressure=", raw_p)
+                -- New pen contact: cancel the tighten timer but keep the rect
+                -- so all strokes in this session share one color refresh.
+                if self._tighten_fn then self:_cancelTightenTimer() end
                 self._stroke_buf:penDown(sx, sy, lw, self._current_color)
             else
                 self._stroke_buf:penMove(sx, sy, lw)
@@ -1068,7 +1084,7 @@ function DrawingCanvas:_pollTouch()
                 -- gesture if the "up" event was dropped by palm rejection.
                 self._last_touch_x = nil
                 self._last_touch_y = nil
-                if self._tighten_fn then self:_cancelTighten() end
+                if self._tighten_fn then self:_cancelTightenTimer() end
                 self._stroke_buf:penDown(fx, fy, DEFAULT_LINE_WIDTH, self._current_color)
                 self._last_touch_x = fx
                 self._last_touch_y = fy

@@ -188,7 +188,20 @@ mid-stroke and made drawing unusable.
 | Pen-up / touch-up | — | schedules the tighten timer | `"a2"` |
 | Tighten pass (fires `COLOR_TIGHTEN_DELAY` = 2.5s after last pen-up, cancelled on next pen-down) | `"partial"` + dither=true, targeted to accumulated stroke bbox | → GLRC16 (reveals true color) | N/A — mono HW never schedules a tighten |
 
-Implementation: `drawingcanvas.lua` — `_scheduleTighten`, `_cancelTighten`,
-`_expandTightenRect`, `COLOR_TIGHTEN_DELAY`. Cancelled on every pen-down
-(never fires mid-session) and on any full-quality refresh path
-(`_repaintAll`, `loadPage`, `_doClose`) that would supersede it.
+Implementation: `drawingcanvas.lua` — `_scheduleTighten`,
+`_cancelTightenTimer` (pen-down: cancels timer only, preserves rect),
+`_cancelTighten` (full reset: cancels timer AND clears rect),
+`_expandTightenRect`, `COLOR_TIGHTEN_DELAY`.
+
+Critical detail: pen-down calls `_cancelTightenTimer()` (timer only), so
+the bbox accumulates across multiple strokes in a writing session. The
+rect is only cleared when: (a) the tighten fires, (b) `_repaintAll`, (c)
+`loadPage`, or (d) `_doClose` — these do full-quality refreshes that make
+the tighten redundant.
+
+The widget sets `self.dithered = has_color_hw` so UIManager knows to honor
+dithering hints from the refresh stack. Without this, intervening
+widget-dirty refreshes can overwrite the tighten's GLRC16 color with
+grayscale. The dither→GLRC16 promotion also requires `Screen.hw_dithering`
+(true by default on MTK Kobo) and `Screen:isColorEnabled()` (true by
+default on color screens).
