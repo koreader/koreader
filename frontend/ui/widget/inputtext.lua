@@ -69,6 +69,8 @@ local InputText = InputContainer:extend{
     undo_startpos = nil, -- position to insert 'undoing'
     undo_charpos = nil, -- position to put the cursor after 'undoing'
     _password_toggle = nil,
+
+    clipboard_settings = Device:hasClipboard() and G_reader_settings:readSetting("clipboard", {}) or nil,
 }
 
 -- These may be (internally) overloaded as needed, depending on Device capabilities.
@@ -251,7 +253,7 @@ function InputText:holdTextBox(arg, ges)
     end
     -- clipboard dialog
     self._hold_handled = nil
-    if Device:hasClipboard() then
+    if self.clipboard_settings then
         if self.do_select then -- select mode on
             if self.selection_start_pos then -- select end
                 self:showSelectionDialog()
@@ -278,6 +280,24 @@ function InputText:holdTextBox(arg, ges)
             modal = true,
             stop_events_propagation = true,
             buttons_table = {
+                {
+                    {
+                        text = _("Delete all"),
+                        enabled = #self.charlist > 0,
+                        callback = function()
+                            UIManager:close(clipboard_dialog)
+                            self:delAll()
+                        end,
+                    },
+                    {
+                        text = _("Undo last deletion"),
+                        enabled = self.undo_charlist ~= nil,
+                        callback = function()
+                            UIManager:close(clipboard_dialog)
+                            self:undoLastDeletion()
+                        end,
+                    },
+                },
                 {
                     {
                         text = _("Copy all"),
@@ -314,14 +334,6 @@ function InputText:holdTextBox(arg, ges)
                 },
                 {
                     {
-                        text = _("Delete all"),
-                        enabled = #self.charlist > 0,
-                        callback = function()
-                            UIManager:close(clipboard_dialog)
-                            self:delAll()
-                        end,
-                    },
-                    {
                         text = _("Select"),
                         callback = function()
                             UIManager:close(clipboard_dialog)
@@ -340,14 +352,11 @@ function InputText:holdTextBox(arg, ges)
                             self:addChars(clipboard_value)
                         end,
                     },
-                },
-                {
                     {
-                        text = _("Undo last deletion"),
-                        enabled = self.undo_charlist ~= nil,
+                        text = "\u{F435}", -- pin
                         callback = function()
                             UIManager:close(clipboard_dialog)
-                            self:undoLastDeletion()
+                            self:showClipboardPinDialog()
                         end,
                     },
                 },
@@ -403,6 +412,110 @@ function InputText:showSelectionDialog()
         },
     }
     UIManager:show(selection_dialog)
+end
+
+function InputText:showClipboardPinDialog()
+    local ButtonDialog = require("ui/widget/buttondialog")
+    local pin_dialog
+    local buttons = {
+        {
+            {
+                text = _("New"),
+                font_face = "smallinfofont",
+                font_size = 22,
+                align = "left",
+                callback = function()
+                    UIManager:close(pin_dialog)
+                    self:editClipboardPinnedItem(pin_dialog)
+                end,
+            },
+        },
+    }
+    if self.clipboard_settings.pinned_items then
+        for i, v in ipairs(self.clipboard_settings.pinned_items) do
+            table.insert(buttons, {{
+                text = v.name and string.format("%s (%s)", v.name, v.text) or v.text,
+                menu_style = true,
+                avoid_text_truncation = false,
+                callback = function()
+                    UIManager:close(pin_dialog)
+                    self:addChars(v.text)
+                end,
+                hold_callback = function()
+                    UIManager:close(pin_dialog)
+                    self:editClipboardPinnedItem(pin_dialog, i)
+                end,
+            }})
+        end
+    end
+    pin_dialog = ButtonDialog:new{
+        width_factor = 0.6,
+        buttons = buttons,
+        modal = true,
+    }
+    UIManager:show(pin_dialog)
+end
+
+function InputText:editClipboardPinnedItem(pin_dialog, idx)
+    local MultiInputDialog = require("ui/widget/multiinputdialog")
+    local item = idx and self.clipboard_settings.pinned_items[idx]
+    local pinned_item_dialog
+    pinned_item_dialog = MultiInputDialog:new{
+        title = _("Clipboard pinned item"),
+        fields = {
+            {
+                text = item and item.text or Device.input.getClipboardText(),
+                hint = _("text"),
+            },
+            {
+                text = item and item.name,
+                hint = _("name (optional)"),
+            },
+        },
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(pinned_item_dialog)
+                    end,
+                },
+                {
+                    text = _("Unpin"),
+                    enabled = idx ~= nil,
+                    callback = function()
+                        UIManager:close(pinned_item_dialog)
+                        UIManager:close(pin_dialog)
+                        table.remove(self.clipboard_settings.pinned_items, idx)
+                        if not next(self.clipboard_settings.pinned_items) then
+                            self.clipboard_settings.pinned_items = nil
+                        end
+                        self:showClipboardPinDialog()
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    callback = function()
+                        local fields = pinned_item_dialog:getFields()
+                        if fields[1] ~= "" then
+                            UIManager:close(pinned_item_dialog)
+                            UIManager:close(pin_dialog)
+                            self.clipboard_settings.pinned_items = self.clipboard_settings.pinned_items or {}
+                            idx = idx or #self.clipboard_settings.pinned_items + 1
+                            self.clipboard_settings.pinned_items[idx] = {
+                                text = fields[1],
+                                name = fields[2] ~= "" and fields[2] or nil,
+                            }
+                            self:showClipboardPinDialog()
+                        end
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(pinned_item_dialog)
+    pinned_item_dialog:onShowKeyboard()
 end
 
 function InputText:checkTextEditability()
