@@ -2,6 +2,7 @@
 applyTo: "plugins/fastnote.koplugin/**/*.lua"
 paths:
   - "plugins/fastnote.koplugin/**/*.lua"
+description: "Lua 5.1/LuaJIT conventions and gotchas for fastnote.koplugin code."
 ---
 
 # Lua conventions — fastnote.koplugin

@@ -5,6 +5,7 @@ paths:
   - ".github/skills/**"
   - ".claude/skills/**"
   - ".claude/rules/**"
+description: "How this repo splits agent docs between instructions files and skills, and the cross-tool discovery mechanics."
 ---
 
 # Instructions vs. Skills: how this repo's agent-facing docs are split
@@ -82,11 +83,13 @@ topic that's pure procedure with no standing invariant to remember
   Code's native equivalent is `.claude/rules/*.md`, which uses a `paths:`
   YAML list instead of `applyTo:` — a different key, same idea. Claude Code
   does not read `.github/instructions/` by that path.
-- **`.github/skills/<name>/SKILL.md` is a hand-rolled convention in this
-  repo**, following the open Agent Skills SKILL.md format. Claude Code's
-  native equivalent is `.claude/skills/<name>/SKILL.md` — live-discovered
-  and `description`-matched against the task automatically, even
-  mid-session. Claude Code does not read `.github/skills/` by that path.
+- **`.github/skills/<name>/SKILL.md` is now a first-class Copilot
+  location** (GitHub Copilot adopted the open Agent Skills standard in
+  December 2025 and reads `.github/skills/` natively across cloud agent,
+  code review, Copilot CLI, and VS Code agent mode). Claude Code's native
+  equivalent is `.claude/skills/<name>/SKILL.md` — live-discovered and
+  `description`-matched against the task automatically, even mid-session.
+  Claude Code does not read `.github/skills/` by that path.
 
 **This repo's fix: two directory-level symlinks, not one per file.**
 
@@ -128,17 +131,38 @@ Without the `paths` key, Claude Code treats the file as **unconditional**
 does not understand `applyTo` and silently ignores it rather than erroring,
 so a missing `paths` key is easy to overlook. Always add both.
 
+VS Code also supports optional `description` (one sentence — shown on hover
+and used for semantic matching when VS Code decides which instructions apply)
+and `name` (display label) frontmatter keys. Adding `description` is
+low-risk: Claude Code and the GitHub cloud agent ignore the extra key; only
+VS Code IDE agent mode uses it. GitHub also defines `excludeAgent`
+(`"code-review"` / `"cloud-agent"`) to suppress an instructions file from
+specific surfaces — not currently needed here, but worth knowing it exists.
+
+**Watch item: double-discovery.** Because Copilot now reads both
+`.github/skills/` and `.claude/skills/` (and both `.github/instructions/`
+and `.claude/rules/`), the directory-level symlinks mean each file is
+reachable from two paths in VS Code agent mode. Anthropic's docs say
+symlinked skills dedup in Claude Code; Copilot's dedup behavior is not
+documented. If duplicate skill listings or doubled instructions context
+appear in VS Code, the fix is a VS Code workspace exclusion targeting the
+`.claude/` paths — do NOT delete the symlinks, as Claude Code requires them.
+
 ---
 
-## Anthropic's Agent Skills rules that apply here
+## Agent Skills rules that apply here
 
-These are binding constraints on any `SKILL.md` in this repo (source:
-Anthropic's Agent Skills documentation and authoring best-practices guide):
+The `SKILL.md` format is the **open Agent Skills standard** (agentskills.io,
+stewarded openly; adopted by ~30+ tools). Anthropic helped author the spec;
+these rules reflect both the open standard and Anthropic's Claude Code
+authoring guidance. Binding constraints on any `SKILL.md` in this repo:
 
 - **Frontmatter `name`**: max 64 characters, lowercase letters/numbers/
-  hyphens only, no XML tags, cannot contain "anthropic" or "claude".
-  Gerund form (`authoring-instructions-and-skills`) is Anthropic's stated
-  preference for new skills; noun-phrase or action-oriented forms
+  hyphens only, no XML tags, cannot contain "anthropic" or "claude",
+  **MUST match the parent directory name exactly** — this moved from
+  convention to a binding open-spec requirement when the Agent Skills format
+  was published. Gerund form (`authoring-instructions-and-skills`) is
+  preferred for new skills; noun-phrase or action-oriented forms
   (`agents-md-authoring`, `test-driven-development`) are an acceptable
   alternative and are already established in this repo's existing skills
   — don't force a rename for cosmetic consistency alone.
@@ -149,13 +173,23 @@ Anthropic's Agent Skills documentation and authoring best-practices guide):
   you..." or "You can use this to...". Lead with *what the skill does*,
   then *when to use it*, packed with the specific trigger terms a request
   would actually contain.
-- **Progressive disclosure**: keep `SKILL.md`'s body under ~500 lines.
+- **Progressive disclosure**: keep `SKILL.md`'s body under ~500 lines
+  (the spec frames this as "instructions < 5,000 tokens recommended").
   Split larger content into separate reference files linked directly from
   `SKILL.md` (not nested — Claude may only partially read a file
   referenced from another referenced file, so keep all references one
   level deep). This repo's existing pattern for this is `.agents/notes/`:
   each `SKILL.md`/instructions file links out to a focused topic file
   rather than inlining detail.
+- **Optional Claude Code frontmatter** (spec-compliant tools ignore
+  unrecognized keys, so these are safe to add in a portable repo):
+  `when_to_use` (extra trigger phrases appended to `description` in skill
+  listings; combined text truncates at 1,536 chars), `paths` (glob-scoped
+  auto-activation, same format as instructions `paths`), `argument-hint`,
+  `user-invocable`, `disable-model-invocation`, `context: fork`.
+- **Optional open-spec frontmatter**: `license`, `compatibility`,
+  `metadata` — add these if the skill is intended for sharing beyond
+  this repo.
 - **No time-sensitive claims.** Don't write "as of May 2026" or "the
   current test count is N" into a skill or instructions file — those go
   stale silently. State the check to run instead (`busted spec/`), not a

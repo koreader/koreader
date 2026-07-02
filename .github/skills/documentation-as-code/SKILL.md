@@ -1,6 +1,9 @@
 ---
 name: documentation-as-code
 description: Checks whether a code change invalidates a doc comment, ADR, config example, or AGENTS.md entry, and updates it in the same pass — documentation is part of writing the code, not a follow-up step. Use when writing or changing any code in this repo — a new function, changed behavior, a file added/removed/renamed, a changed config default, or a new architectural decision. Triggers on the code change itself, not on a separate "update the docs" request.
+paths:
+  - "plugins/fastnote.koplugin/**"
+  - ".agents/**"
 ---
 
 # Documentation as code

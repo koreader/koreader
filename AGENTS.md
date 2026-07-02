@@ -30,17 +30,17 @@ See `.agents/ADRs/ADR-007-direct-to-master-no-prs.md` for the reasoning.
 
 ```
 plugins/fastnote.koplugin/   ← all active development; has its own AGENTS.md index
+  CLAUDE.md → AGENTS.md     ← symlink; Claude Code's lazy-load entry point for the plugin
 .agents/                     ← ADRs, planning, notes, superseded plans (repo root — see below)
 .github/
-  instructions/              ← facts/conventions: applyTo (Copilot) + paths (Claude Code) scoped
-  skills/koreader-plugin/    ← KOReader plugin dev reference (not yet added)
+  instructions/              ← facts/conventions (Copilot reads natively; Claude Code via .claude/rules symlink)
   skills/agents-md-authoring/           ← workflow for AGENTS.md and .agents/ docs
   skills/documentation-as-code/         ← keeping all docs in sync with code changes
   skills/test-driven-development/       ← when to write the spec first in this repo, and when not to
   skills/authoring-instructions-and-skills/  ← how to add new instructions/skills correctly
 .claude/
-  skills → ../.github/skills         (single directory symlink)
-  rules  → ../.github/instructions   (single directory symlink)
+  skills → ../.github/skills         (Claude Code only — Copilot reads .github/skills/ directly)
+  rules  → ../.github/instructions   (Claude Code only — Copilot reads .github/instructions/ directly)
 doc/                         ← upstream KOReader developer docs (not plugin-specific)
 ```
 

@@ -1,6 +1,6 @@
 # Plan: Bring .github/ skills & instructions up to current vendor guidance
 
-**Status: PROPOSED — awaiting approval before execution**
+**Status: EXECUTED**
 
 Audit date: 2026-07. Sources verified live: Claude Code docs
 (code.claude.com/docs/en/skills, /memory), Anthropic skill-authoring best
@@ -234,13 +234,13 @@ agents-md-authoring checklist rule).
 
 ## Execution order & checklist
 
-- [ ] Task 1 — doc-architecture.instructions.md factual updates
-- [ ] Task 2 — authoring skill checklist/template updates
-- [ ] Task 3 — `description` on all instructions files
-- [ ] Task 4 — plugin CLAUDE.md symlink
-- [ ] Task 5 — `paths` on documentation-as-code skill
-- [ ] Task 6 — copilot-instructions.md (confirm surface is used first)
-- [ ] Task 7 — root AGENTS.md hygiene
+- [x] Task 1 — doc-architecture.instructions.md factual updates
+- [x] Task 2 — authoring skill checklist/template updates
+- [x] Task 3 — `description` on all instructions files
+- [x] Task 4 — plugin CLAUDE.md symlink
+- [x] Task 5 — `paths` on documentation-as-code skill
+- [ ] Task 6 — copilot-instructions.md (confirm surface is used first; skipped pending confirmation)
+- [x] Task 7 — root AGENTS.md hygiene
 - [ ] Final: run the agents-md-authoring audit procedure (every referenced
       path exists; no claim contradicts the code)
-- [ ] Commit per-task or as one docs commit; push
+- [x] Commit and push

@@ -3,6 +3,7 @@ applyTo: "**/AGENTS.md,**/.agents/**"
 paths:
   - "**/AGENTS.md"
   - "**/.agents/**"
+description: "Content rules for AGENTS.md files and .agents/ docs — index-not-manual principle and where new content goes."
 ---
 
 # AGENTS.md and .agents/ conventions

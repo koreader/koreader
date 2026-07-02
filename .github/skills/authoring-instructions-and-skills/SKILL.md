@@ -15,10 +15,10 @@ automatically whenever you touch `.github/instructions/`, `.github/skills/`,
 `.claude/skills/`, or `.claude/rules/`. Read that first if you haven't
 already; this skill assumes it.
 
-`.claude/skills` and `.claude/rules` are each a single directory-level
-symlink back to `.github/skills` and `.github/instructions` respectively.
-**A new file needs no symlink step of its own** — it's visible on the
-Claude Code side automatically the moment it exists under `.github/`.
+`.github/skills/` is read natively by GitHub Copilot (December 2025+); the
+`.claude/skills` and `.claude/rules` directory symlinks exist only for Claude
+Code. **A new file in `.github/skills/` or `.github/instructions/` needs no
+symlink step** — both tools see it automatically.
 
 ---
 
@@ -48,6 +48,7 @@ topic across more files than necessary.
 applyTo: "<glob pattern(s), comma-separated for multiple>"
 paths:
   - "<same glob pattern, one per list item>"
+# description: "<optional: one sentence — VS Code shows on hover and uses for semantic matching>"
 ---
 
 # <Topic> conventions
@@ -101,6 +102,7 @@ mkdir -p .github/skills/<name>
 ---
 name: <name>
 description: <what it does, third person, then when to use it>
+# when_to_use: "<optional: extra trigger phrases appended to description for skill selection>"
 ---
 
 # <Skill title>
@@ -144,7 +146,8 @@ Straight from Anthropic's Agent Skills authoring rules — verify all of
 these, don't skip any:
 
 - [ ] `name`: max 64 chars, lowercase letters/numbers/hyphens only, no XML
-      tags, doesn't contain "anthropic" or "claude". Gerund form
+      tags, doesn't contain "anthropic" or "claude", **matches the parent
+      directory name exactly** (open-spec requirement). Gerund form
       (`processing-pdfs`) preferred for new skills; a clear noun/action
       phrase is an acceptable alternative if gerund reads awkwardly.
 - [ ] `description`: max 1024 chars, non-empty, no XML tags, **written in
