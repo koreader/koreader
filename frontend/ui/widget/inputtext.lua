@@ -457,6 +457,7 @@ function InputText:showClipboardPinDialog()
 end
 
 function InputText:editClipboardPinnedItem(pin_dialog, idx)
+    if self.disable_clipboard_pin_edit then return end
     local MultiInputDialog = require("ui/widget/multiinputdialog")
     local item = idx and self.clipboard_settings.pinned_items[idx]
     local pinned_item_dialog
@@ -466,12 +467,14 @@ function InputText:editClipboardPinnedItem(pin_dialog, idx)
             {
                 text = item and item.text or Device.input.getClipboardText(),
                 hint = _("text"),
+                allow_newline = true,
             },
             {
                 text = item and item.name,
                 hint = _("name (optional)"),
             },
         },
+        disable_clipboard_pin_edit = true,
         buttons = {
             {
                 {
