@@ -825,6 +825,18 @@ function Device:ping4(ip)
 end
 
 function Device:getDefaultRoute(interface)
+    if jit.os == "OSX" then
+        local handle = io.popen("route -n get default 2>/dev/null")
+        if not handle then return end
+        local gateway
+        for line in handle:lines() do
+            gateway = line:match("gateway%s*:%s*(%S+)")
+            if gateway then break end
+        end
+        handle:close()
+        return gateway
+    end
+
     local fd = io.open("/proc/net/route", "re")
     if not fd then
         return

@@ -137,6 +137,8 @@ local Desktop = Device:extend{
     isDesktop = yes,
     canRestart = notOSX,
     hasExitOptions = notOSX,
+    hasWifiToggle = yes,
+    hasSeamlessWifiToggle = yes,
 }
 
 local Flatpak = Device:extend{
@@ -450,6 +452,140 @@ function Device:initNetworkManager(NetworkMgr)
             return false
         end
         return 0 == os.execute("ping -c1 -w2 " .. default_gw .. " > /dev/null")
+    end
+end
+
+function Desktop:initNetworkManager(NetworkMgr)
+    local bit = require("bit")
+
+    local function detectWifiInterface()
+        if jit.os ~= "OSX" then return end
+        local handle = io.popen("networksetup -listallhardwareports 2>/dev/null")
+        if not handle then return end
+        local iface
+        local is_wifi = false
+        for line in handle:lines() do
+            if line:match("Wi%-Fi") or line:match("AirPort") then
+                is_wifi = true
+            elseif is_wifi then
+                local dev = line:match("Device: (%S+)")
+                if dev then
+                    iface = dev
+                    break
+                end
+            end
+        end
+        handle:close()
+        if iface then
+            logger.dbg("Desktop: detected WiFi interface:", iface)
+            return iface
+        end
+        -- Fallback: use getifaddrs to find the first enX interface
+        local ffi_local = require("ffi")
+        local C = ffi_local.C
+        local ifaddr = ffi_local.new("struct ifaddrs *[1]")
+        if C.getifaddrs(ifaddr) == -1 then return "en0" end
+        ifaddr = ffi_local.gc(ifaddr[0], C.freeifaddrs)
+        local ifa = ifaddr
+        while ifa ~= nil do
+            if ifa.ifa_name ~= nil then
+                local name = ffi_local.string(ifa.ifa_name)
+                if name:match("^en%d+$") then
+                    -- Skip AWDL (Apple Wireless Direct Link) if encountered as enX
+                    if name ~= "en0" and not iface then
+                        iface = name
+                    elseif name == "en0" then
+                        iface = "en0"
+                        break
+                    end
+                end
+            end
+            ifa = ifa.ifa_next
+        end
+        return iface or "en0"
+    end
+
+    local wifi_interface = detectWifiInterface()
+
+    local function hasActiveInterface()
+        local ffi_local = require("ffi")
+        local C = ffi_local.C
+        local ifaddr = ffi_local.new("struct ifaddrs *[1]")
+        if C.getifaddrs(ifaddr) == -1 then return false end
+        ifaddr = ffi_local.gc(ifaddr[0], C.freeifaddrs)
+        local ifa = ifaddr
+        while ifa ~= nil do
+            if ifa.ifa_addr ~= nil
+                and bit.band(ifa.ifa_flags, C.IFF_UP) ~= 0
+                and bit.band(ifa.ifa_flags, C.IFF_LOOPBACK) == 0
+                and (ifa.ifa_addr.sa_family == C.AF_INET or ifa.ifa_addr.sa_family == C.AF_INET6) then
+                return true
+            end
+            ifa = ifa.ifa_next
+        end
+        return false
+    end
+
+    if jit.os == "OSX" then
+        function NetworkMgr:turnOnWifi(complete_callback)
+            os.execute("networksetup -setairportpower "
+                .. wifi_interface .. " on 2>/dev/null")
+            if complete_callback then
+                UIManager:scheduleIn(1, complete_callback)
+            end
+        end
+
+        function NetworkMgr:turnOffWifi(complete_callback)
+            os.execute("networksetup -setairportpower "
+                .. wifi_interface .. " off 2>/dev/null")
+            if complete_callback then
+                complete_callback()
+            end
+        end
+
+        function NetworkMgr:isWifiOn()
+            local handle = io.popen("networksetup -getairportpower "
+                .. wifi_interface .. " 2>/dev/null")
+            if not handle then return hasActiveInterface() end
+            local line = handle:read("*l")
+            handle:close()
+            return line and line:match(": On$") ~= nil
+        end
+
+        function NetworkMgr:getNetworkInterfaceName()
+            return wifi_interface
+        end
+    end
+
+    if jit.os ~= "OSX" then
+        function NetworkMgr:isWifiOn()
+            return hasActiveInterface()
+        end
+    end
+
+    function NetworkMgr:isConnected()
+        return self:hasDefaultRoute()
+    end
+
+    function NetworkMgr:isOnline()
+        if not Device:hasWifiToggle() then
+            return true
+        end
+        if self:canResolveHostnames() then
+            return true
+        end
+        -- DNS may fail in bundled/luajit on desktop while network is fine.
+        -- If WiFi is on and we have a default route, trust that consumers
+        -- will handle their own HTTP errors.
+        if self:isConnected() then
+            logger.dbg("NetworkMgr: DNS check failed but connected, assuming online")
+            return true
+        end
+        return false
+    end
+
+    if G_reader_settings:readSetting("wifi_enable_action") == nil then
+        G_reader_settings:saveSetting("wifi_enable_action", "turn_on")
     end
 end
 
