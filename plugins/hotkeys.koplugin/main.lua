@@ -91,6 +91,9 @@ if Device:hasKeyboard() then
             hotkeys_list_haskeyboard[char:lower()] = char
         end
     end
+    -- bracket keys for font size (SDL/desktop)
+    hotkeys_list_haskeyboard["["] = "["
+    hotkeys_list_haskeyboard["]"] = "]"
     util.tableMerge(hotkeys_list, hotkeys_list_haskeyboard)
 end
 
@@ -246,6 +249,8 @@ function HotKeys:registerKeyEvents()
             for _, key in ipairs(Device.input.group.Alphabet) do
                 self.key_events[key] = { { key }, event = "HotkeyAction", args = key:lower() }
             end
+            self.key_events["["] = { { "[" }, event = "HotkeyAction", args = "[" }
+            self.key_events["]"] = { { "]" }, event = "HotkeyAction", args = "]" }
         end
     end -- if hasKeyboard()
 
@@ -483,6 +488,14 @@ function HotKeys:addToMainMenu(menu_items)
                     "j", "k", "l", "m", "n", "o", "p", "q", "r",
                     "s", "t", "u", "v", "w", "x", "y", "z",
                 }),
+                separator = true,
+            })
+            table.insert(menu_items.hotkeys.sub_item_table, {
+                text = _("Bracket keys"),
+                enabled_func = function()
+                    return self.hotkey_mode == "hotkeys_reader"
+                end,
+                sub_item_table = self:genSubItemTable({ "[", "]" }),
                 separator = true,
             })
         end

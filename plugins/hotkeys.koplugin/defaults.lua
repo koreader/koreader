@@ -138,6 +138,9 @@ local defaults = {
         o = nil, p = nil, q = nil, r = nil, s = nil,
         t = Device:hasKeyboard() and {toc = true,} or {},
         u = nil, v = nil, w = nil, x = nil, y = nil, z = nil,
+        -- bracket keys (SDL/desktop defaults)
+        ["["] = Device:hasKeyboard() and {decrease_font = true,} or {},
+        ["]"] = Device:hasKeyboard() and {increase_font = true,} or {},
     },
 }
 
