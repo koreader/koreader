@@ -133,12 +133,22 @@ function ReaderRolling:registerKeyEvents()
         self.key_events.MoveUp = { { "RPgBack" }, event = "Panning", args = {0, -1}, }
         self.key_events.MoveDown = { { { "RPgFwd", " " } }, event = "Panning", args = {0,  1}, }
     elseif Device:hasDPad() then
-        self.key_events.MoveUp = { { "Up" }, event = "Panning", args = {0, -1}, }
-        self.key_events.MoveDown = { { "Down" }, event = "Panning", args = {0,  1}, }
+        if Device:isSDL() then
+            self.key_events.MoveUp = { { "Shift", "Up" }, event = "Panning", args = {0, -1}, }
+            self.key_events.MoveDown = { { "Shift", "Down" }, event = "Panning", args = {0,  1}, }
+        else
+            self.key_events.MoveUp = { { "Up" }, event = "Panning", args = {0, -1}, }
+            self.key_events.MoveDown = { { "Down" }, event = "Panning", args = {0,  1}, }
+        end
     end
     if (Device:hasDPad() and not Device:useDPadAsActionKeys()) or (Device:hasKeys() and not Device:useDPadAsActionKeys()) then
-        self.key_events.GotoNextView = { { { "RPgFwd", "LPgFwd", next_key } }, event = "GotoViewRel", args = 1, }
-        self.key_events.GotoPrevView = { { { "RPgBack", "LPgBack", prev_key } }, event = "GotoViewRel", args = -1, }
+        if Device:isSDL() then
+            self.key_events.GotoNextView = { { { "RPgFwd", "LPgFwd", "Down", next_key } }, event = "GotoViewRel", args = 1, }
+            self.key_events.GotoPrevView = { { { "RPgBack", "LPgBack", "Up", prev_key } }, event = "GotoViewRel", args = -1, }
+        else
+            self.key_events.GotoNextView = { { { "RPgFwd", "LPgFwd", next_key } }, event = "GotoViewRel", args = 1, }
+            self.key_events.GotoPrevView = { { { "RPgBack", "LPgBack", prev_key } }, event = "GotoViewRel", args = -1, }
+        end
     end
     if Device:hasKeyboard() and not Device.k3_alt_plus_key_kernel_translated then
         self.key_events.GotoFirst = { { "1" }, event = "GotoPercent", args = 0,   }

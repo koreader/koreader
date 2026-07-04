@@ -67,10 +67,17 @@ function ReaderPaging:registerKeyEvents()
             self.key_events.GotoPrevPage = { { { "RPgBack", "LPgBack" } }, event = "GotoViewRel", args = -1, }
         end
     elseif Device:hasKeys() then
-        self.key_events.GotoNextPage = { { { "RPgFwd", "LPgFwd", not Device:hasFewKeys() and next_key } }, event = "GotoViewRel", args = 1, }
-        self.key_events.GotoPrevPage = { { { "RPgBack", "LPgBack", not Device:hasFewKeys() and prev_key } }, event = "GotoViewRel", args = -1, }
-        self.key_events.GotoNextPos = { { "Down" }, event = "GotoPosRel", args = 1, }
-        self.key_events.GotoPrevPos = { { "Up" }, event = "GotoPosRel", args = -1, }
+        if Device:isSDL() then
+            self.key_events.GotoNextPage = { { { "RPgFwd", "LPgFwd", "Down", not Device:hasFewKeys() and next_key } }, event = "GotoViewRel", args = 1, }
+            self.key_events.GotoPrevPage = { { { "RPgBack", "LPgBack", "Up", not Device:hasFewKeys() and prev_key } }, event = "GotoViewRel", args = -1, }
+            self.key_events.GotoNextPos = { { "Shift", "Down" }, event = "GotoPosRel", args = 1, }
+            self.key_events.GotoPrevPos = { { "Shift", "Up" }, event = "GotoPosRel", args = -1, }
+        else
+            self.key_events.GotoNextPage = { { { "RPgFwd", "LPgFwd", not Device:hasFewKeys() and next_key } }, event = "GotoViewRel", args = 1, }
+            self.key_events.GotoPrevPage = { { { "RPgBack", "LPgBack", not Device:hasFewKeys() and prev_key } }, event = "GotoViewRel", args = -1, }
+            self.key_events.GotoNextPos = { { "Down" }, event = "GotoPosRel", args = 1, }
+            self.key_events.GotoPrevPos = { { "Up" }, event = "GotoPosRel", args = -1, }
+        end
     end
     if Device:hasKeyboard() and not Device.k3_alt_plus_key_kernel_translated then
         self.key_events.GotoFirst = { { "1" }, event = "GotoPercent", args = 0,   }
