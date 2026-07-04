@@ -354,9 +354,10 @@ function InputText:holdTextBox(arg, ges)
                     },
                     {
                         text = "\u{F435}", -- pin
+                        enabled = not self.disable_clipboard_snippet_edit or self.clipboard_settings.snippets ~= nil,
                         callback = function()
                             UIManager:close(clipboard_dialog)
-                            self:showClipboardPinDialog()
+                            self:showClipboardSnippets()
                         end,
                     },
                 },
@@ -414,10 +415,10 @@ function InputText:showSelectionDialog()
     UIManager:show(selection_dialog)
 end
 
-function InputText:showClipboardPinDialog()
+function InputText:showClipboardSnippets()
     local ButtonDialog = require("ui/widget/buttondialog")
-    local pin_dialog
-    local buttons = {
+    local snippets_dialog
+    local buttons = self.disable_clipboard_snippet_edit and {} or {
         {
             {
                 text = _("New"),
@@ -425,44 +426,45 @@ function InputText:showClipboardPinDialog()
                 font_size = 22,
                 align = "left",
                 callback = function()
-                    UIManager:close(pin_dialog)
-                    self:editClipboardPinnedItem(pin_dialog)
+                    UIManager:close(snippets_dialog)
+                    self:editClipboardSnippet(snippets_dialog)
                 end,
             },
         },
     }
-    if self.clipboard_settings.pinned_items then
-        for i, v in ipairs(self.clipboard_settings.pinned_items) do
+    if self.clipboard_settings.snippets then
+        for i, v in ipairs(self.clipboard_settings.snippets) do
             table.insert(buttons, {{
                 text = v.name and string.format("%s (%s)", v.name, v.text) or v.text,
                 menu_style = true,
                 avoid_text_truncation = false,
                 callback = function()
-                    UIManager:close(pin_dialog)
+                    UIManager:close(snippets_dialog)
                     self:addChars(v.text)
                 end,
                 hold_callback = function()
-                    UIManager:close(pin_dialog)
-                    self:editClipboardPinnedItem(pin_dialog, i)
+                    if not self.disable_clipboard_snippet_edit then
+                        UIManager:close(snippets_dialog)
+                        self:editClipboardSnippet(snippets_dialog, i)
+                    end
                 end,
             }})
         end
     end
-    pin_dialog = ButtonDialog:new{
+    snippets_dialog = ButtonDialog:new{
         width_factor = 0.6,
         buttons = buttons,
         modal = true,
     }
-    UIManager:show(pin_dialog)
+    UIManager:show(snippets_dialog)
 end
 
-function InputText:editClipboardPinnedItem(pin_dialog, idx)
-    if self.disable_clipboard_pin_edit then return end
+function InputText:editClipboardSnippet(snippets_dialog, idx)
     local MultiInputDialog = require("ui/widget/multiinputdialog")
-    local item = idx and self.clipboard_settings.pinned_items[idx]
-    local pinned_item_dialog
-    pinned_item_dialog = MultiInputDialog:new{
-        title = _("Clipboard pinned item"),
+    local item = idx and self.clipboard_settings.snippets[idx]
+    local snippet_dialog
+    snippet_dialog = MultiInputDialog:new{
+        title = _("Clipboard snippet"),
         fields = {
             {
                 text = item and item.text or Device.input.getClipboardText(),
@@ -474,51 +476,51 @@ function InputText:editClipboardPinnedItem(pin_dialog, idx)
                 hint = _("name (optional)"),
             },
         },
-        disable_clipboard_pin_edit = true,
+        disable_clipboard_snippet_edit = true,
         buttons = {
             {
                 {
                     text = _("Cancel"),
                     id = "close",
                     callback = function()
-                        UIManager:close(pinned_item_dialog)
+                        UIManager:close(snippet_dialog)
                     end,
                 },
                 {
-                    text = _("Unpin"),
+                    text = _("Remove"),
                     enabled = idx ~= nil,
                     callback = function()
-                        UIManager:close(pinned_item_dialog)
-                        UIManager:close(pin_dialog)
-                        table.remove(self.clipboard_settings.pinned_items, idx)
-                        if not next(self.clipboard_settings.pinned_items) then
-                            self.clipboard_settings.pinned_items = nil
+                        UIManager:close(snippet_dialog)
+                        UIManager:close(snippets_dialog)
+                        table.remove(self.clipboard_settings.snippets, idx)
+                        if not next(self.clipboard_settings.snippets) then
+                            self.clipboard_settings.snippets = nil
                         end
-                        self:showClipboardPinDialog()
+                        self:showClipboardSnippets()
                     end,
                 },
                 {
                     text = _("Save"),
                     callback = function()
-                        local fields = pinned_item_dialog:getFields()
+                        local fields = snippet_dialog:getFields()
                         if fields[1] ~= "" then
-                            UIManager:close(pinned_item_dialog)
-                            UIManager:close(pin_dialog)
-                            self.clipboard_settings.pinned_items = self.clipboard_settings.pinned_items or {}
-                            idx = idx or #self.clipboard_settings.pinned_items + 1
-                            self.clipboard_settings.pinned_items[idx] = {
+                            UIManager:close(snippet_dialog)
+                            UIManager:close(snippets_dialog)
+                            self.clipboard_settings.snippets = self.clipboard_settings.snippets or {}
+                            idx = idx or #self.clipboard_settings.snippets + 1
+                            self.clipboard_settings.snippets[idx] = {
                                 text = fields[1],
                                 name = fields[2] ~= "" and fields[2] or nil,
                             }
-                            self:showClipboardPinDialog()
+                            self:showClipboardSnippets()
                         end
                     end,
                 },
             },
         },
     }
-    UIManager:show(pinned_item_dialog)
-    pinned_item_dialog:onShowKeyboard()
+    UIManager:show(snippet_dialog)
+    snippet_dialog:onShowKeyboard()
 end
 
 function InputText:checkTextEditability()
