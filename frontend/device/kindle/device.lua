@@ -577,10 +577,14 @@ function Kindle:openInputDevices()
         --       And let's add that isn't also a touchscreen to the mix, because while not true at time of writing, that's an event touchscreens sure can support...
         devices = FBInkInput.fbink_input_scan(C.INPUT_ROTATION_EVENT, bit.bor(C.INPUT_TABLET, C.INPUT_TOUCHSCREEN), C.NO_RECAP, dev_count)
         if devices ~= nil then
+            self.input.rotation_fds = {}
             for i = 0, tonumber(dev_count[0]) - 1 do
                 local dev = devices[i]
                 if dev.matched then
-                    self.input:fdopen(tonumber(dev.fd), ffi.string(dev.path), ffi.string(dev.name))
+                    local fd = tonumber(dev.fd)
+                    self.input:fdopen(fd, ffi.string(dev.path), ffi.string(dev.name))
+                    -- Remember the fd, so the gyro translation hooks can skip lookalike events from other devices
+                    self.input.rotation_fds[fd] = true
                 end
             end
             C.free(devices)
@@ -1429,6 +1433,10 @@ local function OasisGyroTranslation(this, ev)
     local DEVICE_ORIENTATION_LANDSCAPE_ROTATED      = 22
 
     if ev.type == C.EV_ABS and ev.code == C.ABS_PRESSURE then
+        -- Only trust the accelerometer, other devices may report ABS_PRESSURE, too (e.g., hotplugged keyboards w/ a digitizer collection)
+        if ev.fd and this.rotation_fds and not this.rotation_fds[ev.fd] then
+            return
+        end
         if ev.value == DEVICE_ORIENTATION_PORTRAIT
             or ev.value == DEVICE_ORIENTATION_PORTRAIT_LEFT
             or ev.value == DEVICE_ORIENTATION_PORTRAIT_RIGHT then
@@ -1537,6 +1545,10 @@ local function KindleGyroTransform(this, ev)
     local UPWARD_LANDSCAPE_RIGHT_INTERRUPT_HAPPENED = 18
 
     if ev.type == C.EV_ABS and ev.code == C.ABS_PRESSURE then
+        -- Only trust the accelerometer, other devices may report ABS_PRESSURE, too (e.g., hotplugged keyboards w/ a digitizer collection)
+        if ev.fd and this.rotation_fds and not this.rotation_fds[ev.fd] then
+            return
+        end
         if ev.value == UPWARD_PORTRAIT_UP_INTERRUPT_HAPPENED then
             -- i.e., UR
             ev.type = C.EV_MSC
