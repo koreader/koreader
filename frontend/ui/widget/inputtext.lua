@@ -427,7 +427,7 @@ function InputText:showClipboardSnippets()
                 align = "left",
                 callback = function()
                     UIManager:close(snippets_dialog)
-                    self:editClipboardSnippet(snippets_dialog)
+                    self:editClipboardSnippet()
                 end,
             },
         },
@@ -445,7 +445,7 @@ function InputText:showClipboardSnippets()
                 hold_callback = function()
                     if not self.disable_clipboard_snippet_edit then
                         UIManager:close(snippets_dialog)
-                        self:editClipboardSnippet(snippets_dialog, i)
+                        self:editClipboardSnippet(i)
                     end
                 end,
             }})
@@ -459,7 +459,7 @@ function InputText:showClipboardSnippets()
     UIManager:show(snippets_dialog)
 end
 
-function InputText:editClipboardSnippet(snippets_dialog, idx)
+function InputText:editClipboardSnippet(idx)
     local MultiInputDialog = require("ui/widget/multiinputdialog")
     local item = idx and self.clipboard_settings.snippets[idx]
     local snippet_dialog
@@ -491,7 +491,6 @@ function InputText:editClipboardSnippet(snippets_dialog, idx)
                     enabled = idx ~= nil,
                     callback = function()
                         UIManager:close(snippet_dialog)
-                        UIManager:close(snippets_dialog)
                         table.remove(self.clipboard_settings.snippets, idx)
                         if not next(self.clipboard_settings.snippets) then
                             self.clipboard_settings.snippets = nil
@@ -505,7 +504,6 @@ function InputText:editClipboardSnippet(snippets_dialog, idx)
                         local fields = snippet_dialog:getFields()
                         if fields[1] ~= "" then
                             UIManager:close(snippet_dialog)
-                            UIManager:close(snippets_dialog)
                             self.clipboard_settings.snippets = self.clipboard_settings.snippets or {}
                             idx = idx or #self.clipboard_settings.snippets + 1
                             self.clipboard_settings.snippets[idx] = {
