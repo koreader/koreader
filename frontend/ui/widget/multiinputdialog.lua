@@ -157,7 +157,7 @@ function MultiInputDialog:init()
             auto_para_direction = field.auto_para_direction or self.auto_para_direction,
             alignment_strict = field.alignment_strict or self.alignment_strict,
             enter_callback = not field.allow_newline and self.enter_callback,
-            disable_clipboard_pin_edit = self.disable_clipboard_pin_edit,
+            disable_clipboard_snippet_edit = self.disable_clipboard_snippet_edit,
         }
         table.insert(self.input_fields, input_field_tmp)
         if field.description then
