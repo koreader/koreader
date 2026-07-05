@@ -1,3 +1,4 @@
+local Archiver = require("ffi/archiver")
 local BD = require("ui/bidi")
 local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
@@ -26,6 +27,7 @@ local C = ffi.C
 local ffiUtil  = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local posix = require("ffi/posix")
 local time = require("ui/time")
 local util  = require("util")
 local _ = require("gettext")
@@ -1702,115 +1704,160 @@ function ReaderDictionary:onTapDownloadDict(item)
         ok_text = _("Download"),
         ok_callback = function()
             NetworkMgr:runWhenOnline(function()
-                self._manager:downloadDictionaryPrep(dict)
+                self._manager:downloadDictionary(dict)
             end)
         end,
     })
 end
 
-function ReaderDictionary:downloadDictionaryPrep(dict)
-    local dummy, filename = util.splitFilePathName(dict.url)
-    local download_location = string.format("%s/%s", self.data_dir, filename)
-
-    if lfs.attributes(download_location) then
-        UIManager:show(ConfirmBox:new{
-            text =  _("File already exists. Overwrite?"),
-            ok_text =  _("Overwrite"),
-            ok_callback = function()
-                self:downloadDictionary(dict, download_location)
-            end,
-        })
-    else
-        self:downloadDictionary(dict, download_location)
+local function extractDictionary(archive, extract_to)
+    -- Ensure the parent directory exists.
+    local ok, err = util.makePath(ffiUtil.dirname(extract_to))
+    if not ok then
+        return ok, err
     end
+    -- If there's a previously extracted directory, remove it.
+    if lfs.attributes(extract_to, "mode") then
+        ok, err = ffiUtil.purgeDir(extract_to)
+        if not ok then
+            return ok, err
+        end
+    end
+    -- Create a temporary directory alongside the final directory.
+    local tmpdir_template = extract_to .. ".XXXXXX"
+    local tmpdir = ffi.new("char[?]", #tmpdir_template + 1, tmpdir_template)
+    if C.mkdtemp(tmpdir) == nil then
+        return false, string.format("mkdtemp(%s): %s", ffi.string(tmpdir), posix.strerror())
+    end
+    tmpdir = ffi.string(tmpdir)
+    -- Extract archive.
+    local arc = Archiver.Reader:new()
+    ok = arc:open(archive)
+    if ok then
+        for entry in arc:iterate() do
+            if not arc:extractToPath(entry.path, tmpdir.."/"..entry.path) then
+                break
+            end
+        end
+        ok, err = not arc.err, arc.err
+    end
+    arc:close()
+    os.remove(archive)
+    -- Finalize.
+    if ok then
+        -- Determine root directory, if any.
+        local archive_root
+        for entry in lfs.dir(tmpdir) do
+            if entry ~= ".." and entry ~= "." then
+                if archive_root then
+                    -- Multiple entries: no root.
+                    archive_root = nil
+                    break
+                end
+                archive_root = entry
+            end
+        end
+        if archive_root then
+            -- Rename root to final directory and remove temporary directory.
+            ok, err = os.rename(tmpdir.."/"..archive_root, extract_to)
+            os.remove(tmpdir)
+        else
+            -- No root, just rename the whole temporary directory.
+            ok, err = os.rename(tmpdir, extract_to)
+        end
+    else
+        ffiUtil.purgeDir(tmpdir)
+    end
+    return ok, err
 end
 
-function ReaderDictionary:downloadDictionary(dict, download_location, continue)
-    continue = continue or false
+function ReaderDictionary:downloadDictionary(dict)
+    -- Ensure we're running in a coroutine.
+    local co = coroutine.running()
+    if not co then
+        Trapper:wrap(function() self:downloadDictionary(dict) end)
+        return
+    end
+
+    -- UI helper.
+    local dialog
+    local show_info = function(text)
+        if dialog then
+            UIManager:close(dialog)
+            dialog = nil
+        end
+        dialog = InfoMessage:new{ text = text }
+        UIManager:show(dialog)
+        UIManager:forceRePaint()
+    end
+
+    -- Socket helper.
     local socket = require("socket")
     local socketutil = require("socketutil")
-    local http = socket.http
-    local ltn12 = require("ltn12")
-
-    if not continue then
-        local file_size
-        -- Skip body & code args
-        socketutil:set_timeout()
-        local headers = socket.skip(2, http.request{
-            method  = "HEAD",
-            url     = dict.url,
-            --redirect = true,
+    local fetch = function(outfile)
+        if outfile then
+            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+        else
+            socketutil:set_timeout()
+        end
+        local code, headers, status = socket.skip(1, socket.http.request{
+            method = outfile and "GET" or "HEAD",
+            sink   = outfile and socketutil.file_sink(io.open(outfile, "w")),
+            url    = dict.url,
         })
         socketutil:reset_timeout()
-        --logger.dbg(headers)
-        file_size = headers and headers["content-length"]
-
-        if file_size then
-            UIManager:show(ConfirmBox:new{
-                text =  T(_("Dictionary filesize is %1 (%2 bytes). Continue with download?"), util.getFriendlySize(file_size), util.getFormattedSize(file_size)),
-                ok_text =  _("Download"),
-                ok_callback = function()
-                    -- call ourselves with continue = true
-                    self:downloadDictionary(dict, download_location, true)
-                end,
-            })
+        if code ~= 200 then
+            local err = status or code
+            logger.dbg("ReaderDictionary: Request failed:", err)
+            logger.dbg("ReaderDictionary: Response headers:", headers)
+            show_info(T(_("Download failed:\n\n%1"), BD.ltr(err)))
             return
-        else
-            logger.dbg("ReaderDictionary: Request failed; response headers:", headers)
-            UIManager:show(InfoMessage:new{
-                text = _("Failed to fetch dictionary. Are you online?"),
-                --timeout = 3,
-            })
-            return false
         end
-    else
-        UIManager:nextTick(function()
-            UIManager:show(InfoMessage:new{
-                text = _("Downloading…"),
-                timeout = 3,
-            })
-        end)
+        return headers
     end
 
-    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local code, headers, status = socket.skip(1, http.request{
-        url     = dict.url,
-        sink    = ltn12.sink.file(io.open(download_location, "w")),
-    })
-    socketutil:reset_timeout()
-    if code == 200 then
-        logger.dbg("file downloaded to", download_location)
-    else
-        logger.dbg("ReaderDictionary: Request failed:", status or code)
-        logger.dbg("ReaderDictionary: Response headers:", headers)
-        UIManager:show(InfoMessage:new{
-            text = _("Could not save file to:\n") .. BD.filepath(download_location),
-            --timeout = 3,
-        })
-        return false
+    -- Fetch content length.
+    local headers = fetch()
+    if not headers or not headers["content-length"] then
+        return
     end
 
-    -- stable target directory is needed so we can look through the folder later
-    local dict_path = self.data_dir .. "/" .. dict.name
-    util.makePath(dict_path)
-    local ok, error = Device:unpackArchive(download_location, dict_path, true)
-
-    if ok then
-        if dict.ifo_lang then
-            self:extendIfoWithLanguage(dict_path, dict.ifo_lang)
-        end
-        available_ifos = false
-        self:init()
-        UIManager:show(InfoMessage:new{
-            text = _("Dictionary downloaded:\n") .. dict.name,
-        })
-        return true
-    else
-        UIManager:show(InfoMessage:new{
-            text = _("Dictionary failed to download:\n") .. string.format("%s\n%s", dict.name, error),
-        })
-        return false
+    dialog = ConfirmBox:new{
+        text = T(_("Dictionary filesize is %1. Continue with download?"), util.getFriendlySize(headers["content-length"])),
+        ok_text =  _("Download"),
+        ok_callback = function() coroutine.resume(co, true) end,
+        cancel_callback = function() coroutine.resume(co, false) end,
+    }
+    UIManager:show(dialog)
+    if not coroutine.yield() then
+        return
     end
+
+    -- Download archive.
+    show_info(_("Downloading…"))
+    local dict_archive = self.data_dir.."/"..table.remove(socket.url.parse_path(dict.url))
+    if not fetch(dict_archive) then
+        return
+    end
+    logger.dbg("file downloaded to", dict_archive)
+
+    -- Extract archive: a stable target directory is needed so we can look through the folder later.
+    -- Additionally, make sure a safe directory name is used (so for example the "Dictionnaire de
+    -- l'Académie Française: 8ème edition" dictionary can be installed on Kindle).
+    local dict_dir = self.data_dir.."/"..util.getSafeFilename(dict.name, ffiUtil.realpath(self.data_dir))
+    local ok, err = extractDictionary(dict_archive, dict_dir)
+    if not ok then
+        show_info(T(_("Extraction failed:\n\n%1"), BD.ltr(err)))
+        return
+    end
+
+    -- Update available dictionaries.
+    if dict.ifo_lang then
+        self:extendIfoWithLanguage(dict_dir, dict.ifo_lang)
+    end
+    available_ifos = false
+    self:init()
+    show_info(_("Dictionary downloaded"))
 end
 
 function ReaderDictionary:extendIfoWithLanguage(dictionary_location, ifo_lang)
