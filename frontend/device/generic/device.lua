@@ -4,7 +4,6 @@ Generic device abstraction.
 This module defines stubs for common methods.
 --]]
 
-local Archiver = require("ffi/archiver")
 local DataStorage = require("datastorage")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
@@ -975,48 +974,6 @@ end
 
 function Device:getDefaultCoverPath()
     return DataStorage:getDataDir() .. "/cover.jpg"
-end
-
---- Unpack an archive.
--- Extract the contents of an archive, detecting its format by
--- filename extension. Inspired by luarocks archive_unpack()
--- @param archive string: Filename of archive.
--- @param extract_to string: Destination directory.
--- @param with_stripped_root boolean: true if root directory in archive should be stripped
--- @return boolean or (boolean, string): true on success, false and an error message on failure.
-function Device:unpackArchive(archive, extract_to, with_stripped_root)
-    require("dbg").dassert(type(archive) == "string")
-    local BD = require("ui/bidi")
-    local arc = Archiver.Reader:new()
-    local ok = arc:open(archive)
-    if ok then
-        for entry in arc:iterate() do
-            local dest_path = entry.path
-            if with_stripped_root then
-                local __, tail = dest_path:match("([^/]*)/*(.*)")
-                if tail then
-                    -- Non-root: strip one level.
-                    dest_path = tail
-                elseif entry.mode == 'directory' then
-                    -- Root directory: ignore.
-                    goto continue
-                else -- luacheck: ignore 542
-                    -- Root non-directory: don't strip.
-                end
-            end
-            if not arc:extractToPath(entry.path, extract_to.."/"..dest_path) then
-                break
-            end
-            ::continue::
-        end
-        ok = not arc.err
-    end
-    if not ok then
-        return false, T(_("Extracting archive failed:\n\n%1"), BD.filepath(archive))..string.format("\n\n(%s)", arc.err)
-    end
-    arc:close()
-    os.remove(archive)
-    return true
 end
 
 -- Update our UIManager reference once it's ready
