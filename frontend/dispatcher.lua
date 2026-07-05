@@ -42,6 +42,7 @@ local ReaderTypography = require("apps/reader/modules/readertypography")
 local ReaderView = require("apps/reader/modules/readerview")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
 local Screen = Device.screen
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local util = require("util")
 local _ = require("gettext")
@@ -1139,6 +1140,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
                     actions.settings.quickmenu_separators = nil
                     actions.settings.keep_open_on_apply = nil
                     actions.settings.anchor_quickmenu = nil
+                    actions.settings.quickmenu_position = nil
                     util.tableRemoveValue(actions, "settings", "show_as_quickmenu")
                     caller.updated = true
                 elseif util.tableGetValue(actions, "settings", "execute_one_by_one") then
@@ -1165,6 +1167,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
                 actions.settings.quickmenu_separators = nil
                 actions.settings.keep_open_on_apply = nil
                 actions.settings.anchor_quickmenu = nil
+                actions.settings.quickmenu_position = nil
                 caller.updated = true
             end
         end,
@@ -1184,6 +1187,87 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             end
         end,
         separator = true,
+    })
+    -- @translators position in the screen
+    local pos_text_default = _("center")
+    local pos_text = {
+        y = { [0] = _("top"), [1] = _("bottom") },
+        x = { [0] = _("left"), [1] = _("right") },
+    }
+    local function genPosMenuItem(axis, value)
+        local actions = location[settings]
+        return {
+            text = value and pos_text[axis][value] or pos_text_default,
+            checked_func = function()
+                if util.tableGetValue(actions, "settings", "anchor_quickmenu") then
+                    return false
+                end
+                local pos = util.tableGetValue(actions, "settings", "quickmenu_position")
+                return (not pos and not value) or (pos and pos[axis] == value)
+            end,
+            radio = true,
+            callback = function()
+                local pos = util.tableGetValue(actions, "settings", "quickmenu_position")
+                if not (pos and pos[axis] == value) then
+                    if value then
+                        util.tableSetValue(actions, value, "settings", "quickmenu_position", axis)
+                    else
+                        util.tableRemoveValue(actions, "settings", "quickmenu_position", axis)
+                    end
+                    util.tableRemoveValue(actions, "settings", "anchor_quickmenu")
+                    caller.updated = true
+                end
+            end,
+            separator = value == 1,
+        }
+    end
+    local pos_sub_item_table = {
+        genPosMenuItem("y", 0),
+        genPosMenuItem("y"),
+        genPosMenuItem("y", 1),
+        genPosMenuItem("x", 0),
+        genPosMenuItem("x"),
+        genPosMenuItem("x", 1),
+        not util.tableGetValue(location[settings], "settings", "name") and { -- for gestures only
+            text = _("gesture position"),
+            checked_func = function()
+                return util.tableGetValue(location[settings], "settings", "anchor_quickmenu")
+            end,
+            radio = true,
+            callback = function()
+                if not util.tableGetValue(location[settings], "settings", "anchor_quickmenu") then
+                    util.tableSetValue(location[settings], true, "settings", "anchor_quickmenu")
+                    util.tableRemoveValue(location[settings], "settings", "quickmenu_position")
+                    caller.updated = true
+                end
+            end,
+        } or nil,
+    }
+    table.insert(menu, {
+        text_func = function()
+            local pos = util.tableGetValue(location[settings], "settings", "quickmenu_position")
+            if not pos and not util.tableGetValue(location[settings], "settings", "anchor_quickmenu") then
+                return _("QuickMenu position") -- center by default, no indication
+            end
+            local text
+            if pos then
+                text = string.format("%s %s", pos.y and pos_text.y[pos.y] or pos_text_default,
+                                              pos.x and pos_text.x[pos.x] or pos_text_default)
+            else
+                text = _("gesture position")
+            end
+            return T(_("QuickMenu position: %1"), text)
+        end,
+        enabled_func = function()
+            return util.tableGetValue(location[settings], "settings", "show_as_quickmenu") or false
+        end,
+        sub_item_table = pos_sub_item_table,
+        hold_callback = function(touchmenu_instance) -- reset to default
+            util.tableRemoveValue(location[settings], "settings", "anchor_quickmenu")
+            util.tableRemoveValue(location[settings], "settings", "quickmenu_position")
+            caller.updated = true
+            touchmenu_instance:updateItems()
+        end,
     })
     table.insert(menu, {
         text = _("Keep QuickMenu open"),
@@ -1226,7 +1310,9 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             caller.updated = true
             touchmenu_instance:updateItems()
         end,
+        separator = true,
     })
+    -- items from Gestures plugin
 end
 
 function Dispatcher.renameQuickMenuActions(actions, rename_update_func)
@@ -1353,15 +1439,36 @@ function Dispatcher._showAsMenu(settings, exec_props, rename_callback, rename_ho
             table.insert(buttons, {})
         end
     end
+    local screen_size = Screen:getSize()
     local ButtonDialog = require("ui/widget/buttondialog")
     quickmenu = ButtonDialog:new{
         title = title,
         title_align = "center",
         shrink_unneeded_width = true,
-        shrink_min_width = math.floor(0.6 * Screen:getWidth()),
+        shrink_min_width = math.floor(0.6 * screen_size.w),
         use_info_style = false,
         buttons = buttons,
-        anchor = exec_props and exec_props.qm_anchor,
+        anchor = function()
+            if exec_props and exec_props.qm_anchor then
+                return exec_props.qm_anchor
+            end
+            local pos = settings.settings.quickmenu_position
+            if pos then
+                local padding = Size.padding.small -- do not stick to the screen edge
+                local x, y
+                if pos.x == 0 then
+                    x = padding
+                elseif pos.x == 1 then
+                    x = screen_size.w - quickmenu:getContentSize().w - padding
+                end
+                if pos.y == 0 then
+                    y = padding
+                elseif pos.y == 1 then
+                    y = screen_size.h - padding
+                end
+                return { x = x, y = y }
+            end
+        end,
     }
     UIManager:show(quickmenu)
 end

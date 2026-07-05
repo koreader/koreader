@@ -134,6 +134,10 @@ function MovableContainer:ensureAnchor(x, y)
     -- the size of the content and the space available on the screen.
     local content_w, content_h = self.dimen.w, self.dimen.h
     local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
+    anchor_dimen.x = anchor_dimen.x or math.floor((screen_w - content_w) / 2) -- center by defualt
+    anchor_dimen.y = anchor_dimen.y or math.floor((screen_h - content_h) / 2)
+    anchor_dimen.w = anchor_dimen.w or 0
+    anchor_dimen.h = anchor_dimen.h or 0
     local left, top
     if BD.mirroredUILayout() then
         left = anchor_dimen.x + anchor_dimen.w - content_w

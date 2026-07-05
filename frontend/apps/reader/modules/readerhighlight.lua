@@ -1528,14 +1528,10 @@ function ReaderHighlight:_getDialogAnchor(dialog, index)
     local position = G_reader_settings:readSetting("highlight_dialog_position", "center")
     if position == "center" then return end
     local padding = Size.padding.small -- vertical padding, do not stick to the highlight box or to the screen edge
-    local dialog_box = dialog:getContentSize()
-    local anchor_x = math.floor((self.screen_w - dialog_box.w) / 2) -- center by width
-    local anchor_y, prefers_pop_down
     if position == "top" then
-        anchor_y = padding
-        prefers_pop_down = true
+        return { y = padding }
     elseif position == "bottom" then
-        anchor_y = self.screen_h - padding
+        return { y = self.screen_h - padding }
     else -- "gesture"
         local boxes = index and self:getHighlightVisibleBoxes(index) or (self.selected_text.sboxes or self.selected_text.pboxes)
         if boxes == nil then return end -- fallback to "center"
@@ -1551,17 +1547,13 @@ function ReaderHighlight:_getDialogAnchor(dialog, index)
         end
         local y0 = box0.y
         local y1 = box1.y + box1.h
-        local dialog_box_h = dialog_box.h + 2 * padding
+        local dialog_box_h = dialog:getContentSize().h + 2 * padding
         if y1 + dialog_box_h <= self.screen_h then -- below highlight, preferable
-            anchor_y = y1 + padding
-            prefers_pop_down = true
+            return { y = y1 + padding }, true -- pop down
         elseif dialog_box_h <= y0 then -- above highlight
-            anchor_y = y0 - padding
-        else -- not enough room below and above, fallback to "center"
-            return
+            return { y = y0 - padding }
         end
     end
-    return { x = anchor_x, y = anchor_y, h = 0, w = 0 }, prefers_pop_down
 end
 
 function ReaderHighlight:_resetHoldTimer(clear)
