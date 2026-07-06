@@ -19,6 +19,7 @@ local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
 local Presets = require("ui/presets")
 local SortWidget = require("ui/widget/sortwidget")
+local StardictEngine = require("stardict/engine")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
@@ -39,6 +40,30 @@ local android = Device:isAndroid() and require("android")
 -- so we only have to look for them on the first :init()
 local available_ifos = nil
 local lookup_history = nil
+
+-- In-process StarDict lookup engine (see frontend/stardict/engine.lua),
+-- shared as a module local: dictionary directories are global, not
+-- per-document. It answers exact lookups without spawning sdcv; anything
+-- it cannot serve with byte-identical results is deferred to sdcv.
+local inprocess_engine = nil
+local inprocess_session_disabled = false
+
+local function getInProcessEngine(data_dir)
+    if not inprocess_engine then
+        local dict_dirs = { data_dir }
+        local dict_ext = data_dir .. "_ext"
+        if lfs.attributes(dict_ext, "mode") == "directory" then
+            table.insert(dict_dirs, dict_ext)
+        end
+        local cache_dir = DataStorage:getDataDir() .. "/cache"
+        util.makePath(cache_dir)
+        inprocess_engine = StardictEngine.new{
+            dict_dirs = dict_dirs,
+            cache_dir = cache_dir,
+        }
+    end
+    return inprocess_engine
+end
 
 local function getIfosInDir(path)
     -- Get all the .ifo under directory path.
@@ -348,6 +373,42 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 end,
                 hold_callback = function(touchmenu_instance)
                     self:toggleFuzzyDefault(touchmenu_instance)
+                end,
+            },
+            {
+                text = _("Enable in-process lookups"),
+                help_text = _("Answer exact-word lookups with the built-in StarDict engine instead of launching sdcv for every lookup. Much faster with large dictionaries. Fuzzy searches and unsupported dictionaries still use sdcv."),
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("dict_inprocess_lookup")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("dict_inprocess_lookup")
+                    inprocess_session_disabled = false
+                end,
+            },
+            {
+                text = _("Rebuild in-process lookup index"),
+                enabled_func = function()
+                    return G_reader_settings:nilOrTrue("dict_inprocess_lookup")
+                end,
+                keep_menu_open = true,
+                callback = function()
+                    local engine = getInProcessEngine(self.data_dir)
+                    local info = InfoMessage:new{ text = _("Rebuilding in-process lookup index…") }
+                    UIManager:show(info)
+                    UIManager:forceRePaint()
+                    UIManager:nextTick(function()
+                        local ok, success, err = pcall(engine.rebuild_all, engine)
+                        UIManager:close(info)
+                        if ok and success then
+                            UIManager:show(InfoMessage:new{ text = _("In-process lookup index rebuilt.") })
+                        else
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Index rebuild failed: %1"), tostring(ok and err or success)),
+                            })
+                        end
+                        inprocess_session_disabled = false
+                    end)
                 end,
                 separator = true,
             },
@@ -1245,6 +1306,29 @@ function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progre
     -- early exit if no dictionaries
     if dictDirsEmpty(dict_dirs) then
         return false, nil
+    end
+    -- Try the in-process StarDict engine first: it answers exact lookups
+    -- without spawning a sdcv process per lookup (sdcv re-scans whole .syn
+    -- files on every launch, which costs seconds per tap with large
+    -- inflection dictionaries). Fuzzy searches, special query syntax,
+    -- dictionaries the engine cannot serve with byte-identical results,
+    -- and any engine error fall through to sdcv below.
+    if G_reader_settings:nilOrTrue("dict_inprocess_lookup")
+            and not fuzzy_search and not inprocess_session_disabled then
+        local start_time = time.now()
+        local ok, results_or_err, reason = pcall(function()
+            return getInProcessEngine(self.data_dir):lookup_words(words, dict_names)
+        end)
+        if ok then
+            if results_or_err then
+                logger.dbg("in-process dict lookup done in", time.to_ms(time.since(start_time)), "ms")
+                return false, results_or_err
+            end
+            logger.dbg("in-process dict lookup deferred to sdcv:", reason)
+        else
+            logger.warn("in-process dict lookup failed, disabled for this session:", results_or_err)
+            inprocess_session_disabled = true
+        end
     end
     local all_results = {}
     local lookup_cancelled = false
