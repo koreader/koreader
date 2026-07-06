@@ -392,7 +392,7 @@ end
 
 function Document:getFullPageHash(pageno, zoom, rotation, gamma, saturation)
     return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
-                    ..zoom.."|"..rotation.."|"..gamma.."|"..self.configurable.background_cleanup.."|"
+                    ..zoom.."|"..rotation.."|"..gamma.."|"..(self.configurable.background_cleanup or 0).."|"
                     ..self.render_mode..(self.render_color and "|color" or "|bw")
                     ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
                     .."|"..saturation
@@ -401,7 +401,7 @@ end
 function Document:getPagePartHash(pageno, zoom, rotation, gamma, saturation, rect)
     return "renderpgpart|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
                     ..tostring(rect).."|"..zoom.."|"..tostring(rect.scaled_rect)
-                    .."|"..rotation.."|"..gamma.."|"..self.configurable.background_cleanup.."|"
+                    .."|"..rotation.."|"..gamma.."|"..(self.configurable.background_cleanup or 0).."|"
                     ..self.render_mode..(self.render_color and "|color" or "|bw")
                     ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
                     .."|"..saturation
