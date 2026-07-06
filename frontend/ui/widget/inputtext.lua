@@ -69,6 +69,8 @@ local InputText = InputContainer:extend{
     undo_startpos = nil, -- position to insert 'undoing'
     undo_charpos = nil, -- position to put the cursor after 'undoing'
     _password_toggle = nil,
+
+    clipboard_settings = Device:hasClipboard() and G_reader_settings:readSetting("clipboard", {}) or nil,
 }
 
 -- These may be (internally) overloaded as needed, depending on Device capabilities.
@@ -251,7 +253,7 @@ function InputText:holdTextBox(arg, ges)
     end
     -- clipboard dialog
     self._hold_handled = nil
-    if Device:hasClipboard() then
+    if self.clipboard_settings then
         if self.do_select then -- select mode on
             if self.selection_start_pos then -- select end
                 self:showSelectionDialog()
@@ -278,6 +280,24 @@ function InputText:holdTextBox(arg, ges)
             modal = true,
             stop_events_propagation = true,
             buttons_table = {
+                {
+                    {
+                        text = _("Delete all"),
+                        enabled = #self.charlist > 0,
+                        callback = function()
+                            UIManager:close(clipboard_dialog)
+                            self:delAll()
+                        end,
+                    },
+                    {
+                        text = _("Undo last deletion"),
+                        enabled = self.undo_charlist ~= nil,
+                        callback = function()
+                            UIManager:close(clipboard_dialog)
+                            self:undoLastDeletion()
+                        end,
+                    },
+                },
                 {
                     {
                         text = _("Copy all"),
@@ -314,14 +334,6 @@ function InputText:holdTextBox(arg, ges)
                 },
                 {
                     {
-                        text = _("Delete all"),
-                        enabled = #self.charlist > 0,
-                        callback = function()
-                            UIManager:close(clipboard_dialog)
-                            self:delAll()
-                        end,
-                    },
-                    {
                         text = _("Select"),
                         callback = function()
                             UIManager:close(clipboard_dialog)
@@ -340,14 +352,12 @@ function InputText:holdTextBox(arg, ges)
                             self:addChars(clipboard_value)
                         end,
                     },
-                },
-                {
                     {
-                        text = _("Undo last deletion"),
-                        enabled = self.undo_charlist ~= nil,
+                        text = "\u{F435}", -- pin
+                        enabled = not self.disable_clipboard_snippet_edit or self.clipboard_settings.snippets ~= nil,
                         callback = function()
                             UIManager:close(clipboard_dialog)
-                            self:undoLastDeletion()
+                            self:showClipboardSnippets()
                         end,
                     },
                 },
@@ -403,6 +413,112 @@ function InputText:showSelectionDialog()
         },
     }
     UIManager:show(selection_dialog)
+end
+
+function InputText:showClipboardSnippets()
+    local ButtonDialog = require("ui/widget/buttondialog")
+    local snippets_dialog
+    local buttons = self.disable_clipboard_snippet_edit and {} or {
+        {
+            {
+                text = _("New"),
+                font_face = "smallinfofont",
+                font_size = 22,
+                align = "left",
+                callback = function()
+                    UIManager:close(snippets_dialog)
+                    self:editClipboardSnippet()
+                end,
+            },
+        },
+    }
+    if self.clipboard_settings.snippets then
+        for i, v in ipairs(self.clipboard_settings.snippets) do
+            table.insert(buttons, {{
+                text = v.name and string.format("%s (%s)", v.name, v.text) or v.text,
+                menu_style = true,
+                avoid_text_truncation = false,
+                callback = function()
+                    UIManager:close(snippets_dialog)
+                    self:addChars(v.text)
+                end,
+                hold_callback = function()
+                    if not self.disable_clipboard_snippet_edit then
+                        UIManager:close(snippets_dialog)
+                        self:editClipboardSnippet(i)
+                    end
+                end,
+            }})
+        end
+    end
+    snippets_dialog = ButtonDialog:new{
+        width_factor = 0.6,
+        buttons = buttons,
+        modal = true,
+    }
+    UIManager:show(snippets_dialog)
+end
+
+function InputText:editClipboardSnippet(idx)
+    local MultiInputDialog = require("ui/widget/multiinputdialog")
+    local item = idx and self.clipboard_settings.snippets[idx]
+    local snippet_dialog
+    snippet_dialog = MultiInputDialog:new{
+        title = _("Clipboard snippet"),
+        fields = {
+            {
+                text = item and item.text or Device.input.getClipboardText(),
+                hint = _("text"),
+                allow_newline = true,
+            },
+            {
+                text = item and item.name,
+                hint = _("name (optional)"),
+            },
+        },
+        disable_clipboard_snippet_edit = true,
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(snippet_dialog)
+                    end,
+                },
+                {
+                    text = _("Remove"),
+                    enabled = idx ~= nil,
+                    callback = function()
+                        UIManager:close(snippet_dialog)
+                        table.remove(self.clipboard_settings.snippets, idx)
+                        if not next(self.clipboard_settings.snippets) then
+                            self.clipboard_settings.snippets = nil
+                        end
+                        self:showClipboardSnippets()
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    callback = function()
+                        local fields = snippet_dialog:getFields()
+                        if fields[1] ~= "" then
+                            UIManager:close(snippet_dialog)
+                            self.clipboard_settings.snippets = self.clipboard_settings.snippets or {}
+                            idx = idx or #self.clipboard_settings.snippets + 1
+                            self.clipboard_settings.snippets[idx] = {
+                                text = fields[1],
+                                name = fields[2] ~= "" and fields[2] or nil,
+                            }
+                            self:showClipboardSnippets()
+                        end
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(snippet_dialog)
+    snippet_dialog:onShowKeyboard()
 end
 
 function InputText:checkTextEditability()
