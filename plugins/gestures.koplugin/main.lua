@@ -343,26 +343,6 @@ function Gestures:genMenu(ges)
     Dispatcher:addSubMenu(self, sub_items, self.gestures, ges)
     sub_items.max_per_page = nil -- restore default, settings in page 2
     table.insert(sub_items, {
-        text = _("Anchor QuickMenu to gesture position"),
-        enabled_func = function()
-            return util.tableGetValue(self.gestures, ges, "settings", "show_as_quickmenu") or false
-        end,
-        checked_func = function()
-            return util.tableGetValue(self.gestures, ges, "settings", "anchor_quickmenu")
-        end,
-        callback = function()
-            if self.gestures[ges] then
-                if util.tableGetValue(self.gestures, ges, "settings", "anchor_quickmenu") then
-                    util.tableRemoveValue(self.gestures, ges, "settings", "anchor_quickmenu")
-                else
-                    util.tableSetValue(self.gestures, true, ges, "settings", "anchor_quickmenu")
-                end
-                self.updated = true
-            end
-        end,
-        separator = true,
-    })
-    table.insert(sub_items, {
         text = _("Always active"),
         checked_func = function()
             return util.tableGetValue(self.gestures, ges, "settings", "always_active")
