@@ -31,6 +31,8 @@ function SSH:init()
     self.allow_no_password = G_reader_settings:isTrue("SSH_allow_no_password")
     self.key_only_auth = G_reader_settings:isTrue("SSH_key_only_auth")
     self.autostart = G_reader_settings:isTrue("SSH_autostart")
+    -- force close all connections on stop
+    self.force_kill_clients = G_reader_settings:isTrue("SSH_force_kill_clients")
 
     if self.autostart then
         self:start()
@@ -128,7 +130,7 @@ function SSH:stopPlugin(force)
     end
 
     local function send(sig, p)
-        return os.execute(string.format("kill -%s %d", sig, p)) == 0
+        return os.execute(string.format("pkill -%s -P %d && kill -%s %d", sig, p, sig, p)) == 0
     end
 
     send("TERM", pid)
@@ -166,13 +168,28 @@ function SSH:stop()
     local ok, err = self:stopPlugin(false)
     if not ok then
         logger.warn("SSH: graceful stop failed:", err)
-        ok, err = self:stopPlugin(true)
-        if not ok then
-            logger.err("SSH: force-stop failed:", err)
+        -- If the user chose to force-close all connections, try a forced stop first.
+        if self.force_kill_clients then
+            ok, err = self:stopPlugin(true)
+            if not ok then
+                -- Last resort: kill every dropbear process to close all sessions.
+                logger.warn("SSH: force-stop also failed, using killall:", err)
+                os.execute("killall -9 dropbear 2>/dev/null")
+                os.remove("/tmp/dropbear_koreader.pid")
+                UIManager:show(InfoMessage:new{
+                    text = _("SSH server forcefully stopped."),
+                    timeout = 2,
+                })
+                return
+            end
+        else
+            -- Without force-kill, active connections may remain.
             UIManager:show(InfoMessage:new{
                 icon = "notice-warning",
-                text = _("Failed to stop SSH server."),
+                text = _("SSH server is still shutting down… Active connections may remain until they are closed."),
+                timeout = 3,
             })
+            return
         end
     end
     if ok then
@@ -306,6 +323,17 @@ function SSH:addToMainMenu(menu_items)
                     self.autostart = not self.autostart
                     G_reader_settings:flipNilOrFalse("SSH_autostart")
                 end,
+            },
+            -- force-close all connections on stop
+            {
+                text = _("Force close all connections on stop"),
+                help_text = _("When enabled, all active SSH sessions will be terminated immediately when stopping the server. When disabled, active sessions may remain open until they are closed by the client."),
+                checked_func = function() return self.force_kill_clients end,
+                callback = function()
+                    self.force_kill_clients = not self.force_kill_clients
+                    G_reader_settings:flipNilOrFalse("SSH_force_kill_clients")
+                end,
+                separator = true,
             },
        }
     }
