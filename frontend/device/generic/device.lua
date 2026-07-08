@@ -570,7 +570,7 @@ function Device:standby(max_duration) end
 
 -- Returns a string, used to determine the platform to fetch OTA updates
 function Device:otaModel()
-    return self.ota_model, "ota"
+    return self.ota_model, "kotasync"
 end
 
 --[[--
