@@ -99,6 +99,38 @@ describe("DepGraph module", function()
         }, dg:serialize())
     end)
 
+    it("should not add duplicate dependencies", function()
+        local dg = DepGraph:new{}
+        dg:addNodeDep("tap_backward", "readermenu_tap")
+        dg:addNodeDep("tap_backward", "readermenu_tap")
+        dg:addNode("tap_backward", {"readermenu_tap"})
+
+        assert.are.same({
+            "readermenu_tap",
+        }, dg:getNode("tap_backward").deps)
+        assert.are.same({
+            "readermenu_tap",
+            "tap_backward",
+        }, dg:serialize())
+    end)
+
+    it("should re-enable disabled dependencies added with addNodeDep", function()
+        local dg = DepGraph:new{}
+        dg:addNode("readermenu_tap", {"readerfooter_tap"})
+        dg:removeNode("readermenu_tap")
+
+        assert.is_false(dg:checkNode("readermenu_tap"))
+
+        dg:addNodeDep("tap_backward", "readermenu_tap")
+
+        assert.is_true(dg:checkNode("readermenu_tap"))
+        assert.are.same({
+            "readerfooter_tap",
+            "readermenu_tap",
+            "tap_backward",
+        }, dg:serialize())
+    end)
+
     it("should serialize complex graph and keep dependencies after removing and re-adding", function()
         local dg = DepGraph:new{}
         dg:addNode("tap_backward")
