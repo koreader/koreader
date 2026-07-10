@@ -704,13 +704,16 @@ function Device:ping4(ip)
     -- NOTE: This is disabled by default, barring custom distro setup during init, c.f., sysctl net.ipv4.ping_group_range
     --       It also requires Linux 3.0+ (https://github.com/torvalds/linux/commit/c319b4d76b9e583a5d88d6bf190e079c4e43213d)
     local socket, socket_type
-    socket = C.socket(C.AF_INET, bit.bor(C.SOCK_DGRAM, C.SOCK_NONBLOCK, C.SOCK_CLOEXEC), C.IPPROTO_ICMP)
+    -- NOTE: We deliberately do NOT call socket() with SOCK_NONBLOCK/SOCK_CLOEXEC:
+    --       that form requires Linux 2.6.27+ and fails with EINVAL on older versions.
+    --       We set both flags via fcntl() below instead, which works on every kernel.
+    socket = C.socket(C.AF_INET, C.SOCK_DGRAM, C.IPPROTO_ICMP)
     if socket == -1 then
         local errno = ffi.errno()
         logger.dbg("Device:ping4: unprivileged ICMP socket:", ffi.string(C.strerror(errno)))
 
         -- Try a raw socket
-        socket = C.socket(C.AF_INET, bit.bor(C.SOCK_RAW, C.SOCK_NONBLOCK, C.SOCK_CLOEXEC), C.IPPROTO_ICMP)
+        socket = C.socket(C.AF_INET, C.SOCK_RAW, C.IPPROTO_ICMP)
         if socket == -1 then
             errno = ffi.errno()
             if errno == C.EPERM then
@@ -731,6 +734,10 @@ function Device:ping4(ip)
     else
         socket_type = C.SOCK_DGRAM
     end
+
+    -- Apply FD_CLOEXEC + O_NONBLOCK now (see the socket() note above).
+    C.fcntl(socket, C.F_SETFD, C.FD_CLOEXEC)
+    C.fcntl(socket, C.F_SETFL, bit.bor(C.fcntl(socket, C.F_GETFL, 0), C.O_NONBLOCK))
 
     -- c.f., busybox's networking/ping.c
     local DEFDATALEN = 56 -- 64 - 8
