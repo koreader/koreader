@@ -699,6 +699,24 @@ function Device:ping4(ip)
         socket = C.socket(C.AF_INET, bit.bor(C.SOCK_RAW, C.SOCK_NONBLOCK, C.SOCK_CLOEXEC), C.IPPROTO_ICMP)
         if socket == -1 then
             errno = ffi.errno()
+            -- Linux < 2.6.27 doesn't accept SOCK_NONBLOCK/SOCK_CLOEXEC in the socket() type
+            -- argument and fails with EINVAL (e.g. Legacy Kindles on kernel 2.6.26). Retry a
+            -- plain raw socket and set the flags via fcntl, so we can keep using the native,
+            -- time-bounded ICMP path below instead of a blocking `ping` CLI fallback (which,
+            -- on the legacy busybox, has no -w flag and can hang the UI indefinitely).
+            if errno == C.EINVAL then
+                -- fcntl command constants are arch-independent on Linux (asm-generic/fcntl.h)
+                local F_SETFD, F_GETFL, F_SETFL, FD_CLOEXEC = 2, 3, 4, 1
+                socket = C.socket(C.AF_INET, C.SOCK_RAW, C.IPPROTO_ICMP)
+                if socket ~= -1 then
+                    C.fcntl(socket, F_SETFD, FD_CLOEXEC)
+                    C.fcntl(socket, F_SETFL, bit.bor(C.fcntl(socket, F_GETFL, 0), C.O_NONBLOCK))
+                else
+                    errno = ffi.errno()
+                end
+            end
+        end
+        if socket == -1 then
             if errno == C.EPERM then
                 logger.dbg("Device:ping4: opening a RAW ICMP socket requires CAP_NET_RAW capabilities!")
             else
