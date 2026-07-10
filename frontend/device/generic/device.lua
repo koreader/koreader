@@ -722,12 +722,18 @@ function Device:ping4(ip)
                 logger.dbg("Device:ping4: raw ICMP socket:", ffi.string(C.strerror(errno)))
             end
             --- Fall-back to the ping CLI tool, in the hope that it's setuid...
-            if self:isKindle() and self:hasDPad() then
-                -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles (K4 included)...
-                return os.execute("ping -q -c1 " .. ip .. " > /dev/null") == 0
-            else
-                return os.execute("ping -q -c1 -w2 " .. ip .. " > /dev/null") == 0
-            end
+            -- NOTE: We can't rely on `ping -w`: it's not available in the old busybox build
+            --       used on Legacy Kindles (K4 included). Bound the runtime ourselves by
+            --       killing the ping after a timeout, which works with any ping implementation.
+            return os.execute(string.format([[ping -q -c1 %s >/dev/null &
+                                              ping_pid=$!
+                                              (sleep 2; kill $ping_pid) &
+                                              timeout_pid=$!
+                                              wait $ping_pid
+                                              code=$?
+                                              kill $timeout_pid 2>/dev/null
+                                              exit $code
+                                              ]], ip)) == 0
         else
             socket_type = C.SOCK_RAW
         end
