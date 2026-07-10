@@ -166,6 +166,11 @@ local DrawingCanvas = InputContainer:extend{
     tighten_delay      = nil,
     tighten_enabled    = nil,
 
+    -- Which raw button code the hardware eraser tip sends (lib/config.lua,
+    -- lib/eraser_button.lua); nil means "use the built-in default"
+    -- ("stylus") -- see init() and _pollPen's PenDev.open call.
+    eraser_button      = nil,
+
     init_rotation_mode = nil,
     _rotation_mode     = nil,
 
@@ -218,6 +223,10 @@ function DrawingCanvas:init()
     else
         self._tighten_enabled = true
     end
+
+    -- Resolve the eraser_button config override. It is a non-empty string
+    -- ("stylus"/"stylus2"), never false/nil once set, so `or` is safe here.
+    self._eraser_button = self.eraser_button or "stylus"
 
     -- Use BBRGB32 on colour e-ink panels so ink renders in the chosen colour.
     -- Screen:isColorEnabled() is a user toggle (reads G_reader_settings) and
@@ -339,7 +348,7 @@ function DrawingCanvas:init()
         -- Pen device
         local pen_path = PenDev.find()
         if pen_path then
-            local pd, err = PenDev.open(pen_path)
+            local pd, err = PenDev.open(pen_path, self._eraser_button)
             if pd then
                 self._pendev = pd
                 UIManager:scheduleIn(PEN_POLL_INTERVAL, function() self:_pollPen() end)

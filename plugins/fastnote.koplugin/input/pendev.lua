@@ -36,8 +36,9 @@ require("ffi/linux_input_h")   -- struct input_event, EV_KEY, EV_ABS, EV_SYN, �
 local ffi      = require("ffi")
 local bit      = require("bit")
 local logger   = require("logger")
-local SM       = require("lib/pen_statemachine")
-local codes    = require("lib/input_codes")
+local SM            = require("lib/pen_statemachine")
+local codes         = require("lib/input_codes")
+local eraser_button = require("lib/eraser_button")
 
 local C   = ffi.C
 local bor = bit.bor
@@ -47,6 +48,7 @@ local BTN_TOOL_PEN       = codes.BTN_TOOL_PEN
 local BTN_TOOL_RUBBER    = codes.BTN_TOOL_RUBBER
 local BTN_TOUCH          = codes.BTN_TOUCH
 local BTN_STYLUS         = codes.BTN_STYLUS
+local BTN_STYLUS2        = codes.BTN_STYLUS2
 local ABS_MT_SLOT        = codes.ABS_MT_SLOT
 local ABS_MT_POSITION_X  = codes.ABS_MT_POSITION_X
 local ABS_MT_POSITION_Y  = codes.ABS_MT_POSITION_Y
@@ -195,9 +197,13 @@ function PenDev.find()
 end
 
 --- Open a digitizer device node and create a PenDev instance.
--- @string path   /dev/input/eventX path (typically from PenDev.find()).
+-- @string path           /dev/input/eventX path (typically from PenDev.find()).
+-- @string eraser_button  "stylus" (default) or "stylus2" -- which raw button
+--                         code is wired to the hardware eraser tip on this
+--                         unit (lib/config.lua eraser_button key). See
+--                         lib/eraser_button.lua.
 -- @treturn PenDev|nil, string?
-function PenDev.open(path)
+function PenDev.open(path, eraser_button_setting)
     if not path then
         return nil, "pendev.open: nil path"
     end
@@ -213,6 +219,9 @@ function PenDev.open(path)
         fd      = fd,
         path    = path,
         sm      = SM:new(),
+        -- Which raw code is wired to the eraser tip on this unit; defaults
+        -- to "stylus" (standard wiring) when unset -- see lib/eraser_button.lua.
+        eraser_button = eraser_button_setting or "stylus",
         -- Axis calibration
         x_min   = FALLBACK_X_MIN,
         y_min   = FALLBACK_Y_MIN,
@@ -309,22 +318,30 @@ function PenDev:poll(cb)
                 -- Elan combo chip eraser detection:
                 -- ABS_MT_TOOL_TYPE=2 is never sent on KoboMonza — the chip
                 -- always reports TOOL_TYPE=1 (pen) even for the eraser tip.
-                -- Instead, BTN_STYLUS=1 fires when the eraser tip contacts
-                -- the screen and BTN_STYLUS=0 fires when it lifts.
-                -- Translate to BTN_TOOL_RUBBER/PEN so the SM sees the correct
-                -- tool type when building the "down" event.
-                if ec == BTN_STYLUS then
-                    if ev == 1 then
+                -- Instead, BTN_STYLUS=1 (or BTN_STYLUS2=1 on swapped units)
+                -- fires when the eraser tip contacts the screen, and value=0
+                -- when it lifts. The pure lib/eraser_button.decode() function
+                -- makes the translation decision (which code is the
+                -- configured eraser, and what to feed the SM); this loop
+                -- just calls it and acts on the result.
+                if ec == BTN_STYLUS or ec == BTN_STYLUS2 then
+                    local action = eraser_button.decode(ec, ev, self.eraser_button)
+                    if action == "rubber_on" then
                         -- Override: eraser tip is now the active tool.
                         -- (ABS_MT_TOOL_TYPE=1 already fed BTN_TOOL_PEN=1 this
                         -- frame; this call corrects it before EV_SYN fires.)
                         self.sm:feed_key(BTN_TOOL_RUBBER, 1, nil)
-                        logger.dbg("FastNote pendev: eraser via BTN_STYLUS=1")
-                    else
+                        logger.dbg("FastNote pendev: eraser via", codes.name_of(ec), "= 1")
+                    elseif action == "pen_restore" then
                         -- Eraser lifted: restore pen mode for next contact.
                         -- No cb — the pressure-based BTN_TOUCH=0 in the same
                         -- frame already emitted "up"; this just resets tool.
                         self.sm:feed_key(BTN_TOOL_PEN, 1, nil)
+                    elseif action == "side_button" then
+                        -- Not the configured eraser code -- the side button.
+                        -- Not wired to any tool state yet (future feature
+                        -- surface); log for diagnostics only.
+                        logger.dbg("FastNote pendev: side button", codes.name_of(ec), "=", ev)
                     end
 
                 -- For MT pen devices the Elan fires EV_KEY BTN_TOUCH=1 at

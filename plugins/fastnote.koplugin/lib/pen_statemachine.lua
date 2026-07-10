@@ -71,6 +71,10 @@ function M:feed_key(code, value, cb)
             self.tool = "eraser"
         else
             self.in_proximity = false
+            -- Reset the tool latch: without this, a subsequent BTN_TOUCH
+            -- with no fresh BTN_TOOL_PEN=1 (e.g. the Wacom-direct path)
+            -- would emit "down" with tool still "eraser" -- phantom eraser.
+            self.tool = "pen"
             if self.pen_down then
                 self.pen_down = false
                 self._just_downed = false

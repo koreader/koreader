@@ -79,11 +79,12 @@ fastnote.koplugin/
 ├── main.lua                   Entry point: config load, canvas open, notebook routing
 ├── drawingcanvas.lua          Drawing canvas widget — ALL input, rendering, menu, orientation,
 │                              chrome strip, and quick-menu color picker (no separate files for these)
-├── fastnote.conf.example      Documented user config (finger_draw, rotation_mode, tighten_*, live_color_refresh)
+├── fastnote.conf.example      Documented user config (finger_draw, rotation_mode, tighten_*, live_color_refresh, eraser_button)
 ├── lib/
 │   ├── canvas_utils.lua       Pure math: compute_dirty_rect, point_in_zone, pressure_to_width
 │   ├── config.lua             Pure Lua config loader, wired via main.lua's canvas-open path
-│   ├── input_codes.lua        Shared Linux input event constants (BTN_*/ABS_*)
+│   ├── input_codes.lua        Shared Linux input event constants (BTN_*/ABS_*, incl. BTN_STYLUS2)
+│   ├── eraser_button.lua      Pure translation: BTN_STYLUS/BTN_STYLUS2 event → eraser tool state
 │   ├── pen_statemachine.lua   Wacom evdev state machine → high-level pen events
 │   ├── json.lua               Pure Lua JSON encoder/decoder (no KOReader deps; busted-testable)
 │   ├── stroke.lua             Stroke object: points, hitTest, bbox, paintTo, toTable/fromTable

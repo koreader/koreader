@@ -56,7 +56,7 @@ diagnose if those gates are false on the device.
 
 ---
 
-## Fix F: Eraser end of stylus draws instead of erasing — NEEDS DEVICE TESTING
+## Fix F: Eraser end of stylus draws instead of erasing — HARDENED, NEEDS DEVICE TESTING
 
 **Architecture review:** The eraser detection chain
 (`BTN_STYLUS` → `BTN_TOOL_RUBBER` → SM `tool="eraser"` → canvas
@@ -91,6 +91,37 @@ toggle). So if the eraser end still draws, debug fastnote's *handling*
 (level-vs-edge, event ordering vs. pen-down, or a swapped
 BTN_STYLUS/BTN_STYLUS2 unit) — the hardware signal exists. See
 `.agents/planning/pencil-koplugin-research.md`.
+
+**Resolved (2026-07, Workstream B of
+`.agents/plans/live-color-refresh-and-eraser-hardening.md`):** two real gaps
+were found and fixed in software, both root-caused from the hypotheses
+above rather than requiring a new hardware signal:
+
+1. **Tool-latch bug (`lib/pen_statemachine.lua`).** `feed_key` for
+   `BTN_TOOL_RUBBER` value 0 cleared proximity but left `tool = "eraser"`
+   latched. On the Wacom-direct path, a subsequent `BTN_TOUCH` with no
+   fresh `BTN_TOOL_PEN 1` in between would emit `"down"` with
+   `tool = "eraser"` still set — a phantom eraser stroke. Fixed: rubber
+   leaving proximity now resets `tool = "pen"`. Regression specs in
+   `spec/pen_statemachine_spec.lua` ("tool-latch reset" describe block).
+2. **The swapped-unit case had no software handling at all.** Added
+   `BTN_STYLUS2` (`0x14c`) to `lib/input_codes.lua` and a new pure
+   `lib/eraser_button.lua` module that decides, given a raw
+   `BTN_STYLUS`/`BTN_STYLUS2` event and the new `eraser_button` config key
+   (`"stylus"` default | `"stylus2"`), whether to feed the state machine
+   `BTN_TOOL_RUBBER`/`BTN_TOOL_PEN` or just log the side button. Wired
+   through `lib/config.lua` → `main.lua` → `DrawingCanvas` →
+   `input/pendev.lua` (`PenDev.open(path, eraser_button)`). Documented in
+   `fastnote.conf.example`, including the user-facing symptom ("eraser end
+   draws instead of erasing → try `eraser_button = \"stylus2\"`").
+
+**What remains device-only:** whether the Kobo Stylus 2 eraser tip on this
+specific unit sends `BTN_STYLUS` or `BTN_STYLUS2` cannot be determined in
+CI/emulator (no `/dev/input` here). Per the post-merge device checklist:
+test the eraser end on hardware; if it still draws, set
+`eraser_button = "stylus2"` in `fastnote.conf` and retest; capture the
+debug log (`logger.dbg` now names the exact code via
+`codes.name_of(ec)`) either way and record the result here.
 
 ---
 

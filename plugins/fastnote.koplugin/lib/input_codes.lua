@@ -12,6 +12,10 @@ M.BTN_TOOL_PEN    = 0x140   -- pen tip entered proximity
 M.BTN_TOOL_RUBBER = 0x141   -- eraser tip entered proximity
 M.BTN_TOUCH       = 0x14a   -- pen tip physically contacting screen
 M.BTN_STYLUS      = 0x14b   -- Elan combo chip: 1=eraser tip contacting, 0=eraser lifted
+                             -- (default eraser_button mapping -- see lib/eraser_button.lua)
+M.BTN_STYLUS2     = 0x14c   -- Stylus 2 side button; level signal like BTN_STYLUS.
+                             -- Some units/pens ship with BTN_STYLUS/BTN_STYLUS2 swapped
+                             -- -- eraser_button = "stylus2" selects this as the eraser tip.
 
 -- EV_ABS single-touch axes (Wacom EMR protocol / pen_statemachine fallback)
 M.ABS_X        = 0
@@ -39,6 +43,7 @@ M._names = {
     [0x141] = "BTN_TOOL_RUBBER",
     [0x14a] = "BTN_TOUCH",
     [0x14b] = "BTN_STYLUS",
+    [0x14c] = "BTN_STYLUS2",
     [0]     = "ABS_X",
     [1]     = "ABS_Y",
     [24]    = "ABS_PRESSURE",

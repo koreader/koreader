@@ -173,4 +173,24 @@ describe("lib/config", function()
         assert.is_false(cfg.tighten_enabled)
     end)
 
+    -- ERASER_BUTTON -----------------------------------------------------------
+
+    it("exposes DEFAULTS table with eraser_button = 'stylus'", function()
+        assert.are.equal("stylus", Config.DEFAULTS.eraser_button)
+    end)
+
+    it("uses default eraser_button when absent from config file", function()
+        local path = write_tmp("return { finger_draw = true }")
+        local cfg = Config.load(path)
+        os.remove(path)
+        assert.are.equal("stylus", cfg.eraser_button)
+    end)
+
+    it("reads eraser_button = 'stylus2' from a valid config file", function()
+        local path = write_tmp("return { eraser_button = 'stylus2' }")
+        local cfg = Config.load(path)
+        os.remove(path)
+        assert.are.equal("stylus2", cfg.eraser_button)
+    end)
+
 end)

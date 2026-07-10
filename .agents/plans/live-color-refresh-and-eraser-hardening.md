@@ -178,12 +178,16 @@ leaves proximity. Specs to add in `spec/pen_statemachine_spec.lua`:
 
 Acceptance (B):
 
-- [ ] `busted spec/` green; new SM and translation specs as above.
-- [ ] `pendev.lua` diff is minimal — logic moved to pure lib code, FFI loop
-      structure untouched.
-- [ ] Fix F section in `color-drawing-fix-and-menu-access.md` updated:
+- [x] `busted spec/` green; new SM and translation specs as above.
+      (216 → 232 successes: 3 new in `spec/pen_statemachine_spec.lua`,
+      10 new in `spec/eraser_button_spec.lua`, 3 new in `spec/config_spec.lua`.)
+- [x] `pendev.lua` diff is minimal — logic moved to pure lib code, FFI loop
+      structure untouched. The `EV_KEY` branch now calls
+      `eraser_button.decode(ec, ev, self.eraser_button)` and switches on its
+      three string results; no translation logic lives in pendev.lua itself.
+- [x] Fix F section in `color-drawing-fix-and-menu-access.md` updated:
       hypothesis resolved, what shipped, what remains device-only.
-- [ ] `fastnote.conf.example` documents `eraser_button`.
+- [x] `fastnote.conf.example` documents `eraser_button`.
 
 ### B. NOT in scope
 

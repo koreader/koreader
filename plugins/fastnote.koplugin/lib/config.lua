@@ -67,6 +67,17 @@ Config.DEFAULTS = {
     --         matrix -- see .github/skills/waveform-experimentation/SKILL.md
     --         before relying on this outside of testing.
     live_color_refresh = false,
+
+    --- Which raw button code the hardware eraser tip sends on this unit.
+    -- The Kobo Stylus 2 eraser tip reports as BTN_STYLUS (level signal)
+    -- while the side button reports as BTN_STYLUS2 -- but some units/pens
+    -- ship with the two swapped. See lib/eraser_button.lua and
+    -- .agents/plans/color-drawing-fix-and-menu-access.md Fix F.
+    -- "stylus"  (default) -- eraser tip sends BTN_STYLUS (standard wiring).
+    -- "stylus2" -- eraser tip sends BTN_STYLUS2 (swapped unit). Symptom
+    --             that tells you to try this: the eraser end draws instead
+    --             of erasing.
+    eraser_button = "stylus",
 }
 
 --- Load a config file and return the merged result.

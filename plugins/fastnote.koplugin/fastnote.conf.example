@@ -111,4 +111,22 @@ return {
     --
     live_color_refresh = false,
 
+    -- eraser_button
+    -- -------------
+    -- Which raw button code the Kobo Stylus 2's hardware eraser tip sends
+    -- on your unit. The eraser tip reports as `BTN_STYLUS` (a level
+    -- signal: on while touching, off on release) on standard units, but
+    -- some units/pens ship with `BTN_STYLUS` and `BTN_STYLUS2` (the side
+    -- button) swapped.
+    --
+    --   "stylus"   (default) — eraser tip sends BTN_STYLUS. Standard wiring.
+    --   "stylus2"  — eraser tip sends BTN_STYLUS2. Try this if the eraser
+    --                end of your stylus draws instead of erasing — that
+    --                symptom means your unit has the two swapped.
+    --
+    -- The other (non-configured) code is always treated as the side button:
+    -- ignored for drawing/erasing, logged at debug level only.
+    --
+    eraser_button = "stylus",
+
 }

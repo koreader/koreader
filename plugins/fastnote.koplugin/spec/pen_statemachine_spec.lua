@@ -145,6 +145,58 @@ describe("pen_statemachine", function()
             assert.equals("up", evs[1].type)
         end)
 
+        it("value=0 resets tool to 'pen' (tool-latch reset)", function()
+            local sm = SM:new()
+            sm:feed_key(BTN_TOOL_RUBBER, 1)
+            sm:feed_key(BTN_TOOL_RUBBER, 0)
+            assert.equals("pen", sm.tool)
+        end)
+
+    end)
+
+    -- ── Tool-latch reset (Fix: rubber leaving proximity must not stay latched) ──
+    -- Bug: feed_key for BTN_TOOL_RUBBER value=0 cleared proximity but left
+    -- `tool = "eraser"` latched. On the Wacom-direct path a subsequent
+    -- BTN_TOUCH without a fresh BTN_TOOL_PEN=1 then emitted "down" with
+    -- tool="eraser" -- phantom eraser. See
+    -- .agents/plans/live-color-refresh-and-eraser-hardening.md Workstream B1.
+
+    describe("tool-latch reset", function()
+
+        it("rubber in -> out -> touch: 'down' reports tool='pen', not phantom eraser", function()
+            local sm = SM:new()
+            sm:feed_key(BTN_TOOL_RUBBER, 1)   -- eraser tip enters proximity
+            sm:feed_key(BTN_TOOL_RUBBER, 0)   -- eraser tip leaves proximity, tool must reset
+            sm:feed_key(BTN_TOUCH, 1)         -- touch arrives with no fresh BTN_TOOL_PEN=1
+            local evs = collect(function(cb) sm:feed_syn(cb) end)
+            assert.equals(1, #evs)
+            assert.equals("down", evs[1].type)
+            assert.equals("pen",  evs[1].tool)
+        end)
+
+        it("eraser down -> up -> pen down round-trips correctly", function()
+            local sm = SM:new()
+
+            -- Eraser stroke: down, then up.
+            sm:feed_key(BTN_TOOL_RUBBER, 1)
+            sm:feed_key(BTN_TOUCH, 1)
+            local down_evs = collect(function(cb) sm:feed_syn(cb) end)
+            assert.equals("down",   down_evs[1].type)
+            assert.equals("eraser", down_evs[1].tool)
+
+            local up_evs = collect(function(cb) sm:feed_key(BTN_TOUCH, 0, cb) end)
+            assert.equals("up", up_evs[1].type)
+
+            sm:feed_key(BTN_TOOL_RUBBER, 0)   -- eraser tip leaves proximity
+
+            -- Next stroke is the pen, with a fresh BTN_TOOL_PEN=1.
+            sm:feed_key(BTN_TOOL_PEN, 1)
+            sm:feed_key(BTN_TOUCH, 1)
+            local pen_down_evs = collect(function(cb) sm:feed_syn(cb) end)
+            assert.equals("down", pen_down_evs[1].type)
+            assert.equals("pen",  pen_down_evs[1].tool)
+        end)
+
     end)
 
     -- ── BTN_TOUCH ────────────────────────────────────────────────────────────
