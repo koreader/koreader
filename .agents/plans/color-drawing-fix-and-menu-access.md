@@ -80,6 +80,18 @@ when touching the eraser end to see what `tool` reports.
 - If no distinguishing event exists, consider adding a menu toggle for
   "eraser end" mode, or detecting via pressure range difference
 
+**Update (2026-07, external confirmation):** the hypothesis that the eraser
+end might not send `BTN_STYLUS` is **wrong**. pencil.koplugin and
+eraser.koplugin (SimonLiu) both confirm on this exact device+pen: the
+eraser end reports `ABS_MT_TOOL_TYPE=1` (pen) but sends `BTN_STYLUS`
+(code 331) value 1 while touching, value 0 on release — a level signal, not
+an edge. The side button sends `BTN_STYLUS2` the same way, and some
+units/pens apparently arrive with the two swapped (pencil ships a swap
+toggle). So if the eraser end still draws, debug fastnote's *handling*
+(level-vs-edge, event ordering vs. pen-down, or a swapped
+BTN_STYLUS/BTN_STYLUS2 unit) — the hardware signal exists. See
+`.agents/planning/pencil-koplugin-research.md`.
+
 ---
 
 ## Housekeeping

@@ -38,6 +38,7 @@ plugins/fastnote.koplugin/   ← all active development; has its own AGENTS.md i
   skills/documentation-as-code/         ← keeping all docs in sync with code changes
   skills/test-driven-development/       ← when to write the spec first in this repo, and when not to
   skills/authoring-instructions-and-skills/  ← how to add new instructions/skills correctly
+  skills/waveform-experimentation/           ← on-device test matrix for E-ink refresh/waveform changes
 .claude/
   skills → ../.github/skills         (Claude Code only — Copilot reads .github/skills/ directly)
   rules  → ../.github/instructions   (Claude Code only — Copilot reads .github/instructions/ directly)

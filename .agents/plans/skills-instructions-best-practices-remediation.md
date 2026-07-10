@@ -241,6 +241,9 @@ agents-md-authoring checklist rule).
 - [x] Task 5 — `paths` on documentation-as-code skill
 - [ ] Task 6 — copilot-instructions.md (confirm surface is used first; skipped pending confirmation)
 - [x] Task 7 — root AGENTS.md hygiene
-- [ ] Final: run the agents-md-authoring audit procedure (every referenced
-      path exists; no claim contradicts the code)
+- [x] Final: run the agents-md-authoring audit procedure (every referenced
+      path exists; no claim contradicts the code) — run 2026-07 alongside
+      the pencil.koplugin research pass; also removed the lingering
+      `koreader-plugin` skill placeholder from the plugin AGENTS.md (same
+      anti-pattern Task 7 removed from root)
 - [x] Commit and push

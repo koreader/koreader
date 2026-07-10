@@ -111,7 +111,37 @@ Fixed the flash issue; strokes still invisible in light mode live drawing.
 
 ---
 
+## UIManager flash promotion: the "automatic refresh interrupts my line" cause
+
+`frontend/ui/uimanager.lua` (~line 513): **any `"partial"` refresh submitted
+through `UIManager:setDirty` counts toward promotion to a full flashing
+refresh after `FULL_REFRESH_COUNT` refreshes — default 6** (user-settable;
+separate night-mode setting). Live drawing emits many refreshes per second,
+so per-segment `"partial"` hits the promotion almost instantly: the screen
+flashes mid-stroke and drawing is locked out during the flash.
+
+`"ui"`, `"fast"`, and `"a2"` do **not** count toward the promotion.
+Direct `Screen:refreshUI/refreshFast/...` calls bypass UIManager entirely —
+no queues, no widget repaint, no promotion counter — which is how
+pencil.koplugin sustains throttled live color refreshes (see
+`.agents/planning/pencil-koplugin-research.md`).
+
+Consequence for this plugin: per-segment `"partial"` was doubly wrong —
+too slow (GLRC16 latency, above) *and* flash-promoted. One-shot uses of
+`"partial"` (+dither) for `_repaintAll`/tighten remain correct.
+
+---
+
 ## Paths not yet tried / future ideas
+
+### Throttled direct Screen:refreshUI for live color (pencil.koplugin technique)
+Paint into the framebuffer, accumulate a dirty rect, and fire a direct
+`Screen:refreshUI(rect)` (AUTO waveform) at most every 16–33 ms, bypassing
+UIManager. pencil.koplugin ships this and users report working live color
+drawing on this exact device+pen. Would show (probably muted) color during
+the stroke while keeping the GLRC16 tighten for final fidelity. Details,
+caveats, and the comparison: `.agents/planning/pencil-koplugin-research.md`.
+**Not implemented — top candidate for the next drawing-feel experiment.**
 
 ### ~~Deferred colour refresh timer~~ — IMPLEMENTED (see below)
 Originally proposed as: use an idle timer (like `_scheduleIdleSave`) to fire

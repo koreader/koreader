@@ -154,14 +154,16 @@ widget code genuinely can't be unit-tested.
 
 - **Lua dialect:** LuaJIT / Lua 5.1 — see `.github/instructions/lua.instructions.md`
   (repo root) for the full rules and the bugs each rule prevents.
-- **KOReader widget patterns:** see `.github/skills/koreader-plugin/SKILL.md`
-  *(not yet added — pending import from the author's skill library)*.
 - Read the Lua instructions file before writing anything — it covers the `_`
   vs `__` gettext gotcha and other rules that have already caused real bugs
   in this codebase.
 - **Documentation changes ride with the code change that needs them** — see
   `.github/skills/documentation-as-code/SKILL.md` (repo root) for what moves
   together (doc comments, ADRs, config examples, AGENTS.md's File Map).
+- **E-ink refresh / waveform changes:** hard rules in
+  `.github/instructions/eink-refresh.instructions.md`; on-device test
+  procedure in `.github/skills/waveform-experimentation/SKILL.md` (both
+  repo root).
 
 ---
 
