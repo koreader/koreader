@@ -196,6 +196,26 @@ Acceptance (B):
 
 ---
 
+## Review pass (post-implementation)
+
+An independent review of the combined diff traced the flag-off path clean,
+confirmed the regression specs are non-vacuous, and found two should-fix
+defects in the experimental live-refresh path, both fixed by the
+supervising session:
+
+1. The pending-rect flush was gated behind `had_stroke`, so a stroke ended
+   by chrome-strip abort or a mid-stroke eraser flip left already-blitted
+   segments un-refreshed on the panel. Fix: `_flushLiveRefresh()` is now
+   unconditional on pen/touch-up and also fires at both early-abort sites
+   (it no-ops unless a rect is pending).
+2. `_live_pending_rect`/`_live_refresh_last` were never reset by
+   full-repaint paths; after `_reinitAtRotation` a stale rect could carry
+   old-orientation coordinates into `Screen:refreshUI`. Fix: `_cancelTighten`
+   (already called by `_repaintAll`, `loadPage`, `_doClose`) now clears the
+   live-refresh state too.
+
+---
+
 ## Post-merge device checklist (for the maintainer — cannot be done in CI)
 
 1. Run the full matrix in `.github/skills/waveform-experimentation/SKILL.md`

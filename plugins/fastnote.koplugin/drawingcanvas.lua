@@ -904,12 +904,18 @@ function DrawingCanvas:_cancelTightenTimer()
     end
 end
 
---- Cancel the tighten timer AND clear the accumulated rect.
--- Use when a full-quality refresh makes the tighten pass redundant
--- (e.g. _repaintAll, loadPage, _doClose).
+--- Cancel the tighten timer AND clear the accumulated rect, plus any
+-- pending live_color_refresh state.
+-- Use when a full-quality refresh makes all deferred refresh state
+-- redundant (e.g. _repaintAll, loadPage, _doClose). Discarding
+-- _live_pending_rect here also matters after _reinitAtRotation: a rect
+-- recorded in the old orientation's coordinate space must never reach a
+-- post-rotation Screen:refreshUI call.
 function DrawingCanvas:_cancelTighten()
     self:_cancelTightenTimer()
     self._tighten_rect = nil
+    self._live_pending_rect = nil
+    self._live_refresh_last = nil
 end
 
 --- Schedule the deferred GLRC16 cleanup pass (color HW only).
@@ -1085,6 +1091,10 @@ function DrawingCanvas:_pollPen()
                     self._stroke_buf:penUp()
                     self._last_pen_x = nil
                     self._last_pen_y = nil
+                    -- Segments blitted since the last throttled tick would
+                    -- otherwise never reach the panel (no-op unless a
+                    -- live_color_refresh rect is pending).
+                    self:_flushLiveRefresh()
                 end
                 return
             end
@@ -1099,6 +1109,9 @@ function DrawingCanvas:_pollPen()
                     self._stroke_buf:penUp()
                     self._last_pen_x = nil
                     self._last_pen_y = nil
+                    -- Flush pending live-refresh ink before erasing starts
+                    -- (no-op unless a live_color_refresh rect is pending).
+                    self:_flushLiveRefresh()
                 end
             end
 
@@ -1151,17 +1164,18 @@ function DrawingCanvas:_pollPen()
                 self._eraser_mode = false
             end
             self._stroke_buf:penUp()
+            -- Flush any rect the live-refresh throttle hadn't fired for yet,
+            -- so the last segments of a stroke are never left un-refreshed.
+            -- Unconditional (not behind had_stroke or the flag check): it's a
+            -- no-op unless a live_color_refresh rect is actually pending, and
+            -- it must also fire when _last_pen_x was already nulled or the
+            -- menu toggle was flipped off with ink still pending.
+            self:_flushLiveRefresh()
             -- Only act if a stroke was actually drawn (not just hover).
             local had_stroke = self._last_pen_x ~= nil
             if had_stroke then
                 self._page_dirty = true
                 self:_scheduleIdleSave()
-                -- live_color_refresh (flag OFF: no-op): flush any rect the
-                -- throttle hadn't fired for yet, so the last segment of the
-                -- stroke is never left un-refreshed.
-                if self:_useLiveColorRefresh() then
-                    self:_flushLiveRefresh()
-                end
                 -- On mono HW: a2 confirms the stroke visually.
                 -- On color HW: the last segment's partial already refreshed the
                 -- display; schedule the deferred tighten instead.
@@ -1217,13 +1231,11 @@ function DrawingCanvas:_pollTouch()
                 self._last_touch_y = fy
             elseif filtered.type == "up" then
                 self._stroke_buf:penUp()
+                -- Unconditional flush, same reasoning as the pen-up handler:
+                -- no-op unless a live_color_refresh rect is pending.
+                self:_flushLiveRefresh()
                 if self._last_touch_x then
                     self._page_dirty = true
-                    -- live_color_refresh (flag OFF: no-op): flush any rect
-                    -- the throttle hadn't fired for yet.
-                    if self:_useLiveColorRefresh() then
-                        self:_flushLiveRefresh()
-                    end
                     if self._has_color_hw then
                         self:_scheduleTighten()
                     else
