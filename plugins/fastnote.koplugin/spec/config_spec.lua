@@ -115,4 +115,62 @@ describe("lib/config", function()
         assert.is_false(Config.DEFAULTS.finger_draw)
     end)
 
+    -- TIGHTEN / LIVE_COLOR_REFRESH DEFAULTS -----------------------------------
+
+    it("exposes DEFAULTS table with tighten_delay = 2.5", function()
+        assert.are.equal(2.5, Config.DEFAULTS.tighten_delay)
+    end)
+
+    it("exposes DEFAULTS table with tighten_enabled = true", function()
+        assert.is_true(Config.DEFAULTS.tighten_enabled)
+    end)
+
+    it("exposes DEFAULTS table with live_color_refresh = false", function()
+        assert.is_false(Config.DEFAULTS.live_color_refresh)
+    end)
+
+    it("reads tighten_delay from a valid config file", function()
+        local path = write_tmp("return { tighten_delay = 1.0 }")
+        local cfg = Config.load(path)
+        os.remove(path)
+        assert.are.equal(1.0, cfg.tighten_delay)
+    end)
+
+    it("reads live_color_refresh = true from a valid config file", function()
+        local path = write_tmp("return { live_color_refresh = true }")
+        local cfg = Config.load(path)
+        os.remove(path)
+        assert.is_true(cfg.live_color_refresh)
+    end)
+
+    it("uses default tighten_delay/tighten_enabled when absent from config file", function()
+        local path = write_tmp("return { finger_draw = true }")
+        local cfg = Config.load(path)
+        os.remove(path)
+        assert.are.equal(2.5, cfg.tighten_delay)
+        assert.is_true(cfg.tighten_enabled)
+    end)
+
+    -- AND/OR MERGE BUG REGRESSION ---------------------------------------------
+    -- `out[k] = (cfg[k] ~= nil) and cfg[k] or v` would silently discard an
+    -- explicit `false` and return the DEFAULTS value instead. tighten_enabled
+    -- defaults to true, so it is the case that actually exercises the bug.
+
+    it("preserves an explicit false for tighten_enabled (default is true)", function()
+        local path = write_tmp("return { tighten_enabled = false }")
+        local cfg = Config.load(path)
+        os.remove(path)
+        assert.is_false(cfg.tighten_enabled)
+    end)
+
+    it("preserves an explicit false for debug_input_log alongside other overrides", function()
+        -- debug_input_log's default is already false, but check the merge
+        -- still reports it explicitly rather than by accident.
+        local path = write_tmp("return { debug_input_log = false, tighten_enabled = false }")
+        local cfg = Config.load(path)
+        os.remove(path)
+        assert.is_false(cfg.debug_input_log)
+        assert.is_false(cfg.tighten_enabled)
+    end)
+
 end)

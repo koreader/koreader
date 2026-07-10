@@ -100,3 +100,11 @@ Drawing in real-time with colour waveforms is too slow (~200 ms). Drawing A2 the
 ## 5. Deferred / Out of Scope
 
 - **`develop_delay` user config wiring:** `lib/config.lua` declares `develop_delay` and `develop_enabled` defaults. `drawingcanvas.lua` uses hardcoded constants (`DEFAULT_DEVELOP_DELAY`, `_develop_enabled = true`). Full config wiring deferred to Stage 13 or a follow-up.
+
+  **Update (see `.agents/plans/live-color-refresh-and-eraser-hardening.md`,
+  repo root):** resolved. The "develop" pass was renamed "tighten" pass
+  before this config was wired (see `COLOR_TIGHTEN_DELAY` in
+  `drawingcanvas.lua`), so the config keys were renamed to match:
+  `develop_delay` → `tighten_delay`, `develop_enabled` → `tighten_enabled`.
+  `main.lua` now calls `Config.load()` and wires both into
+  `DrawingCanvas:new{}`.

@@ -47,6 +47,14 @@ end
 function FastNote:_openCanvas(lib, state, nb, page_idx)
     local load_path = nb:pagePath(page_idx)
 
+    -- Load user config (lib/config.lua): finger_draw / rotation_mode /
+    -- tighten_delay / tighten_enabled / live_color_refresh. Missing file or
+    -- keys fall back to Config.DEFAULTS -- see .agents/notes/tech-debt.md.
+    local Config      = require("lib/config")
+    local DataStorage = require("datastorage")
+    local conf_path   = DataStorage:getDataDir() .. "/settings/fastnote.conf"
+    local cfg         = Config.load(conf_path)
+
     UIManager:show(DrawingCanvas:new{
         load_path      = load_path,
         page_index     = page_idx,
@@ -54,6 +62,12 @@ function FastNote:_openCanvas(lib, state, nb, page_idx)
         dark_mode      = state.dark_mode == 1,
         current_color  = state.current_color,
         pressure_floor = state.pressure_floor,
+
+        finger_draw         = cfg.finger_draw,
+        init_rotation_mode  = cfg.rotation_mode,
+        tighten_delay       = cfg.tighten_delay,
+        tighten_enabled     = cfg.tighten_enabled,
+        live_color_refresh  = cfg.live_color_refresh,
 
         on_save_callback = function(path)
             nb.last_edited           = os.time()

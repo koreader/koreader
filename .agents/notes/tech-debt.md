@@ -5,23 +5,6 @@ Address opportunistically when touching the relevant file.
 
 ---
 
-## lib/config.lua — not wired into production code
-
-`lib/config.lua` loads a `fastnote.conf` file and merges it with defaults.
-It has a passing spec (`spec/config_spec.lua`) and a corresponding
-`fastnote.conf.example` in the plugin root — clearly intended infrastructure.
-
-**What's missing:** nobody calls `Config.load()`. The natural place is
-`main.lua:onOpenFnoteCanvas()`, which should load the config file from
-`DataStorage:getDataDir() .. "/fastnote.conf"` and pass relevant keys
-(e.g. `finger_draw`, `rotation_mode`) into `DrawingCanvas:new{}` as
-init params.
-
-Until then the defaults in `Config.DEFAULTS` are the effective config
-and the file is silently ignored.
-
----
-
 ## Resolved
 
 - **`model/page.lua`** — deleted along with `spec/page_spec.lua`. Confirmed
@@ -30,3 +13,14 @@ and the file is silently ignored.
 - **`StrokeBuffer:isDirty()`** — renamed to `hasStrokes()`. The old name
   implied unsaved-changes semantics; the canvas's own `_page_dirty` boolean
   is the actual unsaved-changes tracker.
+- **`lib/config.lua` — not wired into production code.** Fixed:
+  `main.lua:_openCanvas()` now calls `Config.load(DataStorage:getDataDir()
+  .. "/settings/fastnote.conf")` and passes `finger_draw`, `rotation_mode`
+  (as `init_rotation_mode`), `tighten_delay`, `tighten_enabled`, and
+  `live_color_refresh` into `DrawingCanvas:new{}`. Along the way: the
+  `develop_delay`/`develop_enabled` keys (never wired; the implementation
+  calls this the "tighten" pass) were renamed to `tighten_delay` /
+  `tighten_enabled` to match, and the config merge's `and/or` ternary was
+  replaced with an explicit `if` (it silently discarded an explicit
+  `false` for any key whose default is `true`). See
+  `spec/config_spec.lua` and `fastnote.conf.example`.

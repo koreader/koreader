@@ -79,10 +79,10 @@ fastnote.koplugin/
 ├── main.lua                   Entry point: config load, canvas open, notebook routing
 ├── drawingcanvas.lua          Drawing canvas widget — ALL input, rendering, menu, orientation,
 │                              chrome strip, and quick-menu color picker (no separate files for these)
-├── fastnote.conf.example      Documented user config (finger_draw, rotation_mode)
+├── fastnote.conf.example      Documented user config (finger_draw, rotation_mode, tighten_*, live_color_refresh)
 ├── lib/
 │   ├── canvas_utils.lua       Pure math: compute_dirty_rect, point_in_zone, pressure_to_width
-│   ├── config.lua             Pure Lua config loader (not yet wired into main.lua — see tech-debt.md)
+│   ├── config.lua             Pure Lua config loader, wired via main.lua's canvas-open path
 │   ├── input_codes.lua        Shared Linux input event constants (BTN_*/ABS_*)
 │   ├── pen_statemachine.lua   Wacom evdev state machine → high-level pen events
 │   ├── json.lua               Pure Lua JSON encoder/decoder (no KOReader deps; busted-testable)
@@ -178,7 +178,7 @@ skip the rest.
 | E-ink refresh / waveforms | Kaleido color waveform modes, A2-live + deferred GLRC16 tighten-pass design | `notes/waveform-refresh-research.md` |
 | Input path architecture | Gesture vs. raw-evdev, per-flag scope, hardware eraser detection | `notes/input-path-architecture.md` |
 | Canvas widget lifecycle | `self.dimen` mutation rule, orientation re-lock, gesture zone timing | `notes/canvas-widget-gotchas.md` |
-| Known tech debt | Unwired config.lua, other deferred cleanup | `notes/tech-debt.md` |
+| Known tech debt | Deferred cleanup items and their resolutions | `notes/tech-debt.md` |
 | Storage format | SVG + embedded JSON metadata | `ADRs/ADR-001-svg-with-embedded-json-metadata.md` |
 | Source of truth | StrokeBuffer vs. BlitBuffer | `ADRs/ADR-002-strokebuffer-as-source-of-truth.md` |
 | Dual input path | Why raw evdev + gesture fallback both exist | `ADRs/ADR-003-dual-path-raw-evdev-plus-gesture-fallback.md` |

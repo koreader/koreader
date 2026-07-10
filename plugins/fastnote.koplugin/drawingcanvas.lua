@@ -60,7 +60,16 @@ local IDLE_SAVE_DELAY     = 30     -- seconds of inactivity before auto-save
 -- Color tighten: seconds of pen inactivity before a targeted GLRC16 cleanup
 -- refresh fires over the accumulated stroke bounding box.
 -- Cancels on any pen-down so mid-session strokes are never interrupted.
+-- Device-tuned default; overridable via config (tighten_delay) -- see
+-- .github/instructions/eink-refresh.instructions.md before lowering it.
 local COLOR_TIGHTEN_DELAY = 2.5
+
+-- live_color_refresh (flag-gated, default off; see DrawingCanvas defaults
+-- table and _useLiveColorRefresh): throttle interval for the direct
+-- Screen:refreshUI call over the accumulated pending rect, ~30 fps.
+-- Precomputed as an fts (ui/time) value since it's compared every segment.
+local LIVE_REFRESH_INTERVAL     = 0.033
+local LIVE_REFRESH_INTERVAL_FTS = time.s(LIVE_REFRESH_INTERVAL)
 
 -- 6-color ink palette (Kaleido 3).  Stored as hex; rendered via colorFromString.
 local PALETTE = {
@@ -123,6 +132,14 @@ local DrawingCanvas = InputContainer:extend{
     -- Color tighten: deferred GLRC16 cleanup pass over new strokes (color HW only)
     _tighten_fn   = nil,   -- scheduled timer function
     _tighten_rect = nil,   -- accumulated bbox of strokes since last tighten (or nil)
+    _tighten_delay   = nil, -- resolved seconds (config override or COLOR_TIGHTEN_DELAY); set in init()
+    _tighten_enabled = nil, -- resolved bool (config override or true); set in init()
+
+    -- live_color_refresh (flag-gated, default off): pending union of dirty
+    -- rects not yet flushed to the screen, and the fts timestamp of the
+    -- last direct refresh. Both nil when idle / flag off.
+    _live_pending_rect  = nil,
+    _live_refresh_last  = nil,
 
     -- Minimum pressure floor applied before pressure_to_width.
     -- Ensures a light touch produces a readable stroke; hardware hover stays below.
@@ -136,6 +153,18 @@ local DrawingCanvas = InputContainer:extend{
 
     use_raw_input      = false,    -- false = gesture layer; true = raw evdev
     finger_draw        = false,    -- allow capacitive touch to draw (pen-only default)
+
+    -- Flag-gated experiment (candidate 1, pencil-koplugin-research.md):
+    -- throttled direct-refresh live colour drawing instead of per-segment
+    -- "a2". Only takes effect when _has_color_hw and use_raw_input are both
+    -- true (see _useLiveColorRefresh); toggleable live from the hamburger
+    -- menu, session-only, same as finger_draw.
+    live_color_refresh = false,
+
+    -- Config overrides for the colour tighten pass (lib/config.lua); nil
+    -- means "use the built-in default" (see init()).
+    tighten_delay      = nil,
+    tighten_enabled    = nil,
 
     init_rotation_mode = nil,
     _rotation_mode     = nil,
@@ -178,6 +207,17 @@ function DrawingCanvas:init()
     self._dark_mode      = self.dark_mode == true
     self._current_color  = self.current_color or DEFAULT_COLOR
     self._pressure_floor = self.pressure_floor or 200
+
+    -- Resolve tighten-pass config overrides. tighten_delay is a number, so
+    -- `or` is safe here (a number is never falsy). tighten_enabled is a
+    -- boolean -- `or` would silently turn an explicit `false` into `true`
+    -- (see lua.instructions.md), so it needs an explicit if.
+    self._tighten_delay = self.tighten_delay or COLOR_TIGHTEN_DELAY
+    if self.tighten_enabled ~= nil then
+        self._tighten_enabled = self.tighten_enabled
+    else
+        self._tighten_enabled = true
+    end
 
     -- Use BBRGB32 on colour e-ink panels so ink renders in the chosen colour.
     -- Screen:isColorEnabled() is a user toggle (reads G_reader_settings) and
@@ -429,6 +469,9 @@ function DrawingCanvas:onMenuTap()
     local finger_lbl    = self.finger_draw  and "Finger draw: on"  or "Finger draw: off"
     local eraser_lbl    = self._eraser_locked and "Eraser: on"     or "Eraser: off"
     local mode_lbl      = self._dark_mode  and "Light mode"        or "Dark mode"
+    local live_color_lbl = self.live_color_refresh
+                            and "Live color ink (experimental): on"
+                            or  "Live color ink (experimental): off"
     local menu
 
     local function close() UIManager:close(menu) end
@@ -512,6 +555,16 @@ function DrawingCanvas:onMenuTap()
                  callback = function()
                      close()
                      self:_confirmClearPage()
+                 end},
+            },
+            -- Row 4b: live color ink toggle (experimental, flag-gated;
+            -- session-only, same as finger_draw -- see live_color_refresh).
+            {
+                {text = live_color_lbl,
+                 callback = function()
+                     close()
+                     self.live_color_refresh = not self.live_color_refresh
+                     logger.dbg("FastNote canvas: live_color_refresh =", self.live_color_refresh)
                  end},
             },
             -- Row 5: ink color (top 3)
@@ -852,9 +905,11 @@ end
 
 --- Schedule the deferred GLRC16 cleanup pass (color HW only).
 -- Call on pen-up / stroke-end.  Resets the timer so a series of quick
--- strokes all promote together in one flash after 2.5 s of inactivity.
+-- strokes all promote together in one flash after _tighten_delay seconds
+-- of inactivity (config override of COLOR_TIGHTEN_DELAY; see init()).
 function DrawingCanvas:_scheduleTighten()
     if not self._has_color_hw then return end
+    if not self._tighten_enabled then return end
     if not self._tighten_rect then return end
     if self._tighten_fn then
         UIManager:unschedule(self._tighten_fn)
@@ -867,20 +922,16 @@ function DrawingCanvas:_scheduleTighten()
             UIManager:setDirty(self, function() return "partial", Geom:new(r), true end)
         end
     end
-    UIManager:scheduleIn(COLOR_TIGHTEN_DELAY, self._tighten_fn)
+    UIManager:scheduleIn(self._tighten_delay, self._tighten_fn)
 end
 
 --- Expand the accumulated tighten bbox to include rect (color HW only).
 -- Called from _drawSegment so every live segment contributes.
 function DrawingCanvas:_expandTightenRect(rect)
     if not self._has_color_hw then return end
-    local r = self._tighten_rect
-    if r then
-        local x1 = math.min(r.x, rect.x)
-        local y1 = math.min(r.y, rect.y)
-        local x2 = math.max(r.x + r.w, rect.x + rect.w)
-        local y2 = math.max(r.y + r.h, rect.y + rect.h)
-        self._tighten_rect = { x = x1, y = y1, w = x2 - x1, h = y2 - y1 }
+    if not self._tighten_enabled then return end
+    if self._tighten_rect then
+        self._tighten_rect = utils.union_rect(self._tighten_rect, rect)
     else
         self._tighten_rect = { x = rect.x, y = rect.y, w = rect.w, h = rect.h }
     end
@@ -895,15 +946,68 @@ function DrawingCanvas:_refreshRect(rect)
     UIManager:setDirty(self, function() return "a2", Geom:new(rect) end)
 end
 
+--- Whether the flag-gated live-color-refresh path applies right now.
+-- EXPERIMENTAL (default off; see live_color_refresh in the defaults table).
+-- Only color hardware on the raw evdev pen path qualify — the gesture/
+-- emulator path and monochrome hardware always keep the "a2" path in
+-- _drawSegment, regardless of this flag's value.
+function DrawingCanvas:_useLiveColorRefresh()
+    return self.live_color_refresh and self._has_color_hw and self.use_raw_input
+end
+
+--- EXPERIMENTAL live_color_refresh path: blit the segment's dirty rect
+-- straight into the framebuffer and throttle a direct Screen:refreshUI
+-- over the accumulated pending rect to at most once per
+-- LIVE_REFRESH_INTERVAL_FTS. Bypasses UIManager entirely — the sanctioned
+-- escape hatch for high-frequency refresh, see
+-- .github/instructions/eink-refresh.instructions.md. StrokeBuffer remains
+-- authoritative (ADR-002); this only changes what's shown between ticks.
+-- @param rect table {x, y, w, h} — this segment's dirty rect
+function DrawingCanvas:_liveColorRefresh(rect)
+    Screen.bb:blitFrom(self._bb, rect.x, rect.y, rect.x, rect.y, rect.w, rect.h)
+
+    if self._live_pending_rect then
+        self._live_pending_rect = utils.union_rect(self._live_pending_rect, rect)
+    else
+        self._live_pending_rect = { x = rect.x, y = rect.y, w = rect.w, h = rect.h }
+    end
+
+    local now = time.now()
+    if self._live_refresh_last
+       and (now - self._live_refresh_last) < LIVE_REFRESH_INTERVAL_FTS then
+        return
+    end
+    self._live_refresh_last = now
+    self:_flushLiveRefresh()
+end
+
+--- Fire a direct Screen:refreshUI over the pending live_color_refresh rect
+-- and clear it. No-op if there is nothing pending. Called both by the
+-- throttled tick in _liveColorRefresh and to flush on pen/touch "up" so the
+-- final segment of a stroke is never left un-refreshed by the throttle.
+function DrawingCanvas:_flushLiveRefresh()
+    local rect = self._live_pending_rect
+    if not rect then return end
+    self._live_pending_rect = nil
+    Screen:refreshUI(rect.x, rect.y, rect.w, rect.h)
+end
+
 --- Draw a live segment from (x0,y0) to (x1,y1) into _bb and schedule a refresh.
 -- Also expands the tighten bbox so the deferred cleanup covers this segment.
+-- Flag OFF (default): unchanged "a2" per-segment refresh via _refreshRect.
+-- Flag ON (live_color_refresh, color HW + raw pen path only): see
+-- _liveColorRefresh instead.
 -- @int x0, y0  start point (screen coords)
 -- @int x1, y1  end point
 -- @int lw      line width in pixels
 function DrawingCanvas:_drawSegment(x0, y0, x1, y1, lw)
     utils.drawLine(self._bb, x0, y0, x1, y1, lw, self:_strokeColor())
     local dirty = utils.compute_dirty_rect(x0, y0, x1, y1, lw)
-    self:_refreshRect(dirty)
+    if self:_useLiveColorRefresh() then
+        self:_liveColorRefresh(dirty)
+    else
+        self:_refreshRect(dirty)
+    end
     self:_expandTightenRect(dirty)
 end
 
@@ -1043,6 +1147,12 @@ function DrawingCanvas:_pollPen()
             if had_stroke then
                 self._page_dirty = true
                 self:_scheduleIdleSave()
+                -- live_color_refresh (flag OFF: no-op): flush any rect the
+                -- throttle hadn't fired for yet, so the last segment of the
+                -- stroke is never left un-refreshed.
+                if self:_useLiveColorRefresh() then
+                    self:_flushLiveRefresh()
+                end
                 -- On mono HW: a2 confirms the stroke visually.
                 -- On color HW: the last segment's partial already refreshed the
                 -- display; schedule the deferred tighten instead.
@@ -1100,6 +1210,11 @@ function DrawingCanvas:_pollTouch()
                 self._stroke_buf:penUp()
                 if self._last_touch_x then
                     self._page_dirty = true
+                    -- live_color_refresh (flag OFF: no-op): flush any rect
+                    -- the throttle hadn't fired for yet.
+                    if self:_useLiveColorRefresh() then
+                        self:_flushLiveRefresh()
+                    end
                     if self._has_color_hw then
                         self:_scheduleTighten()
                     else

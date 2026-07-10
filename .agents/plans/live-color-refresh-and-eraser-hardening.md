@@ -110,14 +110,17 @@ Constraints:
 
 Acceptance (A):
 
-- [ ] `busted spec/` green; new specs for config merge-false, key renames,
-      `union_rect`.
-- [ ] `fastnote.conf.example` documents `tighten_delay`, `tighten_enabled`,
+- [x] `busted spec/` green; new specs for config merge-false, key renames,
+      `union_rect`. (208 → 216 successes; `union_rect` already had full
+      spec coverage from an earlier commit — it existed unused in
+      `lib/canvas_utils.lua`, now wired into `_expandTightenRect` and the
+      new live-refresh accumulator.)
+- [x] `fastnote.conf.example` documents `tighten_delay`, `tighten_enabled`,
       `live_color_refresh` in the file's existing comment style.
-- [ ] Flag OFF path verified unchanged by reading the diff (no behavior
+- [x] Flag OFF path verified unchanged by reading the diff (no behavior
       change without the flag).
-- [ ] tech-debt.md: config item moved to Resolved.
-- [ ] waveform-refresh-research.md "future ideas" entry for the throttled
+- [x] tech-debt.md: config item moved to Resolved.
+- [x] waveform-refresh-research.md "future ideas" entry for the throttled
       direct refresh updated to "implemented behind `live_color_refresh`
       (default off), pending device validation".
 
