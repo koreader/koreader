@@ -851,12 +851,40 @@ function Input:handleKeyBoardEv(ev)
         UIManager:nextTick(function() UIManager:quit() end) -- Ensure the program closes in case of some lingering dialog.
     end
 
+    -- A lone Sym key tap (pressed and released with no other key in between) is used
+    -- by InputText to toggle the on-screen keyboard, mirroring Shift/ScreenKB + Home.
+    -- Sym is otherwise only a modifier (the symbol layer) whose bare press/release is
+    -- swallowed just below, so we track the "tapped alone" state across both events.
+    -- It only counts as a lone tap if no other modifier is held at press time (Sym
+    -- itself is not marked in self.modifiers until the block below), so combinations
+    -- like Shift + Sym do not toggle the keyboard. A held Sym (auto-repeat) is not a
+    -- tap either, so clear the flag once repeats start coming in.
+    if ev.value == KEY_PRESS then
+        local solo = keycode == "Sym"
+        if solo then
+            for _, held in pairs(self.modifiers) do
+                if held then
+                    solo = false
+                    break
+                end
+            end
+        end
+        self.sym_tapped = solo
+    elseif ev.value == KEY_REPEAT and keycode == "Sym" then
+        self.sym_tapped = false
+    end
+
     -- handle modifier keys
     if self.modifiers[keycode] ~= nil then
         if ev.value == KEY_PRESS then
             self.modifiers[keycode] = true
         elseif ev.value == KEY_RELEASE then
             self.modifiers[keycode] = false
+            if keycode == "Sym" and self.sym_tapped then
+                self.sym_tapped = false
+                -- Surface the lone Sym tap as a dedicated key event; nothing else binds it.
+                return Event:new("KeyPress", Key:new("SymPress", self.modifiers))
+            end
         end
         return
     end

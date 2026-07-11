@@ -796,6 +796,17 @@ function InputText:onKeyPress(key)
     if not self.focused then
         return false
     end
+
+    -- A lone Sym key tap toggles the on-screen keyboard, same as Shift/ScreenKB + Home.
+    if key["SymPress"] then
+        if self:isKeyboardVisible() then
+            self:onCloseKeyboard()
+        else
+            self:onShowKeyboard()
+        end
+        return self.keyboard ~= nil -- readonly fields have no keyboard: let the event bubble
+    end
+
     local handled = true
 
     if not key["Ctrl"] and not key["Shift"] and not key["Alt"] and not key["ScreenKB"] then
