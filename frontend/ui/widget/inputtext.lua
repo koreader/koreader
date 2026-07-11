@@ -797,8 +797,8 @@ function InputText:onKeyPress(key)
         return false
     end
 
-    -- A lone Sym key tap toggles the on-screen keyboard, same as Shift/ScreenKB + Home.
-    if key["SymPress"] then
+    -- A lone Sym or ScreenKB key tap toggles the on-screen keyboard, same as Shift/ScreenKB + Home.
+    if key["SymPress"] or key["ScreenKBPress"] then
         if self:isKeyboardVisible() then
             self:onCloseKeyboard()
         else
