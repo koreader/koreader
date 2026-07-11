@@ -725,14 +725,13 @@ function InputText:onKeyPress(key)
             end
         elseif key["End"] then
             self:goToEnd()
+        -- Home is a button on eink devices, KeyHome is the key on a physical keyboard.
         elseif key["Home"] then
-            if Device:hasScreenKB() or Device:hasSymKey() then
-                self:keyBack()
-                local Event = require("ui/event")
-                UIManager:sendEvent(Event:new("Home"))
-            else
-                self:goToHome()
-            end
+            self:keyBack()
+            local Event = require("ui/event")
+            UIManager:sendEvent(Event:new("Home"))
+        elseif key["KeyHome"] then
+            self:goToHome()
         elseif key["Press"] then
             self:addChars("\n")
         elseif key["Tab"] then
@@ -773,7 +772,7 @@ function InputText:onKeyPress(key)
             self:downLine()
         elseif key["Press"] then
             self:holdTextBox()
-        elseif key["Home"] then
+        elseif key["Home"] or key["KeyHome"] then
             if self.keyboard:isVisible() then
                 self:onCloseKeyboard()
             else
