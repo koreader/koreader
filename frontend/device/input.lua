@@ -737,7 +737,7 @@ function Input:handleKeyBoardEv(ev)
         end
     end
 
-    local is_sdl = self.device and self.device.isSDL and self.device:isSDL()
+    local is_sdl = self.device:isSDL()
 
     -- On Kobo-style stylus devices, barrel/tool buttons can double as
     -- eraser/highlighter tool selectors. SDL/Linux pen buttons are handled as
