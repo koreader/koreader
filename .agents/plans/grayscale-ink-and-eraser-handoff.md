@@ -1,6 +1,37 @@
 # Handoff: plugin-side grayscale ink + eraser-still-draws investigation
 
-**Status: NOT STARTED (handoff doc — written for a cold-start agent)**
+**Status: CODE ROUND EXECUTED (2026-07) — awaiting on-device results.**
+The investigation below was carried out; findings and the code that
+shipped for them:
+
+1. **Fact 2 ("no bars at all") is VOID as color evidence.** The self-test
+   painted its bars centered in the drawable area — directly under its own
+   centered InfoMessage — and the dismiss callback repainted the page
+   immediately. The bars were never visible on any run. Fixed: bars now
+   paint at the top of the drawable area, persist after dismissal behind a
+   keep/restore dialog, and the readout now includes `canvas_bb_type`
+   (`self._bb:getType()` — suspect A's missing number), the current ink
+   hex, the resolved stroke color, and the bar rect coordinates.
+2. **The color chain is statically correct end-to-end** (hex →
+   colorFromString → paintRect into BBRGB32 `_bb` → blitFrom into BBRGB32
+   Screen.bb → dither-promoted refresh; same combo KOReader core uses for
+   colored highlights). No code-visible place where color dies was found —
+   the next on-device self-test run is designed to be decisive.
+3. **Eraser: real intra-frame ordering race found and fixed.** pendev's
+   ABS_MT_TOOL_TYPE=pen branch could overwrite the BTN_STYLUS-driven
+   rubber state depending on event order. Now an order-independent level
+   latch (`lib/eraser_button.update_held` / `mt_tool_for_pen_slot`,
+   spec-covered; reviewed against six event-order scenarios).
+4. **debug_input_log was designed (ADR-006) but never wired** — no menu
+   toggle, no raw_log_fn assignment, ever. Now fully wired (menu toggle +
+   conf key + `<datadir>/fastnote/input.log`), RAW + DEC lines both
+   written, rotation failure degrades gracefully.
+5. **On-device next steps for the maintainer** are packaged in
+   `.agents/plans/eraser-capture-runbook.md` (eraser + side-button
+   captures) and step 4 below (run the self-test once, read the numbers).
+
+The original handoff text follows unchanged — its "What comes next"
+ordering still applies, with steps 3/4/6 now implemented in code.
 
 You are picking up a long-running color/eraser investigation on
 fastnote.koplugin (Kobo Libra Colour). This doc is self-contained: it
