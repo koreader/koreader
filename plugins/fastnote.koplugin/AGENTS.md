@@ -79,7 +79,7 @@ fastnote.koplugin/
 ├── main.lua                   Entry point: config load, canvas open, notebook routing
 ├── drawingcanvas.lua          Drawing canvas widget — ALL input, rendering, menu, orientation,
 │                              chrome strip, and quick-menu color picker (no separate files for these)
-├── fastnote.conf.example      Documented user config (finger_draw, rotation_mode, tighten_*, live_color_refresh, eraser_button)
+├── fastnote.conf.example      Documented user config (finger_draw, rotation_mode, tighten_*, live_color_refresh, eraser_button, live_ink_style)
 ├── lib/
 │   ├── canvas_utils.lua       Pure math: compute_dirty_rect, point_in_zone, pressure_to_width
 │   ├── config.lua             Pure Lua config loader, wired via main.lua's canvas-open path

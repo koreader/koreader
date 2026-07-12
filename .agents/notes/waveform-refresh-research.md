@@ -197,6 +197,19 @@ buffer* copy of the live stroke must be painted near-black (true color
 stays in StrokeBuffer; the tighten repaints true color before its
 refresh). See `.agents/plans/color-pipeline-diagnosis-and-fix.md`.
 
+**In-plugin implementation (Task C2, implemented):** `live_ink_style`
+config key (`lib/config.lua`, default `"solid"`) selects this behavior.
+`lib/canvas_utils.lua`'s `live_ink_mode(style, dark_mode, has_color_hw,
+live_color_refresh_active)` is the pure decision function (spec-tested in
+`spec/canvas_utils_spec.lua`); `drawingcanvas.lua`'s `_drawSegment` calls it
+per segment and sets `self._display_diverged = true` whenever it paints
+solid ink. The tighten pass (`_scheduleTighten`'s fired closure) checks that
+flag and calls `_rebuildDisplayFromStrokes()` — a helper shared with
+`_repaintAll` and `loadPage` that replays StrokeBuffer's true colors into
+`_bb` and clears the flag — before firing its `"partial"`+dither refresh, so
+GLRC16 always develops the region's real color rather than re-promoting the
+solid black already on screen.
+
 ---
 
 ## Fact-check: "Implementing Real-Time Color Stylus Drawing" paper (2026-07)
@@ -306,9 +319,9 @@ mid-stroke and made drawing unusable.
 | Operation | Waveform | Colour HW (KoboMonza) | Non-colour HW |
 |---|---|---|---|
 | Full repaint (`_repaintAll`) | `"partial"` + dither=true | → GLRC16 | → GLR16 |
-| Live pen/touch segment (`_drawSegment` → `_refreshRect`) | `"a2"` (fast B&W) | → A2 (color ink shown as 1-bit dither) | → A2 |
+| Live pen/touch segment (`_drawSegment` → `_refreshRect`) | `"a2"` (fast B&W) | → A2. Display ink vs. stored ink depends on `live_ink_style` (Task C2, default `"solid"`): `"solid"` paints the segment solid black into `_bb` (StrokeBuffer still stores the true color, ADR-002) — avoids A2 thresholding light ink colors into a faint dither; `"color"` paints the true color into `_bb`, which A2 shows as a 1-bit dither. Either way `_useLiveColorRefresh()` being active forces true color (precedence: `live_color_refresh` > `live_ink_style`). See `lib/canvas_utils.lua`'s `live_ink_mode`. | → A2. `live_ink_style` has no effect (mono hardware always draws true ink; there's no A2 color-dither problem to solve) |
 | Pen-up / touch-up | — | schedules the tighten timer | `"a2"` |
-| Tighten pass (fires `COLOR_TIGHTEN_DELAY` = 2.5s after last pen-up, cancelled on next pen-down) | `"partial"` + dither=true, targeted to accumulated stroke bbox | → GLRC16 (reveals true color) | N/A — mono HW never schedules a tighten |
+| Tighten pass (fires `COLOR_TIGHTEN_DELAY` = 2.5s after last pen-up, cancelled on next pen-down) | `"partial"` + dither=true, targeted to accumulated stroke bbox | → GLRC16 (reveals true color). If any live segment since the last full rebuild painted solid ink (`live_ink_style=="solid"`), `_bb` first gets rebuilt from StrokeBuffer's true colors (`_rebuildDisplayFromStrokes`) before this refresh fires — skipped when nothing diverged | N/A — mono HW never schedules a tighten |
 
 Implementation: `drawingcanvas.lua` — `_scheduleTighten`,
 `_cancelTightenTimer` (pen-down: cancels timer only, preserves rect),

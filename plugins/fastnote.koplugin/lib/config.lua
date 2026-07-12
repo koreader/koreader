@@ -78,6 +78,27 @@ Config.DEFAULTS = {
     --             that tells you to try this: the eraser end draws instead
     --             of erasing.
     eraser_button = "stylus",
+
+    --- How live (in-progress) strokes are painted into the display buffer
+    -- on color hardware while the pen is moving. See ADR-002: this only
+    -- ever affects the display cache -- StrokeBuffer always keeps the
+    -- stroke's true color regardless of this setting.
+    -- "solid" (default) -- live segments paint as solid black (dark mode:
+    --             white, already solid) instead of the true ink color.
+    --             Matches the stock Kobo notebook's live-drawing look and
+    --             avoids A2's 1-bit thresholding turning light ink colors
+    --             into a faint, sparse dither while writing. True color
+    --             is revealed by the deferred tighten pass after the pen
+    --             stops moving.
+    -- "color" -- live segments paint the true ink color (today's
+    --             pre-Task-C2 behavior). Symptom: colored ink looks faint
+    --             / dotted while actively drawing, especially for light
+    --             colors, until the tighten pass fires.
+    -- Ignored (no behavior change) on monochrome hardware, and whenever
+    -- the live_color_refresh experiment is active for a stroke -- that
+    -- path exists specifically to show true color live, so it always
+    -- wins over "solid" (see lib/canvas_utils.lua's live_ink_mode).
+    live_ink_style = "solid",
 }
 
 --- Load a config file and return the merged result.

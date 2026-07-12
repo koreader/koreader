@@ -110,4 +110,45 @@ function canvas_utils.drawLine(bb, x0, y0, x1, y1, w, color)
     end
 end
 
+--- Decide whether a live-drawn segment should paint into the display buffer
+-- as solid ink or as the stroke's true color (Task C2, "draw black, bloom
+-- color" -- see .agents/plans/color-pipeline-diagnosis-and-fix.md).
+--
+-- A2 (the live-drawing waveform on color hardware) is 1-bit: a colored
+-- stroke thresholds to a faint, sparse dither pattern instead of a solid
+-- line. "solid" style paints the live segment in solid black instead, while
+-- the stroke's true color still goes into StrokeBuffer unchanged (ADR-002)
+-- and is revealed by the deferred tighten pass.
+--
+-- Precedence, checked in order:
+--   1. Dark mode already forces solid white ink (existing behavior) --
+--      always "true_color" here, since there is nothing to diverge from.
+--   2. Mono hardware never has this problem (no A2 dither thresholding of
+--      color) -- always "true_color".
+--   3. The live_color_refresh experiment exists specifically to show true
+--      color live; solid black would defeat its purpose -- always
+--      "true_color" when it's active.
+--   4. The tighten pass is what repaints the true color back over solid
+--      ink -- with it disabled (tighten_enabled == false), solid ink would
+--      stay black until an unrelated full repaint, so "true_color" wins.
+--   5. Otherwise: "solid" style on color hardware -> "solid". Any other
+--      style value (including "color", and unrecognized values as a
+--      fail-safe) -> "true_color".
+--
+-- @param style                     string   "solid" | "color" (live_ink_style config)
+-- @param dark_mode                 boolean
+-- @param has_color_hw              boolean
+-- @param live_color_refresh_active boolean  result of _useLiveColorRefresh()
+-- @param tighten_enabled           boolean  only an explicit false disables
+--                                  solid ink (nil is treated as enabled)
+-- @return string  "solid" | "true_color"
+function canvas_utils.live_ink_mode(style, dark_mode, has_color_hw, live_color_refresh_active, tighten_enabled)
+    if dark_mode then return "true_color" end
+    if not has_color_hw then return "true_color" end
+    if live_color_refresh_active then return "true_color" end
+    if tighten_enabled == false then return "true_color" end
+    if style == "solid" then return "solid" end
+    return "true_color"
+end
+
 return canvas_utils

@@ -193,4 +193,24 @@ describe("lib/config", function()
         assert.are.equal("stylus2", cfg.eraser_button)
     end)
 
+    -- LIVE_INK_STYLE -----------------------------------------------------------
+
+    it("exposes DEFAULTS table with live_ink_style = 'solid'", function()
+        assert.are.equal("solid", Config.DEFAULTS.live_ink_style)
+    end)
+
+    it("uses default live_ink_style when absent from config file", function()
+        local path = write_tmp("return { finger_draw = true }")
+        local cfg = Config.load(path)
+        os.remove(path)
+        assert.are.equal("solid", cfg.live_ink_style)
+    end)
+
+    it("reads live_ink_style = 'color' from a valid config file and it survives the merge", function()
+        local path = write_tmp("return { live_ink_style = 'color' }")
+        local cfg = Config.load(path)
+        os.remove(path)
+        assert.are.equal("color", cfg.live_ink_style)
+    end)
+
 end)

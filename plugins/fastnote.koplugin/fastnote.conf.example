@@ -129,4 +129,32 @@ return {
     --
     eraser_button = "stylus",
 
+    -- live_ink_style
+    -- --------------
+    -- How live (in-progress) strokes paint into the display while the pen
+    -- is moving, on colour hardware (Kaleido 3). Never affects StrokeBuffer
+    -- -- the stroke's true colour is always recorded regardless of this
+    -- setting (ADR-002); this only changes what's shown before the tighten
+    -- pass reveals it.
+    --
+    --   "solid"  (default) -- live segments draw as solid black (dark mode:
+    --              white, which is already solid) instead of the chosen ink
+    --              colour. Matches the stock Kobo notebook app's look and
+    --              avoids the A2 live-drawing waveform's 1-bit thresholding
+    --              turning light ink colours into a faint, sparse dither
+    --              while writing. True colour appears once the tighten
+    --              pass fires (see tighten_delay above).
+    --   "color"  -- live segments draw the true ink colour (pre-Task-C2
+    --              behaviour). Symptom: colour ink looks faint / dotted
+    --              while actively drawing -- especially for lighter
+    --              colours -- until the tighten pass fires.
+    --
+    -- Ignored (no behaviour change) on monochrome hardware, whenever the
+    -- live_color_refresh experiment above is active (that path shows true
+    -- colour live on purpose, so it always wins over "solid"), and when
+    -- tighten_enabled = false (with no tighten pass, nothing would ever
+    -- repaint the true colour back over the solid ink).
+    --
+    live_ink_style = "solid",
+
 }

@@ -176,18 +176,33 @@ Design:
 
 Acceptance (C2):
 
-- [ ] `busted spec/` green; config specs for `live_ink_style` (default,
-      file override, explicit-"color" survives merge).
-- [ ] Live segment paint color decision is in a pure, spec-tested helper
+- [x] `busted spec/` green; config specs for `live_ink_style` (default,
+      file override, explicit-"color" survives merge). 241 successes /
+      0 failures / 0 errors (232 baseline + 9 new: 6 in
+      `spec/canvas_utils_spec.lua`'s new `live_ink_mode` describe block,
+      3 in `spec/config_spec.lua`).
+- [x] Live segment paint color decision is in a pure, spec-tested helper
       (e.g. in `lib/canvas_utils.lua`): given (style, dark_mode,
       has_color_hw, live_color_refresh_active) → display ink decision.
-- [ ] Tighten repaints `_bb` from StrokeBuffer before its refresh; the
+      `lib/canvas_utils.lua`'s `live_ink_mode(style, dark_mode,
+      has_color_hw, live_color_refresh_active)` returns `"solid"` |
+      `"true_color"`; written spec-first (red confirmed before
+      implementing).
+- [x] Tighten repaints `_bb` from StrokeBuffer before its refresh; the
       repaint is skipped when nothing diverged (style=="color" or no
       solid-ink segments drawn since the last rebuild).
-- [ ] `fastnote.conf.example` documents `live_ink_style` with the
+      `drawingcanvas.lua`'s `_scheduleTighten` fired closure calls the new
+      `_rebuildDisplayFromStrokes()` helper only `if
+      self._display_diverged`; `_drawSegment` sets that flag true only
+      when `live_ink_mode` returns `"solid"`. `_rebuildDisplayFromStrokes`
+      (shared by `_repaintAll` and `loadPage`, so undo/redo/erase/
+      rotation/dark-mode-toggle/clear-page/loadPage all stay consistent
+      automatically) always clears the flag.
+- [x] `fastnote.conf.example` documents `live_ink_style` with the
       user-visible symptom each value produces.
-- [ ] Waveform note's design table updated (live segment row: display
-      ink vs stored ink).
+- [x] Waveform note's design table updated (live segment row: display
+      ink vs stored ink). Also added a short "Task C2, implemented" note
+      under the 2026-07 A2-dither correction section.
 
 ## Task C3 — review pass
 

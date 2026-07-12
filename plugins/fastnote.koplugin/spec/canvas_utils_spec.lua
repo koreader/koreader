@@ -181,5 +181,55 @@ describe("canvas_utils", function()
 
     end)
 
+    describe("live_ink_mode", function()
+        -- Task C2 ("draw black, bloom color"): pure decision of whether a
+        -- live-drawn segment should paint into _bb as solid ink or the
+        -- stroke's true color. See
+        -- .agents/plans/color-pipeline-diagnosis-and-fix.md.
+
+        it("returns 'solid' for style=solid on color hw, light mode, no live_color_refresh", function()
+            assert.are.equal("solid", utils.live_ink_mode("solid", false, true, false))
+        end)
+
+        it("returns 'true_color' for style=color on color hw, light mode", function()
+            assert.are.equal("true_color", utils.live_ink_mode("color", false, true, false))
+        end)
+
+        it("returns 'true_color' in dark mode even when style=solid", function()
+            -- Dark mode already forces white ink (existing _strokeColor
+            -- behavior) -- it's already "solid", so no display divergence
+            -- from StrokeBuffer's true color is needed.
+            assert.are.equal("true_color", utils.live_ink_mode("solid", true, true, false))
+        end)
+
+        it("returns 'true_color' on mono hardware even when style=solid", function()
+            assert.are.equal("true_color", utils.live_ink_mode("solid", false, false, false))
+        end)
+
+        it("returns 'true_color' when live_color_refresh is active, even when style=solid", function()
+            -- live_color_refresh exists precisely to show true color live;
+            -- solid black would defeat its purpose. Precedence:
+            -- live_color_refresh > live_ink_style.
+            assert.are.equal("true_color", utils.live_ink_mode("solid", false, true, true))
+        end)
+
+        it("returns 'true_color' for an unrecognized style value (fail safe to current behavior)", function()
+            assert.are.equal("true_color", utils.live_ink_mode("bogus", false, true, false))
+        end)
+
+        it("returns 'true_color' when the tighten pass is disabled, even when style=solid", function()
+            -- With tighten_enabled == false nothing ever repaints the true
+            -- color back over the solid ink -- strokes would stay black
+            -- until an unrelated full repaint. Solid only makes sense when
+            -- the bloom is coming.
+            assert.are.equal("true_color", utils.live_ink_mode("solid", false, true, false, false))
+        end)
+
+        it("returns 'solid' when tighten_enabled is explicitly true", function()
+            assert.are.equal("solid", utils.live_ink_mode("solid", false, true, false, true))
+        end)
+
+    end)
+
 end)
 

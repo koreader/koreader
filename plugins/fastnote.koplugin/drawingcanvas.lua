@@ -143,6 +143,20 @@ local DrawingCanvas = InputContainer:extend{
     _tighten_delay   = nil, -- resolved seconds (config override or COLOR_TIGHTEN_DELAY); set in init()
     _tighten_enabled = nil, -- resolved bool (config override or true); set in init()
 
+    -- Task C2 ("draw black, bloom color"): which ink live segments paint
+    -- into _bb with on color hardware -- "solid" (default) or "color".
+    -- nil means "use the built-in default" (see init()). See
+    -- lib/canvas_utils.lua's live_ink_mode for the full decision.
+    live_ink_style  = nil,
+    _live_ink_style = nil, -- resolved "solid"|"color"; set in init()
+
+    -- True whenever a live segment has painted solid ink into _bb since the
+    -- last full rebuild from StrokeBuffer (_rebuildDisplayFromStrokes) --
+    -- i.e. _bb currently disagrees with StrokeBuffer's true colors over at
+    -- least one region. The tighten pass rebuilds _bb before its refresh
+    -- only when this is true; _rebuildDisplayFromStrokes always clears it.
+    _display_diverged = false,
+
     -- live_color_refresh (flag-gated, default off): pending union of dirty
     -- rects not yet flushed to the screen, and the fts timestamp of the
     -- last direct refresh. Both nil when idle / flag off.
@@ -235,6 +249,11 @@ function DrawingCanvas:init()
     -- Resolve the eraser_button config override. It is a non-empty string
     -- ("stylus"/"stylus2"), never false/nil once set, so `or` is safe here.
     self._eraser_button = self.eraser_button or "stylus"
+
+    -- Resolve the live_ink_style config override (Task C2). Same reasoning
+    -- as eraser_button above: a non-empty string ("solid"/"color"), never
+    -- false/nil once set, so `or` is safe here.
+    self._live_ink_style = self.live_ink_style or "solid"
 
     -- Use BBRGB32 on colour e-ink panels so ink renders in the chosen colour.
     -- Screen:isColorEnabled() is a user toggle (reads G_reader_settings) and
@@ -891,9 +910,15 @@ function DrawingCanvas:_updateGestureZones()
     r.h = CHROME_HEIGHT
 end
 
---- Repaint all strokes into the BlitBuffer and request a UI refresh.
--- Use after undo, redo, erase, or mode changes to rebuild the display cache.
-function DrawingCanvas:_repaintAll()
+--- Rebuild self._bb from StrokeBuffer's true stroke colors, without
+-- requesting any screen refresh (callers add their own). Shared by
+-- _repaintAll and loadPage, and by the tighten pass (Task C2, "draw black,
+-- bloom color") to resync _bb with StrokeBuffer's true colors before its
+-- color-quality refresh -- see the "solid live ink" design in
+-- .agents/plans/color-pipeline-diagnosis-and-fix.md.
+-- Always clears _display_diverged: after this call _bb and StrokeBuffer
+-- agree again, so no solid-ink segments remain pending repaint.
+function DrawingCanvas:_rebuildDisplayFromStrokes()
     if not self._bb then return end
     self._bb:fill(self:_bgColor())
     if self._stroke_buf then
@@ -902,6 +927,14 @@ function DrawingCanvas:_repaintAll()
         local override = self._dark_mode and Blitbuffer.COLOR_WHITE or nil
         self._stroke_buf:repaintTo(self._bb, override)
     end
+    self._display_diverged = false
+end
+
+--- Repaint all strokes into the BlitBuffer and request a UI refresh.
+-- Use after undo, redo, erase, or mode changes to rebuild the display cache.
+function DrawingCanvas:_repaintAll()
+    if not self._bb then return end
+    self:_rebuildDisplayFromStrokes()
     -- A full repaint already provides color quality — cancel any pending tighten.
     self:_cancelTighten()
     if self._has_color_hw then
@@ -1077,6 +1110,15 @@ function DrawingCanvas:_scheduleTighten()
         local r = self._tighten_rect
         self._tighten_rect = nil
         if r then
+            -- Task C2: if any live segment since the last rebuild painted
+            -- solid ink instead of true color, _bb has diverged from
+            -- StrokeBuffer over that region -- resync before the
+            -- color-quality refresh so it actually shows true color.
+            -- Skipped when nothing diverged (style=="color", or no
+            -- solid-ink segments were drawn since the last rebuild).
+            if self._display_diverged then
+                self:_rebuildDisplayFromStrokes()
+            end
             UIManager:setDirty(self, function() return "partial", Geom:new(r), true end)
         end
     end
@@ -1155,13 +1197,30 @@ end
 -- Flag OFF (default): unchanged "a2" per-segment refresh via _refreshRect.
 -- Flag ON (live_color_refresh, color HW + raw pen path only): see
 -- _liveColorRefresh instead.
+--
+-- Task C2 ("draw black, bloom color"): the display color painted here can
+-- diverge from the stroke's true color (still recorded in StrokeBuffer
+-- unchanged, via penDown/penMove -- ADR-002) when live_ink_style=="solid"
+-- on color hardware. See lib/canvas_utils.lua's live_ink_mode for the full
+-- decision and _display_diverged's doc comment for how that's resynced.
 -- @int x0, y0  start point (screen coords)
 -- @int x1, y1  end point
 -- @int lw      line width in pixels
 function DrawingCanvas:_drawSegment(x0, y0, x1, y1, lw)
-    utils.drawLine(self._bb, x0, y0, x1, y1, lw, self:_strokeColor())
+    local live_color_active = self:_useLiveColorRefresh()
+    local ink_mode = utils.live_ink_mode(self._live_ink_style, self._dark_mode,
+                                          self._has_color_hw, live_color_active,
+                                          self._tighten_enabled)
+    local color
+    if ink_mode == "solid" then
+        color = Blitbuffer.COLOR_BLACK
+        self._display_diverged = true
+    else
+        color = self:_strokeColor()
+    end
+    utils.drawLine(self._bb, x0, y0, x1, y1, lw, color)
     local dirty = utils.compute_dirty_rect(x0, y0, x1, y1, lw)
-    if self:_useLiveColorRefresh() then
+    if live_color_active then
         self:_liveColorRefresh(dirty)
     else
         self:_refreshRect(dirty)
@@ -1431,9 +1490,7 @@ function DrawingCanvas:loadPage(path)
     self._page_dirty = false
 
     if self._bb then
-        self._bb:fill(self:_bgColor())
-        local override = self._dark_mode and Blitbuffer.COLOR_WHITE or nil
-        self._stroke_buf:repaintTo(self._bb, override)
+        self:_rebuildDisplayFromStrokes()
         self:_cancelTighten()
         UIManager:setDirty(self, "full")
     end
