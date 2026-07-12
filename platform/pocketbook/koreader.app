@@ -4,7 +4,9 @@ export LC_ALL="en_US.UTF-8"
 
 UNPACK_DIR='/mnt/ext1'
 # KOReader's working directory.
-KOREADER_DIR="${UNPACK_DIR}/applications/koreader"
+# Note: the leading dot keeps the PocketBook library scanner from indexing our
+# own files (fonts, help documents, crash.log) as books (koreader/koreader#15462).
+KOREADER_DIR="${UNPACK_DIR}/applications/.koreader"
 
 # Relocalize ourselves to /tmp: this is used by KOReader to detect if the
 # original script has changed after an update (requiring a complete restart

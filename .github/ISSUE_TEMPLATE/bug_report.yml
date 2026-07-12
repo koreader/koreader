@@ -109,7 +109,7 @@ body:
         * Cervantes: `/mnt/private/koreader`
         * Kindle: `koreader/`
         * Kobo: `.adds/koreader/`
-        * Pocketbook: `applications/koreader/`
+        * Pocketbook: `applications/.koreader/` (a hidden directory)
         * Android: Go to [Menu] → Help → Bug Report to save logs to a file
         * AppImage: Run `koreader-20xx.AppImage 2>&1 | tee crash.log` from the terminal
         * Deb / Linux: Run `koreader-20xx 2>&1 | tee crash.log` from the terminal
