@@ -156,6 +156,30 @@ describe("lib/eventlog", function()
         os.remove(path .. ".1")
     end)
 
+    it("degrades to a silent no-op when rotation cannot reopen the file", function()
+        local path = os.tmpname()
+        local log = EventLog.new(path)
+        log:write("RAW", "EV_SYN", "SYN_REPORT", 0)
+
+        -- Simulate reopen failure: point the log at a path inside a
+        -- directory that doesn't exist, so both the rename and the reopen
+        -- fail. _rotate must not throw -- it runs inside the 120 Hz pen
+        -- poll loop, where an uncaught error would take down the KOReader
+        -- UI event loop.
+        log._path = "/nonexistent-eventlog-spec-dir/input.log"
+        assert.has_no.errors(function() log:_rotate() end)
+
+        -- After a failed rotation the log behaves as closed: writes are
+        -- no-ops (write() already guards on _file) and close() stays safe.
+        assert.has_no.errors(function()
+            log:write("RAW", "EV_KEY", "BTN_STYLUS", 1)
+        end)
+        assert.has_no.errors(function() log:close() end)
+
+        os.remove(path)
+        os.remove(path .. ".1")
+    end)
+
     -- ── close() ──────────────────────────────────────────────────────────────
 
     it("close() is idempotent (safe to call twice)", function()

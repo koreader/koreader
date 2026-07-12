@@ -56,6 +56,12 @@ If it still draws instead of erasing, continue to Step 2.
    — paste the finding back into this file since it blocks every step
    below.
 
+   > **Note:** while logging is on, every raw event is written to disk
+   > synchronously, so strokes may feel slightly laggier/jittery than
+   > normal. That's expected — it doesn't change *which* events fire or
+   > their order, which is what these captures are about. Turn the log off
+   > again after capturing.
+
 2. Over SSH, tail the log live while you perform the captures in step 3:
 
    ```bash

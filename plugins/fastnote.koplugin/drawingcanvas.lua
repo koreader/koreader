@@ -508,6 +508,11 @@ end
 -- where a pen poll tick already in flight calls the stale closure against a
 -- closed file handle. onCloseWidget enforces the same ordering in case the
 -- canvas closes while logging is still on.
+--
+-- Performance: every raw event (several per MT frame at ~120 Hz) becomes a
+-- synchronous line-buffered write while enabled, which can add visible
+-- stroke latency/jitter. Debug sessions only -- never leave it on for
+-- normal writing.
 function DrawingCanvas:_toggleInputLog()
     if self._event_log then
         -- Turning OFF.
@@ -1438,6 +1443,20 @@ function DrawingCanvas:_pollPen()
     if not self._pendev then return end
 
     self._pendev:poll(function(ev)
+        -- Decoded-event ("DEC") log line, pairing with the "RAW" lines the
+        -- PenDev.raw_log_fn tap writes before decoding (ADR-006 2C; format
+        -- documented in lib/eventlog.lua). RAW shows what the hardware
+        -- sent; DEC shows what the state machine concluded -- comparing
+        -- the two is how eraser/tool mis-mapping is diagnosed (see
+        -- .agents/plans/eraser-capture-runbook.md).
+        if self._event_log then
+            self._event_log:write("DEC", ev.type,
+                "tool=" .. tostring(ev.tool),
+                string.format("x=%s y=%s p=%s",
+                              tostring(ev.x), tostring(ev.y),
+                              tostring(ev.pressure)))
+        end
+
         -- Feed pen event to palm rejection state machine (Stage 3)
         if self._palmreject then
             self._palmreject:onPenEvent(ev)

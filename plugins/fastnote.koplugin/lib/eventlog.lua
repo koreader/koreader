@@ -38,12 +38,21 @@ function EventLog.new(path)
 end
 
 --- Rotate: close current handle, rename to .1 (overwriting), reopen fresh.
+-- Never throws: this runs from EventLog:write inside the ~120 Hz pen poll
+-- loop, where an uncaught error would propagate into the KOReader UI event
+-- loop (lua.instructions.md). If the reopen fails (disk full, path gone),
+-- the log degrades to a closed no-op — write() already guards on _file.
 function EventLog:_rotate()
     self._file:close()
     os.rename(self._path, self._path .. ".1")
     -- Open fresh (write mode, not append — we just rotated the old content away).
-    self._file = assert(io.open(self._path, "w"))
-    self._file:setvbuf("line")
+    local file = io.open(self._path, "w")
+    if not file then
+        self._file = nil
+        return
+    end
+    file:setvbuf("line")
+    self._file = file
 end
 
 --- Write one log line.
