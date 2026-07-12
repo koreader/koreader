@@ -859,12 +859,13 @@ function Input:handleKeyBoardEv(ev)
     -- if no other modifier is held at press time (the key itself is not marked in
     -- self.modifiers until the block below), so combinations like Shift + Sym do
     -- not toggle the keyboard. Pressing any other key clears the flag, so the
-    -- symbol layer (Sym + key) never toggles. A held key is not a tap either: the
-    -- keypad emits KEY_REPEAT for it (verified on a Kindle 3: mxckpd advertises
-    -- EV_REP, ~1s delay then ~5 Hz), so any event for the key that is neither a
-    -- press nor a release clears the flag and a long hold does not toggle on
-    -- release. This also covers "Disable key repeat" (Kindle:toggleKeyRepeat),
-    -- which rewrites the repeat value to -1 rather than dropping the event.
+    -- symbol layer (Sym + key) never toggles. A held Sym is not a tap either: on
+    -- the Kindle 3 mxckpd advertises EV_REP (~1s delay then ~5 Hz), so a held Sym
+    -- repeats; any event for it that is neither a press nor a release clears the
+    -- flag and a long hold does not toggle on release. That guard also covers
+    -- "Disable key repeat" (Kindle:toggleKeyRepeat), which rewrites the repeat
+    -- value to -1 rather than dropping the event. The ScreenKB key (Kindle 4) does
+    -- not emit repeats, so it needs no such guard; a bare press/release is a tap.
     if ev.value == KEY_PRESS then
         local solo = keycode == "Sym" or keycode == "ScreenKB"
         if solo then
@@ -876,7 +877,7 @@ function Input:handleKeyBoardEv(ev)
             end
         end
         self.keyboard_toggle_tapped = solo and keycode or nil
-    elseif ev.value ~= KEY_RELEASE and (keycode == "Sym" or keycode == "ScreenKB") then
+    elseif ev.value ~= KEY_RELEASE and keycode == "Sym" then
         self.keyboard_toggle_tapped = nil
     end
 
