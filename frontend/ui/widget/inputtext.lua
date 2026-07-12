@@ -796,6 +796,13 @@ function InputText:onKeyPress(key)
     if not self.focused then
         return false
     end
+
+    -- A lone Sym or ScreenKB key press toggles the on-screen keyboard, same as Shift/ScreenKB + Home.
+    if key["SymPress"] or key["ScreenKBPress"] then
+        self:toggleKeyboard()
+        return self.keyboard ~= nil -- readonly fields have no keyboard: let the event bubble
+    end
+
     local handled = true
 
     if not key["Ctrl"] and not key["Shift"] and not key["Alt"] and not key["ScreenKB"] then
@@ -880,11 +887,7 @@ function InputText:onKeyPress(key)
         elseif key["Press"] then
             self:holdTextBox()
         elseif key["Home"] then
-            if self.keyboard:isVisible() then
-                self:onCloseKeyboard()
-            else
-                self:onShowKeyboard()
-            end
+            self:toggleKeyboard()
         elseif key["."] and Device:hasSymKey() then
             -- Kindle does not have a dedicated button for commas
             self:addChars(",")
@@ -975,6 +978,15 @@ function InputText:isKeyboardVisible()
     end
     -- NOTE: Never return `nil`, to avoid inheritance issues in (Multi)InputDialog's keyboard_visible flag.
     return false
+end
+
+-- Temporarily show/hide the on-screen keyboard, e.g. via Shift/ScreenKB + Home or a lone Sym/ScreenKB press.
+function InputText:toggleKeyboard()
+    if self:isKeyboardVisible() then
+        self:onCloseKeyboard()
+    else
+        self:onShowKeyboard()
+    end
 end
 
 function InputText:lockKeyboard(toggle)

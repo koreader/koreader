@@ -851,12 +851,48 @@ function Input:handleKeyBoardEv(ev)
         UIManager:nextTick(function() UIManager:quit() end) -- Ensure the program closes in case of some lingering dialog.
     end
 
+    -- A lone Sym or ScreenKB key tap (pressed and released with no other key in
+    -- between) is used by InputText to toggle the on-screen keyboard, mirroring
+    -- Shift/ScreenKB + Home. Both are otherwise only modifiers whose bare
+    -- press/release is swallowed just below, so we track which one, if any, was
+    -- "tapped alone" across the press/release pair. It only counts as a lone tap
+    -- if no other modifier is held at press time (the key itself is not marked in
+    -- self.modifiers until the block below), so combinations like Shift + Sym do
+    -- not toggle the keyboard. Pressing any other key clears the flag, so the
+    -- symbol layer (Sym + key) never toggles. A held Sym is not a tap either: on
+    -- the Kindle 3 mxckpd advertises EV_REP (~1s delay then ~5 Hz), so a held Sym
+    -- repeats; any event for it that is neither a press nor a release clears the
+    -- flag and a long hold does not toggle on release. That guard also covers
+    -- "Disable key repeat" (Kindle:toggleKeyRepeat), which rewrites the repeat
+    -- value to -1 rather than dropping the event. The ScreenKB key (Kindle 4) does
+    -- not emit repeats, so it needs no such guard; a bare press/release is a tap.
+    if ev.value == KEY_PRESS then
+        local solo = keycode == "Sym" or keycode == "ScreenKB"
+        if solo then
+            for _, held in pairs(self.modifiers) do
+                if held then
+                    solo = false
+                    break
+                end
+            end
+        end
+        self.keyboard_toggle_tapped = solo and keycode or nil
+    elseif ev.value ~= KEY_RELEASE and keycode == "Sym" then
+        self.keyboard_toggle_tapped = nil
+    end
+
     -- handle modifier keys
     if self.modifiers[keycode] ~= nil then
         if ev.value == KEY_PRESS then
             self.modifiers[keycode] = true
         elseif ev.value == KEY_RELEASE then
             self.modifiers[keycode] = false
+            if self.keyboard_toggle_tapped == keycode then
+                self.keyboard_toggle_tapped = nil
+                -- Surface the lone tap as a dedicated key event; nothing else binds it.
+                local tap_key = keycode == "Sym" and "SymPress" or "ScreenKBPress"
+                return Event:new("KeyPress", Key:new(tap_key, self.modifiers))
+            end
         end
         return
     end

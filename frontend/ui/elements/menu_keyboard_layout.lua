@@ -229,23 +229,27 @@ local sub_item_table = {
 }
 if Device:hasKeyboard() or Device:hasScreenKB() then
     -- we use same pos. 4 as below so we are always above "keyboard appearance settings"
+    -- The shortcut that temporarily toggles the keyboard while a field is focused: a
+    -- lone Sym/ScreenKB press on devices that have such a key, otherwise Shift + Home.
+    local vk_shortcut
+    if Device:hasScreenKB() then
+        vk_shortcut = _("'ScreenKB'")
+    elseif Device:hasSymKey() then
+        vk_shortcut = _("'Sym'")
+    else
+        vk_shortcut = _("'Shift' + 'Home'")
+    end
     table.insert(sub_item_table, 4, {
         text = _("Show virtual keyboard"),
-        help_text = _("Enable this setting to always display the virtual keyboard within a text input field. When a field is selected (in focus), you can temporarily toggle the keyboard on/off by pressing 'Shift' (or 'ScreenKB') + 'Home'."),
+        help_text = T(_("Enable this setting to always display the virtual keyboard within a text input field. When a field is selected (in focus), you can temporarily toggle the keyboard on/off by pressing %1."), vk_shortcut),
         checked_func = function()
             return G_reader_settings:isTrue("virtual_keyboard_enabled")
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("virtual_keyboard_enabled")
             if G_reader_settings:nilOrFalse("virtual_keyboard_enabled") then
-                local keyboard_infomessage
-                if Device:hasScreenKB() then
-                    keyboard_infomessage = _("When a text field is selected (in focus), you can temporarily bring up the virtual keyboard by pressing 'ScreenKB' + 'Home'.")
-                else
-                    keyboard_infomessage = _("When a text field is selected (in focus), you can temporarily bring up the virtual keyboard by pressing 'Shift' + 'Home'.")
-                end
                 UIManager:show(InfoMessage:new{
-                    text = keyboard_infomessage
+                    text = T(_("When a text field is selected (in focus), you can temporarily bring up the virtual keyboard by pressing %1."), vk_shortcut),
                 })
             end
         end,
