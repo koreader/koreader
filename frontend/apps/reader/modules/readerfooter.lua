@@ -2124,42 +2124,70 @@ function ReaderFooter:genAllFooterText()
     if not prev_had_merge then
         table.remove(info) -- separator added by the last generator
     end
-    if filler1_idx then
-        local filler1, filler2 = self:getDynamicFillers(info, filler1_idx, filler2_idx)
-        if filler1 then
-            table.insert(info, filler1_idx, filler1)
-        end
-        if filler2 then
-            table.insert(info, filler2_idx, filler2)
-        end
+    if filler1_idx and next(info) then
+        self:insertDynamicFillers(info, filler1_idx, filler2_idx)
     end
     return table.concat(info)
 end
 
-function ReaderFooter:getDynamicFillers(info, filler1_idx, filler2_idx)
+function ReaderFooter:insertDynamicFillers(info, filler1_idx, filler2_idx)
+    if filler2_idx and filler2_idx == filler1_idx + 1 then -- combine adjacent fillers
+        filler2_idx = nil
+    end
+
     local filler_space = " "
     self.filler_space_width = self.filler_space_width or self:getTextWidth(filler_space)
     local margin = (self.settings.disable_progress_bar or self.settings.align == "center")
         and self.horizontal_margin or Screen:scaleBySize(self.settings.progress_margin_width)
     local max_width = math.floor(self._saved_screen_width - 2 * margin)
     local text_width = self:getTextWidth(table.concat(info))
-    if max_width < text_width + 2 * self.filler_space_width then return end -- long footer text
 
-    if filler2_idx and filler2_idx == filler1_idx + 1 then -- combine adjacent fillers
-        filler2_idx = nil
+    if text_width > max_width - 2 * self.filler_space_width then
+         -- long footer text, replace internal fillers with separators
+        local separator = BD.wrap(self:genSeparator())
+        local info_nb = #info + 1
+        if filler1_idx ~= 1 and filler1_idx ~= info_nb then
+            table.insert(info, filler1_idx, separator)
+        end
+        if filler2_idx and filler2_idx ~= info_nb then
+            table.insert(info, filler2_idx, separator)
+        end
+        return
     end
-    local filler1_nb, filler2_nb
+
     if filler2_idx then
         local left_text_width = self:getTextWidth(table.concat(info, "", 1, filler1_idx - 1))
         local right_text_width = self:getTextWidth(table.concat(info, "", filler2_idx - 1))
         local center_text_width = text_width - left_text_width - right_text_width
         local half_max_width = (max_width - center_text_width) / 2
-        filler1_nb = math.floor((half_max_width - left_text_width) / self.filler_space_width)
-        filler2_nb = math.floor((half_max_width - right_text_width) / self.filler_space_width)
+        if left_text_width > half_max_width - self.filler_space_width then
+            -- left text doesn't fit, replace the 1st filler with separator
+            if filler1_idx ~= 1 and filler1_idx ~= #info + 1 then
+                local separator = BD.wrap(self:genSeparator())
+                table.insert(info, filler1_idx, separator)
+                text_width = text_width + self:getTextWidth(separator)
+            end
+            local filler_nb = math.floor((max_width - text_width) / self.filler_space_width)
+            table.insert(info, filler2_idx, filler_space:rep(filler_nb))
+        elseif right_text_width > half_max_width - self.filler_space_width then
+            -- right text doesn't fit, replace the 2nd filler with separator
+            if filler2_idx ~= #info + 1 then
+                local separator = BD.wrap(self:genSeparator())
+                table.insert(info, filler2_idx - 1, separator)
+                text_width = text_width + self:getTextWidth(separator)
+            end
+            local filler_nb = math.floor((max_width - text_width) / self.filler_space_width)
+            table.insert(info, filler1_idx, filler_space:rep(filler_nb))
+        else -- two fillers
+            local filler_nb = math.floor((half_max_width - left_text_width) / self.filler_space_width)
+            table.insert(info, filler1_idx, filler_space:rep(filler_nb))
+            filler_nb = math.floor((half_max_width - right_text_width) / self.filler_space_width)
+            table.insert(info, filler2_idx, filler_space:rep(filler_nb))
+        end
     else -- one filler
-        filler1_nb = math.floor((max_width - text_width) / self.filler_space_width)
+        local filler_nb = math.floor((max_width - text_width) / self.filler_space_width)
+        table.insert(info, filler1_idx, filler_space:rep(filler_nb))
     end
-    return filler_space:rep(filler1_nb), filler2_nb and filler_space:rep(filler2_nb)
 end
 
 function ReaderFooter:getTextWidth(text)
