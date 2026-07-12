@@ -48,10 +48,13 @@ If it still draws instead of erasing, continue to Step 2.
    - hamburger menu inside the canvas → **"Debug log: on"**, or
    - set `debug_input_log = true` in `fastnote.conf` and restart KOReader.
 
-   (If neither the menu toggle nor the config key appears to change
-   anything — i.e. `fastnote/input.log` never gets created — the toggle
-   may not be wired into this build yet; paste that finding back into this
-   file instead of guessing further, since it blocks every step below.)
+   Both paths go through `DrawingCanvas:_toggleInputLog()`
+   (`drawingcanvas.lua`), which opens `lib/eventlog.lua` at the path below
+   and assigns `PenDev.raw_log_fn` (`input/pendev.lua`) so every raw event
+   is captured before decoding. If `fastnote/input.log` never gets created
+   after enabling either way, that's a regression, not an unwired feature
+   — paste the finding back into this file since it blocks every step
+   below.
 
 2. Over SSH, tail the log live while you perform the captures in step 3:
 

@@ -49,7 +49,7 @@ function FastNote:_openCanvas(lib, state, nb, page_idx)
 
     -- Load user config (lib/config.lua): finger_draw / rotation_mode /
     -- tighten_delay / tighten_enabled / live_color_refresh / eraser_button /
-    -- live_ink_style.
+    -- live_ink_style / debug_input_log.
     -- Missing file or keys fall back to Config.DEFAULTS -- see
     -- .agents/notes/tech-debt.md.
     local Config      = require("lib/config")
@@ -72,6 +72,7 @@ function FastNote:_openCanvas(lib, state, nb, page_idx)
         live_color_refresh  = cfg.live_color_refresh,
         eraser_button       = cfg.eraser_button,
         live_ink_style      = cfg.live_ink_style,
+        debug_input_log     = cfg.debug_input_log,
 
         on_save_callback = function(path)
             nb.last_edited           = os.time()

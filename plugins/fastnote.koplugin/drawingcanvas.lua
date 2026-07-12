@@ -29,6 +29,7 @@ ASSUMES: InputContainer, GestureRange, UIManager, Screen, Blitbuffer are
 local Blitbuffer        = require("ffi/blitbuffer")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device            = require("device")
+local EventLog          = require("lib/eventlog")
 local GestureRange      = require("ui/gesturerange")
 local Geom              = require("ui/geometry")
 local InfoMessage       = require("ui/widget/infomessage")
@@ -195,12 +196,23 @@ local DrawingCanvas = InputContainer:extend{
     -- ("stylus") -- see init() and _pollPen's PenDev.open call.
     eraser_button      = nil,
 
+    -- Config override for the debug raw+decoded input event logger
+    -- (lib/config.lua, ADR-006 2C); nil means "use the built-in default"
+    -- (false) -- see init() and _toggleInputLog.
+    debug_input_log    = nil,
+
     init_rotation_mode = nil,
     _rotation_mode     = nil,
 
     _pendev    = nil,              -- PenDev instance
     _touchdev  = nil,              -- TouchDev instance (Stage 3)
     _palmreject = nil,             -- PalmReject instance (Stage 3)
+
+    -- Debug input event logger (ADR-006 2C). _event_log is the lib/eventlog.lua
+    -- instance while logging is enabled (nil otherwise); _debug_input_log is
+    -- the resolved config override, set in init(). See _toggleInputLog.
+    _event_log        = nil,
+    _debug_input_log  = nil,
 
     -- Raw pen tracking (raw input path)
     _last_pen_x         = nil,
@@ -256,6 +268,15 @@ function DrawingCanvas:init()
     -- as eraser_button above: a non-empty string ("solid"/"color"), never
     -- false/nil once set, so `or` is safe here.
     self._live_ink_style = self.live_ink_style or "solid"
+
+    -- Resolve the debug_input_log config override (ADR-006 2C). Boolean --
+    -- `or` would silently turn an explicit `false` into the default (see
+    -- lua.instructions.md), same reasoning as tighten_enabled above.
+    if self.debug_input_log ~= nil then
+        self._debug_input_log = self.debug_input_log
+    else
+        self._debug_input_log = false
+    end
 
     -- Use BBRGB32 on colour e-ink panels so ink renders in the chosen colour.
     -- Screen:isColorEnabled() is a user toggle (reads G_reader_settings) and
@@ -427,10 +448,29 @@ function DrawingCanvas:init()
             end
         end
     end
+
+    -- Debug input log (ADR-006 2C): enable at open if configured on. Only
+    -- meaningful on the raw evdev path -- PenDev.raw_log_fn is only ever
+    -- consulted from PenDev:poll(), which runs when use_raw_input is true.
+    -- Checked here (after the raw-input setup block above) rather than
+    -- earlier so a failed PenDev.open (use_raw_input flipped back to false)
+    -- doesn't enable a logger that will never receive events.
+    if self._debug_input_log and self.use_raw_input then
+        self:_toggleInputLog()
+    end
 end
 
 function DrawingCanvas:onCloseWidget()
     logger.dbg("FastNote canvas: onCloseWidget, freeing resources")
+    -- ADR-006 2C cleanup contract: clear the module-level PenDev.raw_log_fn
+    -- hook before closing the EventLog, so a stale closure can never be
+    -- invoked with a closed file handle by a pen poll tick that races with
+    -- teardown.
+    if self._event_log then
+        PenDev.raw_log_fn = nil
+        self._event_log:close()
+        self._event_log = nil
+    end
     if self._pendev then
         self._pendev:close()
         self._pendev = nil
@@ -448,6 +488,55 @@ function DrawingCanvas:onCloseWidget()
         Device:toggleGSensor(true)
         logger.dbg("FastNote canvas: gyroscope auto-rotation restored")
     end
+end
+
+--- Toggle the raw input event logger (ADR-006 2C, "Input event logger:
+-- module-level singleton vs. per-instance"; adr-006-stage12-color-develop.md).
+--
+-- input/pendev.lua exposes PenDev.raw_log_fn as a module-level hook: when
+-- non-nil, PenDev:poll() calls it as raw_log_fn("RAW", type_name, code_name,
+-- value) for every raw input_event, before decoding. This method is the only
+-- place that assigns or clears it.
+--
+-- Log path: <datadir>/fastnote/input.log -- same base directory FastNote
+-- uses for notebook storage (see FastNote:onOpenFnoteCanvas in main.lua and
+-- model/library.lua), so it is always alongside notebooks/ and state.lua.
+-- Tail it live over SSH: tail -F <path>/fastnote/input.log.
+--
+-- Cleanup contract (ADR-006): when disabling, PenDev.raw_log_fn is cleared
+-- BEFORE the EventLog is closed. Reversing that order would leave a window
+-- where a pen poll tick already in flight calls the stale closure against a
+-- closed file handle. onCloseWidget enforces the same ordering in case the
+-- canvas closes while logging is still on.
+function DrawingCanvas:_toggleInputLog()
+    if self._event_log then
+        -- Turning OFF.
+        PenDev.raw_log_fn = nil
+        self._event_log:close()
+        self._event_log = nil
+        logger.dbg("FastNote canvas: debug input log disabled")
+        return
+    end
+
+    -- Turning ON. EventLog.new() cannot throw -- io.open failure is
+    -- reported as a return value, not a Lua error -- so no pcall is needed
+    -- here; just check for nil and degrade gracefully (lua.instructions.md).
+    local DataStorage = require("datastorage")
+    local log_dir  = DataStorage:getDataDir() .. "/fastnote"
+    os.execute("mkdir -p " .. log_dir)
+    local log_path = log_dir .. "/input.log"
+
+    local log, err = EventLog.new(log_path)
+    if not log then
+        logger.warn("FastNote canvas: could not open debug input log:", err)
+        return
+    end
+
+    self._event_log = log
+    PenDev.raw_log_fn = function(level, type_name, code_name, value)
+        log:write(level, type_name, code_name, value)
+    end
+    logger.dbg("FastNote canvas: debug input log enabled at", log_path)
 end
 
 -- ---------------------------------------------------------------------------
@@ -527,6 +616,10 @@ function DrawingCanvas:onMenuTap()
     local live_color_lbl = self.live_color_refresh
                             and "Live color ink (experimental): on"
                             or  "Live color ink (experimental): off"
+    -- Live state, not the config override: _event_log is non-nil exactly
+    -- while logging is active (menu toggles must move the label even when
+    -- the conf key says otherwise).
+    local debug_log_lbl  = self._event_log and "Debug log: on" or "Debug log: off"
     local menu
 
     local function close() UIManager:close(menu) end
@@ -620,6 +713,18 @@ function DrawingCanvas:onMenuTap()
                      close()
                      self.live_color_refresh = not self.live_color_refresh
                      logger.dbg("FastNote canvas: live_color_refresh =", self.live_color_refresh)
+                 end},
+            },
+            -- Row 4c: debug input event log toggle (ADR-006 2C; see
+            -- _toggleInputLog). Live-togglable without restarting KOReader,
+            -- unlike live_color_refresh this one owns a real system
+            -- resource (an open file), so it is NOT session-only in effect --
+            -- _toggleInputLog opens/closes lib/eventlog.lua accordingly.
+            {
+                {text = debug_log_lbl,
+                 callback = function()
+                     close()
+                     self:_toggleInputLog()
                  end},
             },
             -- Row 5: ink color (top 3)
