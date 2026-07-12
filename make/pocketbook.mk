@@ -11,8 +11,9 @@ endef
 # library scanner ignores our fonts, help documents and crash.log instead of
 # indexing them as books (koreader/koreader#15462). The release tooling strips
 # dotfiles by default (-xr!.*), which would otherwise drop our own directory
-# back out of the package, so lift that blanket rule for this platform only.
-UPDATE_GLOBAL_EXCLUDES := $(filter-out .*,$(UPDATE_GLOBAL_EXCLUDES))
+# back out of the package. Swap that blanket rule for a VCS-cruft one on this
+# platform only, so ".koreader" is kept while .git/.gitignore/etc. are not.
+UPDATE_GLOBAL_EXCLUDES := $(filter-out .*,$(UPDATE_GLOBAL_EXCLUDES)) .git*
 
 update-prepare: all
 	# ensure that the binaries were built for ARM
