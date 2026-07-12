@@ -93,6 +93,18 @@ ko_update_check() {
     fi
 }
 
+# One-time migration for installs created before #15462, when our payload lived
+# in the non-hidden applications/koreader directory (which PocketBook's library
+# scanner indexed as books). This build already unpacked a fresh payload into
+# .koreader, so pull across only the files the old tree has and we don't (the
+# user's settings, history, statistics, custom fonts / patches / plugins, ...)
+# without clobbering the new payload, then drop the old directory.
+OLD_KOREADER_DIR="${UNPACK_DIR}/applications/koreader"
+if [ -d "${OLD_KOREADER_DIR}" ] && [ "${OLD_KOREADER_DIR}" != "${KOREADER_DIR}" ]; then
+    cp -rn "${OLD_KOREADER_DIR}/." "${KOREADER_DIR}/" 2>/dev/null
+    rm -rf "${OLD_KOREADER_DIR}"
+fi
+
 # we're always starting from our working directory
 cd ${KOREADER_DIR} || exit
 
