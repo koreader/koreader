@@ -231,5 +231,49 @@ describe("canvas_utils", function()
 
     end)
 
+    describe("selftest_layout", function()
+        -- Task C1 fix: the color self-test bar block must sit at the TOP of
+        -- the drawable area (below the chrome strip) so a centered
+        -- InfoMessage shown afterward can never cover it -- see
+        -- _runColorSelfTest in drawingcanvas.lua.
+
+        it("centers the bar block horizontally at width_fraction of screen width", function()
+            local r = utils.selftest_layout(1264, 1680, 75, 8, 40, 0.6, 8)
+            local expected_w = math.floor(1264 * 0.6)
+            assert.are.equal(expected_w, r.w)
+            assert.are.equal(math.floor((1264 - expected_w) / 2), r.x)
+        end)
+
+        it("positions the block at the top of the drawable area (chrome_h + top_margin)", function()
+            local r = utils.selftest_layout(1264, 1680, 75, 8, 40, 0.6, 8)
+            assert.are.equal(75 + 8, r.y)
+        end)
+
+        it("sets height to bar_count * bar_height", function()
+            local r = utils.selftest_layout(1264, 1680, 75, 8, 40, 0.6, 8)
+            assert.are.equal(8 * 40, r.h)
+        end)
+
+        it("never lets the block's y sit above (overlap) the chrome strip, even with zero top_margin", function()
+            local r = utils.selftest_layout(1264, 1680, 75, 8, 40, 0.6, 0)
+            assert.is_true(r.y >= 75)
+        end)
+
+        it("keeps the block within screen width for a typical fraction", function()
+            local r = utils.selftest_layout(1264, 1680, 75, 8, 40, 0.6, 8)
+            assert.is_true(r.x >= 0)
+            assert.is_true(r.x + r.w <= 1264)
+        end)
+
+        it("recomputes correctly for a different bar count and height", function()
+            local r = utils.selftest_layout(600, 800, 50, 3, 20, 0.5, 10)
+            assert.are.equal(math.floor(600 * 0.5), r.w)
+            assert.are.equal(math.floor((600 - r.w) / 2), r.x)
+            assert.are.equal(50 + 10, r.y)
+            assert.are.equal(3 * 20, r.h)
+        end)
+
+    end)
+
 end)
 

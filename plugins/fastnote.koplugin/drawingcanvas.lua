@@ -84,10 +84,12 @@ local PALETTE = {
 
 -- Color self-test (Task C1): layout of the reference-bar rect painted into
 -- self._bb.  One bar per PALETTE color plus a black and a white reference
--- bar, stacked vertically, centered in the drawable area below the chrome
--- strip.  See _runColorSelfTest.
+-- bar, stacked vertically, at the TOP of the drawable area below the
+-- chrome strip (never centered -- see selftest_layout in canvas_utils.lua
+-- for why).  See _runColorSelfTest.
 local COLOR_SELFTEST_BAR_HEIGHT     = 40    -- px, per bar
 local COLOR_SELFTEST_WIDTH_FRACTION = 0.6   -- fraction of screen width
+local COLOR_SELFTEST_TOP_MARGIN     = 8     -- px, gap below chrome strip before first bar
 
 -- Hover-prevention: minimum digitizer pressure to accept a "down" event.
 -- The Elan chip can send BTN_TOUCH=1 a few mm above the screen; real contact
@@ -975,6 +977,10 @@ end
 --   hw_dithering      -- Screen.hw_dithering: required for the GLRC16/GCC16 promotion
 --   hw_night_mode     -- Screen:getHWNightmode() (MTK only): HW inversion state
 --   screen_bb_type    -- Screen.bb:getType(): the *actual* framebuffer's BB type
+--   canvas_bb_type    -- self._bb:getType(): this canvas's own display-cache
+--                        BB type. Compare against screen_bb_type -- if they
+--                        disagree, the framebuffer gate is fine and the bug
+--                        is in this plugin's own buffer setup, not KOReader.
 --   bb8_trap          -- true when screen_bb_type == Blitbuffer.TYPE_BB8, the
 --                        definitive tell that KOReader booted the framebuffer
 --                        at 8bpp with CFA skipped (color_rendering was off at
@@ -993,6 +999,7 @@ function DrawingCanvas:_colorGateSnapshot()
         hw_dithering     = Screen.hw_dithering and true or false,
         hw_night_mode    = hw_night_mode,
         screen_bb_type   = screen_bb_type,
+        canvas_bb_type   = self._bb and self._bb:getType(),
         bb8_trap         = (screen_bb_type == Blitbuffer.TYPE_BB8),
     }
 end
@@ -1001,23 +1008,36 @@ end
 function DrawingCanvas:_colorGateLogLine(gate)
     return string.format(
         "color gate: has_color_hw=%s is_color_enabled=%s has_kaleido_wfm=%s " ..
-        "hw_dithering=%s hw_night_mode=%s screen_bb_type=%s bb8_trap=%s",
+        "hw_dithering=%s hw_night_mode=%s screen_bb_type=%s canvas_bb_type=%s bb8_trap=%s",
         tostring(gate.has_color_hw), tostring(gate.is_color_enabled),
         tostring(gate.has_kaleido_wfm), tostring(gate.hw_dithering),
         tostring(gate.hw_night_mode), tostring(gate.screen_bb_type),
-        tostring(gate.bb8_trap))
+        tostring(gate.canvas_bb_type), tostring(gate.bb8_trap))
 end
 
 --- One-tap, on-device answer to "is the color pipeline intact at the
 -- KOReader level, independent of drawing code?" Paints a reference-bar
 -- pattern (one bar per PALETTE color, plus black and white reference bars)
+-- at the TOP of the drawable area (see canvas_utils.selftest_layout)
 -- straight into the display buffer and forces the highest-fidelity color
--- refresh ("full" + dither=true -> GCC16), then shows the gate values next
--- to it. StrokeBuffer is never touched; any pending tighten is cancelled
+-- refresh ("full" + dither=true -> GCC16), then shows the gate values, the
+-- current ink color, the resolved stroke color, and the bar rect's own
+-- coordinates next to it -- enough to answer "I can't find the bars"
+-- without more instrumentation.
+--
+-- The bars are placed at the top rather than centered specifically because
+-- the InfoMessage shown afterward is itself centered: an earlier version
+-- painted the bars centered in the drawable area, so the InfoMessage
+-- covered them completely and the self-test never actually showed
+-- anything.
+--
+-- StrokeBuffer is never touched -- the bars live only in the _bb display
+-- cache and can never be saved to a page. Any pending tighten is cancelled
 -- up front (a tighten firing mid-diagnostic would rebuild _bb and wipe the
--- reference bars while the user is reading them — its job is superseded by
--- the dismiss-time _repaintAll anyway). The page is restored via
--- _repaintAll() when the InfoMessage is dismissed.
+-- reference bars while the user is reading them). Dismissing the
+-- InfoMessage no longer repaints immediately -- see
+-- _confirmSelfTestDismiss -- so the bars stay on screen for inspection
+-- until the user explicitly asks to restore the page.
 function DrawingCanvas:_runColorSelfTest()
     if not self._bb then return end
     self:_cancelTighten()
@@ -1035,29 +1055,33 @@ function DrawingCanvas:_runColorSelfTest()
     bar_names[#bar_names + 1]   = "White (reference)"
     bar_colors[#bar_colors + 1] = Blitbuffer.COLOR_WHITE
 
-    local rect_w = math.floor(self.dimen.w * COLOR_SELFTEST_WIDTH_FRACTION)
-    local rect_h = #bar_colors * COLOR_SELFTEST_BAR_HEIGHT
-    local drawable_h = self.dimen.h - CHROME_HEIGHT
-    local rect_x = math.floor((self.dimen.w - rect_w) / 2)
-    local rect_y = CHROME_HEIGHT + math.floor((drawable_h - rect_h) / 2)
+    local test_rect = utils.selftest_layout(
+        self.dimen.w, self.dimen.h, CHROME_HEIGHT, #bar_colors,
+        COLOR_SELFTEST_BAR_HEIGHT, COLOR_SELFTEST_WIDTH_FRACTION,
+        COLOR_SELFTEST_TOP_MARGIN)
 
-    local bar_y = rect_y
+    local bar_y = test_rect.y
     for __, color in ipairs(bar_colors) do
-        self._bb:paintRect(rect_x, bar_y, rect_w, COLOR_SELFTEST_BAR_HEIGHT, color)
+        self._bb:paintRect(test_rect.x, bar_y, test_rect.w, COLOR_SELFTEST_BAR_HEIGHT, color)
         bar_y = bar_y + COLOR_SELFTEST_BAR_HEIGHT
     end
 
-    local test_rect = { x = rect_x, y = rect_y, w = rect_w, h = rect_h }
     -- "full" + dither=true -> GCC16, the highest-fidelity Kaleido color mode
     -- on an intact pipeline. A flash is expected and fine for a one-shot
     -- diagnostic (see eink-refresh.instructions.md -- one-shot "partial"/
     -- "full" + dither is correct; only per-segment "partial" is the hazard).
     UIManager:setDirty(self, function() return "full", Geom:new(test_rect), true end)
 
+    local stroke_color = self:_strokeColor()
     local msg_lines = {
         "Color self-test -- bars top to bottom: " .. table.concat(bar_names, ", "),
         "",
         self:_colorGateLogLine(gate),
+        "",
+        "Current ink color: " .. self._current_color ..
+        " -> resolved stroke color " .. tostring(stroke_color),
+        string.format("Bars painted at x=%d, y=%d, w=%d, h=%d",
+                       test_rect.x, test_rect.y, test_rect.w, test_rect.h),
         "",
         "Bars in color -> the color pipeline is intact; any remaining issue is plugin-side.",
         "Bars gray (or black/white only) -> a KOReader-level gate is broken " ..
@@ -1068,9 +1092,36 @@ function DrawingCanvas:_runColorSelfTest()
     UIManager:show(InfoMessage:new{
         text = table.concat(msg_lines, "\n"),
         dismiss_callback = function()
-            self:_repaintAll()
+            self:_confirmSelfTestDismiss()
         end,
     })
+end
+
+--- Follow-up dialog shown when the color self-test InfoMessage is
+-- dismissed. The self-test bars live only in self._bb (the display
+-- cache) -- StrokeBuffer is never touched, so they can never be saved;
+-- the only way to lose them is a later repaint (undo, page change,
+-- dark-mode toggle, or explicitly restoring here). Offering a choice
+-- instead of repainting unconditionally keeps the bars visible for
+-- inspection instead of wiping them the instant the InfoMessage closes,
+-- which is the bug this self-test rework fixes (see _runColorSelfTest).
+function DrawingCanvas:_confirmSelfTestDismiss()
+    local dialog
+    dialog = ButtonDialogTitle:new{
+        title = "Self-test bars are still on screen for inspection.",
+        buttons = {
+            {
+                {text = "Keep bars",
+                 callback = function() UIManager:close(dialog) end},
+                {text = "Restore page",
+                 callback = function()
+                     UIManager:close(dialog)
+                     self:_repaintAll()
+                 end},
+            },
+        },
+    }
+    UIManager:show(dialog)
 end
 
 --- Cancel the pending tighten timer but preserve the accumulated rect.
@@ -1527,8 +1578,10 @@ end
 
 --- Toggle between dark (black bg, white ink) and light (white bg, black ink) mode.
 -- Dark mode is a pure display transform: stroke data (#000000 canonical) is
--- never mutated.  _repaintAll passes _strokeColor() as a color_override to
--- paintTo, so all strokes flip visually without changing their stored color.
+-- never mutated.  _repaintAll calls _rebuildDisplayFromStrokes, which passes
+-- Blitbuffer.COLOR_WHITE as the color_override to StrokeBuffer:repaintTo in
+-- dark mode (nil in light mode, so each stroke's own stored color is used)
+-- -- all strokes flip visually without changing their stored color.
 function DrawingCanvas:_toggleDarkMode()
     self._dark_mode = not self._dark_mode
     self._page_dirty = true

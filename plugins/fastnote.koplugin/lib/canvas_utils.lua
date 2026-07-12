@@ -151,4 +151,31 @@ function canvas_utils.live_ink_mode(style, dark_mode, has_color_hw, live_color_r
     return "true_color"
 end
 
+--- Compute the layout rect for the color self-test bar block (Task C1 fix).
+-- Horizontally centered at width_fraction of screen width; positioned at
+-- the TOP of the drawable area (chrome_h + top_margin), not centered
+-- vertically -- a bar block centered in the drawable area sits directly
+-- under the centered InfoMessage the self-test shows next to it, which
+-- covers the bars completely. Placing the block at the top instead keeps
+-- it clear of that InfoMessage. See _runColorSelfTest in drawingcanvas.lua.
+--
+-- @param screen_w      number  screen width in pixels
+-- @param screen_h      number  screen height in pixels (kept for a stable,
+--                              self-describing signature; the top-anchored
+--                              block doesn't need it for this calculation)
+-- @param chrome_h      number  chrome strip height in pixels
+-- @param bar_count     number  number of bars stacked in the block
+-- @param bar_height    number  height of each bar in pixels
+-- @param width_fraction number fraction of screen_w the block should span (0..1)
+-- @param top_margin    number  gap between the chrome strip and the first bar
+-- @return table {x, y, w, h}
+function canvas_utils.selftest_layout(screen_w, screen_h, chrome_h, bar_count,
+                                       bar_height, width_fraction, top_margin)
+    local w = math.floor(screen_w * width_fraction)
+    local h = bar_count * bar_height
+    local x = math.floor((screen_w - w) / 2)
+    local y = chrome_h + top_margin
+    return { x = x, y = y, w = w, h = h }
+end
+
 return canvas_utils
