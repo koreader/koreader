@@ -164,6 +164,18 @@ question), before touching waveform code. A one-tap check: KOReader's own
 UI shows color accents (e.g. colored book covers in the file browser) only
 when the chain is intact.
 
+**In-plugin tooling (Task C1, implemented):** the canvas hamburger menu's
+"Color self-test" row paints a reference-bar pattern (one bar per
+`PALETTE` color, plus black/white references) straight into the display
+buffer and forces a `"full"` + dither=true refresh (→ GCC16 on an intact
+pipeline), then shows every gate above (`_colorGateSnapshot` /
+`_colorGateLogLine` in `drawingcanvas.lua`) next to it. Bars in color means
+the pipeline is intact and any remaining issue is plugin-side; bars gray
+means a gate above is broken (usually gate 1/2, the color_rendering /
+8bpp trap) and no plugin change can help until that's fixed. The same
+gate snapshot is also logged once at canvas init, and a one-per-canvas-open
+warning fires if `has_color_hw` is true but `isColorEnabled()` is false.
+
 ---
 
 ## Correction (2026-07): A2 renders colored ink as sparse 1-bit dither, not "grayscale"

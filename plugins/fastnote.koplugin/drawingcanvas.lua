@@ -31,6 +31,7 @@ local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device            = require("device")
 local GestureRange      = require("ui/gesturerange")
 local Geom              = require("ui/geometry")
+local InfoMessage       = require("ui/widget/infomessage")
 local InputContainer    = require("ui/widget/container/inputcontainer")
 local PenDev            = require("input/pendev")
 local Screen            = Device.screen
@@ -80,6 +81,13 @@ local PALETTE = {
     { name = "Orange", hex = "#cc7700" },
     { name = "Purple", hex = "#8822bb" },
 }
+
+-- Color self-test (Task C1): layout of the reference-bar rect painted into
+-- self._bb.  One bar per PALETTE color plus a black and a white reference
+-- bar, stacked vertically, centered in the drawable area below the chrome
+-- strip.  See _runColorSelfTest.
+local COLOR_SELFTEST_BAR_HEIGHT     = 40    -- px, per bar
+local COLOR_SELFTEST_WIDTH_FRACTION = 0.6   -- fraction of screen width
 
 -- Hover-prevention: minimum digitizer pressure to accept a "down" event.
 -- The Elan chip can send BTN_TOUCH=1 a few mm above the screen; real contact
@@ -245,10 +253,27 @@ function DrawingCanvas:init()
 
     self._stroke_buf = StrokeBuffer.new()
 
+    -- Task C1 gate diagnostics: extends the existing init log (was
+    -- has_color_hw/hw_dithering/isColorEnabled only) with the remaining
+    -- gates from the color gate chain -- see the "color gate chain and the
+    -- 8bpp trap" section of .agents/notes/waveform-refresh-research.md.
+    local gate = self:_colorGateSnapshot()
     logger.dbg("FastNote canvas: init", self.dimen.w, "x", self.dimen.h,
-               "has_color_hw=", has_color_hw,
-               "hw_dithering=", Screen.hw_dithering,
-               "isColorEnabled=", Screen:isColorEnabled())
+               self:_colorGateLogLine(gate))
+
+    -- Proactive warning: color-capable hardware with color rendering
+    -- turned off means ink can never appear in color, no matter what the
+    -- plugin does (8bpp trap). Fires once per canvas open -- init() runs
+    -- exactly once per DrawingCanvas instance/open (_reinitAtRotation
+    -- reuses this instance for rotation and never calls init() again).
+    if gate.has_color_hw and not gate.is_color_enabled then
+        UIManager:show(InfoMessage:new{
+            text = "Fast Note: color rendering is turned off in KOReader, " ..
+                   "so ink will draw in grayscale no matter what color you " ..
+                   "pick. To fix: top menu -> gear icon -> Screen -> Color " ..
+                   "rendering, then restart KOReader.",
+        })
+    end
 
     self.use_raw_input = Device:isKobo()
 
@@ -606,6 +631,14 @@ function DrawingCanvas:onMenuTap()
                     end,
                 },
             },
+            -- Row 7b: color self-test + gate diagnostics (Task C1)
+            {
+                {text = "Color self-test",
+                 callback = function()
+                     close()
+                     self:_runColorSelfTest()
+                 end},
+            },
             -- Row 8: notebooks browser / close
             {
                 {text = "Notebooks",
@@ -892,6 +925,116 @@ end
 --- Return the Blitbuffer color for the page background (mode-dependent).
 function DrawingCanvas:_bgColor()
     return self._dark_mode and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE
+end
+
+-- ---------------------------------------------------------------------------
+-- Task C1: color self-test + gate diagnostics
+-- ---------------------------------------------------------------------------
+
+--- Snapshot every link of the color gate chain (see the "color gate chain
+-- and the 8bpp trap" section of .agents/notes/waveform-refresh-research.md).
+-- If any of these is off, no plugin code can ever produce color -- this is
+-- what the self-test and the proactive warning both check.
+-- @return table {
+--   has_color_hw      -- this plugin's own capability flag (self._has_color_hw)
+--   is_color_enabled  -- Screen:isColorEnabled(): the user's color_rendering setting
+--   has_kaleido_wfm   -- Device:hasKaleidoWfm(): true on all MTK Kobo color panels
+--   hw_dithering      -- Screen.hw_dithering: required for the GLRC16/GCC16 promotion
+--   hw_night_mode     -- Screen:getHWNightmode() (MTK only): HW inversion state
+--   screen_bb_type    -- Screen.bb:getType(): the *actual* framebuffer's BB type
+--   bb8_trap          -- true when screen_bb_type == Blitbuffer.TYPE_BB8, the
+--                        definitive tell that KOReader booted the framebuffer
+--                        at 8bpp with CFA skipped (color_rendering was off at
+--                        startup) -- unfixable from plugin code.
+-- }
+function DrawingCanvas:_colorGateSnapshot()
+    local screen_bb_type = Screen.bb and Screen.bb:getType()
+    local hw_night_mode = false
+    if Screen.getHWNightmode then
+        hw_night_mode = Screen:getHWNightmode()
+    end
+    return {
+        has_color_hw     = self._has_color_hw,
+        is_color_enabled = Screen:isColorEnabled(),
+        has_kaleido_wfm  = (Device.hasKaleidoWfm and Device:hasKaleidoWfm()) or false,
+        hw_dithering     = Screen.hw_dithering and true or false,
+        hw_night_mode    = hw_night_mode,
+        screen_bb_type   = screen_bb_type,
+        bb8_trap         = (screen_bb_type == Blitbuffer.TYPE_BB8),
+    }
+end
+
+--- Render a color gate snapshot (see _colorGateSnapshot) as one log/display line.
+function DrawingCanvas:_colorGateLogLine(gate)
+    return string.format(
+        "color gate: has_color_hw=%s is_color_enabled=%s has_kaleido_wfm=%s " ..
+        "hw_dithering=%s hw_night_mode=%s screen_bb_type=%s bb8_trap=%s",
+        tostring(gate.has_color_hw), tostring(gate.is_color_enabled),
+        tostring(gate.has_kaleido_wfm), tostring(gate.hw_dithering),
+        tostring(gate.hw_night_mode), tostring(gate.screen_bb_type),
+        tostring(gate.bb8_trap))
+end
+
+--- One-tap, on-device answer to "is the color pipeline intact at the
+-- KOReader level, independent of drawing code?" Paints a reference-bar
+-- pattern (one bar per PALETTE color, plus black and white reference bars)
+-- straight into the display buffer and forces the highest-fidelity color
+-- refresh ("full" + dither=true -> GCC16), then shows the gate values next
+-- to it. Does not touch StrokeBuffer or any live-drawing/tighten state --
+-- purely additive diagnostics; the page is restored via _repaintAll() when
+-- the InfoMessage is dismissed.
+function DrawingCanvas:_runColorSelfTest()
+    if not self._bb then return end
+    local gate = self:_colorGateSnapshot()
+    logger.dbg("FastNote canvas: color self-test,", self:_colorGateLogLine(gate))
+
+    local bar_names = {}
+    local bar_colors = {}
+    for __, entry in ipairs(PALETTE) do
+        bar_names[#bar_names + 1]  = entry.name
+        bar_colors[#bar_colors + 1] = Blitbuffer.colorFromString(entry.hex) or Blitbuffer.COLOR_BLACK
+    end
+    bar_names[#bar_names + 1]   = "Black (reference)"
+    bar_colors[#bar_colors + 1] = Blitbuffer.COLOR_BLACK
+    bar_names[#bar_names + 1]   = "White (reference)"
+    bar_colors[#bar_colors + 1] = Blitbuffer.COLOR_WHITE
+
+    local rect_w = math.floor(self.dimen.w * COLOR_SELFTEST_WIDTH_FRACTION)
+    local rect_h = #bar_colors * COLOR_SELFTEST_BAR_HEIGHT
+    local drawable_h = self.dimen.h - CHROME_HEIGHT
+    local rect_x = math.floor((self.dimen.w - rect_w) / 2)
+    local rect_y = CHROME_HEIGHT + math.floor((drawable_h - rect_h) / 2)
+
+    local bar_y = rect_y
+    for __, color in ipairs(bar_colors) do
+        self._bb:paintRect(rect_x, bar_y, rect_w, COLOR_SELFTEST_BAR_HEIGHT, color)
+        bar_y = bar_y + COLOR_SELFTEST_BAR_HEIGHT
+    end
+
+    local test_rect = { x = rect_x, y = rect_y, w = rect_w, h = rect_h }
+    -- "full" + dither=true -> GCC16, the highest-fidelity Kaleido color mode
+    -- on an intact pipeline. A flash is expected and fine for a one-shot
+    -- diagnostic (see eink-refresh.instructions.md -- one-shot "partial"/
+    -- "full" + dither is correct; only per-segment "partial" is the hazard).
+    UIManager:setDirty(self, function() return "full", Geom:new(test_rect), true end)
+
+    local msg_lines = {
+        "Color self-test -- bars top to bottom: " .. table.concat(bar_names, ", "),
+        "",
+        self:_colorGateLogLine(gate),
+        "",
+        "Bars in color -> the color pipeline is intact; any remaining issue is plugin-side.",
+        "Bars gray (or black/white only) -> a KOReader-level gate is broken " ..
+        "(usually Screen -> Color rendering is off, tripping the 8bpp trap) " ..
+        "-- no plugin change can help until that setting is fixed.",
+    }
+
+    UIManager:show(InfoMessage:new{
+        text = table.concat(msg_lines, "\n"),
+        dismiss_callback = function()
+            self:_repaintAll()
+        end,
+    })
 end
 
 --- Cancel the pending tighten timer but preserve the accumulated rect.

@@ -103,13 +103,41 @@ KOReader level, independent of drawing code?"
 
 Acceptance (C1):
 
-- [ ] `busted spec/` green (no change expected to lib/ unless a pure
-      helper is extracted — spec it if so).
-- [ ] Self-test menu row present; InfoMessage lists every gate above with
+- [x] `busted spec/` green (no change expected to lib/ unless a pure
+      helper is extracted — spec it if so). No lib/ change was needed —
+      all C1 logic lives in `drawingcanvas.lua` (KOReader-runtime-only,
+      not spec-covered, per the plugin's own AGENTS.md). 232 successes /
+      0 failures / 0 errors, same as baseline.
+- [x] Self-test menu row present; InfoMessage lists every gate above with
       a one-line "bars gray means / bars colored means" explanation.
-- [ ] Warning fires only when color hw + isColorEnabled()==false, once
-      per canvas open.
-- [ ] No behavior change to drawing paths whatsoever.
+      "Color self-test" row added to `onMenuTap`'s menu (new Row 7b);
+      `_runColorSelfTest()` paints the reference bars + fires `"full"`
+      + dither=true, then shows an InfoMessage with `_colorGateLogLine()`
+      (all six gate values) plus the two interpretation lines from the
+      plan text, verbatim in spirit.
+- [x] Warning fires only when color hw + isColorEnabled()==false, once
+      per canvas open. Implemented in `init()` right after the gate
+      snapshot is built; fires at most once because `init()` runs exactly
+      once per `DrawingCanvas` instance (`_reinitAtRotation` reuses the
+      instance for rotation and never calls `init()` again — verified by
+      reading it).
+- [x] No behavior change to drawing paths whatsoever. No edits touched
+      `_drawSegment`, `_refreshRect`, `_scheduleTighten`,
+      `_expandTightenRect`, `_liveColorRefresh`, `_flushLiveRefresh`,
+      `paintTo`, or any input/poll code — diff is additive only (two new
+      requires-worth of code: gate snapshot/log helpers, the self-test
+      method, one menu row, one warning block in `init()`).
+
+Deviation note: the plan named `Screen.night_mode` as a gate to log: no
+such field exists anywhere in `frontend/` (grepped `frontend/device/`,
+`frontend/ui/uimanager.lua`). The real per-device equivalent on this
+hardware is `Screen:getHWNightmode()` (`frontend/device/kobo/device.lua`
+~line 723, defined only under `if self:isMTK() then`, which KoboMonza
+satisfies) — a HW inversion getter with no backing field, guarded with
+`Screen.getHWNightmode and Screen:getHWNightmode()` the same way the
+existing code already guards `Device.hasKaleidoWfm`. Substituted this for
+the gate snapshot's `hw_night_mode` value; noted here per the task's
+instruction to record any gate-API substitution.
 
 ## Task C2 — solid live ink under A2 ("draw black, bloom color")
 
