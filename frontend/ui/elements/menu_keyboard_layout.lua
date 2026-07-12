@@ -233,15 +233,15 @@ if Device:hasKeyboard() or Device:hasScreenKB() then
     -- lone Sym/ScreenKB press on devices that have such a key, otherwise Shift + Home.
     local vk_shortcut
     if Device:hasScreenKB() then
-        vk_shortcut = "'ScreenKB'"
+        vk_shortcut = _("'ScreenKB'")
     elseif Device:hasSymKey() then
-        vk_shortcut = "'Sym'"
+        vk_shortcut = _("'Sym'")
     else
-        vk_shortcut = "'Shift' + 'Home'"
+        vk_shortcut = _("'Shift' + 'Home'")
     end
     table.insert(sub_item_table, 4, {
         text = _("Show virtual keyboard"),
-        help_text = FFIUtil.template(_("Enable this setting to always display the virtual keyboard within a text input field. When a field is selected (in focus), you can temporarily toggle the keyboard on/off by pressing %1."), vk_shortcut),
+        help_text = T(_("Enable this setting to always display the virtual keyboard within a text input field. When a field is selected (in focus), you can temporarily toggle the keyboard on/off by pressing %1."), vk_shortcut),
         checked_func = function()
             return G_reader_settings:isTrue("virtual_keyboard_enabled")
         end,
@@ -249,7 +249,7 @@ if Device:hasKeyboard() or Device:hasScreenKB() then
             G_reader_settings:flipNilOrFalse("virtual_keyboard_enabled")
             if G_reader_settings:nilOrFalse("virtual_keyboard_enabled") then
                 UIManager:show(InfoMessage:new{
-                    text = FFIUtil.template(_("When a text field is selected (in focus), you can temporarily bring up the virtual keyboard by pressing %1."), vk_shortcut),
+                    text = T(_("When a text field is selected (in focus), you can temporarily bring up the virtual keyboard by pressing %1."), vk_shortcut),
                 })
             end
         end,
