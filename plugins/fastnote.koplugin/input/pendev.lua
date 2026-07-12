@@ -234,6 +234,14 @@ function PenDev.open(path, eraser_button_setting)
         _mt_slots    = {},   -- slot# -> {tool, id, x, y, p}
         _mt_pen_slot = nil,  -- slot# identified as pen (TOOL_TYPE_PEN)
         _has_mt_pen  = false, -- true once MT pen protocol detected; gates BTN_TOUCH skip
+        -- Order-independent eraser latch (see lib/eraser_button.lua).
+        -- true while the configured eraser code (BTN_STYLUS/BTN_STYLUS2) is
+        -- held down; the ABS_MT_TOOL_TYPE == MT_TOOL_PEN branch below
+        -- consults this instead of unconditionally feeding BTN_TOOL_PEN, so
+        -- the tool doesn't silently flip back to pen regardless of whether
+        -- EV_KEY or EV_ABS arrives first in a frame, or whether
+        -- ABS_MT_TOOL_TYPE=pen is re-emitted while the eraser is still down.
+        _eraser_held = false,
     }, PenDev)
 
     self:_query_abs()
@@ -326,10 +334,22 @@ function PenDev:poll(cb)
                 -- just calls it and acts on the result.
                 if ec == BTN_STYLUS or ec == BTN_STYLUS2 then
                     local action = eraser_button.decode(ec, ev, self.eraser_button)
+                    -- self._eraser_held is a LEVEL LATCH, not a one-shot
+                    -- correction: it's authoritative for as long as the
+                    -- configured eraser code stays down, independent of
+                    -- whether this EV_KEY or the ABS_MT_TOOL_TYPE=pen event
+                    -- arrives first within a frame (both orders are seen on
+                    -- real hardware). The ABS_MT_TOOL_TYPE == MT_TOOL_PEN
+                    -- branch below consults this latch on every occurrence --
+                    -- including a sticky/re-emitted MT_TOOL_PEN report in a
+                    -- later frame while the eraser is still touching -- so
+                    -- the tool can never silently flip back to pen while the
+                    -- latch is held. See lib/eraser_button.lua and
+                    -- .agents/plans/eraser-capture-runbook.md.
+                    self._eraser_held = eraser_button.update_held(self._eraser_held, action)
                     if action == "rubber_on" then
-                        -- Override: eraser tip is now the active tool.
-                        -- (ABS_MT_TOOL_TYPE=1 already fed BTN_TOOL_PEN=1 this
-                        -- frame; this call corrects it before EV_SYN fires.)
+                        -- Eraser tip now down: feed the SM directly too, in
+                        -- case no ABS_MT_TOOL_TYPE follows this frame.
                         self.sm:feed_key(BTN_TOOL_RUBBER, 1, nil)
                         logger.dbg("FastNote pendev: eraser via", codes.name_of(ec), "= 1")
                     elseif action == "pen_restore" then
@@ -368,8 +388,18 @@ function PenDev:poll(cb)
                     if ev == MT_TOOL_PEN then
                         self._mt_pen_slot = slot
                         self._has_mt_pen  = true
-                        self.sm:feed_key(BTN_TOOL_PEN, 1, nil)
-                        logger.dbg("FastNote pendev: pen identified at MT slot", slot)
+                        -- Consult the eraser latch instead of always feeding
+                        -- BTN_TOOL_PEN: the Elan chip reports MT_TOOL_PEN=1
+                        -- for the eraser tip too (see module comment), and
+                        -- may re-emit it in a later frame while the eraser
+                        -- is still down. Feeding BTN_TOOL_PEN unconditionally
+                        -- here was the order-dependent bug -- see
+                        -- lib/eraser_button.lua and
+                        -- .agents/plans/eraser-capture-runbook.md.
+                        local btn_tool = eraser_button.mt_tool_for_pen_slot(self._eraser_held, ev)
+                        self.sm:feed_key(btn_tool, 1, nil)
+                        logger.dbg("FastNote pendev: pen identified at MT slot", slot,
+                                   "eraser_held=", tostring(self._eraser_held))
                     elseif ev == MT_TOOL_ERASER then
                         self._mt_pen_slot = slot
                         self._has_mt_pen  = true
@@ -391,6 +421,17 @@ function PenDev:poll(cb)
                     -- contacts as pen input.  Without this, a finger touching
                     -- in the same MT slot re-uses the old _mt_pen_slot index
                     -- and bypasses the finger_draw guard entirely.
+                    --
+                    -- Deliberately NOT touched here: self._eraser_held.
+                    -- BTN_STYLUS/BTN_STYLUS2 is a level signal (fires 1 while
+                    -- the eraser tip touches, 0 on lift) and is authoritative
+                    -- for the eraser latch independent of MT slot/tracking-id
+                    -- lifecycle -- clearing the latch on TRACKING_ID=-1 would
+                    -- reintroduce an order dependency (a slot can release and
+                    -- re-acquire, e.g. across a light lift-and-resettle,
+                    -- while the eraser button stays physically held). Only
+                    -- BTN_STYLUS/BTN_STYLUS2 value=0 (via
+                    -- eraser_button.update_held) clears it.
                     if ev == -1 and slot == self._mt_pen_slot then
                         self._mt_pen_slot = nil
                     end

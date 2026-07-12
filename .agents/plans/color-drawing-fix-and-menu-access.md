@@ -123,6 +123,45 @@ test the eraser end on hardware; if it still draws, set
 debug log (`logger.dbg` now names the exact code via
 `codes.name_of(ec)`) either way and record the result here.
 
+**Update (2026-07, eraser-debugging round, Workstream W2): hardened again
+— order-independent latch, still needs device confirmation.** New
+on-device evidence (real hardware, latest code at the time): the eraser
+end still drew instead of erasing with the `eraser_button = "stylus"`
+default, and holding the stylus side button while drawing with the pen tip
+widened the line (pressure appeared to rise) without erasing or changing
+tools. Code review found a real intra-frame ordering race in
+`input/pendev.lua`'s poll loop: when `BTN_STYLUS`/`BTN_STYLUS2` arrived
+*before* `ABS_MT_TOOL_TYPE=1` (pen) in a frame — or `ABS_MT_TOOL_TYPE=1`
+was sticky-re-emitted in a later frame while the eraser tip was still
+down — the old code's `BTN_TOOL_RUBBER` feed on `BTN_STYLUS=1` got
+silently overwritten by the `ABS_MT_TOOL_TYPE` branch's unconditional
+`BTN_TOOL_PEN` feed, flipping the tool back to pen. Fixed by making the
+eraser state an order-independent **level latch**: `lib/eraser_button.lua`
+gained two pure functions, `M.update_held(held, action)` (updates the
+latch only on the authoritative `"rubber_on"`/`"pen_restore"` actions,
+leaving `"side_button"`/`"unknown"` untouched) and
+`M.mt_tool_for_pen_slot(held, mt_tool_value)` (what `pendev.lua`'s
+`ABS_MT_TOOL_TYPE == MT_TOOL_PEN` branch should feed the state machine:
+`BTN_TOOL_RUBBER` while held, `BTN_TOOL_PEN` otherwise). `pendev.lua` now
+tracks a per-instance `_eraser_held` (initialized `false` in `open()`),
+updated from every `BTN_STYLUS`/`BTN_STYLUS2` decode and consulted by the
+`ABS_MT_TOOL_TYPE == MT_TOOL_PEN` branch before feeding a tool code.
+Deliberately *not* cleared on `ABS_MT_TRACKING_ID = -1` — `BTN_STYLUS` is
+treated as the authoritative level signal for the latch, independent of
+MT slot/tracking-id lifecycle. 11 new specs in
+`spec/eraser_button_spec.lua` cover the latch and the MT-tool mapping;
+`busted spec/` is green. This is still a **software hardening**, not a
+confirmed fix — it closes a real bug but doesn't by itself prove the
+eraser end will erase on this unit (that depends on which raw code the
+unit's eraser tip actually sends, per the `eraser_button` config key).
+**Next step:** run `.agents/plans/eraser-capture-runbook.md` on-device —
+Step 1 is the cheap `eraser_button = "stylus2"` retest; Step 2 is a raw
+debug-log capture (also settles the "wider line while holding the side
+button" observation, which is very likely a pressure-reporting artifact
+tied to the same button rather than a plugin bug, since line width derives
+only from `ABS_PRESSURE` via `pressure_to_width`). Record the outcome
+here once run.
+
 ---
 
 ## Housekeeping

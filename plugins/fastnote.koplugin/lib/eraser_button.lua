@@ -25,8 +25,11 @@ local codes = require("lib/input_codes")
 
 local M = {}
 
-local BTN_STYLUS  = codes.BTN_STYLUS
-local BTN_STYLUS2 = codes.BTN_STYLUS2
+local BTN_STYLUS      = codes.BTN_STYLUS
+local BTN_STYLUS2     = codes.BTN_STYLUS2
+local BTN_TOOL_PEN    = codes.BTN_TOOL_PEN
+local BTN_TOOL_RUBBER = codes.BTN_TOOL_RUBBER
+local MT_TOOL_PEN     = codes.MT_TOOL_PEN
 
 --- Decide what pendev.lua should do for a BTN_STYLUS / BTN_STYLUS2 event.
 -- @int    code             BTN_STYLUS or BTN_STYLUS2 (any other code returns "unknown")
@@ -57,6 +60,63 @@ function M.decode(code, value, configured_button)
         return "rubber_on"
     else
         return "pen_restore"
+    end
+end
+
+--- Update the order-independent eraser latch from a decoded M.decode() action.
+--
+-- Background: pendev.lua's poll loop can see EV_KEY (BTN_STYLUS/BTN_STYLUS2)
+-- and EV_ABS (ABS_MT_TOOL_TYPE) in either order within a frame, and the Elan
+-- chip may re-report ABS_MT_TOOL_TYPE=1 (pen) in a later frame while the
+-- eraser tip is still touching (sticky tool-type reporting). A held-flag that
+-- only changes on the authoritative BTN_STYLUS/BTN_STYLUS2 level signal --
+-- and is otherwise left alone -- makes the eraser state a latch instead of a
+-- one-shot "correction" that depends on event order. See
+-- .agents/plans/eraser-capture-runbook.md and the "Fix F" section of
+-- .agents/plans/color-drawing-fix-and-menu-access.md.
+--
+-- @bool   held    Current held-state (true = eraser tip latched active).
+-- @string action  Result of M.decode(): "rubber_on" | "pen_restore" |
+--                  "side_button" | "unknown".
+-- @treturn bool  The new held-state.
+function M.update_held(held, action)
+    if action == "rubber_on" then
+        return true
+    elseif action == "pen_restore" then
+        return false
+    else
+        -- "side_button" and "unknown" don't touch the latch.
+        return held
+    end
+end
+
+--- Decide which BTN_TOOL_* code to feed the state machine when
+-- ABS_MT_TOOL_TYPE reports MT_TOOL_PEN, consulting the eraser latch.
+--
+-- The Elan combo chip never distinguishes the eraser tip at the MT
+-- tool-type level (it always reports MT_TOOL_PEN=1, see module comment
+-- above) -- so pendev.lua's ABS_MT_TOOL_TYPE == MT_TOOL_PEN branch must
+-- defer to this latch rather than unconditionally feeding BTN_TOOL_PEN.
+-- This makes the mapping order-independent: whether BTN_STYLUS or
+-- ABS_MT_TOOL_TYPE arrives first in a frame, or ABS_MT_TOOL_TYPE is
+-- re-emitted in a later frame while the eraser is still held, the result
+-- is the same.
+--
+-- @bool held           Current held-state from M.update_held().
+-- @int  mt_tool_value   The ABS_MT_TOOL_TYPE value being handled.
+-- @treturn int|nil  BTN_TOOL_RUBBER while held, BTN_TOOL_PEN while not held,
+--   or nil if mt_tool_value isn't MT_TOOL_PEN (not this function's concern --
+--   the caller's ABS_MT_TOOL_TYPE == MT_TOOL_ERASER branch already knows what
+--   to feed without consulting the latch).
+function M.mt_tool_for_pen_slot(held, mt_tool_value)
+    if mt_tool_value ~= MT_TOOL_PEN then
+        return nil
+    end
+
+    if held then
+        return BTN_TOOL_RUBBER
+    else
+        return BTN_TOOL_PEN
     end
 end
 
