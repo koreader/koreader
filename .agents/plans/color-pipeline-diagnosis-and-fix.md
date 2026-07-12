@@ -1,6 +1,9 @@
 # Plan: color pipeline diagnosis + fix (fastnote)
 
-**Status: IN PROGRESS (handoff plan — written for delegated execution)**
+**Status: EXECUTED (C1/C2/C3 done); Phase D device results are in — the
+investigation continues in `.agents/plans/grayscale-ink-and-eraser-handoff.md`
+(key finding: all gates pass and Screen.bb is BBRGB32, so the grayscale
+conversion is plugin-side, not a KOReader gate).**
 
 ## What prompted this (device report, 2026-07)
 
