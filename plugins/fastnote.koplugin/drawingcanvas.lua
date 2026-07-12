@@ -1013,11 +1013,14 @@ end
 -- pattern (one bar per PALETTE color, plus black and white reference bars)
 -- straight into the display buffer and forces the highest-fidelity color
 -- refresh ("full" + dither=true -> GCC16), then shows the gate values next
--- to it. Does not touch StrokeBuffer or any live-drawing/tighten state --
--- purely additive diagnostics; the page is restored via _repaintAll() when
--- the InfoMessage is dismissed.
+-- to it. StrokeBuffer is never touched; any pending tighten is cancelled
+-- up front (a tighten firing mid-diagnostic would rebuild _bb and wipe the
+-- reference bars while the user is reading them — its job is superseded by
+-- the dismiss-time _repaintAll anyway). The page is restored via
+-- _repaintAll() when the InfoMessage is dismissed.
 function DrawingCanvas:_runColorSelfTest()
     if not self._bb then return end
+    self:_cancelTighten()
     local gate = self:_colorGateSnapshot()
     logger.dbg("FastNote canvas: color self-test,", self:_colorGateLogLine(gate))
 

@@ -212,6 +212,26 @@ interactions (self-test vs pending tighten/live rects; solid-ink vs
 eraser/undo/dark-mode/rotation; `live_color_refresh` precedence). Report
 findings; supervising session applies fixes.
 
+**Result (2026-07): no blockers; two should-fixes found and applied.**
+
+1. (Found by the supervising session during C2 review.) Solid live ink
+   with `tighten_enabled = false` would stay black forever — nothing ever
+   repaints the true color. `live_ink_mode` now takes `tighten_enabled`
+   and forces true-color when it's explicitly false.
+2. (Found by the independent reviewer.) `_runColorSelfTest` didn't cancel
+   a pending tighten; one firing mid-diagnostic would rebuild `_bb` and
+   wipe the reference bars while the user was reading them — in exactly
+   the "just drew something faint, immediately ran the self-test" flow.
+   The self-test now calls `_cancelTighten()` before painting.
+
+Traced clean by the reviewer: mono hardware, dark mode, style `"color"`
+(byte-identical to pre-C2), `live_color_refresh` precedence, eraser/undo/
+dark-mode-toggle/page-navigation interactions, `_display_diverged`
+lifecycle, and spec quality (all new specs fail if their logic is
+reverted). Noted as intentional: solid ink also applies to the
+touch/gesture drawing paths — the A2 dither is a property of the refresh
+mode, not the input path.
+
 ---
 
 ## Phase D — on-device decision tree (maintainer; cannot be done here)
