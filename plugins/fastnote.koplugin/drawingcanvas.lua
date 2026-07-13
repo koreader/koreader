@@ -1180,6 +1180,10 @@ function DrawingCanvas:_runColorSelfTest()
     -- on an intact pipeline. A flash is expected and fine for a one-shot
     -- diagnostic (see eink-refresh.instructions.md -- one-shot "partial"/
     -- "full" + dither is correct; only per-segment "partial" is the hazard).
+    -- Breadcrumb so the maintainer can find the matching mxc_update WFM line
+    -- in crash.log by searching for this string (see
+    -- .agents/plans/color-wfm-capture-runbook.md).
+    logger.dbg("FastNote canvas: color self-test firing refresh, watch for the next mxc_update WFM line in crash.log")
     UIManager:setDirty(self, function() return "full", Geom:new(test_rect), true end)
 
     local stroke_color = self:_strokeColor()

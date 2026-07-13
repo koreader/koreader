@@ -1,5 +1,26 @@
 # Handoff: plugin-side grayscale ink + eraser-still-draws investigation
 
+**Status update (2026-07, latest round):** on device, the self-test bars
+are now visible (the prior round's UI fix worked) — but they render as
+distinguishable grayscale shades (different luminance per color, not flat
+gray), never actual color, with every plugin-level gate reading true. The
+eraser is now fixed and out of scope for this doc going forward. This
+round traced the entire software refresh/promotion chain against real
+`base/` submodule source (`koreader-base`, cloned for the first time this
+round) and found it structurally correct all the way to the ioctl
+boundary — see the new dated section in
+`.agents/notes/waveform-refresh-research.md` for the file:line detail. The
+remaining open question — hardware/firmware limitation vs. an as-yet-unfound
+software bug — is resolved by one on-device log line, captured in the new
+runbook `.agents/plans/color-wfm-capture-runbook.md`. Separately, and
+independent of that result either way, `.agents/plans/color-wfm-capture-runbook.md`
+also flags the "Avoid mandatory black flashes in UI" setting
+(`avoid_flashing_ui`, hamburger/gear → Screen → E-ink settings) as worth
+checking regardless — if on, it silently downgrades the deferred tighten
+pass's `"partial"`+dither refresh to `"ui"` mode, which never reaches the
+Kaleido color-promotion logic at all, defeating this plugin's whole
+"draw fast then reveal true color" design for that pass specifically.
+
 **Status: CODE ROUND EXECUTED (2026-07) — awaiting on-device results.**
 The investigation below was carried out; findings and the code that
 shipped for them:

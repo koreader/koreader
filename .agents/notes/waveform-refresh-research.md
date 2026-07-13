@@ -340,3 +340,126 @@ widget-dirty refreshes can overwrite the tighten's GLRC16 color with
 grayscale. The dither→GLRC16 promotion also requires `Screen.hw_dithering`
 (true by default on MTK Kobo) and `Screen:isColorEnabled()` (true by
 default on color screens).
+
+---
+
+## Kaleido color promotion — verified against koreader-base source (base/ submodule) (2026-07)
+
+Every prior mechanics claim in this file (waveform map, promotion table,
+CFA gating above) was sourced from a squashfs extraction of the *deployed*
+`ffi/framebuffer_mxcfb.lua` on-device — real compiled source, but not this
+repo's own git-tracked `base/` submodule. That submodule (`base/`, pointing
+at koreader-base) had never actually been cloned/available in any prior
+round of this investigation: `git submodule status` showed it unpopulated
+until this round ran `git submodule update --init base`. This is the first
+time this repo's own copy of that source was read directly.
+
+**Result: everything above about GCC16/GLRC16/dither-promotion mechanics
+is confirmed accurate.** The squashfs-sourced line numbers differ slightly
+from `base/`'s (compiled deployment vs. git source formatting), but the
+constants, gating logic, and promotion table all match exactly. No
+correction needed to the sections above.
+
+This round's task was different: not re-deriving the mechanics, but tracing
+the *specific* self-test failure (bars render as distinguishable grayscale
+shades, never color, despite every plugin-level gate reading true) all the
+way to the ioctl boundary, to determine whether it's a software bug or a
+hardware/firmware limitation. Findings, with file:line references from
+`base/` directly:
+
+1. **The full call chain for the self-test's `"full"`+dither=true refresh
+   is structurally correct for this device.** `UIManager:_repaint()`
+   dispatches `"full"` via `refresh_methods.full = Screen.refreshFull`
+   (`frontend/ui/uimanager.lua` line 1069). `Screen.hw_dithering` must be
+   true or the dither hint is dropped at `frontend/ui/uimanager.lua` line
+   1297-1299 (`if not Screen.hw_dithering then refresh.dither = nil end`)
+   — the self-test's gate snapshot confirms it's true, so dither survives.
+   `fb:refreshFull(x,y,w,h,d)` (`base/ffi/framebuffer.lua` line 207) calls
+   `refreshFullImp` (line 209), which for KoboMonza (MTK) is
+   `mech_refresh = refresh_kobo_mtk` (`base/ffi/framebuffer_mxcfb.lua`
+   line 1007-1008, gated on `self.device:isMTK()`), which calls
+   `mxc_update(fb, C.HWTCON_SEND_UPDATE, ..., waveform_mode, ...)` (line
+   733) with `waveform_mode` initially `self.waveform_full =
+   C.HWTCON_WAVEFORM_MODE_GC16` (line 1025).
+
+2. **Inside `mxc_update`** (`base/ffi/framebuffer_mxcfb.lua` lines
+   273-428), the color promotion block (lines 370-386) runs: `if dither
+   and fb.device:hasKaleidoWfm() and fb:isColorEnabled() then ... elseif
+   fb:_isFullWaveFormMode(waveform_mode) then waveform_mode =
+   fb.waveform_color ... end` (lines 370, 377-379) —
+   `fb.waveform_color = C.HWTCON_WAVEFORM_MODE_GCC16` (line 1034).
+   `fb:isColorEnabled()` is the exact same closure as the plugin's own
+   `Screen:isColorEnabled()` gate check: `frontend/device/generic/device.lua`
+   line 216 (`self.screen.isColorEnabled = function() ... end`), assigned
+   once on the shared `Screen` singleton — there is no discrepancy
+   possible between the plugin's gate reading and what `mxc_update` sees
+   at refresh time. Then `if fb:_isKaleidoWaveFormMode(waveform_mode) then
+   ioc_data.flags = bor(ioc_data.flags, fb.CFA_PROCESSING_FLAG) end`
+   (lines 383-385) ORs in the CFA processing flag.
+
+3. **`fb.CFA_PROCESSING_FLAG`** is set at init time
+   (`base/ffi/framebuffer_mxcfb.lua` lines 1055-1063): defaults to
+   `C.HWTCON_FLAG_CFA_EINK_G2` (a saturation boost) unless
+   `G_reader_settings:isTrue("no_cfa_post_processing")` ("Disable CFA
+   post-processing", hamburger/tools → More tools → Developer options →
+   `frontend/apps/filemanager/filemanagermenu.lua` lines 672-686, gated
+   `Device:isKobo() and Device:hasColorScreen()`), in which case it's
+   stomped to `0`. `base/ffi-cdecl/include/mtk-kobo.h` line 67 documents
+   `HWTCON_FLAG_CFA_EINK_G1 = 0x100` as "Standard behavior (e.g., same
+   results as no flags)" — so `CFA_PROCESSING_FLAG=0` is reduced
+   saturation, NOT an absence of color. This setting being on would not
+   explain a complete absence of color, only reduced saturation; still
+   worth confirming it's off (default), but it is not the likely root
+   cause of "grayscale, not color."
+
+4. **A distinct, independently-actionable finding, NOT the cause of the
+   self-test failure** (the self-test uses `"full"`, not `"partial"`):
+   `frontend/ui/uimanager.lua` lines 1137, 1144-1147 — if
+   `G_reader_settings:isTrue("avoid_flashing_ui")` ("Avoid mandatory black
+   flashes in UI", hamburger/gear → Screen → E-ink settings →
+   `frontend/ui/elements/avoid_flashing_ui.lua` /
+   `screen_eink_opt_menu_table.lua`) is on, a `"partial"` refresh WITH a
+   region — exactly what this plugin's deferred tighten pass uses
+   (`"partial"` + dither, targeted rect) — gets silently downgraded to
+   `"ui"` mode. `"ui"` maps to `waveform_ui = C.HWTCON_WAVEFORM_MODE_AUTO`
+   (line 1023), matching neither `_isFullWaveFormMode` nor
+   `_isREAGLWaveFormMode`, so it never reaches the Kaleido promotion block
+   at all. If this setting is on, the tighten pass's color reveal is
+   silently defeated, independent of whatever the self-test shows. Worth
+   checking regardless of the self-test's outcome.
+
+5. **The decisive remaining diagnostic**: `mxc_update` has a debug line
+   (`base/ffi/framebuffer_mxcfb.lua` line 423):
+   `fb.debug(string.format("mxc_update: %ux%u region @ (%u, %u) with
+   marker %u (WFM: %u & UPD: %u)", w, h, x, y, marker,
+   ioc_data.waveform_mode, ioc_data.update_mode))`. `fb.debug` is
+   `logger.dbg` (`frontend/device/kobo/device.lua` line 700:
+   `self.screen = require("ffi/framebuffer_mxcfb"):new{device = self,
+   debug = logger.dbg, ...}`), gated on the "Enable debug logging" +
+   "Enable verbose debug logging" Developer options toggles
+   (`frontend/apps/filemanager/filemanagermenu.lua` lines 560-591). All of
+   `reader.lua`'s stdout/stderr goes to `crash.log` in the KOReader install
+   dir (`platform/kobo/koreader.sh` line 421: `./reader.lua "$@"
+   >>crash.log 2>&1`, run from `KOREADER_DIR`) — on a sideloaded install,
+   `/mnt/onboard/.adds/koreader/crash.log`.
+
+   Constants (`base/ffi/mxcfb_kobo_h.lua` lines 108, 115):
+   `HWTCON_WAVEFORM_MODE_GC16 = 2` (grayscale, un-promoted),
+   `HWTCON_WAVEFORM_MODE_GCC16 = 10` (color, promoted — what SHOULD appear
+   if the self-test's own refresh call is working as intended).
+
+   **This single log line is the decisive test.** `WFM: 10` after running
+   the self-test means KOReader's software layer genuinely requested a
+   color update and the promotion is proven correct all the way to the
+   ioctl boundary — the remaining failure is downstream of KOReader
+   (kernel driver / EPDC firmware / physical panel), out of this plugin's
+   or KOReader's control; stop chasing software causes, treat as a
+   hardware/firmware limitation. `WFM: 2` (or anything else) means the
+   promotion is NOT happening at actual refresh time despite every
+   plugin-level gate reading true at self-test-snapshot time — a real,
+   fixable software bug exists somewhere this investigation hasn't found,
+   needing runtime instrumentation to chase further, not a hardware
+   conclusion.
+
+Full step-by-step capture procedure for the maintainer:
+`.agents/plans/color-wfm-capture-runbook.md`.
