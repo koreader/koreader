@@ -693,10 +693,9 @@ function BookmarkBrowser:showBookmarkListMenu()
                     UIManager:close(bm_list_menu)
                     UIManager:show(ButtonSelector:new{
                         current_value = self.filter_table.color,
-                        values = ReaderHighlight.highlight_colors,
-                        bg_colors = ReaderHighlight:getHighlightColorList(),
-                        callback = function(value)
-                            self.filter_table.color = value
+                        values = ReaderHighlight:getHighlightColorList(),
+                        callback = function(selected_color_name)
+                            self.filter_table.color = selected_color_name
                             self:updateBookmarkList()
                         end,
                     })
