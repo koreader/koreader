@@ -181,7 +181,8 @@ function NetworkListener:onNetworkConnected()
     NetworkMgr:setWifiState(true)
     NetworkMgr:setConnectionState(true)
 
-    if not G_reader_settings:isTrue("auto_disable_wifi") then
+    -- You can't set auto_disable_wifi on devices without getNetworkInterfaceName() but guard against it in case it was accidentally set anyway.
+    if not NetworkMgr:getNetworkInterfaceName() or not G_reader_settings:isTrue("auto_disable_wifi") then
         return
     end
 

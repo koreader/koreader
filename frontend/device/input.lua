@@ -27,6 +27,8 @@ local KEY_RELEASE = 0
 -- Based on ABS_MT_TOOL_TYPE values on Elan panels
 local TOOL_TYPE_FINGER = 0
 local TOOL_TYPE_PEN    = 1
+local TOOL_TYPE_ERASER = 2
+local TOOL_TYPE_HIGHLIGHTER = 3
 
 -- For debug logging of ev.type
 local linux_evdev_type_map = {
@@ -234,6 +236,8 @@ function Input:init()
         self.input = require("ffi/input_pocketbook")
     elseif self.device:isRemarkable() and os.getenv("KO_USE_QTFB") == "1" then
         self.input = require("ffi/input_qtfb")
+    elseif self.device:isRemarkable() and os.getenv("KO_USE_BLIGHT") == "1" then
+        self.input = require("ffi/input_blight")
     else
         self.input = require("libs/libkoreader-input")
     end
@@ -451,6 +455,66 @@ end
 
 function Input:gestureAdjustHook(ges)
     -- do nothing by default
+end
+
+--[[--
+Register a callback for stylus/pen events.
+Called before gesture detection with fully processed slot data.
+The callback receives the Input object and a slot table: {slot, id, x, y, tool, timev}.
+Return true from the callback to dominate the event and remove it from gesture detection.
+]]
+function Input:registerStylusCallback(callback)
+    self.stylus_callback = callback
+    logger.info("Input: stylus callback registered, pen_slot =", self.pen_slot)
+end
+
+function Input:unregisterStylusCallback()
+    self.stylus_callback = nil
+    logger.info("Input: stylus callback unregistered")
+end
+
+--[[--
+Filter stylus events from MTSlots and route them to the stylus callback.
+Called before gesture detection. Modifies self.MTSlots in place.
+--]]
+function Input:routeStylusEvents()
+    if not self.stylus_callback or not self.MTSlots or #self.MTSlots == 0 then
+        return
+    end
+
+    local dominated_indices = {}
+
+    for i, slot in ipairs(self.MTSlots) do
+        local is_stylus = slot.tool == TOOL_TYPE_PEN
+            or slot.tool == TOOL_TYPE_ERASER
+            or slot.tool == TOOL_TYPE_HIGHLIGHTER
+            or (self.pen_slot and slot.slot == self.pen_slot)
+
+        if is_stylus then
+            if slot.tool == TOOL_TYPE_PEN then
+                if self.stylus_eraser_active then
+                    slot.tool = TOOL_TYPE_ERASER
+                elseif self.stylus_highlighter_active then
+                    slot.tool = TOOL_TYPE_HIGHLIGHTER
+                end
+            end
+
+            logger.dbg("Input:routeStylusEvents: stylus detected in slot", slot.slot,
+                       "tool=", slot.tool, "id=", slot.id, "x=", slot.x, "y=", slot.y,
+                       "pen_slot=", self.pen_slot, "eraser=", self.stylus_eraser_active,
+                       "highlighter=", self.stylus_highlighter_active)
+            local dominated = self.stylus_callback(self, slot)
+            if dominated then
+                table.insert(dominated_indices, i)
+                logger.dbg("Input:routeStylusEvents: slot", slot.slot,
+                           "dominated, will remove from gesture detection")
+            end
+        end
+    end
+
+    for i = #dominated_indices, 1, -1 do
+        table.remove(self.MTSlots, dominated_indices[i])
+    end
 end
 
 --- Catalog of predefined hooks.
@@ -673,22 +737,40 @@ function Input:handleKeyBoardEv(ev)
 
             return
         end
-    elseif self.wacom_protocol then
-        if ev.code == C.BTN_TOOL_PEN then
-            -- Switch to the dedicated pen slot, and make sure it's active, as this can come in a dedicated input frame
-            self:setupSlotData(self.pen_slot)
-            if ev.value == 1 then
-                self:setCurrentMtSlot("tool", TOOL_TYPE_PEN)
-            else
-                self:setCurrentMtSlot("tool", TOOL_TYPE_FINGER)
-                -- Switch back to our main finger slot
-                self.cur_slot = self.main_finger_slot
-            end
+    end
 
-            return
-        elseif ev.code == C.BTN_TOUCH then
-            -- BTN_TOUCH is bracketed by BTN_TOOL_PEN, so we can limit this to pens, to avoid stomping on panel slots.
-            if self:getCurrentMtSlotData("tool") == TOOL_TYPE_PEN then
+    local is_sdl = self.device:isSDL()
+
+    -- On Kobo-style stylus devices, barrel/tool buttons can double as
+    -- eraser/highlighter tool selectors. SDL/Linux pen buttons are handled as
+    -- plain buttons instead, so standard side buttons don't rewrite the tool.
+    local stylus_buttons_select_tool = not is_sdl
+    if stylus_buttons_select_tool then
+        if ev.code == C.BTN_STYLUS then
+            self.stylus_eraser_active = ev.value == 1
+        elseif ev.code == C.BTN_STYLUS2 then
+            self.stylus_highlighter_active = ev.value == 1
+        end
+    end
+
+    local stylus_tool_protocol = self.wacom_protocol or is_sdl
+    if stylus_tool_protocol and (ev.code == C.BTN_TOOL_PEN or ev.code == C.BTN_TOOL_RUBBER) then
+        -- Switch to the dedicated pen slot, and make sure it's active, as this can come in a dedicated input frame.
+        self:setupSlotData(self.pen_slot)
+        if ev.value == 1 then
+            self:setCurrentMtSlot("tool", ev.code == C.BTN_TOOL_RUBBER and TOOL_TYPE_ERASER or TOOL_TYPE_PEN)
+        else
+            self:setCurrentMtSlot("tool", TOOL_TYPE_FINGER)
+            -- Switch back to our main finger slot.
+            self.cur_slot = self.main_finger_slot
+        end
+
+        return
+    elseif self.wacom_protocol then
+        if ev.code == C.BTN_TOUCH then
+            -- BTN_TOUCH is bracketed by BTN_TOOL_PEN/BTN_TOOL_RUBBER, so we can limit this to styluses, to avoid stomping on panel slots.
+            local tool = self:getCurrentMtSlotData("tool")
+            if tool == TOOL_TYPE_PEN or tool == TOOL_TYPE_ERASER then
                 -- Make sure the pen slot is active, as this can come in a dedicated input frame
                 -- (i.e., we need it to be referenced by self.MTSlots for the lift to be picked up in the EV_SYN:SYN_REPORT handler).
                 -- (Conversely, getCurrentMtSlotData pokes at the *persistent* slot data in self.ev_slots,
@@ -769,12 +851,48 @@ function Input:handleKeyBoardEv(ev)
         UIManager:nextTick(function() UIManager:quit() end) -- Ensure the program closes in case of some lingering dialog.
     end
 
+    -- A lone Sym or ScreenKB key tap (pressed and released with no other key in
+    -- between) is used by InputText to toggle the on-screen keyboard, mirroring
+    -- Shift/ScreenKB + Home. Both are otherwise only modifiers whose bare
+    -- press/release is swallowed just below, so we track which one, if any, was
+    -- "tapped alone" across the press/release pair. It only counts as a lone tap
+    -- if no other modifier is held at press time (the key itself is not marked in
+    -- self.modifiers until the block below), so combinations like Shift + Sym do
+    -- not toggle the keyboard. Pressing any other key clears the flag, so the
+    -- symbol layer (Sym + key) never toggles. A held Sym is not a tap either: on
+    -- the Kindle 3 mxckpd advertises EV_REP (~1s delay then ~5 Hz), so a held Sym
+    -- repeats; any event for it that is neither a press nor a release clears the
+    -- flag and a long hold does not toggle on release. That guard also covers
+    -- "Disable key repeat" (Kindle:toggleKeyRepeat), which rewrites the repeat
+    -- value to -1 rather than dropping the event. The ScreenKB key (Kindle 4) does
+    -- not emit repeats, so it needs no such guard; a bare press/release is a tap.
+    if ev.value == KEY_PRESS then
+        local solo = keycode == "Sym" or keycode == "ScreenKB"
+        if solo then
+            for _, held in pairs(self.modifiers) do
+                if held then
+                    solo = false
+                    break
+                end
+            end
+        end
+        self.keyboard_toggle_tapped = solo and keycode or nil
+    elseif ev.value ~= KEY_RELEASE and keycode == "Sym" then
+        self.keyboard_toggle_tapped = nil
+    end
+
     -- handle modifier keys
     if self.modifiers[keycode] ~= nil then
         if ev.value == KEY_PRESS then
             self.modifiers[keycode] = true
         elseif ev.value == KEY_RELEASE then
             self.modifiers[keycode] = false
+            if self.keyboard_toggle_tapped == keycode then
+                self.keyboard_toggle_tapped = nil
+                -- Surface the lone tap as a dedicated key event; nothing else binds it.
+                local tap_key = keycode == "Sym" and "SymPress" or "ScreenKBPress"
+                return Event:new("KeyPress", Key:new(tap_key, self.modifiers))
+            end
         end
         return
     end
@@ -964,6 +1082,7 @@ function Input:handleTouchEv(ev)
             for _, MTSlot in ipairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
+            self:routeStylusEvents()
             -- feed ev in all slots to state machine
             local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
             self:newFrame()
@@ -1005,6 +1124,7 @@ function Input:handleMixedTouchEv(ev)
             for _, MTSlot in ipairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
+            self:routeStylusEvents()
             -- feed ev in all slots to state machine
             local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
             self:newFrame()
@@ -1070,6 +1190,7 @@ function Input:handleTouchEvSnow(ev)
             for _, MTSlot in ipairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
+            self:routeStylusEvents()
             -- feed ev in all slots to state machine
             local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
             self:newFrame()
@@ -1130,6 +1251,7 @@ function Input:handleTouchEvPhoenix(ev)
             for _, MTSlot in ipairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
+            self:routeStylusEvents()
             -- feed ev in all slots to state machine
             local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
             self:newFrame()
@@ -1179,6 +1301,7 @@ function Input:handleTouchEvLegacy(ev)
                 self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
 
+            self:routeStylusEvents()
             -- feed ev in all slots to state machine
             local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
             self:newFrame()
@@ -1704,5 +1827,10 @@ function Input:inhibitInputUntil(set_or_seconds)
     UIManager:scheduleIn(delay_s, self._inhibitInputUntil_func)
     self:inhibitInput(true)
 end
+
+Input.TOOL_TYPE_FINGER = TOOL_TYPE_FINGER
+Input.TOOL_TYPE_PEN = TOOL_TYPE_PEN
+Input.TOOL_TYPE_ERASER = TOOL_TYPE_ERASER
+Input.TOOL_TYPE_HIGHLIGHTER = TOOL_TYPE_HIGHLIGHTER
 
 return Input

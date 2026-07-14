@@ -3,7 +3,7 @@
 export LC_ALL="en_US.UTF-8"
 
 # Compute our working directory in an extremely defensive manner
-SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
+SCRIPT_DIR="$(CDPATH='' cd "$(dirname "$0")" && pwd -P)"
 # NOTE: We need to remember the *actual* KOREADER_DIR, not the relocalized version in /tmp...
 export KOREADER_DIR="${KOREADER_DIR:-${SCRIPT_DIR}}"
 UNPACK_DIR="${KOREADER_DIR%/*}"
@@ -85,6 +85,7 @@ if [ "${1}" = "--kual" ]; then
     REEXEC_FLAGS="${REEXEC_FLAGS} --kual"
 else
     FROM_KUAL="no"
+    export EIPS_NO_SLEEP="yes"
 fi
 
 # By default, don't stop the framework.
@@ -98,8 +99,7 @@ elif [ "${1}" = "--asap" ]; then
     shift 1
     NO_SLEEP="yes"
     REEXEC_FLAGS="${REEXEC_FLAGS} --asap"
-    # Don't sleep during eips calls either...
-    export EIPS_NO_SLEEP="true"
+    export EIPS_NO_SLEEP="yes"
 else
     NO_SLEEP="no"
 fi
@@ -149,7 +149,7 @@ ko_update_check() {
         #       which we cannot use because it's been mounted noexec for a few years now...
         cp -pf "${KOREADER_DIR}/tar" /var/tmp/gnutar
         # shellcheck disable=SC2016
-        /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='printf "%s" $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}' -C "/mnt/us" -xf "${NEWUPDATE}"
+        /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='printf "%s" $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}' -C "${UNPACK_DIR}" -xf "${NEWUPDATE}"
         fail=$?
         kill -TERM "${FBINK_PID}"
         # And remove our temporary tar binary...
@@ -270,11 +270,9 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
                     logmsg "Title bar geometry: '${TITLEBAR_GEOMETRY}' -> '$("${KOREADER_DIR}/wmctrl" -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')'"
                     USED_WMCTRL="yes"
                 fi
-                if [ "${FROM_KUAL}" = "yes" ]; then
-                    logmsg "Stopping awesome . . ."
-                    killall -STOP awesome
-                    AWESOME_STOPPED="yes"
-                fi
+                logmsg "Stopping awesome . . ."
+                killall -STOP awesome
+                AWESOME_STOPPED="yes"
             fi
         else
             logmsg "Hiding the status bar . . ."
