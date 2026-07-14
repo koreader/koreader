@@ -104,7 +104,6 @@ function ReaderUI:registerModule(name, ui_module, always_active)
 end
 
 function ReaderUI:registerPostInitCallback(callback)
-    self.postInitCallback = self.postInitCallback or {}
     table.insert(self.postInitCallback, callback)
 end
 
