@@ -1,6 +1,17 @@
 # Color WFM capture runbook (maintainer; on-device only)
 
-**Status: NEEDS DEVICE TESTING** — companion to the Color self-test
+**Status: RESOLVED (2026-07) — captured `WFM: 10` (`HWTCON_WAVEFORM_MODE_GCC16`).**
+KOReader's software layer genuinely requested a real Kaleido color update
+at the moment of refresh. The software chain is proven correct end to end;
+the remaining gap is downstream of KOReader (kernel driver / EPDC firmware
+/ physical panel) and is not fixable from this plugin or KOReader itself.
+See the conclusion in `.agents/plans/grayscale-ink-and-eraser-handoff.md`.
+The steps below are kept for reference / in case this needs re-running
+after a firmware update or on another unit.
+
+---
+
+Companion to the Color self-test
 (`DrawingCanvas:_runColorSelfTest`, `plugins/fastnote.koplugin/drawingcanvas.lua`).
 This file cannot be executed from CI/emulator (no real EPDC/kernel driver
 there); it's written so a maintainer with the physical Kobo Libra Colour can

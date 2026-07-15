@@ -1,6 +1,41 @@
 # Handoff: plugin-side grayscale ink + eraser-still-draws investigation
 
-**Status update (2026-07, latest round):** on device, the self-test bars
+**RESOLVED (2026-07): the color gap is downstream of KOReader, not a
+software bug.** The maintainer captured the decisive `mxc_update:` log
+line prescribed by `.agents/plans/color-wfm-capture-runbook.md`:
+`WFM: 10` (`HWTCON_WAVEFORM_MODE_GCC16`) — KOReader's software layer
+genuinely requested a real Kaleido color update, at the moment of refresh
+(not just at gate-snapshot time), using the exact code path traced against
+real `base/` source (see the dated section in
+`.agents/notes/waveform-refresh-research.md`). This proves the entire
+software chain correct from the plugin's `setDirty` call down to the
+literal ioctl sent to the kernel. **No further code change in this plugin
+or in KOReader can fix what's being seen.** The remaining gap is in the
+kernel's `hwtcon` driver, the panel's EPDC firmware, or the physical
+Kaleido 3 color filter layer not completing the job on an otherwise
+correct request — outside this project's ability to fix from software.
+Suggested next steps for the maintainer, not further plugin work: check
+whether color ever renders anywhere else on the device (stock notebook
+app, a colored PDF highlight, a comic page) to localize the fault to
+firmware/panel vs. this app specifically; check for a Kobo firmware
+update; consider a hardware support/warranty inquiry if nothing else
+resolves it. The eraser is fixed (order-independent latch, six event-order
+scenarios reviewed). **This investigation is closed** barring new evidence
+that reopens the software question.
+
+Loose end: the WFM capture was done on a build that still showed the
+self-test dialog overlapping the bar block in a screenshot taken partway
+through this round — the merged-region symptom in the captured log
+(`63,83` to `1137x1368`, matching the pre-fix numbers exactly) suggests
+the device was running the commit just before the dialog-height-cap fix
+(`63493b0`) when that capture was taken. Worth redeploying the latest
+branch tip for a clean self-test *display* (the WFM finding above is
+unaffected by this — the promotion check depends only on mode/dither/
+capability flags, not on which widgets share the refreshed region).
+
+---
+
+**Status update (2026-07, earlier this round):** on device, the self-test bars
 are now visible (the prior round's UI fix worked) — but they render as
 distinguishable grayscale shades (different luminance per color, not flat
 gray), never actual color, with every plugin-level gate reading true. The

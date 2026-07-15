@@ -464,6 +464,14 @@ hardware/firmware limitation. Findings, with file:line references from
 Full step-by-step capture procedure for the maintainer:
 `.agents/plans/color-wfm-capture-runbook.md`.
 
+**Result (2026-07): `WFM: 10` (`HWTCON_WAVEFORM_MODE_GCC16`) captured.**
+Real Kaleido color update genuinely requested, at refresh time (not just
+gate-snapshot time). The software chain above is confirmed correct in
+practice, not just by static reading. The color gap on this device is
+downstream of KOReader (kernel driver / EPDC firmware / physical panel) —
+see the resolution in `.agents/plans/grayscale-ink-and-eraser-handoff.md`.
+No further KOReader or plugin code change addresses it.
+
 **Gotcha found capturing this on device (2026-07): enabling debug logging
 requires a KOReader restart before `fb.debug` output appears.**
 `frontend/logger.lua`'s `Logger:setLevel` REASSIGNS the `logger.dbg` field
