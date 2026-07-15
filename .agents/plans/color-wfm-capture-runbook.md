@@ -22,17 +22,43 @@ captures it.
 
 ---
 
-## Step 1 — enable debug logging
+## Step 1 — enable debug logging, THEN RESTART KOREADER
 
 1. Open the hamburger/tools menu (wrench icon) → **More tools** →
    **Developer options**.
 2. Enable **"Enable debug logging"**.
 3. Enable **"Enable verbose debug logging"** (only selectable once debug
    logging is on).
+4. **Fully close and reopen KOReader now, before doing anything else.**
+   This step is not optional — see the gotcha below.
 
-Both are in `frontend/apps/filemanager/filemanagermenu.lua`
+Both toggles are in `frontend/apps/filemanager/filemanagermenu.lua`
 (`self.menu_items.developer_options`). `fb.debug` — the line we're chasing
-— is `logger.dbg`, which is gated on exactly these two toggles.
+— is `logger.dbg`.
+
+**Gotcha (confirmed 2026-07, cost a whole capture attempt without it):**
+`logger.dbg` is not a live flag check -- `frontend/logger.lua`'s
+`Logger:setLevel` REASSIGNS the `logger.dbg` field to either the real
+logging function or a no-op, and defaults to the no-op at boot. The Kobo
+screen object captures `debug = logger.dbg` exactly once, at boot
+(`frontend/device/kobo/device.lua`, `self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg, ...}`)
+-- a snapshot of whatever `logger.dbg` was AT THAT MOMENT, not a live
+reference. Toggling the two menu items above reassigns the *global*
+`logger.dbg` going forward, but the screen object's already-captured copy
+still points at the stale no-op, so `mxc_update`'s debug line can never
+fire in that running session, no matter how long you wait or how many
+times you re-run the self-test. Only a restart re-runs `Device:init()`
+after the setting is already persisted (`reader.lua` line 73:
+`if G_reader_settings:isTrue("debug") then dbg:turnOn() end`, which runs
+before the screen object is constructed), so the capture happens with the
+real function this time.
+
+This does NOT affect any of the OTHER debug lines you'll see in crash.log
+(`_refresh: Enqueued ...`, `triggering refresh {...}`, this plugin's own
+breadcrumbs, etc.) -- those all call `logger.dbg(...)` directly each time,
+doing a fresh lookup, so they reflect the toggle immediately without a
+restart. It's specifically `fb.debug`'s one-time captured copy that needs
+the restart.
 
 ---
 

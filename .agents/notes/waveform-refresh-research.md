@@ -463,3 +463,27 @@ hardware/firmware limitation. Findings, with file:line references from
 
 Full step-by-step capture procedure for the maintainer:
 `.agents/plans/color-wfm-capture-runbook.md`.
+
+**Gotcha found capturing this on device (2026-07): enabling debug logging
+requires a KOReader restart before `fb.debug` output appears.**
+`frontend/logger.lua`'s `Logger:setLevel` REASSIGNS the `logger.dbg` field
+to either the real logging function or a no-op (defaults to no-op at
+boot). The Kobo screen object captures `debug = logger.dbg` exactly once,
+at boot (`frontend/device/kobo/device.lua`,
+`self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug
+= logger.dbg, ...}`) — a snapshot of whatever `logger.dbg` was at that
+moment, not a live reference. Toggling "Enable debug logging" from the
+in-session menu reassigns the *global* `logger.dbg` going forward, but
+`fb.debug`'s already-captured copy keeps pointing at the stale no-op for
+the rest of that session — so `mxc_update`'s debug line (and any other
+`fb.debug` call in `base/`) can never fire until KOReader restarts with
+the setting already persisted (`reader.lua` line 73:
+`if G_reader_settings:isTrue("debug") then dbg:turnOn() end`, which runs
+before the screen object is constructed). Confirmed on device: a full
+crash.log capture with both debug toggles on, self-test run, and dialog
+dismissed showed every frontend-level debug line (`_refresh: Enqueued
+...`, `triggering refresh {...}`, this plugin's own breadcrumbs) but zero
+`mxc_update:` lines anywhere in the log — consistent with this exact
+mechanism, not a hardware/absence-of-output problem. This does not affect
+frontend-level `logger.dbg(...)` calls made directly (they always do a
+fresh lookup) — only captured-reference cases like `fb.debug`.
