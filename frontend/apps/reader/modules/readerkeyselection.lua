@@ -164,9 +164,17 @@ function ReaderKeySelection:init()
     self._edge_dy = nil
     self._last_move_was_quick_move = nil
     self.mirroredUI = BD.mirroredUILayout()
-    self.ui:registerPostInitCallback(function()
+    if self.ui.postInitCallback then
+        -- Register as part of ReaderUI:init().
+        self.ui:registerPostInitCallback(function()
+            self.ui.menu:registerToMainMenu(self)
+            self._registered_to_menu = true
+        end)
+    elseif not self._registered_to_menu then
+        -- A keyboard was connected after init. Register to the menu directly.
         self.ui.menu:registerToMainMenu(self)
-    end)
+        self._registered_to_menu = true
+    end
 end
 
 function ReaderKeySelection:onSetDimensions(dimen)
