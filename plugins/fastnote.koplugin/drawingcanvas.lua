@@ -91,6 +91,11 @@ local PALETTE = {
 local COLOR_SELFTEST_BAR_HEIGHT     = 40    -- px, per bar
 local COLOR_SELFTEST_WIDTH_FRACTION = 0.6   -- fraction of screen width
 local COLOR_SELFTEST_TOP_MARGIN     = 8     -- px, gap below chrome strip before first bar
+-- Floor for the result InfoMessage's height cap (see _runColorSelfTest):
+-- keeps the dialog from becoming unreadably short on a small/landscape
+-- screen where 2*(bar_bottom+margin) leaves little room, at the cost of
+-- the no-overlap guarantee in that edge case.
+local COLOR_SELFTEST_MSG_MIN_HEIGHT = 200   -- px
 
 -- Hover-prevention: minimum digitizer pressure to accept a "down" event.
 -- The Elan chip can send BTN_TOUCH=1 a few mm above the screen; real contact
@@ -1139,7 +1144,12 @@ end
 -- the InfoMessage shown afterward is itself centered: an earlier version
 -- painted the bars centered in the drawable area, so the InfoMessage
 -- covered them completely and the self-test never actually showed
--- anything.
+-- anything. That alone wasn't sufficient once the message text grew long
+-- enough (gate line, current/resolved color, bar coordinates) to still
+-- reach up into the top-placed bars -- the InfoMessage's own `height` is
+-- now capped so its top edge is geometrically guaranteed to stay clear of
+-- the bar block regardless of future text growth (see the height-cap
+-- comment at the setDirty call site below).
 --
 -- StrokeBuffer is never touched -- the bars live only in the _bb display
 -- cache and can never be saved to a page. Any pending tighten is cancelled
@@ -1186,6 +1196,21 @@ function DrawingCanvas:_runColorSelfTest()
     logger.dbg("FastNote canvas: color self-test firing refresh, watch for the next mxc_update WFM line in crash.log")
     UIManager:setDirty(self, function() return "full", Geom:new(test_rect), true end)
 
+    -- InfoMessage always centers itself on the full screen (CenterContainer
+    -- in ui/widget/infomessage.lua) and grows with text length -- it has no
+    -- awareness of the bar block painted above it. Once this self-test's
+    -- diagnostic text grew (canvas_bb_type, resolved color, bar rect), the
+    -- box grew tall enough to cover most of the bars, defeating the whole
+    -- point of a self-test whose evidence is what's on screen, not in the
+    -- dialog. Cap the box height so its top edge is geometrically
+    -- guaranteed to stay clear of the bar block, however long the message
+    -- text becomes in the future -- overflow gets InfoMessage's own
+    -- built-in scrollbar (triggered automatically whenever `height` is
+    -- set) instead of growing into the evidence.
+    local bar_bottom = test_rect.y + test_rect.h
+    local msg_max_height = math.max(COLOR_SELFTEST_MSG_MIN_HEIGHT,
+        self.dimen.h - 2 * (bar_bottom + COLOR_SELFTEST_TOP_MARGIN))
+
     local stroke_color = self:_strokeColor()
     local msg_lines = {
         "Color self-test -- bars top to bottom: " .. table.concat(bar_names, ", "),
@@ -1205,6 +1230,7 @@ function DrawingCanvas:_runColorSelfTest()
 
     UIManager:show(InfoMessage:new{
         text = table.concat(msg_lines, "\n"),
+        height = msg_max_height,
         dismiss_callback = function()
             self:_confirmSelfTestDismiss()
         end,
