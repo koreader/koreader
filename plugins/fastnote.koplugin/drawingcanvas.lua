@@ -1182,7 +1182,12 @@ function DrawingCanvas:_runColorSelfTest()
 
     local bar_y = test_rect.y
     for __, color in ipairs(bar_colors) do
-        self._bb:paintRect(test_rect.x, bar_y, test_rect.w, COLOR_SELFTEST_BAR_HEIGHT, color)
+        -- paintRectRGB32, not paintRect: paintRect always downconverts its
+        -- color argument to luminance-only before painting, even into a
+        -- BBRGB32 buffer -- see canvas_utils.drawLine's doc comment and
+        -- the "paintRect vs. paintRectRGB32" section of
+        -- waveform-refresh-research.md.
+        self._bb:paintRectRGB32(test_rect.x, bar_y, test_rect.w, COLOR_SELFTEST_BAR_HEIGHT, color)
         bar_y = bar_y + COLOR_SELFTEST_BAR_HEIGHT
     end
 

@@ -1,13 +1,20 @@
 # Color WFM capture runbook (maintainer; on-device only)
 
-**Status: RESOLVED (2026-07) — captured `WFM: 10` (`HWTCON_WAVEFORM_MODE_GCC16`).**
-KOReader's software layer genuinely requested a real Kaleido color update
-at the moment of refresh. The software chain is proven correct end to end;
-the remaining gap is downstream of KOReader (kernel driver / EPDC firmware
-/ physical panel) and is not fixable from this plugin or KOReader itself.
-See the conclusion in `.agents/plans/grayscale-ink-and-eraser-handoff.md`.
-The steps below are kept for reference / in case this needs re-running
-after a firmware update or on another unit.
+**Status: SUPERSEDED (2026-07).** This runbook's capture succeeded —
+`WFM: 10` (`HWTCON_WAVEFORM_MODE_GCC16`) confirmed the refresh/waveform
+layer really does request real color correctly. But that turned out not
+to be where the bug was: the maintainer separately confirmed color renders
+fine elsewhere on the same device (KOReader's own features, other
+plugins), which ruled out a hardware/firmware/driver explanation (those
+are shared, process-wide; they can't selectively fail for one caller).
+The actual root cause was upstream of the refresh call entirely —
+`BlitBuffer:paintRect` silently discarding color at paint time, fixed by
+switching to `paintRectRGB32`. See `.agents/notes/waveform-refresh-research.md`
+("paintRect vs. paintRectRGB32") and the resolution in
+`.agents/plans/grayscale-ink-and-eraser-handoff.md`. This runbook's
+capture steps remain valid if the refresh/waveform layer itself ever
+needs re-checking (e.g. after a firmware update, or on another unit), but
+are not the next step for the current investigation.
 
 ---
 

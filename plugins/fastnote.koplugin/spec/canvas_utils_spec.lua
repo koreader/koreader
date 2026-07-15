@@ -181,6 +181,52 @@ describe("canvas_utils", function()
 
     end)
 
+    describe("drawLine", function()
+        -- Root cause of the long-running "no color ever renders" bug: the
+        -- generic BlitBuffer:paintRect(...) always downconverts its color
+        -- argument via value:getColor8() before painting -- even into a
+        -- genuine TYPE_BBRGB32 buffer -- silently discarding true color.
+        -- BlitBuffer:paintRectRGB32(...) is the type-aware variant that
+        -- preserves RGB32 color and still degrades correctly on grayscale
+        -- buffers (it accepts Color8 too, converting up then back down).
+        -- drawLine must call paintRectRGB32, never plain paintRect, for
+        -- every brush stamp -- see waveform-refresh-research.md.
+
+        -- Minimal recording fake standing in for a real BlitBuffer: only
+        -- the one method under test needs to exist for this pure-Lua spec.
+        local function fake_bb()
+            local calls = {}
+            return {
+                calls = calls,
+                paintRectRGB32 = function(self, x, y, w, h, color)
+                    calls[#calls + 1] = {x = x, y = y, w = w, h = h, color = color}
+                end,
+            }
+        end
+
+        it("paints every brush stamp via paintRectRGB32, not paintRect", function()
+            local bb = fake_bb()
+            local color = "sentinel-color"
+            utils.drawLine(bb, 10, 10, 10, 10, 1, color)
+            assert.is_true(#bb.calls > 0)
+            for __, call in ipairs(bb.calls) do
+                assert.are.equal(color, call.color)
+            end
+        end)
+
+        it("errors instead of silently falling back if paintRectRGB32 is missing", function()
+            -- A bb exposing only the generic (luminance-only) paintRect would
+            -- have been exactly the previous, silently-broken behavior --
+            -- fail loudly rather than falling back to it.
+            local bb_without_rgb32 = {
+                paintRect = function() end,
+            }
+            assert.has_error(function()
+                utils.drawLine(bb_without_rgb32, 0, 0, 5, 0, 1, "color")
+            end)
+        end)
+    end)
+
     describe("live_ink_mode", function()
         -- Task C2 ("draw black, bloom color"): pure decision of whether a
         -- live-drawn segment should paint into _bb as solid ink or the

@@ -82,8 +82,20 @@ function canvas_utils.union_rect(a, b)
     return { x = x1, y = y1, w = x2 - x1, h = y2 - y1 }
 end
 
---- Draw a thick line from (x0,y0) to (x1,y1) using Bresenham + paintRect.
+--- Draw a thick line from (x0,y0) to (x1,y1) using Bresenham + paintRectRGB32.
 -- KOReader's BlitBuffer has no paintLine method; this is the replacement.
+--
+-- Uses paintRectRGB32, NOT the generic paintRect: paintRect always
+-- downconverts its color argument via value:getColor8() before painting,
+-- even into a genuine TYPE_BBRGB32 buffer -- silently discarding true
+-- color and painting luminance-only pixels instead (see
+-- base/ffi/blitbuffer.lua). paintRectRGB32 is the type-aware variant: it
+-- preserves full color on RGB32/RGB16 buffers and still degrades
+-- correctly on grayscale (BB8/BB8A) buffers, since Color8 also supports
+-- :getColorRGB32(). This was the actual root cause of ink never rendering
+-- in color on Kaleido hardware, despite every gate and the whole refresh/
+-- waveform-promotion chain being correct -- see the "paintRect vs.
+-- paintRectRGB32" section of waveform-refresh-research.md.
 -- @param bb     BlitBuffer  destination buffer
 -- @param x0     number  start x (integer)
 -- @param y0     number  start y (integer)
@@ -102,7 +114,7 @@ function canvas_utils.drawLine(bb, x0, y0, x1, y1, w, color)
     local sy = y0 < y1 and 1 or -1
     local err = dx - dy
     while true do
-        bb:paintRect(x0 - r, y0 - r, brush_side, brush_side, color)
+        bb:paintRectRGB32(x0 - r, y0 - r, brush_side, brush_side, color)
         if x0 == x1 and y0 == y1 then break end
         local e2 = 2 * err
         if e2 > -dy then err = err - dy; x0 = x0 + sx end
