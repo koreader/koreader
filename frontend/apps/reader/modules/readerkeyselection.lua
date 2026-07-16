@@ -212,9 +212,7 @@ end
 ReaderKeySelection.onPhysicalKeyboardConnected = ReaderKeySelection.init
 
 function ReaderKeySelection:addToMainMenu(menu_items)
-    if Device:isTouchDevice() or not Device:hasDPad() then return end
-    -- insert table to main reader menu
-    if not Device:useDPadAsActionKeys() then
+    if not Device:useDPadAsActionKeys() and not Device:isTouchDevice() then
         menu_items.start_content_selection = {
             text = _("Start text selection"),
             callback = function()
@@ -222,8 +220,9 @@ function ReaderKeySelection:addToMainMenu(menu_items)
             end,
         }
     end
-    -- we allow user to select the rate at which the content selection tool moves through screen
-    table.insert(menu_items.long_press.sub_item_table, {
+    -- We allow the user to select the rate at which the content selection tool moves
+    -- through the screen. Keep local refs so isTouchDevice() can reuse them below.
+    local crosshairs_speed_item = {
         text_func = function()
             local reader_speed = G_reader_settings:readSetting("highlight_non_touch_factor") or 4
             local dict_speed = G_reader_settings:readSetting("highlight_non_touch_factor_dict") or 3
@@ -259,8 +258,9 @@ function ReaderKeySelection:addToMainMenu(menu_items)
             }
             UIManager:show(double_spin_widget)
         end,
-    })
-    table.insert(menu_items.long_press.sub_item_table, {
+    }
+    table.insert(menu_items.long_press.sub_item_table, crosshairs_speed_item)
+    local crosshairs_speedup_item = {
         text = _("Increase crosshairs speed on consecutive keystrokes"),
         checked_func = function()
             return G_reader_settings:nilOrTrue("highlight_non_touch_spedup")
@@ -271,8 +271,9 @@ function ReaderKeySelection:addToMainMenu(menu_items)
         callback = function()
             G_reader_settings:flipNilOrTrue("highlight_non_touch_spedup")
         end,
-    })
-    table.insert(menu_items.long_press.sub_item_table, {
+    }
+    table.insert(menu_items.long_press.sub_item_table, crosshairs_speedup_item)
+    local crosshairs_interval_item = {
         text_func = function()
             local highlight_non_touch_interval = G_reader_settings:readSetting("highlight_non_touch_interval") or 1
             return T(N_("Interval for crosshairs speed increase: 1 second", "Interval for crosshairs speed increase: %1 seconds", highlight_non_touch_interval), highlight_non_touch_interval)
@@ -299,14 +300,31 @@ function ReaderKeySelection:addToMainMenu(menu_items)
             }
             UIManager:show(spin_widget)
         end,
-    })
+    }
+    table.insert(menu_items.long_press.sub_item_table, crosshairs_interval_item)
+
+    local text_label = _("Text selection tools")
+
+    if Device:isTouchDevice() then
+        -- Dictionary/multi-word selection is already available under taps_and_gestures
+        -- on touch devices, so we only need to surface the crosshairs settings here.
+        menu_items.selection_text = {
+            text = text_label,
+            sub_item_table = {
+                crosshairs_speed_item,
+                crosshairs_speedup_item,
+                crosshairs_interval_item,
+            }
+        }
+        return true
+    end
 
     if menu_items.long_press then
         local long_press_action = ReaderHighlight.long_press_action
         -- long_press settings are under the taps_and_gestures menu, which is not available for non-touch devices
         -- Clone long_press settings, and change its label, making it much more meaningful for non-touch device users.
         menu_items.selection_text = {
-            text = _("Text selection tools"),
+            text = text_label,
             sub_item_table = {
                 menu_items.long_press.sub_item_table[1], -- Dictionary on single word selection
                 {
