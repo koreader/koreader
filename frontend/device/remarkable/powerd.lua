@@ -32,7 +32,7 @@ end
 
 function Remarkable_PowerD:isFrontlightOnHW()
     if not self.device:hasFrontlight() then return false end
-    -- 0 is on, 4 is off as documented in Linux backlight.h
+    -- 0 is on, 4 is off as documented in https://github.com/torvalds/linux/blob/37e2f878a7a660a216cc7a60459995fefd150f25/include/linux/backlight.h#L185-L203
     return self:read_int_file(self.fl.frontlight_white .. "/bl_power") == 0
 end
 
@@ -103,7 +103,7 @@ end
 
 function Remarkable_PowerD:_set_light_value(sysfs_directory, value)
     if not sysfs_directory then return end
-    -- 0 is on, 4 is off as documented in Linux backlight.h
+    -- 0 is on, 4 is off as documented in https://github.com/torvalds/linux/blob/37e2f878a7a660a216cc7a60459995fefd150f25/include/linux/backlight.h#L185-L203
     if (value > 0) then
         ffiUtil.writeToSysfs(0, sysfs_directory .. "/bl_power")
     else
