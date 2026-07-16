@@ -32,8 +32,7 @@ end
 
 function Remarkable_PowerD:isFrontlightOnHW()
     if not self.device:hasFrontlight() then return false end
-    -- 0 is on, 4 is off on reMarkable devices, how odd! I want to see the dev behind this decision...
-    -- As this is not documented, I tinkered with xochitl/csl to see which value it writes to sysfs paths
+    -- 0 is on, 4 is off as documented in Linux background.h
     return self:read_int_file(self.fl.frontlight_white .. "/bl_power") == 0
 end
 
@@ -104,7 +103,7 @@ end
 
 function Remarkable_PowerD:_set_light_value(sysfs_directory, value)
     if not sysfs_directory then return end
-    -- 0 is on, 4 is off on reMarkable devices
+    -- 0 is on, 4 is off as documented in Linux background.h
     if (value > 0) then
         ffiUtil.writeToSysfs(0, sysfs_directory .. "/bl_power")
     else
