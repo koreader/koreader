@@ -104,7 +104,7 @@ end
 
 function Remarkable_PowerD:_set_light_value(sysfs_directory, value)
     if not sysfs_directory then return end
-    -- See the comment above in isFrontlightOnHW for these weird value choices
+    -- 0 is on, 4 is off on reMarkable devices
     if (value > 0) then
         ffiUtil.writeToSysfs(0, sysfs_directory .. "/bl_power")
     else
