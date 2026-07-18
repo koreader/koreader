@@ -45,6 +45,12 @@ local OPDSBrowser = Menu:extend{
     borrow_rel           = "http://opds-spec.org/acquisition/borrow",
     stream_rel           = "http://vaemendis.net/opds-pse/stream",
     facet_rel            = "http://opds-spec.org/facet",
+    download_rel         = {
+        ["download"] = true,
+        ["publication"] = true,
+        ["http://opds-spec.org/acquisition"] = true,
+        ["http://opds-spec.org/acquisition/open-access"] = true,
+    },
     catalog_rel          = {
         ["subsection"] = true,
         ["http://opds-spec.org/subsection"] = true,
@@ -70,6 +76,13 @@ local OPDSBrowser = Menu:extend{
 
     title_shrink_font_to_fit = true,
 }
+
+local function get_value(value)
+    if type(value) == "table" then
+        return value[1]
+    end
+    return value
+end
 
 function OPDSBrowser:init()
     self.item_table = self:genItemTableFromRoot()
@@ -405,6 +418,7 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
         -- Some servers will still break RFC2616 14.3 and send crap instead.
         headers  = {
             ["Accept-Encoding"] = "identity",
+            ["Accept"] = self.opds20_feed, -- prefer OPDS 2.0
         },
         sink     = ltn12.sink.table(sink),
         user     = self.root_catalog_username,
@@ -550,66 +564,70 @@ function OPDSBrowser:genItemTableFromURL(item_url)
 end
 
 function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
-    local function build_href(href)
-        return url.absolute(item_url, href)
-    end
     self.catalog_title = catalog.metadata and catalog.metadata.title or self.catalog_title
     self.facet_groups = nil
     self.search_url = nil
     local item_table = { hrefs = {} }
 
-    if catalog.links then
+    if type(catalog.links) == "table" then
         for _, link in ipairs(catalog.links) do
-            if link.rel and link.href then
-                if link.rel == "search" then
-                    self.search_url = build_href(link.href:gsub("{query}", "%%s"))
+            local rel = get_value(link.rel)
+            if rel and link.href then
+                if rel == "search" then
+                    if link.href:gsub("{.*}", ""):find("query") then
+                        self.search_url = url.absolute(item_url, link.href:gsub("{.*}", "%%s"))
+                    else
+                        self.search_url = url.absolute(item_url, link.href:gsub("{.*}", "%?query=%%s"))
+                    end
                 else
-                    item_table.hrefs[link.rel] = build_href(link.href)
+                    item_table.hrefs[rel] = url.absolute(item_url, link.href)
                 end
             end
         end
     end
 
-    if catalog.navigation then
+    if type(catalog.navigation) == "table" then
         for _, nav in ipairs(catalog.navigation) do
-            if nav.title and nav.href and (not nav.rel or nav.rel ~= "self") then
+            local rel = get_value(nav.rel)
+            if nav.title and nav.href and (not rel or rel ~= "self") then
                 table.insert(item_table, {
                     text = nav.title,
-                    url = build_href(nav.href),
+                    url = url.absolute(item_url, nav.href),
                     mandatory = "\u{e602}", -- 'play arrow' sign
                 })
             end
         end
     end
 
-    if catalog.groups then
+    if type(catalog.groups) == "table" then
         for _, group in ipairs(catalog.groups) do
             local text = group.metadata and group.metadata.title
             local href = group.links and group.links[1] and group.links[1].href
             if text and href then
                 table.insert(item_table, {
                     text = text,
-                    url = build_href(href),
+                    url = url.absolute(item_url, href),
                     mandatory = group.metadata and group.metadata.numberOfItems,
                 })
             end
         end
     end
 
-    if catalog.facets then
+    if type(catalog.facets) == "table" then
         self.facet_groups = {}
         for _, facet in ipairs(catalog.facets) do
             local t = {}
             for i, link in ipairs(facet.links) do
+                local rel = get_value(link.rel)
                 local count = link.properties and link.properties.numberOfItems or 0
                 if link.href and count > 0 then
+                    local href = url.absolute(item_url, link.href)
                     t[i] = {
                         title = link.title,
-                        href = link.href,
+                        href = href,
                          -- mimic OPDS 1.x
                         ["thr:count"] = count,
-                        ["opds:activeFacet"] =
-                            ((link.rel and link.rel == "self") or util.stringEndsWith(item_url, link.href)) and "true",
+                        ["opds:activeFacet"] = ((rel and rel == "self") or (item_url == href)) and "true",
                     }
                 end
             end
@@ -630,35 +648,78 @@ function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
 end
 
 function OPDSBrowser:getItemFromPublication(entry, item_url)
-    local metadata = entry.metadata
-    local title = metadata.title or _("Unknown")
-    local author = metadata.author and metadata.author.name
-    if type(author) == "table" then
-        author = #author > 0 and table.concat(author, ", ")
+    local title, author, content
+    if type(entry.metadata) == "table" then
+        title = entry.metadata.title or _("Unknown")
+        author = entry.metadata.author
+        if type(author) == "table" then
+            author = author[1] and author[1].name or author.name
+            if type(author) == "table" then
+                author = #author > 0 and table.concat(author, ", ")
+            end
+        end
+        author = author or _("Unknown Author")
+        content = entry.metadata.description
     end
-    author = author or _("Unknown Author")
-    local image_href = util.tableGetValue(entry, "images", 1, "href")
+
+    local thumbnail, image
+    if type(entry.images) == "table" then
+        for _, link in ipairs(entry.images) do
+            local rel = get_value(link.rel)
+            if self.thumbnail_rel[rel] then
+                thumbnail = url.absolute(item_url, link.href)
+            elseif self.image_rel[rel] then
+                image = url.absolute(item_url, link.href)
+            end
+        end
+        thumbnail = thumbnail or url.absolute(item_url, entry.images[1].href)
+        image = image or thumbnail
+    end
+
     local acquisitions = {}
-    for _, link in ipairs(entry.links) do
-        if link.rel and link.rel ~= "self" then
-            if link.rel == self.borrow_rel then
-                table.insert(acquisitions, {
-                    type = "borrow",
-                })
-            elseif link.rel and link.rel:match(self.acquisition_rel) then
-                table.insert(acquisitions, {
-                    type = link.type,
-                    href = url.absolute(item_url, link.href),
-                })
+    if type(entry.links) == "table" then
+        for _, link in ipairs(entry.links) do
+            local rel = get_value(link.rel)
+            if rel and rel ~= "self" then
+                if rel == self.borrow_rel then
+                    table.insert(acquisitions, {
+                        type = "borrow",
+                    })
+                elseif rel:match(self.acquisition_rel) then
+                    if util.tableGetValue(link, "properties", "indirectAcquisition", 1, "type") then
+                        -- indirect acquisition
+                        local link_feed = self:parseFeed(url.absolute(item_url, link.href))
+                        if type(link_feed) == "table" and type(link_feed.links) == "table" then
+                            for _, in_link in ipairs(link_feed.links) do
+                                local in_rel = get_value(in_link.rel)
+                                if in_rel and self.download_rel[in_rel] then
+                                    table.insert(acquisitions, {
+                                        type = in_link.type,
+                                        title = in_link.title,
+                                        href = url.absolute(item_url, in_link.href),
+                                    })
+                                end
+                            end
+                        end
+                    else
+                        table.insert(acquisitions, {
+                            type = link.type,
+                            title = link.title,
+                            href = url.absolute(item_url, link.href),
+                        })
+                    end
+                end
             end
         end
     end
-    return {
+
+    return { -- book list item
         text = title .. " - " .. author,
         title = title,
         author = author,
-        image = image_href and url.absolute(item_url, image_href),
-        content = metadata.description,
+        content = content,
+        thumbnail = thumbnail,
+        image = image,
         acquisitions = acquisitions,
     }
 end
