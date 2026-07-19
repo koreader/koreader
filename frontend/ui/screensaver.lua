@@ -659,15 +659,24 @@ function Screensaver:show()
         self.screensaver_widget.dithered = true
 
         UIManager:show(self.screensaver_widget, "full")
-        if G_reader_settings:isTrue("screensaver_extra_flash") then
-            Device.suspend_wait_timeout = Device.suspend_wait_timeout_extra_flash
+        local extra_flash_count = G_reader_settings:readSetting("screensaver_extra_flash_count", 0)
+        if extra_flash_count > 0 then
             local screen_w2, screen_h2 = Screen:getWidth(), Screen:getHeight()
-            UIManager:scheduleIn(0.5, function()
-                Screen:refreshFull(0, 0, screen_w2, screen_h2)
-            end)
-            UIManager:scheduleIn(1.5, function()
-                Screen:refreshFull(0, 0, screen_w2, screen_h2)
-            end)
+            local delay_ms = G_reader_settings:readSetting("screensaver_extra_flash_delay", 1000)
+            -- Extend suspend timeout to cover all scheduled flashes:
+            -- 0.5s initial delay + (count-1)*delay between flashes + 0.5s for final redraw + 2s buffer
+            Device.suspend_wait_timeout = 15 + 0.5 + (extra_flash_count - 1) * (delay_ms / 1000) + 0.5 + 2
+            for i = 1, extra_flash_count do
+                local t = 0.5 + (i - 1) * (delay_ms / 1000)
+                UIManager:scheduleIn(t, function()
+                    UIManager:close(self.screensaver_lock_widget)
+                    Screen:refreshFull(0, 0, screen_w2, screen_h2)
+                    UIManager:scheduleIn(0.5, function()
+                        UIManager:show(self.screensaver_widget, "full")
+                        UIManager:show(self.screensaver_lock_widget)
+                    end)
+                end)
+            end
         end
     end
 
