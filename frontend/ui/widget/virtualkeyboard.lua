@@ -12,6 +12,7 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local KeyboardLayoutDialog = require("ui/widget/keyboardlayoutdialog")
+local LeftContainer = require("ui/widget/container/leftcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -779,6 +780,220 @@ function VirtualKeyPopup:init()
     end)
 end
 
+-- Fixed-height bar shown above the keys for keyboards that provide candidates
+-- (e.g. pinyin). It shows one page of candidate words as tappable cells, with the
+-- currently selected candidate highlighted. Interaction:
+--   * tap a candidate cell         -> commit it (Android-style)
+--   * tap the « / » edge buttons   -> jump a whole page (fast paging)
+--   * the keyboard's ← / → keys    -> move the highlight one candidate at a time
+--     (auto-paging across page boundaries); Space commits the highlighted one.
+-- This serves both touch devices (tap) and key-only devices (arrows + space).
+local CandidateBar = InputContainer:extend{
+    keyboard = nil, -- parent VirtualKeyboard
+    width = nil,
+    height = nil,
+}
+
+function CandidateBar:init()
+    self.candidates = {}
+    self.pages = {}       -- array of { start = idx, count = n }
+    self.page_idx = 1
+    self.selected = 1     -- 1-based index into candidates of the highlighted cell
+    self.cell_bounds = {} -- for the shown page: array of { x1, x2, idx } (relative to bar left)
+    local font_size = G_reader_settings:readSetting("keyboard_key_font_size", DEFAULT_LABEL_SIZE)
+    self.face = Font:getFace("infont", font_size)
+    self.arrow_face = Font:getFace("infont", font_size + 6) -- bigger glyph for the paging buttons
+    self.cell_padding = Size.padding.large
+    -- Generous, roughly square tap targets for the paging arrows at the edges.
+    self.arrow_w = math.floor(self.height * 1.1)
+    self.cands_w = self.width - 2 * self.arrow_w -- width available for candidate cells
+    self.dimen = Geom:new{ w = self.width, h = self.height }
+    self.ges_events = {
+        TapCandidate = {
+            GestureRange:new{
+                ges = "tap",
+                range = self.dimen,
+            },
+        },
+    }
+    self:_rebuild()
+end
+
+function CandidateBar:_measure(text)
+    local tw = TextWidget:new{ text = text, face = self.face }
+    local w = tw:getWidth()
+    tw:free()
+    return w
+end
+
+-- Discover the next page (from where the last known page ends), measuring
+-- candidates greedily until the candidate area is filled. Returns false when
+-- there are no more candidates. Pages are computed lazily so a single keystroke
+-- never has to measure the whole (possibly long) candidate list.
+function CandidateBar:_appendPage()
+    local n = #self.candidates
+    local start
+    if #self.pages == 0 then
+        start = 1
+    else
+        local last = self.pages[#self.pages]
+        start = last.start + last.count
+    end
+    if start > n then return false end
+    local used, count = 0, 0
+    while start + count <= n do
+        local cw = self:_measure(self.candidates[start + count]) + 2 * self.cell_padding
+        if count > 0 and used + cw > self.cands_w then
+            break
+        end
+        used = used + cw
+        count = count + 1
+    end
+    if count == 0 then count = 1 end -- safety: always make progress
+    table.insert(self.pages, { start = start, count = count })
+    return true
+end
+
+function CandidateBar:_pageContains(p, idx)
+    local pg = self.pages[p]
+    return pg and idx >= pg.start and idx < pg.start + pg.count
+end
+
+-- Replace the candidate list and highlight `selected` (1-based). Pages are grown
+-- lazily until the one holding `selected` is known, then that page is shown.
+function CandidateBar:setCandidates(list, selected)
+    list = list or {}
+    -- Avoid a needless repaint when clearing an already-empty bar (separate() is
+    -- called on many navigation events, not just on commit).
+    if #list == 0 and #self.candidates == 0 then return end
+    self.candidates = list
+    self.selected = math.max(1, math.min(selected or 1, #list > 0 and #list or 1))
+    self.pages = {}
+    self.page_idx = 1
+    if #self.candidates > 0 then
+        while self:_appendPage() do
+            if self:_pageContains(#self.pages, self.selected) then break end
+        end
+        for p = 1, #self.pages do
+            if self:_pageContains(p, self.selected) then
+                self.page_idx = p
+                break
+            end
+        end
+    end
+    self:_rebuild()
+    self:_refresh()
+end
+
+-- Tapping « / »: move the highlight to the first candidate of the adjacent page.
+-- Routed back through the IME so the inline text and Space-commit stay in sync.
+function CandidateBar:_pageButton(dir)
+    if #self.candidates == 0 then return end
+    local target = self.page_idx + dir
+    if dir > 0 and target > #self.pages then
+        if not self:_appendPage() then return end -- already at the last page
+    end
+    if target < 1 or target > #self.pages then return end
+    Device:performHapticFeedback("KEYBOARD_TAP")
+    local new_sel = self.pages[target].start
+    if self.keyboard.candidate_highlight and self.keyboard.inputbox then
+        self.keyboard.candidate_highlight(self.keyboard.inputbox, new_sel)
+    end
+end
+
+function CandidateBar:_arrow(label)
+    local inset = Size.padding.small + Size.border.default
+    return FrameContainer:new{
+        margin = Size.padding.small,
+        bordersize = Size.border.default,
+        padding = 0,
+        radius = Size.radius.default,
+        background = Blitbuffer.COLOR_WHITE,
+        CenterContainer:new{
+            dimen = Geom:new{ w = self.arrow_w - 2 * inset, h = self.height - 2 * inset },
+            TextWidget:new{ text = label, face = self.arrow_face, bold = true },
+        },
+    }
+end
+
+function CandidateBar:_rebuild()
+    if self[1] then self[1]:free() end -- release previous cells' TextWidgets
+    self.cell_bounds = {}
+    local cells = HorizontalGroup:new{ allow_mirroring = false }
+    local page = self.pages[self.page_idx]
+    local x = self.arrow_w -- candidate cells start after the left arrow
+    if page then
+        for k = 0, page.count - 1 do
+            local idx = page.start + k
+            local text = self.candidates[idx]
+            local cw = self:_measure(text) + 2 * self.cell_padding
+            local text_widget = TextWidget:new{ text = text, face = self.face }
+            local inner = text_widget
+            if idx == self.selected then
+                -- rounded chip hugging the selected word (inset from the cell edges,
+                -- so it reads as one clean highlight rather than a full-height block)
+                inner = FrameContainer:new{
+                    margin = 0,
+                    bordersize = 0,
+                    padding = Size.padding.small,
+                    radius = Size.radius.default,
+                    background = Blitbuffer.COLOR_LIGHT_GRAY,
+                    text_widget,
+                }
+            end
+            local cell = CenterContainer:new{
+                dimen = Geom:new{ w = cw, h = self.height },
+                inner,
+            }
+            table.insert(cells, cell)
+            table.insert(self.cell_bounds, { x1 = x, x2 = x + cw, idx = idx })
+            x = x + cw
+        end
+    end
+    self[1] = FrameContainer:new{
+        margin = 0,
+        bordersize = 0,
+        padding = 0,
+        background = Blitbuffer.COLOR_WHITE,
+        HorizontalGroup:new{
+            allow_mirroring = false,
+            self:_arrow("«"),
+            LeftContainer:new{
+                dimen = Geom:new{ w = self.cands_w, h = self.height },
+                cells,
+            },
+            self:_arrow("»"),
+        },
+    }
+end
+
+function CandidateBar:_refresh()
+    if not self.dimen or not self.dimen.x then return end -- not painted yet
+    UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
+    UIManager:setDirty(nil, "ui", self.dimen)
+end
+
+function CandidateBar:onTapCandidate(arg, ges)
+    local rel_x = ges.pos.x - self.dimen.x
+    if rel_x < self.arrow_w then
+        self:_pageButton(-1) -- « previous page
+        return true
+    elseif rel_x >= self.width - self.arrow_w then
+        self:_pageButton(1) -- » next page
+        return true
+    end
+    for _, b in ipairs(self.cell_bounds) do
+        if rel_x >= b.x1 and rel_x < b.x2 then
+            Device:performHapticFeedback("KEYBOARD_TAP")
+            if self.keyboard.candidate_select and self.keyboard.inputbox then
+                self.keyboard.candidate_select(self.keyboard.inputbox, b.idx)
+            end
+            break
+        end
+    end
+    return true -- swallow taps within the bar area
+end
+
 local VirtualKeyboard = FocusManager:extend{
     name = "VirtualKeyboard",
     visible = false,
@@ -821,7 +1036,6 @@ local VirtualKeyboard = FocusManager:extend{
         ja = "ja_keyboard",
         ka = "ka_keyboard",
         ko_KR = "ko_KR_keyboard",
-        ml = "ml_keyboard",
         nb_NO = "no_keyboard",
         pl = "pl_keyboard",
         pt_BR = "pt_keyboard",
@@ -859,8 +1073,16 @@ function VirtualKeyboard:init()
     self.utf8mode_keys = keyboard.utf8mode_keys or {}
     self.umlautmode_keys = keyboard.umlautmode_keys or {}
     self.width = Screen:getWidth()
+    -- Optional tappable candidate bar above the keys (e.g. for pinyin input).
+    self.has_candidate_bar = keyboard.candidates == true
+    self.candidate_select = keyboard.candidate_select
+    self.candidate_highlight = keyboard.candidate_highlight
     local keys_height = G_reader_settings:isTrue("keyboard_key_compact") and 48 or 64
-    self.height = Screen:scaleBySize(keys_height * #self.KEYS)
+    self.keys_region_height = Screen:scaleBySize(keys_height * #self.KEYS)
+    self.candidate_bar_height = self.has_candidate_bar and Screen:scaleBySize(keys_height) or 0
+    -- Total height reserved by the keyboard, so InputDialog leaves room for the bar too.
+    self.height = self.keys_region_height
+        + (self.has_candidate_bar and (self.candidate_bar_height + self.key_padding) or 0)
     self.min_layer = keyboard.min_layer
     self.max_layer = keyboard.max_layer
     self:initLayer(self.keyboard_layer)
@@ -1009,12 +1231,26 @@ end
 
 function VirtualKeyboard:addKeys()
     self:free() -- free previous keys' TextWidgets
+    if self.candidate_bar then
+        self.candidate_bar:free()
+        self.candidate_bar = nil
+    end
     self.layout = {}
     local base_key_width = math.floor((self.width - (#self.KEYS[1] + 1)*self.key_padding - 2*self.padding)/#self.KEYS[1])
-    local base_key_height = math.floor((self.height - (#self.KEYS + 1)*self.key_padding - 2*self.padding)/#self.KEYS)
+    -- Key rows only occupy the keys region; the candidate bar (if any) sits above them.
+    local base_key_height = math.floor((self.keys_region_height - (#self.KEYS + 1)*self.key_padding - 2*self.padding)/#self.KEYS)
     local h_key_padding = HorizontalSpan:new{width = self.key_padding}
     local v_key_padding = VerticalSpan:new{width = self.key_padding}
     local vertical_group = VerticalGroup:new{ allow_mirroring = false }
+    if self.has_candidate_bar then
+        self.candidate_bar = CandidateBar:new{
+            keyboard = self,
+            width = self.width - 2*Size.border.default - 2*self.padding,
+            height = self.candidate_bar_height,
+        }
+        table.insert(vertical_group, self.candidate_bar)
+        table.insert(vertical_group, v_key_padding)
+    end
     for i = 1, #self.KEYS do
         local horizontal_group = HorizontalGroup:new{ allow_mirroring = false }
         local layout_horizontal = {}
@@ -1113,6 +1349,13 @@ end
 function VirtualKeyboard:delChar()
     logger.dbg("delete char")
     self.inputbox:delChar()
+end
+
+-- Candidate bar forwarding (no-op when the current layout has no bar).
+function VirtualKeyboard:setCandidates(list, selected)
+    if self.candidate_bar then
+        self.candidate_bar:setCandidates(list, selected)
+    end
 end
 
 function VirtualKeyboard:delWord(left_to_cursor)
