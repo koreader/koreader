@@ -866,13 +866,24 @@ function CandidateBar:setCandidates(list, selected)
     -- Avoid a needless repaint when clearing an already-empty bar (separate() is
     -- called on many navigation events, not just on commit).
     if #list == 0 and #self.candidates == 0 then return end
+    -- The IME reuses the same candidate table while only the highlight moves
+    -- (arrow keys / « » paging). In that case keep the pagination we already
+    -- computed and just move the highlight, instead of re-measuring the whole
+    -- (possibly long) list on every step.
+    local same_list = list == self.candidates
     self.candidates = list
     self.selected = math.max(1, math.min(selected or 1, #list > 0 and #list or 1))
-    self.pages = {}
-    self.page_idx = 1
+    if not same_list then
+        self.pages = {}
+        self.page_idx = 1
+    end
     if #self.candidates > 0 then
-        while self:_appendPage() do
-            if self:_pageContains(#self.pages, self.selected) then break end
+        if #self.pages == 0 then
+            self:_appendPage()
+        end
+        -- grow pagination lazily until a page covers the highlighted candidate
+        while self.pages[#self.pages].start + self.pages[#self.pages].count - 1 < self.selected do
+            if not self:_appendPage() then break end
         end
         for p = 1, #self.pages do
             if self:_pageContains(p, self.selected) then
@@ -1036,6 +1047,7 @@ local VirtualKeyboard = FocusManager:extend{
         ja = "ja_keyboard",
         ka = "ka_keyboard",
         ko_KR = "ko_KR_keyboard",
+        ml = "ml_keyboard",
         nb_NO = "no_keyboard",
         pl = "pl_keyboard",
         pt_BR = "pt_keyboard",
