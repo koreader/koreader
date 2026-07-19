@@ -1203,11 +1203,11 @@ local function getProductId()
 end
 
 -- NOTE: We overload this to make sure checkUnexpectedWakeup doesn't trip *before* the newly scheduled suspend
-function Kobo:rescheduleSuspend()
+function Kobo:rescheduleSuspend(timeout)
     UIManager:unschedule(self.suspend)
     UIManager:unschedule(self._doSuspend)
     UIManager:unschedule(self.checkUnexpectedWakeup)
-    UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
+    UIManager:scheduleIn(timeout or self.suspend_wait_timeout, self.suspend, self)
 end
 
 function Kobo:scheduleUnexpectedWakeupGuard()

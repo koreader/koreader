@@ -649,6 +649,14 @@ function Screensaver:show()
     -- NOTE: Make sure InputContainer gestures are not disabled, to prevent stupid interactions with UIManager on close.
     UIManager:setIgnoreTouchInput(false)
 
+    -- Setup the gesture lock through an additional invisible widget, so that it works regardless of the configuration.
+    if with_gesture_lock then
+        self.screensaver_lock_widget = ScreenSaverLockWidget:new{
+            ui = self.ui,
+            orig_dimen = orig_dimen,
+        }
+    end
+
     if widget then
         self.screensaver_widget = ScreenSaverWidget:new{
             widget = widget,
@@ -663,32 +671,33 @@ function Screensaver:show()
         if extra_flash_count > 0 then
             local screen_w2, screen_h2 = Screen:getWidth(), Screen:getHeight()
             local delay_ms = G_reader_settings:readSetting("screensaver_extra_flash_delay", 1000)
-            -- Extend suspend timeout to cover all scheduled flashes:
-            -- 0.5s initial delay + (count-1)*delay between flashes + 0.5s for final redraw + 2s buffer
-            Device.suspend_wait_timeout = 15 + 0.5 + (extra_flash_count - 1) * (delay_ms / 1000) + 0.5 + 2
+            Device.screensaver_suspend_wait_timeout = Device:getScreensaverSuspendWaitTimeout(extra_flash_count, delay_ms)
             for i = 1, extra_flash_count do
                 local t = 0.5 + (i - 1) * (delay_ms / 1000)
+                local is_last = (i == extra_flash_count)
                 UIManager:scheduleIn(t, function()
-                    UIManager:close(self.screensaver_lock_widget)
+                    -- Paint black directly to the framebuffer and refresh, then force a full widget redraw.
+                    Screen.bb:fill(Blitbuffer.COLOR_BLACK)
                     Screen:refreshFull(0, 0, screen_w2, screen_h2)
                     UIManager:scheduleIn(0.5, function()
-                        UIManager:show(self.screensaver_widget, "full")
-                        UIManager:show(self.screensaver_lock_widget)
+                        UIManager:setDirty(self.screensaver_widget, "full")
+                        UIManager:forceRePaint()
+                        if is_last then
+                            -- It's flagged as modal, so it'll stay on top
+                            UIManager:show(self.screensaver_lock_widget)
+                        end
                     end)
                 end)
             end
+        else
+            -- It's flagged as modal, so it'll stay on top
+            UIManager:show(self.screensaver_lock_widget)
         end
-    end
-
-    -- Setup the gesture lock through an additional invisible widget, so that it works regardless of the configuration.
-    if with_gesture_lock then
-        self.screensaver_lock_widget = ScreenSaverLockWidget:new{
-            ui = self.ui,
-            orig_dimen = orig_dimen,
-        }
-
-        -- It's flagged as modal, so it'll stay on top
-        UIManager:show(self.screensaver_lock_widget)
+    else
+        -- No screensaver widget, show lock widget immediately if needed
+        if self.screensaver_lock_widget then
+            UIManager:show(self.screensaver_lock_widget)
+        end
     end
 end
 
