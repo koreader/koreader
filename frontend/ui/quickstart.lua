@@ -367,9 +367,9 @@ To use the dictionary lookup function, first you need to install one or more dic
 -- More information
 table.insert(quickstart_guide, T(_([[## More info <a id="more"></a>
 
-- You can find any option within the top menu using:
+You can find any option within the top menu using:
 
-> **Menu ➔ ![Menu](resources/icons/mdlight/appbar.menu.svg) ➔ Help ➔ Menu search
+**Menu ➔ ![Menu](resources/icons/mdlight/appbar.menu.svg) ➔ Help ➔ Menu search
 
 You can find more information on our GitHub page
 
