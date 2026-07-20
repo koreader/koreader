@@ -52,6 +52,9 @@ local eink_settings_table = {
                     right_text = _("Delay (ms)"),
                     title_text = _("Sleep screen flashes"),
                     ok_text = _("Set anti-ghosting redraws"),
+                    left_default = 2,
+                    right_default = 1000,
+                    default_text = _("Recommended (2×, 1000 ms)"),
                     callback = function(left_value, right_value)
                         G_reader_settings:saveSetting("screensaver_extra_flash_count", left_value)
                         G_reader_settings:saveSetting("screensaver_extra_flash_delay", right_value)
