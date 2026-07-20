@@ -586,11 +586,13 @@ function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
         end
     end
 
-    if type(catalog.navigation) == "table" then
-        for _, nav in ipairs(catalog.navigation) do
+    local nav_nb = 0
+    local function add_navigation(navigation)
+        for _, nav in ipairs(navigation) do
             local rel = get_value(nav.rel)
             if nav.title and nav.href and (not rel or rel ~= "self") then
-                table.insert(item_table, {
+                nav_nb = nav_nb + 1
+                table.insert(item_table, nav_nb, {
                     text = nav.title,
                     url = url.absolute(item_url, nav.href),
                     mandatory = "\u{e602}", -- 'play arrow' sign
@@ -599,16 +601,24 @@ function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
         end
     end
 
+    if type(catalog.navigation) == "table" then
+        add_navigation(catalog.navigation)
+    end
+
     if type(catalog.groups) == "table" then
         for _, group in ipairs(catalog.groups) do
-            local text = group.metadata and group.metadata.title
-            local href = group.links and group.links[1] and group.links[1].href
-            if text and href then
-                table.insert(item_table, {
-                    text = text,
-                    url = url.absolute(item_url, href),
-                    mandatory = group.metadata and group.metadata.numberOfItems,
-                })
+            if type(group.navigation) == "table" then
+                add_navigation(group.navigation)
+            else
+                local text = group.metadata and group.metadata.title
+                local href = group.links and group.links[1] and group.links[1].href
+                if text and href then
+                    table.insert(item_table, {
+                        text = text,
+                        url = url.absolute(item_url, href),
+                        mandatory = group.metadata and group.metadata.numberOfItems,
+                    })
+                end
             end
         end
     end
@@ -619,16 +629,15 @@ function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
             local t = {}
             for i, link in ipairs(facet.links) do
                 local rel = get_value(link.rel)
-                local count = link.properties and link.properties.numberOfItems or 0
-                if link.href and count > 0 then
+                if link.href then
                     local href = url.absolute(item_url, link.href)
-                    t[i] = {
+                    table.insert(t, {
                         title = link.title,
                         href = href,
                          -- mimic OPDS 1.x
-                        ["thr:count"] = count,
+                        ["thr:count"] = link.properties and link.properties.numberOfItems,
                         ["opds:activeFacet"] = ((rel and rel == "self") or (item_url == href)) and "true",
-                    }
+                    })
                 end
             end
             self.facet_groups[facet.metadata.title] = t
