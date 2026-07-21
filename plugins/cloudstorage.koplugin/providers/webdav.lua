@@ -163,6 +163,12 @@ end
 
 function WebDavApi.uploadFile(file_url, user, pass, local_path, etag)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+    -- If-Match uses strong comparison (RFC 7232 §3.1), so a weak validator
+    -- (W/"…", returned e.g. for gzip-compressed responses) can never match and
+    -- would 412 forever. Strip the weak prefix; proxies keep the same value.
+    if type(etag) == "string" then
+        etag = etag:gsub("^%s*[Ww]/", "")
+    end
     local code, _, status = socket.skip(1, http.request{
         url      = file_url,
         method   = "PUT",
