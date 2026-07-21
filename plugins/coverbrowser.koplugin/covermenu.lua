@@ -130,6 +130,8 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
         self.items_update_action = function()
             logger.dbg("Scheduled items update:", #self.items_to_update, "waiting")
             local is_still_extracting = BookInfoManager:isExtractingInBackground()
+            -- Flash UI for cover images to reduce ghosting
+            local refreshtype = self.show_parent.dithered and "flashui" or "ui"
             local i = 1
             while i <= #self.items_to_update do -- process and clean in-place
                 local item = self.items_to_update[i]
@@ -141,9 +143,9 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
                         if item.refresh_dimen then
                             -- MosaicMenuItem may exceed its own dimen in its paintTo
                             -- with its "description" hint
-                            return "ui", item.refresh_dimen, self.show_parent.dithered
+                            return refreshtype, item.refresh_dimen, self.show_parent.dithered
                         else
-                            return "ui", item[1].dimen, self.show_parent.dithered
+                            return refreshtype, item[1].dimen, self.show_parent.dithered
                         end
                     end
                     UIManager:setDirty(self.show_parent, refreshfunc)
