@@ -93,7 +93,8 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen
-        return "ui", refresh_dimen, self.show_parent.dithered
+        local refreshtype = self.show_parent.dithered and "flashui" or "ui"
+        return refreshtype, refresh_dimen, self.show_parent.dithered
     end)
 
     -- As additionally done in FileChooser:updateItems()
