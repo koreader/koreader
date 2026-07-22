@@ -593,7 +593,7 @@ function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
             href = href,
              -- mimic OPDS 1.x
             ["thr:count"] = f_link.properties and f_link.properties.numberOfItems,
-            ["opds:activeFacet"] = ((f_rel and f_rel == "self") or (item_url == href)) and "true",
+            ["opds:activeFacet"] = (f_rel == "self" or item_url == href) and "true",
         }
     end
 
@@ -611,8 +611,7 @@ function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
     end
 
     local nav_nb = 0
-    local function add_navigation(navigation, metadata)
-        local top_title = metadata and metadata.title
+    local function add_navigation(navigation, top_title)
         for _, nav in ipairs(navigation) do
             local rel = get_value(nav.rel)
             if nav.title and nav.href and (not rel or rel ~= "self") then
@@ -639,15 +638,15 @@ function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
 
     if type(catalog.groups) == "table" then
         for _, group in ipairs(catalog.groups) do
+            local title = group.metadata and group.metadata.title
             if type(group.navigation) == "table" then -- navigation
-                add_navigation(group.navigation, group.metadata)
+                add_navigation(group.navigation, title)
             else -- collection
-                local text = group.metadata and group.metadata.title
                 local href = group.links and group.links[1] and group.links[1].href
-                if text and href then
-                    local numberOfItems = group.metadata and group.metadata.numberOfItems or 0
+                if title and href then
+                    local numberOfItems = group.metadata.numberOfItems or 0
                     table.insert(item_table, {
-                        text = text,
+                        text = title,
                         url = url.absolute(item_url, href),
                         mandatory = numberOfItems ~= 0 and numberOfItems or "-",
                     })
@@ -656,12 +655,9 @@ function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
         end
     end
 
-    if catalog.publications then
+    if type(catalog.publications) == "table" then
         for _, entry in ipairs(catalog.publications) do
-            local item = self:getItemFromPublication(entry, item_url)
-            if item then
-                table.insert(item_table, item)
-            end
+            table.insert(item_table, self:getItemFromPublication(entry, item_url))
         end
     end
 
