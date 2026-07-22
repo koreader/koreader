@@ -586,17 +586,49 @@ function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
         end
     end
 
+    local function get_facet(f_link, f_rel)
+        local href = url.absolute(item_url, f_link.href)
+        return {
+            title = f_link.title,
+            href = href,
+             -- mimic OPDS 1.x
+            ["thr:count"] = f_link.properties and f_link.properties.numberOfItems,
+            ["opds:activeFacet"] = ((f_rel and f_rel == "self") or (item_url == href)) and "true",
+        }
+    end
+
+    if type(catalog.facets) == "table" then
+        self.facet_groups = self.facet_groups or {}
+        for _, facet in ipairs(catalog.facets) do
+            self.facet_groups[facet.metadata.title] = {}
+            for i, link in ipairs(facet.links) do
+                if link.href then
+                    local rel = get_value(link.rel)
+                    table.insert(self.facet_groups[facet.metadata.title], get_facet(link, rel))
+                end
+            end
+        end
+    end
+
     local nav_nb = 0
-    local function add_navigation(navigation)
+    local function add_navigation(navigation, metadata)
+        local top_title = metadata and metadata.title
         for _, nav in ipairs(navigation) do
             local rel = get_value(nav.rel)
             if nav.title and nav.href and (not rel or rel ~= "self") then
-                nav_nb = nav_nb + 1
-                table.insert(item_table, nav_nb, {
-                    text = nav.title,
-                    url = url.absolute(item_url, nav.href),
-                    mandatory = "\u{e602}", -- 'play arrow' sign
-                })
+                if top_title and rel == self.facet_rel then -- facet
+                    self.facet_groups = self.facet_groups or {}
+                    self.facet_groups[top_title] = self.facet_groups[top_title] or {}
+                    table.insert(self.facet_groups[top_title], get_facet(nav, rel))
+                else -- navigation
+                    nav_nb = nav_nb + 1 -- navigations precede collections (groups) in the list
+                    local numberOfItems = nav.properties and nav.properties.numberOfItems
+                    table.insert(item_table, nav_nb, {
+                        text = top_title and top_title .. " - " .. nav.title or nav.title,
+                        url = url.absolute(item_url, nav.href),
+                        mandatory = numberOfItems and numberOfItems .. " \u{e602}" or "\u{e602}", -- 'play arrow' sign
+                    })
+                end
             end
         end
     end
@@ -607,40 +639,20 @@ function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
 
     if type(catalog.groups) == "table" then
         for _, group in ipairs(catalog.groups) do
-            if type(group.navigation) == "table" then
-                add_navigation(group.navigation)
-            else
+            if type(group.navigation) == "table" then -- navigation
+                add_navigation(group.navigation, group.metadata)
+            else -- collection
                 local text = group.metadata and group.metadata.title
                 local href = group.links and group.links[1] and group.links[1].href
                 if text and href then
+                    local numberOfItems = group.metadata and group.metadata.numberOfItems or 0
                     table.insert(item_table, {
                         text = text,
                         url = url.absolute(item_url, href),
-                        mandatory = group.metadata and group.metadata.numberOfItems,
+                        mandatory = numberOfItems ~= 0 and numberOfItems or "-",
                     })
                 end
             end
-        end
-    end
-
-    if type(catalog.facets) == "table" then
-        self.facet_groups = {}
-        for _, facet in ipairs(catalog.facets) do
-            local t = {}
-            for i, link in ipairs(facet.links) do
-                local rel = get_value(link.rel)
-                if link.href then
-                    local href = url.absolute(item_url, link.href)
-                    table.insert(t, {
-                        title = link.title,
-                        href = href,
-                         -- mimic OPDS 1.x
-                        ["thr:count"] = link.properties and link.properties.numberOfItems,
-                        ["opds:activeFacet"] = ((rel and rel == "self") or (item_url == href)) and "true",
-                    })
-                end
-            end
-            self.facet_groups[facet.metadata.title] = t
         end
     end
 
