@@ -94,7 +94,7 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen
         local refreshtype = "ui"
-        if self.show_parent.dithered and BookInfoManager:getSetting("flash_ui_cover_images") then
+        if self._has_cover_images and BookInfoManager:getSetting("flash_ui_cover_images") then
             refreshtype = "flashui"
         end
         return refreshtype, refresh_dimen, self.show_parent.dithered
@@ -142,7 +142,7 @@ function CoverMenu:updateItems(select_number, no_recalculate_dimen)
                     logger.dbg("  found", item.text)
                     self.show_parent.dithered = item._has_cover_image
                     local refreshtype = "ui"
-                    if self.show_parent.dithered and BookInfoManager:getSetting("flash_ui_cover_images") then
+                    if item._has_cover_image and BookInfoManager:getSetting("flash_ui_cover_images") then
                         refreshtype = "flashui"
                     end
                     local refreshfunc = function()
