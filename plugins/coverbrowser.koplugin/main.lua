@@ -349,6 +349,15 @@ function CoverBrowser:addToMainMenu(menu_items)
                     BookInfoManager:toggleSetting("hide_file_info")
                     fc:updateItems(1, true)
                 end,
+            },
+            {
+                text = _("Use full refresh for covers"),
+                checked_func = function()
+                    return BookInfoManager:getSetting("flash_ui_cover_images")
+                end,
+                callback = function()
+                    BookInfoManager:toggleSetting("flash_ui_cover_images")
+                end,
                 separator = true,
             },
             {
