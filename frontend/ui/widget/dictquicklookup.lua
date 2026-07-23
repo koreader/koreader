@@ -678,6 +678,7 @@ function DictQuickLookup:registerKeyEvents()
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
             self.key_events.ChangeToPrevDict = { { modifier, Input.group.PgBack } }
             self.key_events.ChangeToNextDict = { { modifier, Input.group.PgFwd } }
+            self.key_events.HoldClose = { { modifier, "Back" } }
             self.key_events.SetTemporaryLargeWindowMode = { { modifier, "Home" } }
             self.key_events.TextSelectorModifierPress = { { modifier, "Press" } }
             self.key_events.StartOrUpTextSelectorIndicator   = { { modifier, "Up" },   event = "StartOrMoveTextSelectorIndicator", args = { 0, -1, true } }
@@ -693,8 +694,8 @@ function DictQuickLookup:registerKeyEvents()
                     self.key_events.LookupInputWord = { { Device:hasSymKey() and "Del" or "Backspace" }, args = self.word .." " }
                 end
             else
-                -- same case as hasKeyboard
-                self.key_events.LookupInputWord = { { "ScreenKB", "Back" }, args = self.word .." " }
+                -- single key press of the modifier key ScreenKB
+                self.key_events.LookupInputWord = { { "ScreenKBPress" }, args = self.word }
             end
         end
         if Device:hasDPad() then
@@ -1829,6 +1830,11 @@ function DictQuickLookup:onLookupInputWord(hint, ev)
         return true
     end
     self:lookupInputWord(hint)
+    -- We don't really want to return here, so events can propagate and letters
+    -- can be injected into the input dialog. But on a kindle 4, said propagation
+    -- will mess with the virtual keyboard, it'll show it when don't want it, and
+    -- hide it when we do. So, we return true to avoid that.
+    if Device:hasScreenKB() then return true end
 end
 
 function DictQuickLookup:lookupInputWord(hint)
