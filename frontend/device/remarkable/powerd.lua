@@ -86,14 +86,14 @@ end
 function Remarkable_PowerD:onToggleHallSensor(toggle)
     if toggle == nil then
         -- Flip it
-        toggle = self:isHallSensorEnabled() and 1 or 0
-    else
-        -- Honor the requested state
-        toggle = toggle and 1 or 0
+        toggle = not self:isHallSensorEnabled()
     end
-    ffiUtil.writeToSysfs(toggle, self.hall_file)
 
-    G_reader_settings:saveSetting("remarkable_hall_effect_sensor_enabled", toggle == 0 and true or false)
+    -- true -> inhibited = 0
+    -- false -> inhibited = 1
+    ffiUtil.writeToSysfs(toggle and 0 or 1, self.hall_file)
+
+    G_reader_settings:saveSetting("remarkable_hall_effect_sensor_enabled", toggle)
 end
 
 function Remarkable_PowerD:beforeSuspend()
