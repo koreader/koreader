@@ -37,6 +37,7 @@ local CatalogCache = Cache:new{
 }
 
 local OPDSBrowser = Menu:extend{
+    opds20_feed          = "application/opds+json",
     catalog_type         = "application/atom%+xml",
     search_type          = "application/opensearchdescription%+xml",
     search_template_type = "application/atom%+xml",
@@ -44,6 +45,12 @@ local OPDSBrowser = Menu:extend{
     borrow_rel           = "http://opds-spec.org/acquisition/borrow",
     stream_rel           = "http://vaemendis.net/opds-pse/stream",
     facet_rel            = "http://opds-spec.org/facet",
+    download_rel         = {
+        ["download"] = true,
+        ["publication"] = true,
+        ["http://opds-spec.org/acquisition"] = true,
+        ["http://opds-spec.org/acquisition/open-access"] = true,
+    },
     catalog_rel          = {
         ["subsection"] = true,
         ["http://opds-spec.org/subsection"] = true,
@@ -69,6 +76,13 @@ local OPDSBrowser = Menu:extend{
 
     title_shrink_font_to_fit = true,
 }
+
+local function get_value(value)
+    if type(value) == "table" then
+        return value[1]
+    end
+    return value
+end
 
 function OPDSBrowser:init()
     self.item_table = self:genItemTableFromRoot()
@@ -146,64 +160,43 @@ function OPDSBrowser:showOPDSMenu()
     UIManager:show(dialog)
 end
 
--- Shows facet menu for OPDS catalogs with facets/search support
-function OPDSBrowser:showFacetMenu()
-    local buttons = {}
-    local dialog
+function OPDSBrowser:showCatalogMenu()
     local catalog_url = self.paths[#self.paths].url
-
-    -- Add sub-catalog to bookmarks option first
-    table.insert(buttons, {{
-        text = "\u{f067} " .. _("Add catalog"),
-        callback = function()
-            UIManager:close(dialog)
-            self:addSubCatalog(catalog_url)
-        end,
-        align = "left",
-    }})
-    table.insert(buttons, {}) -- separator
-
-    -- Add search option if available
+    local dialog
+    local buttons = {
+        {{
+            text = "\u{f067} " .. _("Add catalog"), -- 'plus' sign
+            callback = function()
+                UIManager:close(dialog)
+                self:addSubCatalog(catalog_url)
+            end,
+            align = "left",
+        }},
+    }
     if self.search_url then
+        table.insert(buttons, {}) -- separator
         table.insert(buttons, {{
-            text = "\u{f002} " .. _("Search"),
+            text = "\u{f002} " .. _("Search"), -- 'magnifying glass' sign
             callback = function()
                 UIManager:close(dialog)
                 self:searchCatalog(self.search_url)
             end,
             align = "left",
         }})
-        table.insert(buttons, {}) -- separator
     end
-
-    -- Add facet groups
     if self.facet_groups then
-        for group_name, facets in ffiUtil.orderedPairs(self.facet_groups) do
-            table.insert(buttons, {
-                { text = "\u{f0b0} " .. group_name, enabled = false, align = "left" }
-            })
-
-            for __, link in ipairs(facets) do
-                local facet_text = link.title
-                if link["thr:count"] then
-                    facet_text = T(_("%1 (%2)"), facet_text, link["thr:count"])
-                end
-                if link["opds:activeFacet"] == "true" then
-                    facet_text = "✓ " .. facet_text
-                end
-                table.insert(buttons, {{
-                    text = facet_text,
-                    callback = function()
-                        UIManager:close(dialog)
-                        self:updateCatalog(url.absolute(catalog_url, link.href))
-                    end,
-                    align = "left",
-                }})
-            end
-            table.insert(buttons, {}) -- separator between groups
+        table.insert(buttons, {}) -- separator
+        for group_name, links in ffiUtil.orderedPairs(self.facet_groups) do
+            local title = string.format("\u{f0b0} %s (%s)", group_name, #links) -- 'filter' sign
+            table.insert(buttons, {{
+                text = title,
+                callback = function()
+                    self:showFacetLinkList(title, links, catalog_url, dialog)
+                end,
+                menu_style = true,
+            }})
         end
     end
-
     dialog = ButtonDialog:new{
         buttons = buttons,
         shrink_unneeded_width = true,
@@ -214,6 +207,31 @@ function OPDSBrowser:showFacetMenu()
     UIManager:show(dialog)
 end
 
+function OPDSBrowser:showFacetLinkList(title, links, catalog_url, dialog)
+    local item_table = {}
+    for i, link in ipairs(links) do
+        item_table[i] = {
+            text = link.title,
+            mandatory = link["thr:count"],
+            bold = link["opds:activeFacet"] == "true" or nil,
+            href = link.href,
+        }
+    end
+    local link_list = Menu:new{
+        title = title,
+        item_table = item_table,
+        covers_fullscreen = true,
+        is_borderless = true,
+        is_popout = false,
+        title_bar_fm_style = true,
+        onMenuSelect = function(menu_self, item)
+            UIManager:close(menu_self)
+            UIManager:close(dialog)
+            self:updateCatalog(url.absolute(catalog_url, item.href))
+        end,
+    }
+    UIManager:show(link_list)
+end
 
 local function buildRootEntry(server)
     local icons = ""
@@ -400,6 +418,7 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
         -- Some servers will still break RFC2616 14.3 and send crap instead.
         headers  = {
             ["Accept-Encoding"] = "identity",
+            ["Accept"] = self.opds20_feed, -- prefer OPDS 2.0
         },
         sink     = ltn12.sink.table(sink),
         user     = self.root_catalog_username,
@@ -463,8 +482,16 @@ function OPDSBrowser:parseFeed(item_url)
     else
         feed = self:fetchFeed(item_url)
     end
-    if feed then
+    local start = feed and feed:sub(1, 1)
+    if start == "<" then -- OPDS 1.x
         return OPDSParser:parse(feed)
+    elseif start == "{" then -- OPDS 2.0
+        local JSON = require("json")
+        local ret, result = pcall(JSON.decode, feed)
+        if ret then
+            result.is_opds2 = true
+            return result
+        end
     end
 end
 
@@ -529,7 +556,191 @@ function OPDSBrowser:genItemTableFromURL(item_url)
         })
         catalog = nil
     end
-    return self:genItemTableFromCatalog(catalog, item_url)
+    if catalog and catalog.is_opds2 then
+        return self:genItemTableFromCatalog2(catalog, item_url)
+    else
+        return self:genItemTableFromCatalog(catalog, item_url)
+    end
+end
+
+function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
+    self.catalog_title = catalog.metadata and catalog.metadata.title or self.catalog_title
+    self.facet_groups = nil
+    self.search_url = nil
+    local item_table = { hrefs = {} }
+
+    if type(catalog.links) == "table" then
+        for _, link in ipairs(catalog.links) do
+            local rel = get_value(link.rel)
+            if rel and link.href then
+                if rel == "search" then
+                    if link.href:gsub("{.*}", ""):find("query") then
+                        self.search_url = url.absolute(item_url, link.href:gsub("{.*}", "%%s"))
+                    else
+                        self.search_url = url.absolute(item_url, link.href:gsub("{.*}", "%?query=%%s"))
+                    end
+                else
+                    item_table.hrefs[rel] = url.absolute(item_url, link.href)
+                end
+            end
+        end
+    end
+
+    local function get_facet(f_link, f_rel)
+        local href = url.absolute(item_url, f_link.href)
+        return {
+            title = f_link.title,
+            href = href,
+             -- mimic OPDS 1.x
+            ["thr:count"] = f_link.properties and f_link.properties.numberOfItems,
+            ["opds:activeFacet"] = (f_rel == "self" or item_url == href) and "true",
+        }
+    end
+
+    if type(catalog.facets) == "table" then
+        self.facet_groups = self.facet_groups or {}
+        for _, facet in ipairs(catalog.facets) do
+            self.facet_groups[facet.metadata.title] = {}
+            for i, link in ipairs(facet.links) do
+                if link.href then
+                    local rel = get_value(link.rel)
+                    table.insert(self.facet_groups[facet.metadata.title], get_facet(link, rel))
+                end
+            end
+        end
+    end
+
+    local nav_nb = 0
+    local function add_navigation(navigation, top_title)
+        for _, nav in ipairs(navigation) do
+            local rel = get_value(nav.rel)
+            if nav.title and nav.href and (not rel or rel ~= "self") then
+                if top_title and rel == self.facet_rel then -- facet
+                    self.facet_groups = self.facet_groups or {}
+                    self.facet_groups[top_title] = self.facet_groups[top_title] or {}
+                    table.insert(self.facet_groups[top_title], get_facet(nav, rel))
+                else -- navigation
+                    nav_nb = nav_nb + 1 -- navigations precede collections (groups) in the list
+                    local numberOfItems = nav.properties and nav.properties.numberOfItems
+                    table.insert(item_table, nav_nb, {
+                        text = top_title and top_title .. " - " .. nav.title or nav.title,
+                        url = url.absolute(item_url, nav.href),
+                        mandatory = numberOfItems and numberOfItems .. " \u{e602}" or "\u{e602}", -- 'play arrow' sign
+                        acquisitions = {},
+                    })
+                end
+            end
+        end
+    end
+
+    if type(catalog.navigation) == "table" then
+        add_navigation(catalog.navigation)
+    end
+
+    if type(catalog.groups) == "table" then
+        for _, group in ipairs(catalog.groups) do
+            local title = group.metadata and group.metadata.title
+            if type(group.navigation) == "table" then -- navigation
+                add_navigation(group.navigation, title)
+            else -- collection
+                local href = group.links and group.links[1] and group.links[1].href
+                if title and href then
+                    local numberOfItems = group.metadata.numberOfItems or 0
+                    table.insert(item_table, {
+                        text = title,
+                        url = url.absolute(item_url, href),
+                        mandatory = numberOfItems ~= 0 and numberOfItems or "-",
+                        acquisitions = {},
+                    })
+                end
+            end
+        end
+    end
+
+    if type(catalog.publications) == "table" then
+        for _, entry in ipairs(catalog.publications) do
+            table.insert(item_table, self:getItemFromPublication(entry, item_url))
+        end
+    end
+
+    return item_table
+end
+
+function OPDSBrowser:getItemFromPublication(entry, item_url)
+    local title, author, content
+    if type(entry.metadata) == "table" then
+        title = entry.metadata.title or _("Unknown")
+        author = entry.metadata.author
+        if type(author) == "table" then
+            author = author[1] and author[1].name or author.name
+            if type(author) == "table" then
+                author = #author > 0 and table.concat(author, ", ")
+            end
+        end
+        author = author or _("Unknown Author")
+        content = entry.metadata.description
+    end
+
+    local thumbnail, image
+    if type(entry.images) == "table" then
+        for _, link in ipairs(entry.images) do
+            local rel = get_value(link.rel)
+            if self.thumbnail_rel[rel] then
+                thumbnail = url.absolute(item_url, link.href)
+            elseif self.image_rel[rel] then
+                image = url.absolute(item_url, link.href)
+            end
+        end
+        thumbnail = thumbnail or url.absolute(item_url, entry.images[1].href)
+        image = image or thumbnail
+    end
+
+    local acquisitions = {}
+    if type(entry.links) == "table" then
+        for _, link in ipairs(entry.links) do
+            local rel = get_value(link.rel)
+            if rel and rel ~= "self" then
+                if rel == self.borrow_rel then
+                    table.insert(acquisitions, {
+                        type = "borrow",
+                    })
+                elseif rel:match(self.acquisition_rel) then
+                    if util.tableGetValue(link, "properties", "indirectAcquisition", 1, "type") then
+                        -- indirect acquisition
+                        local link_feed = self:parseFeed(url.absolute(item_url, link.href))
+                        if type(link_feed) == "table" and type(link_feed.links) == "table" then
+                            for _, in_link in ipairs(link_feed.links) do
+                                local in_rel = get_value(in_link.rel)
+                                if in_rel and self.download_rel[in_rel] then
+                                    table.insert(acquisitions, {
+                                        type = in_link.type,
+                                        title = in_link.title,
+                                        href = url.absolute(item_url, in_link.href),
+                                    })
+                                end
+                            end
+                        end
+                    else
+                        table.insert(acquisitions, {
+                            type = link.type,
+                            title = link.title,
+                            href = url.absolute(item_url, link.href),
+                        })
+                    end
+                end
+            end
+        end
+    end
+
+    return { -- book list item
+        text = title .. " - " .. author,
+        title = title,
+        author = author,
+        content = content,
+        thumbnail = thumbnail,
+        image = image,
+        acquisitions = acquisitions,
+    }
 end
 
 -- Generates catalog item table and processes OPDS facets/search links
@@ -729,7 +940,7 @@ function OPDSBrowser:updateCatalog(item_url, paths_updated)
         if self.facet_groups or self.search_url then
             self:setTitleBarLeftIcon("appbar.menu")
             self.onLeftButtonTap = function()
-                self:showFacetMenu()
+                self:showCatalogMenu()
             end
         else
             self:setTitleBarLeftIcon("plus")
