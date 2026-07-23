@@ -1,5 +1,6 @@
 #!/bin/sh
 
+export GLIBC_TUNABLES=glibc.rtld.execstack=2
 export LC_ALL="en_US.UTF-8"
 
 UNPACK_DIR='/mnt/ext1'
