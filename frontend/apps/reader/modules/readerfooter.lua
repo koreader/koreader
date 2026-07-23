@@ -54,7 +54,8 @@ local MODE = {
     book_author = 18,
     page_turning_inverted = 19, -- includes both page-turn-button and swipe-and-tap inversion
     dynamic_filler = 20,
-    additional_content = 21,
+    dynamic_filler2 = 21,
+    additional_content = 22,
 }
 
 local symbol_prefix = {
@@ -412,49 +413,12 @@ footerTextGeneratorMap = {
         return footer.ui.bookinfo:expandString(footer.custom_text):rep(footer.custom_text_repetitions), merge
     end,
     dynamic_filler = function(footer)
-        local margin = footer.horizontal_margin
-        if not footer.settings.disable_progress_bar then
-            if footer.settings.progress_bar_position == "alongside" then
-                return
-            end
-            if footer.settings.align == "center" then
-                margin = Screen:scaleBySize(footer.settings.progress_margin_width)
-            end
-        end
-        local max_width = math.floor(footer._saved_screen_width - 2 * margin)
-        -- when the filler is between other items, it replaces the separator
-        local text, is_filler_inside = footer:genAllFooterText(footerTextGeneratorMap.dynamic_filler)
-        local tmp = TextWidget:new{
-            text = text,
-            face = footer.footer_text_face,
-            bold = footer.settings.text_font_bold,
-        }
-        local text_width = tmp:getSize().w
-        tmp:free()
-        if footer.separator_width == nil then
-            tmp = TextWidget:new{
-                text = footer:genSeparator(),
-                face = footer.footer_text_face,
-                bold = footer.settings.text_font_bold,
-            }
-            footer.separator_width = tmp:getSize().w
-            tmp:free()
-        end
-        local separator_width = is_filler_inside and footer.separator_width or 0
-        local filler_space = " "
-        if footer.filler_space_width == nil then
-            tmp = TextWidget:new{
-                text = filler_space,
-                face = footer.footer_text_face,
-                bold = footer.settings.text_font_bold,
-            }
-            footer.filler_space_width = tmp:getSize().w
-            tmp:free()
-        end
-        local filler_nb = math.floor((max_width - text_width + separator_width) / footer.filler_space_width)
-        if filler_nb > 0 then
-            return filler_space:rep(filler_nb), true
-        end
+        local filler_enabled = footer.settings.disable_progress_bar or footer.settings.progress_bar_position ~= "alongside"
+        return nil, true, filler_enabled -- merge
+    end,
+    dynamic_filler2 = function(footer) -- same
+        local filler_enabled = footer.settings.disable_progress_bar or footer.settings.progress_bar_position ~= "alongside"
+        return nil, true, filler_enabled
     end,
     additional_content = function(footer)
         if #footer.additional_footer_content == 0 then
@@ -1071,6 +1035,7 @@ function ReaderFooter:textOptionTitles(option)
             self.custom_text_repetitions > 1 and
             string.format(" × %d", self.custom_text_repetitions) or ""),
         dynamic_filler = _("Dynamic filler"),
+        dynamic_filler2 = _("Dynamic filler"),
         additional_content = _("External content"),
     }
     return option_titles[option]
@@ -1474,6 +1439,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(footer_items, getMinibarOption("book_chapter"))
     table.insert(footer_items, getMinibarOption("custom_text"))
     table.insert(footer_items, getMinibarOption("dynamic_filler"))
+    table.insert(footer_items, getMinibarOption("dynamic_filler2"))
     table.insert(footer_items, getMinibarOption("additional_content"))
 
     -- configure footer_items
@@ -1935,9 +1901,6 @@ function ReaderFooter:genItemSymbolsMenuItems(value)
         radio = true,
         callback = function()
             self.settings.item_prefix = value
-            if self.settings.items_separator == "none" then
-                self.separator_width = nil
-            end
             self:refreshFooter(true)
         end,
     }
@@ -1961,7 +1924,6 @@ function ReaderFooter:genItemSeparatorMenuItems(value)
         radio = true,
         callback = function()
             self.settings.items_separator = value
-            self.separator_width = nil
             self:refreshFooter(true)
         end,
     }
@@ -2055,7 +2017,6 @@ function ReaderFooter:loadPreset(preset)
             or old_text_font_bold ~= self.settings.text_font_bold then
         self:updateFooterFont()
     else
-        self.separator_width = nil
         self.filler_space_width = nil
     end
     self:setTocMarkers()
@@ -2126,44 +2087,118 @@ function ReaderFooter:genSeparator()
         or (self.settings.item_prefix == "compact_items" and " " or "  ")
 end
 
-function ReaderFooter:genAllFooterText(gen_to_skip)
+function ReaderFooter:genAllFooterText()
     local info = {}
     -- We need to BD.wrap() all items and separators, so we're
     -- sure they are laid out in our order (reversed in RTL),
     -- without ordering by the RTL Bidi algorithm.
-    local count = 0 -- total number of visible items
-    local skipped_idx, prev_had_merge
+    local separator = BD.wrap(self:genSeparator())
+    local prev_had_merge = true -- there is no separator before the first generator
+    local filler1_idx, filler2_idx
     for _, gen in ipairs(self.footerTextGenerators) do
-        if gen == gen_to_skip then
-            count = count + 1
-            skipped_idx = count
-            goto continue
+        local text, merge, is_filler = gen(self)
+        -- 'merge' means no separators before and after the generator
+        if merge and not prev_had_merge then
+            table.remove(info) -- separator added by the previous generator
         end
-        -- Skip empty generators, so they don't generate bogus separators
-        local text, merge = gen(self)
-        if text and text ~= "" then
-            count = count + 1
-            if self.settings.item_prefix == "compact_items" and gen ~= footerTextGeneratorMap.dynamic_filler then
+        if text and text ~= "" then -- skip empty generators and fillers
+            if self.settings.item_prefix == "compact_items" then
                 -- remove whitespace from footer items if symbol_type is compact_items
                 -- use a hair-space to avoid issues with RTL display
                 text = text:gsub("%s", "\u{200A}")
             end
-            -- if generator request a merge of this item, add it directly,
-            -- i.e. no separator before and after the text then.
-            if merge then
-                local merge_pos = #info == 0 and 1 or #info
-                info[merge_pos] = (info[merge_pos] or "") .. text
-                prev_had_merge = true
-            elseif prev_had_merge then
-                info[#info] = info[#info] .. text
-                prev_had_merge = false
-            else
-                table.insert(info, BD.wrap(text))
+            table.insert(info, BD.wrap(text))
+            if not merge then
+                table.insert(info, separator)
             end
+            prev_had_merge = merge
+        elseif is_filler then
+            if filler1_idx then
+                filler2_idx = #info + 2
+            else
+                filler1_idx = #info + 1
+            end
+            prev_had_merge = merge -- true
         end
-        ::continue::
     end
-    return table.concat(info, BD.wrap(self:genSeparator())), skipped_idx ~= 1 and skipped_idx ~= count
+    if not prev_had_merge then
+        table.remove(info) -- separator added by the last generator
+    end
+    if filler1_idx and next(info) then
+        self:insertDynamicFillers(info, filler1_idx, filler2_idx)
+    end
+    return table.concat(info)
+end
+
+function ReaderFooter:insertDynamicFillers(info, filler1_idx, filler2_idx)
+    if filler2_idx and filler2_idx == filler1_idx + 1 then -- combine adjacent fillers
+        filler2_idx = nil
+    end
+
+    local filler_space = " "
+    self.filler_space_width = self.filler_space_width or self:getTextWidth(filler_space)
+    local margin = (self.settings.disable_progress_bar or self.settings.align == "center")
+        and self.horizontal_margin or Screen:scaleBySize(self.settings.progress_margin_width)
+    local max_width = math.floor(self._saved_screen_width - 2 * margin)
+    local text_width = self:getTextWidth(table.concat(info))
+
+    if text_width > max_width - 2 * self.filler_space_width then
+         -- long footer text, replace internal fillers with separators
+        local separator = BD.wrap(self:genSeparator())
+        local info_nb = #info + 1
+        if filler1_idx ~= 1 and filler1_idx ~= info_nb then
+            table.insert(info, filler1_idx, separator)
+        end
+        if filler2_idx and filler2_idx ~= info_nb then
+            table.insert(info, filler2_idx, separator)
+        end
+        return
+    end
+
+    if filler2_idx then
+        local left_text_width = self:getTextWidth(table.concat(info, "", 1, filler1_idx - 1))
+        local right_text_width = self:getTextWidth(table.concat(info, "", filler2_idx - 1))
+        local center_text_width = text_width - left_text_width - right_text_width
+        local half_max_width = (max_width - center_text_width) / 2
+        if left_text_width > half_max_width - self.filler_space_width then
+            -- left text doesn't fit, replace the 1st filler with separator
+            if filler1_idx ~= 1 and filler1_idx ~= #info + 1 then
+                local separator = BD.wrap(self:genSeparator())
+                table.insert(info, filler1_idx, separator)
+                text_width = text_width + self:getTextWidth(separator)
+            end
+            local filler_nb = math.floor((max_width - text_width) / self.filler_space_width)
+            table.insert(info, filler2_idx, filler_space:rep(filler_nb))
+        elseif right_text_width > half_max_width - self.filler_space_width then
+            -- right text doesn't fit, replace the 2nd filler with separator
+            if filler2_idx ~= #info + 1 then
+                local separator = BD.wrap(self:genSeparator())
+                table.insert(info, filler2_idx - 1, separator)
+                text_width = text_width + self:getTextWidth(separator)
+            end
+            local filler_nb = math.floor((max_width - text_width) / self.filler_space_width)
+            table.insert(info, filler1_idx, filler_space:rep(filler_nb))
+        else -- two fillers
+            local filler_nb = math.floor((half_max_width - left_text_width) / self.filler_space_width)
+            table.insert(info, filler1_idx, filler_space:rep(filler_nb))
+            filler_nb = math.floor((half_max_width - right_text_width) / self.filler_space_width)
+            table.insert(info, filler2_idx, filler_space:rep(filler_nb))
+        end
+    else -- one filler
+        local filler_nb = math.floor((max_width - text_width) / self.filler_space_width)
+        table.insert(info, filler1_idx, filler_space:rep(filler_nb))
+    end
+end
+
+function ReaderFooter:getTextWidth(text)
+    local tmp = TextWidget:new{
+        text = text,
+        face = self.footer_text_face,
+        bold = self.settings.text_font_bold,
+    }
+    local text_width = tmp:getSize().w
+    tmp:free()
+    return text_width
 end
 
 function ReaderFooter:setTocMarkers(reset)
@@ -2228,7 +2263,6 @@ function ReaderFooter:onUpdateFooter(force_repaint, full_repaint)
 end
 
 function ReaderFooter:updateFooterFont()
-    self.separator_width = nil
     self.filler_space_width = nil
     if not FontChooser.isFontRegistered(self.settings.text_font_face) then
         self.settings.text_font_face = self.default_settings.text_font_face
@@ -2495,7 +2529,8 @@ function ReaderFooter:onToggleFooterMode()
         for i, m in ipairs(self.mode_index) do
             if self.mode == self.mode_list.off then break end
             if self.mode == i then
-                if self.settings[m] and self.mode ~= self.mode_list.dynamic_filler then
+                if self.settings[m] and self.mode ~= self.mode_list.dynamic_filler
+                                    and self.mode ~= self.mode_list.dynamic_filler2 then
                     break
                 else
                     self.mode = (self.mode + 1) % self.mode_nb
