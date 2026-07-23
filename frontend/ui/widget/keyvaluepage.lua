@@ -317,6 +317,7 @@ function KeyValuePage:init()
 
     if Device:hasKeys() then
         self.key_events.CloseWithKey = { { Input.group.Back } }
+        self.key_events.Home = { { "Home" } }
         self.key_events.NextPage = { { Input.group.PgFwd } }
         self.key_events.PrevPage = { { Input.group.PgBack } }
         if Device:hasScreenKB() or Device:hasKeyboard() then
@@ -851,6 +852,13 @@ function KeyValuePage:onCloseWithKey()
         self:callback_return()
     end
     self:onClose()
+    return true
+end
+
+function KeyValuePage:onHome()
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 

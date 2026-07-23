@@ -212,6 +212,7 @@ function PageBrowserWidget:registerKeyEvents()
         end
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.ShowMenu = { { "Menu" } }
+        self.key_events.Home = { { "Home" } }
         self.key_events.ScrollPageUp = { { Input.group.PgBack } }
         self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
     end
@@ -1243,6 +1244,12 @@ function PageBrowserWidget:onClose(close_all_parents)
         self.ui.bookmark:onPageUpdate(self.ui:getCurrentPage())
         UIManager:setDirty(self.ui.dialog, "full")
     end
+    return true
+end
+
+function PageBrowserWidget:onHome()
+    self:onClose(true)
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 

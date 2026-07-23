@@ -100,6 +100,7 @@ local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
+local Event = require("ui/event")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -484,6 +485,7 @@ function InputDialog:init()
     end
     if Device:hasKeys() then
         self.key_events.CloseDialog = { { Device.input.group.Back } }
+        self.key_events.Home = { { "Home" } }
     end
     if self._added_widgets then
         for _, widget in ipairs(self._added_widgets) do
@@ -756,6 +758,19 @@ function InputDialog:onClose()
     self:onCloseKeyboard()
 end
 
+function InputDialog:onHome()
+    if self._text_modified then
+        self._home_pending = true
+        self:onCloseDialog()
+    else
+        if not self:onCloseDialog() then
+            UIManager:close(self)
+        end
+        UIManager:sendEvent(Event:new("Home"))
+    end
+    return true
+end
+
 function InputDialog:onSetRotationMode(mode)
     if self.rotation_enabled and mode ~= nil then -- Text editor only
         self.rotation_mode_backup = self.rotation_mode_backup or Screen:getRotationMode() -- backup only initial mode
@@ -889,6 +904,11 @@ function InputDialog:_addSaveCloseButtons()
                 UIManager:show(MultiConfirmBox:new{
                     text = self.close_unsaved_confirm_text or _("You have unsaved changes."),
                     cancel_text = self.close_cancel_button_text or _("Cancel"),
+                    cancel_callback = function()
+                        if self._home_pending then
+                            self._home_pending = nil
+                        end
+                    end,
                     choice1_text = self.close_discard_button_text or _("Discard"),
                     choice1_callback = function()
                         if self.close_callback then self.close_callback(false) end
@@ -896,6 +916,10 @@ function InputDialog:_addSaveCloseButtons()
                         UIManager:show(Notification:new{
                             text = self.close_discarded_notif_text or _("Changes discarded"),
                         })
+                        if self._home_pending then
+                            self._home_pending = nil
+                            UIManager:sendEvent(Event:new("Home"))
+                        end
                     end,
                     choice2_text = self.close_save_button_text or _("Save"),
                     choice2_callback = function()
@@ -915,6 +939,14 @@ function InputDialog:_addSaveCloseButtons()
                                 UIManager:show(Notification:new{
                                     text = msg or _("Saved"),
                                 })
+                                if self._home_pending then
+                                    self._home_pending = nil
+                                    -- Allow readerUI to catch up, otherwise we might get
+                                    -- a no document crash.
+                                    UIManager:scheduleIn(0.5, function()
+                                        UIManager:sendEvent(Event:new("Home"))
+                                    end)
+                                end
                             end
                         end)
                     end,

@@ -73,6 +73,7 @@ function MultiConfirmBox:init()
         end
         if Device:hasKeys() then
             self.key_events.Close = { { Device.input.group.Back } }
+            self.key_events.Home = { { "Home" } }
         end
     end
     local content = HorizontalGroup:new{
@@ -158,6 +159,13 @@ end
 
 function MultiConfirmBox:onClose()
     UIManager:close(self)
+    return true
+end
+
+function MultiConfirmBox:onHome()
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 

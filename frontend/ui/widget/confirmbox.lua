@@ -75,6 +75,7 @@ function ConfirmBox:init()
         end
         if Device:hasKeys() then
             self.key_events.Close = { { Device.input.group.Back } }
+            self.key_events.Home = { { "Home" } }
         end
     end
 
@@ -243,6 +244,13 @@ function ConfirmBox:onClose()
     -- Call cancel_callback, parent may expect a choice
     self.cancel_callback()
     UIManager:close(self)
+    return true
+end
+
+function ConfirmBox:onHome()
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 

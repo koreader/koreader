@@ -78,7 +78,7 @@ return {
     [1073741905] = "Down", -- arrow down
     [1073741902] = "RPgFwd", -- normal PageDown
 
-    [1073741898] = "Home",
+    [1073741898] = os.getenv("DISABLE_TOUCH") == "1" and "Home" or "KeyHome",
     [1073741901] = "End",
     [1073741897] = "Insert",
 

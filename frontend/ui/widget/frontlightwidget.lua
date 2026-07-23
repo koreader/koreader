@@ -84,6 +84,7 @@ function FrontLightWidget:init()
     if Device:hasKeys() then
       local close_keys = Device:hasFewKeys() and { Device.input.group.Back, "Left" } or Device.input.group.Back
       self.key_events.Close = { { close_keys } }
+      self.key_events.Home = { { "Home" } }
     end
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -534,6 +535,13 @@ end
 
 function FrontLightWidget:onClose()
     UIManager:close(self)
+    return true
+end
+
+function FrontLightWidget:onHome()
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 
