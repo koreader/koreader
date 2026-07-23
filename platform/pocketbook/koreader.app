@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Work around PocketBook firmware 6.11.1480 rejecting executable-stack system libraries.
-export GLIBC_TUNABLES=glibc.rtld.execstack=2
+export GLIBC_TUNABLES="${GLIBC_TUNABLES}${GLIBC_TUNABLES:+:}glibc.rtld.execstack=2"
 
 export LC_ALL="en_US.UTF-8"
 
