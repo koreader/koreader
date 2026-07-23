@@ -25,8 +25,6 @@ local T = FFIUtil.template
 local DEFAULT_AUTODIM_STARTTIME_M = 5
 local DEFAULT_AUTODIM_DURATION_S = 5
 local DEFAULT_AUTODIM_FRACTION = 20
-local AUTODIM_EVENT_FREQUENCY = 2 -- in Hz; Frequenzy for FrontlightChangedEvent on E-Ink devices
-
 local AutoDim = WidgetContainer:extend{
     name = "autodim",
 }
@@ -278,9 +276,6 @@ function AutoDim:autodim_task()
 
             -- calculate time until the next decrease step
             self.autodim_step_time_s = math.max(self.autodim_duration_s / fl_diff, 0.001)
-            self.ramp_event_countdown_startvalue = Device:hasEinkScreen() and
-                math.floor((1/AUTODIM_EVENT_FREQUENCY) / self.autodim_step_time_s + 0.5) or 0
-            self.ramp_event_countdown = self.ramp_event_countdown_startvalue
 
             self:ramp_task() -- which schedules itself
             -- Don't schedule `autodim_task` here, as this is done in `trap_widget.dismiss_callback` or in `onResume`
@@ -299,13 +294,6 @@ function AutoDim:ramp_task()
     if fl_level > self.autodim_end_fl then
         fl_level = fl_level - 1
         Powerd:setIntensity(fl_level)
-        self.ramp_event_countdown = self.ramp_event_countdown - 1
-        if self.ramp_event_countdown <= 0 then
-            -- Update footer on every self.ramp_event_countdown call
-            UIManager:broadcastEvent("UpdateFooter")
-            self.ramp_event_countdown = self.ramp_event_countdown_startvalue
-            self.last_ramp_scheduling_time = nil
-        end
         self:_schedule_ramp_task(self.autodim_step_time_s) -- Reschedule only if ramp is not finished
         -- `isCurrentlyDimming` stays true, to flag we have a dimmed FL.
     end
