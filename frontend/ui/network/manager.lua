@@ -756,6 +756,19 @@ function NetworkMgr:goOnlineToRun(callback)
         return true
     end
 
+    -- Don't resurrect Wi-Fi the user explicitly turned off.
+    -- goOnlineToRun is the *blocking* path used by finalizers (e.g. an automatic
+    -- push on document close), so it never represents a direct user request.
+    -- A manual turnOffWifi clears wifi_was_on (an auto_disable_wifi power-save
+    -- toggle does not), so if it's false the user deliberately disabled Wi-Fi:
+    -- honoring turn_on here would go behind their back, and -- since we're
+    -- offline -- block the UI waiting for a connection that isn't coming.
+    -- Mirror auto_restore_wifi, which is likewise gated on wifi_was_on.
+    if not self.wifi_was_on then
+        logger.dbg("NetworkMgr:goOnlineToRun: Wi-Fi was disabled by the user, not going online")
+        return false
+    end
+
     -- If beforeWifiAction isn't turn_on, we're done.
     -- We don't want to go behind the user's back by enforcing "turn_on" behavior,
     -- and we *cannot* use prompt, as we'll block before handling the popup input...
