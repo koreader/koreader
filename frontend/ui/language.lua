@@ -55,6 +55,7 @@ local Language = {
         uk = "Українська",
         zh = "中文",
         zh_CN = "简体中文",
+        zh_wubi = "中文（五笔）",
         zh_TW = "中文（台灣)",
         ["zh_TW.Big5"] = "中文（台灣）（Big5）",
     },
