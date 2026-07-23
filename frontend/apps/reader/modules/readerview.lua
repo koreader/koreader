@@ -505,7 +505,7 @@ end
 function ReaderView:drawTempHighlight(bb, x, y)
     local color = self.highlight.saved_drawer ~= "invert"
         and G_reader_settings:isTrue("highlight_selection_use_highlight_color")
-        and Blitbuffer.colorFromName(self.highlight.saved_color) or nil
+        and self.ui.highlight:getHighlightColor(self.highlight.saved_color) or nil
     for page, boxes in pairs(self.highlight.temp) do
         for i = 1, #boxes do
             local rect = self:pageToScreenTransform(page, boxes[i])
@@ -552,7 +552,7 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
                 local boxes = self.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
                 if boxes then
                     local drawer = item.drawer
-                    local color = item.color and Blitbuffer.colorFromName(item.color)
+                    local color = self.ui.highlight:getHighlightColor(item.color)
                     if not colorful and color and not Blitbuffer.isColor8(color) then
                         colorful = true
                     end
@@ -625,7 +625,7 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
                     local boxes = self.document:getScreenBoxesFromPositions(item.pos0, item.pos1, true) -- get_segments=true
                     if boxes then
                         local drawer = item.drawer
-                        local color = item.color and Blitbuffer.colorFromName(item.color)
+                        local color = self.ui.highlight:getHighlightColor(item.color)
                         if not colorful and color and not Blitbuffer.isColor8(color) then
                             colorful = true
                         end
