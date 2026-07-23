@@ -626,6 +626,7 @@ function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
                         text = top_title and top_title .. " - " .. nav.title or nav.title,
                         url = url.absolute(item_url, nav.href),
                         mandatory = numberOfItems and numberOfItems .. " \u{e602}" or "\u{e602}", -- 'play arrow' sign
+                        acquisitions = {},
                     })
                 end
             end
@@ -649,6 +650,7 @@ function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
                         text = title,
                         url = url.absolute(item_url, href),
                         mandatory = numberOfItems ~= 0 and numberOfItems or "-",
+                        acquisitions = {},
                     })
                 end
             end
