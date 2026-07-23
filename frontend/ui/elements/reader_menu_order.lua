@@ -86,6 +86,7 @@ local order = {
     },
     document = {
         "document_metadata_location",
+        "separate_annotation_file",
         "document_auto_save",
         "document_metadata_arc",
         "document_end_action",
