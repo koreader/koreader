@@ -726,13 +726,9 @@ function Device:ping4(ip)
             --       used on Legacy Kindles (K4 included). Bound the runtime ourselves by
             --       killing the ping after a timeout, which works with any ping implementation.
             return os.execute(string.format([[ping -q -c1 %s >/dev/null &
-                                              ping_pid=$!
-                                              (sleep 2; kill $ping_pid) &
-                                              timeout_pid=$!
-                                              wait $ping_pid
-                                              code=$?
-                                              kill $timeout_pid 2>/dev/null
-                                              exit $code
+                                              pid=$!
+                                              (sleep 2; kill $pid 2>/dev/null) &
+                                              wait $pid 2>/dev/null
                                               ]], ip)) == 0
         else
             socket_type = C.SOCK_RAW
