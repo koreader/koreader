@@ -11,12 +11,12 @@ return {
                 return G_reader_settings:readSetting("activate_menu") ~= "swipe"
             end,
             callback = function()
-                if G_reader_settings:readSetting("activate_menu") ~= "swipe" then
-                    G_reader_settings:saveSetting("activate_menu", "swipe")
-                else
-                    G_reader_settings:saveSetting("activate_menu", "swipe_tap")
+                local value = G_reader_settings:readSetting("activate_menu") ~= "swipe" and "swipe" or "swipe_tap"
+                G_reader_settings:saveSetting("activate_menu", value)
+                ui.menu.activation_menu = value
+                if ui.config then
+                    ui.config.activation_menu = value
                 end
-                ui.menu.activation_menu = G_reader_settings:readSetting("activate_menu")
             end,
         },
         {
@@ -25,12 +25,12 @@ return {
                 return G_reader_settings:readSetting("activate_menu") ~= "tap"
             end,
             callback = function()
-                if G_reader_settings:readSetting("activate_menu") ~= "tap" then
-                    G_reader_settings:saveSetting("activate_menu", "tap")
-                else
-                    G_reader_settings:saveSetting("activate_menu", "swipe_tap")
+                local value = G_reader_settings:readSetting("activate_menu") ~= "tap" and "tap" or "swipe_tap"
+                G_reader_settings:saveSetting("activate_menu", value)
+                ui.menu.activation_menu = value
+                if ui.config then
+                    ui.config.activation_menu = value
                 end
-                ui.menu.activation_menu = G_reader_settings:readSetting("activate_menu")
             end,
             separator = true,
         },
