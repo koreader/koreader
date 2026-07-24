@@ -18,6 +18,9 @@ end
 -- path to primary external storage partition
 local path = android.getExternalStoragePath()
 
+-- Set $FONTDIR to android.dir/fonts so MuPDF can find its fonts.
+C.setenv("FONTDIR", android.dir .. "/fonts", 1)
+
 -- create fake command-line arguments
 -- luacheck: ignore 121
 if android.isDebuggable() then
