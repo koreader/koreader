@@ -27,28 +27,22 @@ local FileManagerMenu = InputContainer:extend{
     registered_widgets = nil, -- array
 }
 
-function FileManagerMenu:init()
-    self.menu_items = {
+local function getDefaultMenuButtons()
+    return {
         ["KOMenu:menu_buttons"] = {
             -- top menu
         },
         -- items in top menu
-        filemanager_settings = {
-            icon = "appbar.filebrowser",
-        },
-        setting = {
-            icon = "appbar.settings",
-        },
-        tools = {
-            icon = "appbar.tools",
-        },
-        search = {
-            icon = "appbar.search",
-        },
-        main = {
-            icon = "appbar.menu",
-        },
+        filemanager_settings = { icon = "appbar.filebrowser" },
+        setting = { icon = "appbar.settings" },
+        tools = { icon = "appbar.tools" },
+        search = { icon = "appbar.search" },
+        main = { icon = "appbar.menu" },
     }
+end
+
+function FileManagerMenu:init()
+    self.menu_items = getDefaultMenuButtons()
 
     self.registered_widgets = {}
 
@@ -67,7 +61,15 @@ function FileManagerMenu:registerKeyEvents()
     end
 end
 
-FileManagerMenu.onPhysicalKeyboardConnected = FileManagerMenu.registerKeyEvents
+function FileManagerMenu:onPhysicalKeyboardConnected()
+    self.key_events = {}
+    self:registerKeyEvents()
+    if self.menu_container then
+        self:onCloseFileManagerMenu()
+    end
+    self.tab_item_table = nil
+end
+FileManagerMenu.onPhysicalKeyboardDisconnected = FileManagerMenu.onPhysicalKeyboardConnected
 
 -- NOTE: FileManager emits a SetDimensions on init, it's our only caller
 function FileManagerMenu:initGesListener()
@@ -147,6 +149,9 @@ function FileManagerMenu:onOpenLastDoc()
 end
 
 function FileManagerMenu:setUpdateItemTable()
+    for k, v in pairs(getDefaultMenuButtons()) do
+        self.menu_items[k] = v
+    end
     local FileChooser = self.ui.file_chooser
 
     -- setting tab
