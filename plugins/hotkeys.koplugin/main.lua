@@ -590,9 +590,11 @@ function HotKeys:onFlushSettings()
     end
 end
 
-function HotKeys:onDispatcherActionNameChanged(action)
+local function applyActionNameChange(data, action)
+    local changed = false
     for _, section in ipairs({ "hotkeys_fm", "hotkeys_reader" }) do
-        local hotkeys = self.settings_data.data[section]
+        local hotkeys = data[section]
+        if not hotkeys then return end
         for shortcut_name, shortcut in pairs(hotkeys) do
             if shortcut[action.old_name] ~= nil then
                 if shortcut.settings and shortcut.settings.order then
@@ -618,18 +620,21 @@ function HotKeys:onDispatcherActionNameChanged(action)
                     shortcut[action.new_name] = true
                 else
                     if next(shortcut) == nil then
-                        self.settings_data.data[section][shortcut_name] = nil
+                        data[section][shortcut_name] = nil
                     end
                 end
-                self.updated = true
+                changed = true
             end
         end
     end
+    return changed
 end
 
-function HotKeys:onDispatcherActionValueChanged(action)
+local function applyActionValueChange(data, action)
+    local changed = false
     for _, section in ipairs({ "hotkeys_fm", "hotkeys_reader" }) do
-        local hotkeys = self.settings_data.data[section]
+        local hotkeys = data[section]
+        if not hotkeys then return end
         for shortcut_name, shortcut in pairs(hotkeys) do
             if shortcut[action.name] == action.old_value then
                 shortcut[action.name] = action.new_value
@@ -649,13 +654,39 @@ function HotKeys:onDispatcherActionValueChanged(action)
                         end
                     end
                     if next(shortcut) == nil then
-                        self.settings_data.data[section][shortcut_name] = nil
+                        data[section][shortcut_name] = nil
                     end
                 end
-                self.updated = true
+                changed = true
             end
         end
     end
+    return changed
+end
+
+function HotKeys:withHotkeysSettings(apply_fn, action)
+    if self.settings_data then
+        if apply_fn(self.settings_data.data, action) then
+            self.updated = true
+        end
+        return
+    end
+
+    -- No live instance right now (no keyboard connected) — patch the
+    -- on-disk file directly so the change is already applied whenever
+    -- the plugin next initialises.
+    local settings = LuaSettings:open(hotkeys_path)
+    if apply_fn(settings.data, action) then
+        settings:flush()
+    end
+end
+
+function HotKeys:onDispatcherActionNameChanged(action)
+    self:withHotkeysSettings(applyActionNameChange, action)
+end
+
+function HotKeys:onDispatcherActionValueChanged(action)
+    self:withHotkeysSettings(applyActionValueChange, action)
 end
 
 return HotKeys
