@@ -351,7 +351,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Use full refresh for covers"),
+                text = _("Flash when displaying covers"),
                 checked_func = function()
                     return BookInfoManager:getSetting("flash_ui_cover_images")
                 end,
