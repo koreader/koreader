@@ -1293,7 +1293,14 @@ function DictQuickLookup:update()
     if self.is_html and self.shw_widget then
         -- Reuse our ScrollHtmlWidget (self.shw_widget)
         -- NOTE: The recursive free via our WidgetContainer (self[1]) above already released the previous MµPDF document instance ;)
-        self.text_widget.htmlbox_widget:setContent(self.definition, self:getHtmlDictionaryCss(), Screen:scaleBySize(self.dict_font_size), nil, nil, self.dictionary_resource_directory)
+        -- setContent() can still raise (e.g. if MuPDF fails to render both the HTML and its
+        -- plain-text fallback), and unlike the initial lookup, this refresh path isn't run
+        -- inside a Trapper/xpcall, so an uncaught error here would take the whole app down.
+        local ok, err = pcall(self.text_widget.htmlbox_widget.setContent, self.text_widget.htmlbox_widget,
+            self.definition, self:getHtmlDictionaryCss(), Screen:scaleBySize(self.dict_font_size), nil, nil, self.dictionary_resource_directory)
+        if not ok then
+            logger.warn("DictQuickLookup:update() failed to set HTML content:", err)
+        end
         -- Scroll back to top
         self.text_widget:resetScroll()
     elseif not self.is_html and self.stw_widget then
