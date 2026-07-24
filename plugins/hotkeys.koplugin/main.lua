@@ -23,78 +23,89 @@ local HotKeys = InputContainer:extend{
     updated = false,
 }
 local hotkeys_path = ffiUtil.joinPath(DataStorage:getSettingsDir(), "hotkeys.lua")
+local hotkeys_list, base_keys, key_emitter_actions
 
--- Define hotkeys_list
-local hotkeys_list = {}
-local base_keys = {
-    up = "Up", down = "Down", left = "Left", right = "Right",
-    left_page_back = "LPgBack", left_page_forward = "LPgFwd",
-    right_page_back = "RPgBack", right_page_forward = "RPgFwd",
-    back = "Back", home = "Home", press = "Press"
-}
-local key_emitter_actions = {
-    key_up = { key = "Up", title = T(_("Send key: %1"), _("Up")) },
-    key_down = { key = "Down", title = T(_("Send key: %1"), _("Down")) },
-    key_left = { key = "Left", title = T(_("Send key: %1"), _("Left")) },
-    key_right = { key = "Right", title = T(_("Send key: %1"), _("Right")) },
-    key_left_page_back = { key = "LPgBack", title = T(_("Send key: %1"), _("Left page back")) },
-    key_left_page_forward = { key = "LPgFwd", title = T(_("Send key: %1"), _("Left page forward")) },
-    key_right_page_back = { key = "RPgBack", title = T(_("Send key: %1"), _("Right page back")) },
-    key_right_page_forward = { key = "RPgFwd", title = T(_("Send key: %1"), _("Right page forward")) },
-    key_back = { key = "Back", title = T(_("Send key: %1"), _("Back")) },
-    key_home = { key = "Home", title = T(_("Send key: %1"), _("Home")) },
-    key_press = { key = "Press", title = T(_("Send key: %1"), _("Press")) },
-    key_menu = { key = "Menu", title = T(_("Send key: %1"), _("Menu")) },
-    key_context_menu = { key = "ContextMenu", title = T(_("Send key: %1"), _("Context menu")) },
-}
--- modifier *here* refers to either screenkb or shift
-local modifier_one = Device:hasScreenKB() and _("ScreenKB + %1") or _("Shift + %1")
--- screenkb/shift + base_keys
-for key, label in pairs(base_keys) do
-    hotkeys_list["modifier_plus_" .. key] = T(modifier_one, label)
-    -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
-end
-if LuaSettings:open(hotkeys_path).data["press_key_does_hotkeys"] then
-    util.tableMerge(hotkeys_list, { press = _("Press") })
-end
+local function buildHotkeysList()
+    -- Define hotkeys_list
+    hotkeys_list = {}
+    base_keys = {
+        up = "Up", down = "Down", left = "Left", right = "Right",
+        left_page_back = "LPgBack", left_page_forward = "LPgFwd",
+        right_page_back = "RPgBack", right_page_forward = "RPgFwd",
+        back = "Back", home = "Home", press = "Press"
+    }
+    key_emitter_actions = {
+        key_up = { key = "Up", title = T(_("Send key: %1"), _("Up")) },
+        key_down = { key = "Down", title = T(_("Send key: %1"), _("Down")) },
+        key_left = { key = "Left", title = T(_("Send key: %1"), _("Left")) },
+        key_right = { key = "Right", title = T(_("Send key: %1"), _("Right")) },
+        key_left_page_back = { key = "LPgBack", title = T(_("Send key: %1"), _("Left page back")) },
+        key_left_page_forward = { key = "LPgFwd", title = T(_("Send key: %1"), _("Left page forward")) },
+        key_right_page_back = { key = "RPgBack", title = T(_("Send key: %1"), _("Right page back")) },
+        key_right_page_forward = { key = "RPgFwd", title = T(_("Send key: %1"), _("Right page forward")) },
+        key_back = { key = "Back", title = T(_("Send key: %1"), _("Back")) },
+        key_home = { key = "Home", title = T(_("Send key: %1"), _("Home")) },
+        key_press = { key = "Press", title = T(_("Send key: %1"), _("Press")) },
+        key_menu = { key = "Menu", title = T(_("Send key: %1"), _("Menu")) },
+        key_context_menu = { key = "ContextMenu", title = T(_("Send key: %1"), _("Context menu")) },
+    }
 
-if Device:supportsGamepad() then
-    for i = 0, 15 do
-        local id = Gamepad.button_ids[i] or tostring(i)
-        local name = Gamepad.button_names[i] or T(_("Button %1"), i)
-        hotkeys_list["gamepad_button_" .. id] = T(_("Gamepad %1"), name)
-    end
-    for i = 0, 5 do
-        local id = Gamepad.axis_ids[i] or tostring(i)
-        local name = Gamepad.axis_names[i] or T(_("Axis %1"), i)
-        hotkeys_list["gamepad_axis_" .. id .. "_minus"] = T(_("Gamepad %1 –"), name)
-        hotkeys_list["gamepad_axis_" .. id .. "_plus"] = T(_("Gamepad %1 +"), name)
-    end
-end
-if Device:hasKeyboard() then
-    local hotkeys_list_haskeyboard = { modifier_plus_menu = _("Shift + Menu") }
-    -- now we can add the "menu" button to base_keys, so we can use it on haskeyboard devices
-    base_keys.menu = "Menu"
-    -- NOTE: we will use 'alt' for kindles and 'ctrl' for other devices with keyboards
-    --       but for simplicity we will use in code 'alt+keys' as the array's key for all.
-    local modifier_two = Device:hasSymKey() and _("Alt + %1") or _("Ctrl + %1")
-    -- Alt/Ctrl + base_keys
+    -- modifier *here* refers to either screenkb or shift
+    local modifier_one = Device:hasScreenKB() and _("ScreenKB + %1") or _("Shift + %1")
+    -- screenkb/shift + base_keys
     for key, label in pairs(base_keys) do
-        hotkeys_list_haskeyboard["alt_plus_" .. key] = T(modifier_two, label)
+        hotkeys_list["modifier_plus_" .. key] = T(modifier_one, label)
+        -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
+    end
+    if LuaSettings:open(hotkeys_path).data["press_key_does_hotkeys"] then
+        util.tableMerge(hotkeys_list, { press = _("Press") })
     end
 
-    local type_to_search = LuaSettings:open(hotkeys_path).data["type_to_search"]
-    -- Alt/Ctrl + alphabet keys and (no modifier) + alphabet keys
-    for dummy, char in ipairs(Device.input.group.Alphabet) do
-        hotkeys_list_haskeyboard["alt_plus_" .. char:lower()] = T(modifier_two, char)
-        if not type_to_search then
-            hotkeys_list_haskeyboard[char:lower()] = char
+    if Device:supportsGamepad() then
+        for i = 0, 15 do
+            local id = Gamepad.button_ids[i] or tostring(i)
+            local name = Gamepad.button_names[i] or T(_("Button %1"), i)
+            hotkeys_list["gamepad_button_" .. id] = T(_("Gamepad %1"), name)
+        end
+        for i = 0, 5 do
+            local id = Gamepad.axis_ids[i] or tostring(i)
+            local name = Gamepad.axis_names[i] or T(_("Axis %1"), i)
+            hotkeys_list["gamepad_axis_" .. id .. "_minus"] = T(_("Gamepad %1 –"), name)
+            hotkeys_list["gamepad_axis_" .. id .. "_plus"] = T(_("Gamepad %1 +"), name)
         end
     end
-    util.tableMerge(hotkeys_list, hotkeys_list_haskeyboard)
+    if Device:hasKeyboard() then
+        local hotkeys_list_haskeyboard = { modifier_plus_menu = _("Shift + Menu") }
+        -- now we can add the "menu" button to base_keys, so we can use it on haskeyboard devices
+        base_keys.menu = "Menu"
+        -- NOTE: we will use 'alt' for kindles and 'ctrl' for other devices with keyboards
+        --       but for simplicity we will use in code 'alt+keys' as the array's key for all.
+        local modifier_two = Device:hasSymKey() and _("Alt + %1") or _("Ctrl + %1")
+        -- Alt/Ctrl + base_keys
+        for key, label in pairs(base_keys) do
+            hotkeys_list_haskeyboard["alt_plus_" .. key] = T(modifier_two, label)
+        end
+
+        local type_to_search = LuaSettings:open(hotkeys_path).data["type_to_search"]
+        -- Alt/Ctrl + alphabet keys and (no modifier) + alphabet keys
+        for dummy, char in ipairs(Device.input.group.Alphabet) do
+            hotkeys_list_haskeyboard["alt_plus_" .. char:lower()] = T(modifier_two, char)
+            if not type_to_search then
+                hotkeys_list_haskeyboard[char:lower()] = char
+            end
+        end
+        util.tableMerge(hotkeys_list, hotkeys_list_haskeyboard)
+    end
+end
+if Device:hasScreenKB() or Device:hasKeyboard() then
+    buildHotkeysList()
 end
 
 function HotKeys:init()
+    if not (Device:hasScreenKB() or Device:hasKeyboard()) then
+        self:disableHotkeys() -- clear all on keyboard disconnection
+        return
+    end
     local defaults_path = ffiUtil.joinPath(self.path, "defaults.lua")
     self.is_docless = self.ui == nil or self.ui.document == nil
     self.hotkey_mode = self.is_docless and "hotkeys_fm" or "hotkeys_reader"
@@ -253,7 +264,24 @@ function HotKeys:registerKeyEvents()
     logger.dbg("Total number of hotkey events registered successfully: ", key_event_count)
 end -- registerKeyEvents()
 
-HotKeys.onPhysicalKeyboardConnected = HotKeys.registerKeyEvents
+function HotKeys:onPhysicalKeyboardConnected()
+    buildHotkeysList()
+    self:init()
+    logger.dbg("HotKeys plugin reinit successfully after physical keyboard (dis)connection.")
+end
+HotKeys.onPhysicalKeyboardDisconnected = HotKeys.onPhysicalKeyboardConnected
+
+function HotKeys:disableHotkeys()
+    self.key_events = {}
+    self.hotkeys = nil
+    self.settings_data = nil
+    self.defaults = nil
+    self.hotkey_mode = nil
+    self.type_to_search = nil
+    self.is_docless = nil
+    hotkeys_list = nil
+    base_keys, key_emitter_actions = nil, nil
+end
 
 function HotKeys:shortcutTitleFunc(hotkey)
     local title = hotkeys_list[hotkey]
@@ -359,6 +387,11 @@ end
     and user settings. It supports different sets of keys for devices with and without keyboards.
 --]]
 function HotKeys:addToMainMenu(menu_items)
+    if not self.settings_data then
+        menu_items.hotkeys = nil
+        menu_items.a_type_to_search = nil
+        return
+    end
     -- 1. Defines sets of cursor keys, page-turn buttons, and function keys.
     local cursor_keys = {
         "modifier_plus_up",
