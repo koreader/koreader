@@ -10,6 +10,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Mupdf = require("ffi/mupdf")
 local Screen = Device.screen
 local UIManager = require("ui/uimanager")
+local _ = require("gettext")
 local logger = require("logger")
 local time = require("ui/time")
 local util  = require("util")
@@ -260,7 +261,13 @@ function HtmlBoxWidget:setContent(body, css, default_font_size, is_xhtml, no_css
 
         ok, self.document = pcall(Mupdf.openDocumentFromText, html, "html", html_resource_directory)
         if not ok then
-            error(self.document)
+            logger.warn("HTML plain-text fallback loading also failed:", self.document)
+            -- This shouldn't fail
+            html = string.format("<html><body>%s</body></html>", _("Failed to render this content."))
+            ok, self.document = pcall(Mupdf.openDocumentFromText, html, "html", html_resource_directory)
+            if not ok then
+                error(self.document)
+            end
         end
     end
 
