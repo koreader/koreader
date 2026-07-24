@@ -261,16 +261,12 @@ function HtmlBoxWidget:setContent(body, css, default_font_size, is_xhtml, no_css
 
         ok, self.document = pcall(Mupdf.openDocumentFromText, html, "html", html_resource_directory)
         if not ok then
-            -- Even the plain-text fallback failed (e.g. MuPDF unable to resolve a fallback
-            -- font, cf. https://github.com/koreader/koreader/issues/15736): fall back to a
-            -- fixed, minimal error message instead of leaving self.document unusable, so the
-            -- failure is visible to the user instead of crashing the app.
             logger.warn("HTML plain-text fallback loading also failed:", self.document)
-            html = string.format("<html>%s<body>%s</body></html>", head, _("Failed to render this content."))
+            -- This shouldn't fail
+            html = string.format("<html><body>%s</body></html>", _("Failed to render this content."))
 
             ok, self.document = pcall(Mupdf.openDocumentFromText, html, "html", html_resource_directory)
             if not ok then
-                -- Truly unrecoverable (e.g. MuPDF itself broken): nothing more we can do.
                 error(self.document)
             end
         end
