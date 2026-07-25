@@ -9,6 +9,7 @@ local util = require("util")
 local DocumentRegistry = {
     registry = {},
     providers = {},
+    epub_entry_transform_provider = nil,
     known_providers = {}, -- hash table of registered providers { provider_key = provider }
     filetype_provider = {},
     mimetype_ext = {},
@@ -54,6 +55,28 @@ end
 -- plugin in FileManager:openFile().
 function DocumentRegistry:addAuxProvider(provider)
     self.known_providers[provider.provider] = provider
+end
+
+-- Register an optional EPUB entry transform provider callback.
+-- It may return a transform object used while the EPUB is being loaded by CREngine:
+-- {
+--     transformEntry = function(self, path) end, -- required, returns bytes or nil
+--     close = function(self) end,                -- optional resource cleanup
+-- }
+function DocumentRegistry:setEpubEntryTransformProvider(provider)
+    self.epub_entry_transform_provider = provider
+end
+
+function DocumentRegistry:getEpubEntryTransform(file, provider)
+    local transform_provider = self.epub_entry_transform_provider
+    if not transform_provider then
+        return
+    end
+    local ok, transform = pcall(transform_provider, file, provider)
+    if ok then
+        return transform
+    end
+    logger.warn("EPUB entry transform provider failed for", file, transform)
 end
 
 --- Returns true if file has provider.
@@ -236,13 +259,23 @@ function DocumentRegistry:openDocument(file, provider)
         provider = provider or self:getProvider(file)
 
         if provider ~= nil then
-            local ok, doc = pcall(provider.new, provider, {file = file})
+            local epub_entry_transform
+            if provider.provider == "crengine" and (getSuffix(file) == "epub" or getSuffix(file) == "epub3") then
+                epub_entry_transform = self:getEpubEntryTransform(file, provider)
+            end
+            local ok, doc = pcall(provider.new, provider, {
+                file = file,
+                epub_entry_transform = epub_entry_transform,
+            })
             if ok then
                 self.registry[file] = {
                     doc = doc,
                     refs = 1,
                 }
             else
+                if epub_entry_transform and epub_entry_transform.close then
+                    pcall(epub_entry_transform.close, epub_entry_transform)
+                end
                 logger.warn("cannot open document", file, doc)
             end
         end

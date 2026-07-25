@@ -299,7 +299,13 @@ function CreDocument:loadDocument(full_document)
     if not self._loaded then
         local only_metadata = full_document == false
         logger.dbg("CreDocument: loading document...")
-        if self._document:loadDocument(self.file, only_metadata) then
+        local loaded
+        if self.epub_entry_transform then
+            loaded = self._document:loadEpubWithEntryTransform(self.file, self.epub_entry_transform, only_metadata)
+        else
+            loaded = self._document:loadDocument(self.file, only_metadata)
+        end
+        if loaded then
             self._loaded = true
             logger.dbg("CreDocument: loading done.")
         else
