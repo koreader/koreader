@@ -51,6 +51,29 @@ local function currentTime()
     return _("Time synchronized.")
 end
 
+-- busybox ntpd and ntpdate both time out via alarm()/SIGALRM, so neither can give up if SIGALRM
+-- is blocked in the mask we inherited -- and a mask survives execve(). sleep and SIGTERM still
+-- work, hence an external watchdog, as in the ping CLI fall-back in Device:ping4.
+local NTP_TIMEOUT = 30 -- seconds
+
+local function runNTPClient()
+    -- One-second steps so the watchdog exits with the client; `exit` carries the client's status.
+    return os.execute(string.format([[%s &
+                                      pid=$!
+                                      (i=%d
+                                       while [ $i -gt 0 ] && kill -0 $pid 2>/dev/null; do
+                                           sleep 1
+                                           i=$((i-1))
+                                       done
+                                       [ $i -eq 0 ] && kill $pid 2>/dev/null) &
+                                      watchdog=$!
+                                      wait $pid 2>/dev/null
+                                      rc=$?
+                                      kill $watchdog 2>/dev/null
+                                      exit $rc
+                                      ]], ntp_cmd, NTP_TIMEOUT))
+end
+
 local function syncNTP()
     local info = InfoMessage:new{
         text = _("Synchronizing time. This may take several seconds.")
@@ -58,7 +81,7 @@ local function syncNTP()
     UIManager:show(info)
     UIManager:forceRePaint()
     local txt
-    if os.execute(ntp_cmd) ~= 0 then
+    if runNTPClient() ~= 0 then
         txt = _("Failed to retrieve time from server. Please check your network configuration.")
     else
         txt = currentTime()
