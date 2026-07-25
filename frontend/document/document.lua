@@ -109,6 +109,13 @@ function Document:close()
             self.is_open = false
             self._document:close()
             self._document = nil
+            -- Release resources held by an optional EPUB entry transform plugin.
+            if self.epub_entry_transform and self.epub_entry_transform.close then
+                local ok, err = pcall(self.epub_entry_transform.close, self.epub_entry_transform)
+                if not ok then
+                    logger.warn("Document: Failed to close EPUB entry transform for", self.file, err)
+                end
+            end
 
             -- NOTE: DocumentRegistry:openDocument will force a GC sweep the next time we open a Document.
             --       MµPDF will also do a bit of spring cleaning of its internal cache when opening a *different* document.
