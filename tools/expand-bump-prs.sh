@@ -62,14 +62,18 @@ if ! command -v gh >/dev/null; then
     exit 2
 fi
 
-input=$(mktemp)
-output=$(mktemp)
-trap 'rm -f "$input" "$output"' EXIT
 if [[ "$file" = '-' ]]; then
-    cat >"$input"
+    input=/dev/stdin
+    output=$(mktemp)
 else
-    cp -- "$file" "$input"
+    input=$file
+    if [[ -n "$in_place" ]]; then
+        output=$(mktemp "$(dirname -- "$file")/.${file##*/}.XXXXXX")
+    else
+        output=$(mktemp)
+    fi
 fi
+trap 'rm -f "$output"' EXIT
 
 declare -A body_cache
 fetched_body=''
@@ -79,6 +83,12 @@ expanded=0
 log() {
     [[ -n "$quiet" ]] || printf '%s\n' "$*" >&2
 }
+
+if [[ "$file" = '-' ]]; then
+    log 'Reading standard input.'
+else
+    log "Reading $file."
+fi
 
 fetch_body() {
     local repo=$1
@@ -129,7 +139,8 @@ done <"$input"
 log "Done: expanded $expanded of $matched matching PRs."
 
 if [[ -n "$in_place" ]]; then
-    cp -- "$output" "$file"
+    chmod --reference="$file" "$output"
+    mv -- "$output" "$file"
 else
     cat "$output"
 fi
