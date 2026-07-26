@@ -23,37 +23,37 @@ quiet=''
 file='-'
 while [[ $# -gt 0 ]]; do
     case "$1" in
-    -h | --help)
-        usage
-        exit 0
-        ;;
-    -i | --in-place)
-        in_place=1
-        ;;
-    -q | --quiet)
-        quiet=1
-        ;;
-    --)
-        shift
-        [[ $# -le 1 ]] || {
-            echo "ERROR: expected at most one FILE" >&2
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        -i | --in-place)
+            in_place=1
+            ;;
+        -q | --quiet)
+            quiet=1
+            ;;
+        --)
+            shift
+            [[ $# -le 1 ]] || {
+                echo "ERROR: expected at most one FILE" >&2
+                exit 2
+            }
+            [[ $# -eq 1 ]] && file=$1
+            break
+            ;;
+        -*)
+            echo "ERROR: unknown option: $1" >&2
+            usage >&2
             exit 2
-        }
-        [[ $# -eq 1 ]] && file=$1
-        break
-        ;;
-    -*)
-        echo "ERROR: unknown option: $1" >&2
-        usage >&2
-        exit 2
-        ;;
-    *)
-        [[ "$file" = '-' ]] || {
-            echo "ERROR: expected at most one FILE" >&2
-            exit 2
-        }
-        file=$1
-        ;;
+            ;;
+        *)
+            [[ "$file" = '-' ]] || {
+                echo "ERROR: expected at most one FILE" >&2
+                exit 2
+            }
+            file=$1
+            ;;
     esac
     shift
 done
