@@ -48,7 +48,7 @@ while [[ $# -gt 0 ]]; do
             exit 2
             ;;
         *)
-            [[ "$file" = '-' ]] || {
+            [[ "${file}" = '-' ]] || {
                 echo "ERROR: expected at most one FILE" >&2
                 exit 2
             }
@@ -58,7 +58,7 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-if [[ -n "$in_place" && "$file" = '-' ]]; then
+if [[ -n "${in_place}" && "${file}" = '-' ]]; then
     echo "ERROR: --in-place requires FILE" >&2
     exit 2
 fi
@@ -68,13 +68,13 @@ if ! command -v gh >/dev/null; then
     exit 2
 fi
 
-if [[ "$file" = '-' ]]; then
+if [[ "${file}" = '-' ]]; then
     input=/dev/stdin
     output=$(mktemp)
 else
-    input=$file
-    if [[ -n "$in_place" ]]; then
-        output=$(mktemp "$(dirname -- "$file")/.${file##*/}.XXXXXX")
+    input=${file}
+    if [[ -n "${in_place}" ]]; then
+        output=$(mktemp "$(dirname -- "${file}")/.${file##*/}.XXXXXX")
     else
         output=$(mktemp)
     fi
@@ -87,66 +87,66 @@ matched=0
 expanded=0
 
 log() {
-    [[ -n "$quiet" ]] || printf '%s\n' "$*" >&2
+    [[ -n "${quiet}" ]] || printf '%s\n' "$*" >&2
 }
 
-if [[ "$file" = '-' ]]; then
+if [[ "${file}" = '-' ]]; then
     log 'Reading standard input.'
 else
-    log "Reading $file."
+    log "Reading ${file}."
 fi
 
 fetch_body() {
     local repo=$1
     local number=$2
-    local key="$repo#$number"
+    local key="${repo}#${number}"
 
-    if [[ ${body_cache[$key]+yes} ]]; then
-        fetched_body="${body_cache[$key]}"
+    if [[ ${body_cache[${key}]+yes} ]]; then
+        fetched_body="${body_cache[${key}]}"
         return
     fi
 
     local body
-    log "Fetching $key..."
-    if ! body=$(gh pr view "$number" --repo "$repo" --json body --template '{{.body}}'); then
-        echo "WARNING: unable to read $repo#$number; leaving bullet unchanged" >&2
+    log "Fetching ${key}..."
+    if ! body=$(gh pr view "${number}" --repo "${repo}" --json body --template '{{.body}}'); then
+        echo "WARNING: unable to read ${repo}#${number}; leaving bullet unchanged" >&2
         fetched_body='__GH_ERROR__'
-        body_cache[$key]=$fetched_body
+        body_cache[${key}]=${fetched_body}
         return
     fi
 
     # Reviewable adds a large, non-release-note footer to older PRs.
-    body=$(printf '%s\n' "$body" | awk '/<!--[[:space:]]*Reviewable:start[[:space:]]*-->/{exit} {print}')
-    fetched_body=$body
-    body_cache[$key]=$fetched_body
+    body=$(printf '%s\n' "${body}" | awk '/<!--[[:space:]]*Reviewable:start[[:space:]]*-->/{exit} {print}')
+    fetched_body=${body}
+    body_cache[${key}]=${fetched_body}
 }
 
-while IFS= read -r line || [[ -n "$line" ]]; do
-    if [[ "$line" =~ ^[[:space:]]*\*.*[Bb]ump.*https://github\.com/([^/]+)/([^/]+)/pull/([0-9]+) ]]; then
+while IFS= read -r line || [[ -n "${line}" ]]; do
+    if [[ "${line}" =~ ^[[:space:]]*\*.*[Bb]ump.*https://github\.com/([^/]+)/([^/]+)/pull/([0-9]+) ]]; then
         repo="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
         number="${BASH_REMATCH[3]}"
         ((matched += 1))
-        fetch_body "$repo" "$number"
-        body=$fetched_body
-        if [[ "$body" != '__GH_ERROR__' && -n "${body//[[:space:]]/}" ]]; then
-            log "Expanding $repo#$number."
+        fetch_body "${repo}" "${number}"
+        body=${fetched_body}
+        if [[ "${body}" != '__GH_ERROR__' && -n "${body//[[:space:]]/}" ]]; then
+            log "Expanding ${repo}#${number}."
             ((expanded += 1))
-            printf '%s\n' "$line" >>"$output"
-            while IFS= read -r body_line || [[ -n "$body_line" ]]; do
-                printf '  %s\n' "$body_line" >>"$output"
-            done <<<"$body"
+            printf '%s\n' "${line}" >>"${output}"
+            while IFS= read -r body_line || [[ -n "${body_line}" ]]; do
+                printf '  %s\n' "${body_line}" >>"${output}"
+            done <<<"${body}"
             continue
         fi
-        [[ "$body" = '__GH_ERROR__' ]] || log "Skipping $repo#$number: no description."
+        [[ "${body}" = '__GH_ERROR__' ]] || log "Skipping ${repo}#${number}: no description."
     fi
-    printf '%s\n' "$line" >>"$output"
-done <"$input"
+    printf '%s\n' "${line}" >>"${output}"
+done <"${input}"
 
-log "Done: expanded $expanded of $matched matching PRs."
+log "Done: expanded ${expanded} of ${matched} matching PRs."
 
-if [[ -n "$in_place" ]]; then
-    chmod --reference="$file" "$output"
-    mv -- "$output" "$file"
+if [[ -n "${in_place}" ]]; then
+    chmod --reference="${file}" "${output}"
+    mv -- "${output}" "${file}"
 else
-    cat "$output"
+    cat "${output}"
 fi
