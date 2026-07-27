@@ -672,14 +672,20 @@ function Screensaver:show()
             local screen_w2, screen_h2 = Screen:getWidth(), Screen:getHeight()
             local delay_ms = G_reader_settings:readSetting("screensaver_extra_flash_delay", 1000)
             Device.screensaver_suspend_wait_timeout = Device:getScreensaverSuspendWaitTimeout(extra_flash_count, delay_ms)
+            -- Save the framebuffer once before any flashes. Each flash restores this copy
+            -- so that transparent areas always composite over the original content.
+            local bb_copy = Screen.bb:copy()
             for i = 1, extra_flash_count do
                 local t = 0.5 + (i - 1) * (delay_ms / 1000)
                 local is_last = (i == extra_flash_count)
                 UIManager:scheduleIn(t, function()
-                    -- Paint black directly to the framebuffer and refresh, then force a full widget redraw.
                     Screen.bb:fill(Blitbuffer.COLOR_BLACK)
                     Screen:refreshFull(0, 0, screen_w2, screen_h2)
                     UIManager:scheduleIn(0.5, function()
+                        Screen.bb:blitFrom(bb_copy)
+                        if is_last then
+                            bb_copy:free()
+                        end
                         UIManager:setDirty(self.screensaver_widget, "full")
                         UIManager:forceRePaint()
                         if is_last then
