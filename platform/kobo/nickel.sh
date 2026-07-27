@@ -20,7 +20,16 @@ unset FBINK_FORCE_ROTA
 
 # kobo v5 animation is originally done in display-init, we copy the neccessary parts here.
 if [ -e "/etc/init.d/display-init.sh" ]; then
-    PRODUCT=$(hwdetect.sh)
+    # FW >= 5.18 uses a binary hwdetect instead of the hwdetect.sh script. So, use hwdetect, if available.
+    if [ -e "/usr/bin/hwdetect" ]; then
+        device=$(hwdetect device-name)
+        branding=$(hwdetect branding)
+        screen=$(hwdetect screen-variant)
+        PRODUCT=${device}${branding^}${screen}
+    else
+        PRODUCT=$(hwdetect.sh)
+    fi
+   
     export PRODUCT
     echo "Starting boot animation..."
     animator.sh /etc/images/"${PRODUCT}"-on-*.raw.gz &
