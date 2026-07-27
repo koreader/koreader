@@ -37,7 +37,7 @@ local CatalogCache = Cache:new{
 }
 
 local OPDSBrowser = Menu:extend{
-    opds20_feed          = "application/opds+json,application/atom+xml",
+    opds20_feed          = "application/opds+json, application/atom+xml;profile=opds-catalog, */*",
     catalog_type         = "application/atom%+xml",
     search_type          = "application/opensearchdescription%+xml",
     search_template_type = "application/atom%+xml",
