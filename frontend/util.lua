@@ -3,12 +3,15 @@ This module contains miscellaneous helper functions for the KOReader frontend.
 ]]
 
 local Utf8Proc = require("ffi/utf8proc")
+local ffi = require("ffi")
 local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local md5 = require("ffi/sha2").md5
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = ffiUtil.template
+require("ffi/posix_h")
+local C = ffi.C
 
 local lshift = bit.lshift
 local rshift = bit.rshift
@@ -923,31 +926,19 @@ end
 -- @string path of the directory
 -- @treturn table with total, used and available bytes
 function util.diskUsage(dir)
-    -- safe way of testing df & awk
-    local function doCommand(d)
-        local handle = io.popen("df -kP " .. util.shell_escape({d}) .. " 2>/dev/null | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }' 2>/dev/null || echo ::ERROR::")
-        if not handle then return end
-        local output = handle:read("*all")
-        handle:close()
-        if not output:find "::ERROR::" then
-            return output
-        end
-    end
     local err = { total = nil, used = nil, available = nil }
     if not dir or lfs.attributes(dir, "mode") ~= "directory" then return err end
-    local usage = doCommand(dir)
-    if not usage then return err end
-    local stage, result = {}, {}
-    for size in usage:gmatch("%w+") do
-        table.insert(stage, size)
-    end
-    for k, v in pairs({"total", "used", "available"}) do
-        if stage[k] ~= nil then
-            -- sizes are in kb, return bytes here
-            result[v] = stage[k] * 1024
-        end
-    end
-    return result
+    local statvfs = ffi.new("struct statvfs")
+    if C.statvfs(dir, statvfs) ~= 0 then return err end
+    -- The block counts are in f_frsize units, which is not always f_bsize.
+    local frsize = tonumber(statvfs.f_frsize)
+    local blocks = tonumber(statvfs.f_blocks)
+    return {
+        total = blocks * frsize,
+        used = (blocks - tonumber(statvfs.f_bfree)) * frsize,
+        -- What df calls available: free blocks less those held back for root.
+        available = tonumber(statvfs.f_bavail) * frsize,
+    }
 end
 
 
