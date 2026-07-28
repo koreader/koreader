@@ -82,8 +82,8 @@ local Device = {
     -- For Kobo, wait at least 15 seconds before calling suspend script. Otherwise, suspend might
     -- fail and the battery will be drained while we are in screensaver mode
     suspend_wait_timeout = 15,
-    -- Bumped when screensaver_extra_flash is enabled, to account for ~2s of extra refresh activity
-    suspend_wait_timeout_extra_flash = 17,
+    -- The screensaver can opt to add additional time in case of extra anti-ghosting draws.
+    screensaver_suspend_wait_timeout = nil,
 
     -- hardware feature tests: (these are functions!)
     hasBattery = yes,
@@ -390,9 +390,22 @@ function Device:getPowerDevice()
     return self.powerd
 end
 
-function Device:rescheduleSuspend()
+-- Used for extra anti-ghosting redraws, to account for the time spent
+-- flashing the screen before suspend.
+-- extra_flash_count: number of corrective redraws (0 = none), delay_ms: delay between each redraw.
+function Device:getScreensaverSuspendWaitTimeout(extra_flash_count, delay_ms)
+    local flash_window = (extra_flash_count and extra_flash_count > 0)
+        -- 0.5s initial delay + (count-1)*delay between flashes + 0.5s for final redraw
+        and (0.5 + (extra_flash_count - 1) * (delay_ms / 1000) + 0.5)
+        or 0
+    return self.suspend_wait_timeout + flash_window + 2 -- 2s safety margin
+end
+
+-- Only used on platforms where we handle suspend ourselves.
+-- Pass an optional timeout to override the default (e.g., to account for extra screensaver flashing).
+function Device:rescheduleSuspend(timeout)
     UIManager:unschedule(self.suspend)
-    UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
+    UIManager:scheduleIn(timeout or self.suspend_wait_timeout, self.suspend, self)
 end
 
 -- Only used on platforms where we handle suspend ourselves.
@@ -474,7 +487,8 @@ function Device:onPowerEvent(ev)
         -- Only turn off the frontlight *after* we've displayed the screensaver and dealt with Wi-Fi,
         -- to prevent that from affecting the smoothness of the frontlight ramp down.
         self.powerd:beforeSuspend()
-        self:rescheduleSuspend()
+        -- When self.screensaver_suspend_wait_timeout is nil the base timeout is used.
+        self:rescheduleSuspend(self.screensaver_suspend_wait_timeout)
     end
 end
 
@@ -690,13 +704,16 @@ function Device:ping4(ip)
     -- NOTE: This is disabled by default, barring custom distro setup during init, c.f., sysctl net.ipv4.ping_group_range
     --       It also requires Linux 3.0+ (https://github.com/torvalds/linux/commit/c319b4d76b9e583a5d88d6bf190e079c4e43213d)
     local socket, socket_type
-    socket = C.socket(C.AF_INET, bit.bor(C.SOCK_DGRAM, C.SOCK_NONBLOCK, C.SOCK_CLOEXEC), C.IPPROTO_ICMP)
+    -- NOTE: We deliberately do NOT call socket() with SOCK_NONBLOCK/SOCK_CLOEXEC:
+    --       that form requires Linux 2.6.27+ and fails with EINVAL on older versions.
+    --       We set both flags via fcntl() below instead, which works on every kernel.
+    socket = C.socket(C.AF_INET, C.SOCK_DGRAM, C.IPPROTO_ICMP)
     if socket == -1 then
         local errno = ffi.errno()
         logger.dbg("Device:ping4: unprivileged ICMP socket:", ffi.string(C.strerror(errno)))
 
         -- Try a raw socket
-        socket = C.socket(C.AF_INET, bit.bor(C.SOCK_RAW, C.SOCK_NONBLOCK, C.SOCK_CLOEXEC), C.IPPROTO_ICMP)
+        socket = C.socket(C.AF_INET, C.SOCK_RAW, C.IPPROTO_ICMP)
         if socket == -1 then
             errno = ffi.errno()
             if errno == C.EPERM then
@@ -705,18 +722,24 @@ function Device:ping4(ip)
                 logger.dbg("Device:ping4: raw ICMP socket:", ffi.string(C.strerror(errno)))
             end
             --- Fall-back to the ping CLI tool, in the hope that it's setuid...
-            if self:isKindle() and self:hasDPad() then
-                -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles (K4 included)...
-                return os.execute("ping -q -c1 " .. ip .. " > /dev/null") == 0
-            else
-                return os.execute("ping -q -c1 -w2 " .. ip .. " > /dev/null") == 0
-            end
+            -- NOTE: We can't rely on `ping -w`: it's not available in the old busybox build
+            --       used on Legacy Kindles (K4 included). Bound the runtime ourselves by
+            --       killing the ping after a timeout, which works with any ping implementation.
+            return os.execute(string.format([[ping -q -c1 %s >/dev/null &
+                                              pid=$!
+                                              (sleep 2; kill $pid 2>/dev/null) &
+                                              wait $pid 2>/dev/null
+                                              ]], ip)) == 0
         else
             socket_type = C.SOCK_RAW
         end
     else
         socket_type = C.SOCK_DGRAM
     end
+
+    -- Apply FD_CLOEXEC + O_NONBLOCK now (see the socket() note above).
+    C.fcntl(socket, C.F_SETFD, C.FD_CLOEXEC)
+    C.fcntl(socket, C.F_SETFL, bit.bor(C.fcntl(socket, C.F_GETFL, 0), C.O_NONBLOCK))
 
     -- c.f., busybox's networking/ping.c
     local DEFDATALEN = 56 -- 64 - 8

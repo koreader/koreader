@@ -151,12 +151,17 @@ function SyncService.sync(server, file_path, sync_cb, is_silent)
     end
     local code_response = 412 -- If-Match header failed
     local etag
+    -- Bound the If-Match retry loop so a persistently failing 412 (e.g. a server
+    -- that only ever returns a weak ETag which can't satisfy If-Match) can't hang
+    -- the app indefinitely; give up after a few tries and report failure.
+    local max_tries, tries = 5, 0
     local api = server.type == "dropbox" and require("apps/cloudstorage/dropboxapi") or require("apps/cloudstorage/webdavapi")
     local token = server.password
     if server.type == "dropbox" and not (server.address == nil or server.address == "") then
         token = api:getAccessToken(server.password, server.address)
     end
-    while code_response == 412 do
+    while code_response == 412 and tries < max_tries do
+        tries = tries + 1
         os.remove(income_file_path)
         if server.type == "dropbox" then
             local url_base = server.url:sub(-1) == "/" and server.url or server.url.."/"

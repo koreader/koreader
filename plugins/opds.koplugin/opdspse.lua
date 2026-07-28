@@ -99,7 +99,7 @@ function OPDSPSE:streamPages(remote_url, count, continue, username, password, la
     -- will overwrite the book progress before we pull it, making it always 0.
     local ok, last_page = pcall(function() return self:getLastPage(remote_url, username, password) end)
     if not ok then
-        logger.warn("Couldn't pull progress, defaulting to Page 0.")
+        logger.dbg("Couldn't pull progress, defaulting to Page 0.")
         last_page = 0
     end
     local page_table = {image_disposable = true}

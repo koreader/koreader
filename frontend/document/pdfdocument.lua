@@ -272,7 +272,7 @@ function PdfDocument:deleteHighlight(pageno, item)
     local page = self._document:openPage(pageno)
     local annot = page:getMarkupAnnotation(quadpoints, n)
     if annot ~= nil then
-        page:deleteMarkupAnnotation(annot)
+        page:deleteAnnotation(annot)
         self:resetTileCacheValidity()
     end
     page:close()

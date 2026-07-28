@@ -213,6 +213,7 @@ BookList.collates = {
         item_func = function(item, ui)
             local doc_props = ui.bookinfo:getDocProps(item.path or item.file)
             doc_props.series = doc_props.series or "\u{FFFF}"
+            doc_props.series_index = tonumber(doc_props.series_index)
             item.doc_props = doc_props
         end,
         init_sort_func = function()

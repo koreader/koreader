@@ -1416,10 +1416,12 @@ function Dispatcher._showAsMenu(settings, exec_props, rename_callback, rename_ho
                 if rename_callback then
                     rename_callback(v, quickmenu)
                 else
+                    local current_offset = quickmenu:getScrolledOffset()
                     UIManager:close(quickmenu)
                     Dispatcher:execute({[v.key] = settings[v.key]})
                     if keep_open_on_apply and not util.stringStartsWith(v.key, "touch_input") then
                         quickmenu:setTitle(title)
+                        quickmenu:setScrolledOffset(current_offset)
                         UIManager:show(quickmenu)
                     end
                 end
