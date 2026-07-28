@@ -3,15 +3,12 @@ This module contains miscellaneous helper functions for the KOReader frontend.
 ]]
 
 local Utf8Proc = require("ffi/utf8proc")
-local ffi = require("ffi")
 local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local md5 = require("ffi/sha2").md5
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = ffiUtil.template
-require("ffi/posix_h")
-local C = ffi.C
 
 local lshift = bit.lshift
 local rshift = bit.rshift
@@ -928,16 +925,12 @@ end
 function util.diskUsage(dir)
     local err = { total = nil, used = nil, available = nil }
     if not dir or lfs.attributes(dir, "mode") ~= "directory" then return err end
-    local statvfs = ffi.new("struct statvfs")
-    if C.statvfs(dir, statvfs) ~= 0 then return err end
-    -- The block counts are in f_frsize units, which is not always f_bsize.
-    local frsize = tonumber(statvfs.f_frsize)
-    local blocks = tonumber(statvfs.f_blocks)
+    local total, free, available = ffiUtil.df(dir)
+    if not total then return err end
     return {
-        total = blocks * frsize,
-        used = (blocks - tonumber(statvfs.f_bfree)) * frsize,
-        -- What df calls available: free blocks less those held back for root.
-        available = tonumber(statvfs.f_bavail) * frsize,
+        total = total,
+        used = total - free,
+        available = available,
     }
 end
 
