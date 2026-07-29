@@ -987,7 +987,7 @@ function Kobo:otaModel()
     local model = "kobo"
     -- Switch to the proper packages on FW 5.x
     -- NOTE: We don't distribute kobov4 binaries, the omission is on purpose.
-    if util.fileExists("/usr/bin/hwdetect.sh") then
+    if util.fileExists("/usr/bin/hwdetect.sh")  or util.fileExists("/usr/bin/hwdetect") then
         model = "kobov5"
     end
     return model, "ota"
@@ -1172,6 +1172,26 @@ local function getCodeName()
         if std_out then
             codename = std_out:read("*line")
             std_out:close()
+        end
+    end
+    -- If that fails, try binary hwdetect (since firmware 5.18)
+    if not codename then
+        local std_out_device = io.popen("/usr/bin/hwdetect device-name", "re")
+        local std_out_branding = io.popen("/usr/bin/hwdetect branding", "re")
+        local std_out_screen = io.popen("/usr/bin/hwdetect screen-variant", "re")
+        if std_out_device and std_out_branding and std_out_screen then
+            local device = std_out_device:read("*line")
+            local branding = std_out_branding:read("*line")
+            local screen = std_out_screen:read("*line")
+            local branding_first = string.sub(branding, 1, 1)
+            local branding_rest = string.sub(branding, 2)
+
+            branding = string.upper(branding_first) .. branding_rest
+            codename = device .. branding .. screen
+
+            std_out_device:close()
+            std_out_branding:close()
+            std_out_screen:close()
         end
     end
     return codename
