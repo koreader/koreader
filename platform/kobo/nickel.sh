@@ -20,16 +20,15 @@ unset FBINK_FORCE_ROTA
 
 # kobo v5 animation is originally done in display-init, we copy the neccessary parts here.
 if [ -e "/etc/init.d/display-init.sh" ]; then
-    # FW >= 5.18 uses a binary hwdetect instead of the hwdetect.sh script. So, use hwdetect, if available.
+    # FW >= 5.18 uses a binary hwdetect instead of the hwdetect.sh script. If hwdetect is available, we can use
+    # utils.sh for convenience.
     if [ -e "/usr/bin/hwdetect" ]; then
-        device=$(hwdetect device-name)
-        branding=$(hwdetect branding)
-        screen=$(hwdetect screen-variant)
-        PRODUCT=${device}${branding^}${screen}
+        source /usr/libexec/platform/utils.sh
+        PRODUCT="$(get_product_name)"
     else
         PRODUCT=$(hwdetect.sh)
     fi
-   
+
     export PRODUCT
     echo "Starting boot animation..."
     animator.sh /etc/images/"${PRODUCT}"-on-*.raw.gz &
@@ -153,6 +152,9 @@ if [ -e "/etc/init.d/z-nickel-hardware-status" ]; then
     # since sometime after 5.2, pulseaudio is started in rc.local. Detect and kill:
     if grep "pulseaudio" "/etc/rc.local"; then
         killall pulseaudio
+    fi
+    if grep "speech-dispatcher" "/etc/rc.local"; then
+        killall speech-dispatcher
     fi
     /etc/init.d/z-nickel-hardware-status
     sync
