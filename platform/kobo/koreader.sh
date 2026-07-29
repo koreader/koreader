@@ -250,16 +250,15 @@ if [ -z "${PRODUCT}" ]; then
 fi
 
 if [ -z "${PRODUCT}" ]; then
-    # FW >= 5.18 uses a binary hwdetect instead of the hwdetect.sh script. So, use hwdetect, if available.
+    # FW >= 5.18 uses a binary hwdetect instead of the hwdetect.sh script. If hwdetect is available, we can use
+    # utils.sh for convenience.
     if [ -e "/usr/bin/hwdetect" ]; then
-        device=$(hwdetect device-name)
-        branding=$(hwdetect branding)
-        screen=$(hwdetect screen-variant)
-        PRODUCT=${device}${branding^}${screen}
+        source /usr/libexec/platform/utils.sh
+        PRODUCT="$(get_product_name)"
     else
         PRODUCT="$(/usr/bin/hwdetect.sh 2>/dev/null)"
     fi
-    
+
     export PRODUCT
 fi
 
