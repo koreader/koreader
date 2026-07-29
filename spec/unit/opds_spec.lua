@@ -431,6 +431,24 @@ describe("OPDS module", function()
             assert.are.same(entries[2].title, "Second")
             assert.are.same(entries[2].link[1].href, "SECOND_IMG")
         end)
+        it("should keep attribute values that are not ASCII", function()
+            local non_ascii_sample = [[
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>Non-ASCII attributes</title>
+<entry>
+<title>Двадцать тысяч льё под водой</title>
+<id>urn:third</id>
+<category term="Приключения" label="Приключения"/>
+<link href="/opds/sequencebooks/109084" rel="related" type="application/atom+xml" title="Все книги серии «Капитан Немо»"/>
+</entry>
+</feed>
+]]
+            local catalog = OPDSParser:parse(non_ascii_sample)
+            local entry = catalog.feed.entry[1]
+            assert.are.same(entry.category.label, "Приключения")
+            assert.are.same(entry.link[1].title, "Все книги серии «Капитан Немо»")
+        end)
     end)
 
     describe("OPDS browser module", function()
