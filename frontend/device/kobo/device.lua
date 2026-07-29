@@ -1174,6 +1174,7 @@ local function getCodeName()
             std_out:close()
         end
     end
+    -- If that fails, try binary hwdetect (since firmware 5.18)
     if not codename then
         local std_out_device = io.popen("/usr/bin/hwdetect device-name", "re")
         local std_out_branding = io.popen("/usr/bin/hwdetect branding", "re")
