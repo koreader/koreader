@@ -1175,18 +1175,17 @@ local function getCodeName()
         end
     end
     if not codename then
-        local std_out_device = io.popen("/usr/bin/hwdetect device-name 2>/dev/null", "re")
-        local std_out_branding = io.popen("/usr/bin/hwdetect branding 2>/dev/null", "re")
-        local std_out_screen = io.popen("/usr/bin/hwdetect screen-variant 2>/dev/null", "re")
-        if std_out_device then
+        local std_out_device = io.popen("/usr/bin/hwdetect device-name", "re")
+        local std_out_branding = io.popen("/usr/bin/hwdetect branding", "re")
+        local std_out_screen = io.popen("/usr/bin/hwdetect screen-variant", "re")
+        if std_out_device and std_out_branding and std_out_screen then
             local device = std_out_device:read("*line")
             local branding = std_out_branding:read("*line")
             local screen = std_out_screen:read("*line")
-
             local branding_first = string.sub(branding, 1, 1)
             local branding_rest = string.sub(branding, 2)
-            branding = string.upper(branding_first) .. branding_rest
 
+            branding = string.upper(branding_first) .. branding_rest
             codename = device .. branding .. screen
 
             std_out_device:close()
