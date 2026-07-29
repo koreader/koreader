@@ -23,7 +23,7 @@ if [ -e "/etc/init.d/display-init.sh" ]; then
     # FW >= 5.18 uses a binary hwdetect instead of the hwdetect.sh script. If hwdetect is available, we can use
     # utils.sh for convenience.
     if [ -e "/usr/bin/hwdetect" ]; then
-        source /usr/libexec/platform/utils.sh
+        . /usr/libexec/platform/utils.sh
         PRODUCT="$(get_product_name)"
     else
         PRODUCT=$(hwdetect.sh)

@@ -253,7 +253,7 @@ if [ -z "${PRODUCT}" ]; then
     # FW >= 5.18 uses a binary hwdetect instead of the hwdetect.sh script. If hwdetect is available, we can use
     # utils.sh for convenience.
     if [ -e "/usr/bin/hwdetect" ]; then
-        source /usr/libexec/platform/utils.sh
+        . /usr/libexec/platform/utils.sh
         PRODUCT="$(get_product_name)"
     else
         PRODUCT="$(/usr/bin/hwdetect.sh 2>/dev/null)"
