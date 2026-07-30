@@ -496,4 +496,55 @@ describe("util module", function()
                 util.urlDecode(util.urlEncode("~^-_%!*'();:@&=+$,/?#[]")))
         end)
     end)
+
+    describe("canForkSafely", function()
+        local orig_calcFreeMem, orig_getRSS
+        setup(function()
+            orig_calcFreeMem = util.calcFreeMem
+            orig_getRSS = util.getRSS
+        end)
+        teardown(function()
+            util.calcFreeMem = orig_calcFreeMem
+            util.getRSS = orig_getRSS
+        end)
+
+        it("should allow forking when free memory covers the estimate", function()
+            util.getRSS = function() return 120 * 1024 * 1024 end
+            util.calcFreeMem = function() return 200 * 1024 * 1024, 512 * 1024 * 1024 end
+            assert.is_true((util.canForkSafely()))
+        end)
+
+        it("should refuse forking when free memory is short", function()
+            util.getRSS = function() return 120 * 1024 * 1024 end
+            util.calcFreeMem = function() return 40 * 1024 * 1024, 512 * 1024 * 1024 end
+            local ok, memfree, needed = util.canForkSafely()
+            assert.is_false(ok)
+            assert.is_equal(40 * 1024 * 1024, memfree)
+            assert.is_equal(72 * 1024 * 1024, needed)
+        end)
+
+        it("should apply a floor for small parents", function()
+            util.getRSS = function() return 10 * 1024 * 1024 end
+            util.calcFreeMem = function() return 30 * 1024 * 1024, 512 * 1024 * 1024 end
+            local ok, _, needed = util.canForkSafely()
+            assert.is_false(ok)
+            assert.is_equal(40 * 1024 * 1024, needed)
+        end)
+
+        it("should honour a custom ratio", function()
+            util.getRSS = function() return 400 * 1024 * 1024 end
+            util.calcFreeMem = function() return 100 * 1024 * 1024, 1024 * 1024 * 1024 end
+            assert.is_true((util.canForkSafely(0.2)))
+        end)
+
+        it("should not change behaviour on unsupported platforms", function()
+            util.getRSS = function() return nil end
+            util.calcFreeMem = function() return 1, 1 end
+            assert.is_true((util.canForkSafely()))
+
+            util.getRSS = function() return 120 * 1024 * 1024 end
+            util.calcFreeMem = function() return nil, nil end
+            assert.is_true((util.canForkSafely()))
+        end)
+    end)
 end)

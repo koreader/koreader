@@ -10,6 +10,7 @@ local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local ffiutil = require("ffi/util")
 local logger = require("logger")
+local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
 
@@ -284,7 +285,24 @@ function ReaderThumbnail:getPageThumbnail(page, width, height, batch_id, when_ge
     return true -- delayed
 end
 
+-- This generation loop runs a few times a second, so don't poll /proc on every pass.
+function ReaderThumbnail:checkMemory()
+    local now = UIManager:getTime()
+    if self._mem_check_at and now < self._mem_check_at then
+        return self._mem_check_ok
+    end
+    self._mem_check_at = now + time.s(5)
+
+    Cache.checkAllMemoryPressure()
+    self._mem_check_ok = util.canForkSafely()
+    if not self._mem_check_ok then
+        logger.warn("deferring thumbnail generation, low memory")
+    end
+    return self._mem_check_ok
+end
+
 function ReaderThumbnail:ensureTileGeneration()
+    local can_generate = self:checkMemory()
     if not self._standby_prevented then
         self._standby_prevented = true
         UIManager:preventStandby()
@@ -315,6 +333,11 @@ function ReaderThumbnail:ensureTileGeneration()
                 local tile = self.tile_cache and self.tile_cache:check(req.hash)
                 if tile then
                     req.when_generated_callback(tile, req.batch_id, true)
+                elseif not can_generate then
+                    -- Requeue it as-is: we'll retry once memory frees up.
+                    table.insert(requests, 1, req)
+                    self.thumbnails_requests[req_id] = requests
+                    break
                 else
                     if self:startTileGeneration(req) then
                         self.req_in_progress = req

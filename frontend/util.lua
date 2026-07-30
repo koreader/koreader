@@ -780,6 +780,35 @@ function util.calcFreeMem()
     end
 end
 
+--- Resident set size of the current process
+---- @treturn int bytes (or nil on unsupported platforms)
+function util.getRSS()
+    local statm = io.open("/proc/self/statm", "r")
+    if not statm then
+        return nil
+    end
+    local _, rss = statm:read("*number", "*number")
+    statm:close()
+    return rss and rss * 4096 or nil
+end
+
+--- Whether there's enough free memory to fork a worker that will grow alongside us.
+--- crengine estimates ~60 MB of extra RSS for a background rerendering against a
+--- ~120 MB parent, hence the default 0.6 ratio, with a floor for small parents.
+---- @number ratio (optional) fraction of our RSS the child is expected to need
+---- @treturn bool, int memfree, int needed
+function util.canForkSafely(ratio)
+    local memfree = util.calcFreeMem()
+    local rss = util.getRSS()
+    if not memfree or not rss then
+        -- Unsupported platform: don't change existing behaviour.
+        return true
+    end
+
+    local needed = math.max(rss * (ratio or 0.6), 40 * 1024 * 1024)
+    return memfree >= needed, memfree, needed
+end
+
 --- Recursively scan directory for files inside
 -- @string path
 -- @func callback(fullpath, name, attr)

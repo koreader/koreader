@@ -10,6 +10,10 @@ local lru = require("ffi/lru")
 local md5 = require("ffi/sha2").md5
 local util = require("util")
 
+-- Every live instance, so a single pressure sweep can reach them all.
+-- Weak values: a cache that's been dropped shouldn't be pinned here.
+local instances = setmetatable({}, { __mode = "v" })
+
 local Cache = {
     -- Cache configuration:
     -- Max storage space, in bytes...
@@ -32,6 +36,7 @@ function Cache:new(o)
     setmetatable(o, self)
     self.__index = self
     if o.init then o:init() end
+    table.insert(instances, o)
     return o
 end
 
@@ -147,8 +152,22 @@ function Cache:clear()
     self.cache:clear()
 end
 
--- Terribly crappy workaround: evict half the cache if we appear to be redlining on free RAM...
-function Cache:memoryPressureCheck()
+-- Rebuild the LRU against a new storage budget. Cached entries are dropped.
+function Cache:resize(new_size)
+    if not self.size or not new_size or new_size == self.size then
+        return false
+    end
+
+    -- Clear first, so the eviction callback still gets a chance to free resources.
+    self.cache:clear()
+    self.size = new_size
+    self.slots = math.ceil(self.size / self.avg_itemsize)
+    self.cache = lru.new(self.slots, self.size, self.enable_eviction_cb)
+    return true
+end
+
+-- Returns free_fraction, memfree, memtotal when redlining on free RAM, nil otherwise.
+local function underPressure()
     local memfree, memtotal = util.calcFreeMem()
 
     -- Nonsensical values? (!Linux), skip this.
@@ -156,19 +175,51 @@ function Cache:memoryPressureCheck()
         return
     end
 
-    -- If less that 20% of the total RAM is free, drop half the Cache...
+    -- If less that 20% of the total RAM is free, we're under pressure.
     local free_fraction = memfree / memtotal
     if free_fraction < 0.20 then
-        logger.warn(string.format("Running low on memory (~%d%%, ~%.2f/%d MiB), evicting half of the cache...",
-                                  free_fraction * 100,
-                                  memfree / (1024 * 1024),
-                                  memtotal / (1024 * 1024)))
-        self.cache:chop()
-
-        -- And finish by forcing a GC sweep now...
-        collectgarbage()
-        collectgarbage()
+        return free_fraction, memfree, memtotal
     end
+end
+
+local function logPressure(free_fraction, memfree, memtotal)
+    logger.warn(string.format("Running low on memory (~%d%%, ~%.2f/%d MiB), evicting half of the cache...",
+                              free_fraction * 100,
+                              memfree / (1024 * 1024),
+                              memtotal / (1024 * 1024)))
+end
+
+-- Terribly crappy workaround: evict half the cache if we appear to be redlining on free RAM...
+function Cache:memoryPressureCheck()
+    local free_fraction, memfree, memtotal = underPressure()
+    if not free_fraction then
+        return false
+    end
+
+    logPressure(free_fraction, memfree, memtotal)
+    self.cache:chop()
+
+    -- And finish by forcing a GC sweep now...
+    collectgarbage()
+    collectgarbage()
+    return true
+end
+
+-- Same, but across every live cache, off a single free-RAM read.
+function Cache.checkAllMemoryPressure()
+    local free_fraction, memfree, memtotal = underPressure()
+    if not free_fraction then
+        return false
+    end
+
+    logPressure(free_fraction, memfree, memtotal)
+    for _, cache in pairs(instances) do
+        cache.cache:chop()
+    end
+
+    collectgarbage()
+    collectgarbage()
+    return true
 end
 
 -- Refresh the disk snapshot (mainly used by ui/data/onetime_migration)

@@ -2,6 +2,7 @@
 This is a registry for document providers
 ]]--
 
+local DocCache = require("document/doccache")
 local DocSettings = require("docsettings")
 local logger = require("logger")
 local util = require("util")
@@ -232,6 +233,7 @@ function DocumentRegistry:openDocument(file, provider)
     -- next regular gc. The second call may help reclaming more memory.
     collectgarbage()
     collectgarbage()
+    DocCache:reevaluate()
     if not self.registry[file] then
         provider = provider or self:getProvider(file)
 

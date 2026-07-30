@@ -57,6 +57,20 @@ local DocCache = Cache:new{
     cache_path = DataStorage:getDataDir() .. "/cache/",
 }
 
+-- The budget computed at startup reflects post-boot free memory, which no longer
+-- holds mid-session. Recompute it, but only act on a substantial change so that
+-- routine openings don't throw away a warm cache.
+function DocCache:reevaluate()
+    local new_size = calcCacheMemSize()
+    if not self.size or math.abs(new_size - self.size) < self.size * 0.25 then
+        return false
+    end
+
+    logger.dbg(string.format("Resizing the global document cache: %.2f -> %.2f MB",
+                             self.size / 1024 / 1024, new_size / 1024 / 1024))
+    return self:resize(new_size)
+end
+
 function DocCache:serialize(doc_path)
     if not self.disk_cache then
         return

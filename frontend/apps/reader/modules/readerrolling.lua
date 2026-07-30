@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
+local Cache = require("cache")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
@@ -13,6 +14,7 @@ local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local time = require("ui/time")
+local util = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
@@ -1737,6 +1739,7 @@ function ReaderRolling:setupRerenderingAutomation()
 
     local next_step_not_before
     self._stepRerenderingAutomation = function(next_step)
+        Cache.checkAllMemoryPressure()
         -- Ensure transitions between partial rerendering steps
         logger.dbg("_stepRerenderingAutomation(", next_step, "), currently ", self.rendering_state)
         UIManager:unschedule(self._stepRerenderingAutomation)
@@ -1762,6 +1765,22 @@ function ReaderRolling:setupRerenderingAutomation()
                 logger.dbg("background rerendering not needed, current cache is usable")
                 self._current_rerendering_pid = nil -- have this mean no rerendering was needed
             else
+                local can_fork, memfree, needed = util.canForkSafely()
+                if not can_fork then
+                    -- Stay in this state and retry later: falling through would end up
+                    -- reloading and rerendering in the foreground, which is what gets
+                    -- big books killed by the OOM killer on low-memory devices.
+                    self._rerendering_deferrals = (self._rerendering_deferrals or 0) + 1
+                    logger.warn(string.format(
+                        "deferring background rerendering, low memory (%.1f MB free, %.1f MB needed), attempt %d",
+                        memfree / 1024 / 1024, needed / 1024 / 1024, self._rerendering_deferrals))
+                    if self.rendering_state ~= prev_state then
+                        UIManager:setDirty(self.view.dialog, "ui", self.view.flipping:getRefreshRegion())
+                    end
+                    UIManager:scheduleIn(self._rerendering_deferrals > 60 and 60 or 1, self._stepRerenderingAutomation)
+                    return
+                end
+                self._rerendering_deferrals = nil
                 self._current_rerendering_pid = self:_rerenderInBackground()
             end
 
@@ -1888,6 +1907,7 @@ function ReaderRolling:tearDownRerenderingAutomation()
         self._stepRerenderingAutomation = nil
         UIManager:allowStandby()
     end
+    self._rerendering_deferrals = nil
     if self._watchInputEvent then
         UIManager.event_hook:unregister("InputEvent", self._watchInputEvent)
         self._watchInputEvent = nil

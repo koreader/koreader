@@ -14,6 +14,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local lru = require("ffi/lru")
 local time = require("ui/time")
+local util = require("util")
 
 -- engine can be initialized only once, on first document opened
 local engine_initialized = false
@@ -77,6 +78,28 @@ local CreDocument = Document:extend{
     last_linear_page = nil,
 }
 
+-- crengine's various in-memory caches have rather small max-sizes
+-- (2.5 / 4.5 / 4.5 / 1 MB), and we avoid some bugs by increasing them.
+-- Each cache only grows when needed, depending on book characteristics, but the
+-- ceiling still has to fit the device: 40x of ~12.5 MB is most of a 512 MB Kindle.
+-- Users can always pin a value with the "cre_storage_size_factor" setting.
+function CreDocument.getDefaultStorageSizeFactor()
+    local _, memtotal = util.calcFreeMem()
+    if not memtotal then
+        return 40
+    end
+
+    local mb = memtotal / 1024 / 1024
+    if mb < 384 then
+        return 5
+    elseif mb < 768 then
+        return 10
+    elseif mb < 1536 then
+        return 20
+    end
+    return 40
+end
+
 function CreDocument.cacheInit()
     -- remove legacy cr3cache directory
     if lfs.attributes("./cr3cache", "mode") == "directory" then
@@ -85,18 +108,10 @@ function CreDocument.cacheInit()
     -- crengine saves caches on disk for faster re-openings, and cleans
     -- the less recently used ones when this limit is reached
     local default_cre_disk_cache_max_size = 64 -- in MB units
-    -- crengine various in-memory caches max-sizes are rather small
-    -- (2.5 / 4.5 / 4.5 / 1 MB), and we can avoid some bugs if we
-    -- increase them. Let's multiply them by 40 (each cache would
-    -- grow only when needed, depending on book characteristics).
-    -- People who would get out of memory crashes with big books on
-    -- older devices can decrease that with setting:
-    --   "cre_storage_size_factor"=1    (or 2, or 5)
-    local default_cre_storage_size_factor = 40
     cre.initCache(DataStorage:getDataDir() .. "/cache/cr3cache",
         (G_reader_settings:readSetting("cre_disk_cache_max_size") or default_cre_disk_cache_max_size)*1024*1024,
         G_reader_settings:nilOrTrue("cre_compress_cached_data"),
-        G_reader_settings:readSetting("cre_storage_size_factor") or default_cre_storage_size_factor)
+        G_reader_settings:readSetting("cre_storage_size_factor") or CreDocument.getDefaultStorageSizeFactor())
 end
 
 function CreDocument:engineInit()

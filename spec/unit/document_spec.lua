@@ -80,3 +80,38 @@ describe("EPUB document module", function()
         doc:close()
     end)
 end)
+
+describe("CreDocument storage size factor", function()
+    local CreDocument, util
+    local orig_calcFreeMem
+
+    setup(function()
+        require("commonrequire")
+        CreDocument = require("document/credocument")
+        util = require("util")
+        orig_calcFreeMem = util.calcFreeMem
+    end)
+    teardown(function()
+        util.calcFreeMem = orig_calcFreeMem
+    end)
+
+    local function withTotalMem(mb)
+        util.calcFreeMem = function() return mb * 1024 * 1024 / 2, mb * 1024 * 1024 end
+    end
+
+    it("should scale with total memory", function()
+        withTotalMem(256)
+        assert.is_equal(5, CreDocument.getDefaultStorageSizeFactor())
+        withTotalMem(512)
+        assert.is_equal(10, CreDocument.getDefaultStorageSizeFactor())
+        withTotalMem(1024)
+        assert.is_equal(20, CreDocument.getDefaultStorageSizeFactor())
+        withTotalMem(4096)
+        assert.is_equal(40, CreDocument.getDefaultStorageSizeFactor())
+    end)
+
+    it("should keep the previous default when memory is unknown", function()
+        util.calcFreeMem = function() return nil, nil end
+        assert.is_equal(40, CreDocument.getDefaultStorageSizeFactor())
+    end)
+end)
