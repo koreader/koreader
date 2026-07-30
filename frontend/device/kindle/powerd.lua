@@ -334,16 +334,20 @@ function KindlePowerD:afterResume()
     if not self.device:hasFrontlight() then
         return
     end
-    if self:isFrontlightOn() then
-        -- The Kindle framework should turn the front light back on automatically.
-        -- The following statement ensures consistency of intensity, but should basically always be redundant,
-        -- since we set intensity via lipc and not sysfs ;).
-        -- NOTE: This is race-y, and we want to *lose* the race, hence the use of the scheduler (c.f., #4392)
-        UIManager:tickAfterNext(function() self:turnOnFrontlightHW() end)
-    else
-        -- But in the off case, we *do* use sysfs, so this one actually matters.
-        UIManager:tickAfterNext(function() self:turnOffFrontlightHW() end)
-    end
+    -- NOTE: This is race-y, and we want to *lose* the race, hence the use of the scheduler (c.f., #4392)
+    --       Decide once we actually run: plugins reacting to the Resume event we just broadcast may
+    --       have adjusted the frontlight in between, and we don't want to clobber that.
+    UIManager:tickAfterNext(function()
+        if self:isFrontlightOn() then
+            -- The Kindle framework should turn the front light back on automatically.
+            -- The following statement ensures consistency of intensity, but should basically always be redundant,
+            -- since we set intensity via lipc and not sysfs ;).
+            self:turnOnFrontlightHW()
+        else
+            -- But in the off case, we *do* use sysfs, so this one actually matters.
+            self:turnOffFrontlightHW()
+        end
+    end)
 end
 
 function KindlePowerD:UIManagerReadyHW(uimgr)
