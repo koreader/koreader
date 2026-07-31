@@ -669,16 +669,29 @@ end
 function OPDSBrowser:getItemFromPublication(entry, item_url)
     local title, author, content
     if type(entry.metadata) == "table" then
+        content = entry.metadata.description
         title = entry.metadata.title or _("Unknown")
         author = entry.metadata.author
         if type(author) == "table" then
-            author = author[1] and author[1].name or author.name
-            if type(author) == "table" then
-                author = #author > 0 and table.concat(author, ", ")
+            if type(author.name) == "string" then
+                author = author.name
+            elseif type(author.name) == "table" then
+                author = table.concat(author.name, ", ")
+            elseif type(author[1]) == "string" then
+                author = table.concat(author, ", ")
+            elseif type(author[1]) == "table" then
+                local t = {}
+                for _, v in ipairs(author) do
+                    if type(v.name) == "string" then
+                        table.insert(t, v.name)
+                    elseif type(v.name) == "table" then
+                        table.insert(t, table.concat(v.name, ", "))
+                    end
+                end
+                author = table.concat(t, ", ")
             end
         end
-        author = author or _("Unknown Author")
-        content = entry.metadata.description
+        author = (type(author) == "string" and author ~= "") and author or _("Unknown Author")
     end
 
     local thumbnail, image
