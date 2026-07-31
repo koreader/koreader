@@ -378,4 +378,78 @@ describe("NewsDownloader module", function()
             assert.is_nil(getFeedItemTimestamp({ title = "x", link = "y" }))
         end)
     end)
+
+    -- "Delete all items in download folder" empties the folder wholesale, and the
+    -- folder is user-selectable, so pointing it at a library and using that entry
+    -- destroys the library (#15508). The folder chooser warns when the chosen
+    -- folder already holds something; this is the test for what "something" means.
+    describe("folderHasOtherContent", function()
+        local lfs, ffiutil, tmp_root
+
+        setup(function()
+            -- Required here, not in the describe body: describe bodies run at
+            -- collection time, before commonrequire has set the package path up.
+            lfs = require("libs/libkoreader-lfs")
+            ffiutil = require("ffi/util")
+            tmp_root = require("datastorage"):getDataDir() .. "/newsdownloader_folder_spec"
+            if lfs.attributes(tmp_root, "mode") == "directory" then
+                ffiutil.purgeDir(tmp_root)
+            end
+            lfs.mkdir(tmp_root)
+        end)
+
+        teardown(function()
+            if lfs.attributes(tmp_root, "mode") == "directory" then
+                ffiutil.purgeDir(tmp_root)
+            end
+        end)
+
+        local function makeDir(name)
+            local path = tmp_root .. "/" .. name
+            lfs.mkdir(path)
+            return path
+        end
+
+        local function touch(path, name)
+            local f = io.open(path .. "/" .. name, "w")
+            f:write("x")
+            f:close()
+        end
+
+        it("reports an empty folder as safe", function()
+            assert.is_false(NewsDownloader:folderHasOtherContent(makeDir("empty")))
+        end)
+
+        it("reports a folder holding a file of the user's", function()
+            local path = makeDir("with_book")
+            touch(path, "my_book.epub")
+            assert.is_true(NewsDownloader:folderHasOtherContent(path))
+        end)
+
+        it("reports a folder holding a subfolder of the user's", function()
+            local path = makeDir("with_subdir")
+            lfs.mkdir(path .. "/Anthologies")
+            assert.is_true(NewsDownloader:folderHasOtherContent(path))
+        end)
+
+        -- A folder this plugin has used before holds its feed configuration and
+        -- nothing else of the user's. Warning about our own file would teach
+        -- people to dismiss the warning.
+        it("does not count the plugin's own feed config", function()
+            local path = makeDir("only_feed_config")
+            touch(path, NewsDownloader.feed_config_file)
+            assert.is_false(NewsDownloader:folderHasOtherContent(path))
+        end)
+
+        it("still reports a used folder that also holds a file of the user's", function()
+            local path = makeDir("feed_config_and_book")
+            touch(path, NewsDownloader.feed_config_file)
+            touch(path, "my_book.epub")
+            assert.is_true(NewsDownloader:folderHasOtherContent(path))
+        end)
+
+        it("reports a path that is not a folder as safe", function()
+            assert.is_false(NewsDownloader:folderHasOtherContent(tmp_root .. "/does_not_exist"))
+        end)
+    end)
 end)

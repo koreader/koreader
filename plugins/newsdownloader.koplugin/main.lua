@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local DocumentRegistry = require("document/documentregistry")
 local DownloadBackend = require("epubdownloadbackend")
@@ -225,13 +226,14 @@ function NewsDownloader:getSubMenuItems()
                     end,
                 },
                 {
-                    text = _("Delete all downloaded items"),
+                    text = _("Delete all items in download folder"),
                     keep_menu_open = true,
                     callback = function()
                         local Trapper = require("ui/trapper")
                         Trapper:wrap(function()
                                 local should_delete = Trapper:confirm(
-                                    _("Are you sure you want to delete all downloaded items?"),
+                                    T(_("Delete everything in the download folder?\n\n%1\n\nThis removes all of the folder's contents, not only the items downloaded by this plugin."),
+                                        BD.dirpath(self.download_dir)),
                                     _("Cancel"),
                                     _("Delete")
                                 )
@@ -925,18 +927,49 @@ function NewsDownloader:removeNewsButKeepFeedConfig()
     })
 end
 
+-- Whether a candidate download folder already holds something of the user's.
+-- The plugin's own feed configuration does not count: it is ours, and it is the
+-- one thing "Delete all items in download folder" keeps anyway.
+function NewsDownloader:folderHasOtherContent(path)
+    if lfs.attributes(path, "mode") ~= "directory" then
+        return false
+    end
+    for entry in lfs.dir(path) do
+        if entry ~= "." and entry ~= ".." and entry ~= self.feed_config_file then
+            return true
+        end
+    end
+    return false
+end
+
 function NewsDownloader:setCustomDownloadDirectory()
     require("ui/downloadmgr"):new{
         onConfirm = function(path)
-            logger.dbg("NewsDownloader: set download directory to: ", path)
-            self.settings:saveSetting(self.config_key_custom_dl_dir, ("%s/"):format(path))
-            self.settings:flush()
+            local function apply()
+                logger.dbg("NewsDownloader: set download directory to: ", path)
+                self.settings:saveSetting(self.config_key_custom_dl_dir, ("%s/"):format(path))
+                self.settings:flush()
 
-            logger.dbg("NewsDownloader: Coping to new download folder previous self.feed_config_file from: ", self.feed_config_path)
-            FFIUtil.copyFile(self.feed_config_path, ("%s/%s"):format(path, self.feed_config_file))
+                logger.dbg("NewsDownloader: Coping to new download folder previous self.feed_config_file from: ", self.feed_config_path)
+                FFIUtil.copyFile(self.feed_config_path, ("%s/%s"):format(path, self.feed_config_file))
 
-            self.initialized = false
-            self:lazyInitialization()
+                self.initialized = false
+                self:lazyInitialization()
+            end
+
+            -- Emptying the download folder removes everything in it, so say so
+            -- while the folder is being chosen. Afterwards the warning would come
+            -- too late to be of any use (#15508).
+            if self:folderHasOtherContent(path) then
+                UIManager:show(ConfirmBox:new{
+                    text = T(_("This folder is not empty:\n\n%1\n\nIt can still be used, but %2 will then delete everything in it, not only the items downloaded by this plugin."),
+                        BD.dirpath(path), _("Delete all items in download folder")),
+                    ok_text = _("Use folder"),
+                    ok_callback = apply,
+                })
+            else
+                apply()
+            end
         end,
     }:chooseDir()
 end
