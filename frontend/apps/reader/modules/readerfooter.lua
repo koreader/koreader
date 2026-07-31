@@ -1034,8 +1034,8 @@ function ReaderFooter:textOptionTitles(option)
         custom_text = T(_("Custom text (long-press to edit): \'%1\'%2"), self.custom_text,
             self.custom_text_repetitions > 1 and
             string.format(" × %d", self.custom_text_repetitions) or ""),
-        dynamic_filler = _("Dynamic filler"),
-        dynamic_filler2 = _("Dynamic filler"),
+        dynamic_filler = _("Dynamic filler 1"),
+        dynamic_filler2 = _("Dynamic filler 2"),
         additional_content = _("External content"),
     }
     return option_titles[option]
