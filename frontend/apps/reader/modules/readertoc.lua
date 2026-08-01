@@ -1009,6 +1009,41 @@ function ReaderToc:onShowToc()
         return true
     end
 
+    if Device:hasDPad() and not Device:hasFewKeys() then
+        -- Keyboard tree-view idiom: expand the focused node with the right arrow
+        -- key, collapse it with the left one (swapped in mirrored UI layout, to
+        -- match the rotated expand icon). Both keys are otherwise no-ops in this
+        -- single-column menu, so unmap the horizontal focus moves to avoid
+        -- handling the same keys twice. Not for hasFewKeys devices, where Menu
+        -- already maps Left to close and Right to hold.
+        toc_menu.key_events.FocusRight = nil
+        toc_menu.key_events.FocusLeft = nil
+        local expand_key, collapse_key = "Right", "Left"
+        if BD.mirroredUILayout() then
+            expand_key, collapse_key = collapse_key, expand_key
+        end
+        toc_menu.key_events.ExpandCurrentNode = { { expand_key } }
+        toc_menu.key_events.CollapseCurrentNode = { { collapse_key } }
+
+        function toc_menu:onExpandCurrentNode()
+            local focused_widget = self:getFocusItem()
+            local item = focused_widget and focused_widget.entry
+            if item and item.state and item.state.icon == "control.expand" then
+                item.state.callback(item.index)
+            end
+            return true
+        end
+
+        function toc_menu:onCollapseCurrentNode()
+            local focused_widget = self:getFocusItem()
+            local item = focused_widget and focused_widget.entry
+            if item and item.state and item.state.icon == "control.collapse" then
+                item.state.callback(item.index)
+            end
+            return true
+        end
+    end
+
     toc_menu.close_callback = function()
         UIManager:close(menu_container)
         BD.resetInvert()
