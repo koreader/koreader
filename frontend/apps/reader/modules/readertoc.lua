@@ -1009,12 +1009,9 @@ function ReaderToc:onShowToc()
         return true
     end
 
-    -- Keyboard tree-view idiom: expand the focused node with the right arrow
-    -- key, collapse it with the left one (swapped in mirrored UI layout, to
-    -- match the rotated expand icon). Both keys are otherwise no-ops in this
-    -- single-column menu, so unmap the horizontal focus moves to avoid
-    -- handling the same keys twice. Not for hasFewKeys devices, where Menu
-    -- already maps Left to close and Right to hold.
+    -- Tree-view idiom: right arrow key expands the focused node, left collapses
+    -- it (swapped in mirrored UI layout). Replaces the horizontal focus moves,
+    -- no-ops in this single-column menu; hasFewKeys devices use these keys otherwise.
     local function applyTreeKeyMappings()
         if not Device:hasDPad() or Device:hasFewKeys() then return end
         toc_menu.key_events.FocusRight = nil
@@ -1048,10 +1045,7 @@ function ReaderToc:onShowToc()
 
     local base_onPhysicalKeyboardConnected = toc_menu.onPhysicalKeyboardConnected
     toc_menu.onPhysicalKeyboardConnected = function(menu)
-        -- The FocusManager handler re-merges the generic key mappings, which
-        -- restores the horizontal focus moves we unmapped — reapply ours on
-        -- top. Also covers a keyboard hot-plugged while the ToC is open on a
-        -- touch-only device.
+        -- The generic handler re-merges the default key mappings — reapply ours.
         base_onPhysicalKeyboardConnected(menu)
         applyTreeKeyMappings()
     end
@@ -1156,8 +1150,7 @@ function ReaderToc:searchToc()
     input_dialog:onShowKeyboard()
 end
 
--- Keep the focus on the node that was just expanded or collapsed: without
--- this, the menu rebuild would reset the focus to the first item of the page.
+-- Keep the focus on the toggled node across the menu rebuild.
 function ReaderToc:refocusTocNode(node)
     if not Device:hasDPad() then return end
     for i, v in ipairs(self.collapsed_toc) do
@@ -1169,9 +1162,7 @@ function ReaderToc:refocusTocNode(node)
 end
 
 -- expand TOC node of index in raw toc table
--- refocus: keep the focus on the node even on touch-capable devices; set by the
--- key-driven callers, where the focus is part of the interaction. Toggles not
--- driven by keys preserve it only on non-touch devices, where it's always shown.
+-- refocus: keep the focus even on touch-capable devices (set by key-driven callers)
 function ReaderToc:expandToc(index, refocus)
     if self.expanded_nodes[index] == true then return end
 
