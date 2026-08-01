@@ -603,7 +603,7 @@ function Kindle:otaModel()
     else
         model = "kindle-legacy"
     end
-    return model, "ota"
+    return model, "kotasync"
 end
 
 function Kindle:toggleKeyRepeat(toggle)
