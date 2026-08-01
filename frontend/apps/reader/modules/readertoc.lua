@@ -1144,6 +1144,19 @@ function ReaderToc:searchToc()
     input_dialog:onShowKeyboard()
 end
 
+-- Keep the focus on the node that was just expanded or collapsed: without
+-- this, the menu rebuild would reset the focus to the first item of the page.
+-- Touch-only devices don't show the focus, nothing to preserve there.
+function ReaderToc:refocusTocNode(node)
+    if not Device:hasDPad() or Device:isTouchDevice() then return end
+    for i, v in ipairs(self.collapsed_toc) do
+        if v == node then
+            self.toc_menu.itemnumber = i
+            break
+        end
+    end
+end
+
 -- expand TOC node of index in raw toc table
 function ReaderToc:expandToc(index)
     if self.expanded_nodes[index] == true then return end
@@ -1175,6 +1188,7 @@ function ReaderToc:expandToc(index)
     if cur_node.state then cur_node.state:free() end
     cur_node.state = self.collapse_button:new{}
     self:updateCurrentNode()
+    self:refocusTocNode(cur_node)
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
 end
 
@@ -1213,6 +1227,7 @@ function ReaderToc:collapseToc(index)
     cur_node.state:free()
     cur_node.state = self.expand_button:new{}
     self:updateCurrentNode()
+    self:refocusTocNode(cur_node)
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
 end
 
