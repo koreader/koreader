@@ -1025,20 +1025,20 @@ function ReaderToc:onShowToc()
         toc_menu.key_events.ExpandCurrentNode = { { expand_key } }
         toc_menu.key_events.CollapseCurrentNode = { { collapse_key } }
 
-        function toc_menu:onExpandCurrentNode()
-            local focused_widget = self:getFocusItem()
+        toc_menu.onExpandCurrentNode = function(menu)
+            local focused_widget = menu:getFocusItem()
             local item = focused_widget and focused_widget.entry
             if item and item.state and item.state.icon == "control.expand" then
-                item.state.callback(item.index)
+                self:expandToc(item.index, true)
             end
             return true
         end
 
-        function toc_menu:onCollapseCurrentNode()
-            local focused_widget = self:getFocusItem()
+        toc_menu.onCollapseCurrentNode = function(menu)
+            local focused_widget = menu:getFocusItem()
             local item = focused_widget and focused_widget.entry
             if item and item.state and item.state.icon == "control.collapse" then
-                item.state.callback(item.index)
+                self:collapseToc(item.index, true)
             end
             return true
         end
@@ -1146,9 +1146,8 @@ end
 
 -- Keep the focus on the node that was just expanded or collapsed: without
 -- this, the menu rebuild would reset the focus to the first item of the page.
--- Touch-only devices don't show the focus, nothing to preserve there.
 function ReaderToc:refocusTocNode(node)
-    if not Device:hasDPad() or Device:isTouchDevice() then return end
+    if not Device:hasDPad() then return end
     for i, v in ipairs(self.collapsed_toc) do
         if v == node then
             self.toc_menu.itemnumber = i
@@ -1158,7 +1157,10 @@ function ReaderToc:refocusTocNode(node)
 end
 
 -- expand TOC node of index in raw toc table
-function ReaderToc:expandToc(index)
+-- refocus: keep the focus on the node even on touch-capable devices; set by the
+-- key-driven callers, where the focus is part of the interaction. Toggles not
+-- driven by keys preserve it only on non-touch devices, where it's always shown.
+function ReaderToc:expandToc(index, refocus)
     if self.expanded_nodes[index] == true then return end
 
     self.expanded_nodes[index] = true
@@ -1188,12 +1190,15 @@ function ReaderToc:expandToc(index)
     if cur_node.state then cur_node.state:free() end
     cur_node.state = self.collapse_button:new{}
     self:updateCurrentNode()
-    self:refocusTocNode(cur_node)
+    if refocus or not Device:isTouchDevice() then
+        self:refocusTocNode(cur_node)
+    end
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
 end
 
 -- collapse TOC node of index in raw toc table
-function ReaderToc:collapseToc(index)
+-- refocus: see expandToc
+function ReaderToc:collapseToc(index, refocus)
     if self.expanded_nodes[index] == true then
         self.expanded_nodes[index] = nil
     end
@@ -1227,7 +1232,9 @@ function ReaderToc:collapseToc(index)
     cur_node.state:free()
     cur_node.state = self.expand_button:new{}
     self:updateCurrentNode()
-    self:refocusTocNode(cur_node)
+    if refocus or not Device:isTouchDevice() then
+        self:refocusTocNode(cur_node)
+    end
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
 end
 
