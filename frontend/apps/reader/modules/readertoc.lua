@@ -1009,13 +1009,14 @@ function ReaderToc:onShowToc()
         return true
     end
 
-    if Device:hasDPad() and not Device:hasFewKeys() then
-        -- Keyboard tree-view idiom: expand the focused node with the right arrow
-        -- key, collapse it with the left one (swapped in mirrored UI layout, to
-        -- match the rotated expand icon). Both keys are otherwise no-ops in this
-        -- single-column menu, so unmap the horizontal focus moves to avoid
-        -- handling the same keys twice. Not for hasFewKeys devices, where Menu
-        -- already maps Left to close and Right to hold.
+    -- Keyboard tree-view idiom: expand the focused node with the right arrow
+    -- key, collapse it with the left one (swapped in mirrored UI layout, to
+    -- match the rotated expand icon). Both keys are otherwise no-ops in this
+    -- single-column menu, so unmap the horizontal focus moves to avoid
+    -- handling the same keys twice. Not for hasFewKeys devices, where Menu
+    -- already maps Left to close and Right to hold.
+    local function applyTreeKeyMappings()
+        if not Device:hasDPad() or Device:hasFewKeys() then return end
         toc_menu.key_events.FocusRight = nil
         toc_menu.key_events.FocusLeft = nil
         local expand_key, collapse_key = "Right", "Left"
@@ -1024,24 +1025,35 @@ function ReaderToc:onShowToc()
         end
         toc_menu.key_events.ExpandCurrentNode = { { expand_key } }
         toc_menu.key_events.CollapseCurrentNode = { { collapse_key } }
+    end
+    applyTreeKeyMappings()
 
-        toc_menu.onExpandCurrentNode = function(menu)
-            local focused_widget = menu:getFocusItem()
-            local item = focused_widget and focused_widget.entry
-            if item and item.state and item.state.icon == "control.expand" then
-                self:expandToc(item.index, true)
-            end
-            return true
+    toc_menu.onExpandCurrentNode = function(menu)
+        local focused_widget = menu:getFocusItem()
+        local item = focused_widget and focused_widget.entry
+        if item and item.state and item.state.icon == "control.expand" then
+            self:expandToc(item.index, true)
         end
+        return true
+    end
 
-        toc_menu.onCollapseCurrentNode = function(menu)
-            local focused_widget = menu:getFocusItem()
-            local item = focused_widget and focused_widget.entry
-            if item and item.state and item.state.icon == "control.collapse" then
-                self:collapseToc(item.index, true)
-            end
-            return true
+    toc_menu.onCollapseCurrentNode = function(menu)
+        local focused_widget = menu:getFocusItem()
+        local item = focused_widget and focused_widget.entry
+        if item and item.state and item.state.icon == "control.collapse" then
+            self:collapseToc(item.index, true)
         end
+        return true
+    end
+
+    local base_onPhysicalKeyboardConnected = toc_menu.onPhysicalKeyboardConnected
+    toc_menu.onPhysicalKeyboardConnected = function(menu)
+        -- The FocusManager handler re-merges the generic key mappings, which
+        -- restores the horizontal focus moves we unmapped — reapply ours on
+        -- top. Also covers a keyboard hot-plugged while the ToC is open on a
+        -- touch-only device.
+        base_onPhysicalKeyboardConnected(menu)
+        applyTreeKeyMappings()
     end
 
     toc_menu.close_callback = function()
