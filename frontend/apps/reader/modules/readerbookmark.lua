@@ -1642,16 +1642,15 @@ end
 function ReaderBookmark:filterByHighlightColor()
     UIManager:show(ButtonSelector:new{
         current_value = self.show_color_only,
-        values = self.ui.highlight.highlight_colors,
-        bg_colors = self.ui.highlight:getHighlightColorList(),
-        callback = function(value)
+        values = self.ui.highlight:getHighlightColorList(),
+        callback = function(selected_color_name)
             local item_table = self.bookmark_menu[1].item_table
             for i = #item_table, 1, -1 do
-                if item_table[i].color ~= value then
+                if item_table[i].color ~= selected_color_name then
                     table.remove(item_table, i)
                 end
             end
-            self.show_color_only = value
+            self.show_color_only = selected_color_name
             self:updateBookmarkList(item_table)
         end,
     })
