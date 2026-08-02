@@ -709,13 +709,12 @@ function ReaderUI:extendProvider(file, provider, is_provider_forced)
 end
 
 function ReaderUI:showReaderCoroutine(file, provider, seamless)
-    UIManager:show(InfoMessage:new{
-        text = T(_("Opening file '%1'."), BD.filepath(filemanagerutil.abbreviate(file))),
-        timeout = 0.0,
-        invisible = seamless,
-    })
-    -- doShowReader might block for a long time, so force repaint here
-    UIManager:forceRePaint()
+    if seamless then
+        -- dummy invisible widget to keep KOReader open after rerendering
+        UIManager:show(InfoMessage:new{ invisible = true, timeout = 0 })
+    else
+        self.opening_page_shown, self.opening_page_timeout = FileManagerBookInfo:showOpeningInfo(file)
+    end
     UIManager:nextTick(function()
         logger.dbg("creating coroutine for showing reader")
         local co = coroutine.create(function()
@@ -788,7 +787,13 @@ function ReaderUI:doShowReader(file, provider, seamless)
         FileManager.instance:onClose()
     end
 
+    seamless = seamless or self.opening_page_shown
     UIManager:show(reader, seamless and "ui" or "full")
+
+    if self.opening_page_timeout and not seamless then
+        reader.bookinfo:showOpeningInfo(file, self.opening_page_timeout)
+    end
+    self.opening_page_shown = nil
 end
 
 function ReaderUI:unlockDocumentWithPassword(document, try_again)
@@ -873,6 +878,7 @@ function ReaderUI:onClose(full_refresh)
     local file
     if self.document ~= nil then
         file = self.document.file
+        self.bookinfo:saveOpeningInfo(file)
         require("readhistory"):updateLastBookTime(self.tearing_down)
         require("readcollection"):updateLastBookTime(file)
         -- Serialize the most recently displayed page for later launch

@@ -78,6 +78,7 @@ local ReaderView = OverlapGroup:extend{
 }
 
 function ReaderView:init()
+    self.do_save_page_bb = G_reader_settings:readSetting("file_opening_info") == "page"
     self.view_modules = {}
 
     self.state = {
@@ -287,6 +288,10 @@ function ReaderView:paintTo(bb, x, y)
             end
         end
         self.state.drawn = true
+    end
+
+    if self.do_save_page_bb and not self.ui.highlight.selected_text and not self.ui.highlight.select_mode then
+        self.saved_page_bb = Screen.bb:copy()
     end
 end
 

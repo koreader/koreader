@@ -470,4 +470,18 @@ function RenderImage:renderCheckerboard(width, height, bb_type)
     return bb
 end
 
+function RenderImage.getScaledImageSize(img_w, img_h, max_img_w, max_img_h)
+    -- img_w, img_h - image size; max_img_w, max_img_h - container size; sides ratio is kept
+    local scale_factor
+    local width = math.floor(max_img_h * img_w / img_h + 0.5)
+    if max_img_w >= width then
+        max_img_w = width
+        scale_factor = max_img_w / img_w
+    else
+        max_img_h = math.floor(max_img_w * img_h / img_w + 0.5)
+        scale_factor = max_img_h / img_h
+    end
+    return max_img_w, max_img_h, scale_factor
+end
+
 return RenderImage

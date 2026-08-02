@@ -997,18 +997,7 @@ Do you want to prune the cache of removed books?]]
     UIManager:show(info)
 end
 
-function BookInfoManager.getCachedCoverSize(img_w, img_h, max_img_w, max_img_h)
-    local scale_factor
-    local width = math.floor(max_img_h * img_w / img_h + 0.5)
-    if max_img_w >= width then
-        max_img_w = width
-        scale_factor = max_img_w / img_w
-    else
-        max_img_h = math.floor(max_img_w * img_h / img_w + 0.5)
-        scale_factor = max_img_h / img_h
-    end
-    return max_img_w, max_img_h, scale_factor
-end
+BookInfoManager.getCachedCoverSize = RenderImage.getScaledImageSize
 
 function BookInfoManager.isCachedCoverInvalid(bookinfo, cover_specs)
     if not bookinfo.cover_w or not bookinfo.cover_h then -- no thumbnail yet

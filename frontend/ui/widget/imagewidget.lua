@@ -61,6 +61,10 @@ local ImageWidget = Widget:extend{
     -- normally true unless our caller wants to reuse its provided image
     image_disposable = true,
 
+    -- upper left corner of container
+    x = nil,
+    y = nil,
+
     -- Width and height of container, to limit rendering to this area
     -- (if provided, and scale_factor is nil, image will be resized to
     -- these width and height without regards to original aspect ratio)
@@ -68,6 +72,7 @@ local ImageWidget = Widget:extend{
     height = nil,
 
     hide = nil, -- to not be painted
+    timeout = nil, -- in seconds
 
     -- Settings that apply at paintTo() time
     invert = nil,
@@ -517,6 +522,8 @@ end
 
 function ImageWidget:paintTo(bb, x, y)
     if self.hide then return end
+    x = self.x or x
+    y = self.y or y
     -- self:_render is called in getSize method
     local size = self:getSize()
     if not self.dimen then
@@ -590,6 +597,10 @@ function ImageWidget:paintTo(bb, x, y)
     ---        Currently, this is *only* the KOReader icon in Help, AFAIK.
     if Screen.night_mode and self.original_in_nightmode and not self.is_icon then
         bb:invertRect(x, y, size.w, size.h)
+    end
+
+    if self.timeout then
+        UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)
     end
 end
 

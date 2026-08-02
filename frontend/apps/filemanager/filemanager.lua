@@ -1170,6 +1170,7 @@ function FileManager:deleteFile(file, is_file)
         local ok = os.remove(file)
         if ok then
             BookList.resetBookInfoCache(file)
+            FileManagerBookInfo.deleteOpeningInfo(file, true)
             DocSettings.updateLocation(file) -- delete sdr
             ReadHistory:fileDeleted(file)
             ReadCollection:removeItem(file)

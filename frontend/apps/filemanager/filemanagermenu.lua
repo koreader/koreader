@@ -19,6 +19,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util  = require("util")
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = ffiUtil.template
 
 local FileManagerMenu = InputContainer:extend{
@@ -390,6 +391,14 @@ To:
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrFalse("file_ask_to_open")
+                end,
+            },
+            {
+                text_func = function()
+                    return T(_("Show on opening: %1"), self:genOpeningInfoMenu(true))
+                end,
+                sub_item_table_func = function()
+                    return self:genOpeningInfoMenu()
                 end,
             },
             {
@@ -1014,6 +1023,146 @@ function FileManagerMenu:getStartWithMenuTable()
             end
         end,
         sub_item_table = sub_item_table,
+    }
+end
+
+function FileManagerMenu:genOpeningInfoMenu(get_text, opening_info)
+    local strings = {
+        none       = _("none"),
+        message    = _("message"),
+        page       = _("book current page"),
+        cover      = _("book cover (%1 %)"),
+    }
+    if get_text then
+        opening_info = opening_info or G_reader_settings:readSetting("file_opening_info") or "message"
+        local text = strings[opening_info]
+        if opening_info == "message" then
+            if G_reader_settings:has("file_opening_info_message") then
+                return text .. " \u{F040}" -- pen
+            end
+        elseif opening_info == "cover" then
+            return T(text, G_reader_settings:readSetting("file_opening_info_cover_scale") or 100)
+        end
+        return text
+    end
+
+    local function genOpeningInfoMenuItems(value, hold_callback, separator)
+        return {
+            text_func = function()
+                return self:genOpeningInfoMenu(true, value)
+            end,
+            checked_func = function()
+                return (G_reader_settings:readSetting("file_opening_info") or "message") == value
+            end,
+            radio = true,
+            callback = function()
+                G_reader_settings:saveSetting("file_opening_info", value ~= "message" and value or nil)
+            end,
+            hold_callback = hold_callback and function(touchmenu_instance)
+                hold_callback(touchmenu_instance)
+            end,
+            separator = separator,
+        }
+    end
+
+    local function message_hold_callback(touchmenu_instance)
+        local default_text = _("Opening file:\n%F") 
+        local input_dialog
+        local InputDialog = require("ui/widget/inputdialog")
+        input_dialog = InputDialog:new{
+            title = _("Book opening message"),
+            input = G_reader_settings:readSetting("file_opening_info_message") or default_text,
+            input_hint = default_text,
+            allow_newline = true,
+            buttons = {
+                {
+                    {
+                        text = _("Info"),
+                        callback = self.ui.bookinfo.expandString,
+                    },
+                    {
+                        text = _("Default"),
+                        callback = function()
+                            input_dialog._input_widget:setText(default_text)
+                            input_dialog._input_widget:goToEnd()
+                        end,
+                    },
+                },
+                {
+                    {
+                        text = _("Cancel"),
+                        id = "close",
+                        callback = function()
+                            UIManager:close(input_dialog)
+                        end,
+                    },
+                    {
+                        text = _("Set"),
+                        callback = function()
+                            local text = input_dialog:getInputText()
+                            text = (text ~= "" and text ~= default_text) and text or nil
+                            G_reader_settings:saveSetting("file_opening_info_message", text)
+                            UIManager:close(input_dialog)
+                            touchmenu_instance:updateItems()
+                        end,
+                    },
+                },
+            },
+        }
+        UIManager:show(input_dialog)
+        input_dialog:onShowKeyboard()
+    end
+
+    local function cover_hold_callback(touchmenu_instance)
+        UIManager:show(SpinWidget:new{
+            title_text = _("Cover scale factor"),
+            width_factor = 0.5,
+            value = G_reader_settings:readSetting("file_opening_info_cover_scale") or 100,
+            value_min = 20,
+            value_max = 100,
+            value_step = 10,
+            value_hold_step = 1,
+            unit = "%",
+            default_value = 100,
+            callback = function(spin)
+                G_reader_settings:saveSetting("file_opening_info_cover_scale", spin.value ~= 100 and spin.value or nil)
+                touchmenu_instance:updateItems()
+            end,
+        })
+    end
+
+    return {
+        genOpeningInfoMenuItems("none"),
+        genOpeningInfoMenuItems("message", message_hold_callback),
+        genOpeningInfoMenuItems("page"),
+        genOpeningInfoMenuItems("cover", cover_hold_callback, true),
+        {
+            text_func = function()
+                return T(_("Show after opening: %1 s"), G_reader_settings:readSetting("file_opening_info_timeout") or 0)
+            end,
+            enabled_func = function()
+                local value = G_reader_settings:readSetting("file_opening_info")
+                return value ~= "none" and value ~= "page"
+            end,
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                UIManager:show(SpinWidget:new{
+                    title_text = _("Show time interval"),
+                    width_factor = 0.5,
+                    value = G_reader_settings:readSetting("file_opening_info_timeout") or 0,
+                    value_min = 0,
+                    value_max = 30,
+                    value_step = 1,
+                    value_hold_step = 2,
+                    unit = C_("Time", "s"),
+                    default_value = 0,
+                    callback = function(spin)
+                        G_reader_settings:saveSetting("file_opening_info_timeout", spin.value ~= 0 and spin.value or nil)
+                        touchmenu_instance:updateItems()
+                    end,
+                })
+            end,
+        },
     }
 end
 

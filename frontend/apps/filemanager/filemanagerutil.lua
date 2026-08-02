@@ -214,6 +214,8 @@ function filemanagerutil.genResetSettingsButton(doc_settings_or_file, caller_cal
                         BookList.setBookInfoCacheProperty(file, "been_opened", false)
                         require("readhistory"):fileSettingsPurged(file)
                     end
+                    local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
+                    FileManagerBookInfo.deleteOpeningInfo(file)
                     caller_callback()
                 end,
             }
@@ -253,12 +255,14 @@ function filemanagerutil.genMultipleResetSettingsButton(files, caller_callback, 
                        _("Information will be permanently lost."),
                 ok_text = _("Reset"),
                 ok_callback = function()
+                    local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
                     for file in pairs(files) do
                         if BookList.hasBookBeenOpened(file) then
                             DocSettings:open(file):purge()
                             UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", file))
                             BookList.setBookInfoCacheProperty(file, "been_opened", false)
                             require("readhistory"):fileSettingsPurged(file)
+                            FileManagerBookInfo.deleteOpeningInfo(file)
                         end
                     end
                     caller_callback()

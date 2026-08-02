@@ -16,6 +16,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local Math = require("optmath")
 local Notification = require("ui/widget/notification")
 local TextViewer = require("ui/widget/textviewer")
+local TileCacheItem = require("document/tilecacheitem")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local datetime = require("datetime")
@@ -924,6 +925,151 @@ function BookInfo:onShowNotebookFile()
     elseif lfs.attributes(notebook_file, "mode") == "file" then
         TextViewer.openFile(notebook_file)
     end
+end
+
+-- book opening info
+
+function BookInfo.getOpeningInfoFolder(file)
+    local DataStorage = require("datastorage")
+    return DataStorage:getDataDir() .. "/cache/opening_info/" .. file:gsub("[:/]", "_") .. "/"
+end
+
+function BookInfo.deleteOpeningInfo(file, all)
+    local folder = BookInfo.getOpeningInfoFolder(file)
+    if lfs.attributes(folder) then
+        if all then
+            ffiUtil.purgeDir(folder)
+        else
+            os.remove(folder .. "page0")
+            os.remove(folder .. "page1")
+            os.remove(folder .. "page2")
+            os.remove(folder .. "page3")
+        end
+    end
+end
+
+function BookInfo.getOpeningInfoCoverPath(file, for_save)
+    local folder = BookInfo.getOpeningInfoFolder(file)
+    if for_save then
+        util.makePath(folder)
+    end
+    return folder .. "cover"
+end
+
+function BookInfo.getOpeningInfoPagePath(file, for_save)
+    local folder = BookInfo.getOpeningInfoFolder(file)
+    local rota
+    if for_save then
+        util.makePath(folder)
+    elseif BookList.hasBookBeenOpened(file) then -- for show
+        local doc_settings = BookList.getDocSettings(file)
+        rota = doc_settings:readSetting("copt_rotation_mode") or doc_settings:readSetting("kopt_rotation_mode")
+    end
+    rota = rota or Screen:getRotationMode()
+    -- 4 types of saved page: portrait/landscape, day/night
+    local r = rota % 2 == 1 and 1 or 0
+    local n = Screen.night_mode and 2 or 0
+    return folder .. "page" .. (r + n), rota -- target orientation
+end
+
+function BookInfo:saveOpeningInfo(file)
+    local opening_info = G_reader_settings:readSetting("file_opening_info")
+    if opening_info == nil or opening_info == "none" then
+        return
+    elseif opening_info == "page" then
+        BookInfo.deleteOpeningInfo(file)
+        if self.ui.view.saved_page_bb then
+            local info_file = BookInfo.getOpeningInfoPagePath(file, true)
+            if Screen.night_mode then
+                self.ui.view.saved_page_bb:invert()
+            end
+            TileCacheItem:new{ bb = self.ui.view.saved_page_bb }:dump(info_file)
+            self.ui.view.saved_page_bb:free()
+            self.ui.view.saved_page_bb = nil
+        end
+    elseif opening_info == "cover" then
+        local info_file = BookInfo.getOpeningInfoCoverPath(file, true)
+        if not lfs.attributes(info_file) then
+            local cover_bb = self:getCoverImage(self.document)
+            if cover_bb then
+                TileCacheItem:new{ bb = cover_bb }:dump(info_file)
+            end
+        end
+    end
+end
+
+function BookInfo:showOpeningInfo(file, timeout)
+    -- timeout is passed by ReaderUI to show message or book cover after opening the book
+    local opening_info = G_reader_settings:readSetting("file_opening_info")
+    if opening_info == "none" then
+        return
+    elseif opening_info ~= nil then -- page or cover
+        local tile, x, y, w, h, rotation_angle, page_shown
+        if opening_info == "page" then
+            local info_file, rota = BookInfo.getOpeningInfoPagePath(file)
+            if lfs.attributes(info_file, "mode") == "file" then
+                tile = TileCacheItem:new{}
+                tile:load(info_file)
+                if tile.bb then
+                    local curr_rota = Screen:getRotationMode()
+                    if rota == curr_rota then
+                        rotation_angle = 0
+                    elseif rota % 2 == curr_rota % 2 then
+                        rotation_angle = 180
+                    else
+                        rotation_angle = 180 - 90 * (rota - curr_rota)
+                    end
+                    page_shown = true
+                end
+            end
+        else -- cover
+            local info_file = BookInfo.getOpeningInfoCoverPath(file)
+            if lfs.attributes(info_file, "mode") == "file" then
+                tile = TileCacheItem:new{}
+                tile:load(info_file)
+                if tile.bb then
+                    -- ImageWidget built-in scale_factor cannot be used
+                    -- because it inverts the screen outside of the image in night mode
+                    local scale_factor = (G_reader_settings:readSetting("file_opening_info_cover_scale") or 100) / 100
+                    local screen_w = Screen:getWidth()
+                    local screen_h = Screen:getHeight()
+                    w = math.floor(scale_factor * screen_w)
+                    h = math.floor(scale_factor * screen_h)
+                    local RenderImage = require("ui/renderimage")
+                    w, h = RenderImage.getScaledImageSize(tile.bb.w, tile.bb.h, w, h)
+                    x = math.floor((screen_w - w) / 2)
+                    y = math.floor((screen_h - h) / 2)
+                end
+            end
+        end
+        if tile and tile.bb then
+            local ImageWidget = require("ui/widget/imagewidget")
+            UIManager:show(ImageWidget:new{
+                image = tile.bb,
+                x = x,
+                y = y,
+                width = w,
+                height = h,
+                rotation_angle = rotation_angle,
+                alpha = true,
+                timeout = timeout or 0,
+            }, "full")
+            if not timeout then
+                UIManager:forceRePaint()
+            end
+            return page_shown, G_reader_settings:readSetting("file_opening_info_timeout")
+        end
+    end
+    local message = G_reader_settings:readSetting("file_opening_info_message")
+    UIManager:show(InfoMessage:new{
+        text = message and self:expandString(message, file)
+            or T(_("Opening file:\n%1"), BD.filepath(filemanagerutil.abbreviate(file))),
+        timeout = timeout or 0,
+    })
+    if not timeout then
+        UIManager:forceRePaint()
+    end
+    return nil, G_reader_settings:readSetting("file_opening_info_timeout")
 end
 
 -- book metadata (sdr)
