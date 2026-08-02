@@ -1136,6 +1136,11 @@ function FileManagerMenu:onMenuSearch()
 end
 
 function FileManagerMenu:registerToMainMenu(widget)
+    for _, w in ipairs(self.registered_widgets) do
+        if w == widget then
+            return
+        end
+    end
     table.insert(self.registered_widgets, widget)
 end
 
