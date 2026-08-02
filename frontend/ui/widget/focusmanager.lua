@@ -122,6 +122,19 @@ function FocusManager:_init()
     self.extra_key_events = EXTRA_KEY_EVENTS
 end
 
+--- Releases focus keys a widget wants for itself, e.g. the horizontal moves in a
+--- single-column menu. They stay released when a keyboard hot-plug re-merges the
+--- default mappings.
+function FocusManager:releaseFocusKeys(...)
+    if not self.released_focus_keys then
+        self.released_focus_keys = {}
+    end
+    for _, name in ipairs({...}) do
+        self.released_focus_keys[name] = true
+        self.key_events[name] = nil
+    end
+end
+
 function FocusManager:isAlternativeKey(key)
     for _, seq in pairs(self.extra_key_events) do
         for _, oneseq in ipairs(seq) do
@@ -284,6 +297,9 @@ function FocusManager:onPhysicalKeyboardConnected()
     -- and it'll call InputContainer._init, which *also* resets the touch zones.
     -- Instead, we'll just do a merge ourselves.
     util.tableMerge(self.key_events, KEY_EVENTS)
+    for name in pairs(self.released_focus_keys or {}) do
+        self.key_events[name] = nil
+    end
     -- populateEventMappings replaces these, so, update our refs
     self.builtin_key_events = BUILTIN_KEY_EVENTS
     self.extra_key_events = EXTRA_KEY_EVENTS

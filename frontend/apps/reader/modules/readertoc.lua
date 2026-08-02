@@ -1012,10 +1012,8 @@ function ReaderToc:onShowToc()
     -- Tree-view idiom: right arrow key expands the focused node, left collapses
     -- it (swapped in mirrored UI layout). Replaces the horizontal focus moves,
     -- no-ops in this single-column menu; hasFewKeys devices use these keys otherwise.
-    local function applyTreeKeyMappings()
-        if not Device:hasDPad() or Device:hasFewKeys() then return end
-        toc_menu.key_events.FocusRight = nil
-        toc_menu.key_events.FocusLeft = nil
+    if Device:hasDPad() and not Device:hasFewKeys() then
+        toc_menu:releaseFocusKeys("FocusLeft", "FocusRight")
         local expand_key, collapse_key = "Right", "Left"
         if BD.mirroredUILayout() then
             expand_key, collapse_key = collapse_key, expand_key
@@ -1023,7 +1021,6 @@ function ReaderToc:onShowToc()
         toc_menu.key_events.ExpandCurrentNode = { { expand_key } }
         toc_menu.key_events.CollapseCurrentNode = { { collapse_key } }
     end
-    applyTreeKeyMappings()
 
     toc_menu.onExpandCurrentNode = function(menu)
         local focused_widget = menu:getFocusItem()
@@ -1041,13 +1038,6 @@ function ReaderToc:onShowToc()
             self:collapseToc(item.index, true)
         end
         return true
-    end
-
-    local base_onPhysicalKeyboardConnected = toc_menu.onPhysicalKeyboardConnected
-    toc_menu.onPhysicalKeyboardConnected = function(menu)
-        -- The generic handler re-merges the default key mappings — reapply ours.
-        base_onPhysicalKeyboardConnected(menu)
-        applyTreeKeyMappings()
     end
 
     toc_menu.close_callback = function()
