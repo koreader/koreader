@@ -32,6 +32,9 @@ local FocusManager = InputContainer:extend{
     layout = nil, -- mandatory
     movement_allowed = { x = true, y = true },
     key_events_enabled = true,
+    -- Widgets that bind keys the focus manager also uses set this; see releaseFocusKeys.
+    focus_keys_callback = nil,
+    released_focus_keys = nil,
 }
 
 -- Only build the default mappings once on initialization, or when an external keyboard is (dis-)/connected.
@@ -132,6 +135,17 @@ function FocusManager:releaseFocusKeys(...)
     for _, name in ipairs({...}) do
         self.released_focus_keys[name] = true
         self.key_events[name] = nil
+    end
+end
+
+-- Re-drop the released keys after the defaults came back, and let the widget
+-- rebind its own keys: a hot-plug may just have brought a D-Pad along.
+function FocusManager:_refreshFocusKeys()
+    for name in pairs(self.released_focus_keys or {}) do
+        self.key_events[name] = nil
+    end
+    if self.focus_keys_callback then
+        self:focus_keys_callback()
     end
 end
 
@@ -297,9 +311,7 @@ function FocusManager:onPhysicalKeyboardConnected()
     -- and it'll call InputContainer._init, which *also* resets the touch zones.
     -- Instead, we'll just do a merge ourselves.
     util.tableMerge(self.key_events, KEY_EVENTS)
-    for name in pairs(self.released_focus_keys or {}) do
-        self.key_events[name] = nil
-    end
+    self:_refreshFocusKeys()
     -- populateEventMappings replaces these, so, update our refs
     self.builtin_key_events = BUILTIN_KEY_EVENTS
     self.extra_key_events = EXTRA_KEY_EVENTS
@@ -317,6 +329,7 @@ function FocusManager:onPhysicalKeyboardDisconnected()
                 self.key_events[k] = nil
             end
         end
+        self:_refreshFocusKeys()
     else
         -- If we longer have keys at all, that's easy ;).
         self.key_events = {}
