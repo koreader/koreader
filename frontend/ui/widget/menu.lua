@@ -972,11 +972,6 @@ function Menu:init()
     end
 end
 
--- Set up the device-dependent key bindings. Also called on physical keyboard
--- connect/disconnect, when the key capabilities change: the bindings owned
--- here are reset first, so a binding from the previous capabilities cannot
--- linger and clash with the new ones (e.g. the few-keys Close on Left vs the
--- restored FocusLeft).
 function Menu:registerKeyEvents()
     if not Device:hasKeys() then
         self.key_events = {}
