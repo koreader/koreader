@@ -962,7 +962,7 @@ function Menu:init()
     }
     self.ges_events.Close = self.on_close_ges
 
-    self:setupKeyEvents()
+    self:registerKeyEvents()
 
     if self.item_table.current then
         self.page = self:getPageNumber(self.item_table.current)
@@ -977,7 +977,7 @@ end
 -- here are reset first, so a binding from the previous capabilities cannot
 -- linger and clash with the new ones (e.g. the few-keys Close on Left vs the
 -- restored FocusLeft).
-function Menu:setupKeyEvents()
+function Menu:registerKeyEvents()
     if not Device:hasKeys() then return end
     self.key_events.Close = { { Input.group.Back } }
     self.key_events.LeftButtonTap = { { "Menu" } }
@@ -1015,12 +1015,12 @@ end
 
 function Menu:onPhysicalKeyboardConnected()
     FocusManager.onPhysicalKeyboardConnected(self)
-    self:setupKeyEvents()
+    self:registerKeyEvents()
 end
 
 function Menu:onPhysicalKeyboardDisconnected()
     FocusManager.onPhysicalKeyboardDisconnected(self)
-    self:setupKeyEvents()
+    self:registerKeyEvents()
 end
 
 function Menu:updatePageInfo(select_number)
