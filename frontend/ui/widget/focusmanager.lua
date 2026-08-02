@@ -1,7 +1,9 @@
 local BD = require("ui/bidi")
 local Device = require("device")
 local Event = require("ui/event")
+local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
 local logger = require("logger")
@@ -217,6 +219,37 @@ function FocusManager:onFocusPrevious()
     return self:onFocusMove({dx, dy})
 end
 
+-- FIXME: kind of arbitrary. Twice the largest default focus border. Probably safe?
+local FOCUS_HIGHLIGHT_PADDING = Size.border.window * 4
+
+-- Returns rect (or nil, if not laid out / never painted)
+local function getItemRect(item)
+    local dimen = item and item.dimen
+    if not dimen or not dimen.x or not dimen.y then return nil end
+    if not dimen.w or not dimen.h or dimen.w <= 0 or dimen.h <= 0 then return nil end
+    return dimen
+end
+
+-- Returns rect or nil.
+-- Returned rect includes both the previous and new item, plus a safety margin.
+local function getFocusSwitchRegion(parent, prev_item, focused_item)
+    local prev_rect = getItemRect(prev_item)
+    local focused_rect = getItemRect(focused_item)
+    local parent_rect = getItemRect(parent)
+    if not prev_rect or not focused_rect or not parent_rect then
+        return nil
+    end
+    local region = prev_rect:combine(focused_rect)
+    if not parent_rect:contains(region) then
+        return nil
+    end
+    local x1 = math.max(parent_rect.x, region.x - FOCUS_HIGHLIGHT_PADDING)
+    local y1 = math.max(parent_rect.y, region.y - FOCUS_HIGHLIGHT_PADDING)
+    local x2 = math.min(parent_rect.x + parent_rect.w, region.x + region.w + FOCUS_HIGHLIGHT_PADDING)
+    local y2 = math.min(parent_rect.y + parent_rect.h, region.y + region.h + FOCUS_HIGHLIGHT_PADDING)
+    return Geom:new{x = x1, y = y1, w = x2 - x1, h = y2 - y1}
+end
+
 function FocusManager:onFocusMove(args)
     if not self.layout then -- allow parent focus manager to handle the event
         return false
@@ -265,12 +298,15 @@ function FocusManager:onFocusMove(args)
         if self.layout[self.selected.y][self.selected.x] ~= current_item
         or not self.layout[self.selected.y][self.selected.x].is_inactive then
             -- we found a different object to focus
+            local target_item = self.layout[self.selected.y][self.selected.x]
             current_item:handleEvent(Event:new("Unfocus"))
-            self.layout[self.selected.y][self.selected.x]:handleEvent(Event:new("Focus"))
-            -- Trigger a fast repaint, this does not count toward a flashing eink refresh
-            -- NOTE: Ideally, we'd only have to repaint the specific subwidget we're highlighting,
-            --       but we may not know its exact coordinates, so, redraw the parent widget instead.
-            UIManager:setDirty(self.show_parent or self, "fast")
+            target_item:handleEvent(Event:new("Focus"))
+            -- Trigger a fast repaint, this does not count toward a flashing eink refresh.
+            -- Redraw parent (but restrict region to just the previous and current subwidget, if possible)
+            local parent = self.show_parent or self
+            UIManager:setDirty(parent, function()
+                return "fast", getFocusSwitchRegion(parent, current_item, target_item)
+            end)
             break
         end
     end
