@@ -58,20 +58,21 @@ local NTP_TIMEOUT = 30 -- seconds
 
 local function runNTPClient()
     -- One-second steps so the watchdog exits with the client; `exit` carries the client's status.
-    return os.execute(string.format([[%s &
-                                      pid=$!
-                                      (i=%d
-                                       while [ $i -gt 0 ] && kill -0 $pid 2>/dev/null; do
-                                           sleep 1
-                                           i=$((i-1))
-                                       done
-                                       [ $i -eq 0 ] && kill $pid 2>/dev/null) &
-                                      watchdog=$!
-                                      wait $pid 2>/dev/null
-                                      rc=$?
-                                      kill $watchdog 2>/dev/null
-                                      exit $rc
-                                      ]], ntp_cmd, NTP_TIMEOUT))
+    return os.execute(string.format([[
+        %s &
+        pid=$!
+        (i=%d
+            while [ $i -gt 0 ] && kill -0 $pid 2>/dev/null; do
+                sleep 1
+                i=$((i-1))
+            done
+            [ $i -eq 0 ] && kill $pid 2>/dev/null) &
+        watchdog=$!
+        wait $pid 2>/dev/null
+        rc=$?
+        kill $watchdog 2>/dev/null
+        exit $rc
+    ]], ntp_cmd, NTP_TIMEOUT))
 end
 
 local function syncNTP()
