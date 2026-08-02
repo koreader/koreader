@@ -978,7 +978,10 @@ end
 -- linger and clash with the new ones (e.g. the few-keys Close on Left vs the
 -- restored FocusLeft).
 function Menu:registerKeyEvents()
-    if not Device:hasKeys() then return end
+    if not Device:hasKeys() then
+        self.key_events = {}
+        return
+    end
     self.key_events.Close = { { Input.group.Back } }
     self.key_events.LeftButtonTap = { { "Menu" } }
     self.key_events.Right = nil
