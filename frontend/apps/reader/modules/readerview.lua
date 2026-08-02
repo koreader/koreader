@@ -665,10 +665,11 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
             y = y + math.ceil((rect.h - h) / 2)
         end
     end
+    local is_gray = not color or Blitbuffer.isColor8(color)
     if drawer == "lighten" then
         local lighten_factor = self.highlight.temp and next(self.highlight.temp)
             and (G_reader_settings:readSetting("highlight_selection_lighten_factor") or 0.2) or self.highlight.lighten_factor
-        if not color then
+        if is_gray then
             bb:darkenRect(x, y, w, h, lighten_factor)
         else
             if bb:getInverse() == 1 then
@@ -683,7 +684,7 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
             end
         end
     elseif drawer == "underscore" then
-        if not color then
+        if is_gray then
             color = Blitbuffer.COLOR_GRAY_4
         end
         if Blitbuffer.isColor8(color) then
@@ -692,7 +693,7 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
             bb:paintRectRGB32(x, y + h - 1, w, Size.line.thick, Screen.night_mode and color:invert() or color)
         end
     elseif drawer == "strikeout" then
-        if not color then
+        if is_gray then
             color = Blitbuffer.COLOR_BLACK
         end
         local line_y = y + math.floor(h / 2) + 1
@@ -708,7 +709,6 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
         bb:invertRect(x, y, w, h)
     end
     if self.highlight.note_mark ~= nil and draw_note_mark ~= nil then
-        color = color or Blitbuffer.COLOR_BLACK
         if self.highlight.note_mark == "underline" then
             -- With most annotation styles, we'd risk making this invisible if we used the same color,
             -- so, always draw this in black.
@@ -723,8 +723,8 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
                 note_mark_pos_x = self.note_mark_pos_x2
             end
             if self.highlight.note_mark == "sideline" then
-                if Blitbuffer.isColor8(color) then
-                    bb:paintRect(note_mark_pos_x, y, self.note_mark_line_w, rect.h, color)
+                if is_gray then
+                    bb:paintRect(note_mark_pos_x, y, self.note_mark_line_w, rect.h, Blitbuffer.COLOR_BLACK)
                 else
                     bb:paintRectRGB32(note_mark_pos_x, y, self.note_mark_line_w, rect.h, Screen.night_mode and color:invert() or color)
                 end
