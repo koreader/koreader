@@ -234,6 +234,18 @@ describe("FocusManager module", function()
         assert.are.equal(1, calls)
         assert.are.same({ { "Right" } }, focusmanager.key_events.ExpandCurrentNode)
     end)
+    it("should not rebind anything once the device has no keys left", function()
+        local Device = require("device")
+        local focusmanager = FocusManager:new{}
+        local called = false
+        focusmanager.focus_keys_callback = function() called = true end
+        stub(Device, "hasKeys")
+        Device.hasKeys.returns(false)
+        focusmanager:onPhysicalKeyboardDisconnected()
+        Device.hasKeys:revert()
+        assert.is_false(called)
+        assert.are.same({}, focusmanager.key_events)
+    end)
     it("alternative key", function()
         local focusmanager = FocusManager:new{}
         focusmanager.extra_key_events = {

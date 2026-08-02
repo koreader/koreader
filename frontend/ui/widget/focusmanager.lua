@@ -140,6 +140,8 @@ end
 
 -- Re-drop the released keys after the defaults came back, and let the widget
 -- rebind its own keys: a hot-plug may just have brought a D-Pad along.
+-- The widget makes the first call itself, once it is fully built; we're not
+-- calling this from _init, where its own bindings aren't in place yet.
 function FocusManager:_refreshFocusKeys()
     for name in pairs(self.released_focus_keys or {}) do
         self.key_events[name] = nil
@@ -332,6 +334,7 @@ function FocusManager:onPhysicalKeyboardDisconnected()
         self:_refreshFocusKeys()
     else
         -- If we longer have keys at all, that's easy ;).
+        -- No point in asking the widget to rebind anything, either.
         self.key_events = {}
     end
     self.builtin_key_events = BUILTIN_KEY_EVENTS
