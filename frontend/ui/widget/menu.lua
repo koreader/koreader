@@ -962,26 +962,43 @@ function Menu:init()
     }
     self.ges_events.Close = self.on_close_ges
 
-    if Device:hasKeys() then
-        -- set up keyboard events
-        self.key_events.Close = { { Input.group.Back } }
-        self.key_events.LeftButtonTap = { { "Menu" } }
-        if Device:hasFewKeys() then
-            self.key_events.Close = { { "Left" } }
-        end
-        self.key_events.NextPage = { { Input.group.PgFwd } }
-        self.key_events.PrevPage = { { Input.group.PgBack } }
-        if Device:hasKeyboard() then
-            self.key_events.FirstPage = { { "Shift", { "LPgBack", "RPgBack" } } }
-            self.key_events.LastPage = { { "Shift", { "LPgFwd", "RPgFwd" } } }
-            self.key_events.ShowGotoDialog = { { "Shift", "Down" } }
-        elseif Device:hasScreenKB() then
-            self.key_events.FirstPage = { { "ScreenKB", { "LPgBack", "RPgBack" } } }
-            self.key_events.LastPage = { { "ScreenKB", { "LPgFwd", "RPgFwd" } } }
-            self.key_events.ShowGotoDialog = { { "ScreenKB", "Down" } }
-        end
-    end
+    self:setupKeyEvents()
 
+    if self.item_table.current then
+        self.page = self:getPageNumber(self.item_table.current)
+    end
+    if not self.path_items then -- not FileChooser
+        self:updateItems(1, true)
+    end
+end
+
+-- Set up the device-dependent key bindings. Also called on physical keyboard
+-- connect/disconnect, when the key capabilities change: the bindings owned
+-- here are reset first, so a binding from the previous capabilities cannot
+-- linger and clash with the new ones (e.g. the few-keys Close on Left vs the
+-- restored FocusLeft).
+function Menu:setupKeyEvents()
+    if not Device:hasKeys() then return end
+    self.key_events.Close = { { Input.group.Back } }
+    self.key_events.LeftButtonTap = { { "Menu" } }
+    self.key_events.Right = nil
+    self.key_events.FirstPage = nil
+    self.key_events.LastPage = nil
+    self.key_events.ShowGotoDialog = nil
+    if Device:hasFewKeys() then
+        self.key_events.Close = { { "Left" } }
+    end
+    self.key_events.NextPage = { { Input.group.PgFwd } }
+    self.key_events.PrevPage = { { Input.group.PgBack } }
+    if Device:hasKeyboard() then
+        self.key_events.FirstPage = { { "Shift", { "LPgBack", "RPgBack" } } }
+        self.key_events.LastPage = { { "Shift", { "LPgFwd", "RPgFwd" } } }
+        self.key_events.ShowGotoDialog = { { "Shift", "Down" } }
+    elseif Device:hasScreenKB() then
+        self.key_events.FirstPage = { { "ScreenKB", { "LPgBack", "RPgBack" } } }
+        self.key_events.LastPage = { { "ScreenKB", { "LPgFwd", "RPgFwd" } } }
+        self.key_events.ShowGotoDialog = { { "ScreenKB", "Down" } }
+    end
     if Device:hasDPad() then
         if Device:hasFewKeys() then
             -- we won't catch presses to "Right", leave that to MenuItem.
@@ -994,13 +1011,16 @@ function Menu:init()
             self.key_events.SelectByShortCut = { { self.item_shortcuts } }
         end
     end
+end
 
-    if self.item_table.current then
-        self.page = self:getPageNumber(self.item_table.current)
-    end
-    if not self.path_items then -- not FileChooser
-        self:updateItems(1, true)
-    end
+function Menu:onPhysicalKeyboardConnected()
+    FocusManager.onPhysicalKeyboardConnected(self)
+    self:setupKeyEvents()
+end
+
+function Menu:onPhysicalKeyboardDisconnected()
+    FocusManager.onPhysicalKeyboardDisconnected(self)
+    self:setupKeyEvents()
 end
 
 function Menu:updatePageInfo(select_number)
