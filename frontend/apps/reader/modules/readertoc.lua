@@ -1012,11 +1012,8 @@ function ReaderToc:onShowToc()
     -- Tree-view idiom: right arrow key expands the focused node, left collapses
     -- it (swapped in mirrored UI layout). Replaces the horizontal focus moves,
     -- no-ops in this single-column menu; hasFewKeys devices use these keys otherwise.
-    -- A menu created with the few-keys bindings (Left close, Right hold) keeps them:
-    -- tree keys would clash with them when a keyboard hot-plug clears hasFewKeys.
-    local created_with_few_keys = Device:hasFewKeys()
     local function applyTreeKeyMappings()
-        if not Device:hasDPad() or Device:hasFewKeys() or created_with_few_keys then return end
+        if not Device:hasDPad() or Device:hasFewKeys() then return end
         toc_menu.key_events.FocusRight = nil
         toc_menu.key_events.FocusLeft = nil
         local expand_key, collapse_key = "Right", "Left"
