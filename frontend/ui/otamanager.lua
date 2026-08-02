@@ -377,7 +377,9 @@ function OTAManager:zsync(full_dl)
             "-u", self:getOTAServer(),
             ota_dir .. self:getZsyncFilename(),
         })
-        return os.execute(util.shell_escape(zsync_cmd))
+        zsync_cmd = util.shell_escape(zsync_cmd)
+        logger.dbg("running zsync:", zsync_cmd)
+        return os.execute(zsync_cmd)
     end
 end
 
