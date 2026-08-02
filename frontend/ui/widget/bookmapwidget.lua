@@ -899,6 +899,7 @@ function BookMapWidget:registerKeyEvents()
         end
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.ShowBookMapMenu = { { "Menu" } }
+        self.key_events.Home = { { "Home" } }
         self.key_events.ScrollPageUp = { { Input.group.PgBack } }
         self.key_events.ScrollPageDown = { { Input.group.PgFwd } }
     end
@@ -1593,6 +1594,12 @@ function BookMapWidget:onClose(close_all_parents)
         self.ui.bookmark:onPageUpdate(self.ui:getCurrentPage())
         UIManager:setDirty(self.ui.dialog, "full")
     end
+    return true
+end
+
+function BookMapWidget:onHome()
+    self:onClose(true)
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 

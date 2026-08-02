@@ -169,6 +169,7 @@ function KeyboardLayoutDialog:init()
     }
     if Device:hasKeys() then
         self.key_events.CloseDialog = { { Device.input.group.Back } }
+        self.key_events.Home = { { "Home" } }
     end
 end
 
@@ -191,6 +192,13 @@ function KeyboardLayoutDialog:onCloseDialog()
         return true
     end
     return false
+end
+
+function KeyboardLayoutDialog:onHome()
+    self:onCloseDialog()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
+    return true
 end
 
 return KeyboardLayoutDialog

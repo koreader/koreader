@@ -354,6 +354,7 @@ function SortWidget:registerKeyEvents()
         self.key_events.NextPage = { { Device.input.group.PgFwd } }
         self.key_events.PrevPage = { { Device.input.group.PgBack } }
         self.key_events.ShowWidgetMenu = { { "Menu" } }
+        self.key_events.Home = { { "Home" } }
         if Device:hasScreenKB() or Device:hasKeyboard() then
             local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
             self.key_events.HoldNonTouch = { { modifier, "Press" } }
@@ -571,6 +572,13 @@ function SortWidget:sortItems(collate, reverse_collate)
     self.show_page = 1
     self.marked = 1 -- enable cancel button
     self:_populateItems()
+end
+
+function SortWidget:onHome()
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
+    return true
 end
 
 function SortWidget:onClose()

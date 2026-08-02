@@ -19,6 +19,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local datetime = require("datetime")
+local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
@@ -61,7 +62,10 @@ function ReaderProgress:init()
 
     if Device:hasKeys() then
         -- don't get locked in on non touch devices
-        self.key_events.AnyKeyPressed = { { Device.input.group.Any } }
+        local any_key_but_home = util.tableDeepCopy(Device.input.group.Any)
+        util.arrayRemove(any_key_but_home, function(t, i) return t[i] ~= "Home" end)
+        self.key_events.AnyKeyPressed = { { any_key_but_home } }
+        self.key_events.Home = { { "Home" } }
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
@@ -499,5 +503,11 @@ ReaderProgress.onAnyKeyPressed = ReaderProgress.onClose
 -- multiswipe to close this widget too.
 ReaderProgress.onMultiSwipe = ReaderProgress.onClose
 
+function ReaderProgress:onHome()
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
+    return true
+end
 
 return ReaderProgress

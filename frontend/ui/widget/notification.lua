@@ -16,6 +16,7 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local time = require("ui/time")
+local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 local Input = Device.input
@@ -89,7 +90,9 @@ function Notification:init()
     if not self.toast then
         -- If not toast, closing is handled in here
         if Device:hasKeys() then
-            self.key_events.AnyKeyPressed = { { Input.group.Any } }
+            local any_key_but_home = util.tableDeepCopy(Input.group.Any)
+            util.arrayRemove(any_key_but_home, function(t, i) return t[i] ~= "Home" end)
+            self.key_events.AnyKeyPressed = { { any_key_but_home } }
         end
         if Device:isTouchDevice() then
             self.ges_events.TapClose = {

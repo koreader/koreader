@@ -33,6 +33,7 @@ function SkimToWidget:init()
 
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.Home = { { "Home" } }
     end
     if Device:isTouchDevice() then
         self.ges_events.TapProgress = {
@@ -501,6 +502,12 @@ end
 
 function SkimToWidget:onClose()
     UIManager:close(self)
+    return true
+end
+
+function SkimToWidget:onHome()
+    self:onClose()
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 

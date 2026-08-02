@@ -787,6 +787,14 @@ local sym_key_map = {
     ["Z"] = "{", ["X"] = "}", ["C"] = "[", ["V"] = "]", ["B"] = "1", ["N"] = "2", ["M"] = "3", ["."] = ":", ["AA"] = ";",
 }
 
+function InputText:keyBack()
+    if self.parent.onCloseDialog then
+        self.parent:onCloseDialog()
+    else
+        UIManager:close(self.parent)
+    end
+end
+
 -- Handle real keypresses from a physical keyboard, even if the virtual keyboard
 -- is shown. Mostly likely to be in the emulator, but could be Android + BT
 -- keyboard, or a "coder's keyboard" Android input method.
@@ -840,18 +848,19 @@ function InputText:onKeyPress(key)
             end
         elseif key["End"] then
             self:goToEnd()
+        -- Home is a button on eink devices, KeyHome is the key on a physical keyboard.
         elseif key["Home"] then
+            self:keyBack()
+            local Event = require("ui/event")
+            UIManager:sendEvent(Event:new("Home"))
+        elseif key["KeyHome"] then
             self:goToHome()
         elseif key["Press"] then
             self:addChars("\n")
         elseif key["Tab"] then
             self:addChars("    ")
         elseif key["Back"] then
-            if self.parent.onCloseDialog then
-                self.parent:onCloseDialog()
-            else
-                UIManager:close(self.parent)
-            end
+            self:keyBack()
         else
             handled = false
         end
@@ -886,7 +895,7 @@ function InputText:onKeyPress(key)
             self:downLine()
         elseif key["Press"] then
             self:holdTextBox()
-        elseif key["Home"] then
+        elseif key["Home"] or key["KeyHome"] then
             self:toggleKeyboard()
         elseif key["."] and Device:hasSymKey() then
             -- Kindle does not have a dedicated button for commas

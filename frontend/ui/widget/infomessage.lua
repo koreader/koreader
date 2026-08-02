@@ -40,6 +40,7 @@ local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local util = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
@@ -87,7 +88,10 @@ function InfoMessage:init()
 
     if self.dismissable then
         if Device:hasKeys() then
-            self.key_events.AnyKeyPressed = { { Input.group.Any } }
+            local any_key_but_home = util.tableDeepCopy(Input.group.Any)
+            util.arrayRemove(any_key_but_home, function(t, i) return t[i] ~= "Home" end)
+            self.key_events.AnyKeyPressed = { { any_key_but_home } }
+            self.key_events.Home = { { "Home" } }
         end
         if Device:isTouchDevice() then
             self.ges_events.TapClose = {
@@ -258,6 +262,13 @@ function InfoMessage:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self.movable.dimen
     end)
+end
+
+function InfoMessage:onHome()
+    self:onTapClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
+    return true
 end
 
 function InfoMessage:onShow()

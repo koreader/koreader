@@ -517,6 +517,7 @@ function TouchMenu:init()
 
     self.key_events.Back = { { Input.group.Back } }
     self.key_events.Close = { { "Menu" } }
+    self.key_events.Home = { { "Home" } }
     if Device:hasFewKeys() then
         self.key_events.Back = { { "Left" } }
     end
@@ -970,6 +971,12 @@ function TouchMenu:onCloseWidget()
             or (ReaderUI.instance and not ReaderUI.instance.tearing_down) then
         UIManager:setDirty(nil, "flashui")
     end
+end
+
+function TouchMenu:onHome()
+    self:onClose()
+    UIManager:sendEvent(Event:new("Home"))
+    return true
 end
 
 -- Menu search feature

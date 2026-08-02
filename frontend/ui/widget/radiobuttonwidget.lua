@@ -82,6 +82,7 @@ function RadioButtonWidget:init()
     end
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.Home = { { "Home" } }
     end
     self.ges_events.TapClose = {
         GestureRange:new{
@@ -287,6 +288,13 @@ function RadioButtonWidget:onClose()
     if self.close_callback then
         self.close_callback()
     end
+    return true
+end
+
+function RadioButtonWidget:onHome()
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 

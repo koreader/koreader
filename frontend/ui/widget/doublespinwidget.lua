@@ -68,6 +68,7 @@ function DoubleSpinWidget:init()
     end
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.Home = { { "Home" } }
         if Device:hasDPad() and Device:useDPadAsActionKeys() then
             self.key_events.LeftWidgetValueUp    = { { "LPgFwd"  }, event = "DoubleSpinButtonPressed", args = { true,   1 } }
             self.key_events.LeftWidgetValueDown  = { { "LPgBack" }, event = "DoubleSpinButtonPressed", args = { true,  -1 } }
@@ -370,6 +371,13 @@ function DoubleSpinWidget:onClose()
     if self.close_callback then
         self.close_callback()
     end
+    return true
+end
+
+function DoubleSpinWidget:onHome()
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 

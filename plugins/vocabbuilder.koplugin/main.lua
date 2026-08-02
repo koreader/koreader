@@ -85,6 +85,7 @@ function MenuDialog:init()
             table.insert(back_group, "Menu")
         end
         self.key_events.Close = { { back_group } }
+        self.key_events.Home = { { "Home" } }
     end
     if Device:isTouchDevice() then
         self.ges_events.Tap = {
@@ -455,6 +456,12 @@ function MenuDialog:onClose()
     return true
 end
 
+function MenuDialog:onHome()
+    self:onClose()
+    UIManager:sendEvent(Event:new("Home"))
+    return true
+end
+
 function MenuDialog:onChangeContextStatus(args, position)
     settings.with_context = position == 2
 end
@@ -506,6 +513,7 @@ function WordInfoDialog:init()
                 table.insert(back_group, "Menu")
             end
             self.key_events.Close = { { back_group } }
+            self.key_events.Home = { { "Home" } }
         end
         if Device:isTouchDevice() then
             self.ges_events.Tap = {
@@ -716,6 +724,12 @@ function WordInfoDialog:onClose()
     if self.tap_close_callback then
         self.tap_close_callback()
     end
+    return true
+end
+
+function WordInfoDialog:onHome()
+    self:onClose()
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 
@@ -1277,6 +1291,7 @@ function VocabularyBuilderWidget:init()
         self.key_events.NextPage = { { Device.input.group.PgFwd } }
         self.key_events.PrevPage = { { Device.input.group.PgBack } }
         self.key_events.ShowMenu = { { "Menu" }}
+        self.key_events.Home = { { "Home" }}
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
@@ -1908,6 +1923,12 @@ function VocabularyBuilderWidget:onClose()
     self.vocabbuilder.widget = nil
     self.vocabbuilder[1] = nil
     -- UIManager:setDirty(self, "ui")
+end
+
+function VocabularyBuilderWidget:onHome()
+    self:onClose()
+    UIManager:sendEvent(Event:new("Home"))
+    return true
 end
 
 function VocabularyBuilderWidget:onCancel()

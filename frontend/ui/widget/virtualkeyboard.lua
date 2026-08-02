@@ -867,6 +867,7 @@ function VirtualKeyboard:init()
     self.tap_interval_override = time.ms(G_reader_settings:readSetting("ges_tap_interval_on_keyboard_ms", 0))
     if Device:hasKeys() then
         self.key_events.Close = { { "Back" } }
+        self.key_events.Home = { { "Home" } }
     end
     if keyboard.wrapInputBox then
         self.uwrap_func = keyboard.wrapInputBox(self.inputbox) or self.uwrap_func
@@ -923,6 +924,13 @@ end
 
 function VirtualKeyboard:onClose()
     UIManager:close(self)
+    return true
+end
+
+function VirtualKeyboard:onHome()
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:sendEvent(Event:new("Home"))
     return true
 end
 
