@@ -400,6 +400,7 @@ To:
                 sub_item_table_func = function()
                     return self:genOpeningInfoMenu()
                 end,
+                separator = true,
             },
             {
                 text = _("Show parent folder"),
@@ -1066,7 +1067,7 @@ function FileManagerMenu:genOpeningInfoMenu(get_text, opening_info)
     end
 
     local function message_hold_callback(touchmenu_instance)
-        local default_text = _("Opening file:\n%F") 
+        local default_text = _("Opening file:\n%F")
         local input_dialog
         local InputDialog = require("ui/widget/inputdialog")
         input_dialog = InputDialog:new{
