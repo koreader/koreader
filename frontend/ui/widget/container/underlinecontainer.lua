@@ -12,6 +12,10 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
 local UnderlineContainer = WidgetContainer:extend{
     linesize = Size.line.thick,
+    -- Painted while focused. It grows upwards, into the room linesize already reserves,
+    -- so switching focus repaints the line and nothing else.
+    focus_linesize = nil,
+    focused = false,
     padding = Size.padding.tiny,
     -- We default to white to be invisible by default for FocusManager use-cases (only switching to black @ onFocus)
     color = Blitbuffer.COLOR_WHITE,
@@ -54,8 +58,9 @@ function UnderlineContainer:paintTo(bb, x, y)
         p_y = (container_size.h - content_size.h) + y
     end
     self[1]:paintTo(bb, x, p_y)
-    bb:paintRect(line_x, y + container_size.h - self.linesize,
-        line_width, self.linesize, self.color)
+    local linesize = self.focused and self.focus_linesize or self.linesize
+    bb:paintRect(line_x, y + container_size.h - linesize,
+        line_width, linesize, self.color)
 end
 
 return UnderlineContainer
