@@ -919,12 +919,12 @@ function util.removeFile(file)
     end
 end
 
--- Gets total, used and available bytes for the mountpoint that holds a given directory.
--- @string path of the directory
+-- Gets total, used and available bytes for the mountpoint that holds a given path.
+-- @string path of a file or a directory
 -- @treturn table with total, used and available bytes
-function util.diskUsage(dir)
+function util.diskUsage(path)
     local err = { total = nil, used = nil, available = nil }
-    local total, free, available = ffiUtil.df(dir)
+    local total, free, available = ffiUtil.df(path)
     if not total then return err end
     return {
         total = total,
