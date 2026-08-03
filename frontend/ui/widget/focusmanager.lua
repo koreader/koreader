@@ -313,10 +313,11 @@ function FocusManager:onPhysicalKeyboardConnected()
     -- and it'll call InputContainer._init, which *also* resets the touch zones.
     -- Instead, we'll just do a merge ourselves.
     util.tableMerge(self.key_events, KEY_EVENTS)
-    self:_refreshFocusKeys()
     -- populateEventMappings replaces these, so, update our refs
     self.builtin_key_events = BUILTIN_KEY_EVENTS
     self.extra_key_events = EXTRA_KEY_EVENTS
+    -- Last, so the widget's callback sees the new refs too.
+    self:_refreshFocusKeys()
 end
 
 function FocusManager:onPhysicalKeyboardDisconnected()
@@ -324,21 +325,24 @@ function FocusManager:onPhysicalKeyboardDisconnected()
     populateEventMappings()
 
     -- If we still have keys, remove what disappeared from KEY_EVENTS from self.key_events (if any).
-    if Device:hasKeys() then
+    local has_keys = Device:hasKeys()
+    if has_keys then
         -- NOTE: This is slightly overkill, we could very well live with a few unreachable mappings for the rest of this widget's life ;).
         for k, _ in pairs(prev_key_events) do
             if not KEY_EVENTS[k] then
                 self.key_events[k] = nil
             end
         end
-        self:_refreshFocusKeys()
     else
         -- If we longer have keys at all, that's easy ;).
-        -- No point in asking the widget to rebind anything, either.
         self.key_events = {}
     end
     self.builtin_key_events = BUILTIN_KEY_EVENTS
     self.extra_key_events = EXTRA_KEY_EVENTS
+    -- Nothing left to bind when the keys are gone, so don't ask the widget to.
+    if has_keys then
+        self:_refreshFocusKeys()
+    end
 end
 
 -- constant, used to reset focus widget after layout recreation
