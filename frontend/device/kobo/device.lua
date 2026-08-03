@@ -990,7 +990,7 @@ function Kobo:otaModel()
     if util.fileExists("/usr/bin/hwdetect.sh")  or util.fileExists("/usr/bin/hwdetect") then
         model = "kobov5"
     end
-    return model, "ota"
+    return model, "kotasync"
 end
 
 function Kobo:exit()
