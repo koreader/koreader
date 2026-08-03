@@ -747,6 +747,19 @@ function Screensaver:close()
 end
 
 function Screensaver:cleanup()
+    -- Cancel any pending anti-ghosting redraws.
+    UIManager:unschedule(Screensaver.flashBlack)
+    UIManager:unschedule(Screensaver.restoreCover)
+
+    if self.bb_copy then
+        self.bb_copy:free()
+        self.bb_copy = nil
+    end
+
+    -- Only meaningful while the suspend entry is being delayed for the flashing;
+    -- reset it so a later suspend (with no extra flashes) uses the normal timeout.
+    Device.screensaver_suspend_wait_timeout = nil
+
     self.show_message = nil
     self.screensaver_type = nil
     self.prefix = nil
