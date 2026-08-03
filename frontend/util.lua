@@ -924,7 +924,6 @@ end
 -- @treturn table with total, used and available bytes
 function util.diskUsage(dir)
     local err = { total = nil, used = nil, available = nil }
-    if not dir or lfs.attributes(dir, "mode") ~= "directory" then return err end
     local total, free, available = ffiUtil.df(dir)
     if not total then return err end
     return {
