@@ -1021,10 +1021,9 @@ function ReaderToc:onShowToc()
             return
         end
         menu:releaseFocusKeys("FocusLeft", "FocusRight")
-        local expand_key, collapse_key = "Right", "Left"
-        if BD.mirroredUILayout() then
-            expand_key, collapse_key = collapse_key, expand_key
-        end
+        local mirrored = BD.mirroredUILayout()
+        local expand_key = mirrored and "Left" or "Right"
+        local collapse_key = mirrored and "Right" or "Left"
         menu.key_events.ExpandCurrentNode = { { expand_key } }
         menu.key_events.CollapseCurrentNode = { { collapse_key } }
     end
