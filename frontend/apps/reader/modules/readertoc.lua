@@ -1072,6 +1072,10 @@ function ReaderToc:onShowToc()
         end
     end
 
+    if self.collapsed_toc.current then
+        self:refocusTocNode(self.collapsed_toc[self.collapsed_toc.current])
+    end
+
     -- auto goto page of the current toc entry
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, self.collapsed_toc.current or -1)
 
