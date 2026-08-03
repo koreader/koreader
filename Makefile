@@ -50,7 +50,6 @@ CR3GUI_DATADIR_FILES = $(filter-out $(CR3GUI_DATADIR_EXCLUDES),$(wildcard $(CR3G
 define DATADIR_FILES
 $(CR3GUI_DATADIR_FILES)
 $(OUTPUT_DIR_DATAFILES)
-$(THIRDPARTY_DIR)/kpvcrlib/cr3.css
 endef
 
 # files to link from main directory
