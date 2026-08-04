@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20260623
+local CURRENT_MIGRATION_DATE = 20260804
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -1023,6 +1023,13 @@ if last_migration_date < 20260623 then
         settings:flush()
         G_reader_settings:delSetting("kosync")
     end
+end
+
+-- 20260804, Remove CloudStorage app
+-- https://github.com/koreader/koreader/pull/15793
+if last_migration_date < 20260804 then
+    logger.info("Performing one-time migration for 20260804")
+    ffiUtil.purgeDir(DataStorage:getDataDir() .. "/frontend/apps/cloudstorage")
 end
 
 -- We're done, store the current migration date
