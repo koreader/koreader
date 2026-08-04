@@ -1009,6 +1009,44 @@ function ReaderToc:onShowToc()
         return true
     end
 
+    -- Tree-view idiom: right arrow key expands the focused node, left collapses
+    -- it (swapped in mirrored UI layout). Replaces the horizontal focus moves,
+    -- no-ops in this single-column menu; hasFewKeys devices use these keys otherwise.
+    -- Runs again whenever the focus keys are rebuilt, e.g. when a hot-plugged
+    -- keyboard brings a D-Pad along.
+    toc_menu.focus_keys_callback = function(menu)
+        if not Device:hasDPad() or Device:hasFewKeys() then
+            menu.key_events.ExpandCurrentNode = nil
+            menu.key_events.CollapseCurrentNode = nil
+            return
+        end
+        menu:releaseFocusKeys("FocusLeft", "FocusRight")
+        local mirrored = BD.mirroredUILayout()
+        local expand_key = mirrored and "Left" or "Right"
+        local collapse_key = mirrored and "Right" or "Left"
+        menu.key_events.ExpandCurrentNode = { { expand_key } }
+        menu.key_events.CollapseCurrentNode = { { collapse_key } }
+    end
+    toc_menu:focus_keys_callback()
+
+    toc_menu.onExpandCurrentNode = function(menu)
+        local focused_widget = menu:getFocusItem()
+        local item = focused_widget and focused_widget.entry
+        if item and item.state and item.state.icon == "control.expand" then
+            self:expandToc(item.index, true)
+        end
+        return true
+    end
+
+    toc_menu.onCollapseCurrentNode = function(menu)
+        local focused_widget = menu:getFocusItem()
+        local item = focused_widget and focused_widget.entry
+        if item and item.state and item.state.icon == "control.collapse" then
+            self:collapseToc(item.index, true)
+        end
+        return true
+    end
+
     toc_menu.close_callback = function()
         UIManager:close(menu_container)
         BD.resetInvert()
@@ -1031,6 +1069,10 @@ function ReaderToc:onShowToc()
                 idx = idx + 1
             end
         end
+    end
+
+    if self.collapsed_toc.current then
+        self:refocusTocNode(self.collapsed_toc[self.collapsed_toc.current])
     end
 
     -- auto goto page of the current toc entry
@@ -1109,8 +1151,20 @@ function ReaderToc:searchToc()
     input_dialog:onShowKeyboard()
 end
 
+-- Keep the focus on the toggled node across the menu rebuild.
+function ReaderToc:refocusTocNode(node)
+    if not Device:hasDPad() then return end
+    for i, v in ipairs(self.collapsed_toc) do
+        if v == node then
+            self.toc_menu.itemnumber = i
+            break
+        end
+    end
+end
+
 -- expand TOC node of index in raw toc table
-function ReaderToc:expandToc(index)
+-- refocus: keep the focus even on touch-capable devices (set by key-driven callers)
+function ReaderToc:expandToc(index, refocus)
     if self.expanded_nodes[index] == true then return end
 
     self.expanded_nodes[index] = true
@@ -1140,11 +1194,15 @@ function ReaderToc:expandToc(index)
     if cur_node.state then cur_node.state:free() end
     cur_node.state = self.collapse_button:new{}
     self:updateCurrentNode()
+    if refocus or not Device:isTouchDevice() then
+        self:refocusTocNode(cur_node)
+    end
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
 end
 
 -- collapse TOC node of index in raw toc table
-function ReaderToc:collapseToc(index)
+-- refocus: see expandToc
+function ReaderToc:collapseToc(index, refocus)
     if self.expanded_nodes[index] == true then
         self.expanded_nodes[index] = nil
     end
@@ -1178,6 +1236,9 @@ function ReaderToc:collapseToc(index)
     cur_node.state:free()
     cur_node.state = self.expand_button:new{}
     self:updateCurrentNode()
+    if refocus or not Device:isTouchDevice() then
+        self:refocusTocNode(cur_node)
+    end
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
 end
 

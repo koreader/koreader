@@ -213,6 +213,39 @@ describe("FocusManager module", function()
         }
         assert.are.same(expected, fm1.layout)
     end)
+    it("should keep released keys released when a keyboard is hot-plugged", function()
+        local focusmanager = FocusManager:new{}
+        focusmanager:releaseFocusKeys("FocusLeft", "FocusRight")
+        assert.is_nil(focusmanager.key_events.FocusLeft)
+        assert.is_nil(focusmanager.key_events.FocusRight)
+        -- The handler re-merges the default mappings, which would bring them back.
+        focusmanager:onPhysicalKeyboardConnected()
+        assert.is_nil(focusmanager.key_events.FocusLeft)
+        assert.is_nil(focusmanager.key_events.FocusRight)
+    end)
+    it("should let the widget rebind its own keys when the mappings are rebuilt", function()
+        local focusmanager = FocusManager:new{}
+        local calls = 0
+        focusmanager.focus_keys_callback = function(self)
+            calls = calls + 1
+            self.key_events.ExpandCurrentNode = { { "Right" } }
+        end
+        focusmanager:onPhysicalKeyboardConnected()
+        assert.are.equal(1, calls)
+        assert.are.same({ { "Right" } }, focusmanager.key_events.ExpandCurrentNode)
+    end)
+    it("should not rebind anything once the device has no keys left", function()
+        local Device = require("device")
+        local focusmanager = FocusManager:new{}
+        local called = false
+        focusmanager.focus_keys_callback = function() called = true end
+        stub(Device, "hasKeys")
+        Device.hasKeys.returns(false)
+        focusmanager:onPhysicalKeyboardDisconnected()
+        Device.hasKeys:revert()
+        assert.is_false(called)
+        assert.are.same({}, focusmanager.key_events)
+    end)
     it("alternative key", function()
         local focusmanager = FocusManager:new{}
         focusmanager.extra_key_events = {

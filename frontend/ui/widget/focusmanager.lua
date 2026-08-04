@@ -32,6 +32,9 @@ local FocusManager = InputContainer:extend{
     layout = nil, -- mandatory
     movement_allowed = { x = true, y = true },
     key_events_enabled = true,
+    -- Widgets that bind keys the focus manager also uses set this; see releaseFocusKeys.
+    focus_keys_callback = nil,
+    released_focus_keys = nil,
 }
 
 -- Only build the default mappings once on initialization, or when an external keyboard is (dis-)/connected.
@@ -120,6 +123,32 @@ function FocusManager:_init()
     -- We should be fine with a simple ref for those, though
     self.builtin_key_events = BUILTIN_KEY_EVENTS
     self.extra_key_events = EXTRA_KEY_EVENTS
+end
+
+--- Releases focus keys a widget wants for itself, e.g. the horizontal moves in a
+--- single-column menu. They stay released when a keyboard hot-plug re-merges the
+--- default mappings.
+function FocusManager:releaseFocusKeys(...)
+    if not self.released_focus_keys then
+        self.released_focus_keys = {}
+    end
+    for _, name in ipairs({...}) do
+        self.released_focus_keys[name] = true
+        self.key_events[name] = nil
+    end
+end
+
+-- Re-drop the released keys after the defaults came back, and let the widget
+-- rebind its own keys: a hot-plug may just have brought a D-Pad along.
+-- The widget makes the first call itself, once it is fully built; we're not
+-- calling this from _init, where its own bindings aren't in place yet.
+function FocusManager:_refreshFocusKeys()
+    for name in pairs(self.released_focus_keys or {}) do
+        self.key_events[name] = nil
+    end
+    if self.focus_keys_callback then
+        self:focus_keys_callback()
+    end
 end
 
 function FocusManager:isAlternativeKey(key)
@@ -287,6 +316,8 @@ function FocusManager:onPhysicalKeyboardConnected()
     -- populateEventMappings replaces these, so, update our refs
     self.builtin_key_events = BUILTIN_KEY_EVENTS
     self.extra_key_events = EXTRA_KEY_EVENTS
+    -- Last, so the widget's callback sees the new refs too.
+    self:_refreshFocusKeys()
 end
 
 function FocusManager:onPhysicalKeyboardDisconnected()
@@ -294,7 +325,8 @@ function FocusManager:onPhysicalKeyboardDisconnected()
     populateEventMappings()
 
     -- If we still have keys, remove what disappeared from KEY_EVENTS from self.key_events (if any).
-    if Device:hasKeys() then
+    local has_keys = Device:hasKeys()
+    if has_keys then
         -- NOTE: This is slightly overkill, we could very well live with a few unreachable mappings for the rest of this widget's life ;).
         for k, _ in pairs(prev_key_events) do
             if not KEY_EVENTS[k] then
@@ -307,6 +339,10 @@ function FocusManager:onPhysicalKeyboardDisconnected()
     end
     self.builtin_key_events = BUILTIN_KEY_EVENTS
     self.extra_key_events = EXTRA_KEY_EVENTS
+    -- Nothing left to bind when the keys are gone, so don't ask the widget to.
+    if has_keys then
+        self:_refreshFocusKeys()
+    end
 end
 
 -- constant, used to reset focus widget after layout recreation
