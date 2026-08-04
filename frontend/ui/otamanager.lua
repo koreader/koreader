@@ -98,7 +98,7 @@ function OTAManager:checkUpdate()
 
     logger.dbg("downloading update file", ota_update_file)
 
-    local ota_type = OTAManager:getOTAType()
+    local ota_type = self:getOTAType()
     if ota_type == "kotasync" then
         self.updater = require("ffi/updater"):new(ota_update_file, ota_dir, "..", "ffi/kotasync")
         local ok, err = pcall(self.updater.fetch_manifest, self.updater)
