@@ -2916,6 +2916,14 @@ local dictionaries = {
         url = "https://www.reader-dict.com/file/eo/dict-eo-eo.zip"
     },
     {
+        name = "reader.dict Polish",
+        lang_in = "pol",
+        lang_out = "pol",
+        entries = 889051,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/pl/dict-pl-pl.zip"
+    },
+    {
         name = "reader.dict Spanish",
         lang_in = "spa",
         lang_out = "spa",
