@@ -1015,6 +1015,8 @@ function ReaderToc:onShowToc()
     -- Runs again whenever the focus keys are rebuilt, e.g. when a hot-plugged
     -- keyboard brings a D-Pad along.
     toc_menu.focus_keys_callback = function(menu)
+        -- This replaces the callback Menu set for itself, so run its part too.
+        menu:registerKeyEvents()
         if not Device:hasDPad() or Device:hasFewKeys() then
             menu.key_events.ExpandCurrentNode = nil
             menu.key_events.CollapseCurrentNode = nil
