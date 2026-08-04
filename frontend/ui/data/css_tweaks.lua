@@ -452,7 +452,7 @@ listing, plaintext, xmp, samp, tt, kbd, pre, code { font-family: monospace !impo
                 title = _("Reset main text font size"),
                 description = _("Disable font-size set on the main text (keeping possibly larger headings untouched), so that KOReader's font size is used."),
                 priority = -1, -- so in-page footnotes smaller can override this
-                css = [[body, p, li, div, blockquote { font-size: 1rem !important; }]],
+                css = [[html, body, p, li, div, blockquote { font-size: 1urem !important; }]],
             },
         },
         {
@@ -868,7 +868,7 @@ body[name="notes"] section {
 }
 body[name="notes"] > section {
     -cr-only-if: fb2-document;
-        font-size: 0.75rem;
+        font-size: 0.75urem;
 }
 body[name="notes"] > title {
     -cr-only-if: fb2-document;
@@ -890,7 +890,7 @@ body[name="comments"] section {
 }
 body[name="comments"] > section {
     -cr-only-if: fb2-document;
-        font-size: 0.85rem;
+        font-size: 0.85urem;
 }
 body[name="comments"] > title {
     -cr-only-if: fb2-document;
@@ -910,7 +910,7 @@ body[name="notes"] > section,
 body[name="comments"] > section
 {
     -cr-only-if: fb2-document;
-        font-size: 1rem !important;
+        font-size: 1urem !important;
 }
                 ]],
             },
@@ -1051,7 +1051,7 @@ Decrease size of in-page footnotes. This may have no effect if it's overwritten 
 *, autoBoxing {
     -cr-hint: late;
     -cr-only-if: -fb2-document inpage-footnote;
-        font-size: 0.8rem !important;
+        font-size: 0.8urem !important;
 }
                     ]],
                     separator = true,
@@ -1067,7 +1067,7 @@ Decrease size of in-page footnotes. This may have no effect if it's overwritten 
 *, autoBoxing {
     -cr-hint: late;
     -cr-only-if: inside-inpage-footnote -inline;
-        font-size: %1rem !important;
+        font-size: %1urem !important;
 }
                     ]], rem),
                 })
