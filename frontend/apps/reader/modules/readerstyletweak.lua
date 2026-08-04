@@ -923,7 +923,7 @@ You can then paste it here with long-press in the text box.]]), true},
     }},
 
     { _("Common classic properties"), {
-        { "font-size: 1rem !important;", _("1rem will enforce your main font size.")},
+        { "font-size: 1urem !important;", _("1rem will enforce your main font size.")},
         { "font-weight: normal !important;", _("Remove bold. Use 'bold' to get bold.")},
         { "hyphens: none !important;", _("Disables hyphenation inside the targeted elements.")},
         { "text-indent: 1.2em !important;", _("1.2em is our default text indentation.")},

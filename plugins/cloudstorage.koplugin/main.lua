@@ -13,7 +13,7 @@ local _ = require("gettext")
 
 local Cloud = WidgetContainer:extend{
     name = "cloudstorage",
-    title = _("Cloud storage+"),
+    title = _("Cloud storage"),
     settings_file = DataStorage:getSettingsDir() .. "/cloudstorage.lua",
     settings = nil,
     servers = nil, -- user servers (array)

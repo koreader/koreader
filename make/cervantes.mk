@@ -13,9 +13,7 @@ update-prepare: all
 	# remove old package if any
 	rm -f $(CERVANTES_PACKAGE)
 	# Cervantes launching scripts
-	$(SYMLINK) $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader/spinning_zsync.sh
 	$(SYMLINK) $(CERVANTES_DIR)/*.sh $(INSTALL_DIR)/koreader
-	$(SYMLINK) $(CERVANTES_DIR)/spinning_zsync $(INSTALL_DIR)/koreader
 
 update-zip: update-prepare
 	$(strip $(call mkupdate,$(CERVANTES_PACKAGE)))

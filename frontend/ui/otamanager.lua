@@ -9,14 +9,16 @@ local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
+local ProgressbarDialog = require("ui/widget/progressbardialog")
 local UIManager = require("ui/uimanager")
+local Trapper = require("ui/trapper")
 local Version = require("version")
-local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
-local T = require("ffi/util").template
+local ffiUtil = require("ffi/util")
+local T = ffiUtil.template
 
 local ota_dir = DataStorage:getDataDir() .. "/ota/"
 
@@ -37,12 +39,9 @@ local OTAManager = {
         "stable",
         "nightly",
     },
+    kotasync_template = "koreader-%s-latest-%s.kotasync",
+    kotasync_update_package = ota_dir .. "update.tar.xz",
     link_template = "koreader-%s-latest-%s",
-    zsync_template = "koreader-%s-latest-%s.zsync",
-    installed_package = ota_dir .. "koreader.installed.tar",
-    package_indexfile = "ota/package.index",
-    updated_package = ota_dir .. "koreader.updated.tar",
-    can_pretty_print = lfs.attributes("./fbink", "mode") == "file" and true or false,
 }
 
 local ota_channels = {
@@ -78,23 +77,15 @@ function OTAManager:getFilename(kind)
     if type(kind) ~= "string" then return end
     local model = Device:otaModel()
     local channel = self:getOTAChannel()
-    if kind == "ota" then
-        return self.zsync_template:format(model, channel)
+    if kind == "kotasync" then
+        return self.kotasync_template:format(model, channel)
     elseif kind == "link" then
         return self.link_template:format(model, channel)
     end
 end
 
-function OTAManager:getZsyncFilename()
-    return self:getFilename("ota")
-end
-
 function OTAManager:checkUpdate()
     if Device:isDeprecated() then return -1 end
-    local http = require("socket.http")
-    local ltn12 = require("ltn12")
-    local socket = require("socket")
-    local socketutil = require("socketutil")
 
     local update_kind = self:getOTAType()
     if not update_kind then return -1 end
@@ -103,25 +94,39 @@ function OTAManager:checkUpdate()
     if not update_file then return -2 end
 
     local ota_update_file = self:getOTAServer() .. update_file
-    local local_update_file = ota_dir .. update_file
-    -- download zsync file from OTA server
-    logger.dbg("downloading update file", ota_update_file)
-    socketutil:set_timeout()
-    local code, headers, status = socket.skip(1, http.request{
-        url     = ota_update_file,
-        sink    = ltn12.sink.file(io.open(local_update_file, "w")),
-    })
-    socketutil:reset_timeout()
-    if code ~= 200 then
-        logger.warn("cannot find update file:", status or code or "network unreachable")
-        logger.dbg("Response headers:", headers)
-        return
-    end
-    -- parse OTA package version
     local link, ota_package
-    local update_info = io.open(local_update_file, "r")
-    if update_info then
-        if OTAManager:getOTAType() == "link" then
+
+    logger.dbg("downloading update file", ota_update_file)
+
+    local ota_type = OTAManager:getOTAType()
+    if ota_type == "kotasync" then
+        self.updater = require("ffi/updater"):new(ota_update_file, ota_dir, "..", "ffi/kotasync")
+        local ok, err = pcall(self.updater.fetch_manifest, self.updater)
+        if not ok then
+            return nil, err
+        end
+        ota_package = err
+    elseif ota_type == "link" then
+        local http = require("socket.http")
+        local ltn12 = require("ltn12")
+        local socket = require("socket")
+        local socketutil = require("socketutil")
+
+        local local_update_file = ota_dir .. update_file
+
+        socketutil:set_timeout()
+        local code, headers, status = socket.skip(1, http.request{
+            url     = ota_update_file,
+            sink    = ltn12.sink.file(io.open(local_update_file, "w")),
+        })
+        socketutil:reset_timeout()
+        if code ~= 200 then
+            logger.dbg("OTA check response headers:", headers)
+            return nil, status or code or "network unreachable"
+        end
+        -- parse OTA package version
+        local update_info = io.open(local_update_file, "r")
+        if update_info then
             local i = 0
             for line in update_info:lines() do
                 i = i + 1
@@ -130,13 +135,8 @@ function OTAManager:checkUpdate()
                     link = self:getOTAServer() .. ota_package
                 end
             end
-        else
-            for line in update_info:lines() do
-                ota_package = line:match("^Filename:%s*(.-)%s*$")
-                if ota_package then break end
-            end
+            update_info:close()
         end
-        update_info:close()
     end
     local local_ok, local_version = pcall(function()
         local rev = Version:getCurrentRevision()
@@ -155,6 +155,27 @@ function OTAManager:checkUpdate()
     end
 end
 
+local co_confirm = function(text, ok_text, cancel_text)
+    local co = coroutine.running()
+    UIManager:show(ConfirmBox:new{
+        text = text,
+        ok_text = ok_text, ok_callback = function() coroutine.resume(co, true) end,
+        cancel_text = cancel_text, cancel_callback = function() coroutine.resume(co, false) end,
+    })
+    return coroutine.yield()
+end
+
+local co_choose = function(text, choice1_text, choice2_text, cancel_text)
+    local co = coroutine.running()
+    UIManager:show(MultiConfirmBox:new{
+        text = text,
+        choice1_text = choice1_text, choice1_callback = function() coroutine.resume(co, 1) end,
+        choice2_text = choice2_text, choice2_callback = function() coroutine.resume(co, 2) end,
+        cancel_text = cancel_text, cancel_callback = function() coroutine.resume(co, false) end,
+    })
+    return coroutine.yield()
+end
+
 function OTAManager:fetchAndProcessUpdate()
     if Device:hasOTARunning() then
         UIManager:show(InfoMessage:new{
@@ -163,222 +184,214 @@ function OTAManager:fetchAndProcessUpdate()
         return
     end
 
-    local ota_version, local_version, link, ota_package = OTAManager:checkUpdate()
+    -- Ensure we're running in a coroutine.
+    local co = coroutine.running()
+    if not co then
+        Trapper:wrap(function()
+            self:fetchAndProcessUpdate()
+            -- Cleanup…
+            if self.updater then
+                self.updater:free()
+                self.updater = nil
+            end
+        end)
+        return
+    end
+    local re = function(res) coroutine.resume(co, res) end
+
+    -- Ensure network is online.
+    if NetworkMgr:willRerunWhenConnected(re) then
+        coroutine.yield()
+        if not NetworkMgr:isConnected() then
+            return
+        end
+    end
+
+    local ota_version, local_version, link, ota_package = self:checkUpdate()
 
     if ota_version == 0 then
         UIManager:show(InfoMessage:new{
             text = _("KOReader is up to date."),
         })
+        return
     elseif ota_version == -1 then
         UIManager:show(InfoMessage:new{
             text = T(_("Device no longer supported.\n\nPlease check %1"), "https://github.com/koreader/koreader/wiki/deprecated-devices")
         })
+        return
     elseif ota_version == -2 then
         UIManager:show(InfoMessage:new{
             text = _("Unable to determine OTA model.")
         })
-    elseif ota_version == nil then
+        return
+    elseif not ota_version then
+        logger.warn("OTA check failed:", local_version)
         UIManager:show(InfoMessage:new{
             text = _("Unable to contact OTA server. Try again later, or try another mirror."),
         })
-    elseif ota_version then
-        local update_message = T(_("Do you want to update?\nInstalled version: %1\nAvailable version: %2"),
-                                 BD.ltr(local_version),
-                                 BD.ltr(ota_version))
-        local update_ok_text = C_("Application update | Button", "Update")
-        if ota_version < local_version then
-            -- Android cannot downgrade APKs. The user needs to uninstall current app first.
-            -- Instead of doing the auto-update when ready we just download the APK using the browser.
-            if Device:isAndroid() then
-                UIManager:show(ConfirmBox:new{
-                    text = T(_("The currently installed version is newer than the available version.\nYou'll need to uninstall the app before installing a previous version.\nDownload anyway?\n\nInstalled version: %1\nAvailable version: %2"),
-                        BD.ltr(local_version),
-                        BD.ltr(ota_version)),
-                    ok_text = _("Download"),
-                    ok_callback = function()
-                        Device:openLink(link)
-                    end,
-                })
-                return
-            end
-            update_message =  T(_("The currently installed version is newer than the available version.\nWould you still like to continue and downgrade?\nInstalled version: %1\nAvailable version: %2"),
-                                BD.ltr(local_version),
-                                BD.ltr(ota_version))
-            update_ok_text = _("Downgrade")
-        end
+        return
+    end
 
-        local wait_for_download = _("Downloading may take several minutes…")
-
-        if OTAManager:getOTAType() == "link" then
+    local update_message = T(_("Do you want to update?\nInstalled version: %1\nAvailable version: %2"),
+                             BD.ltr(local_version),
+                             BD.ltr(ota_version))
+    local update_ok_text = C_("Application update | Button", "Update")
+    if ota_version < local_version then
+        -- Android cannot downgrade APKs. The user needs to uninstall current app first.
+        -- Instead of doing the auto-update when ready we just download the APK using the browser.
+        if Device:isAndroid() then
             UIManager:show(ConfirmBox:new{
-                text = update_message,
-                ok_text = update_ok_text,
+                text = T(_("The currently installed version is newer than the available version.\nYou'll need to uninstall the app before installing a previous version.\nDownload anyway?\n\nInstalled version: %1\nAvailable version: %2"),
+                    BD.ltr(local_version),
+                    BD.ltr(ota_version)),
+                ok_text = _("Download"),
                 ok_callback = function()
-                    if Device:isAndroid() then
-                        Device:download(link, ota_package, wait_for_download)
-                    elseif Device:isSDL() then
-                        Device:openLink(link)
-                    end
-                end
+                    Device:openLink(link)
+                end,
             })
-        else
-            UIManager:show(ConfirmBox:new{
-                text = update_message,
-                ok_text = update_ok_text,
-                ok_callback = function()
-                    UIManager:show(InfoMessage:new{
-                        text = wait_for_download,
-                        timeout = 3,
-                    })
-                    UIManager:scheduleIn(1, function()
-                        if OTAManager:zsync() == 0 then
-                            Device:install()
-                            -- Make it clear that zsync is done
-                            if self.can_pretty_print then
-                                os.execute("./fbink -q -y -7 -pm ' '  ' '")
-                            end
-                        else
-                            -- Make it clear that zsync is done
-                            if self.can_pretty_print then
-                                os.execute("./fbink -q -y -7 -pm ' '  ' '")
-                            end
-                            UIManager:show(MultiConfirmBox:new{
-                                text = _("Failed to update KOReader.\n\nYou can:\nCancel, keeping temporary files.\nRetry the update process with a full download.\nAbort and cleanup all temporary files."),
-                                choice1_text = _("Retry"),
-                                choice1_callback = function()
-                                    UIManager:show(InfoMessage:new{
-                                        text = _("Downloading may take several minutes…"),
-                                        timeout = 3,
-                                    })
-                                    -- Clear the installed package, as well as the complete/incomplete update download
-                                    os.execute("rm -f " .. self.installed_package)
-                                    os.execute("rm -f " .. self.updated_package .. "*")
-                                    -- As well as temporary files, in case zsync went kablooey too early...
-                                    os.execute("rm -f ./rcksum-*")
-                                    -- And then relaunch zsync in full download mode...
-                                    UIManager:scheduleIn(1, function()
-                                        if OTAManager:zsync(true) == 0 then
-                                            Device:install()
-                                            -- Make it clear that zsync is done
-                                            if self.can_pretty_print then
-                                                os.execute("./fbink -q -y -7 -pm ' '  ' '")
-                                            end
-                                        else
-                                            -- Make it clear that zsync is done
-                                            if self.can_pretty_print then
-                                                os.execute("./fbink -q -y -7 -pm ' '  ' '")
-                                            end
-                                            UIManager:show(ConfirmBox:new{
-                                                text = _("Error updating KOReader. Would you like to delete temporary files?"),
-                                                ok_callback = function()
-                                                    os.execute("rm -f " .. ota_dir .. "ko*")
-                                                end,
-                                            })
-                                        end
-                                    end)
-                                end,
-                                choice2_text = _("Abort"),
-                                choice2_callback = function()
-                                    os.execute("rm -f " .. ota_dir .. "ko*")
-                                    os.execute("rm -f " .. self.updated_package .. "*")
-                                    os.execute("rm -f ./rcksum-*")
-                                end,
-                            })
-                        end
-                    end)
-                end
-            })
+            return
         end
-    end
-end
-
----- Uses zsync and tar to prepare an update package.
-function OTAManager:_buildLocalPackage()
-    --- @todo Validate the installed package?
-    local installed_package = self.installed_package
-    if lfs.attributes(installed_package, "mode") == "file" then
-        return 0
-    end
-    if lfs.attributes(self.package_indexfile, "mode") ~= "file" then
-        logger.err("Missing ota metadata:", self.package_indexfile)
-        return nil
+        update_message =  T(_("The currently installed version is newer than the available version.\nWould you still like to continue and downgrade?\nInstalled version: %1\nAvailable version: %2"),
+                            BD.ltr(local_version),
+                            BD.ltr(ota_version))
+        update_ok_text = _("Downgrade")
     end
 
-    local tar_cmd = {
-        './tar',
-        '--create', '--file='..self.installed_package,
-        '--mtime', tostring(Version:getBuildDate()),
-        '--numeric-owner', '--owner=0', '--group=0',
-        '--ignore-failed-read', '--no-recursion', '-C', '..',
-        '--verbatim-files-from', '--files-from', self.package_indexfile,
-    }
-
-    -- With visual feedback if supported...
-    if self.can_pretty_print then
-        os.execute("./fbink -q -y -7 -pmh 'Preparing local OTA package'")
-        -- We need a vague idea of how much space the tarball we're creating will take to compute a proper percentage...
-        -- Get the size from the latest zsync package, which'll be a closer match than anything else we might come up with.
-        local update_file = self:getZsyncFilename()
-        local local_update_file = ota_dir .. update_file
-        local tarball_size = nil
-        local zsync = io.open(local_update_file, "r")
-        if zsync then
-            for line in zsync:lines() do
-                tarball_size = line:match("^Length: (%d*)$")
-                if tarball_size then break end
+    if self:getOTAType() == "link" then
+        UIManager:show(ConfirmBox:new{
+            text = update_message,
+            ok_text = update_ok_text,
+            ok_callback = function()
+                if Device:isAndroid() then
+                    Device:download(link, ota_package, _("Downloading may take several minutes…"))
+                elseif Device:isSDL() then
+                    Device:openLink(link)
+                end
             end
-            zsync:close()
-        end
-        -- Next, we need to compute the amount of tar blocks that'll take, knowing that tar's default blocksize is 20 * 512 bytes.
-        -- c.f., https://superuser.com/questions/168749 & http://www.noah.org/wiki/tar_notes
-        -- Defaults to a sane-ish value as-of now, in case shit happens...
-        local blocks = 6405
-        if tarball_size then
-            blocks = tarball_size * (1/(512 * 20))
-        end
-        -- And since we want a percentage, devise the exact value we need for tar to spit out exactly 100 checkpoints ;).
-        local cpoints = blocks * (1/100)
-        table.insert(tar_cmd, string.format('--checkpoint=%d', cpoints))
-        table.insert(tar_cmd, string.format('--checkpoint-action=exec=./fbink -q -y -6 -P $(($TAR_CHECKPOINT/%d))', cpoints))
-    end
-    return os.execute(util.shell_escape(tar_cmd))
-end
-
-function OTAManager:zsync(full_dl)
-    if full_dl or self:_buildLocalPackage() == 0 then
-        local zsync_wrapper = "./zsync2"
-        local use_pipefail = true
-        -- With visual feedback if supported...
-        if self.can_pretty_print then
-            zsync_wrapper = "./spinning_zsync"
-            -- And because everything is terrible, we can't check for pipefail's usability in spinning_zsync,
-            -- because older ash versions abort on set -o failures...
-            -- c.f., ko/#5844
-            -- So, instead, check from this side of the fence...
-            -- (remember, os.execute is essentially system(), it goes through sh)
-            use_pipefail = (os.execute("set -o pipefail 2>/dev/null") == 0)
-        end
-        local zsync_cmd = {
-            'env',
-            string.format('WITH_PIPEFAIL=%s', use_pipefail),
-        }
-        -- Honor HTTP proxy setting.
-        local http_proxy = G_reader_settings:readSetting("http_proxy")
-        if http_proxy then
-            table.insert(zsync_cmd, string.format("http_proxy=%s", http_proxy))
-        end
-        table.insert(zsync_cmd, zsync_wrapper)
-        -- Only add input tarball when not doing a full download.
-        if not full_dl then
-            util.arrayAppend(zsync_cmd, {"-i", self.installed_package})
-        end
-        util.arrayAppend(zsync_cmd, {
-            "-o", self.updated_package,
-            "-u", self:getOTAServer(),
-            ota_dir .. self:getZsyncFilename(),
         })
-        return os.execute(util.shell_escape(zsync_cmd))
+        return
     end
+
+    if not co_confirm(update_message, update_ok_text) then
+        return
+    end
+
+    local ok, err
+
+    ok, err = self:_prepareUpdate()
+    if not ok then
+        -- Canceled or errored.
+        logger.warn("failed to prepare OTA update:", err)
+        return
+    end
+    local stats = err
+
+    if not co_confirm(T(_("Need to fetch %1 out of %2 files (%3), proceed?"), stats.missing_files, stats.total_files, util.getFriendlySize(stats.download_size))) then
+        return
+    end
+
+    while true do
+
+        ok, err = self:_fetchUpdate()
+        if ok then
+            Device:install()
+            return
+        end
+        logger.warn("failed to fetch OTA update:", err)
+
+        local choice = err == "aborted" and 2 or co_choose(
+            _("Downloading update failed, you can:\nCancel, keeping temporary files.\nRetry the update process.\nAbort and cleanup all temporary files."),
+            _("Retry"), _("Abort")
+        )
+        if choice == 1 then -- luacheck: ignore 542
+            -- Retry.
+        elseif choice == 2 then
+            -- Abort.
+            local ota_file = ota_dir..self:getFilename("kotasync")
+            os.remove(ota_file)
+            os.remove(ota_file..".etag")
+            os.remove(self.kotasync_update_package..".part")
+            break
+        else
+            -- Cancel.
+            break
+        end
+
+    end
+end
+
+local function progress_dialog(title, max, dismiss_text)
+    local co = coroutine.running()
+    local dialog = ProgressbarDialog:new {
+        title = title,
+        progress_max = max,
+        refresh_time_seconds = Device:hasEinkScreen() and 0.5 or 0.1,
+        cancel = function() coroutine.resume(co, true) end,
+        resume = function() coroutine.resume(co) end,
+        dismiss_text = dismiss_text,
+    }
+    dialog.dismiss_callback = dialog.cancel
+    local refresh = function(delay)
+        if delay then
+            UIManager:scheduleIn(delay, dialog.resume)
+        else
+            UIManager:nextTick(dialog.resume)
+        end
+        return coroutine.yield()
+    end
+    function dialog:update(n, delay)
+        if self:reportProgress(n) then
+            return refresh(delay)
+        end
+    end
+    UIManager:show(dialog)
+    UIManager:forceRePaint()
+    refresh()
+    return dialog
+end
+
+function OTAManager:_prepareUpdate()
+    local progress
+    local aborted = false
+    local ok, err = pcall(self.updater.prepare_update, self.updater, function(count, total)
+        if not progress then
+            progress = progress_dialog(_("Analyzing local install…"), total, _("Abort?"))
+        end
+        if progress:update(count, 0.05) then
+            aborted = true
+            return false
+        end
+        return true
+    end)
+    if progress then
+        progress:close()
+    end
+    if aborted then
+        return false, "aborted"
+    end
+    return ok, err
+end
+
+function OTAManager:_fetchUpdate()
+    local progress
+    local aborted = false
+    local ok, err = pcall(self.updater.download_update, self.updater, function(count, total)
+        if not progress then
+            progress = progress_dialog(_("Downloading update…"), total, _("Abort?"))
+        end
+        if progress:update(count, 0.05) then
+            aborted = true
+            return false
+        end
+        return true
+    end)
+    if progress then
+        progress:close()
+    end
+    if aborted then
+        return false, "aborted"
+    end
+    return ok, err
 end
 
 function OTAManager:genServerList()
@@ -411,29 +424,13 @@ function OTAManager:getOTAMenuTable()
     return {
         text = C_("Application update | Menu", "Update"),
         hold_callback = function()
-            local connect_callback = function()
-                OTAManager:fetchAndProcessUpdate()
-            end
-            NetworkMgr:runWhenOnline(connect_callback)
+            OTAManager:fetchAndProcessUpdate()
         end,
         sub_item_table = {
             {
                 text = _("Check for updates"),
                 callback = function()
-                    local working_im = InfoMessage:new{
-                        alignment = "center",
-                        show_icon = false,
-                        text = "⌛",
-                    }
-                    UIManager:show(working_im)
-                    UIManager:forceRePaint()
-
-                    local connect_callback = function()
-                        OTAManager:fetchAndProcessUpdate()
-                    end
-
-                    UIManager:close(working_im)
-                    NetworkMgr:runWhenOnline(connect_callback)
+                    OTAManager:fetchAndProcessUpdate()
                 end
             },
             {

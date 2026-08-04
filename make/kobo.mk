@@ -13,7 +13,6 @@ update-prepare: all
 	# Kobo launching scripts
 	$(SYMLINK) $(KOBO_DIR)/koreader.png $(INSTALL_DIR)/
 	$(SYMLINK) $(KOBO_DIR)/*.sh $(INSTALL_DIR)/koreader/
-	$(SYMLINK) $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader/
 
 update-zip: update-prepare
 	$(strip $(call mkupdate,--manifest-transform=/^koreader\.png$$/d $(KOBO_PACKAGE))) koreader.png
