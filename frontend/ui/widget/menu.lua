@@ -963,6 +963,9 @@ function Menu:init()
     self.ges_events.Close = self.on_close_ges
 
     self:registerKeyEvents()
+    -- Rebuild them whenever the focus keys are, e.g. after a keyboard hot-plug:
+    -- our bindings depend on capabilities the plug just changed.
+    self.focus_keys_callback = self.registerKeyEvents
 
     if self.item_table.current then
         self.page = self:getPageNumber(self.item_table.current)
@@ -1006,16 +1009,6 @@ function Menu:registerKeyEvents()
             self.key_events.SelectByShortCut = { { self.item_shortcuts } }
         end
     end
-end
-
-function Menu:onPhysicalKeyboardConnected()
-    FocusManager.onPhysicalKeyboardConnected(self)
-    self:registerKeyEvents()
-end
-
-function Menu:onPhysicalKeyboardDisconnected()
-    FocusManager.onPhysicalKeyboardDisconnected(self)
-    self:registerKeyEvents()
 end
 
 function Menu:updatePageInfo(select_number)
