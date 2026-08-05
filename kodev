@@ -142,6 +142,7 @@ TARGET:
     linux
     macos                     MacOS app bundle
     pocketbook
+    pocketbookhf
     remarkable
     remarkable-aarch64
     sony-prstux
@@ -170,7 +171,7 @@ function setup_target() {
         cervantes) ;;
         kindle | kindlehf | kindlepw2 | kindle-legacy) ;;
         kobo | kobov4 | kobov5) ;;
-        pocketbook) ;;
+        pocketbook | pocketbookhf) ;;
         remarkable) ;;
         remarkable-aarch64) ;;
         sony-prstux) ;;
