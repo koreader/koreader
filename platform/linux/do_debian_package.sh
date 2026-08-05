@@ -103,6 +103,7 @@ Description: Ebook reader optimized for e-ink screens.
  Integrated with Calibre, Wallabag, Wikipedia,
  Google Translate and other content providers.
 EOF
+chmod -R og=rX "${input_dir}/DEBIAN"
 
 # use absolute path to luajit in reader.lua
 sed -i 's,./luajit,/usr/lib/koreader/luajit,' "${input_dir}/usr/lib/koreader/reader.lua"
