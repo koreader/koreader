@@ -447,4 +447,67 @@ function Font:getAdjustedFace(face, bold)
     return face_obj, bold
 end
 
+--- Register a single fallback font at runtime.
+-- @tparam string fontpath Relative or absolute font filename (e.g.
+--   "NotoEmojiMono-Regular.ttf" or "userfonts/emoji.ttf")
+-- @tparam[opt] int pos Insertion index (defaults to
+--   `Font.additional_fallback_insert_indice`).
+-- @treturn bool true if the font was inserted; false if it was already in the
+--   list or the fallback limit has been reached.
+function Font:registerFallback(fontpath, pos)
+    if type(fontpath) ~= "string" or fontpath == "" then
+        return false
+    end
+    -- Disallow duplicates
+    for _, fp in ipairs(self.fallbacks) do
+        if fp == fontpath then
+            return false
+        end
+    end
+
+    -- Respect the hard limit to avoid performance hits
+    local max_allowed = self.additional_fallback_insert_indice + self.additional_fallback_max_nb - 1
+    if #self.fallbacks >= max_allowed then
+        return false
+    end
+
+    -- Clamp position and insert
+    pos = pos or self.additional_fallback_insert_indice
+    if pos < 1 or pos > #self.fallbacks + 1 then
+        pos = #self.fallbacks + 1
+    end
+    table.insert(self.fallbacks, pos, fontpath)
+
+    -- Auto-register bold variant if present in the system font list.
+    local _, fname = util.splitFilePathName(fontpath)
+    if fname and fname:find("-Regular", 1, true) then
+        local bold_name = fname:gsub("-Regular", "-Bold", 1)
+        for _, path in ipairs(FontList:getFontList()) do
+            local _, base = util.splitFilePathName(path)
+            if base == bold_name then
+                self.bold_font_variant[fontpath] = path
+                self.regular_font_variant[path] = fontpath
+                break
+            end
+        end
+    end
+
+    logger.dbg("Font.registerFallback(): added", fontpath, "at", pos)
+    return true
+end
+
+--- Register multiple fallback fonts at once (keeps their provided order).
+-- @tparam table fontpaths Array of font path strings.
+-- @tparam[opt] int pos Starting insertion index.
+function Font:registerFallbacks(fontpaths, pos)
+    if type(fontpaths) ~= "table" then
+        return false
+    end
+    -- Insert in reverse so the final order matches the given table.
+    for i = #fontpaths, 1, -1 do
+        self:registerFallback(fontpaths[i], pos)
+    end
+    return true
+end
+
 return Font
