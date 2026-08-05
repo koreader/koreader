@@ -195,7 +195,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
             {
                 text = _("Wikipedia server"),
                 keep_menu_open = true,
-                help_text = _("Base URL of the Wikipedia API server, with the %s placeholder replaced by the language code (e.g. https://en.wikipedia.org)."),
+                help_text = _("Base URL of the Wikipedia API server, with the %s placeholder replaced by the language code (e.g. https://%s.wikipedia.org)."),
                 callback = function(touchmenu_instance)
                     local input
                     input = InputDialog:new{
@@ -203,7 +203,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                         input = G_reader_settings:readSetting("wikipedia_server") or Wikipedia.wiki_server,
                         input_hint = Wikipedia.wiki_server,
                         input_type = "text",
-                        description = _("Base URL of the Wikipedia API server, with the %s placeholder replaced by the language code (e.g. https://en.wikipedia.org)."),
+                        description = _("Base URL of the Wikipedia API server, with the %s placeholder replaced by the language code (e.g. https://%s.wikipedia.org)."),
                         buttons = {
                             {
                                 {
@@ -229,6 +229,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                         },
                     }
                     UIManager:show(input)
+                    input:onShowKeyboard()
                 end,
             },
             {
@@ -268,6 +269,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                         },
                     }
                     UIManager:show(input)
+                    input:onShowKeyboard()
                 end,
                 separator = true,
             },

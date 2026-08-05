@@ -467,6 +467,7 @@ This is useful:
                         },
                     }
                     UIManager:show(input)
+                    input:onShowKeyboard()
                 end,
             },
             {
@@ -506,6 +507,7 @@ This is useful:
                         },
                     }
                     UIManager:show(input)
+                    input:onShowKeyboard()
                 end,
             },
         },
