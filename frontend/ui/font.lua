@@ -8,13 +8,17 @@ local Screen = require("device").screen
 local logger = require("logger")
 local util = require("util")
 
+local DEFAULT_UI_FONT_REGULAR = "NotoSans-Regular.ttf"
+local DEFAULT_UI_FONT_BOLD = "NotoSans-Bold.ttf"
+
 -- Known regular (and italic) fonts with an available bold font file
-local _bold_font_variant = {}
-_bold_font_variant["NotoSans-Regular.ttf"] = "NotoSans-Bold.ttf"
-_bold_font_variant["NotoSans-Italic.ttf"] = "NotoSans-BoldItalic.ttf"
-_bold_font_variant["NotoSansArabicUI-Regular.ttf"] = "NotoSansArabicUI-Bold.ttf"
-_bold_font_variant["NotoSerif-Regular.ttf"] = "NotoSerif-Bold.ttf"
-_bold_font_variant["NotoSerif-Italic.ttf"] = "NotoSerif-BoldItalic.ttf"
+local _bold_font_variant = {
+    [DEFAULT_UI_FONT_REGULAR] = DEFAULT_UI_FONT_BOLD,
+    ["NotoSans-Italic.ttf"] = "NotoSans-BoldItalic.ttf",
+    ["NotoSansArabicUI-Regular.ttf"] = "NotoSansArabicUI-Bold.ttf",
+    ["NotoSerif-Regular.ttf"] = "NotoSerif-Bold.ttf",
+    ["NotoSerif-Italic.ttf"] = "NotoSerif-BoldItalic.ttf",
+}
 
 -- Build the reverse mapping, so we can know a font is bold
 local _regular_font_variant = {}
@@ -22,7 +26,17 @@ for regular, bold in pairs(_bold_font_variant) do
     _regular_font_variant[bold] = regular
 end
 
+local function getUIFont(setting_name, default)
+    return G_reader_settings:readSetting(setting_name) or default
+end
+
+local UI_REGULAR = getUIFont("ui_font_regular", DEFAULT_UI_FONT_REGULAR)
+local UI_BOLD = getUIFont("ui_font_bold", DEFAULT_UI_FONT_BOLD)
+
 local Font = {
+    DEFAULT_UI_FONT_REGULAR = DEFAULT_UI_FONT_REGULAR,
+    DEFAULT_UI_FONT_BOLD = DEFAULT_UI_FONT_BOLD,
+
     -- Make these available in the Font object, so other code
     -- can complete them if needed.
     bold_font_variant = _bold_font_variant,
@@ -39,22 +53,22 @@ local Font = {
 
     fontmap = {
         -- default font for menu contents
-        cfont = "NotoSans-Regular.ttf",
+        cfont = UI_REGULAR,
         -- default font for title
         --tfont = "NimbusSanL-BoldItal.cff",
-        tfont = "NotoSans-Bold.ttf",
-        smalltfont = "NotoSans-Bold.ttf",
-        x_smalltfont = "NotoSans-Bold.ttf",
+        tfont = UI_BOLD,
+        smalltfont = UI_BOLD,
+        x_smalltfont = UI_BOLD,
         -- default font for footer
-        ffont = "NotoSans-Regular.ttf",
-        smallffont = "NotoSans-Regular.ttf",
-        largeffont = "NotoSans-Regular.ttf",
+        ffont = UI_REGULAR,
+        smallffont = UI_REGULAR,
+        largeffont = UI_REGULAR,
 
         -- default font for reading position info
-        rifont = "NotoSans-Regular.ttf",
+        rifont = UI_REGULAR,
 
         -- default font for pagination display
-        pgfont = "NotoSans-Regular.ttf",
+        pgfont = UI_REGULAR,
 
         -- selectmenu: font for item shortcut
         scfont = "DroidSansMono.ttf",
@@ -62,7 +76,7 @@ local Font = {
         -- help page: font for displaying keys
         hpkfont = "DroidSansMono.ttf",
         -- font for displaying help messages
-        hfont = "NotoSans-Regular.ttf",
+        hfont = UI_REGULAR,
 
         -- font for displaying input content
         -- we have to use mono here for better distance controlling
@@ -71,16 +85,16 @@ local Font = {
         smallinfont = "DroidSansMono.ttf",
 
         -- font for info messages
-        infofont = "NotoSans-Regular.ttf",
+        infofont = UI_REGULAR,
 
         -- small font for info messages
-        smallinfofont = "NotoSans-Regular.ttf",
+        smallinfofont = UI_REGULAR,
         -- small bold font for info messages
-        smallinfofontbold = "NotoSans-Bold.ttf",
+        smallinfofontbold = UI_BOLD,
         -- extra small font for info messages
-        x_smallinfofont = "NotoSans-Regular.ttf",
+        x_smallinfofont = UI_REGULAR,
         -- extra extra small font for info messages
-        xx_smallinfofont = "NotoSans-Regular.ttf",
+        xx_smallinfofont = UI_REGULAR,
     },
     sizemap = {
         cfont = 24,
