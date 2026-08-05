@@ -333,6 +333,9 @@ function FocusManager:onPhysicalKeyboardDisconnected()
                 self.key_events[k] = nil
             end
         end
+        -- And put back the ones we still want: a widget rebuilding its own bindings around
+        -- the hot-plug may well have dropped the whole set, ours included.
+        util.tableMerge(self.key_events, KEY_EVENTS)
     else
         -- If we longer have keys at all, that's easy ;).
         self.key_events = {}

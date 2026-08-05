@@ -234,6 +234,21 @@ describe("FocusManager module", function()
         assert.are.equal(1, calls)
         assert.are.same({ { "Right" } }, focusmanager.key_events.ExpandCurrentNode)
     end)
+    it("should restore its own keys when a widget cleared them on disconnect", function()
+        local focusmanager = FocusManager:new{}
+        local focus_left = focusmanager.key_events.FocusLeft
+        -- What a widget rebuilding its bindings around the hot-plug does.
+        focusmanager.key_events = {}
+        focusmanager:onPhysicalKeyboardDisconnected()
+        assert.are.same(focus_left, focusmanager.key_events.FocusLeft)
+    end)
+    it("should keep released keys released across a disconnect", function()
+        local focusmanager = FocusManager:new{}
+        focusmanager:releaseFocusKeys("FocusLeft", "FocusRight")
+        focusmanager:onPhysicalKeyboardDisconnected()
+        assert.is_nil(focusmanager.key_events.FocusLeft)
+        assert.is_nil(focusmanager.key_events.FocusRight)
+    end)
     it("should not rebind anything once the device has no keys left", function()
         local Device = require("device")
         local focusmanager = FocusManager:new{}
