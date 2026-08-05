@@ -33,8 +33,8 @@ local FocusManager = InputContainer:extend{
     movement_allowed = { x = true, y = true },
     key_events_enabled = true,
     -- Widgets that bind keys the focus manager also uses set this; see releaseFocusKeys.
-    -- FIXME: a callback that rebuilds a whole key_events set also brings back bindings
-    -- suppressed from the outside; it should only re-add what the rebuild dropped.
+    --- @fixme a callback that rebuilds a whole key_events set also brings back bindings
+    --- suppressed from the outside; it should only re-add what the rebuild dropped.
     focus_keys_callback = nil,
     released_focus_keys = nil,
 }
