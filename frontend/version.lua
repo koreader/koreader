@@ -41,6 +41,11 @@ function Version:getNormalizedVersion(rev)
     return ((year or 0) * 100 + (month or 0)) * 1000000 + (point or 0) * 10000 + (revision or 0), commit
 end
 
+function Version:getCurrentPlatform()
+    local rev = self:getCurrentRevision()
+    return rev and rev:match("_([a-z][^_]*)")
+end
+
 --- Returns current version of KOReader.
 -- @treturn int version in the form of a 12 digit number such as `201511000982`
 -- @treturn string short git commit version hash such as `704d4238`
