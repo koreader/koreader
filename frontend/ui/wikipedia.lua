@@ -96,7 +96,8 @@ local Wikipedia = {
 }
 
 function Wikipedia:getWikiServer(lang)
-    return string.format(self.wiki_server, lang or self.default_lang)
+    local server = G_reader_settings:readSetting("wikipedia_server") or self.wiki_server
+    return string.format(server, lang or self.default_lang)
 end
 
 -- Search for the response header 'set-cookie', and extract the associated cookies
@@ -248,7 +249,7 @@ function Wikipedia:loadPage(text, lang, page_type, plain)
     local url = require("socket.url")
     local query = ""
     local parsed = url.parse(self:getWikiServer(lang))
-    parsed.path = self.wiki_path
+    parsed.path = G_reader_settings:readSetting("wikipedia_path") or self.wiki_path
     if page_type == WIKIPEDIA_INTRO then -- search query
         self.wiki_search_params.explaintext = plain and "" or nil
         for k,v in pairs(self.wiki_search_params) do

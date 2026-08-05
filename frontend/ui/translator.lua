@@ -11,6 +11,7 @@ This module translates text using Google Translate.
 
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local JSON = require("json")
@@ -429,6 +430,84 @@ This is useful:
                 end,
                 sub_item_table = genLanguagesItems("translator_to_language", self:getTargetLanguage()),
             },
+            {
+                text = _("Translation server"),
+                help_text = _("URL of the translation service, without the request path."),
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local input
+                    input = InputDialog:new{
+                        title = _("Translation server"),
+                        input = self:getTransServer(),
+                        input_hint = "https://translate.googleapis.com/",
+                        input_type = "text",
+                        description = _("URL of the translation service, without the request path."),
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    id = "close",
+                                    callback = function() UIManager:close(input) end,
+                                },
+                                {
+                                    text = _("Save"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        local value = input:getInputText()
+                                        if value ~= "" then
+                                            G_reader_settings:saveSetting("trans_server", value)
+                                        else
+                                            G_reader_settings:delSetting("trans_server")
+                                        end
+                                        UIManager:close(input)
+                                        touchmenu_instance:updateItems()
+                                    end,
+                                },
+                            }
+                        },
+                    }
+                    UIManager:show(input)
+                end,
+            },
+            {
+                text = _("Translation path"),
+                help_text = _("Request path of the translation service."),
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local input
+                    input = InputDialog:new{
+                        title = _("Translation path"),
+                        input = G_reader_settings:readSetting("trans_path") or self.trans_path,
+                        input_hint = "/translate_a/single",
+                        input_type = "text",
+                        description = _("Request path of the translation service."),
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    id = "close",
+                                    callback = function() UIManager:close(input) end,
+                                },
+                                {
+                                    text = _("Save"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        local value = input:getInputText()
+                                        if value ~= "" then
+                                            G_reader_settings:saveSetting("trans_path", value)
+                                        else
+                                            G_reader_settings:delSetting("trans_path")
+                                        end
+                                        UIManager:close(input)
+                                        touchmenu_instance:updateItems()
+                                    end,
+                                },
+                            }
+                        },
+                    }
+                    UIManager:show(input)
+                end,
+            },
         },
     }
 end
@@ -523,7 +602,7 @@ function Translator:loadPage(text, target_lang, source_lang)
        query = query .. "dt=rm&"
     end
     local parsed = url.parse(self:getTransServer())
-    parsed.path = self.trans_path
+    parsed.path = G_reader_settings:readSetting("trans_path") or self.trans_path
     parsed.query = query .. "q=" .. url.escape(text)
 
     -- HTTP request

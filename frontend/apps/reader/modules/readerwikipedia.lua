@@ -191,6 +191,84 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                     UIManager:show(wikilang_input)
                     wikilang_input:onShowKeyboard()
                 end,
+            },
+            {
+                text = _("Wikipedia server"),
+                keep_menu_open = true,
+                help_text = _("Base URL of the Wikipedia API server, with the %s placeholder replaced by the language code (e.g. https://en.wikipedia.org)."),
+                callback = function(touchmenu_instance)
+                    local input
+                    input = InputDialog:new{
+                        title = _("Wikipedia server"),
+                        input = G_reader_settings:readSetting("wikipedia_server") or Wikipedia.wiki_server,
+                        input_hint = Wikipedia.wiki_server,
+                        input_type = "text",
+                        description = _("Base URL of the Wikipedia API server, with the %s placeholder replaced by the language code (e.g. https://en.wikipedia.org)."),
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    id = "close",
+                                    callback = function() UIManager:close(input) end,
+                                },
+                                {
+                                    text = _("Save"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        local value = input:getInputText()
+                                        if value ~= "" then
+                                            G_reader_settings:saveSetting("wikipedia_server", value)
+                                        else
+                                            G_reader_settings:delSetting("wikipedia_server")
+                                        end
+                                        UIManager:close(input)
+                                        touchmenu_instance:updateItems()
+                                    end,
+                                },
+                            }
+                        },
+                    }
+                    UIManager:show(input)
+                end,
+            },
+            {
+                text = _("Wikipedia path"),
+                keep_menu_open = true,
+                help_text = _("Request path of the Wikipedia API."),
+                callback = function(touchmenu_instance)
+                    local input
+                    input = InputDialog:new{
+                        title = _("Wikipedia API path"),
+                        input = G_reader_settings:readSetting("wikipedia_path") or Wikipedia.wiki_path,
+                        input_hint = Wikipedia.wiki_path,
+                        input_type = "text",
+                        description = _("Request path of the Wikipedia API."),
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    id = "close",
+                                    callback = function() UIManager:close(input) end,
+                                },
+                                {
+                                    text = _("Save"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        local value = input:getInputText()
+                                        if value ~= "" then
+                                            G_reader_settings:saveSetting("wikipedia_path", value)
+                                        else
+                                            G_reader_settings:delSetting("wikipedia_path")
+                                        end
+                                        UIManager:close(input)
+                                        touchmenu_instance:updateItems()
+                                    end,
+                                },
+                            }
+                        },
+                    }
+                    UIManager:show(input)
+                end,
                 separator = true,
             },
             { -- setting used by dictquicklookup
