@@ -973,16 +973,9 @@ function Menu:init()
 end
 
 function Menu:registerKeyEvents()
-    if not Device:hasKeys() then
-        self.key_events = {}
-        return
-    end
+    if not Device:hasKeys() then return end
     self.key_events.Close = { { Input.group.Back } }
     self.key_events.LeftButtonTap = { { "Menu" } }
-    self.key_events.Right = nil
-    self.key_events.FirstPage = nil
-    self.key_events.LastPage = nil
-    self.key_events.ShowGotoDialog = nil
     if Device:hasFewKeys() then
         self.key_events.Close = { { "Left" } }
     end
@@ -1014,6 +1007,8 @@ function Menu:onPhysicalKeyboardConnected()
 end
 
 function Menu:onPhysicalKeyboardDisconnected()
+    -- Drop the whole set: what the keys we no longer have were bound to cannot linger.
+    self.key_events = {}
     FocusManager.onPhysicalKeyboardDisconnected(self)
     self:registerKeyEvents()
 end
