@@ -962,26 +962,31 @@ function Menu:init()
     }
     self.ges_events.Close = self.on_close_ges
 
-    if Device:hasKeys() then
-        -- set up keyboard events
-        self.key_events.Close = { { Input.group.Back } }
-        self.key_events.LeftButtonTap = { { "Menu" } }
-        if Device:hasFewKeys() then
-            self.key_events.Close = { { "Left" } }
-        end
-        self.key_events.NextPage = { { Input.group.PgFwd } }
-        self.key_events.PrevPage = { { Input.group.PgBack } }
-        if Device:hasKeyboard() then
-            self.key_events.FirstPage = { { "Shift", { "LPgBack", "RPgBack" } } }
-            self.key_events.LastPage = { { "Shift", { "LPgFwd", "RPgFwd" } } }
-            self.key_events.ShowGotoDialog = { { "Shift", "Down" } }
-        elseif Device:hasScreenKB() then
-            self.key_events.FirstPage = { { "ScreenKB", { "LPgBack", "RPgBack" } } }
-            self.key_events.LastPage = { { "ScreenKB", { "LPgFwd", "RPgFwd" } } }
-            self.key_events.ShowGotoDialog = { { "ScreenKB", "Down" } }
-        end
-    end
+    self:registerKeyEvents()
 
+    if self.item_table.current then
+        self.page = self:getPageNumber(self.item_table.current)
+    end
+    if not self.path_items then -- not FileChooser
+        self:updateItems(1, true)
+    end
+end
+
+function Menu:registerKeyEvents()
+    if not Device:hasKeys() then return end
+    self.key_events.Close = { { Input.group.Back } }
+    self.key_events.LeftButtonTap = { { "Menu" } }
+    if Device:hasFewKeys() then
+        self.key_events.Close = { { "Left" } }
+    end
+    self.key_events.NextPage = { { Input.group.PgFwd } }
+    self.key_events.PrevPage = { { Input.group.PgBack } }
+    if Device:hasKeyboard() or Device:hasScreenKB() then
+        local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+        self.key_events.FirstPage = { { modifier, { "LPgBack", "RPgBack" } } }
+        self.key_events.LastPage = { { modifier, { "LPgFwd", "RPgFwd" } } }
+        self.key_events.ShowGotoDialog = { { modifier, "Down" } }
+    end
     if Device:hasDPad() then
         if Device:hasFewKeys() then
             -- we won't catch presses to "Right", leave that to MenuItem.
@@ -994,13 +999,18 @@ function Menu:init()
             self.key_events.SelectByShortCut = { { self.item_shortcuts } }
         end
     end
+end
 
-    if self.item_table.current then
-        self.page = self:getPageNumber(self.item_table.current)
-    end
-    if not self.path_items then -- not FileChooser
-        self:updateItems(1, true)
-    end
+function Menu:onPhysicalKeyboardConnected()
+    FocusManager.onPhysicalKeyboardConnected(self)
+    self:registerKeyEvents()
+end
+
+function Menu:onPhysicalKeyboardDisconnected()
+    -- Drop the whole set: what the keys we no longer have were bound to cannot linger.
+    self.key_events = {}
+    FocusManager.onPhysicalKeyboardDisconnected(self)
+    self:registerKeyEvents()
 end
 
 function Menu:updatePageInfo(select_number)
