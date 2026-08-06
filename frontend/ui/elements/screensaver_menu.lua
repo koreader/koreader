@@ -2,6 +2,7 @@ local Device = require("device")
 local Screensaver = require("ui/screensaver")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
+local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local is_touch_device = Device:isTouchDevice() or nil
@@ -140,7 +141,7 @@ local sub_item_table = {
                 text = _("Postpone screen update after wake-up"),
                 sub_item_table = {
                     genMenuItem(_("Never"), "screensaver_delay", "disable"),
-                    genMenuItem(_("1 second"), "screensaver_delay", "1"),
+                    genMenuItem(T(N_("1 second", "%1 seconds", 1), 1), "screensaver_delay", "1"),
                     genMenuItem(_("3 seconds"), "screensaver_delay", "3"),
                     genMenuItem(_("5 seconds"), "screensaver_delay", "5"),
                     genMenuItem(is_touch_device and _("Until a tap") or _("Until a key press"), "screensaver_delay", "tap"),
