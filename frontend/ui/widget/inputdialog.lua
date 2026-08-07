@@ -573,9 +573,7 @@ function InputDialog:onTap(arg, ges)
         end
     else
         if ges.pos:notIntersectWith(self.dialog_frame.dimen) then
-            -- Not onCloseDialog: a tap outside stays inert on dialogs that have no Close
-            -- button, as it has always been. Only the key falls back to closing.
-            self:_pressCloseButton()
+            self:onCloseDialog()
         end
     end
 end
@@ -736,17 +734,10 @@ end
 
 InputDialog.onKeyboardHeightChanged = InputDialog.reinit
 
-function InputDialog:_pressCloseButton()
+function InputDialog:onCloseDialog()
     local close_button = self.button_table:getButtonById("close")
     if close_button and close_button.enabled then
         close_button.callback()
-        return true
-    end
-    return false
-end
-
-function InputDialog:onCloseDialog()
-    if self:_pressCloseButton() then
         return true
     end
     -- Nothing to defer to: a dialog that can lose work always has a Close button
