@@ -1,7 +1,6 @@
 .DS_*
 ._*
 *.AppImage
-*.app
 *.deb
 *.dmg
 *.directory
