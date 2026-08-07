@@ -45,8 +45,11 @@ function NetworkMgr:_abortWifiConnection()
     -- Cancel any pending connectivity check, because it wouldn't achieve anything
     self:unscheduleConnectivityCheck()
 
-    self.wifi_was_on = false
-    G_reader_settings:makeFalse("wifi_was_on")
+    -- NOTE: We do *not* clear wifi_was_on here: it tracks the user's standing intent
+    --       ("Wi-Fi was enabled, and the user never explicitly disabled it"),
+    --       and an aborted/failed connection attempt is not direct user interaction (c.f., #15728).
+    --       Clearing it here would permanently disarm auto_restore_wifi after a single failed
+    --       background restore (e.g., waking up the device out of range of any known network).
     -- The connection never completed, so any DHCP lease we may have had is no longer valid.
     self.lease_ssid = nil
     -- Murder Wi-Fi and the async script (if any) first...
