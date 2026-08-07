@@ -433,6 +433,8 @@ function Terminal:generateInputDialog()
             },
             {
             text = "✕", --cancel
+            -- Back goes through here, so it asks about the shell like the button does.
+            id = "close",
             callback = function()
                 UIManager:show(MultiConfirmBox:new{
                     text = _("You can close the terminal, but leave the shell open for further commands or quit it now."),
