@@ -1813,8 +1813,12 @@ function DictQuickLookup:onLookupInputWord(hint, ev)
     if self.allow_key_text_selection and self.nt_text_selector_indicator then
         self:onStopTextSelectorIndicator(true)
     end
+    local key_pressed = ev and ev.key
+    if key_pressed and ev.key == " " then
+        return self:lookupInputWord()
+    end
     -- Key-event path: open dialog now, then inject key during next tick.
-    if Device:isSDL() and not hint and ev and ev.key then
+    if Device:isSDL() and not hint and key_pressed then
         if ev.key == " " then
             return self:lookupInputWord()
         end
