@@ -130,8 +130,14 @@ end
 --- Releases focus keys a widget wants for itself, e.g. the horizontal moves in a
 --- single-column menu. They stay released when a keyboard hot-plug re-merges the
 --- default mappings.
---- Only for keys FocusManager itself declares: a widget's own bindings are its
---- registerKeyEvents' business, and that one runs again on hot-plug.
+--- SCOPE: this only guarantees FocusManager's own base key_events (built by
+--- populateEventMappings, e.g., FocusLeft/FocusRight/FocusHalfMove/...) stay
+--- released. It does NOT protect keys a subclass adds itself (e.g., Menu's
+--- ShowGotoDialog/FirstPage/LastPage): if that subclass's own key-rebuilding
+--- method (e.g. Menu:registerKeyEvents) reassigns such a key unconditionally on
+--- external-keyboard connect/disconnect, the release will silently be undone.
+--- A subclass that needs to release one of its own keys is responsible for
+--- checking self.released_focus_keys itself before rebinding it.
 function FocusManager:releaseFocusKeys(...)
     if not self.released_focus_keys then
         self.released_focus_keys = {}
