@@ -41,7 +41,7 @@ echo $$ >/tmp/koreader.pid
 
 # update to new version from OTA directory
 ko_update_check() {
-    NEWUPDATE="${KOREADER_DIR}/ota/update.zip"
+    NEWUPDATE="${KOREADER_DIR}/ota/update.tar.xz"
     if [ -f "${NEWUPDATE}" ]; then
         # Clear screen to delete UI leftovers
         "${KOREADER_DIR}/fbink" --cls
