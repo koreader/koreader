@@ -43,6 +43,8 @@ echo $$ >/tmp/koreader.pid
 ko_update_check() {
     NEWUPDATE="${KOREADER_DIR}/ota/update.zip"
     if [ -f "${NEWUPDATE}" ]; then
+        # Clear screen to delete UI leftovers
+        "${KOREADER_DIR}/fbink" --cls
         "${KOREADER_DIR}/fbink" -q -y -7 -pmh "Updating KOReader"
         # Keep a copy of the old manifest for cleaning leftovers later.
         sed 's,^../,,' "${KOREADER_DIR}/ota/package.index" >/tmp/package.index.old
