@@ -1303,6 +1303,11 @@ function CreDocument:setFontKerning(mode)
     self._document:setIntProperty("font.kerning.mode", mode)
 end
 
+function CreDocument:setFontFractionalPositioning(strength)
+    logger.dbg("CreDocument: set font fractionalbpositioning", strength)
+    self._document:setIntProperty("font.fractional.positioning", strength)
+end
+
 function CreDocument:setWordSpacing(values)
     -- values should be a table of 2 numbers (e.g.: { 90, 75 })
     -- - space width scale percent (hard scale the width of each space char in

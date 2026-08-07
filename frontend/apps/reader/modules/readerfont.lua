@@ -178,6 +178,20 @@ function ReaderFont:onReadSettings(config)
     self.ui.document:setInterlineSpacePercent(self.configurable.line_spacing)
     self.ui.document:setGammaIndex(self.configurable.font_gamma)
 
+    -- We can get subpixel fractional positionning when with kerning
+    -- mode "best" (which is using Harfbuzz).
+    -- This setting accepts a strength from 0 to 3, with 0 disabling
+    -- the feature. Strength 1, 2 and 3 bound the positioning error
+    -- to 1/96, 1/192 and 1/384 em respectively.
+    -- The higher the strength or the smaller the font size, more
+    -- instances of the same glyph will be cached (with possibly
+    -- cache trashing when many glyphs from many fonts are used).
+    -- Default to a strength of 2 for good quality.
+    -- (No need to make this setting available through the UI. One
+    -- can manually set a different strength with this setting.)
+    local strength = G_reader_settings:readSetting("cre_font_fractional_positioning") or 2
+    self.ui.document:setFontFractionalPositioning(strength)
+
     self.font_family_fonts = config:readSetting("font_family_fonts") or {}
     self:updateFontFamilyFonts()
 
@@ -239,6 +253,14 @@ function ReaderFont:onSetFontKerning(mode)
     self.ui.document:setFontKerning(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
     Notification:notify(T(_("Font kerning set to: %1"), optionsutil:getOptionText("SetFontKerning", mode)))
+    return true
+end
+
+function ReaderFont:onSetFontFractionalPositioning(strength)
+    -- (Not exposed by the UI, but available via httpinspector for
+    -- scripting and comparing the effect of strength.)
+    self.ui.document:setFontFractionalPositioning(strength)
+    self.ui:handleEvent(Event:new("UpdatePos"))
     return true
 end
 
