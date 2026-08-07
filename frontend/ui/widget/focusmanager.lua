@@ -130,6 +130,8 @@ end
 --- Releases focus keys a widget wants for itself, e.g. the horizontal moves in a
 --- single-column menu. They stay released when a keyboard hot-plug re-merges the
 --- default mappings.
+--- Only for keys FocusManager itself declares: a widget's own bindings are its
+--- registerKeyEvents' business, and that one runs again on hot-plug.
 function FocusManager:releaseFocusKeys(...)
     if not self.released_focus_keys then
         self.released_focus_keys = {}
