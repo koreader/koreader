@@ -33,8 +33,6 @@ local FocusManager = InputContainer:extend{
     movement_allowed = { x = true, y = true },
     key_events_enabled = true,
     -- Widgets that bind keys the focus manager also uses set this; see releaseFocusKeys.
-    --- @fixme a callback that rebuilds a whole key_events set also brings back bindings
-    --- suppressed from the outside; it should only re-add what the rebuild dropped.
     focus_keys_callback = nil,
     released_focus_keys = nil,
 }
@@ -130,6 +128,14 @@ end
 --- Releases focus keys a widget wants for itself, e.g. the horizontal moves in a
 --- single-column menu. They stay released when a keyboard hot-plug re-merges the
 --- default mappings.
+--- SCOPE: this only guarantees FocusManager's own base key_events (built by
+--- populateEventMappings, e.g., FocusLeft/FocusRight/FocusHalfMove/...) stay
+--- released. It does NOT protect keys a subclass adds itself (e.g., Menu's
+--- ShowGotoDialog/FirstPage/LastPage): if that subclass's own key-rebuilding
+--- method (e.g. Menu:registerKeyEvents) reassigns such a key unconditionally on
+--- external-keyboard connect/disconnect, the release will silently be undone.
+--- A subclass that needs to release one of its own keys is responsible for
+--- checking self.released_focus_keys itself before rebinding it.
 function FocusManager:releaseFocusKeys(...)
     if not self.released_focus_keys then
         self.released_focus_keys = {}
@@ -335,6 +341,9 @@ function FocusManager:onPhysicalKeyboardDisconnected()
                 self.key_events[k] = nil
             end
         end
+        -- And put back the ones we still want: a widget rebuilding its own bindings around
+        -- the hot-plug may well have dropped the whole set, ours included.
+        util.tableMerge(self.key_events, KEY_EVENTS)
     else
         -- If we longer have keys at all, that's easy ;).
         self.key_events = {}
