@@ -740,7 +740,10 @@ function InputDialog:onCloseDialog()
         close_button.callback()
         return true
     end
-    return false
+    -- Nothing to defer to: a dialog that can lose work always has a Close button
+    -- (see _addSaveCloseButtons), so the rest can just go away, as ButtonDialog does.
+    UIManager:close(self)
+    return true
 end
 
 function InputDialog:onClose()
