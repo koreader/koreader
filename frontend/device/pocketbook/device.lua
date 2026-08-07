@@ -907,6 +907,7 @@ local PocketBook1030 = PocketBook:extend{
     model = "PB1030",
     display_dpi = 226,
     hasNaturalLight = yes,
+    ota_model = "pocketbookhf",
 }
 
 -- PocketBook InkPad X (1040)
