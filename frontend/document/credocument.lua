@@ -949,8 +949,8 @@ function CreDocument:getPageLinks(internal_links_only)
     return self._document:getPageLinks(internal_links_only)
 end
 
-function CreDocument:getLinkFromPosition(pos)
-    return self._document:getLinkFromPosition(pos.x, pos.y)
+function CreDocument:getLinkFromPosition(pos, with_forTextSelection)
+    return self._document:getLinkFromPosition(pos.x, pos.y, with_forTextSelection)
 end
 
 function CreDocument:isLinkToFootnote(source_xpointer, target_xpointer, flags, max_text_size)
