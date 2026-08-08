@@ -55,6 +55,7 @@ local IME = {
     iter_map = nil, -- next code when using wildcard
     iter_map_last_key = nil,
     show_candi_callback = function() end,
+    candidate_callback = function() end,
     switch_char = "SWITCH",
     separator = "SEPARATOR",
     partial_separators = { " " }, -- when in state act as separator, otherwise input itself
@@ -235,6 +236,24 @@ function IME:delOnStageAndHintChars(inputbox)
     end
 end
 
+function IME:notifyCandidates(inputbox)
+    local imex = _stack[#_stack]
+    self.candidate_callback(inputbox, imex.candi, imex.index)
+end
+
+function IME:selectCandidate(inputbox, index)
+    local imex = _stack[#_stack]
+    local candidate = imex.candi[index]
+    if not candidate then
+        return
+    end
+    self:delOnStageAndHintChars(inputbox)
+    inputbox.addChars:raw_method_call(candidate)
+    self:clear_stack()
+    self:notifyCandidates(inputbox)
+    return true
+end
+
 function IME:getHintChars()
     self.hint_char_count = 0
     self.on_stage_char_count = 0
@@ -285,6 +304,7 @@ end
 function IME:refreshHintChars(inpuxbox)
     self:delOnStageAndHintChars(inpuxbox)
     inpuxbox.addChars:raw_method_call(self:getHintChars())
+    self:notifyCandidates(inpuxbox)
 end
 
 function IME:separate(inputbox)
@@ -292,6 +312,7 @@ function IME:separate(inputbox)
         self:delHintChars(inputbox)
     end
     self:clear_stack()
+    self:notifyCandidates(inputbox)
 end
 
 function IME:tweak_case(new_candi, old_imex, new_stroke_upper)
@@ -342,6 +363,7 @@ function IME:wrappedDelChar(inputbox)
         -- one char with one stroke
         self:delOnStageAndHintChars(inputbox)
         self:clear_stack()
+        self:notifyCandidates(inputbox)
     else
         inputbox.delChar:raw_method_call()
     end

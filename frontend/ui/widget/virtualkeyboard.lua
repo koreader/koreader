@@ -36,6 +36,7 @@ local VirtualKey = InputContainer:extend{
     icon = nil,
     label = nil,
     bold = nil,
+    background = nil,
 
     keyboard = nil,
     callback = nil,
@@ -260,7 +261,7 @@ function VirtualKey:init()
     self[1] = FrameContainer:new{
         margin = 0,
         bordersize = self.bordersize,
-        background = Blitbuffer.COLOR_WHITE,
+        background = self.background or Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = 0,
         allow_mirroring = false,
@@ -797,6 +798,8 @@ local VirtualKeyboard = FocusManager:extend{
     symbolmode = false,
     umlautmode = false,
     layout = nil, -- array
+    candidate_row = false,
+    candidate_page_size = 6,
 
     height = nil,
     default_label_size = DEFAULT_LABEL_SIZE,
@@ -853,7 +856,17 @@ function VirtualKeyboard:init()
     local lang = self:getKeyboardLayout()
     local keyboard_layout = self.lang_to_keyboard_layout[lang] or self.lang_to_keyboard_layout["en"]
     local keyboard = require("ui/data/keyboardlayouts/" .. keyboard_layout)
-    self.KEYS = keyboard.keys or {}
+    self.min_layer = keyboard.min_layer
+    self.max_layer = keyboard.max_layer
+    self.candidate_row = keyboard.candidate_row or false
+    self.candidate_page_size = keyboard.candidate_page_size or 6
+    self.KEYS = {}
+    if self.candidate_row then
+        table.insert(self.KEYS, self:_buildCandidateRow({}, 1))
+    end
+    for _, row in ipairs(keyboard.keys or {}) do
+        table.insert(self.KEYS, row)
+    end
     self.shiftmode_keys = keyboard.shiftmode_keys or {}
     self.symbolmode_keys = keyboard.symbolmode_keys or {}
     self.utf8mode_keys = keyboard.utf8mode_keys or {}
@@ -861,8 +874,6 @@ function VirtualKeyboard:init()
     self.width = Screen:getWidth()
     local keys_height = G_reader_settings:isTrue("keyboard_key_compact") and 48 or 64
     self.height = Screen:scaleBySize(keys_height * #self.KEYS)
-    self.min_layer = keyboard.min_layer
-    self.max_layer = keyboard.max_layer
     self:initLayer(self.keyboard_layer)
     self.tap_interval_override = time.ms(G_reader_settings:readSetting("ges_tap_interval_on_keyboard_ms", 0))
     if Device:hasKeys() then
@@ -881,6 +892,59 @@ function VirtualKeyboard:init()
             end
         end
     end
+end
+
+function VirtualKeyboard:_candidateKey(label, key, selected)
+    local candidate_key = {
+        bold = selected or false,
+        background = selected and Blitbuffer.COLOR_LIGHT_GRAY or nil,
+    }
+    for layer = self.min_layer, self.max_layer do
+        candidate_key[layer] = { label = label, key }
+    end
+    return candidate_key
+end
+
+function VirtualKeyboard:_buildCandidateRow(candidates, page, selected_index)
+    local page_size = self.candidate_page_size
+    local page_count = math.max(1, math.ceil(#candidates / page_size))
+    page = math.max(1, math.min(page or 1, page_count))
+    local row = {
+        self:_candidateKey(page > 1 and "‹" or "", "\1candidate_prev"),
+    }
+    local start_index = (page - 1) * page_size + 1
+    for offset = 0, page_size - 1 do
+        local index = start_index + offset
+        table.insert(row, self:_candidateKey(
+            candidates[index] or "", "\1candidate_" .. index, index == selected_index
+        ))
+    end
+    table.insert(row, self:_candidateKey(page < page_count and "›" or "", "\1candidate_next"))
+    return row
+end
+
+function VirtualKeyboard:setCandidates(candidates, page, selected_index)
+    if not self.candidate_row then
+        return
+    end
+    self._pending_candidates = candidates or {}
+    self._pending_candidate_page = page or 1
+    self._pending_candidate_index = selected_index
+    if self._candidate_update_scheduled then
+        return
+    end
+    self._candidate_update_scheduled = true
+    UIManager:nextTick(function()
+        self._candidate_update_scheduled = false
+        if not self.candidate_row or not self.KEYS then
+            return
+        end
+        self.KEYS[1] = self:_buildCandidateRow(
+            self._pending_candidates, self._pending_candidate_page, self._pending_candidate_index
+        )
+        self:addKeys()
+        self:_refresh(false)
+    end)
 end
 
 function VirtualKeyboard:_isTextKeyWithoutModifier(seq)
@@ -1010,7 +1074,8 @@ end
 function VirtualKeyboard:addKeys()
     self:free() -- free previous keys' TextWidgets
     self.layout = {}
-    local base_key_width = math.floor((self.width - (#self.KEYS[1] + 1)*self.key_padding - 2*self.padding)/#self.KEYS[1])
+    local base_row = self.candidate_row and self.KEYS[2] or self.KEYS[1]
+    local base_key_width = math.floor((self.width - (#base_row + 1)*self.key_padding - 2*self.padding)/#base_row)
     local base_key_height = math.floor((self.height - (#self.KEYS + 1)*self.key_padding - 2*self.padding)/#self.KEYS)
     local h_key_padding = HorizontalSpan:new{width = self.key_padding}
     local v_key_padding = VerticalSpan:new{width = self.key_padding}
@@ -1049,6 +1114,7 @@ function VirtualKeyboard:addKeys()
                 label = label,
                 alt_label = alt_label,
                 bold = self.KEYS[i][j].bold,
+                background = self.KEYS[i][j].background,
                 keyboard = self,
                 width = key_width,
                 height = key_height,
