@@ -1348,13 +1348,14 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
         end
     end
 
+    -- Get any other candidates from any language-specific plugins we have.
+    -- We prefer the originally selected word first (in case there is a
+    -- dictionary entry for whatever text the user selected).
+    local candidates
     if self.ui.languagesupport and self.ui.languagesupport:hasActiveLanguagePlugins() then
-        -- Get any other candidates from any language-specific plugins we have.
-        -- We prefer the originally selected word first (in case there is a
-        -- dictionary entry for whatever text the user selected).
-        local candidates = self.ui.languagesupport:extraDictionaryFormCandidates(word)
-        if candidates then
-            util.arrayAppend(words, candidates)
+        candidates = self.ui.languagesupport:extraDictionaryFormCandidates(word)
+        if candidates and #candidates == 0 then
+            candidates = nil
         end
     end
 
@@ -1362,6 +1363,11 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     -- (probably) a CJK word. We don't want fuzzy searching in this case
     -- because sdcv cannot handle CJK text properly when fuzzy searching (with
     -- Japanese, it returns hundreds of useless results).
+    -- The plugin candidates take part in this decision even though they are
+    -- looked up separately below, because they used to be part of `words` here
+    -- and one of them being non-CJK is what keeps fuzzy search on for a mixed
+    -- selection (Japanese deinflection can strip a selection down to its
+    -- non-CJK prefix, e.g. imperative negative "な" -> "").
     local shouldnt_fuzzy_search = true
     for _, w in ipairs(words) do
         if not util.hasCJKChar(w) then
@@ -1369,9 +1375,31 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
             break
         end
     end
+    if shouldnt_fuzzy_search and candidates then
+        for _, w in ipairs(candidates) do
+            if not util.hasCJKChar(w) then
+                shouldnt_fuzzy_search = false
+                break
+            end
+        end
+    end
     if shouldnt_fuzzy_search then
         logger.dbg("disabling fuzzy searching for all-CJK word search:", words)
         fuzzy_search = false
+    end
+
+    -- Language plugin candidates are dictionary forms, and are always looked up
+    -- with exact search: an intermediate form that is not actually a headword
+    -- would otherwise contribute near-spelling matches that sort above the
+    -- entry the user asked for. sdcv's --exact-search is per invocation, so
+    -- they can share the lookup below only when it is exact anyway.
+    local exact_candidates
+    if candidates then
+        if fuzzy_search then
+            exact_candidates = candidates
+        else
+            util.arrayAppend(words, candidates)
+        end
     end
 
     local lookup_cancelled, results = self:rawSdcv(words, dict_names, fuzzy_search, self.lookup_progress_msg or false)
@@ -1384,6 +1412,16 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
             }
         }
     else -- flatten any possible results
+        if exact_candidates and not lookup_cancelled then
+            local candidates_cancelled, candidate_results =
+                self:rawSdcv(exact_candidates, dict_names, false, self.lookup_progress_msg or false)
+            lookup_cancelled = candidates_cancelled
+            if candidate_results then
+                -- Appended, so the tapped word's own results keep the lead.
+                util.arrayAppend(results, candidate_results)
+            end
+        end
+
         local flat_results = {}
         local seen_results = {}
         -- Flatten the array, removing any duplicates we may have gotten (sdcv
