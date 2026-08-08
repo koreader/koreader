@@ -884,6 +884,7 @@ function ReaderToc:onShowToc()
     -- *2/5 to account for Menu top title and bottom icons, and add some space between consecutive icons
     local icon_size = math.floor(Screen:getHeight() / items_per_page * 2/5)
     local button_width = icon_size * 2
+    -- no_focus: expand/collapse is on the left/right keys, so the buttons don't need to take focus.
     self.expand_button = Button:new{
         icon = "control.expand",
         icon_rotation_angle = BD.mirroredUILayout() and 180 or 0,
@@ -891,6 +892,7 @@ function ReaderToc:onShowToc()
         icon_width = icon_size,
         icon_height = icon_size,
         bordersize = 0,
+        no_focus = true,
         show_parent = self,
         callback = function(index) self:expandToc(index) end,
         onTapSelectButton = function() end, -- pass through taps to onMenuSelect
@@ -902,6 +904,7 @@ function ReaderToc:onShowToc()
         icon_width = icon_size,
         icon_height = icon_size,
         bordersize = 0,
+        no_focus = true,
         show_parent = self,
         callback = function(index) self:collapseToc(index) end,
         onTapSelectButton = function() end, -- pass through taps to onMenuSelect
