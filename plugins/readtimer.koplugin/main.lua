@@ -21,7 +21,6 @@ local ReadTimer = WidgetContainer:extend{
     timer_symbol = "\u{23F2}", -- ⏲ timer symbol
     timer_letter = "T",
     default_expiry_message_text = _("Time is up"),
-    event_timer_expired = "ReadTimerExpired",
 
     -- static for all plugin instances, to keep scheduled timer across views
     restore_scheduled_time = nil,
@@ -56,7 +55,7 @@ function ReadTimer:init()
         end
 
         self.time = 0
-        UIManager:broadcastEvent(Event:new(self.event_timer_expired))
+        UIManager:broadcastEvent(Event:new("ReadTimerExpired"))
         if self.settings.show_on_expiry == "nothing" then
             maybeRescheduleInterval()
             return
@@ -145,14 +144,7 @@ function ReadTimer:init()
         self:addAdditionalFooterContent()
     end
 
-    self.ui:registerPostInitCallback(function()
-        if self.ui.profiles then
-            self.ui.profiles:registerAutoExecTrigger({
-                text = _("on read timer expiry"),
-                event = self.event_timer_expired,
-            })
-        end
-    end)
+    UIManager.event_hook:registerWidget("InputEvent", self)
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
 end
@@ -178,10 +170,13 @@ function ReadTimer:scheduled()
     return self.time ~= 0
 end
 
+function ReadTimer:now()
+    return time.boottime_or_realtime_coarse()
+end
+
 function ReadTimer:remaining()
     if self:scheduled() then
-        -- Resolution: time.now() subsecond, os.time() two seconds
-        local remaining_s = time.to_s(self.time - time.now())
+        local remaining_s = time.to_s(self.time - self:now())
         if remaining_s > 0 then
             return remaining_s
         else
@@ -252,12 +247,21 @@ function ReadTimer:unschedule()
 end
 
 function ReadTimer:rescheduleIn(seconds)
-    -- Resolution: time.now() subsecond, os.time() two seconds
-    self.time = time.now() + time.s(seconds)
+    self.time = self:now() + time.s(seconds)
     UIManager:scheduleIn(seconds, self.alarm_callback)
     if self.settings.show_value_in_header or self.settings.show_value_in_footer then
         self:update_status_bars(seconds)
     end
+end
+
+function ReadTimer:expireIfDue()
+    if self:scheduled() and self:remaining() == 0 then
+        UIManager:unschedule(self.alarm_callback)
+        UIManager:unschedule(self.update_status_bars, self)
+        self:alarm_callback()
+        return true
+    end
+    return false
 end
 
 function ReadTimer:addCheckboxes(widget, is_interval)
@@ -408,8 +412,7 @@ function ReadTimer:onResume()
 
         if remainder == 0 then
             -- Make sure we fire the alarm right away if it expired during suspend...
-            self:alarm_callback()
-            self:unschedule()
+            self:expireIfDue()
         else
             -- ...and that we re-schedule the timer against the REAL time if it's still ticking.
             logger.dbg("ReadTimer: Rescheduling in", remainder, "seconds")
@@ -417,6 +420,18 @@ function ReadTimer:onResume()
             self:rescheduleIn(remainder)
         end
 
+    end
+end
+
+-- UI tasks (alarm + status-bar refresh) run on the MONOTONIC clock, which is frozen
+-- while the device is suspended/dozing; remaining() tracks boottime instead. On wake we
+-- must re-sync the scheduled tasks against elapsed real time. onResume() does this when a
+-- Resume event is emitted, but Android only broadcasts Resume when not brokenLifecycle, so
+-- broken-lifecycle devices (e.g. the Boox in #14661) never get it. Re-sync on input too.
+function ReadTimer:onInputEvent()
+    if self:scheduled() and not self:expireIfDue() then
+        UIManager:unschedule(self.alarm_callback)
+        UIManager:scheduleIn(self:remaining(), self.alarm_callback)
     end
 end
 
