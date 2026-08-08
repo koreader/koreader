@@ -45,26 +45,30 @@ describe("LanguageSupport module", function()
             assert.are.same({ "kk-candidate" }, lookup("ru", "word"))
         end)
 
+        -- These look the document language up as "xx" so the plugin under test
+        -- is the one that claims it and is therefore tried first. Leaving the
+        -- language unknown would put both plugins in the same fallback loop,
+        -- where pairs() decides which one runs first and the test would only
+        -- sometimes exercise what it means to.
         it("should go on to the next plugin when one declines the text", function()
-            -- Returning nothing means "this is not my text". The search must
-            -- continue regardless of the order pairs() happens to visit them in.
+            -- Returning nothing means "this is not my text".
             local declined = false
             instance:registerPlugin(makePlugin("xx", function() declined = true end))
             instance:registerPlugin(makePlugin("yy", function() return { "candidate" } end))
-            assert.are.same({ "candidate" }, lookup("unknown", "word"))
+            assert.are.same({ "candidate" }, lookup("xx", "word"))
             assert.is_true(declined)
         end)
 
         it("should go on to the next plugin when one crashes", function()
             instance:registerPlugin(makePlugin("xx", function() error("boom") end))
             instance:registerPlugin(makePlugin("yy", function() return { "candidate" } end))
-            assert.are.same({ "candidate" }, lookup("unknown", "word"))
+            assert.are.same({ "candidate" }, lookup("xx", "word"))
         end)
 
         it("should return nothing when every plugin declines", function()
             instance:registerPlugin(makePlugin("xx", function() end))
             instance:registerPlugin(makePlugin("yy", function() end))
-            assert.is_nil(lookup("unknown", "word"))
+            assert.is_nil(lookup("xx", "word"))
         end)
 
         it("should return nothing when no plugins are registered", function()
