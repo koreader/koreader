@@ -24,14 +24,12 @@ is shipped or loaded.**
 
 KOReader queries the tapped word first, then the plugin's candidates in the
 order returned, concatenating results in that order — so an exact hit on the
-tapped word always leads.
+tapped word always leads, and the shallowest analysis leads the rest.
 
-Intermediate rungs are usually not words, and KOReader resolves candidates with
-fuzzy search on, so each would return near-spelling matches that sort above the
-real article. The plugin therefore resolves its own candidates first with exact
-search and passes on only those that exist, in ladder order, so the shallowest
-analysis comes first. If that check cannot run, the unfiltered list is
-returned.
+Intermediate rungs are usually not words. Language support resolves candidates
+with exact search, so a rung that is not a headword returns nothing rather than
+near-spelling matches that would sort above the real article, and the plugin can
+offer every legal analysis without filtering them itself.
 
 The one source of noise it cannot remove is the tapped word's **own** fuzzy
 matches, since KOReader queries it before the plugin is consulted. Unchecking

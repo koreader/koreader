@@ -17,9 +17,9 @@
 -- pg-kazsearch <https://github.com/darkhanakh/pg-kazsearch>, LGPLv3 or later.
 
 local LanguageSupport = require("languagesupport")
-local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local Stemmer = require("stemmer")
 local UIManager = require("ui/uimanager")
+local Utf8Proc = require("ffi/utf8proc")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
@@ -34,21 +34,50 @@ local Kazakh = WidgetContainer:extend{
     pretty_name = "Kazakh",
 }
 
+local UTF8_CHAR = "[%z\1-\127\194-\244][\128-\191]*"
+
 -- U+0400–U+04FF (Cyrillic, including the Kazakh-specific ә ғ қ ң ө ұ ү һ і)
 -- is exactly the two-byte UTF-8 sequences with a lead byte of 0xD0–0xD3.
 local function hasCyrillic(text)
     return text:find("[\208-\211]") ~= nil
 end
 
+-- The nine letters Kazakh adds to the Russian alphabet.
+local KAZAKH_LETTERS = {}
+for c in ("әғқңөұүһі"):gmatch(UTF8_CHAR) do KAZAKH_LETTERS[c] = true end
+
 function Kazakh:init()
     self.max_candidates = G_reader_settings:readSetting("language_kazakh_max_candidates")
         or DEFAULT_MAX_CANDIDATES
-    self.dictionary = (self.ui and self.ui.dictionary) or ReaderDictionary:new()
     LanguageSupport:registerPlugin(self)
 end
 
 function Kazakh:supportsLanguage(language_code)
     return language_code == "kk" or language_code == "kaz" or language_code == "kk-KZ"
+end
+
+--- Whether this word is ours to analyse.
+--
+-- Language support calls every plugin as a fallback when none of them claims
+-- the document's language, because that metadata is so often missing or wrong.
+-- A Russian, Ukrainian or Bulgarian book therefore reaches this plugin too, and
+-- "contains Cyrillic" would claim all of them: the script is shared, so it is
+-- no more of a signal on its own than "contains Latin" would be for German.
+--
+-- In a book marked as Kazakh, any Cyrillic word is fair game. Everywhere else
+-- the word must carry one of the nine letters Kazakh adds to the Russian
+-- alphabet. No Russian or Bulgarian word does, so those readers pay nothing at
+-- all; the cost is that a mislabelled Kazakh book loses the analysis of roughly
+-- a quarter of its inflected words, which setting the language in Book
+-- information restores.
+function Kazakh:_isKazakhWord(word)
+    if not hasCyrillic(word) then return false end
+    local language = self.ui and self.ui.doc_props and self.ui.doc_props.language
+    if self:supportsLanguage(language) then return true end
+    for c in word:gmatch(UTF8_CHAR) do
+        if KAZAKH_LETTERS[c] then return true end
+    end
+    return false
 end
 
 --- Called from @{languagesupport.extraDictionaryFormCandidates} for Kazakh
@@ -59,9 +88,13 @@ end
 function Kazakh:onWordLookup(args)
     local text = args.text
     if not text or text == "" then return end
-    if not hasCyrillic(text) then return end
 
-    local lower = text:lower()
+    -- string.lower only maps ASCII, so Cyrillic has to go through utf8proc: a
+    -- capitalised word would otherwise keep its capital through the whole walk
+    -- and every rung would miss the lowercase headword it should have matched.
+    local lower = Utf8Proc.lowercase(text, false)
+    if not self:_isKazakhWord(lower) then return end
+
     local rungs = Stemmer.ladder(lower)
     if #rungs == 0 then return end
 
@@ -75,44 +108,11 @@ function Kazakh:onWordLookup(args)
     end
     if #candidates == 0 then return end
 
-    candidates = self:_keepRealHeadwords(candidates)
+    -- Every rung is offered, including the ones that are not words: language
+    -- support resolves candidates with exact search, so an analysis that is not
+    -- a headword returns nothing and costs only its place in the sdcv argv.
     logger.dbg("kazakh.koplugin: candidates for", text, "->", candidates)
-    if #candidates == 0 then return end
     return candidates
-end
-
---- Drop candidates that are not actually headwords.
---
--- Intermediate rungs are usually not words, and KOReader resolves candidates
--- with fuzzy search on, so each one returns near-spelling matches that sort
--- above the real article. Resolving them here with exact search first keeps
--- only those that exist, in ladder order, so the shallowest analysis leads.
---
--- On any failure the unfiltered list is returned: this can only add precision,
--- never lose a result.
-function Kazakh:_keepRealHeadwords(candidates)
-    if not self.dictionary or not self.dictionary.rawSdcv then
-        return candidates
-    end
-    -- fuzzy_search = false, and no progress message: this must be invisible.
-    local ok, cancelled, results =
-        pcall(self.dictionary.rawSdcv, self.dictionary, candidates, nil, false, false)
-    if not ok then
-        logger.dbg("kazakh.koplugin: candidate check failed:", cancelled)
-        return candidates
-    end
-    if cancelled or type(results) ~= "table" or #results == 0 then
-        return candidates
-    end
-
-    local kept = {}
-    for i, cand in ipairs(candidates) do
-        local r = results[i]
-        if type(r) == "table" and #r > 0 then
-            kept[#kept + 1] = cand
-        end
-    end
-    return kept
 end
 
 function Kazakh:genMenuItem()
