@@ -190,6 +190,21 @@ BookList.collates = {
             end
         end,
     },
+    title_natural = {
+        text = _("Title natural"),
+        menu_order = 100,
+        item_func = function(item, ui)
+            local doc_props = ui.bookinfo:getDocProps(item.path or item.file)
+            item.doc_props = doc_props
+        end,
+        init_sort_func = function()
+            local natsort
+            natsort, cache = sort.natsort_cmp(cache)
+            return function(a, b)
+                return natsort(a.doc_props.display_title, b.doc_props.display_title)
+            end, cache
+        end,
+    },
     authors = {
         text = _("Authors"),
         menu_order = 110,
