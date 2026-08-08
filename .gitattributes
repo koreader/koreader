@@ -1,0 +1,49 @@
+# Declare files that will always have LF line endings on checkout.
+# This is the default for most text files, but explicitly setting it ensures consistency.
+* text=auto eol=lf
+
+# Explicitly declare binary files to prevent Git from trying to auto-convert them.
+# Add common binary file extensions here.
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.bmp binary
+*.tiff binary
+*.tif binary
+*.webp binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.tgz binary
+*.rar binary
+*.7z binary
+*.exe binary
+*.dll binary
+*.obj binary
+*.class binary
+*.jar binary
+*.swf binary
+*.flv binary
+*.mp4 binary
+*.mp3 binary
+*.avi binary
+*.mov binary
+*.wmv binary
+*.doc binary
+*.docx binary
+*.xls binary
+*.xlsx binary
+*.ppt binary
+*.pptx binary
+*.odt binary
+*.ods binary
+*.odp binary
+*.bin binary
+*.dat binary
+*.db binary
+*.sqlite binary
+*.iso binary
+*.img binary
+*.ko binary # Assuming .ko are compiled kobject files, thus binary
