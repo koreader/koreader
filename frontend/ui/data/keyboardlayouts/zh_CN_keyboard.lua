@@ -16,6 +16,7 @@ local ime = IME:new {
     end,
     switch_char = "→",
     switch_char_prev = "←",
+    candidate_bar = true, -- show candidates in a tappable bar; arrow keys page instead of cycling
 }
 
 py_keyboard.keys[4][3][2].alt_label = nil
@@ -86,7 +87,7 @@ end
 
 local wrappedRightChar = function(inputbox)
     if ime:hasCandidates() then
-        ime:wrappedAddChars(inputbox, "→")
+        ime:wrappedAddChars(inputbox, "→") -- move highlight to next candidate (auto-pages)
     else
         ime:separate(inputbox)
         inputbox.rightChar:raw_method_call()
@@ -95,7 +96,7 @@ end
 
 local wrappedLeftChar = function(inputbox)
     if ime:hasCandidates() then
-        ime:wrappedAddChars(inputbox, "←")
+        ime:wrappedAddChars(inputbox, "←") -- move highlight to previous candidate
     else
         ime:separate(inputbox)
         inputbox.leftChar:raw_method_call()
@@ -156,4 +157,12 @@ end
 py_keyboard.wrapInputBox = wrapInputBox
 py_keyboard.genMenuItems = genMenuItems
 py_keyboard.keys[5][4].label = "空格"
+-- Enable the tappable candidate bar (handled by VirtualKeyboard).
+py_keyboard.candidates = true
+py_keyboard.candidate_select = function(inputbox, idx)
+    ime:selectCandidate(inputbox, idx)
+end
+py_keyboard.candidate_highlight = function(inputbox, idx)
+    ime:setHighlight(inputbox, idx)
+end
 return py_keyboard
