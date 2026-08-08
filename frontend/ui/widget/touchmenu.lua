@@ -147,6 +147,7 @@ function TouchMenuItem:init()
 
     self._underline_container = UnderlineContainer:new{
         vertical_align = "center",
+        focus_linesize = Size.line.focus_indicator,
         dimen = self.dimen:copy(),
         line_width = self.item_frame:getSize().w, -- we'll draw a shorter line
         self.item_frame,
@@ -160,11 +161,13 @@ end
 
 function TouchMenuItem:onFocus()
     self._underline_container.color = Blitbuffer.COLOR_BLACK
+    self._underline_container.focused = true
     return true
 end
 
 function TouchMenuItem:onUnfocus()
     self._underline_container.color = Blitbuffer.COLOR_WHITE
+    self._underline_container.focused = false
     return true
 end
 

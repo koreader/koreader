@@ -64,7 +64,9 @@ local Size = {
         thin = Screen:scaleBySize(0.5),
         medium = Screen:scaleBySize(1),
         thick = Screen:scaleBySize(1.5),
-        focus_indicator = Screen:scaleBySize(5),
+        -- 5 px reads at a glance where scaleBySize maps one to one; denser screens
+        -- get the same weight out of 3.
+        focus_indicator = Screen:scaleBySize(Screen:getDPI() < 200 and 5 or 3),
         progress = Screen:scaleBySize(7),
     },
     item = {
