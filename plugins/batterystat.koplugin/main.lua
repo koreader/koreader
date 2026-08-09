@@ -10,7 +10,12 @@ local datetime = require("datetime")
 local dbg = require("dbg")
 local time = require("ui/time")
 local _ = require("gettext")
-local T = require("ffi/util").template
+
+local BatteryStatWidget = WidgetContainer:extend{
+    name = "batterystat",
+    title = _("Battery statistics"),
+    settings_file = DataStorage:getSettingsDir() .. "/battery_stats.lua",
+}
 
 local State = {}
 
@@ -100,7 +105,7 @@ function Usage:dumpCharging(kv_pairs)
 end
 
 local BatteryStat = {
-    settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/battery_stats.lua"),
+    settings = LuaSettings:open(BatteryStatWidget.settings_file),
     kv_page = nil,
 }
 
@@ -205,7 +210,7 @@ function BatteryStat:showStatistics()
     self:accumulate()
     local kv_pairs = self:dump()
     kv_pairs[#kv_pairs].separator = true
-    table.insert(kv_pairs, {_("Tap to reset the data."), "",
+    table.insert(kv_pairs, {_("Tap to reset the data"), "",
                             callback = function()
                                 UIManager:setDirty(self.kv_page, "fast")
                                 UIManager:scheduleIn(0.1, function()
@@ -213,7 +218,7 @@ function BatteryStat:showStatistics()
                                 end)
                             end})
     self.kv_page = KeyValuePage:new{
-        title = T(_("Battery statistics (now %1%)"), self.awake_state.percentage),
+        title = BatteryStatWidget.title .. " (" .. self.awake_state.percentage .. "%)",
         kv_pairs = kv_pairs,
         single_page = true,
     }
@@ -264,12 +269,8 @@ end
 
 BatteryStat:init()
 
-local BatteryStatWidget = WidgetContainer:extend{
-    name = "batterystat",
-}
-
 function BatteryStatWidget:onDispatcherRegisterActions()
-    Dispatcher:registerAction("battery_statistics", {category="none", event="ShowBatteryStatistics", title=_("Battery statistics"), device=true, separator=true})
+    Dispatcher:registerAction("battery_statistics", {category="none", event="ShowBatteryStatistics", title=self.title, device=true, separator=true})
 end
 
 function BatteryStatWidget:init()
@@ -281,7 +282,7 @@ end
 
 function BatteryStatWidget:addToMainMenu(menu_items)
     menu_items.battery_statistics = {
-        text = _("Battery statistics"),
+        text = self.title,
         keep_menu_open = true,
         callback = function()
             BatteryStat:showStatistics()

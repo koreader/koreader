@@ -25,6 +25,7 @@ The parser looks to bookmarks._.text field for edited notes. bookmarks._.notes i
 @module koplugin.exporter
 --]]--
 
+local ButtonSelector = require("ui/widget/buttonselector")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
@@ -36,8 +37,10 @@ local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
-local T = require("ffi/util").template
+local ffiUtil = require("ffi/util")
 local logger = require("logger")
+local util = require("util")
+local T = ffiUtil.template
 local _ = require("gettext")
 
 -- update clippings from history clippings
@@ -104,13 +107,30 @@ end
 
 local Exporter = WidgetContainer:extend{
     name = "exporter",
+    default_clipping_dir = DataStorage:getFullDataDir() .. "/clipboard",
+    default_clipping_filename_single   = "%D-%M %A - %T",   -- "yyyy-mm-dd-hh-mm-ss author - title"
+    default_clipping_filename_multiple = "%D-%M all-books", -- see patterns in FileManagerBookInfo:expandString()
 }
 
 function Exporter:init()
-    self.parser = MyClipping:new{}
+    self.settings = G_reader_settings:readSetting("exporter", {})
+    self.parser = MyClipping:new{
+        ui = self.ui,
+        settings = self.settings,
+    }
     self.targets = genExportersTable(self.path)
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
+    self.ui.folder_shortcuts.registerShortcut({
+        provider = Exporter.name,
+        name = _("Export highlights folder"),
+        get = function()
+            return self.settings.clipping_dir or self.default_clipping_dir
+        end,
+        set = function(path)
+            self.settings.clipping_dir = path
+        end,
+    })
 end
 
 function Exporter:onDispatcherRegisterActions()
@@ -130,11 +150,19 @@ function Exporter:isReady()
 end
 
 function Exporter:isDocReady()
-    return self.ui.document and true or false
+    return self.document and self.ui.annotation:hasAnnotations() and true or false
 end
 
 function Exporter:isReadyToExport()
     return self:isDocReady() and self:isReady()
+end
+
+function Exporter:requiresFile()
+    for _, v in pairs(self.targets) do
+        if v:isEnabled() and not v.is_remote then
+            return true
+        end
+    end
 end
 
 function Exporter:requiresNetwork()
@@ -147,15 +175,11 @@ function Exporter:requiresNetwork()
     end
 end
 
-function Exporter:getDocumentClippings()
-    return self.parser:parseCurrentDoc(self.view) or {}
-end
-
 --- Parse and export highlights from the currently opened document.
 function Exporter:onExportCurrentNotes()
     if not self:isReadyToExport() then return end
     self.ui.annotation:updatePageNumbers(true)
-    local clippings = self:getDocumentClippings()
+    local clippings = self.parser:parseCurrentDoc()
     self:exportClippings(clippings)
 end
 
@@ -196,19 +220,43 @@ function Exporter:exportClippings(clippings)
     for _title, booknotes in pairs(clippings) do
         table.insert(exportables, booknotes)
     end
+    if #exportables == 0 then
+        UIManager:show(InfoMessage:new{ text = _("No highlights to export") })
+        return
+    end
+    local timestamp = os.time()
+    local clipping_filepath
+    if self:requiresFile() then
+        local file, clipping_dir, clipping_filename
+        if #exportables == 1 then
+            file = exportables[1].file
+            clipping_dir = self.settings.clipping_dir_book and ffiUtil.dirname(file)
+                or self.settings.clipping_dir or self.default_clipping_dir
+            clipping_filename = self.settings.clipping_filename_single or self.default_clipping_filename_single
+        else
+            clipping_dir = self.settings.clipping_dir or self.default_clipping_dir
+            clipping_filename = self.settings.clipping_filename_multiple or self.default_clipping_filename_multiple
+        end
+        -- full file path without extension
+        clipping_filename = self.ui.bookinfo:expandString(clipping_filename, file, timestamp)
+        clipping_filename = clipping_filename:gsub("\r?\n", "; ")
+        clipping_filepath = clipping_dir .. "/" .. util.getSafeFilename(clipping_filename, nil, nil, -1)
+    end
     local export_callback = function()
         UIManager:nextTick(function()
-            local timestamp = os.time()
             local statuses = {}
             for k, v in pairs(self.targets) do
                 if v:isEnabled() then
+                    if not v.is_remote then
+                        v.filepath = clipping_filepath
+                    end
                     v.timestamp = timestamp
                     local status = v:export(exportables)
                     if status then
                         if v.is_remote then
                             table.insert(statuses, T(_("%1: Exported successfully."), v.name))
                         else
-                            table.insert(statuses, T(_("%1: Exported to %2."), v.name, v:getFilePath(exportables)))
+                            table.insert(statuses, T(_("%1: Exported to %2."), v.name, v:getFilePath()))
                         end
                     else
                         table.insert(statuses, T(_("%1: Failed to export."), v.name))
@@ -218,7 +266,6 @@ function Exporter:exportClippings(clippings)
             end
             UIManager:show(InfoMessage:new{
                 text = table.concat(statuses, "\n"),
-                timeout = 3,
             })
         end)
 
@@ -236,14 +283,14 @@ end
 
 function Exporter:addToMainMenu(menu_items)
     self.targets = genExportersTable(self.path)
-    local formats_submenu, share_submenu, styles_submenu = {}, {}, {}
+    local formats_submenu, share_submenu = {}, {}
     for k, v in pairs(self.targets) do
         formats_submenu[#formats_submenu + 1] = v:getMenuTable()
         if v.shareable then
             share_submenu[#share_submenu + 1] = {
                 text = T(_("Share as %1"), v.name),
                 callback = function()
-                    local clippings = self:getDocumentClippings()
+                    local clippings = self.parser:parseCurrentDoc()
                     local document
                     for _, notes in pairs(clippings) do
                         document = notes or {}
@@ -258,27 +305,8 @@ function Exporter:addToMainMenu(menu_items)
     table.sort(formats_submenu, function(v1, v2)
         return v1.text < v2.text
     end)
-    local settings = G_reader_settings:readSetting("exporter", {})
-    for i, v in ipairs(ReaderHighlight.getHighlightStyles()) do
-        local style = v[2]
-        styles_submenu[i] = {
-            text = v[1],
-            checked_func = function() -- all styles checked by default
-                return not (settings.highlight_styles and settings.highlight_styles[style] == false)
-            end,
-            callback = function()
-                if settings.highlight_styles and settings.highlight_styles[style] == false then
-                    settings.highlight_styles[style] = nil
-                    if next(settings.highlight_styles) == nil then
-                        settings.highlight_styles = nil
-                    end
-                else
-                    settings.highlight_styles = settings.highlight_styles or {}
-                    settings.highlight_styles[style] = false
-                end
-            end,
-        }
-    end
+
+    local settings = self.settings
     local menu = {
         text = _("Export highlights"),
         sub_item_table = {
@@ -306,9 +334,64 @@ function Exporter:addToMainMenu(menu_items)
                 sub_item_table = formats_submenu,
             },
             {
-                text = _("Choose highlight styles"),
-                sub_item_table = styles_submenu,
+                text = _("Filter by highlight style"),
+                checked_func = function()
+                    return util.tableGetValue(settings, "filter", "style") and true or false
+                end,
+                check_callback_updates_menu = true,
+                callback = function(touchmenu_instance)
+                    UIManager:show(ButtonSelector:new{
+                        current_value = util.tableGetValue(settings, "filter", "style"),
+                        values = ReaderHighlight.getHighlightStyles(),
+                        multi_choice = true,
+                        callback = function(value)
+                            if value then
+                                util.tableSetValue(settings, value, "filter", "style")
+                            else
+                                util.tableRemoveValue(settings, "filter", "style")
+                            end
+                            touchmenu_instance:updateItems()
+                        end,
+                    })
+                end,
+                hold_callback = function(touchmenu_instance)
+                    util.tableRemoveValue(settings, "filter", "style")
+                    touchmenu_instance:updateItems()
+                end,
+            },
+            {
+                text = _("Filter by highlight color"),
+                checked_func = function()
+                    return util.tableGetValue(settings, "filter", "color") and true or false
+                end,
+                check_callback_updates_menu = true,
+                callback = function(touchmenu_instance)
+                    UIManager:show(ButtonSelector:new{
+                        current_value = util.tableGetValue(settings, "filter", "color"),
+                        values = ReaderHighlight:getHighlightColorList(),
+                        multi_choice = true,
+                        callback = function(selected_color_names)
+                            if selected_color_names then
+                                util.tableSetValue(settings, selected_color_names, "filter", "color")
+                            else
+                                util.tableRemoveValue(settings, "filter", "color")
+                            end
+                            touchmenu_instance:updateItems()
+                        end,
+                    })
+                end,
+                hold_callback = function(touchmenu_instance)
+                    util.tableRemoveValue(settings, "filter", "color")
+                    touchmenu_instance:updateItems()
+                end,
                 separator = true,
+            },
+            {
+                text = _("Set export filename"),
+                keep_menu_open = true,
+                callback = function()
+                    self:setFilename()
+                end,
             },
             {
                 text = _("Choose export folder"),
@@ -344,13 +427,76 @@ function Exporter:addToMainMenu(menu_items)
     menu_items.exporter = menu
 end
 
+function Exporter:setFilename()
+    local MultiInputDialog = require("ui/widget/multiinputdialog")
+    local dialog
+    dialog = MultiInputDialog:new{
+        title = _("Set export filename"),
+        fields = {
+            {
+                text = self.settings.clipping_filename_single or self.default_clipping_filename_single,
+                hint = self.default_clipping_filename_single,
+                description = _("Single book"),
+            },
+            {
+                text = self.settings.clipping_filename_multiple or self.default_clipping_filename_multiple,
+                hint = self.default_clipping_filename_multiple,
+                description = _("Multiple books"),
+            },
+        },
+        buttons = {
+            {
+                {
+                    text = _("Info"),
+                    callback = self.ui.bookinfo.expandString,
+                },
+                {
+                    text = _("Default"),
+                    callback = function()
+                        dialog._input_widget:setText(dialog._input_widget.hint)
+                        dialog._input_widget:goToEnd()
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(dialog)
+                    end,
+                },
+                {
+                    text = _("Set"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        local filename_single, filename_multiple = unpack(dialog:getFields())
+                        if filename_single == "" or filename_single == self.default_clipping_filename_single then
+                            filename_single = nil
+                        end
+                        self.settings.clipping_filename_single = filename_single
+                        if filename_multiple == "" or filename_multiple == self.default_clipping_filename_multiple then
+                            filename_multiple = nil
+                        end
+                        self.settings.clipping_filename_multiple = filename_multiple
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(dialog)
+    dialog:onShowKeyboard()
+end
+
 function Exporter:chooseFolder()
-    local settings = G_reader_settings:readSetting("exporter", {})
     local title_header = _("Current export folder:")
-    local current_path = settings.clipping_dir
-    local default_path = DataStorage:getFullDataDir() .. "/clipboard"
+    local current_path = self.settings.clipping_dir
+    local default_path = self.default_clipping_dir
     local caller_callback = function(path)
-        settings.clipping_dir = path
+        if current_path ~= path then
+            self.ui.folder_shortcuts:updateShortcut(Exporter.name, path)
+            self.settings.clipping_dir = path
+        end
     end
     filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path)
 end

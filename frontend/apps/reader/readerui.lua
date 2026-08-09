@@ -4,8 +4,10 @@ ReaderUI is an abstraction for a reader interface.
 It works using data gathered from a document interface.
 ]]--
 
+local Archiver = require("ffi/archiver")
 local BD = require("ui/bidi")
 local BookList = require("ui/widget/booklist")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DeviceListener = require("device/devicelistener")
 local DocCache = require("document/doccache")
@@ -39,6 +41,7 @@ local ReaderHandMade = require("apps/reader/modules/readerhandmade")
 local ReaderHinting = require("apps/reader/modules/readerhinting")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local ReaderScrolling = require("apps/reader/modules/readerscrolling")
+local ReaderKeySelection = require("apps/reader/modules/readerkeyselection")
 local ReaderKoptListener = require("apps/reader/modules/readerkoptlistener")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local ReaderMenu = require("apps/reader/modules/readermenu")
@@ -124,7 +127,21 @@ function ReaderUI:init()
         self.dialog = self
     end
 
-    self.doc_settings = DocSettings:open(self.document.file)
+    local file = self.document.file
+    self.doc_settings = DocSettings:open(file)
+    if self.arc_settings_data then -- new book with archived metadata to be applied
+        local custom_props = self.arc_settings_data.metadata_arc.custom_props
+        if custom_props then
+            local custom_doc_settings = DocSettings.openSettingsFile()
+            custom_doc_settings.data.custom_props = custom_props
+            custom_doc_settings.data.doc_props = self.arc_settings_data.doc_props
+            custom_doc_settings:flushCustomMetadata(file)
+        end
+        self.arc_settings_data.metadata_arc = nil
+        self.arc_settings_data.doc_path = file
+        self.doc_settings.data = self.arc_settings_data
+        self.arc_settings_data = nil
+    end
     self.document.is_new = self.doc_settings:readSetting("doc_props") == nil
     -- Handle local settings migration
     SettingsMigration:migrateSettings(self.doc_settings)
@@ -177,7 +194,8 @@ function ReaderUI:init()
     self:registerModule("bookmark", ReaderBookmark:new{
         dialog = self.dialog,
         view = self.view,
-        ui = self
+        ui = self,
+        document = self.document,
     })
     self:registerModule("annotation", ReaderAnnotation:new{
         dialog = self.dialog,
@@ -206,6 +224,13 @@ function ReaderUI:init()
     })
     -- wikipedia
     self:registerModule("wikipedia", ReaderWikipedia:new{
+        dialog = self.dialog,
+        view = self.view,
+        ui = self,
+        document = self.document,
+    })
+    -- text selection with cursor keys
+    self:registerModule("keyselection", ReaderKeySelection:new{
         dialog = self.dialog,
         view = self.view,
         ui = self,
@@ -467,13 +492,14 @@ function ReaderUI:init()
     local props = self.document:getProps()
     self.doc_settings:saveSetting("doc_props", props)
     -- And have an extended and customized copy in memory for quick access.
-    self.doc_props = FileManagerBookInfo.extendProps(props, self.document.file)
+    self.doc_props = FileManagerBookInfo.extendProps(props, file)
 
     local md5 = self.doc_settings:readSetting("partial_md5_checksum")
     if md5 == nil then
-        md5 = util.partialMD5(self.document.file)
+        md5 = self.md5_checksum or util.partialMD5(file)
         self.doc_settings:saveSetting("partial_md5_checksum", md5)
     end
+    self.md5_checksum = nil
 
     local summary = self.doc_settings:readSetting("summary", {})
     if BookList.getBookStatusString(summary.status) == nil then
@@ -482,19 +508,26 @@ function ReaderUI:init()
     end
 
     if summary.status ~= "complete" or not G_reader_settings:isTrue("history_freeze_finished_books") then
-        require("readhistory"):addItem(self.document.file) -- (will update "lastfile")
+        require("readhistory"):addItem(file) -- (will update "lastfile")
     end
 
     -- After initialisation notify that document is loaded and rendered
     -- CREngine only reports correct page count after rendering is done
     -- Need the same event for PDF document
     self:handleEvent(Event:new("ReaderReady", self.doc_settings))
+    self.doc_settings:saveSetting("doc_pages", self.document:getPageCount())
 
     for _,v in ipairs(self.postReaderReadyCallback) do
         v()
     end
     self.postReaderReadyCallback = nil
     self.reloading = nil
+    if self.after_open_callback then
+        self:after_open_callback()
+        self.after_open_callback = nil
+    end
+
+    BookList.setBookInfoCache(file, self.doc_settings)
 
     Device:setIgnoreInput(false) -- Allow processing of events (on Android).
     Input:inhibitInputUntil(0.2)
@@ -517,18 +550,6 @@ function ReaderUI:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.Home = { { "Home" } }
         self.key_events.Reload = { { "F5" } }
-        if Device:hasDPad() and Device:useDPadAsActionKeys() then
-            self.key_events.StartHighlightIndicator = { { { "Up", "Down" } } }
-        end
-        if Device:hasScreenKB() or Device:hasSymKey() then
-            if Device:hasKeyboard() then
-                self.key_events.ToggleWifi = { { "Shift", "Home" } }
-                self.key_events.OpenLastDoc = { { "Shift", "Back" } }
-            else -- Currently exclusively targets Kindle 4.
-                self.key_events.ToggleWifi = { { "ScreenKB", "Home" } }
-                self.key_events.OpenLastDoc = { { "ScreenKB", "Back" } }
-            end
-        end
     end
 end
 
@@ -566,7 +587,12 @@ function ReaderUI:showFileManager(file, selected_files)
         last_dir, last_file = self:getLastDirFile(true)
     end
     local FileManager = require("apps/filemanager/filemanager")
-    FileManager:showFiles(last_dir, last_file, selected_files)
+    if FileManager.instance then
+        FileManager.instance.file_chooser:changeToPath(last_dir, last_file)
+        FileManager.instance.selected_files = selected_files
+    else
+        FileManager:showFiles(last_dir, last_file, selected_files)
+    end
 end
 
 function ReaderUI:onShowingReader()
@@ -587,7 +613,7 @@ end
 --- @note: Will sanely close existing FileManager/ReaderUI instance for you!
 ---        This is the *only* safe way to instantiate a new ReaderUI instance!
 ---        (i.e., don't look at the testsuite, which resorts to all kinds of nasty hacks).
-function ReaderUI:showReader(file, provider, seamless, is_provider_forced)
+function ReaderUI:showReader(file, provider, seamless, is_provider_forced, after_open_callback)
     logger.dbg("show reader ui")
 
     if lfs.attributes(file, "mode") ~= "file" then
@@ -604,9 +630,41 @@ function ReaderUI:showReader(file, provider, seamless, is_provider_forced)
         provider = self:extendProvider(file, provider, is_provider_forced)
     end
     if provider and provider.provider then
-        -- We can now signal the existing ReaderUI/FileManager instances that it's time to go bye-bye...
-        UIManager:broadcastEvent(Event:new("ShowingReader"))
-        self:showReaderCoroutine(file, provider, seamless)
+        local function do_show(settings_file)
+            if settings_file then
+                os.remove(settings_file)
+                os.remove(settings_file .. ".old")
+            end
+            self.after_open_callback = after_open_callback
+            -- We can now signal the existing ReaderUI/FileManager instances that it's time to go bye-bye...
+            UIManager:broadcastEvent(Event:new("ShowingReader"))
+            self:showReaderCoroutine(file, provider, seamless)
+        end
+        if BookList.hasBookBeenOpened(file) then
+            do_show()
+        else -- new book
+            self.md5_checksum = util.partialMD5(file)
+            local arc_settings_file = DocSettings.getSettingsArcFile(self.md5_checksum, true) -- check if exists
+            if arc_settings_file then
+                UIManager:show(ConfirmBox:new{
+                    text =
+_[[This book was previously opened on this device.
+Would you like to restore its metadata from the archive?
+Discarded metadata will be removed from the archive.]],
+                    ok_text = _("Restore"),
+                    ok_callback = function()
+                        self.arc_settings_data = DocSettings.openSettingsFile(arc_settings_file).data
+                        do_show(arc_settings_file)
+                    end,
+                    cancel_text = _("Discard"),
+                    cancel_callback = function()
+                        do_show(arc_settings_file)
+                    end,
+                })
+            else -- no arc settings file
+                do_show()
+            end
+        end
     else
         UIManager:show(InfoMessage:new{
             text = T(_("File '%1' is not supported."), BD.filepath(filemanagerutil.abbreviate(file)))
@@ -622,18 +680,16 @@ function ReaderUI:extendProvider(file, provider, is_provider_forced)
     -- or on the original file double extension ("fb2.zip" etc).
     local _, file_type = filemanagerutil.splitFileNameType(file) -- supports double-extension
     if file_type == "zip" then
-        -- read the content of zip-file and get extension of the 1st file
-        local std_out = io.popen("unzip -qql \"" .. file .. "\"")
-        if std_out then
-            local size, ext
-            for line in std_out:lines() do
-                size, ext = string.match(line, "%s+(%d+)%s+.+%.([^.]+)")
-                if size and ext then break end
+        local arc = Archiver.Reader:new()
+        if arc:open(file) then
+            for entry in arc:iterate() do
+                local ext = util.getFileNameSuffix(entry.path)
+                if ext and entry.mode == "file" and entry.size > 0 then
+                    file_type = ext:lower()
+                    break
+                end
             end
-            std_out:close()
-            if ext ~= nil then
-                file_type = ext:lower()
-            end
+            arc:close()
         end
         if not is_provider_forced then
             local providers = DocumentRegistry:getProviders("dummy." .. file_type)
@@ -715,7 +771,10 @@ function ReaderUI:doShowReader(file, provider, seamless)
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         document = document,
         reloading = self.reloading,
+        after_open_callback = self.after_open_callback,
     }
+    self.reloading = nil
+    self.after_open_callback = nil
 
     Screen:setWindowTitle(reader.doc_props.display_title)
     Device:notifyBookState(reader.doc_props.display_title, document)
@@ -784,6 +843,7 @@ end
 
 function ReaderUI:saveSettings()
     self:handleEvent(Event:new("SaveSettings"))
+    DocSettings.saveSettingsArcFile(self.doc_settings, nil, true)
     self.doc_settings:flush()
     G_reader_settings:flush()
 end
@@ -826,7 +886,8 @@ function ReaderUI:onClose(full_refresh)
     end
     UIManager:close(self.dialog, full_refresh ~= false and "full")
     if file then
-        BookList.setBookInfoCache(file, self.doc_settings)
+        BookList.setBookInfoCacheProperty(file, "percent_finished", self.doc_settings:readSetting("percent_finished"))
+        -- other cached properties of the currently opened document are updated in real time
     end
 end
 
@@ -876,14 +937,13 @@ function ReaderUI:onReload()
     self:reloadDocument()
 end
 
-function ReaderUI:reloadDocument(after_close_callback, seamless)
+function ReaderUI:reloadDocument(after_close_callback, seamless, after_open_callback)
     local file = self.document.file
     local provider = getmetatable(self.document).__index
 
     -- Mimic onShowingReader's refresh optimizations
     self.tearing_down = true
     self.dithered = nil
-    self.reloading = true
 
     self:handleEvent(Event:new("CloseReaderMenu"))
     self:handleEvent(Event:new("CloseConfigMenu"))
@@ -895,10 +955,11 @@ function ReaderUI:reloadDocument(after_close_callback, seamless)
         after_close_callback(file, provider)
     end
 
-    self:showReader(file, provider, seamless)
+    self.reloading = true
+    self:showReader(file, provider, seamless, nil, after_open_callback)
 end
 
-function ReaderUI:switchDocument(new_file, seamless)
+function ReaderUI:switchDocument(new_file, seamless, after_open_callback, provider, is_provider_forced)
     if not new_file then return end
 
     -- Mimic onShowingReader's refresh optimizations
@@ -910,11 +971,30 @@ function ReaderUI:switchDocument(new_file, seamless)
     self.highlight:onClose() -- close highlight dialog if any
     self:onClose(false)
 
-    self:showReader(new_file, nil, seamless)
+    self:showReader(new_file, provider, seamless, is_provider_forced, after_open_callback)
 end
 
 function ReaderUI:onOpenLastDoc()
-    self:switchDocument(self.menu:getPreviousFile())
+    filemanagerutil.openFile(self, self.menu:getPreviousFile())
+end
+
+function ReaderUI:onAnnotationsModified()
+    BookList.setBookInfoCacheProperty(self.document.file, "has_annotations", self.annotation:hasAnnotations())
+end
+
+function ReaderUI:onDocumentRerendered()
+    local pages = self.document:getPageCount()
+    self.doc_settings:saveSetting("doc_pages", pages)
+    if self.doc_settings:nilOrFalse("pagemap_use_page_labels") then
+        BookList.setBookInfoCacheProperty(self.document.file, "pages", pages)
+    end
+end
+
+function ReaderUI:onUsePageLabelsUpdated()
+    local pages = self.doc_settings:isTrue("pagemap_use_page_labels")
+        and self.doc_settings:readSetting("pagemap_doc_pages")
+         or self.doc_settings:readSetting("doc_pages")
+    BookList.setBookInfoCacheProperty(self.document.file, "pages", pages)
 end
 
 function ReaderUI:getCurrentPage()

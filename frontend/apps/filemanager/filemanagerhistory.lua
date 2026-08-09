@@ -7,7 +7,6 @@ local InputDialog = require("ui/widget/inputdialog")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Utf8Proc = require("ffi/utf8proc")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("util")
 local _ = require("gettext")
@@ -63,7 +62,7 @@ function FileManagerHistory:onShowHist(search_info)
         name = "history",
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showHistDialog() end,
-        onMenuChoice = self.onMenuChoice,
+        onMenuSelect = self.onMenuSelect,
         onMenuHold = self.onMenuHold,
         ui = self.ui,
         _manager = self,
@@ -123,8 +122,7 @@ end
 
 function FileManagerHistory:isItemMatch(item)
     if self.search_string then
-        local filename = self.case_sensitive and item.text or Utf8Proc.lowercase(util.fixUtf8(item.text, "?"))
-        if not filename:find(self.search_string) then
+        if util.stringSearch(item.text, self.search_string, self.case_sensitive) == 0 then
             local book_props = self.ui.bookinfo:getDocProps(item.file, nil, true) -- do not open the document
             if not self.ui.bookinfo:findInProps(book_props, self.search_string, self.case_sensitive) then
                 return false
@@ -168,14 +166,8 @@ function FileManagerHistory:onSetDimensions(dimen)
     self.dimen = dimen
 end
 
-function FileManagerHistory:onMenuChoice(item)
-    if self.ui.document then
-        if self.ui.document.file ~= item.file then
-            self.ui:switchDocument(item.file)
-        end
-    else
-        self.ui:openFile(item.file)
-    end
+function FileManagerHistory:onMenuSelect(item)
+    filemanagerutil.openFile(self.ui, item.file, self.close_callback)
 end
 
 function FileManagerHistory:onMenuHold(item)
@@ -206,15 +198,17 @@ function FileManagerHistory:onMenuHold(item)
     local is_currently_opened = file == (self.ui.document and self.ui.document.file)
 
     local buttons = {}
-    local doc_settings_or_file
+    local been_opened, doc_settings_or_file
     if is_currently_opened then
+        been_opened = true
         doc_settings_or_file = self.ui.doc_settings
         if not book_props then
             book_props = self.ui.doc_props
             book_props.has_cover = true
         end
     else
-        if BookList.hasBookBeenOpened(file) then
+        been_opened = BookList.hasBookBeenOpened(file)
+        if been_opened then
             doc_settings_or_file = BookList.getDocSettings(file)
             if not book_props then
                 local props = doc_settings_or_file:readSetting("doc_props")
@@ -256,6 +250,15 @@ function FileManagerHistory:onMenuHold(item)
             end,
         },
     })
+    if been_opened then
+        local annotations = doc_settings_or_file:readSetting("annotations")
+        if annotations and #annotations > 0 then
+            table.insert(buttons, {
+                self._manager.ui.collections:genExportHighlightsButton({ [file] = true }, close_dialog_callback),
+                self._manager.ui.collections:genBookmarkBrowserButton({ [file] = true }, close_dialog_callback),
+            })
+        end
+    end
     table.insert(buttons, {
         filemanagerutil.genShowFolderButton(file, close_dialog_menu_callback, item.dim),
         filemanagerutil.genBookInformationButton(doc_settings_or_file, book_props, close_dialog_callback, item.dim),

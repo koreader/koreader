@@ -1,11 +1,11 @@
 <p>KOReader es un lector de libros electrónicos optimizado para pantallas de tinta electrónica. Puede abrir muchos formatos y proporciona ajustes avanzados de texto.</p>
 <p>Vea a continuación una selección de sus muchas características:</p>
 <ul>
-  <li>Admite formatos de página fija (PDF, DjVu, CBR, CBZ) y formatos de libros electrónicos ajustables (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Los documentos PDF&#47;DjVu escaneados se pueden redistribuir. Instrucciones de redistribución especiales para leer PDFs y manga de doble columna.</li>
+  <li>Admite formatos de página fija (PDF, DjVu, CBR, CBZ) y formatos de libros electrónicos reajustables (EPUB, FB2, Mobi, DOC, CHM, TXT, HTML). Los documentos PDF&#47;DjVu escaneados se pueden reajustar. Direcciones de flujo especiales para leer PDFs y manga de doble columna.</li>
   <li>Interfaz de usuario multilingüe optimizada para pantallas de tinta electrónica. Vista de lector altamente personalizable con opciones completas de composición tipográfica. Los diccionarios multilingües de separación silábica están incluidos.</li>
   <li>Soporte de escritura no latina para libros, incluidos los idiomas Hebreo, Árabe, Persa, Ruso, Chino, Japonés y Coreano.</li>
-  <li>Funciones únicas de Mapa de Libros y Navegador de Páginas para navegar por su libro.</li>
-  <li>Modo especial de resaltado de varias páginas con muchas opciones de exportación locales y en línea.</li>
-  <li>Puede sincronizar el progreso de lectura entre todos sus dispositivos con KOReader.</li>
+  <li>Funciones únicas de Mapa de libros y Explorador de páginas para navegar por su libro.</li>
+  <li>Modo especial de subrayado de varias páginas con muchas opciones de exportación locales y en línea.</li>
+  <li>Puede sincronizar el progreso de lectura entre todos sus dispositivos KOReader.</li>
   <li>Integrado con Calibre, Wallabag, Wikipedia, Google Translate y otros proveedores de contenidos.</li>
 </ul>

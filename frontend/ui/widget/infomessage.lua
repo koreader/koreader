@@ -46,6 +46,7 @@ local Screen = Device.screen
 
 local InfoMessage = InputContainer:extend{
     modal = true,
+    honor_silent_mode = true,
     face = nil,
     monospace_font = false,
     text = "",

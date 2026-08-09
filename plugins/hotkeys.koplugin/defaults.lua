@@ -1,5 +1,6 @@
 -- typed on my Commodore 64 ;)
 local Device = require("device")
+local util = require("util")
 
 -- The hotkey shortcuts defined here are only the defaults. The user can
 -- change them at any time using the hotkey shortcuts configuration menu.
@@ -7,7 +8,8 @@ local Device = require("device")
 --       should never be assigned to any action in this plugin, because they are already assigned
 --       to events in core. If you assign them to actions in this plugin, those actions will be in
 --       conflict with the existing ones and hell will break loose.
-return {
+
+local defaults = {
     hotkeys_fm = {
         modifier_plus_up                 = nil,
         -- modifier_plus_down               -- keep nil, brings up FM search widget (equivalent to tapping on 'Page x of y').
@@ -40,9 +42,9 @@ return {
         alt_plus_a = nil,
         alt_plus_b = nil,
         alt_plus_c = nil,
-        alt_plus_d = {dictionary_lookup = true,},
+        alt_plus_d = Device:hasKeyboard() and {dictionary_lookup = true,} or {},
         alt_plus_e = nil,
-        alt_plus_f = {file_search = true,},
+        alt_plus_f = Device:hasKeyboard() and {file_search = true,} or {},
         alt_plus_g = nil,
         alt_plus_h = nil,
         alt_plus_i = nil,
@@ -59,10 +61,18 @@ return {
         alt_plus_t = nil,
         alt_plus_u = nil,
         alt_plus_v = nil,
-        alt_plus_w = {wikipedia_lookup = true,},
+        alt_plus_w = Device:hasKeyboard() and {wikipedia_lookup = true,} or {},
         alt_plus_x = nil,
         alt_plus_y = nil,
         alt_plus_z = nil,
+        -- alphabet (no modifier)
+        -- Note: these are all nil in FM mode since we already use them
+        --       as shortcuts for opening documents.
+        -- a = nil, b = nil, c = nil, d = nil, e = nil, f = nil,
+        -- g = nil, h = nil, i = nil, j = nil, k = nil, l = nil,
+        -- m = nil, n = nil, o = nil, p = nil, q = nil, r = nil,
+        -- s = nil, t = nil, u = nil, v = nil, w = nil, x = nil,
+        -- y = nil, z = nil,
     },
     hotkeys_reader = {
         modifier_plus_up                 = {toc = true,},
@@ -96,9 +106,9 @@ return {
         alt_plus_a = nil,
         alt_plus_b = nil,
         alt_plus_c = nil,
-        alt_plus_d = {dictionary_lookup = true,},
+        alt_plus_d = Device:hasKeyboard() and {dictionary_lookup = true,} or {},
         alt_plus_e = nil,
-        alt_plus_f = {file_search = true,},
+        alt_plus_f = Device:hasKeyboard() and {file_search = true,} or {},
         alt_plus_g = nil,
         alt_plus_h = nil,
         alt_plus_i = nil,
@@ -111,13 +121,52 @@ return {
         alt_plus_p = nil,
         alt_plus_q = nil,
         alt_plus_r = nil,
-        alt_plus_s = {fulltext_search = true,},
+        alt_plus_s = Device:hasKeyboard() and {fulltext_search = true,} or {},
         alt_plus_t = nil,
         alt_plus_u = nil,
         alt_plus_v = nil,
-        alt_plus_w = {wikipedia_lookup = true,},
+        alt_plus_w = Device:hasKeyboard() and {wikipedia_lookup = true,} or {},
         alt_plus_x = nil,
         alt_plus_y = nil,
         alt_plus_z = nil,
+        -- alphabet (no modifier)
+        a = nil,
+        b = Device:hasKeyboard() and {bookmarks = true,} or {},
+        c = nil, d = nil, e = nil, f = nil, g = nil,
+        h = Device:hasKeyboard() and {text_selection = true,} or {},
+        i = nil, j = nil, k = nil, l = nil, m = nil, n = nil,
+        o = nil, p = nil, q = nil, r = nil, s = nil,
+        t = Device:hasKeyboard() and {toc = true,} or {},
+        u = nil, v = nil, w = nil, x = nil, y = nil, z = nil,
     },
 }
+
+if Device:supportsGamepad() then
+    local gamepad_defaults = {
+        gamepad_axis_left_x_minus = {key_left = true,}, -- left
+        gamepad_axis_left_x_plus  = {key_right = true,}, -- right
+        gamepad_axis_left_y_minus = {key_up = true,}, -- up
+        gamepad_axis_left_y_plus  = {key_down = true,}, -- down
+        gamepad_axis_right_y_minus = {key_right_page_back = true,}, -- Page Up
+        gamepad_axis_right_y_plus  = {key_right_page_forward = true,}, -- Page Down
+        gamepad_button_a = {key_press = true,}, -- South (A) -> Enter/Press
+        gamepad_button_b = {key_back = true,}, -- East (B) -> Escape
+        gamepad_button_y = {key_context_menu = true,}, -- North (Y) -> ContextMenu
+        gamepad_button_back = {key_right_page_back = true,}, -- Back
+        gamepad_button_guide = {key_right_page_forward = true,}, -- Guide
+        gamepad_button_start = {key_menu = true,}, -- Start
+        gamepad_button_left_stick = {key_menu = true,}, -- Left Stick
+        gamepad_button_left_shoulder = {key_right_page_back = true,}, -- Left Shoulder
+        gamepad_button_right_shoulder = {key_right_page_forward = true,}, -- Right Shoulder
+        gamepad_button_dpad_up = {key_up = true,}, -- D-pad Up
+        gamepad_button_dpad_down = {key_down = true,}, -- D-pad Down
+        gamepad_button_dpad_left = {key_left = true,}, -- D-pad Left
+        gamepad_button_dpad_right = {key_right = true,}, -- D-pad Right
+    }
+
+    for _, mode in ipairs({"hotkeys_fm", "hotkeys_reader"}) do
+        util.tableMerge(defaults[mode], gamepad_defaults)
+    end
+end
+
+return defaults

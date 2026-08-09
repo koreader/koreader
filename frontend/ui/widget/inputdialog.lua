@@ -223,7 +223,7 @@ function InputDialog:init()
     if self.fullscreen or self.add_nav_bar then
         self.deny_keyboard_hiding = true
     end
-    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:nilOrFalse("virtual_keyboard_enabled") then
         self.keyboard_visible = false
         self.skip_first_show_keyboard = true
     end
@@ -317,6 +317,11 @@ function InputDialog:init()
                                     - vspan_after_input_text:getSize().h
                                     - buttons_container:getSize().h
                                     - keyboard_height
+        if self._added_widgets then
+            for _, widget in ipairs(self._added_widgets) do
+                available_height = available_height - widget:getSize().h
+            end
+        end
         if self.fullscreen or self.use_available_height or text_height > available_height then
             -- Don't leave unusable space in the text widget, as the user could think
             -- it's an empty line: move that space in pads after and below (for centering)
@@ -388,6 +393,10 @@ function InputDialog:init()
         charpos = self._charpos,
     }
     table.insert(self.layout[1], self._input_widget)
+    self._password_toggle_widget = self._input_widget:getPasswordToggleWidget()
+    if self._password_toggle_widget then
+        table.insert(self.layout, { self._password_toggle_widget })
+    end
     self:mergeLayoutInVertical(self.button_table)
     -- NOTE: Never send a Focus event, as, on hasDPad device, InputText's onFocus *will* call onShowKeyboard,
     --       and that will wreak havoc on toggleKeyboard...
@@ -425,6 +434,17 @@ function InputDialog:init()
         vspan_after_input_text,
         buttons_container,
     }
+    if self._password_toggle_widget then
+        local toggle_row = CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width,
+                h = self._password_toggle_widget:getSize().h,
+            },
+            self._password_toggle_widget,
+        }
+        -- Keep password toggle between input field and the post-input spacer.
+        table.insert(self.vgroup, 4, toggle_row)
+    end
 
     -- Final widget
     self.dialog_frame = FrameContainer:new{
@@ -502,8 +522,11 @@ function InputDialog:reinit()
     UIManager:setDirty("all", "flashui")
 end
 
-function InputDialog:addWidget(widget, re_init)
-    table.insert(self.layout, #self.layout, {widget})
+function InputDialog:addWidget(widget, re_init, skip_focus_layout)
+    local is_text_height_adjustable = self.fullscreen or self.use_available_height
+    if not skip_focus_layout then
+        table.insert(self.layout, #self.layout, {widget})
+    end
     if not re_init then -- backup widget for re-init
         widget = CenterContainer:new{
             dimen = Geom:new{
@@ -516,9 +539,15 @@ function InputDialog:addWidget(widget, re_init)
             self._added_widgets = {}
         end
         table.insert(self._added_widgets, widget)
+        if is_text_height_adjustable then
+            self.text_height = nil
+            self:init()
+        end
     end
     -- insert widget before the bottom buttons and their previous vspan
-    table.insert(self.vgroup, #self.vgroup-1, widget)
+    if re_init or not is_text_height_adjustable then
+        table.insert(self.vgroup, #self.vgroup-1, widget)
+    end
 end
 
 function InputDialog:getAddedWidgetAvailableWidth()
@@ -630,7 +659,7 @@ function InputDialog:isKeyboardVisible()
 end
 
 function InputDialog:lockKeyboard(toggle)
-    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:isFalse("virtual_keyboard_enabled") then
+    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:nilOrFalse("virtual_keyboard_enabled") then
         -- do not lock the virtual keyboard when user is hiding it, we still *might* want to activate it via shortcuts ("Shift" + "Home") when in need of special characters or symbols
         return
     end
@@ -643,7 +672,7 @@ function InputDialog:toggleKeyboard(force_toggle)
     -- Remember the *current* visibility, as the following close will reset it
     local visible = self:isKeyboardVisible()
 
-    -- When we forcibly close the keyboard, remember its current visiblity state, so that we can properly restore it later.
+    -- When we forcibly close the keyboard, remember its current visibility state, so that we can properly restore it later.
     -- (This is used by some buttons in fullscreen mode, where we might want to keep the original keyboard hidden when popping up a new one for another InputDialog).
     if force_toggle == false then
         -- NOTE: visible will be nil between our own init and a show of the keyboard, which is precisely what happens when we *hide* the keyboard.
@@ -711,7 +740,10 @@ function InputDialog:onCloseDialog()
         close_button.callback()
         return true
     end
-    return false
+    -- Nothing to defer to: a dialog that can lose work should add a Close button
+    -- (see _addSaveCloseButtons), so the rest can just go away, as ButtonDialog does.
+    UIManager:close(self)
+    return true
 end
 
 function InputDialog:onClose()
@@ -921,6 +953,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                 id = "keyboard",
                 callback = function()
                     self:toggleKeyboard()
+                    Device:startTextInput()
                 end,
             })
         end
@@ -943,12 +976,14 @@ function InputDialog:_addScrollButtons(nav_bar)
                                     callback = function()
                                         UIManager:close(input_dialog)
                                         self:toggleKeyboard()
+                                        Device:startTextInput()
                                     end,
                                 },
                                 {
                                     text = _("Find first"),
                                     callback = function()
                                         self:findCallback(input_dialog, true)
+                                        Device:startTextInput()
                                     end,
                                 },
                                 {
@@ -956,6 +991,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                                     is_enter_default = true,
                                     callback = function()
                                         self:findCallback(input_dialog)
+                                        Device:startTextInput()
                                     end,
                                 },
                             },
@@ -999,6 +1035,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                                     callback = function()
                                         UIManager:close(input_dialog)
                                         self:toggleKeyboard()
+                                        Device:startTextInput()
                                     end,
                                 },
                                 {
@@ -1011,6 +1048,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                                             self:toggleKeyboard()
                                             self._input_widget:moveCursorToCharPos(self._input_widget:getLineCharPos(new_line_num))
                                         end
+                                        Device:startTextInput()
                                     end,
                                 },
                             },

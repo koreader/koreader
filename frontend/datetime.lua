@@ -12,18 +12,18 @@ local datetime = {}
 datetime.weekDays = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" } -- in Lua wday order
 
 datetime.shortMonthTranslation = {
-    ["Jan"] = _("Jan"),
-    ["Feb"] = _("Feb"),
-    ["Mar"] = _("Mar"),
-    ["Apr"] = _("Apr"),
-    ["May"] = _("May"),
-    ["Jun"] = _("Jun"),
-    ["Jul"] = _("Jul"),
-    ["Aug"] = _("Aug"),
-    ["Sep"] = _("Sep"),
-    ["Oct"] = _("Oct"),
-    ["Nov"] = _("Nov"),
-    ["Dec"] = _("Dec"),
+    ["Jan"] = C_("Abbreviated month", "Jan"),
+    ["Feb"] = C_("Abbreviated month", "Feb"),
+    ["Mar"] = C_("Abbreviated month", "Mar"),
+    ["Apr"] = C_("Abbreviated month", "Apr"),
+    ["May"] = C_("Abbreviated month", "May"),
+    ["Jun"] = C_("Abbreviated month", "Jun"),
+    ["Jul"] = C_("Abbreviated month", "Jul"),
+    ["Aug"] = C_("Abbreviated month", "Aug"),
+    ["Sep"] = C_("Abbreviated month", "Sep"),
+    ["Oct"] = C_("Abbreviated month", "Oct"),
+    ["Nov"] = C_("Abbreviated month", "Nov"),
+    ["Dec"] = C_("Abbreviated month", "Dec"),
 }
 
 datetime.longMonthTranslation = {
@@ -312,8 +312,33 @@ end
 ---- @treturn seconds
 function datetime.stringToSeconds(datetime_string)
     local year, month, day = datetime_string:match("(%d+)-(%d+)-(%d+)")
-    local hour, min, sec   = datetime_string:match("(%d+):(%d+):(%d+)")
-    return os.time({ year = year, month = month, day = day, hour = hour or 0, min = min or 0, sec = sec or 0 })
+    local hour, mins, sec = datetime_string:match("(%d+):(%d+):(%d+)")
+    return os.time({ year = year, month = month, day = day, hour = hour or 0, min = mins or 0, sec = sec or 0 })
+end
+
+--- Converts a date+time RFC 1123 string to seconds
+---- @string "Fri, 20 Mar 2026 11:05:30 GMT"
+---- @treturn seconds
+function datetime.stringRFC1123ToSeconds(datetime_string)
+    local months = { Jan=1, Feb=2, Mar=3, Apr=4, May=5, Jun=6, Jul=7, Aug=8, Sep=9, Oct=10, Nov=11, Dec=12 }
+    local day, month, year, hour, mins, sec = datetime_string:match("(%d+) (%a+) (%d+) (%d+):(%d+):(%d+)")
+    return os.time({ year = year, month = months[month], day = day, hour = hour, min = mins, sec = sec })
+end
+
+--- Converts a date+time RFC 3659 string to seconds
+---- @string "20260320110530"
+---- @treturn seconds
+function datetime.stringRFC3659ToSeconds(datetime_string)
+    local year, month, day, hour, mins, sec = datetime_string:match("(%d%d%d%d)(%d%d)(%d%d)(%d%d)(%d%d)(%d%d)")
+    return os.time({ year = year, month = month, day = day, hour = hour, min = mins, sec = sec })
+end
+
+--- Converts a date+time ISO 8601 string to seconds
+---- @string "2026-03-20T11:05:30Z"
+---- @treturn seconds
+function datetime.stringISO8601ToSeconds(datetime_string)
+    local year, month, day, hour, mins, sec = datetime_string:match("(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)")
+    return os.time({ year = year, month = month, day = day, hour = hour, min = mins, sec = sec })
 end
 
 return datetime

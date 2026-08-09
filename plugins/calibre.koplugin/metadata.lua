@@ -21,6 +21,7 @@ local used_metadata = {
     "size",
     "title",
     "authors",
+    "author_sort",
     "tags",
     "series",
     "series_index"
@@ -40,12 +41,10 @@ local search_used_metadata = {
 local function slim(book, is_search)
     local slim_book = rapidjson.object({})
     for _, k in ipairs(is_search and search_used_metadata or used_metadata) do
-        if k == "series" or k == "series_index" then
-            slim_book[k] = book[k] or rapidjson.null
-        elseif k == "tags" or k == "authors" then
+        if k == "tags" or k == "authors" then
             slim_book[k] = book[k] or rapidjson.array({})
         else
-            slim_book[k] = book[k]
+            slim_book[k] = book[k] or rapidjson.null
         end
     end
     return slim_book
@@ -134,12 +133,19 @@ end
 -- add a book to our books table
 function CalibreMetadata:addBook(book)
     -- prevent duplicate entries
+    if not self:updateBook(book) then
+        table.insert(self.books, #self.books + 1, slim(book))
+    end
+end
+
+-- update a book in our books table if exists
+function CalibreMetadata:updateBook(book)
     local _, index = self:getBookUuid(book.lpath)
     if index then
         self.books[index] = slim(book)
-    else
-        table.insert(self.books, #self.books + 1, slim(book))
+        return true
     end
+    return false
 end
 
 -- remove a book from our books table

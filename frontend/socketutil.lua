@@ -8,6 +8,8 @@ local http = require("socket.http")
 local https = require("ssl.https")
 local ltn12 = require("ltn12")
 local socket = require("socket")
+local ffiUtil = require("ffi/util")
+local T = ffiUtil.template
 
 local socketutil = {
     -- Init to the default LuaSocket/LuaSec values
@@ -15,9 +17,10 @@ local socketutil = {
     total_timeout = -1,
 }
 
---- Builds a sensible UserAgent that fits Wikipedia's UA policy <https://meta.wikimedia.org/wiki/User-Agent_policy>
+--- Builds a sensible UserAgent that fits Wikipedia's UA policy <https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy>
 local socket_ua = http.USERAGENT
-socketutil.USER_AGENT = "KOReader/" .. Version:getShortVersion() .. " (" .. Device.model .. "; " .. jit.os .. "; " .. jit.arch .. ") " .. socket_ua:gsub(" ", "/")
+socketutil.USER_AGENT = T("KOReader/%1 (%2; %3; %4; https://github.com/koreader/koreader) %5",
+    Version:getShortVersion(), Device.model, jit.os, jit.arch, socket_ua:gsub(" ", "/"))
 -- Monkey-patch it in LuaSocket, as it already takes care of inserting the appropriate header to its requests.
 http.USERAGENT = socketutil.USER_AGENT
 
@@ -170,6 +173,24 @@ function socketutil.redact_request(request)
         end
     end
     return safe_request
+end
+
+function socketutil.chainSinkWithProgressCallback(sink, progressCallback)
+    if sink == nil or progressCallback == nil then
+        return sink
+    end
+
+    local downloaded_bytes = 0
+    local progress_reporter_filter = function(chunk, err)
+        if chunk ~= nil then
+            -- accumulate the downloaded bytes so we don't need to check the actual file every time
+            downloaded_bytes = downloaded_bytes + chunk:len()
+            progressCallback(downloaded_bytes)
+        end
+        return chunk, err
+    end
+
+    return ltn12.sink.chain(progress_reporter_filter, sink)
 end
 
 return socketutil

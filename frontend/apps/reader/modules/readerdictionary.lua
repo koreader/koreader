@@ -1,4 +1,8 @@
+local Archiver = require("ffi/archiver")
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
+local ButtonDialog = require("ui/widget/buttondialog")
+local ButtonSelector = require("ui/widget/buttonselector")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -13,14 +17,17 @@ local KeyValuePage = require("ui/widget/keyvaluepage")
 local LuaData = require("luadata")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
+local Presets = require("ui/presets")
 local SortWidget = require("ui/widget/sortwidget")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
+local Utf8Proc = require("ffi/utf8proc")
 local ffi = require("ffi")
 local C = ffi.C
 local ffiUtil  = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local posix = require("ffi/posix")
 local time = require("ui/time")
 local util  = require("util")
 local _ = require("gettext")
@@ -100,12 +107,19 @@ local function getDictionaryFixHtmlFunc(path)
 end
 
 function ReaderDictionary:init()
-    self:registerKeyEvents()
-
+    self._dict_buttons = {}
     self.disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history")
     self.dicts_order = G_reader_settings:readSetting("dicts_order", {})
     self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})
     self.disable_fuzzy_search_fm = G_reader_settings:isTrue("disable_fuzzy_search")
+
+    self.default_layout = {
+        { "prev_dict", "highlight", "next_dict" },
+        { "wikipedia",    "search",     "close" },
+    }
+    if Device:hasDPad() and Device:hasFewKeys() then
+        table.insert(self.default_layout, 1, {"text_selection"})
+    end
 
     if self.ui then
         self.ui.menu:registerToMainMenu(self)
@@ -163,13 +177,31 @@ function ReaderDictionary:init()
     if not lookup_history then
         lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", "LookupHistory")
     end
+
+    self.preset_obj = {
+        presets = G_reader_settings:readSetting("dict_presets", {}),
+        cycle_index = G_reader_settings:readSetting("dict_presets_cycle_index"),
+        dispatcher_name = "load_dictionary_preset",
+        saveCycleIndex = function(this)
+            G_reader_settings:saveSetting("dict_presets_cycle_index", this.cycle_index)
+        end,
+        buildPreset = function() return self:buildPreset() end,
+        loadPreset = function(preset) self:loadPreset(preset) end,
+    }
 end
 
-function ReaderDictionary:registerKeyEvents()
-    if Device:hasKeyboard() then
-        self.key_events.ShowDictionaryLookup = { { "Alt", "D" }, { "Ctrl", "D" } }
+function ReaderDictionary:addToDictButtons(spec)
+    if type(spec) ~= "table" or type(spec.id) ~= "string" then
+        logger.warn("ReaderDictionary: addToDictButtons expects a table with a string 'id'")
+        return
     end
+    self._dict_buttons[spec.id] = spec
 end
+
+-- function ReaderDictionary:registerKeyEvents()
+--     Now handled by hotkeys.koplugin:
+--     onShowDictionaryLookup = { { "Alt", "D" }, { "Ctrl", "D" } }
+-- end
 
 function ReaderDictionary:sortAvailableIfos()
     table.sort(available_ifos, function(lifo, rifo)
@@ -216,6 +248,7 @@ function ReaderDictionary:updateSdcvDictNamesOptions()
 end
 
 function ReaderDictionary:addToMainMenu(menu_items)
+    local is_docless = self.ui == nil or self.ui.document == nil
     menu_items.search_settings = { -- submenu with Dict, Wiki, Translation settings
         text = _("Settings"),
     }
@@ -279,8 +312,17 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 end,
             },
             {
+                text = _("Dictionary presets"),
+                help_text = _("This feature allows you to organize dictionaries into presets (for example, by language). You can quickly switch between these presets to change which dictionaries are used for lookups.\n\nNote: presets only store dictionaries, no other settings."),
+                sub_item_table_func = function()
+                    return Presets.genPresetMenuItemTable(self.preset_obj, _("Create new preset from enabled dictionaries"),
+                        function() return self.enabled_dict_names and #self.enabled_dict_names > 0 end)
+                end,
+            },
+            {
                 text = _("Download dictionaries"),
                 sub_item_table_func = function() return self:_genDownloadDictionariesMenu() end,
+                separator = true,
             },
             {
                 text_func = function()
@@ -310,32 +352,40 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 separator = true,
             },
             {
-                text = _("Enable dictionary lookup history"),
+                text = _("Dictionary lookup history"),
                 checked_func = function()
                     return not self.disable_lookup_history
                 end,
-                callback = function()
-                    self.disable_lookup_history = not self.disable_lookup_history
-                    G_reader_settings:saveSetting("disable_lookup_history", self.disable_lookup_history)
-                end,
-            },
-            {
-                text = _("Clean dictionary lookup history"),
-                enabled_func = function()
-                    return lookup_history:has("lookup_history")
-                end,
-                keep_menu_open = true,
-                callback = function(touchmenu_instance)
-                    UIManager:show(ConfirmBox:new{
-                        text = _("Clean dictionary lookup history?"),
-                        ok_text = _("Clean"),
-                        ok_callback = function()
-                            -- empty data table to replace current one
-                            lookup_history:reset{}
-                            touchmenu_instance:updateItems()
+                sub_item_table = {
+                    {
+                        text = _("Enable dictionary lookup history"),
+                        checked_func = function()
+                            return not self.disable_lookup_history
                         end,
-                    })
-                end,
+                        callback = function()
+                            self.disable_lookup_history = not self.disable_lookup_history
+                            G_reader_settings:saveSetting("disable_lookup_history", self.disable_lookup_history)
+                        end,
+                    },
+                    {
+                        text = _("Clean dictionary lookup history"),
+                        enabled_func = function()
+                            return lookup_history:has("lookup_history")
+                        end,
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Clean dictionary lookup history?"),
+                                ok_text = _("Clean"),
+                                ok_callback = function()
+                                    -- empty data table to replace current one
+                                    lookup_history:reset{}
+                                    touchmenu_instance:updateItems()
+                                end,
+                            })
+                        end,
+                    },
+                },
                 separator = true,
             },
             { -- setting used by dictquicklookup
@@ -381,6 +431,26 @@ function ReaderDictionary:addToMainMenu(menu_items)
             }
         }
     }
+    table.insert(menu_items.dictionary_settings.sub_item_table, {
+        text = _("Customize buttons"),
+        sub_item_table_func = function()
+            return self:_genCustomizeButtonsMenu()
+        end,
+    })
+    if not is_docless then
+        table.insert(menu_items.dictionary_settings.sub_item_table, 2, {
+            keep_menu_open = true,
+            text = _("Set dictionary priority for this book"),
+            help_text = _("This feature enables you to specify dictionary priorities on a per-book basis. Results from higher-priority dictionaries will be displayed first when looking up words. Only dictionaries that are currently active can be selected and prioritized."),
+            enabled_func = function()
+                -- we allow to use preferred dictionaries even if no dictionaries are enabled globally (see self:updateSdcvDictNamesOptions)
+                return #self.enabled_dict_names > 1 or #self.preferred_dictionaries > 0
+            end,
+            callback = function(touchmenu_instance)
+                self:showPreferredDictsDialog(touchmenu_instance)
+            end,
+        })
+    end
     if Device:canExternalDictLookup() then
         local function genExternalDictItems()
             local items_table = {}
@@ -433,11 +503,347 @@ function ReaderDictionary:addToMainMenu(menu_items)
     end
 end
 
+function ReaderDictionary:_genCustomizeButtonsMenu()
+    local customize_buttons_menu = {}
+    local available_options = {
+        { text = _("Previous result"), id = "prev_dict" },
+        { text = _("Highlight"),       id = "highlight" },
+        { text = _("Next result"),     id = "next_dict" },
+        { text = _("Wikipedia"),       id = "wikipedia" },
+        { text = _("Search"),          id = "search" },
+        { text = _("Close"),           id = "close" },
+        { text = _("Translate"),       id = "translate" },
+    }
+    if Device:hasDPad() then
+        table.insert(available_options, { text = _("Text selection"), id = "text_selection" })
+    end
+
+    for _, spec in ffiUtil.orderedPairs(self._dict_buttons) do
+        if not spec.conditional and spec.menu_text then
+            table.insert(available_options, { text = spec.menu_text, id = spec.id })
+        end
+        if not spec.conditional and not DictQuickLookup.layoutContainsButtonId(self.default_layout, spec.id) then
+            local i = spec.insert_first and 1 or (#self.default_layout + 1)
+            table.insert(self.default_layout, i, { spec.id })
+        end
+    end
+
+    -- This function return the config from settings.
+    local function getDictConfig()
+        local config = util.tableDeepCopy(G_reader_settings:readSetting("dict_button_config"))
+        if not config then
+            config = {
+                layout = self.default_layout,
+                order = {},
+                row_count = {}
+            }
+            for i = 1, #self.default_layout do
+                config.row_count[i] = #self.default_layout[i]
+            end
+        end
+
+        if #config.order == 0 then
+            for _, row in ipairs(self.default_layout) do
+                for _, id in ipairs(row) do
+                    table.insert(config.order, id)
+                end
+            end
+        end
+
+        local in_order = {}
+        for _, id in ipairs(config.order) do
+            in_order[id] = true
+        end
+        for _, opt in ipairs(available_options) do
+            if not in_order[opt.id] then
+                table.insert(config.order, opt.id)
+            end
+        end
+
+        return config
+    end
+
+    -- This helper regenerates the layout based on the given config, and saves it in settings.
+    local function regenLayout(override_config, override_selected)
+        local config = override_config or getDictConfig()
+
+        local selected_ids = override_selected
+        if not selected_ids then
+            selected_ids = {}
+            for _, row in ipairs(config.layout) do
+                for _, id in ipairs(row) do
+                    selected_ids[id] = true
+                end
+            end
+        end
+
+        local new_layout = {}
+        local current_row = {}
+        local row_idx = 1
+        local max_in_row = config.row_count[row_idx] or 3
+
+        for _, id in ipairs(config.order) do
+            if selected_ids[id] then
+                if #current_row >= max_in_row then
+                    table.insert(new_layout, current_row)
+                    current_row = {}
+                    row_idx = row_idx + 1
+                    max_in_row = config.row_count[row_idx] or 3
+                end
+                table.insert(current_row, id)
+            end
+        end
+        if #current_row > 0 then
+            table.insert(new_layout, current_row)
+        end
+
+        local new_row_count = {}
+        for i = 1, #new_layout do
+            new_row_count[i] = config.row_count[i] or 3
+        end
+        config.row_count = new_row_count
+
+        config.layout = new_layout
+        G_reader_settings:saveSetting("dict_button_config", config)
+    end
+
+    local rebuildRowMenu -- forward declaration for recursive use in genRowMenu
+    -- This function generates dynamically the row submenu, according to the current config.
+    local function genRowMenu()
+        local config = getDictConfig()
+        local layout_rows = config.layout
+        for i = 1, #layout_rows do
+            table.insert(customize_buttons_menu, {
+                text_func = function()
+                    return T(_("Max buttons in row %1: %2"), i, config.row_count[i] or 3)
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    UIManager:show(SpinWidget:new{
+                        value = config.row_count[i] or 3,
+                        value_min = 1,
+                        value_max = 4,
+                        default_value = self.default_layout[i] and #self.default_layout[i] or 3,
+                        title_text = T(_("Max buttons in row %1"), i),
+                        callback = function(spin)
+                            config.row_count[i] = spin.value
+                            regenLayout(config)
+                            rebuildRowMenu()
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                    })
+                end,
+                separator = i == #layout_rows,
+            })
+        end
+
+        table.insert(customize_buttons_menu, {
+            text = _("Test button layout"),
+            keep_menu_open = true,
+            callback = function()
+                local preview_word = "lorem"
+                local preview_definition = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " ..
+                _("This is a mock definition used to preview dictionary button positions.") .. "\n\n" ..
+                _("Tip: Place the Previous/Next buttons in the same row with two other buttons (4 total) to make them shrink and save space.")
+                self:showDict(preview_word, {
+                    {
+                        dict = _("Layout preview"),
+                        word = preview_word,
+                        definition = preview_definition,
+                    },
+                })
+            end,
+        })
+    end
+
+    -- This rebuillds the row menu based on changes in the layout.
+    local row_menu_start_idx = #customize_buttons_menu + 1
+    function rebuildRowMenu()
+        while #customize_buttons_menu >= row_menu_start_idx do
+            table.remove(customize_buttons_menu)
+        end
+        genRowMenu()
+    end
+
+    table.insert(customize_buttons_menu, {
+        text = _("Sort and toggle buttons"),
+        keep_menu_open = true,
+        separator = true,
+        callback = function(touchmenu_instance)
+            local config = getDictConfig()
+            local selected_ids = {}
+            for _, row in ipairs(config.layout) do
+                for _, id in ipairs(row) do
+                    selected_ids[id] = true
+                end
+            end
+
+            local sort_items = {}
+            local local_selected = util.tableDeepCopy(selected_ids)
+
+            for _, id in ipairs(config.order) do
+                for _, opt in ipairs(available_options) do
+                    if opt.id == id then
+                        table.insert(sort_items, {
+                            text = opt.text,
+                            id = opt.id,
+                            checked_func = function() return local_selected[opt.id] end,
+                            callback = function() local_selected[opt.id] = not local_selected[opt.id] end,
+                        })
+                        break
+                    end
+                end
+            end
+
+            UIManager:show(SortWidget:new{
+                title = _("Sort and toggle buttons"),
+                item_table = sort_items,
+                callback = function()
+                    local new_order = {}
+
+                    for _, item in ipairs(sort_items) do
+                        table.insert(new_order, item.id)
+                    end
+
+                    config.order = new_order
+                    regenLayout(config, local_selected)
+                    rebuildRowMenu()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end
+            })
+        end,
+        hold_callback = function(touchmenu_instance)
+             UIManager:show(ConfirmBox:new{
+                text = _("Would you like to reset the button layout?"),
+                ok_text = _("Reset"),
+                ok_callback = function()
+                    G_reader_settings:delSetting("dict_button_config")
+                    rebuildRowMenu()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+             })
+        end,
+    })
+    row_menu_start_idx = #customize_buttons_menu + 1
+    genRowMenu()
+    return customize_buttons_menu
+end
+
+function ReaderDictionary:showPreferredDictsDialog(touchmenu_instance)
+    local dialog
+    local buttons = {}
+    local disabled_buttons = {}  -- store disabled dict buttons separately
+    local update_sdcv = true
+
+    local function saveAndRefresh()
+        self:onSaveSettings()
+        if update_sdcv then self:updateSdcvDictNamesOptions() end
+        UIManager:close(dialog)
+        if #self.enabled_dict_names == 0 then
+            -- This is an edge case where we have a preferred dictionary but no globally enabled ones.
+            -- If we un-prefer said dict, we would end up with an empty dialog, so close up shop and go home.
+            touchmenu_instance:updateItems()
+            return
+        end
+        self:showPreferredDictsDialog(touchmenu_instance)
+    end
+
+    local function makeButtonEntry(dict, is_enabled)
+        local is_preferred = false
+        local pref_num = 0
+        for i, pref_dict in ipairs(self.preferred_dictionaries) do
+            if pref_dict == dict then
+                is_preferred = true
+                pref_num = i
+                break
+            end
+        end
+
+        local button_text = dict
+        if is_preferred and is_enabled then
+            -- Add circled number (U+2460...2473) at start
+            local symbol = util.unicodeCodepointToUtf8(0x245F + (pref_num < 20 and pref_num or 20))
+            button_text = symbol .. " " .. button_text
+        elseif not is_enabled then
+            -- Add circled x (U+2297) at start for disabled dictionaries
+            button_text = "⊗ " .. button_text
+        end
+
+        return {
+            {
+                align = "left",
+                text = button_text,
+                callback = function()
+                    if not is_enabled then return end -- No toggle for disabled dicts
+                    if is_preferred then
+                        for i, pref_dict in ipairs(self.preferred_dictionaries) do
+                            if pref_dict == dict then
+                                table.remove(self.preferred_dictionaries, i)
+                                break
+                            end
+                        end
+                    else
+                        table.insert(self.preferred_dictionaries, dict)
+                    end
+                    saveAndRefresh()
+                end,
+                hold_callback = function()
+                    if not is_enabled then -- re-enable dictionary
+                        self.doc_disabled_dicts[dict] = nil
+                    else -- disable dictionary for this book
+                        self.doc_disabled_dicts[dict] = true
+                    end
+                    update_sdcv = false
+                    saveAndRefresh()
+                end,
+            }
+        }
+    end
+
+    -- Process enabled dictionaries first.
+    for _, dict in ipairs(self.enabled_dict_names) do
+        if not self.doc_disabled_dicts[dict] then
+            table.insert(buttons, makeButtonEntry(dict, true))
+        else
+            table.insert(disabled_buttons, makeButtonEntry(dict, false))
+        end
+    end
+
+    -- Append disabled dictionaries at the bottom of the list.
+    for _, btn in ipairs(disabled_buttons) do
+        table.insert(buttons, btn)
+    end
+
+    table.insert(buttons, {
+        {
+            text = _("Reset"),
+            callback = function()
+                self.doc_disabled_dicts = {}
+                self.preferred_dictionaries = {}
+                saveAndRefresh()
+            end,
+        }
+    })
+
+    dialog = ButtonDialog:new{
+        title = _("Select preferred dictionaries"),
+        title_align = "center",
+        shrink_unneeded_width = true,
+        buttons = buttons,
+    }
+    UIManager:show(dialog)
+end
+
 function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link, dict_close_callback)
     logger.dbg("dict lookup word:", word, boxes)
     -- escape quotes and other funny characters in word
     word = self:cleanSelection(word, is_sane)
     logger.dbg("dict stripped word:", word)
+    -- (If word ends up empty, we still do the lookup, which will give us
+    -- a window with no result. This will ensure the normal cleanup of the
+    -- highlight when closing this "no result" window, which is easier than
+    -- trying to do it here if we were skipping the lookup.)
 
     self.highlight = highlight
     local disable_fuzzy_search
@@ -556,7 +962,7 @@ function ReaderDictionary:_genDownloadDictionariesMenu()
             keep_menu_open = true,
             text = lang_key,
             callback = function()
-                self:showDownload(available_langs)
+                self:showDownload(lang_key, available_langs)
             end
         })
     end
@@ -701,6 +1107,14 @@ function ReaderDictionary:cleanSelection(text, is_sane)
         text = text:gsub("\u{2019}", "'") -- Right single quotation mark
         -- Strip punctuation characters around selection
         text = util.stripPunctuation(text)
+        -- Note: although it seems innocuous to use a character class [·|↑] to perform a single gsub,
+        --       doing so will cause byte corruption in some languages (e.g. Greek).
+        -- In some dictionaries, both interpuncts and pipes are used to delimiter syllables.
+        text = text:gsub("·", "") -- interpunct
+        text = text:gsub("|", "") -- pipe
+        text = text:gsub("↑", "") -- and up arrow, used in some dictionaries to indicate related words
+        text = text:gsub("ˈ", "") -- primary stress mark, used in phonetic transcriptions to indicate a stressed syllable
+        text = text:gsub("ˌ", "") -- secondary stress mark, used in phonetic transcriptions to indicate a weaker stressed syllable
         -- Strip some common english grammatical construct
         text = text:gsub("'s$", '') -- english possessive
         -- Strip some common french grammatical constructs
@@ -737,35 +1151,83 @@ function ReaderDictionary:dismissLookupInfo()
 end
 
 function ReaderDictionary:onShowDictionaryLookup()
+    local buttons = {}
+    local preset_names = Presets.getPresets(self.preset_obj)
+    if preset_names and #preset_names > 0 then
+        table.insert(buttons, {
+            {
+                text = _("Search with preset"),
+                callback = function()
+                    local text = self.dictionary_lookup_dialog:getInputText()
+                    if text == "" or text:match("^%s*$") then return end
+                    self:showSearchWithPresetDialog(preset_names, self.dictionary_lookup_dialog, text)
+                end,
+            }
+        })
+    end
+
+    table.insert(buttons, {
+        {
+            text = _("Cancel"),
+            id = "close",
+            callback = function()
+                UIManager:close(self.dictionary_lookup_dialog)
+            end,
+        },
+        {
+            text = _("Search dictionary"),
+            is_enter_default = true,
+            callback = function()
+                if self.dictionary_lookup_dialog:getInputText() == "" then return end
+                UIManager:close(self.dictionary_lookup_dialog)
+                -- Trust that input text does not need any cleaning (allows querying for "-suffix")
+                self:onLookupWord(self.dictionary_lookup_dialog:getInputText(), true)
+            end,
+        },
+    })
+
     self.dictionary_lookup_dialog = InputDialog:new{
         title = _("Enter a word or phrase to look up"),
         input = "",
         input_type = "text",
-        buttons = {
-            {
-                {
-                    text = _("Cancel"),
-                    id = "close",
-                    callback = function()
-                        UIManager:close(self.dictionary_lookup_dialog)
-                    end,
-                },
-                {
-                    text = _("Search dictionary"),
-                    is_enter_default = true,
-                    callback = function()
-                        if self.dictionary_lookup_dialog:getInputText() == "" then return end
-                        UIManager:close(self.dictionary_lookup_dialog)
-                        -- Trust that input text does not need any cleaning (allows querying for "-suffix")
-                        self:onLookupWord(self.dictionary_lookup_dialog:getInputText(), true)
-                    end,
-                },
-            }
-        },
+        buttons = buttons,
     }
     UIManager:show(self.dictionary_lookup_dialog)
     self.dictionary_lookup_dialog:onShowKeyboard()
     return true
+end
+
+function ReaderDictionary:showSearchWithPresetDialog(preset_names, input_dialog, word, boxes, link, dict_close_callback)
+    if not preset_names then
+        preset_names = Presets.getPresets(self.preset_obj)
+    end
+    local current_dict_state = self:buildPreset()
+    local button_dialog, buttons = nil, {}
+    for _, preset_name in ipairs(preset_names) do
+        table.insert(buttons, {
+            {
+                align = "left",
+                text = preset_name,
+                callback = function()
+                    self:loadPreset(self.preset_obj.presets[preset_name], true)
+                    UIManager:close(button_dialog)
+                    UIManager:close(input_dialog)
+                    self:onLookupWord(word, true, boxes, self.highlight, link,
+                        function()
+                            self:loadPreset(current_dict_state, true)
+                            if dict_close_callback then dict_close_callback() end
+                        end
+                    )
+                end,
+            }
+        })
+    end
+    button_dialog = ButtonDialog:new{
+        buttons = buttons,
+        shrink_unneeded_width = true,
+    }
+    if input_dialog then input_dialog:onCloseKeyboard() end
+    UIManager:show(button_dialog)
 end
 
 function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progress_msg)
@@ -878,6 +1340,13 @@ end
 
 function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     local words = {word}
+    -- If a word starts with a capital letter, add lowercase version to words array.
+    if not fuzzy_search then
+        local lowercased = Utf8Proc.lowercase(word, false)
+        if word ~= lowercased then
+            table.insert(words, lowercased)
+        end
+    end
 
     if self.ui.languagesupport and self.ui.languagesupport:hasActiveLanguagePlugins() then
         -- Get any other candidates from any language-specific plugins we have.
@@ -954,10 +1423,6 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
 end
 
 function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link, dict_close_callback)
-    if word == "" then
-        return
-    end
-
     local book_title = self.ui.doc_props and self.ui.doc_props.display_title or _("Dictionary lookup")
 
     -- Event for plugin to catch lookup with book title
@@ -974,7 +1439,7 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
         Device:doExternalDictLookup(word, G_reader_settings:readSetting("external_dict_lookup_method"), function()
             if self.highlight then
                 local clear_id = self.highlight:getClearId()
-                UIManager:scheduleIn(0.5, function()
+                UIManager:scheduleIn(G_defaults:readSetting("DELAY_CLEAR_HIGHLIGHT_S"), function()
                     self.highlight:clear(clear_id)
                 end)
             end
@@ -984,6 +1449,17 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
             end
         end)
         return
+    end
+
+    -- Before starting the search, remove any dictionaries that were disabled for *this* book.
+    if dict_names and self.doc_disabled_dicts then
+        local filtered_names = {}
+        for _, name in ipairs(dict_names) do
+            if not self.doc_disabled_dicts[name] then
+                table.insert(filtered_names, name)
+            end
+        end
+        dict_names = filtered_names
     end
 
     -- If the user disabled all the dictionaries, go away.
@@ -1006,20 +1482,26 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
 
     self._lookup_start_time = UIManager:getTime()
     local results = self:startSdcv(word, dict_names, fuzzy_search)
+    local function lookupCancelled()
+        if self.highlight then
+            self.highlight:clear()
+        end
+        if dict_close_callback then
+            dict_close_callback()
+        end
+    end
     if results and results.lookup_cancelled
         and (time.now() - self._lookup_start_time) <= self.quick_dismiss_before_delay then
         -- If interrupted quickly just after launch, don't display anything
         -- (this might help avoiding refreshes and the need to dismiss
         -- after accidental long-press when holding a device).
-        if self.highlight then
-            self.highlight:clear()
-        end
-
-        if dict_close_callback then
-            dict_close_callback()
-        end
-
+        lookupCancelled()
         return
+    end
+    -- Intercept "No results" to offer alternative search methods (e.g., fuzzy search to non-fussy people)
+    if results and results[1].no_result then
+        local handled = self:showNoResultsDialog(word, dict_names, fuzzy_search, boxes, link, dict_close_callback, lookupCancelled)
+        if handled then return end
     end
 
     self:showDict(word, tidyMarkup(results), boxes, link, dict_close_callback)
@@ -1080,136 +1562,302 @@ function ReaderDictionary:showDict(word, results, boxes, link, dict_close_callba
     end
 end
 
-function ReaderDictionary:showDownload(downloadable_dicts)
-    local kv_pairs = {}
-    for dummy, dict in ipairs(downloadable_dicts) do
-        table.insert(kv_pairs, {dict.name, "",
-            callback = function()
-                local connect_callback = function()
-                    self:downloadDictionaryPrep(dict)
-                end
-                NetworkMgr:runWhenOnline(connect_callback)
-            end})
-        local lang
-        if dict.lang_in == dict.lang_out then
-            lang = string.format("    %s", dict.lang_in)
-        else
-            lang = string.format("    %s–%s", dict.lang_in, dict.lang_out)
-        end
-        table.insert(kv_pairs, {lang, ""})
-        table.insert(kv_pairs, {"    ".._("License"), dict.license})
-        table.insert(kv_pairs, {"    ".._("Entries"), dict.entries, separator = true})
-    end
-    self.download_window = KeyValuePage:new{
-        title = _("Tap dictionary name to download"),
-        kv_pairs = kv_pairs,
-    }
-    UIManager:show(self.download_window)
-end
+function ReaderDictionary:showNoResultsDialog(word, dict_names, fuzzy_search, boxes, link, dict_close_callback, lookupCancelled)
+    self:dismissLookupInfo() -- Close the "Searching..." message
+    local preset_names = Presets.getPresets(self.preset_obj)
+    local has_presets = preset_names and #preset_names > 0
+    if fuzzy_search and not has_presets then return false end -- fall through to showing empty results
 
-function ReaderDictionary:downloadDictionaryPrep(dict, size)
-    local dummy, filename = util.splitFilePathName(dict.url)
-    local download_location = string.format("%s/%s", self.data_dir, filename)
+    local preset_button = has_presets and {
+        text = _("Search with preset"),
+        callback = function(dialog)
+            local new_word = dialog:getInputText()
+            if new_word == "" or new_word:match("^%s*$") then return end
+            self:showSearchWithPresetDialog(preset_names, dialog, new_word, boxes, link, dict_close_callback)
+        end,
+    } or nil
 
-    if lfs.attributes(download_location) then
-        UIManager:show(ConfirmBox:new{
-            text =  _("File already exists. Overwrite?"),
-            ok_text =  _("Overwrite"),
-            ok_callback = function()
-                self:downloadDictionary(dict, download_location)
+    -- Determine the primary action based on what's available
+    local description, primary_action
+    if not fuzzy_search then
+        description = _("Would you like to use fuzzy search?")
+        primary_action = {
+            text = _("Fuzzy search"),
+            is_enter_default = true,
+            callback = function(dialog)
+                local new_word = dialog:getInputText()
+                if new_word == "" then return end
+                UIManager:close(dialog)
+                -- Re-run the lookup with the (possibly edited) word and fuzzy enabled.
+                self:stardictLookup(new_word, dict_names, true, boxes, link, dict_close_callback)
             end,
-        })
-    else
-        self:downloadDictionary(dict, download_location)
+        }
+    elseif has_presets then
+        description = _("Would you like to search with a preset?")
+        primary_action = preset_button
+        primary_action.is_enter_default = true
     end
+
+    local buttons = {}
+    -- Add preset button as an additional option (when fuzzy is the primary action)
+    if not fuzzy_search and has_presets then
+        table.insert(buttons, { preset_button })
+    end
+    table.insert(buttons, {
+        {
+            text = _("Cancel"),
+            id = "close",
+            callback = function(dialog)
+                UIManager:close(dialog)
+                UIManager:scheduleIn(G_defaults:readSetting("DELAY_CLEAR_HIGHLIGHT_S"), function() lookupCancelled() end)
+            end,
+        },
+        primary_action,
+    })
+    local dialog
+    dialog = InputDialog:new{
+        title = _("No results found"),
+        input = word, -- Pre-fills the dialog with the selected word
+        input_type = "text",
+        description = description,
+        buttons = buttons,
+    }
+
+    -- Wire up callbacks with the dialog instance
+    for _, row in ipairs(buttons) do
+        for _, button in ipairs(row) do
+            if button.callback then
+                local original_callback = button.callback
+                button.callback = function()
+                    original_callback(dialog)
+                end
+            end
+        end
+    end
+    UIManager:show(dialog)
+    dialog:onShowKeyboard()
+    return true
 end
 
-function ReaderDictionary:downloadDictionary(dict, download_location, continue)
-    continue = continue or false
+function ReaderDictionary:showDownload(lang, downloadable_dicts)
+    self.dl_dict_list = BookList:new{
+        lang = lang,
+        dicts = downloadable_dicts,
+        filter = nil,
+        _manager = self,
+        title_bar_left_icon = "appbar.menu",
+        onLeftButtonTap = function()
+            self:filterDownloadDict()
+        end,
+        onMenuSelect = self.onTapDownloadDict,
+    }
+    self:updateDownloadDictItemTable()
+    UIManager:show(self.dl_dict_list)
+end
+
+function ReaderDictionary:updateDownloadDictItemTable()
+    local item_table = {}
+    for _, dict in ipairs(self.dl_dict_list.dicts) do
+        if self.dl_dict_list.filter == nil or self.dl_dict_list.filter == (dict.lang_in == dict.lang_out) then
+            table.insert(item_table, {
+                text = dict.name,
+                mandatory = dict.entries,
+                dict = dict,
+            })
+        end
+    end
+    local title = T(_("Available dictionaries (%1)"), #item_table)
+    local subtitle = T(_("Language: %1"), self.dl_dict_list.lang)
+    if self.dl_dict_list.filter ~= nil then
+        subtitle = subtitle .. " \u{F0B0}"
+    end
+    self.dl_dict_list:switchItemTable(title, item_table, nil, nil, subtitle)
+end
+
+function ReaderDictionary:filterDownloadDict()
+    UIManager:show(ButtonSelector:new{
+        current_value = self.dl_dict_list.filter,
+        values = {
+            { _("all"), nil },
+            { self.dl_dict_list.lang, true },
+            { _("bilingual"), false },
+        },
+        callback = function(value)
+            self.dl_dict_list.filter = value
+            self:updateDownloadDictItemTable()
+        end,
+    })
+end
+
+function ReaderDictionary:onTapDownloadDict(item)
+    local dict = item.dict
+    local t = {
+        dict.name,
+        "",
+        T(_("Language: %1–%2"), dict.lang_in, dict.lang_out),
+        T(_("Entries: %1"), dict.entries),
+        T(_("License: %1"), dict.license),
+        "",
+    }
+    UIManager:show(ConfirmBox:new{
+        text = table.concat(t, "\n"),
+        ok_text = _("Download"),
+        ok_callback = function()
+            NetworkMgr:runWhenOnline(function()
+                self._manager:downloadDictionary(dict)
+            end)
+        end,
+    })
+end
+
+local function extractDictionary(archive, extract_to)
+    -- Ensure the parent directory exists.
+    local ok, err = util.makePath(ffiUtil.dirname(extract_to))
+    if not ok then
+        return ok, err
+    end
+    -- If there's a previously extracted directory, remove it.
+    if lfs.attributes(extract_to, "mode") then
+        ok, err = ffiUtil.purgeDir(extract_to)
+        if not ok then
+            return ok, err
+        end
+    end
+    -- Create a temporary directory alongside the final directory.
+    local tmpdir_template = extract_to .. ".XXXXXX"
+    local tmpdir = ffi.new("char[?]", #tmpdir_template + 1, tmpdir_template)
+    if C.mkdtemp(tmpdir) == nil then
+        return false, string.format("mkdtemp(%s): %s", ffi.string(tmpdir), posix.strerror())
+    end
+    tmpdir = ffi.string(tmpdir)
+    -- Extract archive.
+    local arc = Archiver.Reader:new()
+    ok = arc:open(archive)
+    if ok then
+        for entry in arc:iterate() do
+            if not arc:extractToPath(entry.path, tmpdir.."/"..entry.path) then
+                break
+            end
+        end
+        ok, err = not arc.err, arc.err
+    end
+    arc:close()
+    os.remove(archive)
+    -- Finalize.
+    if ok then
+        -- Determine root directory, if any.
+        local archive_root
+        for entry in lfs.dir(tmpdir) do
+            if entry ~= ".." and entry ~= "." then
+                if archive_root then
+                    -- Multiple entries: no root.
+                    archive_root = nil
+                    break
+                end
+                archive_root = entry
+            end
+        end
+        if archive_root then
+            -- Rename root to final directory and remove temporary directory.
+            ok, err = os.rename(tmpdir.."/"..archive_root, extract_to)
+            os.remove(tmpdir)
+        else
+            -- No root, just rename the whole temporary directory.
+            ok, err = os.rename(tmpdir, extract_to)
+        end
+    else
+        ffiUtil.purgeDir(tmpdir)
+    end
+    return ok, err
+end
+
+function ReaderDictionary:downloadDictionary(dict)
+    -- Ensure we're running in a coroutine.
+    local co = coroutine.running()
+    if not co then
+        Trapper:wrap(function() self:downloadDictionary(dict) end)
+        return
+    end
+
+    -- UI helper.
+    local dialog
+    local show_info = function(text)
+        if dialog then
+            UIManager:close(dialog)
+            dialog = nil
+        end
+        dialog = InfoMessage:new{ text = text }
+        UIManager:show(dialog)
+        UIManager:forceRePaint()
+    end
+
+    -- Socket helper.
     local socket = require("socket")
     local socketutil = require("socketutil")
-    local http = socket.http
-    local ltn12 = require("ltn12")
-
-    if not continue then
-        local file_size
-        -- Skip body & code args
-        socketutil:set_timeout()
-        local headers = socket.skip(2, http.request{
-            method  = "HEAD",
-            url     = dict.url,
-            --redirect = true,
+    local fetch = function(outfile)
+        if outfile then
+            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+        else
+            socketutil:set_timeout()
+        end
+        local code, headers, status = socket.skip(1, socket.http.request{
+            method = outfile and "GET" or "HEAD",
+            sink   = outfile and socketutil.file_sink(io.open(outfile, "w")),
+            url    = dict.url,
         })
         socketutil:reset_timeout()
-        --logger.dbg(headers)
-        file_size = headers and headers["content-length"]
-
-        if file_size then
-            UIManager:show(ConfirmBox:new{
-                text =  T(_("Dictionary filesize is %1 (%2 bytes). Continue with download?"), util.getFriendlySize(file_size), util.getFormattedSize(file_size)),
-                ok_text =  _("Download"),
-                ok_callback = function()
-                    -- call ourselves with continue = true
-                    self:downloadDictionary(dict, download_location, true)
-                end,
-            })
+        if code ~= 200 then
+            local err = status or code
+            logger.dbg("ReaderDictionary: Request failed:", err)
+            logger.dbg("ReaderDictionary: Response headers:", headers)
+            show_info(T(_("Download failed:\n\n%1"), BD.ltr(err)))
             return
-        else
-            logger.dbg("ReaderDictionary: Request failed; response headers:", headers)
-            UIManager:show(InfoMessage:new{
-                text = _("Failed to fetch dictionary. Are you online?"),
-                --timeout = 3,
-            })
-            return false
         end
-    else
-        UIManager:nextTick(function()
-            UIManager:show(InfoMessage:new{
-                text = _("Downloading…"),
-                timeout = 3,
-            })
-        end)
+        return headers
     end
 
-    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local code, headers, status = socket.skip(1, http.request{
-        url     = dict.url,
-        sink    = ltn12.sink.file(io.open(download_location, "w")),
-    })
-    socketutil:reset_timeout()
-    if code == 200 then
-        logger.dbg("file downloaded to", download_location)
-    else
-        logger.dbg("ReaderDictionary: Request failed:", status or code)
-        logger.dbg("ReaderDictionary: Response headers:", headers)
-        UIManager:show(InfoMessage:new{
-            text = _("Could not save file to:\n") .. BD.filepath(download_location),
-            --timeout = 3,
-        })
-        return false
+    -- Fetch content length.
+    local headers = fetch()
+    if not headers or not headers["content-length"] then
+        return
     end
 
-    -- stable target directory is needed so we can look through the folder later
-    local dict_path = self.data_dir .. "/" .. dict.name
-    util.makePath(dict_path)
-    local ok, error = Device:unpackArchive(download_location, dict_path, true)
-
-    if ok then
-        if dict.ifo_lang then
-            self:extendIfoWithLanguage(dict_path, dict.ifo_lang)
-        end
-        available_ifos = false
-        self:init()
-        UIManager:show(InfoMessage:new{
-            text = _("Dictionary downloaded:\n") .. dict.name,
-        })
-        return true
-    else
-        UIManager:show(InfoMessage:new{
-            text = _("Dictionary failed to download:\n") .. string.format("%s\n%s", dict.name, error),
-        })
-        return false
+    dialog = ConfirmBox:new{
+        text = T(_("Dictionary filesize is %1. Continue with download?"), util.getFriendlySize(headers["content-length"])),
+        ok_text =  _("Download"),
+        ok_callback = function() coroutine.resume(co, true) end,
+        cancel_callback = function() coroutine.resume(co, false) end,
+    }
+    UIManager:show(dialog)
+    if not coroutine.yield() then
+        return
     end
+
+    -- Download archive.
+    show_info(_("Downloading…"))
+    local dict_archive = self.data_dir.."/"..table.remove(socket.url.parse_path(dict.url))
+    if not fetch(dict_archive) then
+        return
+    end
+    logger.dbg("file downloaded to", dict_archive)
+
+    -- Extract archive: a stable target directory is needed so we can look through the folder later.
+    -- Additionally, make sure a safe directory name is used (so for example the "Dictionnaire de
+    -- l'Académie Française: 8ème edition" dictionary can be installed on Kindle).
+    local dict_dir = self.data_dir.."/"..util.getSafeFilename(dict.name, ffiUtil.realpath(self.data_dir))
+    local ok, err = extractDictionary(dict_archive, dict_dir)
+    if not ok then
+        show_info(T(_("Extraction failed:\n\n%1"), BD.ltr(err)))
+        return
+    end
+
+    -- Update available dictionaries.
+    if dict.ifo_lang then
+        self:extendIfoWithLanguage(dict_dir, dict.ifo_lang)
+    end
+    available_ifos = false
+    self:init()
+    show_info(_("Dictionary downloaded"))
 end
 
 function ReaderDictionary:extendIfoWithLanguage(dictionary_location, ifo_lang)
@@ -1248,11 +1896,14 @@ function ReaderDictionary:onReadSettings(config)
     else
         self.disable_fuzzy_search = G_reader_settings:isTrue("disable_fuzzy_search")
     end
+    -- Disabled dictionary list for this book
+    self.doc_disabled_dicts = config:readSetting("disabled_dicts") or {}
 end
 
 function ReaderDictionary:onSaveSettings()
     if self.ui.doc_settings then
-        self.ui.doc_settings:saveSetting("preferred_dictionaries", self.preferred_dictionaries)
+        self.ui.doc_settings:saveSetting("preferred_dictionaries", next(self.preferred_dictionaries) and self.preferred_dictionaries or nil)
+        self.ui.doc_settings:saveSetting("disabled_dicts", next(self.doc_disabled_dicts) and self.doc_disabled_dicts or nil)
     end
 end
 
@@ -1314,6 +1965,66 @@ The current default (★) is enabled.]])
             touchmenu_instance:updateItems()
         end,
     })
+end
+
+function ReaderDictionary:buildPreset()
+    local preset = { enabled_dict_names = {} } -- Only store the names of enabled dictionaries.
+    for _, name in ipairs(self.enabled_dict_names) do
+        preset.enabled_dict_names[name] = true
+    end
+    return preset
+end
+
+function ReaderDictionary:loadPreset(preset, skip_notification)
+    if not preset.enabled_dict_names then return end
+    -- build a list of currently available dictionary names for validation
+    local available_dict_names = {}
+    for _, ifo in ipairs(available_ifos) do
+        available_dict_names[ifo.name] = true
+    end
+    -- Only enable dictionaries from the preset that are still available, and re-build self.dicts_disabled
+    -- to make sure dicts added after the creation of the preset, are disabled as well.
+    local dicts_disabled, valid_enabled_names = {}, {}
+    for _, ifo in ipairs(available_ifos) do
+        if preset.enabled_dict_names[ifo.name] then
+            table.insert(valid_enabled_names, ifo.name)
+        else
+            dicts_disabled[ifo.file] = true
+        end
+    end
+    -- update both settings and save
+    self.dicts_disabled = dicts_disabled
+    self.enabled_dict_names = valid_enabled_names
+    G_reader_settings:saveSetting("dicts_disabled", self.dicts_disabled)
+    self:onSaveSettings()
+    self:updateSdcvDictNamesOptions()
+    -- Show a message if any dictionaries from the preset are missing.
+    if not skip_notification and util.tableSize(preset.enabled_dict_names) > #valid_enabled_names then
+        local missing_dicts = {}
+        for preset_name, _ in pairs(preset.enabled_dict_names) do
+            if not available_dict_names[preset_name] then
+                table.insert(missing_dicts, preset_name)
+            end
+        end
+        UIManager:show(InfoMessage:new{
+            text = _("Some dictionaries from this preset have been deleted or are no longer available:") .. "\n\n• " .. table.concat(missing_dicts, "\n• "),
+        })
+    end
+end
+
+function ReaderDictionary:onCycleDictionaryPresets()
+    return Presets.cycleThroughPresets(self.preset_obj, true)
+end
+
+function ReaderDictionary:onLoadDictionaryPreset(preset_name)
+    return Presets.onLoadPreset(self.preset_obj, preset_name, true)
+end
+
+function ReaderDictionary.getPresets() -- for Dispatcher
+    local dict_config = {
+        presets = G_reader_settings:readSetting("dict_presets", {})
+    }
+    return Presets.getPresets(dict_config)
 end
 
 return ReaderDictionary

@@ -84,4 +84,8 @@ return {
 
     [1073741894] = "PrintScreen",
     [1073741895] = "ScrollLock",
+
+    -- Synthetic Linux pen button codes emitted by ffi/SDL3.lua for SDL3 pen events.
+    [331] = "Stylus",
+    [332] = "Stylus2",
 }

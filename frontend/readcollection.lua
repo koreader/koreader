@@ -1,3 +1,4 @@
+local BookList = require("ui/widget/booklist")
 local DataStorage = require("datastorage")
 local DocumentRegistry = require("document/documentregistry")
 local LuaSettings = require("luasettings")
@@ -11,6 +12,7 @@ local collection_file = DataStorage:getSettingsDir() .. "/collection.lua"
 local ReadCollection = {
     coll = nil, -- hash table
     coll_settings = nil, -- hash table
+    coll_default = nil, -- string or nil
     last_read_time = 0,
     default_collection_name = "favorites",
 }
@@ -56,6 +58,9 @@ function ReadCollection:_read()
         end
         self.coll[coll_name] = coll
         self.coll_settings[coll_name] = collection.settings or { order = 1 } -- favorites, first run
+        if self.coll_settings[coll_name].default then
+            self.coll_default = coll_name
+        end
         if self:updateCollectionFromFolder(coll_name) > 0 then
             updated_collections[coll_name] = true
         end
@@ -102,7 +107,7 @@ end
 
 function ReadCollection:isFileInCollection(file, collection_name)
     file = ffiUtil.realpath(file) or file
-    return self.coll[collection_name][file] and true or false
+    return self.coll[collection_name] and self.coll[collection_name][file] and true or false
 end
 
 function ReadCollection:isFileInCollections(file, ignore_show_mark_setting)
@@ -148,10 +153,12 @@ end
 
 function ReadCollection:addRemoveItemMultiple(file, collections_to_add)
     file = ffiUtil.realpath(file) or file
+    local attr
     for coll_name, coll in pairs(self.coll) do
         if collections_to_add[coll_name] then
             if not coll[file] then
-                coll[file] = buildEntry(file, self:getCollectionNextOrder(coll_name))
+                attr = attr or lfs.attributes(file)
+                coll[file] = buildEntry(file, self:getCollectionNextOrder(coll_name), attr)
             end
         else
             if coll[file] then
@@ -165,10 +172,12 @@ function ReadCollection:addItemsMultiple(files, collections_to_add)
     local count = 0
     for file in pairs(files) do
         file = ffiUtil.realpath(file) or file
+        local attr
         for coll_name in pairs(collections_to_add) do
             local coll = self.coll[coll_name]
             if not coll[file] then
-                coll[file] = buildEntry(file, self:getCollectionNextOrder(coll_name))
+                attr = attr or lfs.attributes(file)
+                coll[file] = buildEntry(file, self:getCollectionNextOrder(coll_name), attr)
                 count = count + 1
             end
         end
@@ -182,7 +191,7 @@ function ReadCollection:removeItem(file, collection_name, no_write) -- FM: delet
         if self.coll[collection_name][file] then
             self.coll[collection_name][file] = nil
             if not no_write then
-                self:write({ collection_name = true })
+                self:write({ [collection_name] = true })
             end
             return true
         end
@@ -237,6 +246,7 @@ function ReadCollection:_updateItem(coll_name, file_name, new_filepath, new_path
     local item = buildEntry(new_filepath, item_old.order, item_old.attr) -- no lfs call
     coll[item.file] = item
     coll[file_name] = nil
+    return item.file
 end
 
 function ReadCollection:updateItem(file, new_filepath) -- FM: rename file, move file
@@ -273,9 +283,11 @@ function ReadCollection:updateItemsByPath(path, new_path) -- FM: rename folder, 
     local len = #path
     local do_write
     for coll_name, coll in pairs(self.coll) do
+        local seen = {}
         for file_name in pairs(coll) do
-            if file_name:sub(1, len) == path then
-                self:_updateItem(coll_name, file_name, new_path .. file_name:sub(len + 1))
+            if not seen[file_name] and file_name:sub(1, len) == path then
+                local new_file_name = self:_updateItem(coll_name, file_name, new_path .. file_name:sub(len + 1))
+                seen[new_file_name] = true
                 do_write = true
             end
         end
@@ -285,19 +297,45 @@ function ReadCollection:updateItemsByPath(path, new_path) -- FM: rename folder, 
     end
 end
 
-function ReadCollection:updateCollectionFromFolder(collection_name)
+function ReadCollection:updateCollectionFromFolder(collection_name, folders, is_showing)
+    folders = folders or self.coll_settings[collection_name].folders
     local count = 0
-    if self.coll_settings[collection_name].folders then
+    if folders then
         local coll = self.coll[collection_name]
-        local function add_item_callback(file, filename, attr)
-            file = ffiUtil.realpath(file)
-            if coll[file] == nil and DocumentRegistry:hasProvider(file) then
-                self:addItem(file, collection_name, attr)
-                count = count + 1
+        local filetypes
+        local filter = util.tableGetValue(self.coll_settings[collection_name], "filter", "add")
+        local str = filter and filter.filetype
+        if str then -- string of comma separated file types
+            filetypes = {}
+            for filetype in util.gsplit(str, ",") do
+                filetypes[util.trim(filetype)] = true
             end
         end
-        for folder, folder_settings in pairs(self.coll_settings[collection_name].folders) do
-            util.findFiles(folder, add_item_callback, folder_settings.subfolders)
+        local function add_item_callback(file, f, attr)
+            file = ffiUtil.realpath(file)
+            local does_match = coll[file] == nil and not util.stringStartsWith(f, "._")
+                and (filetypes or DocumentRegistry:hasProvider(f))
+            if does_match then
+                if filetypes then
+                    local _, fileext = require("apps/filemanager/filemanagerutil").splitFileNameType(f)
+                    does_match = filetypes[fileext]
+                end
+                if does_match then
+                    if filter and filter.status then
+                        does_match = filter.status[BookList.getBookStatus(file)]
+                    end
+                    if does_match then
+                        self:addItem(file, collection_name, attr)
+                        count = count + 1
+                    end
+                end
+            end
+        end
+        for folder, folder_settings in pairs(folders) do
+            if not is_showing or folder_settings.scan_on_show then
+                logger.dbg("ReadCollection: scanning folder", folder)
+                util.findFiles(folder, add_item_callback, folder_settings.subfolders)
+            end
         end
     end
     return count
@@ -337,11 +375,17 @@ function ReadCollection:renameCollection(coll_name, new_name)
     self.coll[new_name] = self.coll[coll_name]
     self.coll_settings[coll_name] = nil
     self.coll[coll_name] = nil
+    if self.coll_default == coll_name then
+        self.coll_default = new_name
+    end
 end
 
 function ReadCollection:removeCollection(coll_name)
     self.coll_settings[coll_name] = nil
     self.coll[coll_name] = nil
+    if self.coll_default == coll_name then
+        self.coll_default = nil
+    end
 end
 
 function ReadCollection:updateCollectionListOrder(ordered_coll)

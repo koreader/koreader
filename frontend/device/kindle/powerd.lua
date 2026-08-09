@@ -24,6 +24,33 @@ function KindlePowerD:init()
         self.fl_max = self.fl_max + 1
     end
 
+    if self.device:hasAuxBattery() then
+        self.getAuxCapacityHW = function(this)
+            return this:unchecked_read_int_file(self.aux_batt_capacity_file)
+        end
+
+        self.isAuxBatteryConnectedHW = function(this)
+            local status = this:read_str_file(self.aux_batt_status_file)
+            if status == nil then
+                -- File could not be read, assume not connected
+                return false
+            end
+            -- File was read, assume aux battery is connected
+            return true
+        end
+
+        self.isAuxChargingHW = function(this)
+            -- "Discharging" when discharging
+            -- "Full" when full
+            -- "Charging" when charging via DCP
+            return this:read_str_file(this.aux_batt_status_file) ~= "Discharging"
+        end
+
+        self.isAuxChargedHW = function(this)
+            return this:read_str_file(this.aux_batt_status_file) == "Full"
+        end
+    end
+
     self:initWakeupMgr()
 end
 
@@ -54,9 +81,11 @@ function KindlePowerD:frontlightIntensityHW()
     if self.lipc_handle ~= nil then
         -- Handle the step 0 switcheroo on ! canTurnFrontlightOff devices...
         if self.device:canTurnFrontlightOff() then
-            return self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
+            -- Fall back to fl_min if the HW read fails (e.g. failed frontlight component)
+            return self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity") or self.fl_min
         else
-            local lipc_fl_intensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
+            -- Fall back to fl_min if the HW read fails (e.g. failed frontlight component)
+            local lipc_fl_intensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity") or self.fl_min
             -- NOTE: If lipc returns 0, compare against what the kernel says,
             --       to avoid breaking on/off detection on devices where lipc 0 doesn't actually turn it off (<= PW3),
             --       c.f., #5986
@@ -113,12 +142,16 @@ function KindlePowerD:setIntensityHW(intensity)
         -- NOTE: when intensity is 0, we want to *really* kill the light, so do it manually
         -- (asking lipc to set it to 0 would in fact set it to > 0 on ! canTurnFrontlightOff Kindles).
         -- We do *both* to make the fl restore on resume less jarring on devices where lipc 0 != off.
-        ffiUtil.writeToSysfs(intensity, self.fl_intensity_file)
+        for _, fl_intensity_file in ipairs(self.fl_intensity_files) do
+            ffiUtil.writeToSysfs(intensity, fl_intensity_file)
+        end
 
         -- And in case there are two LED groups...
         -- This should never happen as all warmth devices so far canTurnFrontlightOff
-        if self.warmth_intensity_file then
-            ffiUtil.writeToSysfs(intensity, self.warmth_intensity_file)
+        if self.warmth_intensity_files then
+            for _, warmth_intensity_file in ipairs(self.warmth_intensity_files ) do
+                ffiUtil.writeToSysfs(intensity, warmth_intensity_file)
+            end
         end
     end
 
@@ -203,7 +236,7 @@ function KindlePowerD:onToggleHallSensor(toggle)
 end
 
 function KindlePowerD:_readFLIntensity()
-    return self:read_int_file(self.fl_intensity_file)
+    return self:read_int_file(self.fl_intensity_files[1])
 end
 
 function KindlePowerD:toggleSuspend()

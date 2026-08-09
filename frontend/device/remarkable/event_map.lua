@@ -1,7 +1,9 @@
 return {
+    [20001] = "SleepCover",
     [102] = "Home",
     [105] = "LPgBack",
     [106] = "RPgFwd",
     [116] = "Power",
+    [143] = "Resume",
 }
--- TODO libremarkable has 143 as "wakeup" - don't know what that corresponds to?
+-- 116 is issued when the device gets to sleep, 143 when it wakes up.

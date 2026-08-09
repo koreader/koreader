@@ -5,7 +5,6 @@ local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local PluginLoader = require("pluginloader")
-local Screensaver = require("ui/screensaver")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local dbg = require("dbg")
@@ -21,50 +20,13 @@ local ReaderMenu = InputContainer:extend{
 }
 
 function ReaderMenu:init()
-    self.menu_items = {
-        ["KOMenu:menu_buttons"] = {
-            -- top menu
-        },
-        -- items in top menu
-        navi = {
-            icon = "appbar.navigation",
-        },
-        typeset = {
-            icon = "appbar.typeset",
-        },
-        setting = {
-            icon = "appbar.settings",
-        },
-        tools = {
-            icon = "appbar.tools",
-        },
-        search = {
-            icon = "appbar.search",
-        },
-        filemanager = {
-            icon = "appbar.filebrowser",
-            remember = false,
-            callback = function()
-                self:onTapCloseMenu()
-                local file = self.ui.document.file
-                self.ui:onClose()
-                self.ui:showFileManager(file)
-            end,
-        },
-        main = {
-            icon = "appbar.menu",
-        }
-    }
+    self.menu_items = self:getDefaultMenuButtons()
 
     self.registered_widgets = {}
 
     self:registerKeyEvents()
 
-    if G_reader_settings:has("activate_menu") then
-        self.activation_menu = G_reader_settings:readSetting("activate_menu")
-    else
-        self.activation_menu = "swipe_tap"
-    end
+    self.activation_menu = G_reader_settings:readSetting("activate_menu") or "swipe_tap"
 
     -- delegate gesture listener to readerui, NOP our own
     self.ges_events = nil
@@ -89,7 +51,40 @@ function ReaderMenu:registerKeyEvents()
     end
 end
 
-ReaderMenu.onPhysicalKeyboardConnected = ReaderMenu.registerKeyEvents
+function ReaderMenu:getDefaultMenuButtons()
+    return {
+        ["KOMenu:menu_buttons"] = {
+            -- top menu
+        },
+        -- items in top menu
+        navi = { icon = "appbar.navigation" },
+        typeset = { icon = "appbar.typeset" },
+        setting = { icon = "appbar.settings" },
+        tools = { icon = "appbar.tools" },
+        search = { icon = "appbar.search" },
+        filemanager = {
+            icon = "appbar.filebrowser",
+            remember = false,
+            callback = function()
+                self:onTapCloseMenu()
+                local file = self.ui.document.file
+                self.ui:onClose()
+                self.ui:showFileManager(file)
+            end,
+        },
+        main = { icon = "appbar.menu" },
+    }
+end
+
+function ReaderMenu:onPhysicalKeyboardConnected()
+    self.key_events = {}
+    self:registerKeyEvents()
+    if self.menu_container then
+        self:onCloseReaderMenu()
+    end
+    self.tab_item_table = nil
+end
+ReaderMenu.onPhysicalKeyboardDisconnected = ReaderMenu.onPhysicalKeyboardConnected
 
 function ReaderMenu:getPreviousFile()
     return require("readhistory"):getPreviousFile(self.ui.document.file)
@@ -182,13 +177,9 @@ end
 ReaderMenu.onReaderReady = ReaderMenu.initGesListener
 
 function ReaderMenu:setUpdateItemTable()
-    for _, widget in pairs(self.registered_widgets) do
-        local ok, err = pcall(widget.addToMainMenu, widget, self.menu_items)
-        if not ok then
-            logger.err("failed to register widget", widget.name, err)
-        end
+    for k, v in pairs(self:getDefaultMenuButtons()) do
+        self.menu_items[k] = v
     end
-
     -- typeset tab
     self.menu_items.document_settings = {
         text = _("Document settings"),
@@ -213,6 +204,7 @@ function ReaderMenu:setUpdateItemTable()
             {
                 text = _("Save document settings as default"),
                 keep_menu_open = true,
+                separator = true,
                 callback = function()
                     UIManager:show(ConfirmBox:new{
                         text = _("Save current document settings as default values?"),
@@ -229,6 +221,51 @@ function ReaderMenu:setUpdateItemTable()
             },
         },
     }
+
+    if not Device:isTouchDevice() then
+        -- This menu entry is a duplicate of the one found in page_turns for touch devices
+        -- but we need to add it here for non-touch devices.
+        table.insert(self.menu_items.document_settings.sub_item_table, {
+            text_func = function()
+                local text = _("Invert document-related dialogs")
+                if G_reader_settings:isTrue("invert_ui_layout") then
+                    text = text .. "   ★"
+                end
+                return text
+            end,
+            checked_func = function()
+                return self.view:shouldInvertBiDiLayoutMirroring()
+            end,
+            callback = function()
+                UIManager:broadcastEvent(Event:new("ToggleUILayoutMiroring"))
+            end,
+            hold_callback = function(touchmenu_instance)
+                local invert_ui_layout = G_reader_settings:isTrue("invert_ui_layout")
+                local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+                UIManager:show(MultiConfirmBox:new{
+                    text = invert_ui_layout and _("The default (★) for newly opened books is to Invert document-related dialogs.\n\nWould you like to change it?")
+                    or _("The default (★) for newly opened books is not to Invert document-related dialogs.\n\nWould you like to change it?"),
+                    choice1_text_func = function()
+                        return invert_ui_layout and _("Don't invert") or _("Don't invert") .." (★)"
+                    end,
+                    choice1_callback = function()
+                        G_reader_settings:makeFalse("invert_ui_layout")
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                    choice2_text_func = function()
+                        return invert_ui_layout and _("Invert") .." (★)" or _("Invert")
+                    end,
+                    choice2_callback = function()
+                        G_reader_settings:makeTrue("invert_ui_layout")
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                })
+            end,
+            help_text = _([[
+When enabled the UI direction for the Table of Contents, Book Map, and Page Browser dialogs will mirror the default UI direction.
+Useful when used alongside 'Invert page turn taps and swipes'.]]),
+        })
+    end
 
     self.menu_items.page_overlap = dofile("frontend/ui/elements/page_overlap.lua")
 
@@ -253,33 +290,9 @@ function ReaderMenu:setUpdateItemTable()
     end
 
     if Device:supportsScreensaver() then
-        local ss_book_settings = {
-            text = _("Do not show this book cover on sleep screen"),
-            enabled_func = function()
-                if self.ui and self.ui.document then
-                    local screensaverType = G_reader_settings:readSetting("screensaver_type")
-                    return screensaverType == "cover" or screensaverType == "disable"
-                else
-                    return false
-                end
-            end,
-            checked_func = function()
-                return self.ui and self.ui.doc_settings and self.ui.doc_settings:isTrue("exclude_screensaver")
-            end,
-            callback = function()
-                if Screensaver:isExcluded() then
-                    self.ui.doc_settings:makeFalse("exclude_screensaver")
-                else
-                    self.ui.doc_settings:makeTrue("exclude_screensaver")
-                end
-                self.ui:saveSettings()
-            end,
-        }
-        local screensaver_sub_item_table = dofile("frontend/ui/elements/screensaver_menu.lua")
-        table.insert(screensaver_sub_item_table, ss_book_settings)
         self.menu_items.screensaver = {
             text = _("Sleep screen"),
-            sub_item_table = screensaver_sub_item_table,
+            sub_item_table = dofile("frontend/ui/elements/screensaver_menu.lua"),
         }
     end
 
@@ -327,6 +340,13 @@ function ReaderMenu:setUpdateItemTable()
         end
     }
 
+    for _, widget in ipairs(self.registered_widgets) do
+        local ok, err = pcall(widget.addToMainMenu, widget, self.menu_items)
+        if not ok then
+            logger.err("failed to register widget", widget.name, err)
+        end
+    end
+
     -- NOTE: This is cached via require for ui/plugin/insert_menu's sake...
     local order = require("ui/elements/reader_menu_order")
 
@@ -336,7 +356,7 @@ end
 dbg:guard(ReaderMenu, 'setUpdateItemTable',
     function(self)
         local mock_menu_items = {}
-        for _, widget in pairs(self.registered_widgets) do
+        for _, widget in ipairs(self.registered_widgets) do
             -- make sure addToMainMenu works in debug mode
             widget:addToMainMenu(mock_menu_items)
         end
@@ -347,7 +367,10 @@ function ReaderMenu:saveDocumentSettingsAsDefault()
     if self.ui.rolling then
         G_reader_settings:saveSetting("cre_font", self.ui.font.font_face)
         G_reader_settings:saveSetting("copt_css", self.ui.document.default_css)
-        G_reader_settings:saveSetting("style_tweaks", self.ui.styletweak.global_tweaks)
+        local style_tweaks = G_reader_settings:readSetting("style_tweaks")
+        for tweak_id, is_enabled in pairs(self.ui.styletweak.doc_tweaks) do
+            style_tweaks[tweak_id] = is_enabled or nil
+        end
         prefix = "copt_"
     else
         prefix = "kopt_"
@@ -358,18 +381,6 @@ function ReaderMenu:saveDocumentSettingsAsDefault()
 end
 
 function ReaderMenu:exitOrRestart(callback, force)
-    -- Only restart sets a callback, which suits us just fine for this check ;)
-    if callback and not force and not Device:isStartupScriptUpToDate() then
-        UIManager:show(ConfirmBox:new{
-            text = _("KOReader's startup script has been updated. You'll need to completely exit KOReader to finalize the update."),
-            ok_text = _("Restart anyway"),
-            ok_callback = function()
-                self:exitOrRestart(callback, true)
-            end,
-        })
-        return
-    end
-
     self:onTapCloseMenu()
     UIManager:nextTick(function()
         self.ui:onClose()
@@ -380,6 +391,7 @@ function ReaderMenu:exitOrRestart(callback, force)
 end
 
 function ReaderMenu:onShowMenu(tab_index, do_not_show)
+    self.ui.keyselection:stopHighlightIndicator(true) -- stop any text selection in progress, if applicable
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
     end
@@ -518,6 +530,11 @@ function ReaderMenu:onMenuSearch()
 end
 
 function ReaderMenu:registerToMainMenu(widget)
+    for _, w in ipairs(self.registered_widgets) do
+        if w == widget then
+            return
+        end
+    end
     table.insert(self.registered_widgets, widget)
 end
 

@@ -112,6 +112,7 @@ function CoverBrowser:addToMainMenu(menu_items)
             checked_func = function()
                 return mode == curr_display_modes["filemanager"]
             end,
+            radio = true,
             callback = function()
                 self:setDisplayMode(mode)
             end,
@@ -121,6 +122,7 @@ function CoverBrowser:addToMainMenu(menu_items)
             checked_func = function()
                 return mode == curr_display_modes["history"]
             end,
+            radio = true,
             callback = function()
                 CoverBrowser.setupWidgetDisplayMode("history", mode)
             end,
@@ -130,6 +132,7 @@ function CoverBrowser:addToMainMenu(menu_items)
             checked_func = function()
                 return mode == curr_display_modes["collections"]
             end,
+            radio = true,
             callback = function()
                 CoverBrowser.setupWidgetDisplayMode("collections", mode)
             end,
@@ -345,6 +348,15 @@ function CoverBrowser:addToMainMenu(menu_items)
                 callback = function()
                     BookInfoManager:toggleSetting("hide_file_info")
                     fc:updateItems(1, true)
+                end,
+            },
+            {
+                text = _("Flash when displaying covers"),
+                checked_func = function()
+                    return BookInfoManager:getSetting("flash_ui_cover_images")
+                end,
+                callback = function()
+                    BookInfoManager:toggleSetting("flash_ui_cover_images")
                 end,
                 separator = true,
             },
@@ -610,7 +622,7 @@ function CoverBrowser:refreshFileManagerInstance()
     local fc = self.ui.file_chooser
     if fc then
         fc:_recalculateDimen()
-        fc:changeToPath(fc.path, fc.prev_focused_path)
+        fc:switchItemTable(nil, nil, fc.prev_itemnumber, { dummy = "" }) -- dummy itemmatch to draw focus
     end
 end
 

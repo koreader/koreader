@@ -8,6 +8,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local Math = require("optmath")
 local ffi = require("ffi")
 local logger = require("logger")
+local Device = require("device")
 
 -- Backends are lazy-loaded
 local Mupdf = nil
@@ -52,30 +53,27 @@ function RenderImage:renderImageData(data, size, want_frames, width, height)
     -- animated GIF or WebP images, which MuPDF don't handle.
     local buffer = ffi.cast("unsigned char*", data)
     local header = ffi.string(buffer, math.min(4, size))
+    local image
     if header == "GIF8" then
         logger.dbg("GIF file provided, renderImageData: using GifLib")
-        local image = self:renderGifImageDataWithGifLib(data, size, want_frames, width, height)
-        if image then
-            return image
-        end
+        image = self:renderGifImageDataWithGifLib(data, size, want_frames, width, height)
         -- fallback to rendering with MuPDF
     elseif header == "RIFF" then
         -- (The header should be "RIFFxxxxWEBPVP8", but we let libwebp check for what's after "RIFF".)
         logger.dbg("possible WebP file provided, renderImageData: using libwebp")
-        local image = self:renderWebpImageDataWithLibwebp(data, size, want_frames, width, height)
-        if image then
-            return image
-        end
-        -- fallback to rendering with MuPDF
+        image = self:renderWebpImageDataWithLibwebp(data, size, want_frames, width, height)
     elseif header == "<svg" or header == "<?xm" then
         logger.dbg("possible SVG file provided, renderImageData: using crengine")
-        local image = self:renderSVGImageDataWithCRengine(data, size, width, height)
-        if image then
-            return image
-        end
+        image = self:renderSVGImageDataWithCRengine(data, size, width, height)
+    elseif buffer[0] == 0xff and buffer[1] == 0xd8 then
+        image = self:renderJpegImageDataWithTurboJpeg(data, size, width, height)
     end
-    logger.dbg("renderImageData: using MuPDF")
-    return self:renderImageDataWithMupdf(data, size, width, height)
+    if not image then
+        -- fallback to rendering with MuPDF
+        logger.dbg("renderImageData: using MuPDF")
+        image = self:renderImageDataWithMupdf(data, size, width, height)
+    end
+    return image
 end
 
 --- Renders image data as a BlitBuffer with MuPDF
@@ -114,6 +112,26 @@ function RenderImage:renderSVGImageDataWithCRengine(data, size, width, height)
     return image
 end
 
+function RenderImage:renderJpegImageDataWithTurboJpeg(data, size, width, height)
+    if not data or not size or size == 0 then
+        return
+    end
+    if not Pic then Pic = require("ffi/pic") end
+    Pic.color = Device:hasColorScreen()
+    local ok, jpeg = pcall(Pic.openJPGDocumentFromData, data, size)
+    if not ok then
+        logger.warn("failed rendering image (TurboJPEG):", jpeg)
+        return
+    end
+    local bb = self:scaleBlitBuffer(jpeg.image_bb, width, height)
+    if not bb then
+        logger.warn("failed rendering image (TurboJPEG):", jpeg)
+    end
+    if bb ~= jpeg.image_bb then
+        jpeg:close()
+    end
+    return bb
+end
 
 --- Renders image data as a BlitBuffer with GifLib
 --

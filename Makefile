@@ -1,4 +1,4 @@
-PHONY = all android-ndk android-sdk base clean distclean doc fetchthirdparty po pot re static-check
+PHONY = all android-ndk android-sdk base clean distclean doc fetchthirdparty re static-check update update-%
 SOUND = $(INSTALL_DIR)/%
 
 # koreader-base directory
@@ -9,21 +9,11 @@ include $(KOR_BASE)/Makefile.defs
 RELEASE_DATE := $(shell git show -s --format=format:"%cd" --date=short HEAD)
 # We want VERSION to carry the version of the KOReader main repo, not that of koreader-base
 VERSION := $(shell git describe HEAD)
+RELEASE_EPOCH := $(shell git log -1 --format='%cs' $(word 1,$(subst -, ,$(VERSION))))
 # Only append date if we're not on a whole version, like v2018.11
 ifneq (,$(findstring -,$(VERSION)))
 	VERSION := $(VERSION)_$(RELEASE_DATE)
 endif
-
-LINUX_ARCH?=native
-ifeq ($(LINUX_ARCH), native)
-	LINUX_ARCH_NAME:=$(shell uname -m)
-else ifeq ($(LINUX_ARCH), arm64)
-	LINUX_ARCH_NAME:=aarch64
-else ifeq ($(LINUX_ARCH), arm)
-	LINUX_ARCH_NAME:=armv7l
-endif
-LINUX_ARCH_NAME?=$(LINUX_ARCH)
-
 
 MACHINE=$(TARGET_MACHINE)
 ifdef KODEBUG
@@ -60,7 +50,6 @@ CR3GUI_DATADIR_FILES = $(filter-out $(CR3GUI_DATADIR_EXCLUDES),$(wildcard $(CR3G
 define DATADIR_FILES
 $(CR3GUI_DATADIR_FILES)
 $(OUTPUT_DIR_DATAFILES)
-$(THIRDPARTY_DIR)/kpvcrlib/cr3.css
 endef
 
 # files to link from main directory
@@ -81,6 +70,7 @@ ev_replay.py
 help
 history
 l10n/templates
+l10n/*/*.po
 ota
 resources/fonts*
 resources/icons/src*
@@ -104,6 +94,7 @@ endef
 define UPDATE_PATH_EXCLUDES +=
 dummy-test-file*
 file.sdr*
+i18n-test
 readerbookmark.*
 readerhighlight.*
 testdata
@@ -128,15 +119,16 @@ release_excludes = $(strip $(UPDATE_PATH_EXCLUDES:%='-x!$1%') $(UPDATE_GLOBAL_EX
 define mkupdate
 cd $(INSTALL_DIR) &&
 '$(abspath tools/mkrelease.sh)'
+--epoch=$(RELEASE_EPOCH)
 $(if $(PARALLEL_JOBS),--jobs $(PARALLEL_JOBS))
 --manifest=$(or $2,koreader)/ota/package.index
 $(foreach a,$1,'$(if $(filter --%,$a),$a,$(abspath $a))') $(or $2,koreader)
 $(call release_excludes,$(or $2,koreader)/)
 endef
 
-all: base
+all: base mo
 	install -d $(INSTALL_DIR)/koreader
-	rm -f $(INSTALL_DIR)/koreader/git-rev; echo "$(VERSION)" > $(INSTALL_DIR)/koreader/git-rev
+	rm -f $(INSTALL_DIR)/koreader/git-rev; echo "$(VERSION)_$(DIST)" > $(INSTALL_DIR)/koreader/git-rev
 ifdef ANDROID
 	rm -f android-fdroid-version; echo -e "$(ANDROID_NAME)\n$(ANDROID_VERSION)" > koreader-android-fdroid-latest
 endif
@@ -146,6 +138,8 @@ ifneq (,$(EMULATE_READER))
 	@echo "[*] Install front spec only for the emulator"
 	$(SYMLINK) spec $(INSTALL_DIR)/koreader/spec/front
 	$(SYMLINK) test $(INSTALL_DIR)/koreader/spec/front/unit/data
+	@echo "[*] Install launcher for the emulator"
+	cp $(COMMON_DIR)/koreader.sh $(INSTALL_DIR)/koreader/
 endif
 	$(SYMLINK) $(INSTALL_FILES) $(INSTALL_DIR)/koreader/
 ifdef ANDROID
@@ -160,7 +154,7 @@ endif
 	@echo "[*] Install plugins"
 	$(SYMLINK) plugins $(INSTALL_DIR)/koreader/
 	@echo "[*] Install resources"
-	$(SYMLINK) resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
+	$(SYMLINK) resources/fonts $(INSTALL_DIR)/koreader/fonts
 	install -d $(INSTALL_DIR)/koreader/{screenshots,fonts/host,ota}
 	# Note: the data dir is distinct from the one in base/build/…!
 	@echo "[*] Install data files"
@@ -190,7 +184,7 @@ else
 	git submodule update --jobs 3 --init --recursive
 endif
 
-clean: base-clean
+clean: base-clean mo-clean
 	rm -rf $(INSTALL_DIR)
 
 distclean: clean base-distclean
@@ -209,30 +203,13 @@ ifneq (,$(wildcard make/$(TARGET).mk))
   include make/$(TARGET).mk
 endif
 
+include make/gettext.mk
+
 android-ndk:
 	$(MAKE) -C $(KOR_BASE)/toolchain $(ANDROID_NDK_HOME)
 
 android-sdk:
 	$(MAKE) -C $(KOR_BASE)/toolchain $(ANDROID_HOME)
-
-# for gettext
-DOMAIN=koreader
-TEMPLATE_DIR=l10n/templates
-XGETTEXT_BIN=xgettext
-
-pot: po
-	mkdir -p $(TEMPLATE_DIR)
-	$(XGETTEXT_BIN) --from-code=utf-8 \
-		--keyword=C_:1c,2 --keyword=N_:1,2 --keyword=NC_:1c,2,3 \
-		--add-comments=@translators \
-		reader.lua `find frontend -iname "*.lua" | sort` \
-		`find plugins -iname "*.lua" | sort` \
-		`find tools -iname "*.lua" | sort` \
-		-o $(TEMPLATE_DIR)/$(DOMAIN).pot
-
-po:
-	git submodule update --remote l10n
-
 
 static-check:
 	@if which luacheck > /dev/null; then \

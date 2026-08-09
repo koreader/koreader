@@ -116,6 +116,9 @@ function NetworkItem:init()
     if not self.info.ssid then
         self.info.ssid = "[hidden]"
     end
+    if not self.info.flags then
+        self.info.flags = ""
+    end
     self.display_ssid = util.fixUtf8(self.info.ssid, "�")
 
     local wifi_icon

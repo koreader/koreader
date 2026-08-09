@@ -131,6 +131,7 @@ function AutoTurn:addToMainMenu(menu_items)
             return self:_enabled() and T(_("Autoturn: %1"), time_string) or _("Autoturn")
         end,
         checked_func = function() return self:_enabled() end,
+        check_callback_updates_menu = true,
         callback = function(menu)
             local DateTimeWidget = require("ui/widget/datetimewidget")
             local autoturn_seconds = G_reader_settings:readSetting("autoturn_timeout_seconds", 30)

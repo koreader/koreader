@@ -38,7 +38,18 @@ if [ "${untagged_todo}" ]; then
     exit_code=1
 fi
 
+echo -e "\n${ANSI_GREEN}Checking for gettext warnings${ANSI_RESET}"
+gettext_output=$(make -o po pot 2>&1)
+gettext_exit_code=$?
+printf '%s\n' "${gettext_output}"
+if [ ${gettext_exit_code} -ne 0 ]; then
+    exit_code=1
+elif grep -q '^xgettext: warning:' <<<"${gettext_output}"; then
+    echo -e "\n${ANSI_RED}Warning: xgettext reported warnings.${ANSI_RESET}"
+    exit_code=1
+fi
+
 echo -e "\n${ANSI_GREEN}Luacheck results${ANSI_RESET}"
-luacheck -q {reader,setupkoenv,datastorage}.lua frontend plugins spec || exit_code=1
+luacheck ${PARALLEL_JOBS:+-j "${PARALLEL_JOBS}"} -q {reader,setupkoenv,datastorage}.lua frontend plugins spec platform/remarkable/qtfb_keep_alive.lua || exit_code=1
 
 exit ${exit_code}

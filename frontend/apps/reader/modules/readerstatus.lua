@@ -1,3 +1,4 @@
+local BookList = require("ui/widget/booklist")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
@@ -148,7 +149,7 @@ function ReaderStatus:onEndOfBook()
     elseif settings == "mark_read" then
         self:markBook(true)
         UIManager:show(InfoMessage:new{
-            text = _("You've reached the end of the document.\nThe current book is marked as finished."),
+            text = _("You've reached the end of the document.\nThe current book has been marked as finished."),
             timeout = 3
         })
     elseif settings == "book_status_file_browser" then
@@ -178,10 +179,11 @@ function ReaderStatus:onOpenNextOrPreviousFileInFolder(prev)
     local fc = FileChooser:new{ ui = self.ui }
     local file = fc:getNextOrPreviousFileInFolder(self.document.file, prev)
     if file then
+        local filemanagerutil = require("apps/filemanager/filemanagerutil")
         -- Delay until the next tick, as this will destroy the Document instance,
         -- but we may not be the final Event caught by said Document...
         UIManager:nextTick(function()
-            self.ui:switchDocument(file)
+            filemanagerutil.openFile(self.ui, file)
         end)
     else
         UIManager:show(InfoMessage:new{
@@ -211,8 +213,7 @@ function ReaderStatus:markBook(mark_read)
     local summary = self.ui.doc_settings:readSetting("summary")
     summary.status = (not mark_read and summary.status == "complete") and "reading" or "complete"
     summary.modified = os.date("%Y-%m-%d", os.time())
-    -- If History is called over Reader, it will read the file to get the book status, so flush
-    self.ui.doc_settings:flush()
+    BookList.setBookInfoCacheProperty(self.document.file, "status", summary.status)
 end
 
 return ReaderStatus

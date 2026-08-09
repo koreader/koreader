@@ -95,6 +95,10 @@ function ImageViewer:init()
                 Close = { { Device.input.group.Back } },
                 ZoomIn = { { Device.input.group.PgBack } },
                 ZoomOut = { { Device.input.group.PgFwd } },
+                PanUp = { { "Up" }, event = "CursorPan", args="up" },
+                PanDown = { { "Down" }, event = "CursorPan", args="down" },
+                PanLeft = { { "Left" }, event = "CursorPan", args="left" },
+                PanRight = { { "Right" }, event = "CursorPan", args="right" },
             }
         end
     end
@@ -466,6 +470,9 @@ function ImageViewer:onShow()
 end
 
 function ImageViewer:switchToImageNum(image_num)
+    if image_num == self._images_list_cur then
+        return
+    end
     if self.image and self.image_disposable and self.image.free then
         logger.dbg("ImageViewer:switchToImageNum: free self.image", self.image)
         self.image:free()
@@ -548,6 +555,22 @@ function ImageViewer:panBy(x, y)
         -- so we'll be centered the same way when we zoom in or out
         self._center_x_ratio, self._center_y_ratio = self._image_wg:panBy(x, y)
     end
+end
+
+function ImageViewer:onCursorPan(direction)
+    local step_h = Screen:getWidth() / 10
+    local step_v = Screen:getHeight() / 10
+
+    if direction == "up" then
+        self:panBy(0, -step_v)
+    elseif direction == "down" then
+        self:panBy(0, step_v)
+    elseif direction == "left" then
+        self:panBy(-step_h, 0)
+    elseif direction == "right" then
+        self:panBy(step_h, 0)
+    end
+    return true
 end
 
 -- Panning events

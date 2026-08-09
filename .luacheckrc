@@ -26,7 +26,6 @@ exclude_files = {
 -- don't balk on busted stuff in spec
 files["spec/unit/*"].std = "+busted"
 files["spec/unit/*"].globals = {
-    "match", -- can be removed once luacheck 0.24.0 or higher is used
     "package",
     "disable_plugins",
     "load_plugin",
@@ -36,11 +35,9 @@ files["spec/unit/*"].globals = {
 
 -- TODO: clean up and enforce max line width (631)
 -- https://luacheck.readthedocs.io/en/stable/warnings.html
--- 211 - Unused local variable
--- 631 - Line is too long
 ignore = {
-    "211/__*",
-    "231/__",
-    "631",
+    "211/__*", -- Unused local variable
+    "231/__",  -- Local variable is set but never accessed
+    "631",     -- Line is too long
     "dummy",
 }

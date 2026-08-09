@@ -30,8 +30,12 @@
                 "device",
                 "device_id",
             ],
+            "optional_params" : [
+                "metadata",
+            ],
             "payload" : [
                 "document",
+                "metadata",
                 "progress",
                 "percentage",
                 "device",

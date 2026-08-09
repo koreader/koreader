@@ -1,8 +1,23 @@
 #!/bin/sh
+
+# Work around PocketBook firmware 6.11.1480 rejecting executable-stack system libraries.
+# See https://github.com/koreader/koreader/issues/15720#issuecomment-5059698020
+export GLIBC_TUNABLES="${GLIBC_TUNABLES}${GLIBC_TUNABLES:+:}glibc.rtld.execstack=2"
+
 export LC_ALL="en_US.UTF-8"
 
-# working directory of koreader
-KOREADER_DIR="/mnt/ext1/applications/koreader"
+UNPACK_DIR='/mnt/ext1'
+# KOReader's working directory.
+KOREADER_DIR="${UNPACK_DIR}/applications/koreader"
+
+# Relocalize ourselves to /tmp: this is used by KOReader to detect if the
+# original script has changed after an update (requiring a complete restart
+# from the parent launcher).
+if [ "$(dirname "${0}")" != '/tmp' ]; then
+    cp -pf "${0}" '/tmp/koreader.app'
+    chmod 777 '/tmp/koreader.app'
+    exec '/tmp/koreader.app' "$@"
+fi
 
 # load our own shared libraries if possible, solely because we don't control InkView, and we'd rather not it have load duplicate system libs...
 # (We handle this via DT_RPATH for our own stuff).
@@ -26,40 +41,25 @@ echo $$ >/tmp/koreader.pid
 
 # update to new version from OTA directory
 ko_update_check() {
-    NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
-    INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
+    NEWUPDATE="${KOREADER_DIR}/ota/update.tar.xz"
     if [ -f "${NEWUPDATE}" ]; then
+        # Clear screen to delete UI leftovers
+        "${KOREADER_DIR}/fbink" --cls
         "${KOREADER_DIR}/fbink" -q -y -7 -pmh "Updating KOReader"
+        # Keep a copy of the old manifest for cleaning leftovers later.
+        sed 's,^../,,' "${KOREADER_DIR}/ota/package.index" >/tmp/package.index.old
         # Setup the FBInk daemon
         export FBINK_NAMED_PIPE="/tmp/.koreader.fbink"
         rm -f "${FBINK_NAMED_PIPE}"
         FBINK_PID="$("${KOREADER_DIR}/fbink" --daemon 1 %KOREADER% -q -y -6 -P 0)"
-        # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
-        # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
-        FILESIZE="$(stat -c %b "${NEWUPDATE}")"
-        # shellcheck disable=SC2003
-        BLOCKS="$(expr "${FILESIZE}" / 20)"
-        # shellcheck disable=SC2003
-        CPOINTS="$(expr "${BLOCKS}" / 100)"
-        export CPOINTS
-        # NOTE: We don't run as root, but folders created over USBMS are owned by root, which yields fun permission shenanigans...
-        #       c.f., https://github.com/koreader/koreader/issues/7581
-        KO_PB_TARLOG="/tmp/.koreader.tar"
-        # shellcheck disable=SC2016
-        "${KOREADER_DIR}/tar" --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='printf "%s" $(expr ${TAR_CHECKPOINT} / ${CPOINTS}) > ${FBINK_NAMED_PIPE}' -C "/mnt/ext1" -xf "${NEWUPDATE}" 2>"${KO_PB_TARLOG}"
+        (cd "${UNPACK_DIR}" && "${KOREADER_DIR}/unpack" -X "${NEWUPDATE}" >"${FBINK_NAMED_PIPE}")
         fail=$?
         kill -TERM "${FBINK_PID}"
-        # As mentioned above, filter out potential chmod & utime failures...
-        if [ "${fail}" -ne 0 ]; then
-            if [ "$(grep -Evc '(Cannot utime|Cannot change mode|Exiting with failure status due to previous errors)' "${KO_PB_TARLOG}")" -eq "0" ]; then
-                # No other errors, we're good!
-                fail=0
-            fi
-        fi
-        rm -f "${KO_PB_TARLOG}"
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
-            mv "${NEWUPDATE}" "${INSTALLED}"
+            # Cleanup leftovers from previous install.
+            sed 's,^../,,' "${KOREADER_DIR}/ota/package.index" >/tmp/package.index.new
+            (cd "${UNPACK_DIR}" && grep -xvFf /tmp/package.index.new /tmp/package.index.old | xargs -r rm -vf)
             "${KOREADER_DIR}/fbink" -q -y -6 -pm "Update successful :)"
             "${KOREADER_DIR}/fbink" -q -y -5 -pm "KOReader will start momentarily . . ."
         else
@@ -67,9 +67,8 @@ ko_update_check() {
             "${KOREADER_DIR}/fbink" -q -y -6 -pmh "Update failed :("
             "${KOREADER_DIR}/fbink" -q -y -5 -pm "KOReader may fail to function properly!"
         fi
-        rm -f "${NEWUPDATE}" # always purge newupdate to prevent update loops
-        unset CPOINTS FBINK_NAMED_PIPE
-        unset BLOCKS FILESIZE FBINK_PID
+        rm -f /tmp/package.index.old /tmp/package.index.new "${NEWUPDATE}" # always purge newupdate to prevent update loops
+        unset FBINK_NAMED_PIPE FBINK_PID
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         sync
     fi

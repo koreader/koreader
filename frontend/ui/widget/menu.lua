@@ -22,7 +22,6 @@ local TextWidget = require("ui/widget/textwidget")
 local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
-local Utf8Proc = require("ffi/utf8proc")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -88,6 +87,7 @@ Widget that displays an item for menu
 local MenuItem = InputContainer:extend{
     font = "smallinfofont",
     infont = "infont",
+    text_bgcolor = nil,
     linesize = Size.line.medium,
     single_line = false,
     multilines_forced = false, -- set to true to always use TextBoxWidget
@@ -200,6 +200,8 @@ function MenuItem:init()
     local mandatory_w = mandatory_widget:getWidth()
 
     local available_width = self.content_width - state_width - text_mandatory_padding - mandatory_w
+    local text_fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil
+    local text_bgcolor = self.text_bgcolor
     local item_name
 
     -- Whether we show text on a single or multiple lines, we don't want it shortened
@@ -228,8 +230,9 @@ function MenuItem:init()
             post_text_widget = TextWidget:new{
                 text = self.post_text,
                 face = self.post_text_face,
+                max_width = math.floor(available_width / 2), -- keep some space for the other stuff
                 bold = self.bold,
-                fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+                fgcolor = text_fgcolor,
             }
             available_width = available_width - post_text_widget:getWidth() - post_text_left_padding - post_text_right_padding
         end
@@ -239,7 +242,7 @@ function MenuItem:init()
             face = self.face,
             bold = self.bold,
             truncate_left = self.truncate_left,
-            fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+            fgcolor = text_fgcolor,
         }
         local w = item_name:getWidth()
         if w > available_width then
@@ -306,6 +309,15 @@ function MenuItem:init()
                 post_text_widget.forced_baseline = mdtr_baseline
             end
         end
+        if text_bgcolor then
+            item_name = FrameContainer:new{
+                width = math.max(item_name:getWidth(), available_width), -- if the ellipsis doesn't fit
+                background = text_bgcolor,
+                bordersize = 0,
+                padding = 0,
+                item_name,
+            }
+        end
 
     elseif self.multilines_show_more_text then
         -- Multi-lines, with font size decrease if needed to show more of the text.
@@ -318,13 +330,14 @@ function MenuItem:init()
                 item_name:free()
             end
             logger.dbg("multilines_show_more_text trying font size", font_size)
-            item_name = TextBoxWidget:new {
+            item_name = TextBoxWidget:new{
                 text = text,
                 face = Font:getFace(self.font, font_size),
                 width = available_width,
                 alignment = "left",
                 bold = self.bold,
-                fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+                fgcolor = text_fgcolor,
+                bgcolor = text_bgcolor,
             }
             -- return true if we fit
             return item_name:getSize().h <= max_item_height
@@ -371,7 +384,7 @@ function MenuItem:init()
 
     else
         -- Multi-lines, with fixed user provided font size
-        item_name = TextBoxWidget:new {
+        item_name = TextBoxWidget:new{
             text = text,
             face = self.face,
             width = available_width,
@@ -380,7 +393,8 @@ function MenuItem:init()
             height_overflow_show_ellipsis = true,
             alignment = "left",
             bold = self.bold,
-            fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+            fgcolor = text_fgcolor,
+            bgcolor = text_bgcolor,
         }
     end
 
@@ -786,6 +800,7 @@ function Menu:init()
                 callback = function()
                     local search_string = self.page_info_text.input_dialog:getInputText()
                     if search_string ~= "" then
+                        self.search_index = nil
                         self:goToMenuItemMatching(search_string, true)
                         self.page_info_text:closeInputDialog()
                     end
@@ -797,6 +812,7 @@ function Menu:init()
                 text = _("Cancel"),
                 id = "close",
                 callback = function()
+                    self.search_index = nil
                     self.page_info_text:closeInputDialog()
                 end,
             },
@@ -805,6 +821,7 @@ function Menu:init()
                 callback = function()
                     local page = tonumber(self.page_info_text.input_dialog:getInputText())
                     if page and page >= 1 and page <= self.page_num then
+                        self.search_index = nil
                         self:onGotoPage(page)
                         self.page_info_text:closeInputDialog()
                     end
@@ -819,6 +836,9 @@ function Menu:init()
         call_hold_input_on_tap = true,
         hold_input = {
             title = _("Enter text, letter or page number"),
+            input_func = function()
+                return self.search_index and self.search_string
+            end,
             hint_func = function()
                 -- @translators First group is the standard range for alphabetic searches, second group is a page number range
                 return T(_("(a - z) or (1 - %1)"), self.page_num)
@@ -942,26 +962,31 @@ function Menu:init()
     }
     self.ges_events.Close = self.on_close_ges
 
-    if Device:hasKeys() then
-        -- set up keyboard events
-        self.key_events.Close = { { Input.group.Back } }
-        self.key_events.LeftButtonTap = { { "Menu" } }
-        if Device:hasFewKeys() then
-            self.key_events.Close = { { "Left" } }
-        end
-        self.key_events.NextPage = { { Input.group.PgFwd } }
-        self.key_events.PrevPage = { { Input.group.PgBack } }
-        if Device:hasKeyboard() then
-            self.key_events.FirstPage = { { "Shift", { "LPgBack", "RPgBack" } } }
-            self.key_events.LastPage = { { "Shift", { "LPgFwd", "RPgFwd" } } }
-            self.key_events.ShowGotoDialog = { { "Shift", "Down" } }
-        elseif Device:hasScreenKB() then
-            self.key_events.FirstPage = { { "ScreenKB", { "LPgBack", "RPgBack" } } }
-            self.key_events.LastPage = { { "ScreenKB", { "LPgFwd", "RPgFwd" } } }
-            self.key_events.ShowGotoDialog = { { "ScreenKB", "Down" } }
-        end
-    end
+    self:registerKeyEvents()
 
+    if self.item_table.current then
+        self.page = self:getPageNumber(self.item_table.current)
+    end
+    if not self.path_items then -- not FileChooser
+        self:updateItems(1, true)
+    end
+end
+
+function Menu:registerKeyEvents()
+    if not Device:hasKeys() then return end
+    self.key_events.Close = { { Input.group.Back } }
+    self.key_events.LeftButtonTap = { { "Menu" } }
+    if Device:hasFewKeys() then
+        self.key_events.Close = { { "Left" } }
+    end
+    self.key_events.NextPage = { { Input.group.PgFwd } }
+    self.key_events.PrevPage = { { Input.group.PgBack } }
+    if Device:hasKeyboard() or Device:hasScreenKB() then
+        local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+        self.key_events.FirstPage = { { modifier, { "LPgBack", "RPgBack" } } }
+        self.key_events.LastPage = { { modifier, { "LPgFwd", "RPgFwd" } } }
+        self.key_events.ShowGotoDialog = { { modifier, "Down" } }
+    end
     if Device:hasDPad() then
         if Device:hasFewKeys() then
             -- we won't catch presses to "Right", leave that to MenuItem.
@@ -974,19 +999,25 @@ function Menu:init()
             self.key_events.SelectByShortCut = { { self.item_shortcuts } }
         end
     end
+end
 
-    if self.item_table.current then
-        self.page = self:getPageNumber(self.item_table.current)
-    end
-    if not self.path_items then -- not FileChooser
-        self:updateItems(1, true)
-    end
+function Menu:onPhysicalKeyboardConnected()
+    FocusManager.onPhysicalKeyboardConnected(self)
+    self:registerKeyEvents()
+end
+
+function Menu:onPhysicalKeyboardDisconnected()
+    -- Drop the whole set: what the keys we no longer have were bound to cannot linger.
+    self.key_events = {}
+    FocusManager.onPhysicalKeyboardDisconnected(self)
+    self:registerKeyEvents()
 end
 
 function Menu:updatePageInfo(select_number)
     if #self.item_table > 0 then
         local is_focused = self.itemnumber and self.itemnumber > 0
         if is_focused or Device:hasDPad() then
+            self.prev_itemnumber = self.itemnumber -- for CoverBrowser
             self.itemnumber = nil -- focus only once
             select_number = select_number or 1 -- default to select the first item
             local x, y
@@ -1079,6 +1110,7 @@ function Menu:updateItems(select_number, no_recalculate_dimen)
             show_parent = self.show_parent,
             state_w = self.state_w,
             text = Menu.getMenuText(item),
+            text_bgcolor = item.text_bgcolor,
             bidi_wrap_func = item.bidi_wrap_func,
             post_text = item.post_text,
             mandatory = item.mandatory,
@@ -1124,6 +1156,7 @@ end
 
 -- merge TitleBar layout into self FocusManager layout
 function Menu:mergeTitleBarIntoLayout()
+    if not self.title_bar then return end
     if Device:hasSymKey() or Device:hasScreenKB() then
         -- Title bar items can be accessed through key mappings on kindle
         return
@@ -1158,6 +1191,7 @@ function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch, 
     local no_recalculate_dimen = true
 
     if new_item_table then
+        self.search_index = nil
         self.item_table = new_item_table
         no_recalculate_dimen = false
     end
@@ -1304,12 +1338,21 @@ function Menu:onSelectByShortCut(_, keyevent)
 end
 
 function Menu:goToMenuItemMatching(search_string, goto_letter)
-    search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
-    for i, item in ipairs(self.item_table) do
+    search_string = util.stringLower(search_string)
+    local start_index = 1
+    if self.search_index and self.search_string == search_string then
+        start_index = self.search_index + 1
+    end
+    for i = start_index, #self.item_table do
+        local item = self.item_table[i]
         if not item.is_go_up then
-            local item_text = Utf8Proc.lowercase(util.fixUtf8(item.text, "?"))
+            local item_text = util.stringLower(item.text)
             local idx = item_text:find(search_string)
             if idx and (idx == 1 or not goto_letter) then
+                if not goto_letter then
+                    self.search_string = search_string
+                    self.search_index = i
+                end
                 self.itemnumber = i -- draw focus
                 self:onGotoPage(self:getPageNumber(i))
                 break
@@ -1388,7 +1431,7 @@ function Menu:onLastPage()
 end
 
 function Menu:onGotoPage(page)
-    self.prev_focused_path = nil
+    self.prev_itemnumber = nil
     self.page = page
     self:updateItems(1, true)
     return true

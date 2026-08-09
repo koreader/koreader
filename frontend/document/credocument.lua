@@ -688,7 +688,7 @@ function CreDocument:getTextFromPositions(pos0, pos1, do_not_draw_selection)
         drawSelection, drawSegmentedSelection)
     logger.dbg("CreDocument: get text range", text_range)
     if text_range then
-        local line_boxes = self:getScreenBoxesFromPositions(text_range.pos0, text_range.pos1)
+        local line_boxes = self:getScreenBoxesFromPositions(text_range.pos0, text_range.pos1, true)
         return {
             text = text_range.text,
             pos0 = text_range.pos0,
@@ -714,6 +714,37 @@ function CreDocument:getScreenBoxesFromPositions(pos0, pos1, get_segments)
         end
     end
     return line_boxes
+end
+
+function CreDocument:getNearestWordAndBoxFromPosition(pos, cpp_direction)
+    local nearest = self._document:getNearestWordFromPosition(pos.x, pos.y, cpp_direction)
+    if not nearest or not nearest.text then return nil end
+    logger.dbg("CreDocument: get nearest word", nearest)
+    local wordbox = {
+        page = self._document:getCurrentPage(),
+        word = nearest.text,
+        pos0 = nearest.pos0,
+        pos1 = nearest.pos1,
+    }
+    if nearest.pos0 and nearest.pos1 then
+        local word_boxes = self._document:getWordBoxesFromPositions(nearest.pos0, nearest.pos1, true)
+        if word_boxes then
+            for i = 1, #word_boxes do
+                local v = word_boxes[i]
+                word_boxes[i] = { x = v.x0,        y = v.y0,
+                                  w = v.x1 - v.x0, h = v.y1 - v.y0 }
+            end
+            wordbox.sbox = Geom.boundingBox(word_boxes)
+            if wordbox.sbox then
+                return wordbox
+            end
+        end
+    end
+    return nil
+end
+
+function CreDocument:getNearestWordFromPosition(pos, direction)
+    return self._document:getNearestWordFromPosition(pos.x, pos.y, direction)
 end
 
 function CreDocument:compareXPointers(xp1, xp2)
@@ -918,8 +949,8 @@ function CreDocument:getPageLinks(internal_links_only)
     return self._document:getPageLinks(internal_links_only)
 end
 
-function CreDocument:getLinkFromPosition(pos)
-    return self._document:getLinkFromPosition(pos.x, pos.y)
+function CreDocument:getLinkFromPosition(pos, with_forTextSelection)
+    return self._document:getLinkFromPosition(pos.x, pos.y, with_forTextSelection)
 end
 
 function CreDocument:isLinkToFootnote(source_xpointer, target_xpointer, flags, max_text_size)
@@ -1272,6 +1303,11 @@ function CreDocument:setFontKerning(mode)
     self._document:setIntProperty("font.kerning.mode", mode)
 end
 
+function CreDocument:setFontFractionalPositioning(strength)
+    logger.dbg("CreDocument: set font fractionalbpositioning", strength)
+    self._document:setIntProperty("font.fractional.positioning", strength)
+end
+
 function CreDocument:setWordSpacing(values)
     -- values should be a table of 2 numbers (e.g.: { 90, 75 })
     -- - space width scale percent (hard scale the width of each space char in
@@ -1403,14 +1439,14 @@ function CreDocument:getAndClearRegexSearchError()
     return retval
 end
 
-function CreDocument:findText(pattern, origin, direction, case_insensitive, page, regex, max_hits)
-    logger.dbg("CreDocument: find text", pattern, origin, direction == 1, case_insensitive, regex, max_hits)
-    return self._document:findText(pattern, origin, direction == 1, case_insensitive, regex, max_hits)
+function CreDocument:findText(pattern, origin, direction, case_insensitive, page, regex, max_hits, search_flags)
+    logger.dbg("CreDocument: find text", pattern, origin, direction == 1, case_insensitive, regex, max_hits, search_flags)
+    return self._document:findText(pattern, origin, direction == 1, case_insensitive, regex, max_hits, search_flags)
 end
 
-function CreDocument:findAllText(pattern, case_insensitive, nb_context_words, max_hits, regex)
-    logger.dbg("CreDocument: find all text", pattern, case_insensitive, regex, max_hits, true, nb_context_words)
-    return self._document:findAllText(pattern, case_insensitive, regex, max_hits, true, nb_context_words)
+function CreDocument:findAllText(pattern, case_insensitive, nb_context_words, max_hits, regex, search_flags)
+    logger.dbg("CreDocument: find all text", pattern, case_insensitive, regex, max_hits, true, nb_context_words, search_flags)
+    return self._document:findAllText(pattern, case_insensitive, regex, max_hits, true, nb_context_words, search_flags)
 end
 
 function CreDocument:enableInternalHistory(toggle)
@@ -1491,11 +1527,32 @@ function CreDocument:buildAlternativeToc()
 end
 
 function CreDocument:buildSyntheticPageMapIfNoneDocumentProvided(chars_per_synthetic_page)
-    self._document:buildSyntheticPageMapIfNoneDocumentProvided(chars_per_synthetic_page or 1024)
+    -- for backward compatibility with legacy user patches
+    -- https://github.com/koreader/koreader/issues/9020#issuecomment-2033259217
+    if not self._document:hasPageMapDocumentProvided() then
+        self._document:buildSyntheticPageMap(chars_per_synthetic_page or 1024)
+    end
+end
+
+function CreDocument:buildSyntheticPageMap(chars_per_synthetic_page)
+    self._document:buildSyntheticPageMap(chars_per_synthetic_page or 1024)
+end
+
+function CreDocument:getSyntheticPageMapCharsPerPage()
+    -- returns 0 if no synthetic pagemap
+    return self._document:getSyntheticPageMapCharsPerPage()
 end
 
 function CreDocument:isPageMapSynthetic()
     return self._document:isPageMapSynthetic()
+end
+
+function CreDocument:hasPageMapDocumentProvided()
+    return self._document:hasPageMapDocumentProvided()
+end
+
+function CreDocument:isPageMapDocumentProvided()
+    return self._document:isPageMapDocumentProvided()
 end
 
 function CreDocument:hasPageMap()
@@ -1541,6 +1598,7 @@ function CreDocument:register(registry)
     registry:addProvider("epub", "application/epub", self, 100) -- Alternative mimetype for OPDS.
     registry:addProvider("epub3", "application/epub+zip", self, 100)
     registry:addProvider("fb2", "application/fb2", self, 90)
+    registry:addProvider("fb2", "application/x-fictionbook+xml", self, 90) -- Alternative mimetype for OPDS.
     registry:addProvider("fb2", "text/fb2+xml", self, 90) -- Alternative mimetype for OPDS.
     registry:addProvider("fb2.zip", "application/zip", self, 90)
     registry:addProvider("fb2.zip", "application/fb2+zip", self, 90) -- Alternative mimetype for OPDS.
@@ -1548,6 +1606,7 @@ function CreDocument:register(registry)
     registry:addProvider("htm", "text/html", self, 100)
     registry:addProvider("html", "text/html", self, 100)
     registry:addProvider("htm.zip", "application/zip", self, 100)
+    registry:addProvider("htmlz", "application/html+zip", self, 100) -- For calibre OPDS.
     registry:addProvider("html.zip", "application/zip", self, 100)
     registry:addProvider("html.zip", "application/html+zip", self, 100) -- Alternative mimetype for OPDS.
     registry:addProvider("log", "text/plain", self)
@@ -1687,7 +1746,7 @@ function CreDocument:setupCallCache()
             return time.now()
         end
         addStatMiss = function(name, starttime, not_cached)
-            local duration = time.since(starttime)
+            local duration = time.to_s(time.since(starttime))
             if not self._call_cache_stats[name] then
                 self._call_cache_stats[name] = {0, 0.0, 1, duration, not_cached}
             else
@@ -1697,7 +1756,7 @@ function CreDocument:setupCallCache()
             end
         end
         addStatHit = function(name, starttime)
-            local duration = time.since(starttime)
+            local duration = time.to_s(time.since(starttime))
             if not self._call_cache_stats[name] then
                 self._call_cache_stats[name] = {1, duration, 0, 0.0}
             else
@@ -1810,6 +1869,7 @@ function CreDocument:setupCallCache()
             elseif name == "zoomFont" then add_reset = true -- not used by koreader
             elseif name == "resetCallCache" then add_reset = true
             elseif name == "cacheFlows" then add_reset = true
+            elseif name == "buildSyntheticPageMap" then add_reset = true
 
             -- These may have crengine do native highlight or unhighlight
             -- (we could keep the original buffer and use a scratch buffer while
@@ -1870,6 +1930,7 @@ function CreDocument:setupCallCache()
             elseif name == "getPageLinks" then cache_by_tag = true
             elseif name == "getScreenBoxesFromPositions" then cache_by_tag = true
             elseif name == "getScreenPositionFromXPointer" then cache_by_tag = true
+            elseif name == "getNearestWordFromPosition" then cache_by_tag = true
             elseif name == "getXPointer" then cache_by_tag = true
             elseif name == "isXPointerInCurrentPage" then cache_by_tag = true
             elseif name == "getPageMapCurrentPageLabel" then cache_by_tag = true

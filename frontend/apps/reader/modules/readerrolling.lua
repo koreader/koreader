@@ -116,15 +116,17 @@ end
 function ReaderRolling:onGesture() end
 
 function ReaderRolling:registerKeyEvents()
-    local nextKey = BD.mirroredUILayout() and "Left" or "Right"
-    local prevKey = BD.mirroredUILayout() and "Right" or "Left"
+    local prev_key, next_key = "Left", "Right"
+    if BD.mirroredUILayout() then
+        next_key, prev_key = prev_key, next_key
+    end
     if Device:hasDPad() and Device:useDPadAsActionKeys() then
         if G_reader_settings:isTrue("left_right_keys_turn_pages") then
-            self.key_events.GotoNextView = { { { "LPgFwd", nextKey } }, event = "GotoViewRel", args = 1, }
-            self.key_events.GotoPrevView = { { { "LPgBack", prevKey } }, event = "GotoViewRel", args = -1, }
+            self.key_events.GotoNextView = { { { "LPgFwd", next_key } }, event = "GotoViewRel", args = 1, }
+            self.key_events.GotoPrevView = { { { "LPgBack", prev_key } }, event = "GotoViewRel", args = -1, }
         elseif G_reader_settings:nilOrFalse("left_right_keys_turn_pages") then
-            self.key_events.GotoNextChapter = { { nextKey }, event = "GotoNextChapter", args = 1, }
-            self.key_events.GotoPrevChapter = { { prevKey }, event = "GotoPrevChapter", args = -1, }
+            self.key_events.GotoNextChapter = { { next_key }, event = "GotoNextChapter", args = 1, }
+            self.key_events.GotoPrevChapter = { { prev_key }, event = "GotoPrevChapter", args = -1, }
             self.key_events.GotoNextView = { { "LPgFwd" }, event = "GotoViewRel", args = 1, }
             self.key_events.GotoPrevView = { { "LPgBack" }, event = "GotoViewRel", args = -1, }
         end
@@ -135,8 +137,8 @@ function ReaderRolling:registerKeyEvents()
         self.key_events.MoveDown = { { "Down" }, event = "Panning", args = {0,  1}, }
     end
     if (Device:hasDPad() and not Device:useDPadAsActionKeys()) or (Device:hasKeys() and not Device:useDPadAsActionKeys()) then
-        self.key_events.GotoNextView = { { { "RPgFwd", "LPgFwd", nextKey } }, event = "GotoViewRel", args = 1, }
-        self.key_events.GotoPrevView = { { { "RPgBack", "LPgBack", prevKey } }, event = "GotoViewRel", args = -1, }
+        self.key_events.GotoNextView = { { { "RPgFwd", "LPgFwd", next_key } }, event = "GotoViewRel", args = 1, }
+        self.key_events.GotoPrevView = { { { "RPgBack", "LPgBack", prev_key } }, event = "GotoViewRel", args = -1, }
     end
     if Device:hasKeyboard() and not Device.k3_alt_plus_key_kernel_translated then
         self.key_events.GotoFirst = { { "1" }, event = "GotoPercent", args = 0,   }
@@ -284,8 +286,6 @@ function ReaderRolling:onCloseDocument()
     UIManager:unschedule(self.onUpdatePos)
 
     self.current_header_height = nil -- show unload progress bar at top
-    -- we cannot do it in onSaveSettings() because getLastPercent() uses self.ui.document
-    self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
 
     local cache_file_path = self.ui.document:getCacheFilePath() -- nil if no cache file
     self.ui.doc_settings:saveSetting("cache_file_path", cache_file_path)
@@ -335,6 +335,7 @@ function ReaderRolling:showSuggestReloadConfirmBox(warn_txt)
 end
 
 function ReaderRolling:onSaveSettings()
+    self.ui.doc_settings:saveSetting("percent_finished", self.view.footer.percent_finished)
     self.ui.doc_settings:delSetting("last_percent") -- deprecated
     self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
     self.ui.doc_settings:saveSetting("hide_nonlinear_flows", self.hide_nonlinear_flows)
@@ -577,7 +578,7 @@ function ReaderRolling:onPan(_, ges)
             -- Mouse wheel generates a Pan event: in page mode, move one
             -- page per event. Scroll mode is handled in the 'else' branch
             -- and use the wheeled distance.
-            UIManager:broadcastEvent(Event:new("GotoViewRel", -1 * ges.mousewheel_direction))
+            self:onGotoViewRel(-1 * ges.mousewheel_direction)
         elseif self.view.view_mode == "scroll" then
             if not self._pan_started then
                 self._pan_started = true
@@ -945,13 +946,16 @@ function ReaderRolling:onGotoViewRel(diff)
     if self.ui.document ~= nil then
         self.xpointer = self.ui.document:getXPointer()
     end
+    if self.ui.keyselection:isActive() then
+        self.ui.keyselection:pageTurnDuringSelection()
+    end
     return true
 end
 
 function ReaderRolling:onPanning(args, _)
     local _, dy = unpack(args)
     if self.view.view_mode ~= "scroll" then
-        UIManager:broadcastEvent(Event:new("GotoViewRel", dy))
+        self:onGotoViewRel(dy)
         return
     end
     self:_gotoPos(self.current_pos + dy * self.panning_steps.normal)

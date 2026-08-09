@@ -61,6 +61,7 @@ local ProgressWidget = Widget:extend{
     _orig_bordersize = nil,
     initial_pos_marker = false, -- overlay a marker at the initial percentage position
     initial_percentage = nil,
+    invert_direction = false, -- manually invert the direction regardless of UI mirroring
 }
 
 function ProgressWidget:init()
@@ -114,15 +115,22 @@ function ProgressWidget:paintTo(bb, x, y)
         self.dimen = Geom:new{
             x = x, y = y,
             w = my_size.w,
-            h = my_size.h
+            h = my_size.h,
         }
     else
         self.dimen.x = x
         self.dimen.y = y
+        self.dimen.w = my_size.w
+        self.dimen.h = my_size.h
     end
     if self.dimen.w == 0 or self.dimen.h == 0 then return end
 
     local _mirroredUI = BD.mirroredUILayout()
+    -- Apply inversion if requested (XOR operation with mirrored UI)
+    if self.invert_direction then
+        _mirroredUI = not _mirroredUI
+    end
+
     -- We'll draw every bar element in order, bottom to top.
     local fill_width = my_size.w - 2*(self.margin_h + self.bordersize)
     local fill_y = y + self.margin_v + self.bordersize
@@ -183,11 +191,20 @@ function ProgressWidget:paintTo(bb, x, y)
 
         -- Overlay the initial position marker on top of that
         if self.initial_pos_marker and self.initial_percentage >= 0 then
-            if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
-                self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.initial_percentage) - self.height / 4), y - Math.round(self.height / 6))
+            local marker_x, icon_x, icon_y
+            if _mirroredUI then
+                marker_x = x + self.margin_h + self.bordersize + math.ceil(fill_width - (fill_width * self.initial_percentage))
             else
-                self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.initial_percentage) - self.height / 2), y)
+                marker_x = x + self.margin_h + self.bordersize + math.ceil(fill_width * self.initial_percentage)
             end
+            if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
+                icon_x = Math.round(marker_x - self.height * (1/4))
+                icon_y = y - Math.round(self.height * (1/6))
+            else
+                icon_x = Math.round(marker_x - self.height * (1/2))
+                icon_y = y
+            end
+            self.initial_pos_icon:paintTo(bb, icon_x, icon_y)
         end
     end
 
@@ -227,7 +244,13 @@ function ProgressWidget:getPercentageFromPosition(pos)
     if x < 0 or x > width then
         return nil
     end
-    if BD.mirroredUILayout() then
+    local mirrored = BD.mirroredUILayout()
+    -- Invert if requested
+    if self.invert_direction then
+        mirrored = not mirrored
+    end
+
+    if mirrored then
         x = width - x
     end
     return x / width

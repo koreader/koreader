@@ -10,7 +10,7 @@ local _ = require("gettext")
 -- nextcloud notes exporter
 local NextcloudExporter = require("base"):new {
     name = "nextcloud_notes",
-    category = _("KOReader"),
+    default_category = _("KOReader"),
     is_remote = true,
 }
 
@@ -53,6 +53,12 @@ function NextcloudExporter:getMenuTable()
                                 hint = _("Security → Devices & sessions"),
                                 text = self.settings.password,
                                 input_type = "string"
+                            },
+                            {
+                                description = _("Category"),
+                                hint = _("Category applied to the note"),
+                                text = self.settings.category or self.default_category,
+                                input_type = "string"
                             }
                         },
                         buttons = {
@@ -70,6 +76,7 @@ function NextcloudExporter:getMenuTable()
                                         local host = fields[1]
                                         local username = fields[2]
                                         local password = fields[3]
+                                        local category = fields[4]
                                         if host ~= "" then
                                             self.settings.host = host
                                             self:saveSettings()
@@ -80,6 +87,10 @@ function NextcloudExporter:getMenuTable()
                                         end
                                         if password ~= "" then
                                             self.settings.password = password
+                                            self:saveSettings()
+                                        end
+                                        if category ~= "" then
+                                            self.settings.category = category
                                             self:saveSettings()
                                         end
                                         UIManager:close(url_dialog)
@@ -125,6 +136,7 @@ function NextcloudExporter:export(t)
     -- setup Nextcloud variables
     local url_base = string.format("%s/index.php/apps/notes/api/v1/", self.settings.host)
     local auth = mime.b64(self.settings.username .. ":" .. self.settings.password)
+    local category = self.settings.category or self.default_category
     local note_id
     local verb
     local request_body
@@ -138,7 +150,7 @@ function NextcloudExporter:export(t)
     }
 
     -- fetch existing notes from Nextcloud
-    local url = url_base .. "notes?category=" .. self.category
+    local url = url_base .. "notes?category=" .. category
     notes_cache, err = self:makeJsonRequest(url, "GET", nil, json_headers)
     if not notes_cache then
         logger.warn("Error fetching existing notes from Nextcloud", err)
@@ -165,7 +177,7 @@ function NextcloudExporter:export(t)
         request_body = {
             title = note_title,
             content = table.concat(note, "\n"),
-            category = self.category,
+            category = category,
         }
 
         -- set up create or update specific parameters

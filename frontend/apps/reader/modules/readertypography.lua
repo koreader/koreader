@@ -76,6 +76,7 @@ local LANGUAGES = {
     { "lv",               {"lav"},   "H   ",   _("Latvian"),                "Latvian.pattern" },
     { "lt",               {"lit"},   "H   ",   _("Lithuanian"),             "Lithuanian.pattern" },
     { "mk",                  {""},   "H   ",   _("Macedonian"),             "Macedonian.pattern" },
+    { "ml",               {"mal"},   "H   ",   _("Malayalam"),              "Malayalam.pattern" },
     { "no",               {"nor"},   "H   ",   _("Norwegian"),              "Norwegian.pattern" },
     { "oc",               {"oci"},   "H   ",   _("Occitan"),                "Occitan.pattern" },
     { "pl",               {"pol"},   "HB  ",   _("Polish"),                 "Polish.pattern" },
@@ -234,6 +235,10 @@ When the book's language tag is not among our presets, no specific features will
                 end
                 return text
             end,
+            checked_func = function()
+                return self.text_lang_tag == lang_tag
+            end,
+            radio = true,
             callback = function()
                 -- We use an InfoMessage because the text might be too long for a Notification.
                 -- Use a small timeout (but long enough to read) as this might be bothering.
@@ -241,10 +246,7 @@ When the book's language tag is not among our presets, no specific features will
                     text = T(_("Changed language for typography rules to %1."), BD.wrap(lang_name)),
                     timeout = 2,
                 })
-                self.text_lang_tag = lang_tag
-                self.ui.document:setTextMainLang(lang_tag)
-                self.ui:handleEvent(Event:new("TypographyLanguageChanged"))
-                self.ui:handleEvent(Event:new("UpdatePos"))
+                self:onSetTypographyLanguage(lang_tag)
             end,
             hold_callback = function(touchmenu_instance)
                 UIManager:show(MultiConfirmBox:new{
@@ -267,9 +269,6 @@ When the book's language tag is not among our presets, no specific features will
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
                 })
-            end,
-            checked_func = function()
-                return self.text_lang_tag == lang_tag
             end,
         })
     end
@@ -456,6 +455,7 @@ These settings will apply to all books with any hyphenation dictionary.
             return self.hyphenation and not self.hyph_soft_hyphens_only
                                     and not self.hyph_force_algorithmic
         end,
+        radio = true,
         enabled_func = function()
             return self.hyphenation
         end,
@@ -493,6 +493,7 @@ These settings will apply to all books with any hyphenation dictionary.
             -- so have that check even if we reset them above)
             return self.hyphenation and not self.hyph_soft_hyphens_only and self.hyph_force_algorithmic
         end,
+        radio = true,
         enabled_func = function()
             return self.hyphenation
         end,
@@ -528,6 +529,7 @@ These settings will apply to all books with any hyphenation dictionary.
         checked_func = function()
             return self.hyphenation and self.hyph_soft_hyphens_only
         end,
+        radio = true,
         enabled_func = function()
             return self.hyphenation
         end,
@@ -557,8 +559,7 @@ These settings will apply to all books with any hyphenation dictionary.
         text = _("Hanging punctuation"),
         checked_func = function() return self.floating_punctuation == 1 end,
         callback = function()
-            self.floating_punctuation = self.floating_punctuation == 1 and 0 or 1
-            self:onToggleFloatingPunctuation(self.floating_punctuation)
+            self:onToggleFloatingPunctuation()
         end,
         hold_callback = function() self:makeDefaultFloatingPunctuation() end,
     })
@@ -578,15 +579,38 @@ function ReaderTypography:addToMainMenu(menu_items)
     }
 end
 
-function ReaderTypography:onToggleFloatingPunctuation(toggle)
-    -- for some reason the toggle value read from history files may stay boolean
-    -- and there seems no more elegant way to convert boolean values to numbers
-    if toggle == true then
-        toggle = 1
-    elseif toggle == false then
-        toggle = 0
+function ReaderTypography:onSetTypographyLanguage(lang_tag)
+    if lang_tag == true then -- book language, from Dispatcher
+        lang_tag = self.book_lang_tag
+            or G_reader_settings:readSetting("text_lang_fallback")
+            or G_reader_settings:readSetting("text_lang_default")
     end
-    self.ui.document:setFloatingPunctuation(toggle)
+    if lang_tag then
+        self.text_lang_tag = lang_tag
+        self.ui.document:setTextMainLang(lang_tag)
+        self.ui:handleEvent(Event:new("TypographyLanguageChanged"))
+        self.ui:handleEvent(Event:new("UpdatePos"))
+    end
+end
+
+function ReaderTypography.getLangTags() -- for Dispatcher
+    local tags, names = { true }, { _("book language") }
+    for i, v in ipairs(LANGUAGES) do
+        tags[i + 1] = v[1]
+        names[i + 1] = v[4]
+    end
+    return tags, names
+end
+
+function ReaderTypography:onToggleFloatingPunctuation(toggle)
+    if toggle == nil then
+        self.floating_punctuation = self.floating_punctuation == 1 and 0 or 1
+    elseif toggle == 0 or toggle == false then
+        self.floating_punctuation = 0
+    else -- 1 or true (or anything else)
+        self.floating_punctuation = 1
+    end
+    self.ui.document:setFloatingPunctuation(self.floating_punctuation)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
@@ -740,11 +764,10 @@ function ReaderTypography:onReadSettings(config)
     -- (Stored as 0/1 in docsetting for historical reasons, but as true/false
     -- in global settings.)
     if config:has("floating_punctuation") then
-        self.floating_punctuation = config:readSetting("floating_punctuation")
+        self:onToggleFloatingPunctuation(config:readSetting("floating_punctuation"))
     else
-        self.floating_punctuation = G_reader_settings:isTrue("floating_punctuation") and 1 or 0
+        self:onToggleFloatingPunctuation(G_reader_settings:isTrue("floating_punctuation"))
     end
-    self:onToggleFloatingPunctuation(self.floating_punctuation)
 
     -- Decide and set the text main lang tag according to settings
     if config:has("text_lang") then
@@ -785,22 +808,19 @@ function ReaderTypography:onPreRenderDocument(config)
     -- user can see it and switch from and back to it easily
     table.insert(self.language_submenu, 1, {
         text = T(_("Book language: %1"), self.book_lang_tag or _("N/A")),
-        callback = function()
-            UIManager:show(InfoMessage:new{
-                text = T(_("Changed language for typography rules to book language: %1."), BD.wrap(self.book_lang_tag)),
-                timeout = 2,
-            })
-            self.text_lang_tag = self.book_lang_tag
-            self.ui.doc_settings:saveSetting("text_lang", self.text_lang_tag)
-            self.ui.document:setTextMainLang(self.text_lang_tag)
-            self.ui:handleEvent(Event:new("TypographyLanguageChanged"))
-            self.ui:handleEvent(Event:new("UpdatePos"))
-        end,
         enabled_func = function()
             return self.book_lang_tag ~= nil
         end,
         checked_func = function()
             return self.text_lang_tag == self.book_lang_tag
+        end,
+        radio = true,
+        callback = function()
+            UIManager:show(InfoMessage:new{
+                text = T(_("Changed language for typography rules to book language: %1."), BD.wrap(self.book_lang_tag)),
+                timeout = 2,
+            })
+            self:onSetTypographyLanguage(self.book_lang_tag)
         end,
         separator = true,
     })

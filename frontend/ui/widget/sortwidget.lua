@@ -43,7 +43,7 @@ function SortItemWidget:init()
             range = self.dimen,
         }
     }
-    self.ges_events.Hold = {
+    self.ges_events.HoldTouch = {
         GestureRange:new{
             ges = "hold",
             range = self.dimen,
@@ -89,6 +89,7 @@ function SortItemWidget:init()
                         text = self.item.text,
                         max_width = text_max_width,
                         face = self.item.face or self.face,
+                        fgcolor = self.item.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
                     },
                     self.show_parent.underscore_checked_item and item_checked and LineWidget:new{
                         dimen = Geom:new{ w = text_max_width, h = Size.line.thick },
@@ -121,7 +122,7 @@ function SortItemWidget:onTap(_, ges)
     return true
 end
 
-function SortItemWidget:onHold()
+function SortItemWidget:onHoldTouch()
     if self.item.hold_callback then
         self.item:hold_callback(function() self.show_parent:_populateItems() end)
     elseif self.item.callback then
@@ -288,6 +289,7 @@ function SortWidget:init()
     local vertical_footer = VerticalGroup:new{
         bottom_line,
         self.page_info,
+        self.dimen.h < Screen:getHeight() and bottom_line or nil,
     }
     local footer = BottomContainer:new{
         dimen = self.dimen:copy(),
@@ -352,16 +354,13 @@ function SortWidget:registerKeyEvents()
         self.key_events.NextPage = { { Device.input.group.PgFwd } }
         self.key_events.PrevPage = { { Device.input.group.PgBack } }
         self.key_events.ShowWidgetMenu = { { "Menu" } }
-        if Device:hasScreenKB() then
-            self.key_events.MoveUp = { { "ScreenKB", "Up" }, event = "MoveItemKB", args = -1 }
-            self.key_events.MoveDown = { { "ScreenKB", "Down" }, event = "MoveItemKB", args = 1 }
-            self.key_events.FirstPage = { { "ScreenKB", Device.input.group.PgBack }, event = "GoToPage", args = 1 }
-            self.key_events.LastPage = { { "ScreenKB", Device.input.group.PgFwd }, event = "GoToPage", args = self.pages }
-        elseif Device:hasKeyboard() then
-            self.key_events.MoveUp = { { "Shift", "Up" }, event = "MoveItemKB", args = -1 }
-            self.key_events.MoveDown = { { "Shift", "Down" }, event = "MoveItemKB", args = 1 }
-            self.key_events.FirstPage = { { "Shift", Device.input.group.PgBack }, event = "GoToPage", args = 1 }
-            self.key_events.LastPage = { { "Shift", Device.input.group.PgFwd }, event = "GoToPage", args = self.pages }
+        if Device:hasScreenKB() or Device:hasKeyboard() then
+            local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            self.key_events.HoldNonTouch = { { modifier, "Press" } }
+            self.key_events.MoveUp = { { modifier, "Up" }, event = "MoveItemKB", args = -1 }
+            self.key_events.MoveDown = { { modifier, "Down" }, event = "MoveItemKB", args = 1 }
+            self.key_events.FirstPage = { { modifier, Device.input.group.PgBack }, event = "GoToPage", args = 1 }
+            self.key_events.LastPage = { { modifier, Device.input.group.PgFwd }, event = "GoToPage", args = self.pages }
         end
     end
 end
@@ -607,6 +606,15 @@ function SortWidget:onCancel()
 
     self:onGoToPage(self.show_page)
     return true
+end
+
+function SortWidget:onHoldNonTouch()
+    -- Handle keyboard-triggered hold events by acting on the focused item directly
+    local focused_item = self:getFocusItem()
+    if not focused_item then
+        return true
+    end
+    return focused_item:onHoldTouch()
 end
 
 function SortWidget:onReturn()

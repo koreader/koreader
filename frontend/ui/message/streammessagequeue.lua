@@ -15,7 +15,7 @@ local StreamMessageQueue = MessageQueue:extend{
 function StreamMessageQueue:start()
     local endpoint = string.format("tcp://%s:%d", self.host, self.port)
     self.socket = czmq.zsock_new(C.ZMQ_STREAM)
-    if not self.socket then
+    if self.socket == nil then
         error("cannot create socket for endpoint " .. endpoint)
     end
     logger.dbg("connecting to endpoint", endpoint)
@@ -29,7 +29,7 @@ function StreamMessageQueue:start()
     end
     self.id = ffi.string(buffer, id_size[0])
     self.poller = czmq.zpoller_new(self.socket, nil)
-    if not self.poller then
+    if self.poller == nil then
         error("cannot create poller for endpoint " .. endpoint)
     end
 end
@@ -37,9 +37,11 @@ end
 function StreamMessageQueue:stop()
     if self.poller ~= nil then
         czmq.zpoller_destroy(ffi.new('zpoller_t *[1]', self.poller))
+        self.poller = nil
     end
     if self.socket ~= nil then
         czmq.zsock_destroy(ffi.new('zsock_t *[1]', self.socket))
+        self.socket = nil
     end
 end
 

@@ -41,6 +41,11 @@ function Version:getNormalizedVersion(rev)
     return ((year or 0) * 100 + (month or 0)) * 1000000 + (point or 0) * 10000 + (revision or 0), commit
 end
 
+function Version:getCurrentPlatform()
+    local rev = self:getCurrentRevision()
+    return rev and rev:match("_([a-z][^_]*)")
+end
+
 --- Returns current version of KOReader.
 -- @treturn int version in the form of a 12 digit number such as `201511000982`
 -- @treturn string short git commit version hash such as `704d4238`
@@ -68,24 +73,6 @@ function Version:getShortVersion()
         end
     end
     return self.short
-end
-
---- Returns the release date of the current version of KOReader, YYYYmmdd, in UTC.
---- Technically closer to the build date, but close enough where official builds are concerned ;).
--- @treturn int date
-function Version:getBuildDate()
-    if not self.date then
-        local lfs = require("libs/libkoreader-lfs")
-        local mtime = lfs.attributes("git-rev", "modification")
-        if mtime then
-            local ts = os.date("!%Y%m%d", mtime)
-            self.date = tonumber(ts) or 0
-        else
-            -- No git-rev file?
-            self.date = 0
-        end
-    end
-    return self.date
 end
 
 --- Get last line in `VERSION_LOG_FILE`.

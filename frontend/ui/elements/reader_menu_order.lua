@@ -13,15 +13,14 @@ local order = {
     navi = {
         "table_of_contents",
         "bookmarks",
-        "toggle_bookmark", -- if not Device:isTouchDevice()
+        "toggle_bookmark", -- if not Device:isTouchDevice() and not useDPadAsActionKeys()
         "bookmark_browsing_mode",
         "navi_settings",
         "----------------------------",
-        "page_map",
         "hide_nonlinear_flows",
         "----------------------------",
-        "book_map", -- if Device:isTouchDevice()
-        "page_browser", -- if Device:isTouchDevice()
+        "book_map", -- if Device:isTouchDevice() or useDPadAsActionKeys()
+        "page_browser", -- if Device:isTouchDevice() or useDPadAsActionKeys()
         "----------------------------",
         "go_to",
         "skim_to",
@@ -44,6 +43,7 @@ local order = {
         "handmade_hidden_flows",
         "handmade_settings",
         "----------------------------",
+        "page_map",
         "bookmarks_settings",
     },
     typeset = {
@@ -87,6 +87,7 @@ local order = {
     document = {
         "document_metadata_location",
         "document_auto_save",
+        "document_metadata_arc",
         "document_end_action",
         "language_support",
         "----------------------------",
@@ -104,6 +105,7 @@ local order = {
         "autostandby",
         "autosuspend",
         "autoshutdown",
+        "pageturn_power", -- if Device:isKobo() and Device:hasKeys()
         "ignore_sleepcover",
         "ignore_open_sleepcover",
         "cover_events",
@@ -158,6 +160,7 @@ local order = {
     },
     taps_and_gestures = {
         "gesture_manager",
+        "gesture_overview",
         "gesture_intervals",
         "----------------------------",
         "ignore_hold_corners",
@@ -176,6 +179,7 @@ local order = {
         "exporter",
         "statistics",
         "progress_sync",
+        "cloudstorage",
         "move_to_archive",
         "wallabag",
         "news_downloader",
@@ -228,6 +232,7 @@ local order = {
         "----------------------------",
         "favorites",
         "collections",
+        "bookmark_browser",
         "----------------------------",
         "book_status",
         "book_info",
@@ -245,6 +250,7 @@ local order = {
         "search_menu",
         "----------------------------",
         "report_bug",
+        "plugins_disable_external",
         "----------------------------",
         "system_statistics",  -- if enabled (Plugin)
         "version",

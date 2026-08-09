@@ -4,7 +4,6 @@ local Notification = require("ui/widget/notification")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local random = require("random")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -67,14 +66,15 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
     return { -- annotation
         datetime         = bm.datetime, -- creation time, not changeable
         datetime_updated = nil,         -- last modification time
-        drawer           = hl.drawer,   -- highlight drawer
+        drawer           = hl.drawer,   -- highlight style
         color            = hl.color,    -- highlight color
         text             = bm.notes,    -- highlighted text, editable
         text_edited      = hl.edited,   -- true if highlighted text has been edited
         note             = note,        -- user's note, editable
+        note_format      = nil,         -- plain text, or "html" or "md"
         chapter          = chapter,     -- book chapter title
         pageno           = pageno,      -- book page number (continuous numbering, used by KOHighlights)
-        pageref          = pageref,     -- book page number (iff: reference pages or hidden flows)
+        pageref          = pageref,     -- book page number (iff: stable pages or hidden flows)
         page             = bm.page,     -- highlight location, xPointer or number (pdf)
         pos0             = bm.pos0,     -- highlight start position, xPointer (== page) or table (pdf)
         pos1             = bm.pos1,     -- highlight end position, xPointer or table (pdf)
@@ -240,6 +240,7 @@ function ReaderAnnotation:setNeedsUpdateFlag()
 end
 
 ReaderAnnotation.onDocumentRerendered = ReaderAnnotation.setNeedsUpdateFlag
+ReaderAnnotation.onUsePageLabelsUpdated = ReaderAnnotation.setNeedsUpdateFlag
 
 function ReaderAnnotation:onCloseDocument()
     self:updatePageNumbers()
@@ -262,7 +263,7 @@ function ReaderAnnotation:onExportAnnotations(on_closing)
     if do_export and self:hasAnnotations() then
         local file = self:getExportAnnotationsFilepath()
         local anno = LuaSettings:open(file)
-        local device_id = G_reader_settings:readSetting("device_id", random.uuid())
+        local device_id = G_reader_settings:readSetting("device_id")
         anno:saveSetting("device_id", device_id)
         anno:saveSetting("datetime", os.date("%Y-%m-%d %H:%M:%S"))
         anno:saveSetting("paging", self.ui.paging and true)
@@ -282,7 +283,7 @@ function ReaderAnnotation:importAnnotations()
     if anno:readSetting("device_id") == G_reader_settings:readSetting("device_id") then return end -- same device
     local new_annotations = anno:readSetting("annotations")
     if (self.ui.paging and true) ~= anno:readSetting("paging") then return end -- incompatible annotations type
-    local new_datetime = anno:readSetting("datetime")
+    local new_datetime = G_reader_settings:isTrue("annotations_export_keep_all_on_import") and "" or anno:readSetting("datetime")
     os.remove(file)
     if #self.annotations == 0 then
         self.annotations = new_annotations
@@ -503,7 +504,7 @@ function ReaderAnnotation:getInsertionIndex(item)
 end
 
 function ReaderAnnotation:addItem(item)
-    item.datetime = os.date("%Y-%m-%d %H:%M:%S")
+    item.datetime = item.datetime or os.date("%Y-%m-%d %H:%M:%S")
     item.pageno = self.ui.rolling and self.document:getPageFromXPointer(item.page) or item.page
     item.pageref = self:getPageRef(item.page, item.pageno)
     local index = self:getInsertionIndex(item)
@@ -512,7 +513,7 @@ function ReaderAnnotation:addItem(item)
 end
 
 function ReaderAnnotation:onAnnotationsModified(items)
-    if items.index_modified == nil then -- not needed when annotation added or removed
+    if items.index_modified == nil or items.modify_datetime then -- not needed when annotation added or removed
         items[1].datetime_updated = os.date("%Y-%m-%d %H:%M:%S")
     end
 end

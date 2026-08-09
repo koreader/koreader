@@ -24,40 +24,31 @@ local T = ffiUtil.template
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
     menu_items = nil, -- table, mandatory
-    registered_widgets = nil,
+    registered_widgets = nil, -- array
 }
 
-function FileManagerMenu:init()
-    self.menu_items = {
+local function getDefaultMenuButtons()
+    return {
         ["KOMenu:menu_buttons"] = {
             -- top menu
         },
         -- items in top menu
-        filemanager_settings = {
-            icon = "appbar.filebrowser",
-        },
-        setting = {
-            icon = "appbar.settings",
-        },
-        tools = {
-            icon = "appbar.tools",
-        },
-        search = {
-            icon = "appbar.search",
-        },
-        main = {
-            icon = "appbar.menu",
-        },
+        filemanager_settings = { icon = "appbar.filebrowser" },
+        setting = { icon = "appbar.settings" },
+        tools = { icon = "appbar.tools" },
+        search = { icon = "appbar.search" },
+        main = { icon = "appbar.menu" },
     }
+end
+
+function FileManagerMenu:init()
+    self.menu_items = getDefaultMenuButtons()
 
     self.registered_widgets = {}
 
     self:registerKeyEvents()
 
-    self.activation_menu = G_reader_settings:readSetting("activate_menu")
-    if self.activation_menu == nil then
-        self.activation_menu = "swipe_tap"
-    end
+    self.activation_menu = G_reader_settings:readSetting("activate_menu") or "swipe_tap"
 end
 
 function FileManagerMenu:registerKeyEvents()
@@ -66,13 +57,19 @@ function FileManagerMenu:registerKeyEvents()
         if Device:hasFewKeys() then
             self.key_events.KeyPressShowMenu = { { { "Menu", "Right" } } }
         end
-        if Device:hasScreenKB() then
-            self.key_events.OpenLastDoc = { { "ScreenKB", "Back" } }
-        end
+        -- OpenLastDoc = { { "ScreenKB", "Back" } } handled by hotkeys
     end
 end
 
-FileManagerMenu.onPhysicalKeyboardConnected = FileManagerMenu.registerKeyEvents
+function FileManagerMenu:onPhysicalKeyboardConnected()
+    self.key_events = {}
+    self:registerKeyEvents()
+    if self.menu_container then
+        self:onCloseFileManagerMenu()
+    end
+    self.tab_item_table = nil
+end
+FileManagerMenu.onPhysicalKeyboardDisconnected = FileManagerMenu.onPhysicalKeyboardConnected
 
 -- NOTE: FileManager emits a SetDimensions on init, it's our only caller
 function FileManagerMenu:initGesListener()
@@ -148,17 +145,24 @@ function FileManagerMenu:onOpenLastDoc()
         self:onCloseFileManagerMenu()
     end
 
-    local ReaderUI = require("apps/reader/readerui")
-    ReaderUI:showReader(last_file)
+    self.ui:openFile(last_file)
 end
 
 function FileManagerMenu:setUpdateItemTable()
+    for k, v in pairs(getDefaultMenuButtons()) do
+        self.menu_items[k] = v
+    end
     local FileChooser = self.ui.file_chooser
 
     -- setting tab
     self.menu_items.filebrowser_settings = {
         text = _("Settings"),
         sub_item_table = {
+            {
+                text = _("Show all files from subfolders"),
+                checked_func = function() return FileChooser.show_flat_view end,
+                callback = function() FileChooser:toggleShowFilesMode("show_flat_view") end,
+            },
             {
                 text = _("Show hidden files"),
                 checked_func = function() return FileChooser.show_hidden end,
@@ -342,6 +346,7 @@ function FileManagerMenu:setUpdateItemTable()
                             local current_path = G_reader_settings:readSetting("home_dir")
                             local default_path = filemanagerutil.getDefaultDir()
                             local caller_callback = function(path)
+                                self.ui.folder_shortcuts:updateShortcut("home_dir", path)
                                 G_reader_settings:saveSetting("home_dir", path)
                                 self.ui:updateTitleBarPath()
                             end
@@ -384,9 +389,28 @@ To:
                 separator = true,
             },
             {
+                text = _("Ask to open files"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("file_ask_to_open")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("file_ask_to_open")
+                end,
+            },
+            {
+                text = _("Show parent folder"),
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("show_parent_folder")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("show_parent_folder")
+                    FileChooser:refreshPath()
+                end,
+            },
+            {
                 text = _("Show collection mark"),
                 checked_func = function()
-                    return G_reader_settings:hasNot("collection_show_mark")
+                    return G_reader_settings:nilOrTrue("collection_show_mark")
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrTrue("collection_show_mark")
@@ -445,13 +469,6 @@ To:
         },
     }
 
-    for _, widget in pairs(self.registered_widgets) do
-        local ok, err = pcall(widget.addToMainMenu, widget, self.menu_items)
-        if not ok then
-            logger.err("failed to register widget", widget.name, err)
-        end
-    end
-
     self.menu_items.show_filter = self:getShowFilterMenuTable()
     self.menu_items.sort_by = self:getSortingMenuTable()
     self.menu_items.reverse_sorting = {
@@ -468,7 +485,7 @@ To:
         text = _("Folders and files mixed"),
         enabled_func = function()
             local collate = FileChooser:getCollate()
-            return collate.can_collate_mixed
+            return collate.can_collate_mixed or false
         end,
         checked_func = function()
             local collate = FileChooser:getCollate()
@@ -808,19 +825,6 @@ To:
         })
     end
 
-    self.menu_items.cloud_storage = {
-        text = _("Cloud storage"),
-        callback = function()
-            local cloud_storage = require("apps/cloudstorage/cloudstorage"):new{}
-            UIManager:show(cloud_storage)
-            local filemanagerRefresh = function() self.ui:onRefresh() end
-            function cloud_storage:onClose()
-                filemanagerRefresh()
-                UIManager:close(cloud_storage)
-            end
-        end,
-    }
-
     -- main menu tab
     self.menu_items.open_last_document = {
         text_func = function()
@@ -864,9 +868,16 @@ To:
             remember = false,
             callback = function()
                 self:onCloseFileManagerMenu()
-                self.ui:tapPlus()
+                self.ui:onShowPlusMenu()
             end,
         }
+    end
+
+    for _, widget in ipairs(self.registered_widgets) do
+        local ok, err = pcall(widget.addToMainMenu, widget, self.menu_items)
+        if not ok then
+            logger.err("failed to register widget", widget.name, err)
+        end
     end
 
     -- NOTE: This is cached via require for ui/plugin/insert_menu's sake...
@@ -878,7 +889,7 @@ end
 dbg:guard(FileManagerMenu, 'setUpdateItemTable',
     function(self)
         local mock_menu_items = {}
-        for _, widget in pairs(self.registered_widgets) do
+        for _, widget in ipairs(self.registered_widgets) do
             -- make sure addToMainMenu works in debug mode
             widget:addToMainMenu(mock_menu_items)
         end
@@ -957,6 +968,7 @@ function FileManagerMenu:getSortingMenuTable()
             callback = function()
                 self.ui:onSetSortBy(k)
             end,
+            radio = true,
         })
     end
     table.sort(sub_item_table, function(a, b) return a.menu_order < b.menu_order end)
@@ -987,6 +999,7 @@ function FileManagerMenu:getStartWithMenuTable()
             callback = function()
                 G_reader_settings:saveSetting("start_with", v[2])
             end,
+            radio = true,
         })
     end
     return {
@@ -1003,18 +1016,6 @@ function FileManagerMenu:getStartWithMenuTable()
 end
 
 function FileManagerMenu:exitOrRestart(callback, force)
-    -- Only restart sets a callback, which suits us just fine for this check ;)
-    if callback and not force and not Device:isStartupScriptUpToDate() then
-        UIManager:show(ConfirmBox:new{
-            text = _("KOReader's startup script has been updated. You'll need to completely exit KOReader to finalize the update."),
-            ok_text = _("Restart anyway"),
-            ok_callback = function()
-                self:exitOrRestart(callback, true)
-            end,
-        })
-        return
-    end
-
     UIManager:close(self.menu_container)
     self.ui:onClose()
     if callback then
@@ -1128,6 +1129,11 @@ function FileManagerMenu:onMenuSearch()
 end
 
 function FileManagerMenu:registerToMainMenu(widget)
+    for _, w in ipairs(self.registered_widgets) do
+        if w == widget then
+            return
+        end
+    end
     table.insert(self.registered_widgets, widget)
 end
 

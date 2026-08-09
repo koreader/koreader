@@ -1,16 +1,20 @@
 #!/bin/sh
+
 export LC_ALL="en_US.UTF-8"
 
 # Compute our working directory in an extremely defensive manner
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
 # NOTE: We need to remember the *actual* KOREADER_DIR, not the relocalized version in /tmp...
 export KOREADER_DIR="${KOREADER_DIR:-${SCRIPT_DIR}}"
+UNPACK_DIR="${KOREADER_DIR%/*}"
 
 # We rely on starting from our working directory, and it needs to be set, sane and absolute.
 cd "${KOREADER_DIR:-/dev/null}" || exit
 
-# To make USBMS behave, relocalize ourselves outside of onboard
-if [ "${SCRIPT_DIR}" != "/tmp" ]; then
+# To make USBMS behave, relocalize ourselves outside of onboard. Additionally,
+# this is used by KOReader to detect if the original script has changed after
+# an update (requiring a complete restart from the parent launcher).
+if [ "${SCRIPT_DIR}" != "/tmp" ] && [ "${SCRIPT_DIR}" != "/var/volatile/tmp" ]; then
     cp -pf "${0}" "/tmp/koreader.sh"
     chmod 777 "/tmp/koreader.sh"
     exec "/tmp/koreader.sh" "$@"
@@ -89,12 +93,13 @@ fi
 
 # update to new version from OTA directory
 ko_update_check() {
-    NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
-    INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
+    NEWUPDATE="${KOREADER_DIR}/ota/update.tar.xz"
     if [ -f "${NEWUPDATE}" ]; then
         # Clear screen to delete UI leftovers
         ./fbink --cls
         ./fbink -q -y -7 -pmh "Updating KOReader"
+        # Keep a copy of the old manifest for cleaning leftovers later.
+        cp "${KOREADER_DIR}/ota/package.index" /tmp/
         # Setup the FBInk daemon
         export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
         rm -f "${FBINK_NAMED_PIPE}"
@@ -107,18 +112,13 @@ ko_update_check() {
             PBAR_WFM="AUTO"
         fi
         FBINK_PID="$(./fbink --daemon 1 %KOREADER% -q -y -6 -P 0 -W ${PBAR_WFM})"
-        # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
-        # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
-        FILESIZE="$(stat -c %b "${NEWUPDATE}")"
-        BLOCKS="$((FILESIZE / 20))"
-        export CPOINTS="$((BLOCKS / 100))"
-        # shellcheck disable=SC2016
-        ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='printf "%s" $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}'
+        (cd "${UNPACK_DIR}" && "${KOREADER_DIR}/unpack" -X "${NEWUPDATE}" >"${FBINK_NAMED_PIPE}")
         fail=$?
         kill -TERM "${FBINK_PID}"
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
-            mv "${NEWUPDATE}" "${INSTALLED}"
+            # Cleanup leftovers from previous install.
+            (cd "${UNPACK_DIR}" && grep -xvFf "${KOREADER_DIR}/ota/package.index" /tmp/package.index | xargs -r rm -vf)
             ./fbink -q -y -6 -pm "Update successful :)"
             ./fbink -q -y -5 -pm "KOReader will start momentarily . . ."
 
@@ -131,9 +131,8 @@ ko_update_check() {
             ./fbink -q -y -6 -pmh "Update failed :("
             ./fbink -q -y -5 -pm "KOReader may fail to function properly!"
         fi
-        rm -f "${NEWUPDATE}" # always purge newupdate to prevent update loops
-        unset CPOINTS FBINK_NAMED_PIPE
-        unset BLOCKS FILESIZE FBINK_PID
+        rm -f /tmp/package.index "${NEWUPDATE}" # always purge newupdate to prevent update loops
+        unset FBINK_NAMED_PIPE FBINK_PID
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         sync
     fi
@@ -209,7 +208,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     #       as we want to be able to use our own per-if processes w/ custom args later on.
     #       A SIGTERM does not break anything, it'll just prevent automatic lease renewal until the time
     #       KOReader actually sets the if up itself (i.e., it'll do)...
-    killall -q -TERM nickel hindenburg sickel fickel strickel fontickel adobehost foxitpdf iink dhcpcd-dbus dhcpcd bluealsa bluetoothd fmon nanoclock.lua
+    killall -q -TERM nickel hindenburg sickel fickel strickel fontickel adobehost foxitpdf iink dhcpcd-dbus dhcpcd bluealsa bluetoothd fmon nanoclock.lua memorylogger QtWebEngineProcess
 
     # Wait for Nickel to die... (oh, procps with killall -w, how I miss you...)
     kill_timeout=0
@@ -238,6 +237,20 @@ fi
 
 if [ -z "${PRODUCT}" ]; then
     PRODUCT="$(/bin/kobo_config.sh 2>/dev/null)"
+    export PRODUCT
+fi
+
+if [ -z "${PRODUCT}" ]; then
+    # FW >= 5.18 uses a binary hwdetect instead of the hwdetect.sh script. If hwdetect is available, we can use
+    # utils.sh for convenience.
+    if [ -e "/usr/bin/hwdetect" ]; then
+        # shellcheck disable=SC1091
+        . /usr/libexec/platform/utils.sh
+        PRODUCT="$(get_product_name)"
+    else
+        PRODUCT="$(/usr/bin/hwdetect.sh 2>/dev/null)"
+    fi
+
     export PRODUCT
 fi
 
@@ -513,7 +526,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
             continue
         fi
 
-        if ! ./tar xzf "./data/KoboUSBMS.tar.gz" -C "${USBMS_HOME}"; then
+        if ! (cd "${USBMS_HOME}" && "${KOREADER_DIR}/unpack" -x "${KOREADER_DIR}/data/KoboUSBMS.tar.gz"); then
             echo "Couldn't unpack KoboUSBMS, restarting KOReader . . ." >>crash.log 2>&1
             if ! umount "${USBMS_HOME}"; then
                 echo "Couldn't unmount the USBMS tmpfs, shutting down in 30 sec!" >>crash.log 2>&1

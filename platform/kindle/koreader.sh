@@ -1,24 +1,33 @@
 #!/bin/sh
 
+export LC_ALL="en_US.UTF-8"
+
+# Compute our working directory in an extremely defensive manner
+SCRIPT_DIR="$(CDPATH='' cd "$(dirname "$0")" && pwd -P)"
+# NOTE: We need to remember the *actual* KOREADER_DIR, not the relocalized version in /tmp...
+export KOREADER_DIR="${KOREADER_DIR:-${SCRIPT_DIR}}"
+UNPACK_DIR="${KOREADER_DIR%/*}"
+
 # NOTE: Stupid workaround to make sure the script we end up running is a *copy*,
 # living in a magical land that doesn't suffer from gross filesystem deficiencies.
 # Otherwise, the vfat+fuse mess means an OTA update will break the script on exit,
 # and potentially leave the user in a broken state, with the WM still paused...
+# Additionally, this is used by KOReader to detect if the original script has
+# changed after an update (requiring a complete restart from the parent
+# launcher).
 if [ "$(dirname "${0}")" != "/var/tmp" ]; then
     cp -pf "${0}" /var/tmp/koreader.sh
     chmod 777 /var/tmp/koreader.sh
     exec /var/tmp/koreader.sh "$@"
 fi
 
-export LC_ALL="en_US.UTF-8"
+# We rely on starting from our working directory, and it needs to be set, sane and absolute.
+cd "${KOREADER_DIR:-/dev/null}" || exit
 
 PROC_KEYPAD="/proc/keypad"
 PROC_FIVEWAY="/proc/fiveway"
 [ -e "${PROC_KEYPAD}" ] && echo unlock >"${PROC_KEYPAD}"
 [ -e "${PROC_FIVEWAY}" ] && echo unlock >"${PROC_FIVEWAY}"
-
-# KOReader's working directory
-export KOREADER_DIR="/mnt/us/koreader"
 
 # NOTE: Same vfat+fuse shenanigans needed for FBInk, before we source libko...
 cp -pf "${KOREADER_DIR}/fbink" /var/tmp/fbink
@@ -76,6 +85,7 @@ if [ "${1}" = "--kual" ]; then
     REEXEC_FLAGS="${REEXEC_FLAGS} --kual"
 else
     FROM_KUAL="no"
+    export EIPS_NO_SLEEP="yes"
 fi
 
 # By default, don't stop the framework.
@@ -89,8 +99,7 @@ elif [ "${1}" = "--asap" ]; then
     shift 1
     NO_SLEEP="yes"
     REEXEC_FLAGS="${REEXEC_FLAGS} --asap"
-    # Don't sleep during eips calls either...
-    export EIPS_NO_SLEEP="true"
+    export EIPS_NO_SLEEP="yes"
 else
     NO_SLEEP="no"
 fi
@@ -117,35 +126,32 @@ cd "${KOREADER_DIR}" || exit
 
 # Handle pending OTA update
 ko_update_check() {
-    NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
-    INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
+    NEWUPDATE="${KOREADER_DIR}/ota/update.tar.xz"
     if [ -f "${NEWUPDATE}" ]; then
         logmsg "Updating KOReader . . ."
+        /var/tmp/fbink -c
         # Let our checkpoint script handle the detailed visual feedback...
         eips_print_bottom_centered "Updating KOReader" 3
+        # Keep a copy of the old manifest for cleaning leftovers later.
+        cp "${KOREADER_DIR}/ota/package.index" /tmp/
         # Setup the FBInk daemon
         export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
         rm -f "${FBINK_NAMED_PIPE}"
         FBINK_PID="$(/var/tmp/fbink --daemon 1 %KOREADER% -q -y -6 -P 0)"
-        # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
-        # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
-        FILESIZE="$(stat -c %b "${NEWUPDATE}")"
-        BLOCKS="$((FILESIZE / 20))"
-        export CPOINTS="$((BLOCKS / 100))"
-        # NOTE: To avoid blowing up when tar truncates itself during an update, copy our GNU tar binary to the system's tmpfs,
-        #       and run that one (c.f., #4602)...
-        #       This is most likely a side-effect of the weird fuse overlay being used for /mnt/us (vs. the real vfat on /mnt/base-us),
-        #       which we cannot use because it's been mounted noexec for a few years now...
-        cp -pf "${KOREADER_DIR}/tar" /var/tmp/gnutar
-        # shellcheck disable=SC2016
-        /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='printf "%s" $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}' -C "/mnt/us" -xf "${NEWUPDATE}"
+        # NOTE: To avoid blowing up when an executable get truncated during use, we copy our binaries to the system's
+        # tmpfs, and run them from there (c.f., #4602)...  This is most likely a side-effect of the weird fuse overlay
+        # being used for /mnt/us (vs. the real vfat on /mnt/base-us), which we cannot use because it's been mounted
+        # noexec for a few years now...
+        cp -pf "${KOREADER_DIR}/unpack" /var/tmp/
+        (cd "${UNPACK_DIR}" && /var/tmp/unpack -X "${NEWUPDATE}" >"${FBINK_NAMED_PIPE}")
         fail=$?
         kill -TERM "${FBINK_PID}"
-        # And remove our temporary tar binary...
-        rm -f /var/tmp/gnutar
+        # And remove our temporary binaries...
+        rm -f /var/tmp/unpack
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
-            mv "${NEWUPDATE}" "${INSTALLED}"
+            # Cleanup leftovers from previous install.
+            (cd "${UNPACK_DIR}" && grep -xvFf "${KOREADER_DIR}/ota/package.index" /tmp/package.index | xargs -r rm -vf)
             logmsg "Update successful :)"
             eips_print_bottom_centered "Update successful :)" 2
             eips_print_bottom_centered "KOReader will start momentarily . . ." 1
@@ -160,9 +166,8 @@ ko_update_check() {
             eips_print_bottom_centered "Update failed :(" 2
             eips_print_bottom_centered "KOReader may fail to function properly" 1
         fi
-        rm -f "${NEWUPDATE}" # always purge newupdate to prevent update loops
-        unset CPOINTS FBINK_NAMED_PIPE
-        unset BLOCKS FILESIZE FBINK_PID
+        rm -f /tmp/package.index "${NEWUPDATE}" # always purge newupdate to prevent update loops
+        unset FBINK_NAMED_PIPE FBINK_PID
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         sync
     fi
@@ -252,16 +257,14 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
                 # FIXME: There's apparently a nasty side-effect on FW >= 5.12.4 which somehow softlocks the UI on exit (despite wmctrl succeeding). Don't have the HW to investigate, so, just drop it. (#6117)
                 if [ "$(version "${FW_VERSION}")" -lt "$(version "5.12.4")" ]; then
                     logmsg "Hiding the title bar . . ."
-                    TITLEBAR_GEOMETRY="$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')"
-                    ${KOREADER_DIR}/wmctrl -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY%,*},1"
-                    logmsg "Title bar geometry: '${TITLEBAR_GEOMETRY}' -> '$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')'"
+                    TITLEBAR_GEOMETRY="$("${KOREADER_DIR}/wmctrl" -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')"
+                    "${KOREADER_DIR}/wmctrl" -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY%,*},1"
+                    logmsg "Title bar geometry: '${TITLEBAR_GEOMETRY}' -> '$("${KOREADER_DIR}/wmctrl" -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')'"
                     USED_WMCTRL="yes"
                 fi
-                if [ "${FROM_KUAL}" = "yes" ]; then
-                    logmsg "Stopping awesome . . ."
-                    killall -STOP awesome
-                    AWESOME_STOPPED="yes"
-                fi
+                logmsg "Stopping awesome . . ."
+                killall -STOP awesome
+                AWESOME_STOPPED="yes"
             fi
         else
             logmsg "Hiding the status bar . . ."
@@ -388,17 +391,17 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
         # NOTE: Wait and retry for a bit, because apparently there may be timing issues (c.f., #5990)?
         usleep 250000
         WMCTRL_COUNT=0
-        until [ "$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')" = "${TITLEBAR_GEOMETRY}" ]; do
+        until [ "$("${KOREADER_DIR}/wmctrl" -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')" = "${TITLEBAR_GEOMETRY}" ]; do
             # Abort after 5s
             if [ ${WMCTRL_COUNT} -gt 20 ]; then
                 log "Giving up on restoring the title bar geometry!"
                 break
             fi
-            ${KOREADER_DIR}/wmctrl -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY}"
+            "${KOREADER_DIR}/wmctrl" -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY}"
             usleep 250000
             WMCTRL_COUNT=$((WMCTRL_COUNT + 1))
         done
-        logmsg "Title bar geometry restored to '$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')' (ought to be: '${TITLEBAR_GEOMETRY}') [after ${WMCTRL_COUNT} attempts]"
+        logmsg "Title bar geometry restored to '$("${KOREADER_DIR}/wmctrl" -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')' (ought to be: '${TITLEBAR_GEOMETRY}') [after ${WMCTRL_COUNT} attempts]"
     fi
 fi
 

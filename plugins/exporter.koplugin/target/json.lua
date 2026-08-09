@@ -41,7 +41,7 @@ local function format(booknotes, settings)
         entries = {},
         exported = booknotes.exported,
         file = booknotes.file,
-        md5sum = settings.bookChecksum and md5.sumFile(booknotes.file) or nil,
+        md5sum = settings.bookChecksum and booknotes.file and md5.sumFile(booknotes.file) or nil,
         number_of_pages = booknotes.number_of_pages
     }
     for _, entry in ipairs(booknotes) do

@@ -109,20 +109,22 @@ function ReaderHandMade:onToggleHandmadeToc()
     self.toc_enabled = not self.toc_enabled
     self:setupToc()
     -- Have footer updated, so we may see this took effect
-    self.view.footer:onUpdateFooter(self.view.footer_visible)
+    self.view.footer:maybeUpdateFooter()
 end
 
 function ReaderHandMade:onToggleHandmadeFlows()
     self.flows_enabled = not self.flows_enabled
     self:setupFlows()
     -- Have footer updated, so we may see this took effect
-    self.view.footer:onUpdateFooter(self.view.footer_visible)
+    self.view.footer:maybeUpdateFooter()
     self.ui.annotation:setNeedsUpdateFlag()
 end
 
 function ReaderHandMade:addToMainMenu(menu_items)
-    -- As it's currently impossible to create custom hidden flows on non-touch, and really impractical to create a custom toc, it's better hide these features completely for now.
-    if not Device:isTouchDevice() then
+    if not Device:isTouchDevice() and not Device:useDPadAsActionKeys() then
+        -- As it's currently impossible to create custom hidden flows on non-touch devices without useDPadAsActionKeys,
+        -- (technically speaking, without a 'hold' or 'long-press' event) and really impractical to create a custom toc,
+        -- it's better hide these features completely for now.
         return
     end
     menu_items.handmade_toc = {
@@ -198,7 +200,7 @@ This custom table of contents is currently limited to a single level and can't h
                                 self.toc = {}
                                 self.ui:handleEvent(Event:new("UpdateToc"))
                                 -- The footer may be visible, so have it update its chapter related items
-                                self.view.footer:onUpdateFooter(self.view.footer_visible)
+                                self.view.footer:maybeUpdateFooter()
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
                                 end
@@ -259,7 +261,7 @@ Hidden flows are shown with gray or hatched background in Book map and Page brow
                                 self.ui:handleEvent(Event:new("UpdateToc"))
                                 self.ui:handleEvent(Event:new("InitScrollPageStates"))
                                 -- The footer may be visible, so have it update its dependent items
-                                self.view.footer:onUpdateFooter(self.view.footer_visible)
+                                self.view.footer:maybeUpdateFooter()
                                 self.ui.annotation:setNeedsUpdateFlag()
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
@@ -283,7 +285,7 @@ Hidden flows are shown with gray or hatched background in Book map and Page brow
                                 self.ui:handleEvent(Event:new("UpdateToc"))
                                 self.ui:handleEvent(Event:new("InitScrollPageStates"))
                                 -- The footer may be visible, so have it update its dependent items
-                                self.view.footer:onUpdateFooter(self.view.footer_visible)
+                                self.view.footer:maybeUpdateFooter()
                                 self.ui.annotation:setNeedsUpdateFlag()
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
@@ -402,6 +404,11 @@ function ReaderHandMade:updateHighlightDialog()
                     this:onClose()
                     self:addOrEditPageTocItem(nil, nil, selected_text)
                 end,
+                hold_callback = function() -- no dialog: directly creates new TOC item with selection (if none existing)
+                    local selected_text = this.selected_text
+                    this:onClose()
+                    self:addOrEditPageTocItem(nil, nil, selected_text, true)
+               end,
             }
         end)
     else
@@ -452,7 +459,7 @@ function ReaderHandMade:hasPageTocItem(pageno, xpointer)
     return is_match
 end
 
-function ReaderHandMade:addOrEditPageTocItem(pageno, when_updated_callback, selected_text)
+function ReaderHandMade:addOrEditPageTocItem(pageno, when_updated_callback, selected_text, no_dialog)
     local xpointer, title
     if selected_text then
         -- If we get selected_text, it's from the highlight dialog after text selection
@@ -482,12 +489,29 @@ function ReaderHandMade:addOrEditPageTocItem(pageno, when_updated_callback, sele
             depth = 1, -- we only support 1-level chapters to keep the UX simple
         }
     end
+    if no_dialog then
+        if item_found then return true end  -- no changes if existing TOC entry
+        if selected_text then -- via highlight dialog
+            item.title = selected_text.text
+            table.insert(self.toc, idx, item)
+            self.ui:handleEvent(Event:new("UpdateToc"))
+        else -- via Page browser
+            item.title = ""
+            table.insert(self.toc, idx, item)
+            self.ui:handleEvent(Event:new("UpdateToc"))
+            if when_updated_callback then
+                when_updated_callback()
+            end
+        end
+        return true
+    end
     local dialog
     dialog = InputDialog:new{
         title = item_found and _("Edit custom TOC chapter") or _("Create new custom ToC chapter"),
         input = item.title,
         input_hint = _("TOC chapter title"),
         description = T(_([[On page %1.]]), pageno),
+        cursor_at_end = item_found and true or false, -- cursor at start for new entries for easy manual addition of chapter number
         buttons = {
             {
                 {
@@ -530,7 +554,7 @@ function ReaderHandMade:addOrEditPageTocItem(pageno, when_updated_callback, sele
                         text = _("Use selected text"),
                         callback = function()
                             -- Just replace the text without saving, to allow editing/fixing it
-                            dialog:setInputText(selected_text.text, nil, false)
+                            dialog:setInputText(selected_text.text, nil, true)
                         end,
                     } or nil,
             } or nil,
@@ -619,23 +643,17 @@ function ReaderHandMade:updateDocFlows()
             table.insert(flows, cur_hidden_flow)
         end
     end
-    local first_linear_page
-    local last_linear_page
-    local prev_flow
-    for i, flow in ipairs(flows) do
-        if not prev_flow or prev_flow[1] + prev_flow[2] < flow[1] then
-            if not first_linear_page and flow[1] > 1 then
-                first_linear_page = prev_flow and prev_flow[1] + prev_flow[2] or 1
-            end
+    local first_linear_page = 1
+    local last_linear_page = nb_pages
+    if #flows > 0 then
+        local flow = flows[1]
+        if flow[1] == 1 then -- book first page is in a hidden flow
+            first_linear_page = flow[1] + flow[2]
+        end
+        flow = flows[#flows]
+        if flow[1] + flow[2] == nb_pages then -- book last page is in a hidden flow
             last_linear_page = flow[1] - 1
         end
-        prev_flow = flow
-    end
-    if not prev_flow or prev_flow[1] + prev_flow[2] < nb_pages then
-        last_linear_page = nb_pages
-    end
-    if not first_linear_page then -- no flow met
-        first_linear_page = 1
     end
     -- CreDocument adds and item with key [0] with info about the main flow
     flows[0] = {first_linear_page, nb_pages - nb_hidden_pages}

@@ -13,6 +13,9 @@ describe("Readerrolling module", function()
         Event = require("ui/event")
         Screen = require("device").screen
 
+        -- Expected values below established before the introduction of fractional positionning
+        G_reader_settings:saveSetting("cre_font_fractional_positioning", 0)
+
         local sample_epub = "spec/front/unit/data/juliet.epub"
         readerui = ReaderUI:new{
             dimen = Screen:getSize(),
@@ -22,6 +25,8 @@ describe("Readerrolling module", function()
     end)
 
     teardown(function()
+        G_reader_settings:delSetting("cre_font_fractional_positioning")
+        G_reader_settings:flush()
         readerui:onClose()
     end)
 

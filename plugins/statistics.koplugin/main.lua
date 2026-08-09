@@ -1,31 +1,27 @@
 local BD = require("ui/bidi")
-local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
 local DocSettings = require("docsettings")
-local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local Math = require("optmath")
-local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderProgress = require("readerprogress")
 local ReadHistory = require("readhistory")
-local Screensaver = require("ui/screensaver")
 local SQ3 = require("lua-ljsqlite3/init")
-local SyncService = require("frontend/apps/cloudstorage/syncservice")
 local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
 local datetime = require("datetime")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local N_ = _.ngettext
-local T = FFIUtil.template
+local T = ffiUtil.template
 
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
@@ -62,6 +58,7 @@ local STATISTICS_SQL_BOOK_TOTALS_QUERY = [[
 
 local ReaderStatistics = Widget:extend{
     name = "statistics",
+    settings_key = "statistics",
     start_current_period = 0,
     preserved_start_current_period = nil, -- should stay a class property
     curr_page = 0,
@@ -91,6 +88,7 @@ ReaderStatistics.default_settings = {
     calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
     calendar_show_histogram = true,
     calendar_browse_future_months = false,
+    color = false,
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
@@ -113,16 +111,17 @@ function ReaderStatistics:onDispatcherRegisterActions()
         {category="none", event="ShowBookStats", title=_("Reading statistics: current book"), reader=true})
 end
 
-function ReaderStatistics:init()
-    if self.document and self.document.is_pic then
-        return -- disable in PIC documents
-    end
+function ReaderStatistics:useColorRendering()
+    return Device:hasColorScreen() and (not G_reader_settings:has("color_rendering") or G_reader_settings:isTrue("color_rendering"))
+end
 
+function ReaderStatistics:init()
+    self.color = self:useColorRendering()
     self.is_doc = false
     self.is_doc_not_frozen = false -- freeze finished books statistics
 
     -- Placeholder until onReaderReady
-    self.data = {
+    self.data = self.document and {
         title = "",
         authors = "N/A",
         language = "N/A",
@@ -141,42 +140,15 @@ function ReaderStatistics:init()
     end
     self:resetVolatileStats()
 
-    self.settings = G_reader_settings:readSetting("statistics", self.default_settings)
+    self.settings = G_reader_settings:readSetting(self.settings_key, self.default_settings)
 
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
     self:checkInitDatabase()
-    BookStatusWidget.getStats = function()
-        return self:getStatsBookStatus(self.id_curr_book, self.settings.is_enabled)
-    end
-    ReaderFooter.getAvgTimePerPage = function()
-        if self.settings.is_enabled then
-            return self.avg_time
-        end
-    end
-    Screensaver.getAvgTimePerPage = function()
-        if self.settings.is_enabled then
-            return self.avg_time
-        end
-    end
-    Screensaver.getReaderProgress = function()
-        self:insertDB()
-        local current_duration, current_pages = self:getCurrentBookStats()
-        local today_duration, today_pages = self:getTodayBookStats()
-        local dates_stats = self:getReadingProgressStats(7)
-        local readingprogress
-        if dates_stats then
-            readingprogress = ReaderProgress:new{
-                dates = dates_stats,
-                current_duration = current_duration,
-                current_pages = current_pages,
-                today_duration = today_duration,
-                today_pages = today_pages,
-                readonly = true,
-            }
-        end
-        return readingprogress
-    end
+end
+
+function ReaderStatistics:onColorRenderingUpdate()
+    self.color = self:useColorRendering()
 end
 
 function ReaderStatistics:initData()
@@ -197,7 +169,6 @@ function ReaderStatistics:initData()
         end
     end
     self.data.series = series or "N/A"
-
     self.data.pages = self.document:getPageCount()
     -- Update these numbers to what's actually stored in the settings
     self.data.highlights, self.data.notes = self.ui.annotation:getNumberOfHighlightsAndNotes()
@@ -249,7 +220,6 @@ function ReaderStatistics:onDocumentRerendered()
     -- - 5 minutes later, on the next insertDB(), (153, now-5mn, 42, 254) will be inserted in DB
 
     local new_pagecount = self.document:getPageCount()
-
     if new_pagecount ~= self.data.pages then
         logger.dbg("ReaderStatistics: Pagecount change, flushing volatile book statistics")
         -- Flush volatile stats to DB for current book, and update pagecount and average time per page stats
@@ -293,11 +263,8 @@ function ReaderStatistics:resetVolatileStats(now_ts)
     end
 end
 
-function ReaderStatistics:getStatsBookStatus(id_curr_book, stat_enable)
-    if not stat_enable or id_curr_book == nil then
-        return {}
-    end
-
+function ReaderStatistics:getStatsBookStatus()
+    if not (self.settings.is_enabled and self.id_curr_book) then return end
     self:insertDB()
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
@@ -309,20 +276,13 @@ function ReaderStatistics:getStatsBookStatus(id_curr_book, stat_enable)
                     GROUP  BY dates
                );
     ]]
-    local total_days = conn:rowexec(string.format(sql_stmt, id_curr_book))
-    local total_read_pages, total_time_book = conn:rowexec(string.format(STATISTICS_SQL_BOOK_TOTALS_QUERY, id_curr_book))
+    local total_days = conn:rowexec(string.format(sql_stmt, self.id_curr_book))
+    local total_read_pages, total_time_book = conn:rowexec(string.format(STATISTICS_SQL_BOOK_TOTALS_QUERY, self.id_curr_book))
     conn:close()
-
-    if total_time_book == nil then
-        total_time_book = 0
-    end
-    if total_read_pages == nil then
-        total_read_pages = 0
-    end
-    return  {
+    return {
         days = tonumber(total_days),
-        time = tonumber(total_time_book),
-        pages = tonumber(total_read_pages),
+        time = tonumber(total_time_book) or 0,
+        pages = tonumber(total_read_pages) or 0,
     }
 end
 
@@ -365,7 +325,7 @@ Do you want to create an empty database?
             if lfs.attributes(bkp_db_location, "mode") == "file" then
                 logger.warn("ReaderStatistics: A DB backup from schema", db_version, "to schema", DB_SCHEMA_VERSION, "already exists!")
             else
-                FFIUtil.copyFile(db_location, bkp_db_location)
+                ffiUtil.copyFile(db_location, bkp_db_location)
                 logger.info("ReaderStatistics: Old DB backed up as", bkp_db_location)
             end
 
@@ -403,7 +363,7 @@ Do you want to create an empty database?
             if lfs.attributes(bkp_db_location, "mode") == "file" then
                 logger.warn("ReaderStatistics: A DB backup from schema", db_version, "to schema", DB_SCHEMA_VERSION, "already exists!")
             else
-                FFIUtil.copyFile(db_location, bkp_db_location)
+                ffiUtil.copyFile(db_location, bkp_db_location)
                 logger.info("ReaderStatistics: Old DB backed up as", bkp_db_location)
             end
 
@@ -1162,21 +1122,25 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                             { -- Friday (Bangladesh and Maldives)
                                 text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[6]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 6 end,
+                                radio = true,
                                 callback = function() self.settings.calendar_start_day_of_week = 6 end
                             },
                             { -- Saturday (some Middle East countries)
                                 text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[7]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 7 end,
+                                radio = true,
                                 callback = function() self.settings.calendar_start_day_of_week = 7 end
                             },
                             { -- Sunday
                                 text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[1]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 1 end,
+                                radio = true,
                                 callback = function() self.settings.calendar_start_day_of_week = 1 end
                             },
                             { -- Monday
                                 text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[2]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 2 end,
+                                radio = true,
                                 callback = function() self.settings.calendar_start_day_of_week = 2 end
                             },
                         },
@@ -1261,73 +1225,16 @@ Time is in hours and minutes.]]),
                         separator = true,
                     },
                     {
-                        text = _("Cloud sync"),
-                        callback = function(touchmenu_instance)
-                            local server = self.settings.sync_server
-                            local edit_cb = function()
-                                local sync_settings = SyncService:new{}
-                                sync_settings.onClose = function(this)
-                                    UIManager:close(this)
-                                end
-                                sync_settings.onConfirm = function(sv)
-                                    if server and (server.type ~= sv.type
-                                        or server.url ~= sv.url
-                                        or server.address ~= sv.address) then
-                                            SyncService.removeLastSyncDB(db_location)
-                                    end
-                                    self.settings.sync_server = sv
-                                    touchmenu_instance:updateItems()
-                                end
-                                UIManager:show(sync_settings)
-                            end
-                            if not server then
-                                edit_cb()
-                                return
-                            end
-                            local dialogue
-                            local delete_button = {
-                                text = _("Delete"),
-                                callback = function()
-                                    UIManager:close(dialogue)
-                                    UIManager:show(ConfirmBox:new{
-                                        text = _("Delete server info?"),
-                                        cancel_text = _("Cancel"),
-                                        cancel_callback = function()
-                                            return
-                                        end,
-                                        ok_text = _("Delete"),
-                                        ok_callback = function()
-                                            self.settings.sync_server = nil
-                                            SyncService.removeLastSyncDB(db_location)
-                                            touchmenu_instance:updateItems()
-                                        end,
-                                    })
-                                end,
-                            }
-                            local edit_button = {
-                                text = _("Edit"),
-                                callback = function()
-                                    UIManager:close(dialogue)
-                                    edit_cb()
-                                end
-                            }
-                            local close_button = {
-                                text = _("Close"),
-                                callback = function()
-                                    UIManager:close(dialogue)
-                                end
-                            }
-                            local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
-                            dialogue = ButtonDialog:new{
-                                title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nSet up the same cloud folder on each device to sync across your devices."),
-                                             server.name.." "..type, SyncService.getReadablePath(server)),
-                                buttons = {
-                                    {delete_button, edit_button, close_button}
-                                },
-                            }
-                            UIManager:show(dialogue)
+                        text_func = function()
+                            local text = self.ui.cloudstorage and self.ui.cloudstorage:getServerNameType(self.settings.sync_server)
+                            return T(_("Cloud sync: %1"), text or _("not set"))
                         end,
-                        enabled_func = function() return self.settings.is_enabled end,
+                        callback = function(touchmenu_instance)
+                            self:setSyncRemoteFolder(touchmenu_instance)
+                        end,
+                        enabled_func = function()
+                            return self:canSync(true)
+                        end,
                         keep_menu_open = true,
                     },
                 },
@@ -1338,7 +1245,7 @@ Time is in hours and minutes.]]),
                 separator = true,
             },
             {
-                text = _("Synchronize now"),
+                text = _("Sync now"),
                 callback = function()
                     self:onSyncBookStats()
                 end,
@@ -1366,31 +1273,15 @@ Time is in hours and minutes.]]),
                 text = _("Reading progress"),
                 keep_menu_open = true,
                 callback = function()
-                    self:insertDB()
-                    local current_duration, current_pages = self:getCurrentBookStats()
-                    local today_duration, today_pages = self:getTodayBookStats()
-                    local dates_stats = self:getReadingProgressStats(7)
-                    if dates_stats then
-                        UIManager:show(ReaderProgress:new{
-                            dates = dates_stats,
-                            current_duration = current_duration,
-                            current_pages = current_pages,
-                            today_duration = today_duration,
-                            today_pages = today_pages,
-                        })
-                    else
-                        UIManager:show(InfoMessage:new{
-                            text = _("Reading progress is not available.\nThere is no data for the last week."),
-                        })
-                    end
-                end
+                    self:onShowReaderProgress()
+                end,
             },
             {
                 text = _("Time range"),
                 keep_menu_open = true,
                 callback = function()
                     self:onShowTimeRange()
-                end
+                end,
             },
             {
                 text = _("Calendar view"),
@@ -1650,26 +1541,26 @@ function ReaderStatistics:getCurrentStat()
     local __, book_read_time = self:getPageTimeTotalStats(id_book)
     local now_ts = os.time()
 
-    if total_time_book == nil then
-        total_time_book = 0
-    end
-    if total_read_pages == nil then
-        total_read_pages = 0
-    end
-    if first_open == nil then
-        first_open = now_ts
-    end
+    total_time_book = tonumber(total_time_book) or 0
+    total_read_pages = tonumber(total_read_pages) or 0
+    first_open = first_open or now_ts
     self.data.pages = self.document:getPageCount()
-    total_time_book = tonumber(total_time_book)
-    total_read_pages = tonumber(total_read_pages)
 
     local current_page
     local total_pages
     local page_progress_string
     local percent_read
-    if self.document:hasHiddenFlows() and self.view.state.page then
-        local flow = self.document:getPageFlow(self.view.state.page)
-        current_page = self.document:getPageNumberInFlow(self.view.state.page)
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        current_page = self.ui:getCurrentPage()
+        total_pages = self.data.pages
+        local current_page_label, current_page_idx, total_pages_idx = self.ui.pagemap:getCurrentPageLabel()
+        local last_page_label = self.ui.pagemap:getLastPageLabel()
+        percent_read = Math.round(100*current_page_idx/total_pages_idx)
+        page_progress_string = ("%s / %s (%d%%)"):format(current_page_label, last_page_label, percent_read)
+    elseif self.document:hasHiddenFlows() then
+        current_page = self.ui:getCurrentPage()
+        local flow = self.document:getPageFlow(current_page)
+        current_page = self.document:getPageNumberInFlow(current_page)
         total_pages = self.document:getTotalPagesInFlow(flow)
         percent_read = Math.round(100*current_page/total_pages)
         if flow == 0 then
@@ -2767,7 +2658,7 @@ end
 function ReaderStatistics:importFromFile(base_path, item)
     item = util.trim(item)
     if item ~= ".stat" then
-        local statistic_file = FFIUtil.joinPath(base_path, item)
+        local statistic_file = ffiUtil.joinPath(base_path, item)
         if lfs.attributes(statistic_file, "mode") == "directory" then
             return
         end
@@ -2841,10 +2732,12 @@ end
 
 function ReaderStatistics:onReaderReady(config)
     if self.settings.is_enabled then
-        self.data = config:readSetting("stats", { performance_in_pages = {} })
-        self.doc_md5 = config:readSetting("partial_md5_checksum")
-        -- we have correct page count now, do the actual initialization work
-        self:initData()
+        if not self.document.is_pic then -- disabled in PIC documents
+            self.data = config:readSetting("stats", { performance_in_pages = {} })
+            self.doc_md5 = config:readSetting("partial_md5_checksum")
+            -- we have correct page count now, do the actual initialization work
+            self:initData()
+        end
         self.view.footer:maybeUpdateFooter()
     end
 end
@@ -3056,23 +2949,29 @@ function ReaderStatistics:getReadingDurationBySecond(ts)
     return per_book
 end
 
-function ReaderStatistics:onShowReaderProgress()
+function ReaderStatistics:onShowReaderProgress(get_widget)
     self:insertDB()
     local current_duration, current_pages = self:getCurrentBookStats()
     local today_duration, today_pages = self:getTodayBookStats()
     local dates_stats = self:getReadingProgressStats(7)
-    local readingprogress
-    if dates_stats then
-        readingprogress = ReaderProgress:new{
-            dates = dates_stats,
-            current_duration = current_duration,
-            current_pages = current_pages,
-            today_duration = today_duration,
-            today_pages = today_pages,
-            --readonly = true,
-        }
+    local readingprogress = dates_stats and ReaderProgress:new{
+        dates = dates_stats,
+        current_duration = current_duration,
+        current_pages = current_pages,
+        today_duration = today_duration,
+        today_pages = today_pages,
+        readonly = get_widget, -- true for Screensaver
+    }
+    if get_widget then
+        return readingprogress
     end
-    UIManager:show(readingprogress)
+    if readingprogress then
+        UIManager:show(readingprogress)
+    else
+        UIManager:show(InfoMessage:new{
+            text = _("Reading progress is not available.\nThere is no data for the last week."),
+        })
+    end
 end
 
 function ReaderStatistics:onShowBookStats()
@@ -3093,7 +2992,7 @@ function ReaderStatistics:getCurrentBookReadPages()
         SELECT
           page,
           min(sum(duration), ?) AS durations,
-          strftime("%s", "now") - max(start_time) AS delay
+          strftime('%s', 'now') - max(start_time) AS delay
         FROM page_stat
         WHERE id_book = ?
         GROUP BY page
@@ -3123,21 +3022,86 @@ function ReaderStatistics:getCurrentBookReadPages()
     return read_pages
 end
 
-function ReaderStatistics:canSync()
-    return self.settings.sync_server ~= nil and self.settings.is_enabled
+function ReaderStatistics:getTimeForPages(pages)
+    if self.settings.is_enabled and self.avg_time and self.avg_time == self.avg_time then -- not nan
+        local duration_format = G_reader_settings:readSetting("duration_format", "classic")
+        return datetime.secondsToClockDuration(duration_format, pages * self.avg_time, true)
+    end
+end
+
+-- cloud sync (Cloud storage plugin required)
+
+function ReaderStatistics:canSync(no_server_check)
+    return self.settings.is_enabled and self.ui.cloudstorage ~= nil
+        and (no_server_check or self.settings.sync_server ~= nil)
+end
+
+function ReaderStatistics:setSyncRemoteFolder(touchmenu_instance)
+    local cs = self.ui.cloudstorage
+    local server = self.settings.sync_server
+    local dialogue
+    local buttons = {
+        {
+            {
+                text = _("Delete"),
+                enabled = server and true or false,
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Delete server info?"),
+                        ok_text = _("Delete"),
+                        ok_callback = function()
+                            UIManager:close(dialogue)
+                            self.settings.sync_server = nil
+                            os.remove(db_location .. ".sync")
+                            touchmenu_instance:updateItems()
+                        end,
+                    })
+                end,
+            },
+            {
+                text = _("Edit"),
+                callback = function()
+                    UIManager:close(dialogue)
+                    cs:onShowCloudStorageList(function(sv)
+                        self.settings.sync_server = sv
+                        if server and (server.type ~= sv.type or server.url ~= sv.url or server.address ~= sv.address) then
+                            os.remove(db_location .. ".sync")
+                        end
+                        touchmenu_instance:updateItems()
+                        self:setSyncRemoteFolder(touchmenu_instance) -- keep the dialog open
+                    end)
+                end,
+            },
+            {
+                text = _("Close"),
+                callback = function()
+                    UIManager:close(dialogue)
+                end,
+            },
+        },
+    }
+    local text = cs:getServerNameType(server) or _("not set")
+    if server then
+        text = text .. "\n\n" .. T(_("Folder path:\n%1"), cs.getReadablePath(server))
+                    .. "\n\n" .. _("Set up the same cloud folder on each device to sync across your devices.")
+    end
+    dialogue = ButtonDialog:new{
+        title = T(_("Cloud storage: %1"), text),
+        buttons = buttons,
+    }
+    UIManager:show(dialogue)
 end
 
 function ReaderStatistics:onSyncBookStats()
-    if not self:canSync() then return end
-
-    UIManager:show(InfoMessage:new {
-        text = _("Syncing book statistics. This may take a while."),
-        timeout = 1,
-    })
-
-    UIManager:nextTick(function()
-        SyncService.sync(self.settings.sync_server, db_location, self.onSync)
-    end)
+    if self:canSync() then
+        local caller_pre_callback = function()
+            UIManager:show(InfoMessage:new {
+                text = _("Syncing book statistics…"),
+                timeout = 1,
+            })
+        end
+        self.ui.cloudstorage:sync(self.settings.sync_server, db_location, self.onSync, nil, caller_pre_callback)
+    end
 end
 
 function ReaderStatistics.onSync(local_path, cached_path, income_path)

@@ -29,18 +29,35 @@ local SSH = WidgetContainer:extend{
 function SSH:init()
     self.SSH_port = G_reader_settings:readSetting("SSH_port") or "2222"
     self.allow_no_password = G_reader_settings:isTrue("SSH_allow_no_password")
+    self.key_only_auth = G_reader_settings:isTrue("SSH_key_only_auth")
+    self.autostart = G_reader_settings:isTrue("SSH_autostart")
+    -- force close all connections on stop
+    self.force_kill_clients = G_reader_settings:isTrue("SSH_force_kill_clients")
+
+    if self.autostart then
+        self:start()
+    end
+
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
 end
 
 function SSH:start()
+    if self:isRunning() then
+        logger.dbg("[Network] Not starting SSH server, already running.")
+        return
+    end
+
     local cmd = string.format("%s %s %s %s%s %s",
         "./dropbear",
         "-E",
         "-R",
         "-p", self.SSH_port,
         "-P /tmp/dropbear_koreader.pid")
-     if self.allow_no_password then
+    -- prevent login without public key (discourage allow_no_password option)
+    if self.key_only_auth then
+        cmd = string.format("%s %s", cmd, "-s")
+    elseif self.allow_no_password then
         cmd = string.format("%s %s", cmd, "-n")
     end
 
@@ -88,15 +105,46 @@ function SSH:isRunning()
     return util.pathExists("/tmp/dropbear_koreader.pid")
 end
 
-function SSH:stop()
-    os.execute("cat /tmp/dropbear_koreader.pid | xargs kill")
-    UIManager:show(InfoMessage:new {
-        text = T(_("SSH server stopped.")),
-        timeout = 2,
-    })
+--- Stops the Dropbear process started by this plugin.
+--- @param force boolean If true, forces the process to stop if it doesn't exit gracefully.
+--- @return boolean Success, string|nil Error
+function SSH:stopPlugin(force)
+    if not self:isRunning() then
+        return true
+    end
 
-    if self:isRunning() then
-        os.remove("/tmp/dropbear_koreader.pid")
+    local pid_path = "/tmp/dropbear_koreader.pid"
+
+    local function readPID()
+        local f = io.open(pid_path, "r")
+        if not f then return nil end
+        local s = f:read("*l")
+        f:close()
+        return s and tonumber(s) or nil
+    end
+
+    local pid = readPID()
+
+    local function isProcAlive(p)
+        return p and util.pathExists("/proc/" .. p)
+    end
+
+    local function send(sig, p)
+        return os.execute(string.format("pkill -%s -P %d && kill -%s %d", sig, p, sig, p)) == 0
+    end
+
+    send("TERM", pid)
+    for _ = 1, 20 do
+        if not isProcAlive(pid) then break end
+        ffiutil.sleep(0.1)
+    end
+
+    if isProcAlive(pid) and force then
+        send("KILL", pid)
+        for _ = 1, 10 do
+            if not isProcAlive(pid) then break end
+            ffiutil.sleep(0.1)
+        end
     end
 
     -- Plug the hole in the Kindle's firewall
@@ -107,6 +155,48 @@ function SSH:stop()
         os.execute(string.format("%s %s %s",
             "iptables -D OUTPUT -p tcp --sport", self.SSH_port,
             "-m conntrack --ctstate ESTABLISHED -j ACCEPT"))
+    end
+
+    if not isProcAlive(pid) then
+        os.remove(pid_path)
+        return true
+    end
+    return false, "dropbear process did not exit"
+end
+
+function SSH:stop()
+    local ok, err = self:stopPlugin(false)
+    if not ok then
+        logger.warn("SSH: graceful stop failed:", err)
+        -- If the user chose to force-close all connections, try a forced stop first.
+        if self.force_kill_clients then
+            ok, err = self:stopPlugin(true)
+            if not ok then
+                -- Last resort: kill every dropbear process to close all sessions.
+                logger.warn("SSH: force-stop also failed, using killall:", err)
+                os.execute("killall -9 dropbear 2>/dev/null")
+                os.remove("/tmp/dropbear_koreader.pid")
+                UIManager:show(InfoMessage:new{
+                    text = _("SSH server forcefully stopped."),
+                    timeout = 2,
+                })
+                return
+            end
+        else
+            -- Without force-kill, active connections may remain.
+            UIManager:show(InfoMessage:new{
+                icon = "notice-warning",
+                text = _("SSH server is still shutting down… Active connections may remain until they are closed."),
+                timeout = 3,
+            })
+            return
+        end
+    end
+    if ok then
+        UIManager:show(InfoMessage:new{
+            text = _("SSH server stopped."),
+            timeout = 2,
+        })
     end
 end
 
@@ -156,11 +246,17 @@ end
 function SSH:addToMainMenu(menu_items)
     menu_items.ssh = {
         text = _("SSH server"),
+        checked_func = function() return self:isRunning() end,
+        hold_callback = function(touchmenu_instance)
+            self:onToggleSSHServer()
+            ffiutil.sleep(1)
+            touchmenu_instance:updateItems()
+        end,
         sub_item_table = {
             {
                 text = _("SSH server"),
-                keep_menu_open = true,
                 checked_func = function() return self:isRunning() end,
+                check_callback_updates_menu = true,
                 callback = function(touchmenu_instance)
                     self:onToggleSSHServer()
                     -- sleeping might not be needed, but it gives the feeling
@@ -171,7 +267,7 @@ function SSH:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return T(_("SSH port (%1)"), self.SSH_port)
+                    return T(_("SSH port: %1"), self.SSH_port)
                 end,
                 keep_menu_open = true,
                 enabled_func = function() return not self:isRunning() end,
@@ -192,13 +288,52 @@ function SSH:addToMainMenu(menu_items)
                 end,
             },
             {
+                text_func = function()
+                    return _("Login with key only (SECURE, public key required)")
+                end,
+                checked_func = function() return self.key_only_auth end,
+                enabled_func = function() return not self:isRunning() end,
+                callback = function()
+                    self.key_only_auth = not self.key_only_auth
+                    if self.key_only_auth and self.allow_no_password then
+                        self.allow_no_password = false
+                        G_reader_settings:flipNilOrFalse("SSH_allow_no_password")
+                    end
+                    G_reader_settings:flipNilOrFalse("SSH_key_only_auth")
+                end,
+            },
+            {
                 text = _("Login without password (DANGEROUS)"),
                 checked_func = function() return self.allow_no_password end,
                 enabled_func = function() return not self:isRunning() end,
                 callback = function()
                     self.allow_no_password = not self.allow_no_password
+                    if self.allow_no_password and self.key_only_auth then
+                        self.key_only_auth = false
+                        G_reader_settings:flipNilOrFalse("SSH_key_only_auth")
+                    end
                     G_reader_settings:flipNilOrFalse("SSH_allow_no_password")
                 end,
+            },
+            {
+                text = _("Start SSH server with KOReader"),
+                checked_func = function() return self.autostart end,
+                enabled_func = function() return not self:isRunning() end,
+                callback = function()
+                    self.autostart = not self.autostart
+                    G_reader_settings:flipNilOrFalse("SSH_autostart")
+                end,
+            },
+            -- force-close all connections on stop
+            {
+                text = _("Force close all connections on stop"),
+                help_text = _("When enabled, all active SSH sessions will be terminated immediately when stopping the server. When disabled, active sessions may remain open until they are closed by the client."),
+                checked_func = function() return self.force_kill_clients end,
+                callback = function()
+                    self.force_kill_clients = not self.force_kill_clients
+                    G_reader_settings:flipNilOrFalse("SSH_force_kill_clients")
+                end,
+                separator = true,
             },
        }
     }

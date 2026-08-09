@@ -169,17 +169,6 @@ function ReadHistory:getPreviousFile(current_file)
     end
 end
 
---- Used in the BookShortcuts plugin.
-function ReadHistory:getFileByDirectory(directory, recursive)
-    local real_path = realpath(directory)
-    for _, v in ipairs(self.hist) do
-        local ipath = realpath(ffiutil.dirname(v.file))
-        if ipath == real_path or (recursive and util.stringStartsWith(ipath, real_path)) then
-             return v.file
-        end
-    end
-end
-
 --- Updates the history list after renaming/moving a file.
 function ReadHistory:updateItem(file, new_filepath)
     local index = self:getIndexByFile(file)

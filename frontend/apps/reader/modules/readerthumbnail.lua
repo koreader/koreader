@@ -21,12 +21,11 @@ local _ = require("gettext")
 local ReaderThumbnail = InputContainer:extend{}
 
 function ReaderThumbnail:init()
-    self:registerKeyEvents()
     if not Device:isTouchDevice() and not Device:useDPadAsActionKeys() then
         -- The BookMap and PageBrowser widgets depend too much on gestures,
         -- making them work with not enough keys on Non-Touch would be hard and very limited, so
         -- just don't make them available.
-        -- We will only let BookMap run on useDPadAsActionKeys devices.
+        -- We will only let them run on useDPadAsActionKeys devices.
         return
     end
 
@@ -64,15 +63,10 @@ function ReaderThumbnail:init()
     end
 end
 
-function ReaderThumbnail:registerKeyEvents()
-    if Device:hasDPad() and Device:useDPadAsActionKeys() then
-        if Device:hasKeyboard() then
-            self.key_events.ShowBookMap = { { "Shift", "Down" } }
-        else
-            self.key_events.ShowBookMap = { { "ScreenKB", "Down" } }
-        end
-    end
-end
+-- function ReaderThumbnail:registerKeyEvents()
+--     Now handled by hotkeys.koplugin:
+--     onShowBookMap = { { "Shift", "Down" } }
+-- end
 
 function ReaderThumbnail:addToMainMenu(menu_items)
     menu_items.book_map = {
@@ -83,12 +77,11 @@ function ReaderThumbnail:addToMainMenu(menu_items)
         -- Show the alternative overview mode (which is just a restricted
         -- variation of the main book map) with long-press (let's avoid
         -- adding another item in the crowded first menu).
+        hold_keep_menu_open = false,
         hold_callback = function()
             self:onShowBookMap(true)
         end,
     }
-    -- PageBrowser still needs some work before we can let it run on non-touch devices with useDPadAsActionKeys
-    if Device:hasDPad() and Device:useDPadAsActionKeys() then return end
     menu_items.page_browser = {
         text = _("Page browser"),
         callback = function()

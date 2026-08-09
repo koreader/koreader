@@ -10,6 +10,9 @@ describe("Readertoc module", function()
         Screen = require("device").screen
         DEBUG = require("dbg")
 
+        -- Expected values below established before the introduction of fractional positionning
+        G_reader_settings:saveSetting("cre_font_fractional_positioning", 0)
+
         local sample_epub = "spec/front/unit/data/juliet.epub"
         -- Clear settings from previous tests
         local DocSettings = require("docsettings")
@@ -24,6 +27,11 @@ describe("Readertoc module", function()
         -- reset book to first page
         readerui.rolling:onGotoPage(0)
         toc = readerui.toc
+    end)
+
+    teardown(function()
+        G_reader_settings:delSetting("cre_font_fractional_positioning")
+        G_reader_settings:flush()
     end)
 
     it("should get max toc depth", function()

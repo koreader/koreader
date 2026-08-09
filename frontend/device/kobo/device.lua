@@ -978,15 +978,19 @@ function Kobo:init()
         self:toggleKeyRepeat(false)
     end
 
-    -- Switch to the proper packages on FW 5.x
-    -- NOTE: We don't distribute kobov4 binaries, the omission is on purpose.
-    if util.fileExists("/usr/bin/hwdetect.sh") then
-        self.ota_model = "kobov5"
-    end
-
     -- Finally, Let Generic properly setup the standard stuff.
     -- (Of particular import, this needs to come *after* we've set our input hooks, so that the viewport translation runs last).
     Generic.init(self)
+end
+
+function Kobo:otaModel()
+    local model = "kobo"
+    -- Switch to the proper packages on FW 5.x
+    -- NOTE: We don't distribute kobov4 binaries, the omission is on purpose.
+    if util.fileExists("/usr/bin/hwdetect.sh")  or util.fileExists("/usr/bin/hwdetect") then
+        model = "kobov5"
+    end
+    return model, "kotasync"
 end
 
 function Kobo:exit()
@@ -1162,6 +1166,34 @@ local function getCodeName()
             std_out:close()
         end
     end
+    -- If that fails, run another script (since kobo v5 firmware)
+    if not codename then
+        local std_out = io.popen("/usr/bin/hwdetect.sh 2>/dev/null", "re")
+        if std_out then
+            codename = std_out:read("*line")
+            std_out:close()
+        end
+    end
+    -- If that fails, try binary hwdetect (since firmware 5.18)
+    if not codename then
+        local std_out_device = io.popen("/usr/bin/hwdetect device-name", "re")
+        local std_out_branding = io.popen("/usr/bin/hwdetect branding", "re")
+        local std_out_screen = io.popen("/usr/bin/hwdetect screen-variant", "re")
+        if std_out_device and std_out_branding and std_out_screen then
+            local device = std_out_device:read("*line")
+            local branding = std_out_branding:read("*line")
+            local screen = std_out_screen:read("*line")
+            local branding_first = string.sub(branding, 1, 1)
+            local branding_rest = string.sub(branding, 2)
+
+            branding = string.upper(branding_first) .. branding_rest
+            codename = device .. branding .. screen
+
+            std_out_device:close()
+            std_out_branding:close()
+            std_out_screen:close()
+        end
+    end
     return codename
 end
 
@@ -1203,11 +1235,11 @@ local function getProductId()
 end
 
 -- NOTE: We overload this to make sure checkUnexpectedWakeup doesn't trip *before* the newly scheduled suspend
-function Kobo:rescheduleSuspend()
+function Kobo:rescheduleSuspend(timeout)
     UIManager:unschedule(self.suspend)
     UIManager:unschedule(self._doSuspend)
     UIManager:unschedule(self.checkUnexpectedWakeup)
-    UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
+    UIManager:scheduleIn(timeout or self.suspend_wait_timeout, self.suspend, self)
 end
 
 function Kobo:scheduleUnexpectedWakeupGuard()
@@ -1610,12 +1642,9 @@ function Kobo:defaultCPUGovernor()
 end
 
 function Kobo:isStartupScriptUpToDate()
-    -- Compare the hash of the *active* script (i.e., the one in /tmp) to the *potential* one (i.e., the one in KOREADER_DIR)
-    local current_script = "/tmp/koreader.sh"
-    local new_script = os.getenv("KOREADER_DIR") .. "/" .. "koreader.sh"
-
     local md5 = require("ffi/MD5")
-    return md5.sumFile(current_script) == md5.sumFile(new_script)
+    -- Compare the hash of the *active* script to the *potential* one.
+    return md5.sumFile("/tmp/koreader.sh") == md5.sumFile("koreader.sh")
 end
 
 function Kobo:UIManagerReady(uimgr)
@@ -1781,11 +1810,11 @@ elseif codename == "goldfinch" then
     return KoboGoldfinch
 elseif codename == "condor" then
     return KoboCondor
-elseif codename == "monza" or codename == "monzaTolino" then
+elseif codename == "monza" or codename == "monzaKobo" or codename == "monzaTolino" then
     return KoboMonza
-elseif codename == "spaBW" or codename == "spaTolinoBW" then
+elseif codename == "spaBW" or codename == "spaKoboBW" or codename == "spaTolinoBW" or codename == "spaBWTPV" then
     return KoboSpaBW
-elseif codename == "spaColour" or codename == "spaTolinoColour" then
+elseif codename == "spaColour" or codename == "spaKoboColour" or codename == "spaTolinoColour" then
     return KoboSpaColour
 else
     error("unrecognized Kobo model ".. codename .. " with device id " .. product_id)

@@ -88,6 +88,9 @@ function KeyValueItem:init()
     local key_w = math.floor(frame_internal_width * ratio - middle_padding)
     local value_w = math.floor(frame_internal_width * (1-ratio))
 
+    if self.key_bold == false then
+        self.key_font_name = self.value_font_name
+    end
     local key_widget = TextWidget:new{
         text = self.key,
         max_width = available_width,
@@ -190,6 +193,7 @@ function KeyValueItem:init()
         bordersize = 0,
         focusable = true,
         focus_border_size = Size.border.thin,
+        focus_inner_border = true,
         background = Blitbuffer.COLOR_WHITE,
         HorizontalGroup:new{
             dimen = content_dimen,
@@ -312,9 +316,15 @@ function KeyValuePage:init()
     end
 
     if Device:hasKeys() then
-        self.key_events.Close = { { Input.group.Back } }
+        self.key_events.CloseWithKey = { { Input.group.Back } }
         self.key_events.NextPage = { { Input.group.PgFwd } }
         self.key_events.PrevPage = { { Input.group.PgBack } }
+        if Device:hasScreenKB() or Device:hasKeyboard() then
+            local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            self.key_events.HoldNonTouch = { { modifier, "Press" } }
+            self.key_events.FirstPage = { { modifier, Input.group.PgFwd }, event = "GoToPage", args = 1 }
+            self.key_events.LastPage = { { modifier, Input.group.PgBack }, event = "GoToPage", args = self.pages}
+        end
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
@@ -326,6 +336,12 @@ function KeyValuePage:init()
         self.ges_events.MultiSwipe = {
             GestureRange:new{
                 ges = "multiswipe",
+                range = self.dimen,
+            }
+        }
+        self.ges_events.Pan = { -- (for mousewheel scrolling support)
+            GestureRange:new{
+                ges = "pan",
                 range = self.dimen,
             }
         }
@@ -564,6 +580,11 @@ function KeyValuePage:goToPage(page)
     self:_populateItems()
 end
 
+function KeyValuePage:onGoToPage(page)
+    self:goToPage(page)
+    return true
+end
+
 -- make sure self.item_margin and self.item_height are set before calling this
 function KeyValuePage:_populateItems()
     self.layout = {}
@@ -677,6 +698,7 @@ function KeyValuePage:_populateItems()
                 width = self.item_width,
                 width_ratio = width_ratio,
                 font_size = self.items_font_size,
+                key_bold = entry.key_bold,
                 key = entry[1],
                 value = entry[2],
                 value_lang = self.values_lang,
@@ -801,6 +823,17 @@ function KeyValuePage:onMultiSwipe(arg, ges_ev)
     return true
 end
 
+function KeyValuePage:onPan(arg, ges_ev)
+    if ges_ev.mousewheel_direction then
+        if ges_ev.direction == "north" then
+            self:onNextPage()
+        elseif ges_ev.direction == "south" then
+            self:onPrevPage()
+        end
+    end
+    return true
+end
+
 function KeyValuePage:setTitleBarLeftIcon(icon)
     self.title_bar:setLeftIcon(icon)
 end
@@ -813,12 +846,29 @@ function KeyValuePage:onClose()
     return true
 end
 
+function KeyValuePage:onCloseWithKey()
+    if self.page_return_arrow and self.callback_return then
+        self:callback_return()
+    end
+    self:onClose()
+    return true
+end
+
 function KeyValuePage:onReturn()
     if self.callback_return then
         self:callback_return()
         UIManager:close(self)
         UIManager:setDirty(nil, "ui")
     end
+end
+
+function KeyValuePage:onHoldNonTouch()
+    -- Handle keyboard-triggered hold events by acting on the focused item directly
+    local focused_item = self:getFocusItem()
+    if not focused_item then
+        return true
+    end
+    return focused_item:onHold()
 end
 
 return KeyValuePage

@@ -37,43 +37,27 @@ function Calibre:onCalibreBrowseBy(field)
 end
 
 function Calibre:onNetworkDisconnected()
-    self:closeWirelessConnection()
+    CalibreWireless:disconnect()
 end
 
 function Calibre:onSuspend()
-    self:closeWirelessConnection()
+    CalibreWireless:disconnect()
 end
 
 function Calibre:onClose()
-    self:closeWirelessConnection()
+    CalibreWireless:disconnect()
+end
+
+function Calibre:onCloseWidget()
+    CalibreWireless:disconnect()
 end
 
 function Calibre:onStartWirelessConnection()
-    UIManager:nextTick(function()
-        UIManager:show(InfoMessage:new{
-            text = _("Connecting to calibre"),
-            timeout = 2,
-        })
-    end)
-    UIManager:tickAfterNext(function()
-        self:startWirelessConnection()
-    end)
+   CalibreWireless:connect()
 end
 
 function Calibre:onCloseWirelessConnection()
-    self:closeWirelessConnection()
-end
-
-function Calibre:startWirelessConnection()
-    if not CalibreWireless.calibre_socket then
-        CalibreWireless:connect()
-    end
-end
-
-function Calibre:closeWirelessConnection()
-    if CalibreWireless.calibre_socket then
-        CalibreWireless:disconnect()
-    end
+    CalibreWireless:disconnect()
 end
 
 function Calibre:onDispatcherRegisterActions()
@@ -83,7 +67,7 @@ function Calibre:onDispatcherRegisterActions()
     Dispatcher:registerAction("calibre_browse_authors", { category="none", event="CalibreBrowseBy", arg="authors", title=_("Browse all calibre authors"), general=true,})
     Dispatcher:registerAction("calibre_browse_titles", { category="none", event="CalibreBrowseBy", arg="title", title=_("Browse all calibre titles"), general=true, separator=true,})
     Dispatcher:registerAction("calibre_start_connection", { category="none", event="StartWirelessConnection", title=_("Calibre wireless connect"), general=true,})
-    Dispatcher:registerAction("calibre_close_connection", { category="none", event="CloseWirelessConnection", title=_("Calibre wireless disconnect"), general=true,})
+    Dispatcher:registerAction("calibre_close_connection", { category="none", event="CloseWirelessConnection", title=_("Calibre wireless disconnect"), general=true, separator=true,})
 end
 
 function Calibre:init()
@@ -310,6 +294,7 @@ function Calibre:getWirelessMenuTable()
                     checked_func = function()
                         return G_reader_settings:hasNot("calibre_wireless_url")
                     end,
+                    radio = true,
                     callback = function()
                         G_reader_settings:delSetting("calibre_wireless_url")
                     end,
@@ -319,6 +304,8 @@ function Calibre:getWirelessMenuTable()
                     checked_func = function()
                         return G_reader_settings:has("calibre_wireless_url")
                     end,
+                    check_callback_updates_menu = true,
+                    radio = true,
                     callback = function(touchmenu_instance)
                         local MultiInputDialog = require("ui/widget/multiinputdialog")
                         local url_dialog
@@ -357,7 +344,7 @@ function Calibre:getWirelessMenuTable()
                                             local fields = url_dialog:getFields()
                                             if fields[1] ~= "" then
                                                 local port = tonumber(fields[2])
-                                                if not port or port < 1 or port > 65355 then
+                                                if not port or port < 1 or port > 65535 then
                                                     --default port
                                                      port = 9090
                                                 end
@@ -408,6 +395,7 @@ function Calibre:getWirelessMenuTable()
                         end
                         return false
                     end
+                    submenu[i+1].radio = true
                     submenu[i+1].callback = function()
                         if type(v) == "string" and v ~= CalibreExtensions.default_output then
                             CalibreExtensions.default_output = v

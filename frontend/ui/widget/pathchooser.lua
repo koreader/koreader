@@ -22,10 +22,7 @@ local PathChooser = FileChooser:extend{
 }
 
 function PathChooser:init()
-    local collate = G_reader_settings:readSetting("collate")
-    if self.show_files and (collate == "title" or collate == "authors" or collate == "series" or collate == "keywords") then
-        self.ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
-    end
+    self.ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
 
     if self.title == true then -- default title depending on options
         if self.select_directory and not self.select_file then

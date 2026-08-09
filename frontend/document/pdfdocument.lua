@@ -1,4 +1,3 @@
-local BlitBuffer = require("ffi/blitbuffer")
 local CacheItem = require("cacheitem")
 local CanvasContext = require("document/canvascontext")
 local DocCache = require("document/doccache")
@@ -237,7 +236,7 @@ local function _quadpointsToPboxes(quadpoints, n)
     return pboxes
 end
 
-function PdfDocument:saveHighlight(pageno, item)
+function PdfDocument:saveHighlight(pageno, item, annot_color)
     local can_write = self:_checkIfWritable()
     if can_write ~= true then return can_write end
 
@@ -245,7 +244,6 @@ function PdfDocument:saveHighlight(pageno, item)
     local quadpoints, n = _quadpointsFromPboxes(item.pboxes)
     local page = self._document:openPage(pageno)
     local annot_type = C.PDF_ANNOT_HIGHLIGHT
-    local annot_color = item.color and BlitBuffer.colorFromName(item.color)
     if item.drawer == "lighten" then
         annot_type = C.PDF_ANNOT_HIGHLIGHT
     elseif item.drawer == "underscore" then
@@ -272,7 +270,7 @@ function PdfDocument:deleteHighlight(pageno, item)
     local page = self._document:openPage(pageno)
     local annot = page:getMarkupAnnotation(quadpoints, n)
     if annot ~= nil then
-        page:deleteMarkupAnnotation(annot)
+        page:deleteAnnotation(annot)
         self:resetTileCacheValidity()
     end
     page:close()
@@ -291,6 +289,19 @@ function PdfDocument:updateHighlightContents(pageno, item, contents)
         self:resetTileCacheValidity()
     end
     page:close()
+end
+
+function PdfDocument:getEmbeddedAnnotations()
+    local annotations = {}
+    for pageno = 1, self.info.number_of_pages do
+        local page = self._document:openPage(pageno)
+        local page_annots = page:getEmbeddedAnnotations()
+        if page_annots then
+            annotations[pageno] = page_annots
+        end
+        page:close()
+    end
+    return next(annotations) and annotations
 end
 
 function PdfDocument:writeDocument()
@@ -344,20 +355,22 @@ function PdfDocument:findAllText(pattern, case_insensitive, nb_context_words, ma
     return self.koptinterface:findAllText(self, pattern, case_insensitive, nb_context_words, max_hits)
 end
 
-function PdfDocument:renderPage(pageno, rect, zoom, rotation, gamma, hinting)
-    return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, gamma, hinting)
+function PdfDocument:renderPage(pageno, rect, zoom, rotation, gamma, saturation, hinting)
+    return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, gamma, saturation, hinting)
 end
 
-function PdfDocument:hintPage(pageno, zoom, rotation, gamma)
-    return self.koptinterface:hintPage(self, pageno, zoom, rotation, gamma)
+function PdfDocument:hintPage(pageno, zoom, rotation, gamma, saturation)
+    return self.koptinterface:hintPage(self, pageno, zoom, rotation, gamma, saturation)
 end
 
-function PdfDocument:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma)
-    return self.koptinterface:drawPage(self, target, x, y, rect, pageno, zoom, rotation, gamma)
+function PdfDocument:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, saturation)
+    return self.koptinterface:drawPage(self, target, x, y, rect, pageno, zoom, rotation, gamma, saturation)
 end
 
 function PdfDocument:register(registry)
     --- Document types ---
+    registry:addProvider("cbr", "application/vnd.comicbook-rar", self, 100)
+    registry:addProvider("cbr", "application/vnd.rar", self, 100)
     registry:addProvider("cbt", "application/vnd.comicbook+tar", self, 100)
     registry:addProvider("cbz", "application/vnd.comicbook+zip", self, 100)
     registry:addProvider("cbz", "application/x-cbz", self, 100) -- Alternative mimetype for OPDS.

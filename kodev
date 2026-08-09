@@ -85,9 +85,6 @@ function run_make() {
     if [[ "${CURDIR}" != "${PWD}" ]]; then
         cmd+=(-C "${CURDIR}")
     fi
-    if [[ "${TARGET}" == 'android' ]]; then
-        cmd+=("ANDROID_ARCH=${ANDROID_ARCH}")
-    fi
     for param in TARGET KODEBUG VERBOSE; do
         cmd+=("${param}=${!param}")
     done
@@ -133,7 +130,6 @@ TARGET:
     android-arm64
     android-x86
     android-x86_64
-    appimage
     bookeen                   Compatible with Bookeen Cybook Muse/Ocean (Allwinner A13)
     cervantes
     emulator                  Default if no TARGET is given
@@ -147,9 +143,10 @@ TARGET:
     linux
     macos                     MacOS app bundle
     pocketbook
+    pocketbookhf
     remarkable
+    remarkable-aarch64
     sony-prstux
-    ubuntu-touch
     win32
 "
 # shellcheck disable=2155
@@ -167,22 +164,19 @@ function setup_target() {
             fi
             TARGET=''
             ;;
-        appimage | linux) is_system Linux ;;
+        linux) is_system Linux ;;
         macos) is_system macOS ;;
         win32) is_system Windows ;;
         # Devices.
-        android-arm | android-arm64 | android-x86 | android-x86_64)
-            ANDROID_ARCH="${TARGET#android-}"
-            TARGET='android'
-            ;;
+        android-arm | android-arm64 | android-x86 | android-x86_64) ;;
         bookeen) ;;
         cervantes) ;;
         kindle | kindlehf | kindlepw2 | kindle-legacy) ;;
         kobo | kobov4 | kobov5) ;;
-        pocketbook) ;;
+        pocketbook | pocketbookhf) ;;
         remarkable) ;;
+        remarkable-aarch64) ;;
         sony-prstux) ;;
-        ubuntu-touch) ;;
         # Invalid.
         *)
             valid=0
@@ -200,7 +194,7 @@ function setup_target() {
     # Fetch third party as needed.
     check_submodules
     # Automatically install Android NDK / SDK when not configured.
-    if [[ "${TARGET}" == 'android' ]]; then
+    if [[ "${TARGET}" = android-* ]]; then
         local wanted=()
         [[ -n "${ANDROID_NDK_HOME}${ANDROID_NDK_ROOT}" ]] || wanted+=('android-ndk')
         [[ -n "${ANDROID_HOME}${ANDROID_SDK_ROOT}" ]] || wanted+=('android-sdk')
@@ -311,7 +305,6 @@ function kodev-activate() {
     parse_options '' '' '0' "$@"
     info "adding ${CURDIR} to \$PATH..."
     export PATH="${PATH}:${CURDIR}"
-    eval "$(luarocks --lua-version=5.1 path --bin)"
     exec "${SHELL}"
 }
 
@@ -365,7 +358,7 @@ ${TARGETS_HELP_MSG}
 
 function kodev-release() {
     HELP="
-USAGE: $0 ${CMD} <OPTIONS> <TARGET>
+USAGE: $0 ${CMD} <OPTIONS> <TARGET> [TYPES]…
 
 OPTIONS:
 
@@ -375,7 +368,7 @@ $(build_options_help_msg 'BUILD' 'create update from existing build' '' 'default
 
 ${RELEASE_TARGETS_HELP_MSG}
 "
-    parse_options "i${BUILD_GETOPT_SHORT}" "ignore-translation,${BUILD_GETOPT_LONG}" '1' "$@"
+    parse_options "i${BUILD_GETOPT_SHORT}" "ignore-translation,${BUILD_GETOPT_LONG}" '+' "$@"
     local ignore_translation=0
     for opt in "${OPTS[@]}"; do
         case "${opt}" in
@@ -392,7 +385,10 @@ ${RELEASE_TARGETS_HELP_MSG}
             exit 1
         fi
     fi
-    run_make ${NO_BUILD:+--assume-old=all} update
+    set -- "${ARGS[@]/#/update-}"
+    shift
+    [[ $# -gt 0 ]] || set -- update
+    run_make ${NO_BUILD:+--assume-old=all} "$@"
 }
 
 # }}}
@@ -476,12 +472,17 @@ ANDROID TARGET:
                 if [[ -n "${VALUE}" ]]; then
                     declare -a "wrap=(${VALUE})"
                 else
-                    # Try to use friendly defaults for GDB:
-                    # - DDD is a slightly less nice GUI
-                    # - cgdb is a nice curses-based GDB front
-                    # - GDB standard CLI has a fallback
-                    if ! wrap=("$(command -v ddd cgdb gdb | head -n1)"); then
-                        die 1 "Couldn't find GDB."
+                    local -a candidates
+                    case "${OSTYPE}" in
+                        darwin*) candidates=(lldb) ;;
+                        # Try to use friendly defaults for GDB:
+                        # - DDD is a slightly less nice GUI
+                        # - cgdb is a nice curses-based GDB front
+                        # - GDB standard CLI has a fallback
+                        *) candidates=(ddd cgdb gdb) ;;
+                    esac
+                    if ! wrap=("$(command -v "${candidates[@]}" | head -n1)"); then
+                        die 1 "Couldn't find a supported debugger (${candidates[*]})."
                     fi
                 fi
                 if [[ ${#wrap[@]} -eq 1 ]]; then
@@ -584,7 +585,7 @@ ANDROID TARGET:
     fi
     # Build the final make command.
     local margs=()
-    if [[ "${TARGET}" == 'android' ]]; then
+    if [[ "${TARGET}" = android-* ]]; then
         if [[ "$1" = *.apk ]]; then
             margs+=(ANDROID_APK="$1")
             NO_BUILD=1

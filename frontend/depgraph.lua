@@ -17,6 +17,15 @@ NOTE: Insertion order is preserved, duplicates are automatically prevented (both
 
 local DepGraph = {}
 
+local function appendUnique(array, value)
+    for _, item in ipairs(array) do
+        if item == value then
+            return
+        end
+    end
+    table.insert(array, value)
+end
+
 function DepGraph:new(new_o)
     local o = new_o or {}
     o.nodes = {}
@@ -47,6 +56,19 @@ function DepGraph:getNode(id)
     return nil, nil
 end
 
+local function getOrCreateNode(self, node_key)
+    local node = self:getNode(node_key)
+    if node then
+        if node.disabled then
+            node.disabled = nil
+        end
+    else
+        node = { key = node_key }
+        table.insert(self.nodes, node)
+    end
+    return node
+end
+
 -- Like getNode, but only for active nodes:
 -- if node is nil but index is set, node is disabled
 function DepGraph:getActiveNode(id)
@@ -62,19 +84,7 @@ end
 -- If dependencies don't exist as proper nodes yet, they'll be created, in order.
 -- If node already exists, the new list of dependencies is *appended* to the existing one, without duplicates.
 function DepGraph:addNode(node_key, deps)
-    -- Find main node if it already exists
-    local node = self:getNode(node_key)
-
-    if node then
-        -- If it exists, but was disabled, re-enable it
-        if node.disabled then
-           node.disabled = nil
-        end
-    else
-        -- If it doesn't exist at all, create it
-        node = { key = node_key }
-        table.insert(self.nodes, node)
-    end
+    local node = getOrCreateNode(self, node_key)
 
     -- No dependencies? We're done!
     if not deps then
@@ -84,30 +94,8 @@ function DepGraph:addNode(node_key, deps)
     -- Create dep nodes if they don't already exist
     local node_deps = node.deps or {}
     for _, dep_node_key in ipairs(deps) do
-        local dep_node = self:getNode(dep_node_key)
-
-        if dep_node then
-            -- If it exists, but was disabled, re-enable it
-            if dep_node.disabled then
-                dep_node.disabled = nil
-            end
-        else
-            -- Create dep node itself if need be
-            dep_node = { key = dep_node_key }
-            table.insert(self.nodes, dep_node)
-        end
-
-        -- Update deps array the long way 'round, and prevent duplicates, in case deps was funky as hell.
-        local exists = false
-        for _, k in ipairs(node_deps) do
-            if k == dep_node_key then
-                exists = true
-                break
-            end
-        end
-        if not exists then
-            table.insert(node_deps, dep_node_key)
-        end
+        getOrCreateNode(self, dep_node_key)
+        appendUnique(node_deps, dep_node_key)
     end
     -- Update main node with its updated deps
     node.deps = node_deps
@@ -150,50 +138,15 @@ end
 
 -- Add a single dep_node_key to node_key's deps
 function DepGraph:addNodeDep(node_key, dep_node_key)
-    -- Check the main node
-    local node = self:getNode(node_key)
-
-    if node then
-        -- If it exists, but was disabled, re-enable it
-        if node.disabled then
-           node.disabled = nil
-        end
-    else
-        -- If it doesn't exist at all, create it
-        node = { key = node_key }
-        table.insert(self.nodes, node)
-    end
-
-    -- Then check the dep node
-    local dep_node = self:getNode(dep_node_key)
-
-    if dep_node then
-        -- If it exists, but was disabled, re-enable it
-        if dep_node.disabled then
-            dep_node.disabled = nil
-        end
-    else
-        -- Create dep node itself if need be
-        dep_node = { key = dep_node_key }
-        table.insert(self.nodes, dep_node)
-    end
+    local node = getOrCreateNode(self, node_key)
+    getOrCreateNode(self, dep_node_key)
 
     -- If main node currently doesn't have deps, start with an empty array
     if not node.deps then
         node.deps = {}
     end
 
-    -- Prevent duplicate deps
-    local exists = false
-    for _, k in ipairs(node.deps) do
-        if k == dep_node_key then
-            exists = true
-            break
-        end
-    end
-    if not exists then
-        table.insert(node.deps, dep_node_key)
-    end
+    appendUnique(node.deps, dep_node_key)
 end
 
 -- Remove a single dep_node_key from node_key's deps

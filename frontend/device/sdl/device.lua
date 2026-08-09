@@ -1,11 +1,14 @@
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
+local Gamepad = require("device/sdl/gamepad")
 local Generic = require("device/generic/device")
+local Key = require("device/key")
 local UIManager
-local SDL = require("ffi/SDL2_0")
+local SDL = require("ffi/SDL3")
 local ffi = require("ffi")
 local logger = require("logger")
 local time = require("ui/time")
+local util = require("util")
 
 -- SDL computes WM_CLASS on X11/Wayland based on process's binary name.
 -- Some desktop environments rely on WM_CLASS to name the app and/or to assign the proper icon.
@@ -70,6 +73,8 @@ local Device = Generic:extend{
     hasKeys = yes,
     hasSymKey = os.getenv("DISABLE_TOUCH") == "1" and yes or no,
     hasDPad = yes,
+    useDPadAsActionKeys = os.getenv("DISABLE_TOUCH") == "1" and yes or no,
+    supportsGamepad = yes,
     hasWifiToggle = no,
     hasSeamlessWifiToggle = no,
     isTouchDevice = yes,
@@ -86,7 +91,7 @@ local Device = Generic:extend{
     openLink = function(self, link)
         local enabled, tool = getLinkOpener()
         if not enabled or not tool or not link or type(link) ~= "string" then return end
-        return runCommand(tool .. " '" .. link .. "'")
+        return runCommand(util.shell_escape{tool, link})
     end,
     canExternalDictLookup = yes,
     getExternalDictLookupList = function() return external.dicts end,
@@ -97,7 +102,7 @@ local Device = Generic:extend{
             if isUrl(app) and getLinkOpener() then
                 ok = self:openLink(app..text)
             elseif isCommand(app) then
-                ok = runCommand(app .. " " .. text .. " &")
+                ok = runCommand(util.shell_escape{app, text} .. " &")
             end
         end
         if ok and external.when_back_callback then
@@ -108,18 +113,24 @@ local Device = Generic:extend{
     window = G_reader_settings:readSetting("sdl_window", {}),
 }
 
-function Device:otaModel()
-    if self.ota_model then
-        return self.ota_model, "link"
-    end
-end
-
 local AppImage = Device:extend{
     model = "AppImage",
-    ota_model = "appimage",
     hasOTAUpdates = yes,
     isDesktop = yes,
 }
+
+function AppImage:otaModel()
+    local arch = jit.arch
+    local model
+    if arch == "arm64" then
+        model = "appimage-aarch64"
+    elseif arch == "arm" then
+        model = "appimage-armhf"
+    elseif arch == "x64" then
+        model = "appimage-x86_64"
+    end
+    return model, "link"
+end
 
 local Desktop = Device:extend{
     model = SDL.getPlatform(),
@@ -176,7 +187,7 @@ function Device:init()
     end
 
     self.hasClipboard = yes
-    self.screen = require("ffi/framebuffer_SDL2_0"):new{
+    self.screen = require("ffi/framebuffer_SDL3"):new{
         device = self,
         debug = logger.dbg,
         w = self.window.width,
@@ -193,27 +204,59 @@ function Device:init()
     local ok, re = pcall(self.screen.setWindowIcon, self.screen, "resources/koreader.png")
     if not ok then logger.warn(re) end
 
+    local function makeKeyPressEvent(keycode)
+        if not keycode then
+            return nil
+        end
+        return Event:new("KeyPress", Key:new(keycode, {}))
+    end
+
+    local function dispatchGamepadAxisMotion(axis, value, event_time)
+        local axis_ev = {
+            axis = axis,
+            value = value,
+            time = event_time,
+        }
+        if not UIManager:broadcastEvent(Event:new("GamepadAxisMotion", axis_ev)) then
+            local key_ev = makeKeyPressEvent(Gamepad:getAxisKeyName(axis, value))
+            if key_ev then
+                UIManager:sendEvent(key_ev)
+            end
+        end
+    end
+
+    local function unscheduleAxisRepeat(clear_state)
+        if self._axis_repeat_action then
+            UIManager:unschedule(self._axis_repeat_action)
+            self._axis_repeat_action = nil
+        end
+        if clear_state ~= false then
+            Gamepad:clearRepeatingAxis()
+        end
+    end
+
+    local function scheduleAxisRepeat(axis, delay_s)
+        unscheduleAxisRepeat(false)
+        Gamepad:setRepeatingAxis(axis)
+        self._axis_repeat_action = function()
+            local axis_ev = Gamepad:getHeldAxisEvent()
+            if not axis_ev then
+                Gamepad:clearRepeatingAxis()
+                self._axis_repeat_action = nil
+                return
+            end
+            dispatchGamepadAxisMotion(axis_ev.axis, axis_ev.value, time.now())
+            UIManager:scheduleIn(Gamepad.axis_repeat_interval_s, self._axis_repeat_action)
+        end
+        UIManager:scheduleIn(delay_s, self._axis_repeat_action)
+    end
+
     self.input = require("device/input"):new{
         device = self,
         event_map = dofile("frontend/device/sdl/event_map_sdl2.lua"),
         handleSdlEv = function(device_input, ev)
 
-
-            -- SDL events can remain cdata but are almost completely transparent
-            local SDL_TEXTINPUT = 771
-            local SDL_MOUSEWHEEL = 1027
-            local SDL_MULTIGESTURE = 2050
-            local SDL_DROPFILE = 4096
-            local SDL_WINDOWEVENT_MOVED = 4
-            local SDL_WINDOWEVENT_RESIZED = 5
-
-            if ev.code == SDL_MOUSEWHEEL then
-                local scrolled_x = ev.value.x
-                local scrolled_y = ev.value.y
-
-                local up = 1
-                local down = -1
-
+            if ev.code == SDL.SDL.SDL_EVENT_MOUSE_WHEEL and (ev.value.integer_x ~= 0 or ev.value.integer_y ~= 0) then
                 local pos = Geom:new{
                     x = 0,
                     y = 0,
@@ -224,12 +267,13 @@ function Device:init()
                     ges = "pan",
                     distance = 200,
                     relative = {
-                        x = 50*scrolled_x,
-                        y = 100*scrolled_y,
+                        x = 50 * ev.value.integer_x,
+                        y = 100 * ev.value.integer_y,
                     },
                     pos = pos,
                     time = time.timeval(ev.time),
-                    mousewheel_direction = scrolled_y,
+                    mousewheel_direction = ev.value.integer_y,
+                    direction = ev.value.integer_y > 0 and "south" or "north"
                 }
                 local fake_ges_release = {
                     ges = "pan_release",
@@ -241,25 +285,15 @@ function Device:init()
                 }
                 local fake_pan_ev = Event:new("Pan", nil, fake_ges)
                 local fake_release_ev = Event:new("Gesture", fake_ges_release)
-                if scrolled_y == down then
-                    fake_ges.direction = "north"
-                    UIManager:sendEvent(fake_pan_ev)
-                    UIManager:sendEvent(fake_release_ev)
-                elseif scrolled_y == up then
-                    fake_ges.direction = "south"
-                    UIManager:sendEvent(fake_pan_ev)
-                    UIManager:sendEvent(fake_release_ev)
-                end
-            elseif ev.code == SDL_MULTIGESTURE then
-                -- no-op for now
-                do end -- luacheck: ignore 541
-            elseif ev.code == SDL_DROPFILE then
+                UIManager:sendEvent(fake_pan_ev)
+                UIManager:sendEvent(fake_release_ev)
+            elseif ev.code == SDL.SDL.SDL_EVENT_DROP_FILE then
                 local dropped_file_path = ev.value
                 if dropped_file_path and dropped_file_path ~= "" then
                     local ReaderUI = require("apps/reader/readerui")
                     ReaderUI:doShowReader(dropped_file_path)
                 end
-            elseif ev.code == SDL_WINDOWEVENT_RESIZED then
+            elseif ev.code == SDL.SDL.SDL_EVENT_WINDOW_RESIZED then
                 device_input.device.screen.resize(device_input.device.screen, ev.value.data1, ev.value.data2)
                 self.window.width = ev.value.data1
                 self.window.height = ev.value.data2
@@ -288,10 +322,33 @@ function Device:init()
 
                 -- make sure dialogs are displayed
                 UIManager:setDirty("all", "ui")
-            elseif ev.code == SDL_WINDOWEVENT_MOVED then
+            elseif ev.code == SDL.SDL.SDL_EVENT_WINDOW_MOVED then
                 self.window.left = ev.value.data1
                 self.window.top = ev.value.data2
-            elseif ev.code == SDL_TEXTINPUT then
+            elseif ev.code == SDL.SDL.SDL_EVENT_GAMEPAD_AXIS_MOTION then
+                local should_process = Gamepad:shouldProcessAxisMotion(ev.value.axis, ev.value.value)
+                local held_direction = Gamepad:getHeldDirection(ev.value.axis)
+
+                if not held_direction then
+                    if Gamepad.repeating_axis == ev.value.axis then
+                        unscheduleAxisRepeat()
+                    end
+                    return
+                end
+
+                if should_process then
+                    scheduleAxisRepeat(ev.value.axis, Gamepad.axis_repeat_delay_s)
+                    dispatchGamepadAxisMotion(ev.value.axis, ev.value.value, time.timeval(ev.time))
+                end
+                return
+            elseif ev.code == SDL.SDL.SDL_EVENT_GAMEPAD_BUTTON_DOWN then
+                -- Broadcast for plugins; if not handled, emit default key events
+                if not UIManager:broadcastEvent(Event:new("GamepadButtonDown", ev.value)) then
+                    return makeKeyPressEvent(Gamepad:getButtonKeyName(ev.value.button))
+                end
+            elseif ev.code == SDL.SDL.SDL_EVENT_GAMEPAD_BUTTON_UP then
+                UIManager:broadcastEvent(Event:new("GamepadButtonUp", ev.value))
+            elseif ev.code == SDL.SDL.SDL_EVENT_TEXT_INPUT then
                 UIManager:sendEvent(Event:new("TextInput", tostring(ev.value)))
             end
         end,
@@ -438,8 +495,6 @@ function Emulator:initNetworkManager(NetworkMgr)
     end
     NetworkMgr.isConnected = NetworkMgr.isWifiOn
 end
-
-io.write("Starting SDL in " .. SDL.getBasePath() .. "\n")
 
 -------------- device probe ------------
 if os.getenv("APPIMAGE") then

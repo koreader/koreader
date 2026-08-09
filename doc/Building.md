@@ -12,42 +12,51 @@ You can skip most of the following instructions if desired, and use our premade 
 ## Prerequisites
 
 To get and compile the source you must have:
-- `autoconf`: version greater than 2.64
-- `bash`: version 4.0 or greater
-- `ccache`: optional, but recommended
-- `cmake`: version 3.15 or greater, 3.20 or greater recommended
-- `gettext`
+- `autoconf`: version > 2.64
+- `automake`
+- `awk`
+- `bash`: version >= 4.0
+- `cmake`: version >= 3.17.5
+- `find`
 - `gcc/g++` or `clang/clang++`: with C11 & C++17 support
+- `gettext`
 - `git`
-- `make`: version 4.1 or greater
-- `meson`: version 1.2.0 or greater
+- `libtool`
+- `make`: version >= 4.1 (recommended: >= 4.4 for transparent `-j` / `-l` handling)
+- `meson`: version >= 1.2.0 on Linux, >= 1.8.3 on macOS
 - `nasm`
-- `ninja`
+- `ninja` (recommended: >= 1.13.2 for make job server support)
 - `patch`
-- `perl`: version 5 or greater
 - `pkg-config` or `pkgconf`
+- `python`: version >= 3.10
 - `unzip`
 - `wget`
 
-For testing:
-- `busted`
-- `lua`: version 5.1
-- `luarocks`
-- `SDL2`
+Optional:
+- `7z`: for packing releases and the Android build assets
+- `ccache`: recommended for faster recompilation times
+- `luacheck`, `shellcheck` and `shfmt`: for linting the codebase with `./kodev check`
+- `luajit` (Linux only): to update Linux packages' metadata
+- `ffi-cdecl` or `luajit` + `tree-sitter >= 0.26.0` + `tree-sitter-c >= 0.24.0`: to generate FFI cdecls
+- `SDL3`: version >= 3.2.12, only the library, for running the emulator / tests (if not found, a version will automatically be built)
 
 ### Alpine Linux
 
 Install the prerequisites using apk:
 
 ```
-sudo apk add autoconf automake bash cmake coreutils curl diffutils \
-    findutils g++ gcc gettext-dev git grep gzip libtool linux-headers \
-    lua5.1-busted luarocks5.1 make meson nasm ninja-build patch perl \
-    pkgconf procps-ng sdl2 tar unzip wget
+sudo apk add autoconf automake bash cmake coreutils diffutils findutils \
+    g++ gcc gettext-dev git grep gzip libtool linux-headers make meson \
+    nasm ninja-build patch pkgconf procps-ng sdl3 tar unzip wget
 ```
 
 **Note:** don't forget to add `/usr/lib/ninja-build/bin` to `$PATH`
 so the real ninja is used (and not the binary provided by samurai).
+
+Optional:
+```
+sudo apk add 7zip ccache luacheck luajit shellcheck shfmt
+```
 
 ### Arch Linux
 
@@ -55,7 +64,12 @@ Install the prerequisites using pacman:
 
 ```
 run0 pacman -S base-devel ca-certificates cmake gcc-libs git \
-    lua51-busted luarocks meson nasm ninja perl sdl2 unzip wget
+    meson nasm ninja sdl3 unzip wget
+```
+
+Optional:
+```
+run0 pacman -S 7zip ccache luacheck luajit shellcheck shfmt
 ```
 
 ### Debian/Ubuntu
@@ -63,31 +77,60 @@ run0 pacman -S base-devel ca-certificates cmake gcc-libs git \
 Install the prerequisites using APT:
 
 ```
-sudo apt-get install autoconf automake build-essential ca-certificates cmake \
-    gcc-multilib gettext git libsdl2-2.0-0 libtool libtool-bin lua-busted \
-    lua5.1 luarocks meson nasm ninja-build patch perl pkg-config unzip wget
+sudo apt install --no-install-recommends autoconf automake build-essential \
+    ca-certificates cmake gcc-multilib gettext git libtool libtool-bin meson \
+    nasm ninja-build patch pkg-config unzip wget
 ```
 
-**Note:** Debian distributions might need `meson` to be installed from `bookworm-backports`) because the version provided by the default repositories is too old:
+To install SDL3, on recent enough distributions:
 ```
-sudo apt install meson/bookworm-backports
+sudo apt install --no-install-recommends libsdl3-0
 ```
-The bookworm-backports repository was already included on Linux Mint Dedian Edition 6.
+
+For building SDL3 on distributions that don't provide a recent enough version:
+```
+# Minimal Wayland support.
+sudo apt install --no-install-recommends libegl-dev libwayland-dev libxkbcommon-dev
+# Minimal X11 support.
+sudo apt install --no-install-recommends libx11-dev libxcursor-dev libxext-dev libxi-dev \
+    libxrandr-dev libxss-dev libxtst-dev
+```
+
+**Note:** Debian distributions might need `meson` to be installed from `bookworm-backports`
+because the version provided by the default repositories is too old:
+```
+sudo apt install --no-install-recommends meson/bookworm-backports
+```
+The bookworm-backports repository was already included on Linux Mint Debian Edition 6.
 Otherwise, follow full up-to-date instructions from here: https://wiki.debian.org/Backports.
+
+Optional:
+```
+sudo apt install --no-install-recommends  ccache libluajit-5.1-dev lua-check luajit \
+    p7zip-full shellcheck shfmt
+```
+And to install GCC plugin support for your installed GCC version, e.g. for `gcc-11`:
+```
+sudo apt install --no-install-recommends gcc-11-plugin-dev
+```
 
 ### Fedora/Red Hat
 
 Install the prerequisites using DNF:
 
 ```
-sudo dnf install autoconf automake cmake gettext gcc gcc-c++ git libtool \
-    lua5.1 luarocks meson nasm ninja-build patch perl-FindBin procps-ng \
-    SDL2 unzip wget
+sudo dnf install autoconf automake cmake gcc gcc-c++ gettext git libtool meson \
+    nasm ninja-build patch procps-ng SDL3 unzip wget
 ```
 
-And for busted:
+Optional:
 ```
-luarocks --lua-version=5.1 --local install busted
+sudo dnf install ccache gcc-plugin-devel luajit-devel p7zip shellcheck shfmt
+```
+And for luacheck:
+```
+sudo dnf install lua-argparse lua-filesystem luarocks
+luarocks install luacheck
 ```
 
 ### macOS
@@ -96,7 +139,8 @@ Install the prerequisites using [Homebrew](https://brew.sh/):
 
 ```
 brew install autoconf automake bash binutils cmake coreutils findutils \
-    gnu-getopt libtool make meson nasm ninja p7zip pkg-config sdl2 util-linux
+    gettext gnu-getopt libtool make meson nasm ninja pkgconf sdl3 \
+    util-linux
 ```
 
 You will also have to ensure Homebrew's findutils, gnu-getopt, make & util-linux are in your path, e.g., via
@@ -104,12 +148,44 @@ You will also have to ensure Homebrew's findutils, gnu-getopt, make & util-linux
 export PATH="$(brew --prefix)/opt/findutils/libexec/gnubin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/make/libexec/gnubin:$(brew --prefix)/opt/util-linux/bin:${PATH}"
 ```
 
-*Note:* With current XCode versions, you *will* need to set a minimum deployment version higher than `10.04`. Otherwise, you'll hit various linking errors related to missing unwinding libraries/symbols.
-On Mojave, `10.09` has been known to behave with XCode 10, And `10.14` with XCode 11. When in doubt, go with your current macOS version.
+Optional:
+```
+brew install ccache luacheck p7zip shellcheck shfmt
+```
+
+*Note:* You can override the default targeted minimum deployment version by setting `MACOSX_DEPLOYMENT_TARGET`:
 ```
 export MACOSX_DEPLOYMENT_TARGET=10.09
 ```
-*Note:* On Catalina (10.15), you will currently *NOT* want to deploy for `10.15`, as [XCode is currently broken in that configuration](https://forums.developer.apple.com/thread/121887)! (i.e., deploy for `10.14` instead).
+
+### Nix
+
+Ensure the [nix is installed](https://nixos.org/download/).
+
+Then simply run the included nix shell:
+```
+nix-shell tools/shell.nix
+```
+
+### openSUSE
+
+Install the prerequisites using zypper:
+
+```
+sudo zypper install autoconf automake bash cmake find gcc gcc-32bit gcc-c++ gettext \
+    gawk git libSDL3-0 libtool make meson nasm ninja patch pkgconf unzip wget
+```
+
+Optional:
+
+```
+sudo zypper install 7zip ccache luajit-devel luajit-luacheck ShellCheck shfmt
+```
+
+And to install GCC plugin support for your installed GCC version, e.g. for `gcc15`:
+```
+sudo apt install gcc15-devel
+```
 
 ## Getting the source
 

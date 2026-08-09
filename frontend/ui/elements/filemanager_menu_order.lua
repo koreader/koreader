@@ -41,6 +41,7 @@ local order = {
         "document_metadata_location",
         "document_metadata_location_move",
         "document_auto_save",
+        "document_metadata_arc",
         "document_end_action",
         "language_support",
     },
@@ -56,6 +57,7 @@ local order = {
         "autostandby",
         "autosuspend",
         "autoshutdown",
+        "pageturn_power", -- if Device:isKobo() and Device:hasKeys()
         "ignore_sleepcover",
         "ignore_open_sleepcover",
         "cover_events",
@@ -109,6 +111,7 @@ local order = {
     },
     taps_and_gestures = {
         "gesture_manager",
+        "gesture_overview",
         "gesture_intervals",
         "----------------------------",
         "ignore_hold_corners",
@@ -121,7 +124,7 @@ local order = {
         "calibre",
         "exporter",
         "statistics",
-        "cloud_storage",
+        "cloudstorage",
         "move_to_archive",
         "wallabag",
         "news_downloader",
@@ -171,6 +174,7 @@ local order = {
         "----------------------------",
         "favorites",
         "collections",
+        "bookmark_browser",
         "----------------------------",
         "mass_storage_actions", -- if Device:canToggleMassStorage()
         "----------------------------",
@@ -185,6 +189,7 @@ local order = {
         "search_menu",
         "----------------------------",
         "report_bug",
+        "plugins_disable_external",
         "----------------------------",
         "system_statistics", -- if enabled (Plugin)
         "version",

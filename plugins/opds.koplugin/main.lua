@@ -12,10 +12,13 @@ local T = require("ffi/util").template
 
 local OPDS = WidgetContainer:extend{
     name = "opds",
-    opds_settings_file = DataStorage:getSettingsDir() .. "/opds.lua",
+    settings_file = DataStorage:getSettingsDir() .. "/opds.lua",
     settings = nil,
+    opds_settings = nil,
     servers = nil,
     downloads = nil,
+    pending_syncs = nil,
+    updated = nil,
     default_servers = {
         {
             title = "Project Gutenberg",
@@ -45,14 +48,20 @@ local OPDS = WidgetContainer:extend{
 }
 
 function OPDS:init()
-    self.settings = LuaSettings:open(self.opds_settings_file)
+    self:onDispatcherRegisterActions()
+    self.ui.menu:registerToMainMenu(self)
+end
+
+function OPDS:loadSettings()
+    if self.settings then return end
+    self.settings = LuaSettings:open(self.settings_file)
     if next(self.settings.data) == nil then
         self.updated = true -- first run, force flush
     end
+    self.opds_settings = self.settings:readSetting("settings", {})
     self.servers = self.settings:readSetting("servers", self.default_servers)
     self.downloads = self.settings:readSetting("downloads", {})
-    self:onDispatcherRegisterActions()
-    self.ui.menu:registerToMainMenu(self)
+    self.pending_syncs = self.settings:readSetting("pending_syncs", {})
 end
 
 function OPDS:onDispatcherRegisterActions()
@@ -73,9 +82,12 @@ function OPDS:addToMainMenu(menu_items)
 end
 
 function OPDS:onShowOPDSCatalog()
+    self:loadSettings()
     self.opds_browser = OPDSBrowser:new{
+        settings = self.opds_settings,
         servers = self.servers,
         downloads = self.downloads,
+        pending_syncs = self.pending_syncs,
         title = _("OPDS catalog"),
         is_popout = false,
         is_borderless = true,
@@ -104,7 +116,7 @@ end
 
 function OPDS:showFileDownloadedDialog(file)
     self.last_downloaded_file = file
-    UIManager:show(ConfirmBox:new{
+    local confirm_box = ConfirmBox:new{
         text = T(_("File saved to:\n%1\nWould you like to read the downloaded book now?"), BD.filepath(file)),
         ok_text = _("Read now"),
         ok_callback = function()
@@ -116,7 +128,11 @@ function OPDS:showFileDownloadedDialog(file)
                 self.ui:openFile(file)
             end
         end,
-    })
+    }
+    -- As the InfoMessage "Downloading" is getting closed, show this ConfirmBox on the next UI tick to avoid e-Ink rendering congestion
+    UIManager:nextTick(function()
+        UIManager:show(confirm_box)
+    end)
 end
 
 function OPDS:onFlushSettings()

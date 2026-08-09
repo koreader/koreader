@@ -47,6 +47,10 @@ DOVERLAPPIXELS = 30,
 -- set to 0 to disable showing rectangle and follow link immediately
 FOLLOW_LINK_TIMEOUT = 0.5,
 
+-- delay before clearing highlighted text after dictionary queries
+-- default to 0.5 second
+DELAY_CLEAR_HIGHLIGHT_S = 0.5,
+
 -- customizable tap zones(rectangles)
 -- x: x coordinate of top left corner in proportion to screen width
 -- y: y coordinate of top left corner in proportion to screen height
@@ -83,6 +87,8 @@ DKOPTREADER_CONFIG_AUTO_STRAIGHTEN = 0,    -- range from 0 to 10
 DKOPTREADER_CONFIG_JUSTIFICATION = 3,    -- -1 = auto, 0 = left, 1 = center, 2 = right, 3 = full
 DKOPTREADER_CONFIG_MAX_COLUMNS = 2,        -- range from 1 to 4
 DKOPTREADER_CONFIG_CONTRAST = 1.0,        -- range from 0.2 to 2.0
+DKOPTREADER_CONFIG_SATURATION = 1.0,        -- range from 0.2 to 2.0
+DKOPTREADER_CONFIG_WHITE_THRESHOLD = 255,  -- range from 0 to 255
 
 -- word spacing for reflow
 DKOPTREADER_CONFIG_WORD_SPACINGS = {0.05, -0.2, 0.375},    -- range from (+/-)0.05 to (+/-)0.5

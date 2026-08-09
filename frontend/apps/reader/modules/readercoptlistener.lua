@@ -88,19 +88,17 @@ function ReaderCoptListener:onReaderReady()
 end
 
 function ReaderCoptListener:updatePageInfoOverride(pageno)
-    pageno = pageno or self.ui.view.footer.pageno
-
-    if self.document.configurable.status_line ~= 0 or self.view.view_mode ~= "page"
-        or not self.page_info_override or not next(self.additional_header_content) then
-
+    if self.document.configurable.status_line ~= 0 or self.view.view_mode ~= "page" -- no alt status bar
+        or not (self.page_info_override or next(self.additional_header_content)) -- no items to override
+    then
         self.document:setPageInfoOverride("")
         return
     end
+
     -- There are a few cases where we may not be updated on change, at least:
-    -- - when toggling ReaderPageMap's "Use reference page numbers"
     -- - when changing footer's nb of digits after decimal point
     -- but we will update on next page turn. Let's not bother.
-
+    pageno = pageno or self.view.footer.pageno
     local page_pre = ""
     local page_number = pageno
     local page_sep = " / "
@@ -117,19 +115,18 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
     -- but here each item (page number, page counte, percentage) is individually toggable,
     -- so try to get something that make sense when not all are enabled
     if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
-        -- These become strings here
         page_number = self.ui.pagemap:getCurrentPageLabel(true)
         page_count = self.ui.pagemap:getLastPageLabel(true)
     elseif self.ui.document:hasHiddenFlows() then
         local flow = self.ui.document:getPageFlow(pageno)
-        page_number = tostring(self.ui.document:getPageNumberInFlow(pageno))
-        page_count = tostring(self.ui.document:getTotalPagesInFlow(flow))
+        page_number = self.ui.document:getPageNumberInFlow(pageno)
+        page_count = self.ui.document:getTotalPagesInFlow(flow)
         percentage = page_number / page_count
         if flow == 0 then
             page_sep = " // "
         else
             page_pre = "["
-            page_post = "]"..tostring(flow)
+            page_post = "]" .. flow
             percentage_pre = "["
             percentage_post = "]"
         end
@@ -146,7 +143,7 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
         end
     end
 
-    local page_info = additional_content
+    local page_info = ""
     if self.page_number == 1 or self.page_count == 1 then
         page_info = page_info .. page_pre
         if self.page_number == 1 then
@@ -197,7 +194,13 @@ function ReaderCoptListener:updatePageInfoOverride(pageno)
         end
     end
 
-    self.document:setPageInfoOverride(page_info)
+    if not self.page_info_override and additional_content ~= "" then
+        -- force showing additional content when other overridden items are disabled
+        self.document._document:setIntProperty("window.status.pos.page.number", 1)
+    else
+        self.document._document:setIntProperty("window.status.pos.page.number", self.page_number)
+    end
+    self.document:setPageInfoOverride(additional_content .. page_info)
 end
 
 function ReaderCoptListener:onPageUpdate(pageno)
@@ -206,6 +209,11 @@ end
 
 function ReaderCoptListener:onPosUpdate(pos, pageno)
     self:updatePageInfoOverride(pageno)
+end
+
+function ReaderCoptListener:onUsePageLabelsUpdated()
+    self:updatePageInfoOverride()
+    self:updateHeader()
 end
 
 function ReaderCoptListener:onBookMetadataChanged(prop_updated)
@@ -328,7 +336,10 @@ function ReaderCoptListener:removeAdditionalHeaderContent(content_func)
     for i, v in ipairs(self.additional_header_content) do
         if v == content_func then
             table.remove(self.additional_header_content, i)
-            return true
+            if #self.additional_header_content == 0 then
+                self.document._document:setIntProperty("window.status.pos.page.number", self.page_number)
+            end
+            return
         end
     end
 end

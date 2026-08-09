@@ -8,25 +8,31 @@ BOOKEEN_DIR = $(PLATFORM_DIR)/bookeen
 # Deliberately filename-only: $(VERSION) itself is left alone, so the `git-rev`
 # written into the package (Makefile `all:`) and the version comparison
 # OTAManager does against it are unchanged. `:=` matters here -- with `=` this
-# would re-run `date` for each of the two mkupdate calls below and could straddle
-# a second boundary, naming the .zip and .targz differently.
+# would re-run `date` for each mkupdate call below and could straddle a second
+# boundary, naming the packages differently.
 BOOKEEN_BUILD_STAMP := $(shell date -u +%Y%m%d-%H%M%S)
 
 BOOKEEN_PACKAGE = koreader-bookeen$(KODEDUG_SUFFIX)-$(VERSION)-$(BOOKEEN_BUILD_STAMP).zip
-BOOKEEN_PACKAGE_OTA = koreader-bookeen$(KODEDUG_SUFFIX)-$(VERSION)-$(BOOKEEN_BUILD_STAMP).targz
+BOOKEEN_PACKAGE_OTA = koreader-bookeen$(KODEDUG_SUFFIX)-$(VERSION)-$(BOOKEEN_BUILD_STAMP).tar.xz
+BOOKEEN_PACKAGE_OLD_OTA = koreader-bookeen$(KODEDUG_SUFFIX)-$(VERSION)-$(BOOKEEN_BUILD_STAMP).targz
 
 define UPDATE_PATH_EXCLUDES +=
 tools
 endef
 
-update: all
+update-prepare: all
 	# ensure that the binaries were built for ARM
 	file --dereference $(INSTALL_DIR)/koreader/luajit | grep ARM
 	# Bookeen launching scripts
 	$(SYMLINK) $(BOOKEEN_DIR)/* $(INSTALL_DIR)/koreader/
-	$(SYMLINK) $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader/
-	# Create packages.
+
+update-zip: update-prepare
 	$(strip $(call mkupdate,$(BOOKEEN_PACKAGE)))
+
+update-txz: update-prepare
 	$(strip $(call mkupdate,$(BOOKEEN_PACKAGE_OTA)))
 
-PHONY += update
+update-tgz: update-prepare
+	$(strip $(call mkupdate,$(BOOKEEN_PACKAGE_OLD_OTA)))
+
+update: update-zip update-txz update-tgz

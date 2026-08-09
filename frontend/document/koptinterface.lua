@@ -12,11 +12,14 @@ local FFIUtil = require("ffi/util")
 local Geom = require("ui/geometry")
 local KOPTContext = require("ffi/koptcontext")
 local Persist = require("persist")
+local Screen = require("device").screen
 local TileCacheItem = require("document/tilecacheitem")
 local Utf8Proc = require("ffi/utf8proc")
 local logger = require("logger")
 local util = require("util")
 local ffi = require("ffi")
+
+require "ffi/posix_h"
 
 local KoptInterface = {
     ocrengine = "ocrengine",
@@ -99,9 +102,11 @@ function KoptInterface:setDefaultConfigurable(configurable)
     configurable.page_margin = G_defaults:readSetting("DKOPTREADER_CONFIG_PAGE_MARGIN")
     configurable.quality = G_defaults:readSetting("DKOPTREADER_CONFIG_RENDER_QUALITY")
     configurable.contrast = G_defaults:readSetting("DKOPTREADER_CONFIG_CONTRAST")
+    configurable.white_threshold = G_defaults:readSetting("DKOPTREADER_CONFIG_WHITE_THRESHOLD")
     configurable.defect_size = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFECT_SIZE")
     configurable.line_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_LINE_SPACING")
     configurable.word_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING")
+    configurable.background_cleanup = 0
 end
 
 function KoptInterface:waitForContext(kc)
@@ -138,6 +143,10 @@ function KoptInterface:createContext(doc, pageno, bbox)
     kc:setLanguage(lang)
     kc:setTrim(doc.configurable.trim_page)
     kc:setWrap(doc.configurable.text_wrap)
+    if doc.configurable.white_threshold ~= 255 then
+        kc:setWhiteThreshold(doc.configurable.white_threshold)
+        kc:setPaintWhiteThreshold(1)
+    end
     kc:setIndent(doc.configurable.detect_indent)
     kc:setColumns(doc.configurable.max_columns)
     kc:setDeviceDim(canvas_size.w, canvas_size.h)
@@ -212,7 +221,7 @@ function KoptInterface:getAutoBBox(doc, pageno)
     if not cached then
         local page = doc._document:openPage(pageno)
         local kc = self:createContext(doc, pageno, bbox)
-        page:getPagePix(kc, doc.render_mode)
+        page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
         local x0, y0, x1, y1 = kc:getAutoBBox()
         local w, h = native_size.w, native_size.h
         if (x1 - x0)/w > 0.1 or (y1 - y0)/h > 0.1 then
@@ -243,7 +252,7 @@ function KoptInterface:getSemiAutoBBox(doc, pageno)
         local page = doc._document:openPage(pageno)
         local kc = self:createContext(doc, pageno, bbox)
         local auto_bbox = {}
-        page:getPagePix(kc, doc.render_mode)
+        page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
         auto_bbox.x0, auto_bbox.y0, auto_bbox.x1, auto_bbox.y1 = kc:getAutoBBox()
         auto_bbox.x0 = auto_bbox.x0 + bbox.x0
         auto_bbox.y0 = auto_bbox.y0 + bbox.y0
@@ -284,7 +293,6 @@ local function get_pthread()
     for _, libname in ipairs(candidates) do
         ok, cached_pthread = pcall(ffi.load, libname)
         if ok then
-            require("ffi/pthread_h")
             return cached_pthread
         end
     end
@@ -297,11 +305,11 @@ function KoptInterface:reflowPage(doc, pageno, bbox, background)
         kc:setPreCache()
         self.bg_thread = true
     end
-    -- Caculate zoom.
+    -- Calculate zoom.
     kc.zoom = (1.5 * kc.zoom * kc.quality * kc.dev_width) / bbox.x1
     -- Generate pixmap.
     local page = doc._document:openPage(pageno)
-    page:getPagePix(kc, doc.render_mode)
+    page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
     page:close()
     -- Reflow.
     if background then
@@ -384,19 +392,23 @@ function KoptInterface:getCoverPageImage(doc)
     local native_size = Document.getNativePageDimensions(doc, 1)
     local canvas_size = CanvasContext:getSize()
     local zoom = math.min(canvas_size.w / native_size.w, canvas_size.h / native_size.h)
-    local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1.0)
+    local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1.0, 1.0, false)
     if tile then
         return tile.bb:copy()
     end
 end
 
-function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, hinting)
+function KoptInterface:is_optimizing_page(doc)
+    return doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 or doc.configurable.white_threshold ~= 255
+end
+
+function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, saturation, hinting)
     if doc.configurable.text_wrap == 1 then
         return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, hinting)
-    elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
+    elseif self:is_optimizing_page(doc) then
         return self:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hinting)
     else
-        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, hinting)
+        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, saturation, hinting)
     end
 end
 
@@ -440,6 +452,76 @@ Render optimized page into tile cache.
 Inherited from common document interface.
 --]]
 function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hinting)
+    local function buildOptimizedTile(bbox, persistent)
+        local kc = self:createContext(doc, pageno, bbox)
+        local page = doc._document:openPage(pageno)
+        kc:setZoom(zoom)
+        page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
+        page:close()
+        logger.dbg("optimizing page", pageno)
+        kc:optimizePage()
+        local fullwidth, fullheight = kc:getPageDim()
+        -- prepare cache item with contained blitbuffer
+        local tile = TileCacheItem:new{
+            persistent = persistent,
+            doc_path = doc.file,
+            excerpt = Geom:new{
+                x = 0, y = 0,
+                w = fullwidth,
+                h = fullheight,
+            },
+            pageno = pageno,
+        }
+        tile.bb = kc:dstToBlitBuffer()
+        tile.size = tonumber(tile.bb.stride) * tile.bb.h + 512 -- estimation
+        kc:free()
+        return tile
+    end
+
+    local function buildOptimizedFullPageTile()
+        local page_size = Document.getNativePageDimensions(doc, pageno)
+        local full_page_bbox = {
+            x0 = 0,
+            y0 = 0,
+            x1 = page_size.w,
+            y1 = page_size.h,
+        }
+        return buildOptimizedTile(full_page_bbox, true)
+    end
+
+    local function buildOptimizedPagePartTile()
+        local page_size = Document.getNativePageDimensions(doc, pageno)
+        local x0 = math.max(rect.x, 0)
+        local y0 = math.max(rect.y, 0)
+        local x1 = math.min(rect.x + rect.w, page_size.w)
+        local y1 = math.min(rect.y + rect.h, page_size.h)
+        if x1 <= x0 or y1 <= y0 then
+            return nil
+        end
+        local bbox = {
+            x0 = x0,
+            y0 = y0,
+            x1 = x1,
+            y1 = y1,
+        }
+        return buildOptimizedTile(bbox, false)
+    end
+
+    local is_prescaled = rect and rect.scaled_rect ~= nil or false
+    if is_prescaled then
+        if hinting then
+            CanvasContext:enableCPUCores(2)
+        end
+
+        local part_tile = buildOptimizedPagePartTile()
+
+        if hinting then
+            CanvasContext:enableCPUCores(1)
+        end
+
+        return part_tile
+    end
+
     local bbox = doc:getPageBBox(pageno)
     local hash_list = { "renderoptpg" }
     self:getContextHash(doc, pageno, bbox, hash_list)
@@ -451,34 +533,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hi
             CanvasContext:enableCPUCores(2)
         end
 
-        local page_size = Document.getNativePageDimensions(doc, pageno)
-        local full_page_bbox = {
-            x0 = 0, y0 = 0,
-            x1 = page_size.w,
-            y1 = page_size.h,
-        }
-        local kc = self:createContext(doc, pageno, full_page_bbox)
-        local page = doc._document:openPage(pageno)
-        kc:setZoom(zoom)
-        page:getPagePix(kc, doc.render_mode)
-        page:close()
-        logger.dbg("optimizing page", pageno)
-        kc:optimizePage()
-        local fullwidth, fullheight = kc:getPageDim()
-        -- prepare cache item with contained blitbuffer
-        local tile = TileCacheItem:new{
-            persistent = true,
-            doc_path = doc.file,
-            excerpt = Geom:new{
-                x = 0, y = 0,
-                w = fullwidth,
-                h = fullheight
-            },
-            pageno = pageno,
-        }
-        tile.bb = kc:dstToBlitBuffer()
-        tile.size = tonumber(tile.bb.stride) * tile.bb.h + 512 -- estimation
-        kc:free()
+        local tile = buildOptimizedFullPageTile()
         DocCache:insert(hash, tile)
 
         if hinting then
@@ -491,16 +546,16 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hi
     end
 end
 
-function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma)
+function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, saturation)
     --- @note: Crappy safeguard around memory issues like in #7627: if we're eating too much RAM, drop half the cache...
     DocCache:memoryPressureCheck()
 
     if doc.configurable.text_wrap == 1 then
-        self:hintReflowedPage(doc, pageno, zoom, rotation, gamma, true)
-    elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
-        self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, gamma, true)
+        self:hintReflowedPage(doc, pageno, zoom, rotation, true)
+    elseif self:is_optimizing_page(doc) then
+        self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, true)
     else
-        Document.hintPage(doc, pageno, zoom, rotation, gamma)
+        Document.hintPage(doc, pageno, zoom, rotation, gamma, saturation)
     end
 end
 
@@ -513,7 +568,7 @@ off by calling self:waitForContext(kctx)
 
 Inherited from common document interface.
 --]]
-function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, hinting)
+function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, hinting)
     local bbox = doc:getPageBBox(pageno)
     local hash_list = { "kctx" }
     self:getContextHash(doc, pageno, bbox, hash_list)
@@ -533,13 +588,16 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, hint
     end
 end
 
-function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
+function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, saturation)
+    local nightmode_invert = doc.configurable.nightmode_document == 1 and Screen.night_mode
     if doc.configurable.text_wrap == 1 then
-        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
-    elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
-        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
+        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
+    elseif self:is_optimizing_page(doc) then
+        self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
+    elseif nightmode_invert then
+        Document.drawPageInverted(doc, target, x, y, rect, pageno, zoom, rotation, gamma, saturation)
     else
-        Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma)
+        Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, saturation)
     end
 end
 
@@ -548,13 +606,16 @@ Draw cached tile pixels into target blitbuffer.
 
 Inherited from common document interface.
 --]]
-function KoptInterface:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation)
-    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 1.0)
+function KoptInterface:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, nightmode_invert)
+    local tile = self:renderPage(doc, pageno, rect, zoom, rotation, 1.0, 1.0, false)
     target:blitFrom(tile.bb,
         x, y,
         rect.x - tile.excerpt.x,
         rect.y - tile.excerpt.y,
         rect.w, rect.h)
+    if nightmode_invert then
+        target:invertRect(x, y, rect.w, rect.h)
+    end
 end
 
 --[[
@@ -690,7 +751,7 @@ function KoptInterface:getPanelFromPage(doc, pageno, ges)
     local kc = self:createContext(doc, pageno, bbox)
     kc:setZoom(1.0)
     local page = doc._document:openPage(pageno)
-    page:getPagePix(kc, doc.render_mode)
+    page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
     local panel = kc:getPanelFromPage(ges)
     page:close()
     kc:free()
@@ -715,7 +776,7 @@ function KoptInterface:getNativeTextBoxesFromScratch(doc, pageno)
         local kc = self:createContext(doc, pageno, bbox)
         kc:setZoom(1.0)
         local page = doc._document:openPage(pageno)
-        page:getPagePix(kc, doc.render_mode)
+        page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
         local boxes, nr_word = kc:getNativeWordBoxes("src", 0, 0, page_size.w, page_size.h)
         if boxes then
             DocCache:insert(hash, CacheItem:new{ scratchnativepgboxes = boxes, size = 192 * nr_word }) -- estimation
@@ -749,7 +810,7 @@ function KoptInterface:getPageBlock(doc, pageno, x, y)
         -- leptonica needs a source image of at least 300dpi
         kc:setZoom(CanvasContext:getWidth() / page_size.w * 300 / CanvasContext:getDPI())
         local page = doc._document:openPage(pageno)
-        page:getPagePix(kc, doc.render_mode)
+        page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
         kc:findPageBlocks()
         DocCache:insert(hash, CacheItem:new{ kctx = kc, size = 3072 }) -- estimation
         page:close()
@@ -801,7 +862,9 @@ function KoptInterface:getReflewOCRWord(doc, pageno, rect)
             kc.getTOCRWord, kc, "dst",
             rect.x, rect.y, rect.w, rect.h,
             self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
-        DocCache:insert(hash, CacheItem:new{ rfocrword = word, size = #word + 64 }) -- estimation
+        if word then
+            DocCache:insert(hash, CacheItem:new{ rfocrword = word, size = #word + 64 }) -- estimation
+        end
         return word
     else
         return cached.rfocrword
@@ -826,14 +889,16 @@ function KoptInterface:getNativeOCRWord(doc, pageno, rect)
         local kc = self:createContext(doc, pageno, bbox)
         kc:setZoom(30/rect.h)
         local page = doc._document:openPage(pageno)
-        page:getPagePix(kc, doc.render_mode)
+        page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
         --kc:exportSrcPNGFile({rect}, nil, "ocr-word.png")
         local word_w, word_h = kc:getPageDim()
         local _, word = pcall(
             kc.getTOCRWord, kc, "src",
             0, 0, word_w, word_h,
             self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
-        DocCache:insert(hash, CacheItem:new{ ocrword = word, size = #word + 64 }) -- estimation
+        if word then
+            DocCache:insert(hash, CacheItem:new{ ocrword = word, size = #word + 64 }) -- estimation
+        end
         logger.dbg("word", word)
         page:close()
         kc:free()
@@ -876,7 +941,7 @@ function KoptInterface:getClipPageContext(doc, pos0, pos1, pboxes, drawer)
     }
     local kc = self:createContext(doc, pos0.page, bbox)
     local page = doc._document:openPage(pos0.page)
-    page:getPagePix(kc, doc.render_mode)
+    page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
     page:close()
     return kc, rect
 end
@@ -940,6 +1005,16 @@ local function getWordBoxIndices(boxes, pos)
     return m, n
 end
 
+local function compareWordBoxIndices(i1, j1, i2, j2)
+    if i1 == i2 then
+        if j1 == j2 then
+            return 0
+        end
+        return j1 < j2 and 1 or -1
+    end
+    return i1 < i2 and 1 or -1
+end
+
 --[[--
 Get word and word box around `pos`.
 --]]
@@ -970,7 +1045,7 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
     local line_boxes = {}
     local i_start, j_start = getWordBoxIndices(boxes, pos0)
     local i_stop, j_stop = getWordBoxIndices(boxes, pos1)
-    if i_start == i_stop and j_start > j_stop or i_start > i_stop then
+    if compareWordBoxIndices(i_start, j_start, i_stop, j_stop) == -1 then
         i_start, i_stop = i_stop, i_start
         j_start, j_stop = j_stop, j_start
     end
@@ -983,7 +1058,8 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
         local prev_word
         local prev_word_end_x
         for j = j0, j1 do
-            local word = boxes[i][j].word
+            local box = boxes[i][j]
+            local word = box and box.word
             if word then
                 if not line_first_word_seen then
                     line_first_word_seen = true
@@ -1003,7 +1079,6 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
                         end
                     end
                 end
-                local box = boxes[i][j]
                 if prev_word then
                     -- A box should have been made for each word, so assume
                     -- we want a space between them, with some exceptions
@@ -1013,12 +1088,12 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
                     if prev_word:sub(-1, -1) == " " or word:sub(1, 1) == " " then
                         -- Already a space between these words
                         add_space = false
-                    elseif dist_from_prev_word < box_height * 0.03 then
+                    elseif dist_from_prev_word >= 0 and dist_from_prev_word < box_height * 0.03 then
                         -- If the space between previous word box and this word box
                         -- is smaller than 5% of box height, assume these boxes
                         -- should be stuck
                         add_space = false
-                    elseif dist_from_prev_word < box_height * 0.8 then
+                    elseif dist_from_prev_word >= 0 and dist_from_prev_word < box_height * 0.8 then
                         local prev_word_end = prev_word:match(util.UTF8_CHAR_PATTERN.."$")
                         local word_start = word:match(util.UTF8_CHAR_PATTERN)
                         if util.isCJKChar(prev_word_end) and util.isCJKChar(word_start) then
@@ -1395,18 +1470,13 @@ function KoptInterface:comparePositions(doc, ppos1, ppos2)
     elseif ppos1.page > ppos2.page then
         return -1
     end
-    local box1 = self:getWordFromPosition(doc, ppos1).pbox
-    local box2 = self:getWordFromPosition(doc, ppos2).pbox
-    if box1.y == box2.y then
-        if box1.x == box2.x then
-            return 0
-        elseif box1.x > box2.x then
-            return -1
-        end
-    elseif box1.y > box2.y then
-        return -1
+    local text_boxes = self:getTextBoxes(doc, ppos1.page)
+    if not text_boxes then
+        return 0
     end
-    return 1
+    local i1, j1 = getWordBoxIndices(text_boxes, ppos1)
+    local i2, j2 = getWordBoxIndices(text_boxes, ppos2)
+    return compareWordBoxIndices(i1, j1, i2, j2)
 end
 
 --[[--
@@ -1433,7 +1503,7 @@ end
 local function get_pattern_list(pattern, case_insensitive)
     -- pattern list of single words
     local plist = {}
-    -- (as in util.splitToWords(), but only splitting on spaces, keeping punctuations)
+    -- (as in util.splitToWords(), but only splitting on spaces, keeping punctuation marks)
     for word in util.gsplit(pattern, "%s+") do
         if util.hasCJKChar(word) then
             for char in util.gsplit(word, "[\192-\255][\128-\191]+", true) do

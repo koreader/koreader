@@ -135,6 +135,8 @@ local font_exts = {
     ["ttc"] = true,
     ["cff"] = true,
     ["otf"] = true,
+    ["woff"] = true,
+    ["woff2"] = true,
 }
 
 function FontList:_readList(dir, mark)
@@ -153,7 +155,7 @@ function FontList:_readList(dir, mark)
             return
         end
         local fi = collectFaceInfo(path)
-        if not fi then return end
+        if not fi or not next(fi) then return end
         fi.change = attr.change
         self.fontinfo[path] = fi
         mark.cache_dirty = true

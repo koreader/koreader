@@ -783,12 +783,16 @@ end
 --- Recursively scan directory for files inside
 -- @string path
 -- @func callback(fullpath, name, attr)
-function util.findFiles(dir, cb, recursive)
+-- @bool recursive
+-- @int max_files (maximum number of files to find)
+function util.findFiles(dir, cb, recursive, max_files)
     recursive = recursive ~= false
+    local count = 0
     local function scan(current)
         local ok, iter, dir_obj = pcall(lfs.dir, current)
         if not ok then return end
         for f in iter, dir_obj do
+            if max_files and count >= max_files then return end
             local path = current.."/"..f
             -- lfs can return nil here, as it will follow symlinks!
             local attr = lfs.attributes(path) or {}
@@ -798,6 +802,7 @@ function util.findFiles(dir, cb, recursive)
                 end
             elseif attr.mode == "file" or attr.mode == "link" then
                 cb(path, f, attr)
+                count = count + 1
             end
         end
     end
@@ -914,48 +919,34 @@ function util.removeFile(file)
     end
 end
 
--- Gets total, used and available bytes for the mountpoint that holds a given directory.
--- @string path of the directory
+-- Gets total, used and available bytes for the mountpoint that holds a given path.
+-- @string path of a file or a directory
 -- @treturn table with total, used and available bytes
-function util.diskUsage(dir)
-    -- safe way of testing df & awk
-    local function doCommand(d)
-        local handle = io.popen("df -k " .. util.shell_escape({d}) .. " 2>/dev/null | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }' 2>/dev/null || echo ::ERROR::")
-        if not handle then return end
-        local output = handle:read("*all")
-        handle:close()
-        if not output:find "::ERROR::" then
-            return output
-        end
-    end
+function util.diskUsage(path)
     local err = { total = nil, used = nil, available = nil }
-    if not dir or lfs.attributes(dir, "mode") ~= "directory" then return err end
-    local usage = doCommand(dir)
-    if not usage then return err end
-    local stage, result = {}, {}
-    for size in usage:gmatch("%w+") do
-        table.insert(stage, size)
-    end
-    for k, v in pairs({"total", "used", "available"}) do
-        if stage[k] ~= nil then
-            -- sizes are in kb, return bytes here
-            result[v] = stage[k] * 1024
-        end
-    end
-    return result
+    local total, free, available = ffiUtil.df(path)
+    if not total then return err end
+    return {
+        total = total,
+        used = total - free,
+        available = available,
+    }
 end
 
 
 --- Replaces characters that are invalid filenames.
 --
--- Replaces the characters <code>\/:*?"<>|</code> with an <code>_</code>.
+-- Replaces the characters <code>\/:*?"<>|</code> with an <code>_</code>
+-- and removes trailing dots and spaces, in line with <https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions>.
 -- These characters are problematic on Windows filesystems. On Linux only
 -- <code>/</code> poses a problem.
 ---- @string str filename
 ---- @treturn string sanitized filename
-local function replaceAllInvalidChars(str)
+function util.replaceAllInvalidChars(str)
     if str then
-        return str:gsub('[\\,%/,:,%*,%?,%",%<,%>,%|]','_')
+        str = str:gsub('[\\/:*?"<>|]', '_')
+        str = str:gsub("[.%s]+$", "")
+        return str
     end
 end
 
@@ -981,7 +972,7 @@ If an optional path is provided, @{util.getFilesystemType}() will be used to det
 ---- @treturn string safe filename
 function util.getSafeFilename(str, path, limit, limit_ext)
     local filename, suffix = util.splitFileNameSuffix(str)
-    local replaceFunc = replaceAllInvalidChars
+    local replaceFunc = util.replaceAllInvalidChars
     local safe_filename
     -- VFAT supports a maximum of 255 UCS-2 characters, although it's probably treated as UTF-16 by Windows
     -- default to a slightly lower limit just in case
@@ -1003,6 +994,7 @@ function util.getSafeFilename(str, path, limit, limit_ext)
         suffix = nil
     end
 
+    filename = filename:gsub("\r?\n", " "):gsub("\t", " ")
     filename = util.htmlToPlainTextIfHtml(filename)
     filename = filename:sub(1, limit)
     -- the limit might result in broken UTF-8, which we don't want in the result
@@ -1443,17 +1435,23 @@ end
 
 --- Encode URL also known as percent-encoding see https://en.wikipedia.org/wiki/Percent-encoding
 --- @string text the string to encode
+--- @string preserve_chars a string containing all the charactes to preserve unencoded - e.g. "/"
 --- @treturn encode string
---- Taken from https://gist.github.com/liukun/f9ce7d6d14fa45fe9b924a3eed5c3d99
-function util.urlEncode(url)
+--- Originally taken from https://gist.github.com/liukun/f9ce7d6d14fa45fe9b924a3eed5c3d99
+--- Modified to comply with RFC 3986's unreserved characters definition:
+---    ALPHA (A-Z, a-z), DIGIT (0-9), '-', '.', '_', '~'
+function util.urlEncode(url, preserve_chars)
     local char_to_hex = function(c)
         return string.format("%%%02X", string.byte(c))
     end
+    preserve_chars = preserve_chars or ""
+    local pattern_base = "^%w%-%._~"
+    local pattern = string.format("([%s%s])", pattern_base, preserve_chars)
     if url == nil then
         return
     end
     url = url:gsub("\n", "\r\n")
-    url = url:gsub("([^%w%-%.%_%~%!%*%'%(%)])", char_to_hex)
+    url = url:gsub(pattern, char_to_hex)
     return url
 end
 
@@ -1484,6 +1482,11 @@ function util.checkLuaSyntax(lua_text)
     -- with: Line 3: '=' expected near '123'
     err = err and err:gsub("%[string \".-%\"]:", "Line ")
     return err
+end
+
+--- Convert UTF-8 string to lower case.
+function util.stringLower(str)
+   return str and Utf8Proc.lowercase(util.fixUtf8(str, "?"))
 end
 
 --- Simple startsWith string helper.

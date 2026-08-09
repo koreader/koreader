@@ -95,6 +95,10 @@ function OPDSParser:parse(text)
     --       because it doesn't really deal well with various XHTML quirks, as the list of crappy replacements above attests to...
     --       There's also a high probability of finding orphaned tags or badly nested ones in there, which would screw everything up.
     --       In any case, we just want to treat the whole thing as a single text node anyway, so, just mangle the markup to force luxl's hand.
+    -- A self-closing content tag (e.g. <content type="text"/>) has no text. Turn it
+    -- into an empty element first, otherwise the lazy ".-" in the rewrite below runs
+    -- past it to the next entry's content tag and swallows everything in between.
+    text = text:gsub("<content%s+[^<>]-/>", "<content />")
     text = text:gsub('<content type=".-">', "<content>")
     text = text:gsub("<content>(.-)</content>", function (s)
         return '<content type="text">' .. s:gsub("%p", {["<"] = "&lt;", [">"] = "&gt;", ['"'] = "&quot;", ["'"] = "&apos;"}) .. "</content>"

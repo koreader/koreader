@@ -22,10 +22,14 @@ function filemanagerutil.getDefaultDir()
     return Device.home_dir or "."
 end
 
+function filemanagerutil.getHomeFolder()
+    return G_reader_settings:readSetting("home_dir") or Device.home_dir or "."
+end
+
 function filemanagerutil.abbreviate(path)
     if not path then return "" end
     if G_reader_settings:nilOrTrue("shorten_home_dir") then
-        local home_dir = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+        local home_dir = filemanagerutil.getHomeFolder()
         if path == home_dir or path == home_dir .. "/" then
             return _("Home")
         end
@@ -53,13 +57,13 @@ function filemanagerutil.splitFileNameType(filepath)
     return filename_without_suffix, filetype
 end
 
-function filemanagerutil.getRandomFile(dir, match_func)
+function filemanagerutil.getRandomFile(dir, match_func, max_files)
     local files = {}
     util.findFiles(dir, function(file)
         if match_func(file) then
             table.insert(files, file)
         end
-    end, false)
+    end, false, max_files)
     if #files > 0 then
         math.randomseed(os.time())
         return files[math.random(#files)]
@@ -367,7 +371,7 @@ function filemanagerutil.executeScript(file, caller_callback)
     end)
 end
 
-function filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path, file_filter)
+function filemanagerutil.showChooseDialog(title_header, caller_callback, current_path, default_path, file_filter, reset_button)
     local is_file = file_filter and true or false
     local path = current_path or default_path
     local dialog
@@ -379,10 +383,10 @@ function filemanagerutil.showChooseDialog(title_header, caller_callback, current
                     UIManager:close(dialog)
                     if path then
                         if is_file then
-                            path = path:match("(.*/)")
+                            path = ffiUtil.dirname(path)
                         end
                         if lfs.attributes(path, "mode") ~= "directory" then
-                            path = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+                            path = filemanagerutil.getHomeFolder()
                         end
                     end
                     local PathChooser = require("ui/widget/pathchooser")
@@ -413,6 +417,18 @@ function filemanagerutil.showChooseDialog(title_header, caller_callback, current
             },
         })
     end
+    if reset_button then
+        table.insert(buttons, {
+            {
+                text = _("Reset"),
+                enabled = current_path and true or false,
+                callback = function()
+                    UIManager:close(dialog)
+                    caller_callback()
+                end,
+            },
+        })
+    end
     local title_value = path and (is_file and BD.filepath(path) or BD.dirpath(path))
                               or _("not set")
     local ButtonDialog = require("ui/widget/buttondialog")
@@ -421,6 +437,42 @@ function filemanagerutil.showChooseDialog(title_header, caller_callback, current
         buttons = buttons,
     }
     UIManager:show(dialog)
+end
+
+function filemanagerutil.openFile(ui, file, caller_pre_callback, no_dialog)
+    local openFile = function()
+        if caller_pre_callback then
+            caller_pre_callback()
+        end
+        if ui.document then -- Reader
+            if ui.document.file ~= file then
+                local DocumentRegistry = require("document/documentregistry")
+                local provider, is_provider_forced = DocumentRegistry:getProvider(file, true) -- include auxiliary
+                if provider and provider.order then -- auxiliary
+                    -- keep the currently opened document, open the file over Reader
+                    if provider.callback then -- module
+                        provider.callback(file)
+                    else -- plugin
+                        ui[provider.provider]:openFile(file)
+                    end
+                else -- document
+                    ui:switchDocument(file, nil, nil, provider, is_provider_forced)
+                end
+            end
+        else -- FM
+            ui:openFile(file)
+        end
+    end
+
+    if not no_dialog and G_reader_settings:isTrue("file_ask_to_open") then
+        UIManager:show(ConfirmBox:new{
+            text = _("Open this file?") .. "\n\n" .. BD.filename(file:match("([^/]+)$")),
+            ok_text = _("Open"),
+            ok_callback = openFile,
+        })
+    else
+        openFile()
+    end
 end
 
 return filemanagerutil

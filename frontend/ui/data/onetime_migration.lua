@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20250405
+local CURRENT_MIGRATION_DATE = 20260804
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -32,15 +32,6 @@ local function drop_fontcache()
     if not ok then
        logger.warn("os.remove:", err)
     end
-end
-
--- Global settings, https://github.com/koreader/koreader/pull/4945 & https://github.com/koreader/koreader/pull/5655
--- Limit the check to the most recent update. ReaderUI calls this one unconditionally to update docsettings, too.
-if last_migration_date < 20191129 then
-    logger.info("Performing one-time migration for 20191129")
-
-    local SettingsMigration = require("ui/data/settings_migration")
-    SettingsMigration:migrateSettings(G_reader_settings)
 end
 
 -- ReaderTypography, https://github.com/koreader/koreader/pull/6072
@@ -884,6 +875,161 @@ if last_migration_date < 20250405 then
         })
     end
     G_reader_settings:delSetting("show_finished")
+end
+
+-- Global settings, https://github.com/koreader/koreader/pull/4945 & https://github.com/koreader/koreader/pull/5655
+-- Limit the check to the most recent update. ReaderUI calls this one unconditionally to update docsettings, too.
+-- 20250601, Refactor default footnote style tweaks
+-- https://github.com/koreader/koreader/pull/13613
+if last_migration_date < 20250601 then
+    logger.info("Performing one-time migration for 20250601")
+
+    local SettingsMigration = require("ui/data/settings_migration")
+    SettingsMigration:migrateSettings(G_reader_settings)
+end
+
+-- 20250914, Move all ReadTimer plugin settings into a single table.
+-- https://github.com/koreader/koreader/pull/14309
+if last_migration_date < 20250914 then
+    logger.info("Performing one-time migration for 20250914")
+
+    local remain_time_hours, remain_time_minutes
+    local remain_time = G_reader_settings:readSetting("reader_timer_remain_time")
+    if remain_time then
+        remain_time_hours = remain_time[1]
+        remain_time_minutes = remain_time[2]
+        G_reader_settings:delSetting("reader_timer_remain_time")
+    end
+    local settings = {
+        remain_time_hours = remain_time_hours,
+        remain_time_minutes = remain_time_minutes,
+        show_value_in_header = G_reader_settings:readSetting("readtimer_show_value_in_header"),
+        show_value_in_footer = G_reader_settings:readSetting("readtimer_show_value_in_footer"),
+    }
+    G_reader_settings:saveSetting("readtimer", settings)
+    G_reader_settings:delSetting("readtimer_show_value_in_header")
+    G_reader_settings:delSetting("readtimer_show_value_in_footer")
+end
+
+-- 20250929, Screensaver message position refactor: top/middle/bottom -> banner/box with custom positioning
+-- https://github.com/koreader/koreader/pull/14371
+if last_migration_date < 20250929 then
+    logger.info("Performing one-time migration for 20250929")
+
+    -- List of prefixes to check (empty string for normal settings, plus event prefixes)
+    local prefixes = {"", "poweroff_", "reboot_"}
+
+    for _, prefix in ipairs(prefixes) do
+        local old_position_key = prefix .. "screensaver_message_position"
+        local old_position = G_reader_settings:readSetting(old_position_key)
+
+        if old_position then
+            local new_container_key = prefix .. "screensaver_message_container"
+            local new_position_key = prefix .. "screensaver_message_vertical_position"
+
+            if old_position == "top" then
+                -- Top -> Banner at 100% from bottom
+                G_reader_settings:saveSetting(new_container_key, "banner")
+                G_reader_settings:saveSetting(new_position_key, 100)
+            elseif old_position == "middle" then
+                -- Middle -> Box at 50% (center)
+                G_reader_settings:saveSetting(new_container_key, "box")
+                G_reader_settings:saveSetting(new_position_key, 50)
+            elseif old_position == "bottom" then
+                -- Bottom -> Banner at 0% from bottom
+                G_reader_settings:saveSetting(new_container_key, "banner")
+                G_reader_settings:saveSetting(new_position_key, 0)
+            end
+            G_reader_settings:delSetting(old_position_key)
+        end
+    end
+end
+
+-- 20260306, Enable virtual keyboard on kindle 4
+-- https://github.com/koreader/koreader/pull/15057
+if last_migration_date < 20260306 then
+    logger.info("Performing one-time migration for 20260306")
+
+    local Device = require("device")
+    if Device:hasScreenKB() and G_reader_settings:hasNot("virtual_keyboard_enabled") then
+        G_reader_settings:makeTrue("virtual_keyboard_enabled")
+    end
+end
+
+-- 20260428, Hotkeys plugin: add text_selection to hotkeys_reader defaults
+-- https://github.com/koreader/koreader/pull/14867
+if last_migration_date < 20260428 then
+    logger.info("Performing one-time migration for 20260428")
+
+    local Device = require("device")
+    if Device:hasKeyboard() then
+        local hotkeys_path = ffiUtil.joinPath(DataStorage:getSettingsDir(), "hotkeys.lua")
+        if lfs.attributes(hotkeys_path, "mode") == "file" then
+            local hotkeys_settings = LuaSettings:open(hotkeys_path)
+            if hotkeys_settings.data.hotkeys_reader then
+                hotkeys_settings.data.hotkeys_reader.b = {bookmarks = true}
+                hotkeys_settings.data.hotkeys_reader.h = {text_selection = true}
+                hotkeys_settings.data.hotkeys_reader.t = {toc = true}
+                hotkeys_settings:flush()
+            end
+        end
+    end
+end
+
+-- 20260512, Move HttpInspector plugin settings into one table.
+-- https://github.com/koreader/koreader/pull/15373
+if last_migration_date < 20260512 then
+    logger.info("Performing one-time migration for 20260512")
+
+    local autostart = G_reader_settings:readSetting("httpinspector_autostart")
+    local port = G_reader_settings:readSetting("httpinspector_port")
+    if autostart or port then
+        G_reader_settings:delSetting("httpinspector_autostart")
+        G_reader_settings:delSetting("httpinspector_port")
+        G_reader_settings:saveSetting("httpinspector", {
+            autostart = autostart,
+            port = tonumber(port),
+        })
+    end
+end
+
+-- 20260517, Move BookShortcuts plugin settings into the settings file.
+-- https://github.com/koreader/koreader/pull/15392
+if last_migration_date < 20260517 then
+    logger.info("Performing one-time migration for 20260517")
+
+    local directory_action = G_reader_settings:readSetting("BookShortcuts_directory_action")
+    local recursive_directory = G_reader_settings:readSetting("BookShortcuts_recursive_directory")
+    if directory_action or recursive_directory then
+        G_reader_settings:delSetting("BookShortcuts_directory_action")
+        G_reader_settings:delSetting("BookShortcuts_recursive_directory")
+        local settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/bookshortcuts.lua")
+        settings:saveSetting("settings", {
+            directory_action = directory_action,
+            recursive_directory = recursive_directory,
+        })
+        settings:flush()
+    end
+end
+
+-- 20260623, Move Kosync plugin settings into a separate file
+-- https://github.com/koreader/koreader/pull/15591
+if last_migration_date < 20260623 then
+    logger.info("Performing one-time migration for 20260623")
+    local kosync_setting = G_reader_settings:readSetting("kosync")
+    if kosync_setting then
+        local settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/kosync.lua")
+        settings:saveSetting("settings" , kosync_setting)
+        settings:flush()
+        G_reader_settings:delSetting("kosync")
+    end
+end
+
+-- 20260804, Remove CloudStorage app
+-- https://github.com/koreader/koreader/pull/15793
+if last_migration_date < 20260804 then
+    logger.info("Performing one-time migration for 20260804")
+    ffiUtil.purgeDir(DataStorage:getDataDir() .. "/frontend/apps/cloudstorage")
 end
 
 -- We're done, store the current migration date

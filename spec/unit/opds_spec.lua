@@ -186,6 +186,39 @@ One Thousand Mythological Characters Briefly Described
 </feed>
 ]]
 
+-- https://www.gutenberg.org/catalog/osd-books.xml
+local opensearch_sample = [[
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+   <LongName>Project Gutenberg</LongName>
+   <ShortName>Gutenberg</ShortName>
+   <Description>Search the Project Gutenberg ebook catalog.</Description>
+   <Tags>free ebooks books public domain</Tags>
+   <Developer>Marcello Perathoner</Developer>
+   <Contact>webmaster@gutenberg.org</Contact>
+
+   <Url type="text/html"
+        template="http://www.gutenberg.org/ebooks/search/?query={searchTerms}"/>
+
+   <Url type="application/atom+xml"
+        template="http://m.gutenberg.org/ebooks/search.opds/?query={searchTerms}"/>
+
+   <Url type="application/x-suggestions+json"
+    rel="suggestions"
+        template="http://www.gutenberg.org/ebooks/suggest/?query={searchTerms}"/>
+
+   <Query role="example" searchTerms="shakespeare hamlet" />
+   <Query role="example" searchTerms="doyle detective" />
+   <Query role="example" searchTerms="love stories" />
+
+   <Attribution>Search Data Copyright 1971-2012, Project Gutenberg, All Rights Reserved.</Attribution>
+   <SyndicationRight>open</SyndicationRight>
+   <Language>en-us</Language>
+   <OutputEncoding>UTF-8</OutputEncoding>
+   <InputEncoding>UTF-8</InputEncoding>
+</OpenSearchDescription>
+]]
+
 local popular_new_sample = [[
 <?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xml:lang="en" xmlns:app="http://www.w3.org/2007/app" xmlns:thr="http://purl.org/syndication/thread/1.0" xmlns:opds="http://opds-spec.org/2010/catalog">
@@ -257,6 +290,54 @@ local facet_sample = [[
 </feed>
 ]]
 
+-- https://archive2.cbeta.org/opds (single-quoted attributes)
+local single_quote_sample = [[
+<?xml version='1.0' encoding='UTF-8' ?>
+<feed xmlns="https://www.w3.org/2005/Atom">
+<id>https://www.cbeta.org/opds/index.php</id>
+<link rel="self"
+    href="https://www.cbeta.org/opds/index.php"
+    type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+<link rel="start"
+    href="https://www.cbeta.org/opds/index.php"
+    type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+<title>CBETA ePub OPDS Catalog</title>
+<updated>2023-11-13T00:00:00Z</updated>
+<entry>
+    <title>Entry One</title>
+    <link rel='subsection'
+        href='https://www.cbeta.org/opds/index.php?vol=T'
+        type='application/atom+xml;profile=opds-catalog;kind=navigation'/>
+    <updated>2023-11-13T10:03:10Z</updated>
+    <id>https://www.cbeta.org/opds/index.php?vol=T</id>
+</entry>
+<entry>
+    <title>Entry Two</title>
+    <link rel='subsection'
+        href='https://www.cbeta.org/opds/index.php?vol=X'
+        type='application/atom+xml;profile=opds-catalog;kind=navigation'/>
+    <updated>2023-11-13T10:03:10Z</updated>
+    <id>https://www.cbeta.org/opds/index.php?vol=X</id>
+</entry>
+</feed>
+]]
+
+local pdf_query_sample = [[
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/terms/" xmlns:os="http://a9.com/-/spec/opensearch/1.1/" xmlns:opds="http://opds-spec.org/2010/catalog">
+    <id>tag:root:pdfquery</id>
+    <title>PDF Query Test</title>
+    <updated>2025-09-11T00:00:00Z</updated>
+    <entry>
+        <title>Sample PDF With Query</title>
+        <id>urn:pdf:with:query</id>
+        <updated>2025-09-11T00:00:00Z</updated>
+        <content type="text">A PDF that already has .pdf before a query parameter.</content>
+        <link href="http://example.org/books/file.pdf?opds" type="application/pdf" title="pdf" rel="related" />
+    </entry>
+</feed>
+]]
+
 describe("OPDS module", function()
     local socketutil
     local OPDSParser, OPDSBrowser
@@ -317,41 +398,135 @@ describe("OPDS module", function()
             assert.are.same(entry.link[1].href, "https://www.gutenberg.org/ebooks/42474.epub.images")
             assert.are.same(entry.link[1].title, "EPUB (with images)")
         end)
+        it("should not desync entries when a content tag is self-closing", function()
+            -- Regression for #15511: a self-closing <content type="text"/> used to make
+            -- the content rewrite over-match into the next entry, dropping entries and
+            -- pairing covers with the wrong titles.
+            local self_closing_content_sample = [[
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>Self-closing content</title>
+<entry>
+<title>First</title>
+<id>urn:first</id>
+<content type="text"/>
+<link type="image/png" rel="http://opds-spec.org/image/thumbnail" href="FIRST_IMG"/>
+</entry>
+<entry>
+<title>Second</title>
+<id>urn:second</id>
+<content type="text">A description.</content>
+<link type="image/png" rel="http://opds-spec.org/image/thumbnail" href="SECOND_IMG"/>
+</entry>
+</feed>
+]]
+            local catalog = OPDSParser:parse(self_closing_content_sample)
+            local feed = catalog.feed
+            assert.truthy(feed)
+            local entries = feed.entry
+            assert.truthy(entries)
+            assert.are.same(#entries, 2)
+            assert.are.same(entries[1].title, "First")
+            assert.are.same(entries[1].link[1].href, "FIRST_IMG")
+            assert.are.same(entries[2].title, "Second")
+            assert.are.same(entries[2].link[1].href, "SECOND_IMG")
+        end)
+        it("should keep attribute values that are not ASCII", function()
+            local non_ascii_sample = [[
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>Non-ASCII attributes</title>
+<entry>
+<title>Двадцать тысяч льё под водой</title>
+<id>urn:third</id>
+<category term="Приключения" label="Приключения"/>
+<link href="/opds/sequencebooks/109084" rel="related" type="application/atom+xml" title="Все книги серии «Капитан Немо»"/>
+</entry>
+</feed>
+]]
+            local catalog = OPDSParser:parse(non_ascii_sample)
+            local entry = catalog.feed.entry[1]
+            assert.are.same(entry.category.label, "Приключения")
+            assert.are.same(entry.link[1].title, "Все книги серии «Капитан Немо»")
+        end)
     end)
 
     describe("OPDS browser module", function()
+        before_each(function()
+            local Cache = require("cache")
+            stub(Cache, "check", function() return nil end)
+        end)
+
+        after_each(function()
+            local Cache = require("cache")
+            if Cache.check.revert then
+                Cache.check:revert()
+            end
+        end)
+
         describe("URL generation", function()
-            it("should generate search item #internet", function()
-                local catalog = OPDSParser:parse(navigation_sample)
-                local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "https://www.gutenberg.org/ebooks.opds/?format=opds")
+            it("should generate search url and catalog items #internet", function()
+                local fetch_feed_stub = stub(OPDSBrowser, "getSearchTemplate", function(self, osd_url)
+                    local search_descriptor = OPDSParser:parse(opensearch_sample)
+                    if search_descriptor and search_descriptor.OpenSearchDescription and search_descriptor.OpenSearchDescription.Url then
+                        for _, candidate in ipairs(search_descriptor.OpenSearchDescription.Url) do
+                            if candidate.type and candidate.template and candidate.type:find(self.search_template_type) then
+                                return candidate.template:gsub("{searchTerms}", "%%s")
+                            end
+                        end
+                    end
+                    return nil
+                end)
+
+                local main_catalog = OPDSParser:parse(navigation_sample)
+                local item_table = OPDSBrowser:genItemTableFromCatalog(main_catalog, "https://www.gutenberg.org/ebooks.opds/?format=opds")
+
+                assert.truthy(OPDSBrowser.search_url)
+                assert.are.same("http://m.gutenberg.org/ebooks/search.opds/?query=%s", OPDSBrowser.search_url)
 
                 assert.truthy(item_table)
-                assert.are.same(item_table[1].text, "\u{f002} " .. "Search")
+                assert.are.same(3, #item_table)
+                assert.are.same("Popular", item_table[1].title)
+                assert.are.same("Latest", item_table[2].title)
+                assert.are.same("Random", item_table[3].title)
+
+                fetch_feed_stub:revert()
             end)
             it("should generate URL on rel=subsection #internet", function()
                 local catalog = OPDSParser:parse(navigation_sample)
                 local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "https://www.gutenberg.org/ebooks.opds/?format=opds")
 
                 assert.truthy(item_table)
-                assert.are.same(item_table[2].title, "Popular")
-                assert.are.same(item_table[2].url, "https://www.gutenberg.org/ebooks/search.opds/?sort_order=downloads")
+                assert.are.same(item_table[1].title, "Popular")
+                assert.are.same(item_table[1].url, "https://www.gutenberg.org/ebooks/search.opds/?sort_order=downloads")
             end)
             it("should generate URL on rel=popular and rel=new #internet", function()
                 local catalog = OPDSParser:parse(popular_new_sample)
                 local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://www.feedbooks.com/publicdomain/catalog.atom")
 
                 assert.truthy(item_table)
-                assert.are.same(item_table[2].title, "Most popular")
-                assert.are.same(item_table[2].url, "https://catalog.feedbooks.com/publicdomain/browse/top.atom?lang=en")
-                assert.are.same(item_table[3].title, "Recently added")
-                assert.are.same(item_table[3].url, "https://catalog.feedbooks.com/publicdomain/browse/recent.atom?lang=en")
+                assert.are.same(item_table[1].title, "Most popular")
+                assert.are.same(item_table[1].url, "https://catalog.feedbooks.com/publicdomain/browse/top.atom?lang=en")
+                assert.are.same(item_table[2].title, "Recently added")
+                assert.are.same(item_table[2].url, "https://catalog.feedbooks.com/publicdomain/browse/recent.atom?lang=en")
+            end)
+            it("should parse single-quoted attributes", function()
+                local catalog = OPDSParser:parse(single_quote_sample)
+                local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "https://www.cbeta.org/opds/index.php")
+
+                assert.truthy(item_table)
+                assert.are.same(2, #item_table)
+                assert.are.same("Entry One", item_table[1].title)
+                assert.are.same("https://www.cbeta.org/opds/index.php?vol=T", item_table[1].url)
+                assert.are.same("Entry Two", item_table[2].title)
+                assert.are.same("https://www.cbeta.org/opds/index.php?vol=X", item_table[2].url)
             end)
             it("should use the main URL for faceted links as long as faceted links aren't properly supported #internet", function()
                 local catalog = OPDSParser:parse(facet_sample)
                 local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://flibusta.is/opds")
 
                 assert.truthy(item_table)
-                assert.are.same(item_table[2].url, "http://flibusta.is/opds/author/75357")
+                assert.are.same(item_table[1].url, "http://flibusta.is/opds/author/75357")
             end)
         end)
 
@@ -360,7 +535,25 @@ describe("OPDS module", function()
             local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://flibusta.is/opds")
 
             assert.truthy(item_table)
-            assert.are_not.same(item_table[2].image, "http://flibusta.is/opds/author/75357")
+            assert.are_not.same(item_table[1].image, "http://flibusta.is/opds/author/75357")
+        end)
+
+        it("should not append .pdf after query parameters or duplicate acquisition entries #14300 #internet", function()
+            local catalog = OPDSParser:parse(pdf_query_sample)
+            local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://example.org/opds")
+
+            assert.truthy(item_table)
+            assert.are.same(1, #item_table)
+            local acquisitions = item_table[1].acquisitions
+            assert.truthy(acquisitions)
+            -- Only one acquisition entry should be present (generic provider entry).
+            assert.are.same(1, #acquisitions)
+            local href = acquisitions[1].href
+            assert.truthy(href)
+            -- It must contain the original query parameter unchanged.
+            assert(href:match("file%.pdf%?opds$"))
+            -- And must NOT have an extra .pdf appended after the query string.
+            assert(not href:match("opds%.pdf$"))
         end)
     end)
 end)

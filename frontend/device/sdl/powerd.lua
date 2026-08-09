@@ -1,5 +1,5 @@
 local BasePowerD = require("device/generic/powerd")
-local SDL = require("ffi/SDL2_0")
+local SDL = require("ffi/SDL3")
 
 local SDLPowerD = BasePowerD:new{
     -- these values are just used on the emulator

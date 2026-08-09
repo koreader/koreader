@@ -7,5 +7,5 @@
   <li>Egyedi könyvtérkép és oldalböngésző funkciók a könyvben való navigáláshoz.</li>
   <li>Speciális többoldalas kiemelési mód számos helyi és online exportálási lehetőséggel.</li>
   <li>Can synchronize your reading progress across all your KOReader running devices.</li>
-  <li>Integrated with Calibre, Wallabag, Wikipedia, Google Translate and other content providers.</li>
+  <li>Integrálva a Calibre, Wallabag, Wikipedia, Google translate és más tartalomszolgáltatások.</li>
 </ul>
