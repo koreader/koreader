@@ -1,8 +1,70 @@
 describe("gesturedetector module", function()
-    local GestureDetector
+    local GestureDetector, time
     setup(function()
         require("commonrequire")
         GestureDetector = require("device/gesturedetector")
+        time = require("ui/time")
+    end)
+
+    local function feedTwoFingerTap(disable_two_finger_tap)
+        local input = {
+            main_finger_slot = 0,
+            disable_double_tap = true,
+            disable_two_finger_tap = disable_two_finger_tap,
+            tap_interval_override = nil,
+            setTimeout = function() end,
+            clearTimeout = function() end,
+        }
+        local gesture_detector = GestureDetector:new{
+            input = input,
+            screen = {
+                scaleByDPI = function(_, value) return value end,
+            },
+            active_contacts = {},
+            contact_count = 0,
+            previous_tap = {},
+            clock_id = 0,
+        }
+        local slot0 = {
+            slot = 0,
+            id = 1,
+            x = 10,
+            y = 20,
+            timev = time.s(1),
+        }
+        local slot1 = {
+            slot = 1,
+            id = 2,
+            x = 80,
+            y = 20,
+            timev = time.s(1) + time.ms(10),
+        }
+
+        gesture_detector:feedEvent{slot0, slot1}
+        slot0.id = -1
+        slot0.timev = time.s(1) + time.ms(20)
+        slot1.id = -1
+        slot1.timev = time.s(1) + time.ms(30)
+        return gesture_detector:feedEvent{slot0, slot1}
+    end
+
+    describe("two finger taps", function()
+        it("should combine concurrent contacts by default", function()
+            local gestures = feedTwoFingerTap(false)
+
+            assert.are.equal(1, #gestures)
+            assert.are.equal("two_finger_tap", gestures[1].ges)
+        end)
+
+        it("should keep concurrent contacts independent when requested", function()
+            local gestures = feedTwoFingerTap(true)
+
+            assert.are.equal(2, #gestures)
+            assert.are.equal("tap", gestures[1].ges)
+            assert.are.equal(10, gestures[1].pos.x)
+            assert.are.equal("tap", gestures[2].ges)
+            assert.are.equal(80, gestures[2].pos.x)
+        end)
     end)
 
     describe("adjustGesCoordinate", function()

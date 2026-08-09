@@ -499,7 +499,23 @@ function Contact:tapState(new_tap)
     if tev.id == -1 then
         if buddy_contact and self.down then
             -- Both main contacts are actives and we are down
-            if self:isTwoFingerTap(buddy_contact) then
+            if gesture_detector.input.disable_two_finger_tap then
+                -- Send each contact as a separate tap. Dropping this contact
+                -- clears the buddy link but leaves the other contact active,
+                -- so its later lift will emit the second tap.
+                logger.dbg("Contact:tapState: Two active contacts -> independent tap @", tev.x, tev.y)
+                gesture_detector:dropContact(self)
+                return {
+                    ges = "tap",
+                    pos = Geom:new{
+                        x = tev.x,
+                        y = tev.y,
+                        w = 0,
+                        h = 0,
+                    },
+                    time = tev.timev,
+                }
+            elseif self:isTwoFingerTap(buddy_contact) then
                 -- Mark that slot
                 self.mt_gesture = "tap"
                 -- Neuter its buddy
