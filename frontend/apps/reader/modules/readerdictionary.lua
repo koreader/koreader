@@ -1368,24 +1368,19 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     -- and one of them being non-CJK is what keeps fuzzy search on for a mixed
     -- selection (Japanese deinflection can strip a selection down to its
     -- non-CJK prefix, e.g. imperative negative "な" -> "").
-    local shouldnt_fuzzy_search = true
-    for _, w in ipairs(words) do
-        if not util.hasCJKChar(w) then
-            shouldnt_fuzzy_search = false
-            break
-        end
-    end
-    if shouldnt_fuzzy_search and candidates then
-        for _, w in ipairs(candidates) do
-            if not util.hasCJKChar(w) then
-                shouldnt_fuzzy_search = false
-                break
+    if fuzzy_search then
+        local function allCJK(list)
+            for _, w in ipairs(list) do
+                if not util.hasCJKChar(w) then
+                    return false
+                end
             end
+            return true
         end
-    end
-    if shouldnt_fuzzy_search then
-        logger.dbg("disabling fuzzy searching for all-CJK word search:", words)
-        fuzzy_search = false
+        if allCJK(words) and (candidates == nil or allCJK(candidates)) then
+            logger.dbg("disabling fuzzy searching for all-CJK word search:", words)
+            fuzzy_search = false
+        end
     end
 
     -- Language plugin candidates are dictionary forms, and are always looked up
@@ -1412,6 +1407,10 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
             }
         }
     else -- flatten any possible results
+        -- Only reached when the lookup above was fuzzy: --exact-search is an
+        -- sdcv command-line flag, so one invocation cannot search the user's
+        -- own word loosely and these strictly. When fuzzy search is off they
+        -- were appended to `words` above and no second call happens.
         if exact_candidates and not lookup_cancelled then
             local candidates_cancelled, candidate_results =
                 self:rawSdcv(exact_candidates, dict_names, false, self.lookup_progress_msg or false)
