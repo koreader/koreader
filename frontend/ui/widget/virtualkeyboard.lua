@@ -511,7 +511,7 @@ end
 VirtualKeyPopup = FocusManager:extend{
     modal = true,
     disable_double_tap = true,
-    disable_two_finger_tap = true,
+    allow_concurrent_taps = true,
     inputbox = nil,
     layout = nil, -- array
 }
@@ -787,7 +787,7 @@ local VirtualKeyboard = FocusManager:extend{
     covers_footer = true,
     modal = true,
     disable_double_tap = true,
-    disable_two_finger_tap = true,
+    allow_concurrent_taps = true,
     inputbox = nil,
     KEYS = nil, -- table to store layouts
     shiftmode_keys = nil, -- table

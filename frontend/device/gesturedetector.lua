@@ -498,12 +498,12 @@ function Contact:tapState(new_tap)
     -- Contact lift
     if tev.id == -1 then
         if buddy_contact and self.down then
-            -- Both main contacts are actives and we are down
-            if gesture_detector.input.disable_two_finger_tap then
-                -- Send each contact as a separate tap. Dropping this contact
-                -- clears the buddy link but leaves the other contact active,
-                -- so its later lift will emit the second tap.
-                logger.dbg("Contact:tapState: Two active contacts -> independent tap @", tev.x, tev.y)
+            -- The current contact was down and is still paired with another main contact.
+            if gesture_detector.input.allow_concurrent_taps then
+                -- Preserve this contact as a tap instead of combining it with its buddy.
+                -- Dropping this contact clears the buddy link but leaves the other
+                -- contact active, so its later lift emits the second tap.
+                logger.dbg("Contact:tapState: Concurrent contact emitted as tap @", tev.x, tev.y)
                 gesture_detector:dropContact(self)
                 return {
                     ges = "tap",

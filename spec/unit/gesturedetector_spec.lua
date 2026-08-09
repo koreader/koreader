@@ -6,11 +6,11 @@ describe("gesturedetector module", function()
         time = require("ui/time")
     end)
 
-    local function feedTwoFingerTap(disable_two_finger_tap)
+    local function feedConcurrentTaps(allow_concurrent_taps)
         local input = {
             main_finger_slot = 0,
             disable_double_tap = true,
-            disable_two_finger_tap = disable_two_finger_tap,
+            allow_concurrent_taps = allow_concurrent_taps,
             tap_interval_override = nil,
             setTimeout = function() end,
             clearTimeout = function() end,
@@ -43,27 +43,33 @@ describe("gesturedetector module", function()
         gesture_detector:feedEvent{slot0, slot1}
         slot0.id = -1
         slot0.timev = time.s(1) + time.ms(20)
+        local first_lift_gestures = gesture_detector:feedEvent{slot0}
+
         slot1.id = -1
         slot1.timev = time.s(1) + time.ms(30)
-        return gesture_detector:feedEvent{slot0, slot1}
+        local second_lift_gestures = gesture_detector:feedEvent{slot1}
+
+        return first_lift_gestures, second_lift_gestures
     end
 
-    describe("two finger taps", function()
+    describe("concurrent taps", function()
         it("should combine concurrent contacts by default", function()
-            local gestures = feedTwoFingerTap(false)
+            local first_lift_gestures, second_lift_gestures = feedConcurrentTaps(false)
 
-            assert.are.equal(1, #gestures)
-            assert.are.equal("two_finger_tap", gestures[1].ges)
+            assert.are.equal(1, #first_lift_gestures)
+            assert.are.equal("two_finger_tap", first_lift_gestures[1].ges)
+            assert.are.equal(0, #second_lift_gestures)
         end)
 
         it("should keep concurrent contacts independent when requested", function()
-            local gestures = feedTwoFingerTap(true)
+            local first_lift_gestures, second_lift_gestures = feedConcurrentTaps(true)
 
-            assert.are.equal(2, #gestures)
-            assert.are.equal("tap", gestures[1].ges)
-            assert.are.equal(10, gestures[1].pos.x)
-            assert.are.equal("tap", gestures[2].ges)
-            assert.are.equal(80, gestures[2].pos.x)
+            assert.are.equal(1, #first_lift_gestures)
+            assert.are.equal("tap", first_lift_gestures[1].ges)
+            assert.are.equal(10, first_lift_gestures[1].pos.x)
+            assert.are.equal(1, #second_lift_gestures)
+            assert.are.equal("tap", second_lift_gestures[1].ges)
+            assert.are.equal(80, second_lift_gestures[1].pos.x)
         end)
     end)
 
