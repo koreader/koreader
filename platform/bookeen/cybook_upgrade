@@ -1,0 +1,267 @@
+#!/bin/sh
+#
+# Bookeen "drop-in" KOReader installer.
+#
+# WHAT THIS IS
+#
+# Copy this file to the root of the device's user partition as
+#
+#     <USB drive>/cybook_upgrade          (i.e. /mnt/fat/cybook_upgrade on device)
+#
+# and reboot. That is the whole procedure -- no telnet, no adb, no shell on the
+# device, and no modification of the read-only rootfs beforehand.
+#
+# INSTALL, IN FULL
+#
+# With the device plugged in as USB mass storage (its FAT partition mounted on
+# the host as e.g. /run/media/you/CYBOOK):
+#
+#     unzip koreader-bookeen-*.zip -d /run/media/you/CYBOOK/
+#     cp /run/media/you/CYBOOK/koreader/cybook_upgrade /run/media/you/CYBOOK/
+#     sync && eject                       # then reboot the device
+#
+# Note the second line: this file ships *inside* koreader/ because that is where
+# `make update` puts everything (make/bookeen.mk symlinks platform/bookeen/* into
+# the package's koreader/ directory, and mkrelease.sh only ever archives that one
+# top-level directory). ebrmain looks for it at the partition root, so it has to
+# be copied up one level by hand. It is not needed inside koreader/ at all; the
+# copy there is just how it gets onto the device.
+#
+# The exec bit does not need setting: /mnt/fat is vfat, mounted
+# `noauto,noatime,nosuid,nodev,nodiratime,iocharset=utf8` per /etc/fstab -- no
+# `noexec`, and no umask, so every file on it reads as mode 755 regardless of
+# what the host wrote. (An SD card at /mnt/sd works the same way and is checked
+# first; it is also `defaults`, hence auto-mounted, so a card is the more
+# reliable drop point if the device has a slot.)
+#
+# Afterwards this file is gone from the partition -- ebrmain deletes it, by
+# design. The log it leaves behind is koreader-install.log next to where it was.
+#
+# Note "afterwards", not "after a successful install": ebrmain decodes our exit
+# status into a local and then ignores it, and the unlink() is unconditional. So
+# if the install aborts (no koreader/ directory, rootfs would not remount rw) the
+# hook still disappears and has to be copied again after fixing the cause. That
+# is also why every failure path here logs a specific reason -- the log is the
+# only thing that survives.
+#
+# WHY IT RUNS AT ALL
+#
+# /mnt/app/ebrmain is not the reader; it is a supervisor whose main loop
+# (FUN_0000de80 in the stock 2018 binary) does, on every iteration:
+#
+#     FUN_000085c0()      <-- this hook: stat + execv "cybook_upgrade", then unlink it
+#     FUN_0000d170()      <-- stat + execv the reader (boordr), waitpid, switch on RC
+#
+# FUN_000085c0 stats two paths in order and execv()s the first that exists:
+#
+#     /mnt/sd/cybook_upgrade        (SD card, if a slot exists)
+#     /mnt/fat/cybook_upgrade       (the user partition -- what you just copied to)
+#
+# It runs as root (ebrmain is root), waits for it to exit, logs
+# ".. Deleting upgrade file <%s>", and then unlink()s it. So this script is
+# self-deleting by design: it fires exactly once and cannot loop.
+#
+# Which pair of paths is used depends on a board check ebrmain does at startup:
+# it reads uname().release and maps it to a board ID (FUN_0000f090). "3.0.8" --
+# this BSP -- yields 13, and any ID other than 0x96a selects the sd/fat pair
+# above rather than the ext1/ext2 pair used by the older OMAP devices. Verified
+# against the CYBME2F-BK rootfs from CybUpdate; see KOREADER.md.
+#
+# WHAT IT DOES
+#
+# Installs a second hook -- /mnt/app/boordr, the reader path ebrmain execv()s --
+# as a small shim that starts KOReader if it is present and falls back to the
+# stock reader otherwise. It does NOT delete the stock reader: that binary is
+# moved aside to boordr.stock and is still what runs if KOReader is missing or
+# its launcher is not executable.
+#
+# The shim is needed because ebrmain checks /mnt/fat/boordr *before*
+# /mnt/app/boordr, which looks like it would be a pure user-partition install --
+# but /mnt/fat is `noauto` in /etc/fstab and every init script that touches it
+# (S20userfs, S34bundle_setup, S42check_update, S32*) unmounts it again before
+# exiting. boordr itself is what mounts /mnt/fat at runtime. So at the moment
+# ebrmain stats its search path, the user partition is normally not mounted and
+# /mnt/fat/boordr is invisible. A shim on the (always-present) rootfs is the
+# reliable way in, and this script is how it gets there without a shell.
+#
+# NOTHING HERE IS DESTRUCTIVE AND ALL OF IT IS REVERSIBLE.
+#
+# GETTING BACK TO STOCK
+#
+# Easiest, and needs no shell -- create an empty file
+#
+#     <USB drive>/koreader/.disabled
+#
+# The shim sees it and hands straight over to the stock reader. Delete it to
+# re-enable KOReader. Use this first if anything goes wrong; it cannot fail.
+#
+# To remove the shim entirely (needs a shell on the device):
+#
+#     mount -o remount,rw /
+#     mv /mnt/app/boordr.stock /mnt/app/boordr
+#     mount -o remount,ro /
+#
+# Worst case, with no shell and no working reader: the vendor's own OTA path is
+# untouched by any of this, so reflashing rootfs.fex from a CybUpdate restores
+# /mnt/app/boordr wholesale.
+
+set -u
+
+KO_DIR="/mnt/fat/koreader"
+STOCK="/mnt/app/boordr"
+STOCK_SAVED="/mnt/app/boordr.stock"
+SHIM="/mnt/app/boordr"
+LOG="/mnt/fat/koreader-install.log"
+
+# ebrmain gives us no terminal. Log to the user partition, which is where
+# whoever dropped this file can actually read it afterwards over USB.
+log() {
+    echo "[$(date)] $*" >>"${LOG}" 2>&1
+}
+
+# /bin/eink and /bin/epd-display can draw a BMP to the panel, so unlike
+# koreader.sh (which has no fbink) this script *can* report to the screen.
+# Only stock /system BMPs are used -- no assets of our own to install.
+splash() {
+    [ -x /bin/eink ] && [ -e "$1" ] && /bin/eink d "$1" >/dev/null 2>&1
+}
+
+# /mnt/fat is noauto and generally not mounted at this point; mount it so we can
+# write the log and look for the KOReader tree. Remember whether we did, so the
+# state is left as we found it -- boordr expects to mount it itself.
+FAT_WAS_MOUNTED="no"
+if grep -q ' /mnt/fat ' /proc/mounts 2>/dev/null; then
+    FAT_WAS_MOUNTED="yes"
+else
+    mount /mnt/fat >/dev/null 2>&1 || mount /dev/fat /mnt/fat >/dev/null 2>&1
+fi
+
+log "cybook_upgrade: starting (KOReader drop-in installer)"
+log "  kernel:  $(uname -r)"
+log "  rootfs:  $(grep ' / ' /proc/mounts 2>/dev/null | head -1)"
+
+# --- sanity: is there actually a KOReader install to point at? ----------------
+#
+# Deliberately checked before anything is modified. A user who copies only this
+# file and forgets the koreader/ directory should get an untouched device and a
+# log line, not a device wired to a launcher that does not exist.
+if [ ! -x "${KO_DIR}/koreader.sh" ]; then
+    log "!! ${KO_DIR}/koreader.sh not found or not executable -- nothing installed."
+    log "   Unzip a koreader-bookeen-*.zip into the root of this partition first,"
+    log "   so that ${KO_DIR}/koreader.sh exists, then copy this file again."
+    splash /system/update_finished_error.bmp
+    [ "${FAT_WAS_MOUNTED}" = "no" ] && { sync; umount /mnt/fat >/dev/null 2>&1; }
+    exit 0
+fi
+log "  found ${KO_DIR}/koreader.sh"
+
+splash /system/factory_processing.bmp
+
+# --- install the shim --------------------------------------------------------
+#
+# The rootfs is ext2 mounted read-only; remount rw exactly as the vendor's own
+# /etc/init.d/ebrmain.sh does when it needs to chmod +x these same binaries.
+mount -o remount,rw / >/dev/null 2>&1 || {
+    log "!! could not remount / rw -- nothing installed."
+    splash /system/update_finished_error.bmp
+    [ "${FAT_WAS_MOUNTED}" = "no" ] && { sync; umount /mnt/fat >/dev/null 2>&1; }
+    exit 0
+}
+
+# Idempotent: if boordr.stock already exists we have run before, and moving the
+# current (shim) boordr over it would destroy the only copy of the stock reader.
+if [ -e "${STOCK_SAVED}" ]; then
+    log "  ${STOCK_SAVED} already present -- refreshing the shim only."
+else
+    mv "${STOCK}" "${STOCK_SAVED}" || {
+        log "!! could not move ${STOCK} aside -- nothing installed."
+        mount -o remount,ro / >/dev/null 2>&1
+        splash /system/update_finished_error.bmp
+        [ "${FAT_WAS_MOUNTED}" = "no" ] && { sync; umount /mnt/fat >/dev/null 2>&1; }
+        exit 0
+    }
+    log "  moved stock reader to ${STOCK_SAVED}"
+fi
+
+# The shim. Kept deliberately small and dependency-free: ebrmain execv()s it
+# directly, so the #!/bin/sh line is what makes it runnable at all.
+cat >"${SHIM}" <<'SHIM_EOF'
+#!/bin/sh
+# KOReader shim, installed by cybook_upgrade. ebrmain execv()s this as the
+# reader. Falls back to the stock reader (boordr.stock) whenever KOReader is
+# not installed, so a missing/broken KOReader cannot brick the device.
+#
+# ebrmain passes a reason code as $1 ("101" = USB connect, "102"/"52" = wake
+# from suspend). The stock reader understands those; KOReader does not, so they
+# are swallowed here rather than forwarded as a filename to open.
+
+KO_DIR="/mnt/fat/koreader"
+
+# ebrmain does not mount the user partition; the reader is expected to.
+grep -q ' /mnt/fat ' /proc/mounts 2>/dev/null || mount /mnt/fat >/dev/null 2>&1
+
+if [ -x "${KO_DIR}/koreader.sh" ] && [ ! -e "${KO_DIR}/.disabled" ]; then
+    cd "${KO_DIR}" || exit 13
+
+    # Tell koreader.sh how it was started. It refuses to honour KO_STOP_EBRMAIN
+    # when this is set, because under the shim ebrmain is KOReader's own
+    # grandparent: /etc/init.d/ebrmain.sh stop is `killall -9 ebrmain boordr`,
+    # which would kill the process waiting for our RC_* exit code. There is also
+    # nothing to stop -- the stock reader never ran.
+    KO_VIA_BOORDR_SHIM=1
+    export KO_VIA_BOORDR_SHIM
+
+    ./koreader.sh
+    rc=$?
+
+    # What we exit with is ebrmain's RC_* protocol, NOT KOReader's exit code.
+    # The values below are the switch arms of the supervisor loop, read off the
+    # stock binary (FUN_0000d170):
+    #
+    #   50 / 101  RC_POWER_OFF          -> HAL OnPowerOff, Deinit, power down.
+    #                                      The only codes that end the loop.
+    #   11        RC_CRASH              -> user feedback + expose USB mass storage
+    #   13        RC_DEBUG_EXIT         -> relaunch; 3 within 60s becomes RC_CRASH
+    #   14        RC_CORRUPTED_SYSTEM   -> expose USB
+    #   103       RC_REMOTE_FSCK_NEEDED -> user feedback + USB
+    #   0, or anything unlisted        -> default: relaunch immediately
+    #
+    # Note in particular that 0 is *not* an accepted code: exiting 0 falls
+    # through to the default arm and ebrmain relaunches us at once, which turns
+    # "quit KOReader" into a spin. So the code has to be chosen deliberately:
+    #
+    #   KOReader quit cleanly -> 101, power the device off. That is what a
+    #     reader exiting means on hardware with no launcher behind it.
+    #   KOReader died -> 11 (RC_CRASH), because that arm exposes the FAT
+    #     partition over USB mass storage. Without a shell on the device that is
+    #     the only way to retrieve crash.log, so a crash leaves the log
+    #     reachable by plugging in the cable rather than needing telnet.
+    if [ "${rc}" -eq 0 ]; then
+        exit 101
+    fi
+    exit 11
+fi
+
+# No KOReader: hand over to the stock reader, preserving ebrmain's argv.
+exec /mnt/app/boordr.stock "$@"
+SHIM_EOF
+
+chmod 755 "${SHIM}"
+sync
+mount -o remount,ro / >/dev/null 2>&1
+
+log "  installed shim at ${SHIM}"
+log "cybook_upgrade: done. ebrmain will now start KOReader."
+log ""
+log "To undo: delete ${SHIM} and move ${STOCK_SAVED} back to ${STOCK}"
+log "  (mount -o remount,rw / first). Or, without any shell at all, create the"
+log "  file ${KO_DIR}/.disabled -- the shim then starts the stock reader."
+
+splash /system/update_finished_good.bmp
+
+# Leave the mount table as we found it.
+[ "${FAT_WAS_MOUNTED}" = "no" ] && { sync; umount /mnt/fat >/dev/null 2>&1; }
+
+# ebrmain unlinks this file now, then proceeds to launch the reader -- which is
+# the shim above, i.e. KOReader starts on this same boot, without a reboot.
+exit 0

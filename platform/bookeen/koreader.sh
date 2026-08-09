@@ -23,13 +23,26 @@
 # So the single most important line in this file is the `cd` below. Everything
 # else is convenience.
 #
-# WHAT IS DELIBERATELY *NOT* HERE, AND WHY
+# ON-SCREEN FEEDBACK
 #
 # Every other port's launcher drives fbink for on-screen progress and the crash
 # "bomb" screen. fbink is not built for bookeen (thirdparty/fbink is excluded for
-# this target, and there is no fbink or fbdepth in the install tree), so there is
-# no way to draw to the panel from shell. All feedback here therefore goes to
-# crash.log only: `tail -f crash.log` over telnet/adb is the debugging path.
+# this target, and there is no fbink or fbdepth in the install tree), so none of
+# that machinery is available here.
+#
+# The panel is not unreachable from shell, though: the stock rootfs ships
+# /bin/eink and /bin/epd-display, which open /dev/fb0 + /dev/disp and blit a BMP.
+# The vendor's own scripts use them exactly as ko_splash() does below --
+# `/bin/eink d /system/update_prompt_bat.bmp` (bin/update.sh:132),
+# `/bin/epd-display d /system/factory_bundle.bmp` (S34bundle_setup.sh:16).
+#
+# So a *few* stock BMPs can be shown, and one is: the crash-abort screen, which
+# is the only state where the user is otherwise left staring at a dead panel with
+# no idea KOReader gave up. Progress reporting is deliberately not attempted --
+# there are no assets for it beyond the vendor's update/factory bitmaps, and
+# drawing to /dev/disp while KOReader is starting up would contend with
+# framebuffer_mxcfb.lua for the same ioctls. Everything else goes to crash.log:
+# `tail -f crash.log` over telnet/adb is the debugging path.
 #
 # There is likewise no fbdepth bitdepth/rotation dance: this target does not go
 # through fbdev at all. framebuffer_mxcfb.lua opens /dev/disp and drives the
@@ -39,11 +52,12 @@
 #
 # /bin/sh is BusyBox 1.18.3 ash (from rootfs.fex). The applets used below all
 # exist in that binary: realpath, dirname, md5sum, pidof, sync, sleep, date,
-# tail, grep, cp, rm. Notably ABSENT, so avoided here: `timeout` (kobo and
-# remarkable use it to wait on a touch event), `pkill`/`pgrep` (cervantes and
-# kobo use `pkill -0` for liveness -- `pidof` is used instead), and `xargs -r`
-# (whose presence in BusyBox is a build-time feature flag, so the leftover
-# cleanup below uses a read loop instead).
+# tail, grep, cp, rm. `eink` is not an applet but a separate stock binary at
+# /bin/eink, checked for with -x before use. Notably ABSENT, so avoided here:
+# `timeout` (kobo and remarkable use it to wait on a touch event), `pkill`/`pgrep`
+# (cervantes and kobo use `pkill -0` for liveness -- `pidof` is used instead), and
+# `xargs -r` (whose presence in BusyBox is a build-time feature flag, so the
+# leftover cleanup below uses a read loop instead).
 
 # There is no locale data anywhere in the stock rootfs -- no /usr/lib/locale, no
 # /usr/lib/gconv, and /usr/share/locale is empty -- so this setlocale() request
@@ -51,6 +65,13 @@
 # parity with every other port, so that behaviour does not quietly diverge if a
 # locale is ever added to the image. reader.lua pins LC_NUMERIC to C itself.
 export LC_ALL="en_US.UTF-8"
+
+# Draw a stock BMP to the panel. See "ON-SCREEN FEEDBACK" in the header: this is
+# the vendor's own idiom, and only /system bitmaps that ship on the device are
+# used, so there is nothing to install. Silent no-op if either is missing.
+ko_splash() {
+    [ -x /bin/eink ] && [ -e "$1" ] && /bin/eink d "$1" >/dev/null 2>&1
+}
 
 # KOReader's working directory, resolved to an absolute path *before* the
 # relocation below, because after that exec $0 no longer points into the install
@@ -110,6 +131,10 @@ fi
 
 if [ ! -x ./reader.lua ] || [ ! -x ./luajit ]; then
     echo "koreader.sh: ${KOREADER_DIR} is not a usable install (missing reader.lua or luajit)" >>crash.log 2>&1
+    # The likeliest first-boot failure: unzipped to the wrong place, or unzipped
+    # by something that dropped the exec bits. Worth saying on the panel, since a
+    # user who got here has no shell output either.
+    ko_splash /system/update_finished_error.bmp
     exit 1
 fi
 
@@ -188,11 +213,21 @@ export EXT_FONT_DIR="/mnt/fat/fonts"
 # So: export KO_STOP_EBRMAIN=1 to enable it. Worth trying if the panel shows
 # corruption or stale content that KOReader itself cannot explain.
 #
+# DO NOT set it if KOReader was started by the platform/bookeen/cybook_upgrade
+# drop-in. That installs a shim at /mnt/app/boordr which ebrmain execv()s, so
+# ebrmain is then this script's own grandparent: `ebrmain.sh stop` is
+# `killall -9 ebrmain boordr`, and killing our own supervisor mid-run discards
+# the RC_* exit code the shim was going to hand back (so power-off and the
+# crash/USB-exposure path both stop working). When launched through the shim
+# there is also nothing to stop -- the stock reader was never started.
+#
 # BusyBox here has no pkill/pgrep; pidof is the available liveness check. The
 # vendor's own init script is used for both directions rather than reimplementing
 # the kill (it also chmod +x's the binaries, remounting / rw to do so).
 VIA_EBRMAIN="false"
-if [ -n "${KO_STOP_EBRMAIN}" ] && [ -x /etc/init.d/ebrmain.sh ]; then
+if [ -n "${KO_STOP_EBRMAIN}" ] && [ -n "${KO_VIA_BOORDR_SHIM}" ]; then
+    echo "[$(date)] koreader.sh: ignoring KO_STOP_EBRMAIN -- started via the boordr shim, ebrmain is our parent" >>crash.log 2>&1
+elif [ -n "${KO_STOP_EBRMAIN}" ] && [ -x /etc/init.d/ebrmain.sh ]; then
     if pidof ebrmain >/dev/null 2>&1 || pidof boordr >/dev/null 2>&1; then
         VIA_EBRMAIN="true"
         echo "[$(date)] koreader.sh: stopping the stock reader (KO_STOP_EBRMAIN set)" >>crash.log 2>&1
@@ -246,11 +281,16 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         if [ ${CRASH_COUNT} -ge 5 ]; then
             echo "Too many consecutive crashes, aborting . . ." >>crash.log 2>&1
             echo "!!!! ! !!!!" >>crash.log 2>&1
+            # Give up visibly. Without this the panel keeps whatever was last
+            # refreshed and the device looks merely frozen. This is the closest
+            # stock bitmap to "it went wrong"; other ports draw an fbink bomb.
+            ko_splash /system/update_finished_error.bmp
             break
         fi
         if [ "${ALWAYS_ABORT}" = "true" ]; then
             echo "Aborting on crash as requested . . ." >>crash.log 2>&1
             echo "!!!! ! !!!!" >>crash.log 2>&1
+            ko_splash /system/update_finished_error.bmp
             break
         fi
 
