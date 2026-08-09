@@ -46,6 +46,26 @@ end
 local KAZAKH_LETTERS = {}
 for c in ("әғқңөұүһі"):gmatch(UTF8_CHAR) do KAZAKH_LETTERS[c] = true end
 
+-- A stem-final ы/і elides before the -у ending: оқы -> оқу, not оқыу.
+local ELIDES_BEFORE_U = { ["ы"] = true, ["і"] = true }
+
+--- The -у verbal noun of a verb stem: жаз -> жазу, сөйле -> сөйлеу, оқы -> оқу.
+--
+-- This is the form many dictionaries key a verb on, while the ladder can only
+-- strip suffixes and so bottoms out at the bare stem. Whether the stem really
+-- is a verb is left to the dictionary, as everywhere else here: candidates are
+-- resolved with exact search, so a word that does not exist costs nothing but
+-- its place in the query.
+local function verbalNoun(stem)
+    local last = stem:match(UTF8_CHAR .. "$")
+    -- Already a -у form; deriving another would only invent `оқуу`.
+    if not last or last == "у" then return nil end
+    if ELIDES_BEFORE_U[last] then
+        return stem:sub(1, #stem - #last) .. "у"
+    end
+    return stem .. "у"
+end
+
 function Kazakh:init()
     self.max_candidates = G_reader_settings:readSetting("language_kazakh_max_candidates")
         or DEFAULT_MAX_CANDIDATES
@@ -99,13 +119,31 @@ function Kazakh:onWordLookup(args)
     if #rungs == 0 then return end
 
     local candidates = {}
-    for i = 1, math.min(#rungs, self.max_candidates) do
-        -- KOReader already looks the tapped word up itself; offering it again
-        -- would only duplicate a result.
-        if rungs[i] ~= text and rungs[i] ~= lower then
-            candidates[#candidates + 1] = rungs[i]
+    -- KOReader already looks the tapped word up itself; offering it again
+    -- would only duplicate a result.
+    local seen = { [text] = true, [lower] = true }
+    local function offer(word)
+        if word and not seen[word] then
+            seen[word] = true
+            candidates[#candidates + 1] = word
         end
     end
+
+    for i = 1, math.min(#rungs, self.max_candidates) do
+        offer(rungs[i])
+    end
+
+    -- Then the verbal nouns, after the analyses themselves so those keep the
+    -- lead. Many dictionaries key a verb on its -у form rather than the bare
+    -- stem the ladder strips down to, and nothing in the ladder can bridge
+    -- that: it only removes suffixes. The tapped word gets one too, so that
+    -- tapping `сөйле` still reaches `сөйлеу`.
+    local analyses = #candidates
+    offer(verbalNoun(lower))
+    for i = 1, analyses do
+        offer(verbalNoun(candidates[i]))
+    end
+
     if #candidates == 0 then return end
 
     -- Every rung is offered, including the ones that are not words: language
@@ -126,7 +164,7 @@ function Kazakh:genMenuItem()
                     -- @translators %1 is the number of dictionary forms offered per lookup.
                     return T(_("Maximum candidates: %1"), self.max_candidates)
                 end,
-                help_text = _("How many dictionary-form candidates to offer per lookup. Lowering this makes lookups faster."),
+                help_text = _("How many analyses of the tapped word to offer per lookup. Each may add a verb form as well. Lowering this makes lookups faster."),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")

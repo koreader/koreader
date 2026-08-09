@@ -84,6 +84,46 @@ describe("Kazakh plugin", function()
         assert.is_false(contains(candidates, "Мектеп"))
     end)
 
+    describe("verb forms", function()
+        -- Dictionaries commonly key a verb on its -у verbal noun, while the
+        -- ladder only strips suffixes and bottoms out at the bare stem.
+        it("should offer the -у form of an analysis", function()
+            assert.is_true(contains(lookup("kk", "сөйледі"), "сөйлеу"))
+            assert.is_true(contains(lookup("kk", "жазбаймын"), "жазу"))
+        end)
+
+        it("should offer the -у form of the tapped word itself", function()
+            -- Tapping the bare stem must still reach the dictionary's headword.
+            assert.is_true(contains(lookup("kk", "сөйле"), "сөйлеу"))
+        end)
+
+        it("should elide a stem-final ы/і before -у", function()
+            -- оқы -> оқу, never оқыу.
+            local c = lookup("kk", "оқыды")
+            assert.is_true(contains(c, "оқу"))
+            assert.is_false(contains(c, "оқыу"))
+        end)
+
+        it("should not add another -у to a form that already ends in one", function()
+            for _, w in ipairs(lookup("kk", "оқу") or {}) do
+                assert.is_not_equal("оқуу", w)
+            end
+        end)
+
+        it("should rank the analyses above the verb forms", function()
+            -- The dictionary sees candidates in order, so a real lemma should
+            -- not sit behind a speculative verb form.
+            local c = lookup("kk", "мектептерімізде")
+            local lemma, verb
+            for i, w in ipairs(c) do
+                if w == "мектеп" then lemma = i end
+                if w == "мектепу" then verb = i end
+            end
+            assert.is_not_nil(lemma)
+            if verb then assert.is_true(lemma < verb) end
+        end)
+    end)
+
     it("should decline text that is not Cyrillic at all", function()
         assert.is_nil(lookup("kk", "hello"))
         assert.is_nil(lookup("kk", ""))
