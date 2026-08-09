@@ -316,6 +316,32 @@ end
 
 function Bookeen:supportsScreensaver() return true end
 
+-- platform/bookeen/koreader.sh copies itself to /tmp and re-execs from there
+-- before doing anything else, so these are "what is currently running" versus
+-- "what is installed". They differ exactly when an update replaced the launcher
+-- underneath us, which reader.lua turns into a prompt to fully exit (a restart
+-- alone would keep running the old script, since the loop lives inside it).
+--
+-- Both paths are md5'd rather than compared by mtime because the OTA extractor
+-- preserves timestamps. sumFile returns nil for a missing file, and nil == nil
+-- would wrongly read as "up to date", so require an actual hash from the
+-- installed copy -- which is also what makes this correct when reader.lua was
+-- launched by hand instead of through the launcher: no /tmp/koreader.sh exists,
+-- so the comparison is nil vs. a hash, i.e. false... and that would nag on every
+-- manual start. Hence the explicit "not running from the launcher" escape.
+function Bookeen:isStartupScriptUpToDate()
+    if lfs.attributes("/tmp/koreader.sh", "mode") ~= "file" then
+        -- Not started via koreader.sh at all; there is nothing to be stale.
+        return true
+    end
+    local md5 = require("ffi/MD5")
+    local installed = md5.sumFile("koreader.sh")
+    if not installed then
+        return true
+    end
+    return md5.sumFile("/tmp/koreader.sh") == installed
+end
+
 function Bookeen:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
     local command
