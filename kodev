@@ -134,6 +134,7 @@ TARGET:
     android-x86
     android-x86_64
     appimage
+    bookeen                   Compatible with Bookeen Cybook Muse/Ocean (Allwinner A13)
     cervantes
     emulator                  Default if no TARGET is given
     kindle                    Compatible with all Kindle models >= Kindle4
@@ -147,7 +148,6 @@ TARGET:
     macos                     MacOS app bundle
     pocketbook
     remarkable
-    bookeen
     sony-prstux
     ubuntu-touch
     win32
@@ -175,6 +175,7 @@ function setup_target() {
             ANDROID_ARCH="${TARGET#android-}"
             TARGET='android'
             ;;
+        bookeen) ;;
         cervantes) ;;
         kindle | kindlehf | kindlepw2 | kindle-legacy) ;;
         kobo | kobov4 | kobov5) ;;

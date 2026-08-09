@@ -24,9 +24,12 @@ function Bookeen_PowerD:frontlightIntensityHW()
 end
 
 function Bookeen_PowerD:setIntensityHW(intensity)
-    inv_intensity = 255 - intensity
-    command = '/bin/frontlight ' .. tostring(inv_intensity)
-    io.popen(command)
+    local inv_intensity = 255 - intensity
+    local std_out = io.popen('/bin/frontlight ' .. tostring(inv_intensity))
+    if std_out then
+        std_out:close()
+    end
+    self:_decideFrontlightState()
 end
 
 function Bookeen_PowerD:getCapacityHW()
@@ -34,7 +37,7 @@ function Bookeen_PowerD:getCapacityHW()
 end
 
 function Bookeen_PowerD:isChargingHW()
-    return self:read_str_file(self.status_file) == "Charging\n"
+    return self:read_str_file(self.status_file) == "Charging"
 end
 
 function Bookeen_PowerD:beforeSuspend()

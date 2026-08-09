@@ -1,7 +1,6 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local Event = require("ui/event")
-local WakeupMgr = require("device/wakeupmgr")
-local TimeVal = require("ui/timeval")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 local function yes() return true end
@@ -88,10 +87,19 @@ local function getSerial()
         serial = std_out:read()
         std_out:close()
     end
+    -- `nvram` fails outright when /priv is mounted read-only or the private
+    -- partition was wiped (S40factory_reset.sh erases it), and then `cut` yields
+    -- an empty line rather than nothing at all. Normalise every such case to nil
+    -- so the accessors below can report "unknown" instead of indexing a string
+    -- that is too short, or returning nil out of tonumber() and having callers
+    -- silently compare nil against a generation constant.
+    if serial == "" then
+        serial = nil
+    end
     return serial
 end
 
-local Bookeen = Generic:new{
+local Bookeen = Generic:extend{
     model = "Bookeen",
     isBookeen = yes,
     hasKeys = yes,
@@ -104,36 +112,49 @@ local Bookeen = Generic:new{
     isAlwaysPortrait = yes,
     hasMultitouch = yes,
     hasFrontlight = yes,
-    touch_probe_ev_epoch_time = yes,
-    touch_switch_xy = yes,
-    touch_mirrored_x = yes,
+    touch_switch_xy = true,
+    touch_mirrored_x = true,
     display_dpi = 212,
     serial = getSerial(),
     just_toggled_frontlight = 0
 }
 
+-- All of the below decode fixed offsets of the 18-char serial documented at the
+-- top of this file. Every one returns nil when the serial is missing or too
+-- short, rather than raising: `nvram` is not guaranteed to work (see getSerial),
+-- and none of these values is important enough to abort startup over. Callers
+-- MUST therefore treat nil as "unknown" and pick a safe default -- do not
+-- compare the result against a generation constant and assume a false result
+-- means "some other generation".
+local function serialField(serial, first, last)
+    if type(serial) ~= "string" or #serial < last then
+        return nil
+    end
+    return serial:sub(first, last)
+end
+
 function Bookeen:getReseller()
-    return self.serial:sub(1, 2)
+    return serialField(self.serial, 1, 2)
 end
 
 function Bookeen:getScreenType()
-    return tonumber(self.serial:sub(3, 4), 16)
+    return tonumber(serialField(self.serial, 3, 4) or "", 16)
 end
 
 function Bookeen:getDeviceGeneration()
-    return tonumber(self.serial:sub(5, 5), 16)
+    return tonumber(serialField(self.serial, 5, 5) or "", 16)
 end
 
 function Bookeen:getDeviceColor()
-    return self.serial:sub(6, 7)
+    return serialField(self.serial, 6, 7)
 end
 
 function Bookeen:getHardwareRevision()
-    return tonumber(self.serial:sub(8, 8), 16)
+    return tonumber(serialField(self.serial, 8, 8) or "", 16)
 end
 
 function Bookeen:getHardwareOptions()
-    return tonumber(self.serial:sub(9, 9), 16)
+    return tonumber(serialField(self.serial, 9, 9) or "", 16)
 end
 
 local function bookeenEnableWifi(toggle)
@@ -147,17 +168,28 @@ local function bookeenEnableWifi(toggle)
 end
 
 function Bookeen:initNetworkManager(NetworkMgr)
-    local device_serial = getSerial()
-    local device_generation = tonumber(device_serial:sub(5, 5), 16)
+    -- Reuse the already-parsed generation rather than re-shelling out to nvram
+    -- and indexing the result unguarded (which raised on any device where nvram
+    -- fails). nil here simply means "not known to be Muse/Ocean", which selects
+    -- the dhcpcd branch below -- and dhcpcd is present in the stock rootfs, so
+    -- that is a safe default either way.
+    local device_generation = self:getDeviceGeneration()
 
     function NetworkMgr:turnOffWifi(complete_callback)
         bookeenEnableWifi(0)
-        self.releaseIP()
+        self:releaseIP()
+        if complete_callback then
+            complete_callback()
+        end
     end
 
-    function NetworkMgr:turnOnWifi(complete_callback)
+    function NetworkMgr:turnOnWifi(complete_callback, interactive)
         bookeenEnableWifi(1)
-        self:reconnectOrShowNetworkMenu(complete_callback)
+        return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
+    end
+
+    function NetworkMgr:getNetworkInterfaceName()
+        return "wlan0"
     end
 
     NetworkMgr:setWirelessBackend(
@@ -195,51 +227,22 @@ function Bookeen:initNetworkManager(NetworkMgr)
         end
         return false
     end
-
+    NetworkMgr.isConnected = NetworkMgr.ifHasAnAddress
 end
 
 
-local probeEvEpochTime
--- this function will update itself after the first touch event
-probeEvEpochTime = function(self, ev)
-    local now = TimeVal:now()
-    -- This check should work as long as main UI loop is not blocked for more
-    -- than 10 minute before handling the first touch event.
-    if ev.time.sec <= now.sec - 600 then
-        -- time is seconds since boot, force it to epoch
-        probeEvEpochTime = function(_, _ev)
-            _ev.time = TimeVal:now()
-        end
-        ev.time = now
-    else
-        -- time is already epoch time, no need to do anything
-        probeEvEpochTime = function(_, _) end
-    end
-end
-
+-- input events
 function Bookeen:initEventAdjustHooks()
-    if self.touch_switch_xy then
-        self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
-    end
-    if self.touch_mirrored_x then
+    if self.touch_switch_xy and self.touch_mirrored_x then
         self.input:registerEventAdjustHook(
-            self.input.adjustTouchMirrorX,
-            self.screen:getWidth()
+            self.input.adjustTouchSwitchAxesAndMirrorX,
+            (self.screen:getWidth() - 1)
         )
-    end
-    if self.touch_probe_ev_epoch_time then
-        self.input:registerEventAdjustHook(function(_, ev)
-            probeEvEpochTime(_, ev)
-        end)
-    end
-
-    if self.touch_legacy then
-        self.input.handleTouchEv = self.input.handleTouchEvLegacy
     end
 end
 
 function Bookeen:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg, is_always_portrait = self.isAlwaysPortrait()}
     self.powerd = require("device/bookeen/powerd"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
@@ -279,19 +282,32 @@ function Bookeen:init()
         end
     end
 
-    self.input.open("/dev/input/event0") -- Face buttons
-    self.input.open("/dev/input/event1") -- Power button
-    self.input.open("/dev/input/event2") -- Touch screen
+    self.input:open("/dev/input/event0") -- Face buttons
+    self.input:open("/dev/input/event1") -- Power button
+    self.input:open("/dev/input/event2") -- Touch screen
 
-    if self:getDeviceGeneration() ~= BOOKEEN_GENERATION_MUSE_OCEAN then
-        self.input.open("/dev/input/event3") -- Accelerometer
+    -- Accelerometer. Probe for the node instead of inferring it from the serial:
+    -- getDeviceGeneration() reads a single hex digit out of `nvram -s` output, and
+    -- gets it wrong whenever nvram is unreadable or the serial is formatted
+    -- unexpectedly -- in which case this used to be a *fatal* open() on hardware
+    -- that has no accelerometer at all (the Muse/Ocean generation). devtmpfs only
+    -- creates nodes that exist, so lfs is authoritative where the serial is not.
+    --
+    -- Note nothing currently reads this device: there is no consumer for its
+    -- events anywhere in the tree. It is opened only so the fd exists, and it
+    -- costs one of the 8 slots in input.c's `inputfds` (hence "no free slots"
+    -- below), so failing to open it is in no way fatal.
+    if lfs.attributes("/dev/input/event3", "mode") == "char device" then
+        self.input:open("/dev/input/event3")
+    else
+        logger.dbg("Bookeen: no accelerometer at /dev/input/event3, skipping")
     end
 
     self.input.handleTouchEv = self.input.handleBookeenTouchEvent
     self:initEventAdjustHooks()
-    -- self.input.open("fake_events")  -- no free slots :(
+    -- self.input:open("fake_events")  -- no free slots :(
 
-    local rotation_mode = self.screen.ORIENTATION_PORTRAIT
+    local rotation_mode = self.screen.DEVICE_ROTATED_UPRIGHT
     self.screen.native_rotation_mode = rotation_mode
     self.screen.cur_rotation_mode = rotation_mode
 
