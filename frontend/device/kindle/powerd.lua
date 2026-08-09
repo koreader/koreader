@@ -81,9 +81,11 @@ function KindlePowerD:frontlightIntensityHW()
     if self.lipc_handle ~= nil then
         -- Handle the step 0 switcheroo on ! canTurnFrontlightOff devices...
         if self.device:canTurnFrontlightOff() then
-            return self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
+            -- Fall back to fl_min if the HW read fails (e.g. failed frontlight component)
+            return self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity") or self.fl_min
         else
-            local lipc_fl_intensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
+            -- Fall back to fl_min if the HW read fails (e.g. failed frontlight component)
+            local lipc_fl_intensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity") or self.fl_min
             -- NOTE: If lipc returns 0, compare against what the kernel says,
             --       to avoid breaking on/off detection on devices where lipc 0 doesn't actually turn it off (<= PW3),
             --       c.f., #5986
