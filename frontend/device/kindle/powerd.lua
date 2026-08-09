@@ -116,7 +116,7 @@ end
 -- in order to be able to toggle it back on at the right intensity.
 function KindlePowerD:isFrontlightOnHW()
     local hw_intensity = self:frontlightIntensityHW()
-    return hw_intensity > self.fl_min
+    return hw_intensity ~= nil and hw_intensity > self.fl_min
 end
 
 function KindlePowerD:setIntensityHW(intensity)
