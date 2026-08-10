@@ -730,6 +730,7 @@ function InputDialog:onKeyboardClosed()
         self:onClose()
         self:free()
 
+        self.keyboard_visible = false -- it is already gone
         self:init(true)
 
         self:refreshButtons()

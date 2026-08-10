@@ -866,7 +866,7 @@ function VirtualKeyboard:init()
     self:initLayer(self.keyboard_layer)
     self.tap_interval_override = time.ms(G_reader_settings:readSetting("ges_tap_interval_on_keyboard_ms", 0))
     if Device:hasKeys() then
-        self.key_events.Close = { { "Back" } }
+        self.key_events.CloseWithKey = { { "Back" } }
     end
     if keyboard.wrapInputBox then
         self.uwrap_func = keyboard.wrapInputBox(self.inputbox) or self.uwrap_func
@@ -923,6 +923,17 @@ end
 
 function VirtualKeyboard:onClose()
     UIManager:close(self)
+    return true
+end
+
+-- A parent that laid itself out around us has to hear about it. Not from onClose: a
+-- programmatic hide goes through that one, and would reenter the caller's own re-init.
+function VirtualKeyboard:onCloseWithKey()
+    self:onClose()
+    local parent = self.inputbox and self.inputbox.parent
+    if parent and parent.onKeyboardClosed then
+        parent:onKeyboardClosed()
+    end
     return true
 end
 

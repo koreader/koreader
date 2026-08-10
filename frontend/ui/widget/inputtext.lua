@@ -982,6 +982,12 @@ end
 
 -- Temporarily show/hide the on-screen keyboard, e.g. via Shift/ScreenKB + Home or a lone Sym/ScreenKB press.
 function InputText:toggleKeyboard()
+    -- A dialog that lays itself out around the keyboard has to do the toggling itself.
+    local parent = self.parent
+    if parent and parent.toggleKeyboard and parent.fullscreen and parent.add_nav_bar
+            and not parent.readonly then
+        return parent:toggleKeyboard()
+    end
     if self:isKeyboardVisible() then
         self:onCloseKeyboard()
     else
