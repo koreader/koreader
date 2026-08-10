@@ -584,5 +584,21 @@ describe("OPDS module", function()
             assert.are.same(1, #acquisitions)
             assert.are.same("http://example.org/get/PDF/123/library", acquisitions[1].href)
         end)
+
+        it("should add the file extension to a server filename that lacks a usable one #internet", function()
+            local orig_fetchFeed = OPDSBrowser.fetchFeed
+            OPDSBrowser.fetchFeed = function() return nil end -- no headers: fall back to the URL
+            finally(function() OPDSBrowser.fetchFeed = orig_fetchFeed end)
+
+            -- No suffix at all.
+            assert.are.same("library.pdf",
+                OPDSBrowser:getServerFileName("http://example.org/get/PDF/123/library", "pdf"))
+            -- A dotted tail that is not a known extension is not a suffix either.
+            assert.are.same("2509.07924v1.pdf",
+                OPDSBrowser:getServerFileName("http://arxiv.org/pdf/2509.07924v1", "pdf"))
+            -- An existing, usable extension is left alone.
+            assert.are.same("file.pdf",
+                OPDSBrowser:getServerFileName("http://example.org/books/file.pdf?opds", "pdf"))
+        end)
     end)
 end)

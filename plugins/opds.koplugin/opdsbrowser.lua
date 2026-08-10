@@ -523,9 +523,11 @@ function OPDSBrowser:getServerFileName(item_url, filetype)
     end
 
     if filename and filetype then
+        -- Add extension if missing or unusable. getFileNameSuffix() returns an
+        -- empty string (not nil) when there is no suffix at all, and the last
+        -- dotted part of a name like "2509.07924v1" is not one either.
         local current_suffix = util.getFileNameSuffix(filename)
-        -- Add extension if missing
-        if not current_suffix then
+        if not DocumentRegistry:hasProvider("dummy." .. current_suffix) then
             filename = filename .. "." .. filetype:lower()
         end
     end
