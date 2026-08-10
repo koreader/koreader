@@ -338,6 +338,22 @@ local pdf_query_sample = [[
 </feed>
 ]]
 
+local pdf_acquisition_sample = [[
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/terms/" xmlns:os="http://a9.com/-/spec/opensearch/1.1/" xmlns:opds="http://opds-spec.org/2010/catalog">
+    <id>tag:root:pdfacquisition</id>
+    <title>PDF Acquisition Test</title>
+    <updated>2025-09-11T00:00:00Z</updated>
+    <entry>
+        <title>Sample PDF Without Suffix</title>
+        <id>urn:pdf:no:suffix</id>
+        <updated>2025-09-11T00:00:00Z</updated>
+        <content type="text">A PDF whose download link carries no .pdf suffix.</content>
+        <link href="/get/PDF/123/library" type="application/pdf" rel="http://opds-spec.org/acquisition" />
+    </entry>
+</feed>
+]]
+
 describe("OPDS module", function()
     local socketutil
     local OPDSParser, OPDSBrowser
@@ -554,6 +570,19 @@ describe("OPDS module", function()
             assert(href:match("file%.pdf%?opds$"))
             -- And must NOT have an extra .pdf appended after the query string.
             assert(not href:match("opds%.pdf$"))
+        end)
+
+        it("should not duplicate a PDF acquisition whose href has no .pdf suffix #internet", function()
+            local catalog = OPDSParser:parse(pdf_acquisition_sample)
+            local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://example.org/opds")
+
+            assert.truthy(item_table)
+            assert.are.same(1, #item_table)
+            local acquisitions = item_table[1].acquisitions
+            assert.truthy(acquisitions)
+            -- The acquisition link is added once, by the rel handling above.
+            assert.are.same(1, #acquisitions)
+            assert.are.same("http://example.org/get/PDF/123/library", acquisitions[1].href)
         end)
     end)
 end)

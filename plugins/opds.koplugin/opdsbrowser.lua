@@ -825,6 +825,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                 -- a publication. Arxiv uses title. Specifically, it uses
                 -- a title attribute that contains pdf. (title="pdf")
                 if link.rel or link.title then
+                    local acquisitions_nb = #item.acquisitions
                     if link.rel == self.borrow_rel then
                         table.insert(item.acquisitions, {
                             type = "borrow",
@@ -869,8 +870,11 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                     end
                     -- This statement grabs the catalog items that are
                     -- indicated by title="pdf" or whose type is
-                    -- "application/pdf"
-                    if link.title == "pdf" or link.type == "application/pdf"
+                    -- "application/pdf", and that have not already been
+                    -- added as an acquisition above (which would result in
+                    -- duplicate download buttons)
+                    if #item.acquisitions == acquisitions_nb
+                        and (link.title == "pdf" or link.type == "application/pdf")
                         and link.rel ~= "subsection" then
                         -- Check for the presence of the pdf suffix and add it
                         -- if it's missing.
