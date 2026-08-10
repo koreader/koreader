@@ -776,6 +776,14 @@ function InputText:focus()
     Device:startTextInput()
 end
 
+function InputText:keyBack()
+    if self.parent.onCloseDialog then
+        self.parent:onCloseDialog()
+    else
+        UIManager:close(self.parent)
+    end
+end
+
 -- NOTE: This key_map can be used for keyboards without numeric keys, such as on Kindles with keyboards. It is loosely 'inspired' by the symbol layer on the virtual keyboard but,
 --       we have taken the liberty of making some adjustments since:
 --       * K3 does not have numeric keys (top row) and,
@@ -841,17 +849,15 @@ function InputText:onKeyPress(key)
         elseif key["End"] then
             self:goToEnd()
         elseif key["Home"] then
+            self:keyBack()
+        elseif key["KeyHome"] then
             self:goToHome()
         elseif key["Press"] then
             self:addChars("\n")
         elseif key["Tab"] then
             self:addChars("    ")
         elseif key["Back"] then
-            if self.parent.onCloseDialog then
-                self.parent:onCloseDialog()
-            else
-                UIManager:close(self.parent)
-            end
+            self:keyBack()
         else
             handled = false
         end

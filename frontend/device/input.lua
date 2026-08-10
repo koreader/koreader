@@ -141,7 +141,7 @@ local Input = {
             "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
             "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
             "Up", "Down", "Left", "Right", "Press", "Backspace", "End",
-            "Back", "Sym", "AA", "Menu", "Home", "Del", "ScreenKB",
+            "Back", "Sym", "AA", "Menu", "KeyHome", "Del", "ScreenKB",
             "LPgBack", "RPgBack", "LPgFwd", "RPgFwd"
         },
     },
