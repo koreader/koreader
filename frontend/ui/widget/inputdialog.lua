@@ -716,7 +716,10 @@ function InputDialog:toggleKeyboard(force_toggle)
     end
 
     -- Clear the FocusManager highlight, because that gets lost in the mess somehow...
-    self.button_table:getButtonById("keyboard"):onUnfocus()
+    local keyboard_button = self.button_table:getButtonById("keyboard") -- absent without touch
+    if keyboard_button then
+        keyboard_button:onUnfocus()
+    end
 
     -- Make sure we refresh the nav bar, as it will have moved, and it belongs to us, not to VK or our input widget...
     self:refreshButtons()
@@ -951,8 +954,8 @@ function InputDialog:_addScrollButtons(nav_bar)
         row = self.buttons[1]
     end
     if nav_bar then -- Add the Home & End buttons
-        -- Also add Keyboard hide/show button if we can
-        if self.fullscreen and not self.readonly then
+        -- Also add Keyboard hide/show button if we can -- not without touch, where a key does it.
+        if self.fullscreen and not self.readonly and Device:isTouchDevice() then
             table.insert(row, {
                 text = self.keyboard_visible and "↓⌨" or "↑⌨",
                 id = "keyboard",
