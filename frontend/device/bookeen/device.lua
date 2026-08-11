@@ -1,5 +1,7 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local Event = require("ui/event")
+local UIManager
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
@@ -105,8 +107,11 @@ local Bookeen = Generic:extend{
     hasKeys = yes,
     hasOTAUpdates = yes,
     hasWifiManager = yes,
+    hasFastWifiStatusQuery = yes,
+    hasWifiRestore = yes,
     canReboot = yes,
     canPowerOff = yes,
+    canSuspend = yes,
     canHWInvert = no,
     isTouchDevice = yes,
     isAlwaysPortrait = yes,
@@ -158,33 +163,35 @@ function Bookeen:getHardwareOptions()
 end
 
 local function bookeenEnableWifi(toggle)
+    local ok, how, status
     if toggle == 1 then
         logger.info("Bookeen: enabling Wifi")
-        os.execute("./wlan.sh start")
+        ok, how, status = os.execute("./wlan.sh start")
     else
         logger.info("Bookeen: disabling Wifi")
-        os.execute("./wlan.sh stop")
+        ok, how, status = os.execute("./wlan.sh stop")
     end
+    if type(ok) == "number" then
+        return ok == 0
+    end
+    return ok == true and (status == nil or status == 0)
 end
 
 function Bookeen:initNetworkManager(NetworkMgr)
-    -- Reuse the already-parsed generation rather than re-shelling out to nvram
-    -- and indexing the result unguarded (which raised on any device where nvram
-    -- fails). nil here simply means "not known to be Muse/Ocean", which selects
-    -- the dhcpcd branch below -- and dhcpcd is present in the stock rootfs, so
-    -- that is a safe default either way.
-    local device_generation = self:getDeviceGeneration()
-
     function NetworkMgr:turnOffWifi(complete_callback)
-        bookeenEnableWifi(0)
+        os.execute("./restore-wifi-async.sh stop")
         self:releaseIP()
+        bookeenEnableWifi(0)
         if complete_callback then
             complete_callback()
         end
     end
 
     function NetworkMgr:turnOnWifi(complete_callback, interactive)
-        bookeenEnableWifi(1)
+        if not bookeenEnableWifi(1) then
+            logger.warn("Bookeen: wlan.sh start failed")
+            return false
+        end
         return self:reconnectOrShowNetworkMenu(complete_callback, interactive)
     end
 
@@ -196,38 +203,29 @@ function Bookeen:initNetworkManager(NetworkMgr)
         "wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/wlan0"})
 
     function NetworkMgr:obtainIP()
-        local obtain_ip_cmd = "dhcpcd wlan0"
-        if device_generation == BOOKEEN_GENERATION_MUSE_OCEAN then
-            obtain_ip_cmd = "udhcpc -i wlan0 -R"
-        end
-        os.execute(obtain_ip_cmd)
+        os.execute("./obtain-ip.sh")
     end
     function NetworkMgr:releaseIP()
-        local release_ip_cmd = "dhcpcd -k wlan0"
-        if device_generation == BOOKEEN_GENERATION_MUSE_OCEAN then
-            release_ip_cmd = "killall udhcpc"
-        end
-        os.execute(release_ip_cmd)
+        os.execute("./release-ip.sh")
     end
     function NetworkMgr:restoreWifiAsync()
         os.execute("./restore-wifi-async.sh")
     end
 
-    function NetworkMgr:isWifiOn()
-        local fd = io.open("/proc/modules", "r")
-        if fd then
-            local lsmod = fd:read("*all")
-            fd:close()
-            if lsmod:len() > 0 then
-                local module = os.getenv("WIFI_MODULE") or "8188eu"
-                if lsmod:find(module) then
-                    return true
-                end
-            end
-        end
-        return false
-    end
+    NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
     NetworkMgr.isConnected = NetworkMgr.ifHasAnAddress
+    NetworkMgr.interface = NetworkMgr:getNetworkInterfaceName()
+
+    -- Same guard kobo has: if we were launched with the module loaded but no
+    -- address (a supplicant that died, a lease that was never obtained, or the
+    -- stock reader having left the radio on), the state is inconsistent and every
+    -- beforeWifiAction would see isWifiOn() and skip connecting. Tear it down so
+    -- the first request starts clean.
+    if NetworkMgr:isWifiOn() and not NetworkMgr:isConnected() then
+        logger.info("Bookeen Wi-Fi: left in an inconsistent state, resetting")
+        NetworkMgr:releaseIP()
+        bookeenEnableWifi(0)
+    end
 end
 
 
@@ -293,10 +291,10 @@ function Bookeen:init()
     -- that has no accelerometer at all (the Muse/Ocean generation). devtmpfs only
     -- creates nodes that exist, so lfs is authoritative where the serial is not.
     --
-    -- Note nothing currently reads this device: there is no consumer for its
-    -- events anywhere in the tree. It is opened only so the fd exists, and it
-    -- costs one of the 8 slots in input.c's `inputfds` (hence "no free slots"
-    -- below), so failing to open it is in no way fatal.
+    -- Note nothing reads this device yet: hasGSensor is still `no`, so there is no
+    -- consumer for its events anywhere in the tree, and the knxjif driver reports
+    -- nothing until its `enable` sysfs knob is written anyway. It is opened only so
+    -- the fd exists, so failing to open it is in no way fatal.
     if lfs.attributes("/dev/input/event3", "mode") == "char device" then
         self.input:open("/dev/input/event3")
     else
@@ -305,7 +303,11 @@ function Bookeen:init()
 
     self.input.handleTouchEv = self.input.handleBookeenTouchEvent
     self:initEventAdjustHooks()
-    -- self.input:open("fake_events")  -- no free slots :(
+
+    -- Charger/USB uevents, via the forked helper in input-bookeen.h. There is
+    -- plenty of room: input.c's inputfds array holds 8 fds and we have used 4.
+    -- (The old "no free slots :(" comment here was simply wrong.)
+    self.input:open("fake_events")
 
     local rotation_mode = self.screen.DEVICE_ROTATED_UPRIGHT
     self.screen.native_rotation_mode = rotation_mode
@@ -359,38 +361,89 @@ function Bookeen:setDateTime(year, month, day, hour, min, sec)
     end
 end
 
-function Bookeen:intoScreenSaver()
-    local Screensaver = require("ui/screensaver")
-    if self.screen_saver_mode == false then
-        Screensaver:show()
-    end
-    self.powerd:beforeSuspend()
-    self.screen_saver_mode = true
+function Bookeen:UIManagerReady(uimgr)
+    UIManager = uimgr
 end
 
-function Bookeen:outofScreenSaver()
-    if self.screen_saver_mode == true then
-        local Screensaver = require("ui/screensaver")
-        Screensaver:close()
+function Bookeen:setEventHandlers(uimgr)
+    UIManager.event_handlers.Suspend = function()
+        self:onPowerEvent("Suspend")
     end
-    self.powerd:afterResume()
-    self.screen_saver_mode = false
+    UIManager.event_handlers.Resume = function()
+        self:onPowerEvent("Resume")
+    end
+    UIManager.event_handlers.PowerPress = function()
+        UIManager:scheduleIn(2, UIManager.poweroff_action)
+    end
+    UIManager.event_handlers.PowerRelease = function()
+        if not UIManager._entered_poweroff_stage then
+            UIManager:unschedule(UIManager.poweroff_action)
+            if self.screen_saver_mode then
+                if self.screen_saver_lock then
+                    UIManager.event_handlers.Suspend()
+                else
+                    UIManager.event_handlers.Resume()
+                end
+            else
+                UIManager.event_handlers.Suspend()
+            end
+        end
+    end
+    UIManager.event_handlers.Light = function()
+        self:getPowerDevice():toggleFrontlight()
+    end
+    UIManager.event_handlers.Charging = function()
+        self:_beforeCharging()
+        -- Plug/unplug wakes the device (the AXP20 IRQ is a wakeup source), so put it back.
+        if self.screen_saver_mode and not self.screen_saver_lock then
+            UIManager.event_handlers.Suspend()
+        end
+    end
+    UIManager.event_handlers.NotCharging = function()
+        self:usbPlugOut()
+        self:_afterNotCharging()
+        if self.screen_saver_mode and not self.screen_saver_lock then
+            UIManager.event_handlers.Suspend()
+        end
+    end
+    UIManager.event_handlers.UsbPlugIn = function()
+        self:_beforeCharging()
+        if self.screen_saver_mode and not self.screen_saver_lock then
+            UIManager.event_handlers.Suspend()
+        end
+    end
+    UIManager.event_handlers.UsbPlugOut = function()
+        self:usbPlugOut()
+        self:_afterNotCharging()
+        if self.screen_saver_mode and not self.screen_saver_lock then
+            UIManager.event_handlers.Suspend()
+        end
+    end
 end
 
 function Bookeen:suspend()
-    local f, re, err_msg, err_code
-
-    f = io.open("/sys/power/state", "w")
-    if not f then
-        return false
+    if self:hasWifiToggle() then
+        local network_manager = require("ui/network/manager")
+        if network_manager:isWifiOn() then
+            logger.info("Bookeen suspend: had to kill Wi-Fi")
+            network_manager:disableWifi()
+        end
     end
-    logger.info("Bookeen going to sleep!")
-    re, err_msg, err_code = f:write("mem\n")
-    io.close(f)
-    logger.info("Bookeen woke up!")
+
+    os.execute("sync")
+
+    logger.info("Bookeen suspend: going to sleep . . .")
+    local ret = ffiUtil.writeToSysfs("mem", "/sys/power/state")
+
+    if ret then
+        logger.info("Bookeen suspend: woke up!")
+    else
+        logger.warn("Bookeen suspend: the kernel refused to enter suspend!")
+    end
 end
 
 function Bookeen:resume()
+    UIManager:unschedule(self.suspend)
 end
 
 function Bookeen:powerOff()
