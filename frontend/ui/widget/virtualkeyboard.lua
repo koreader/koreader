@@ -926,8 +926,10 @@ function VirtualKeyboard:onClose()
     return true
 end
 
--- A parent that laid itself out around us has to hear about it. Not from onClose: a
--- programmatic hide goes through that one, and would reenter the caller's own re-init.
+-- A fullscreen dialog reserves screen space for the keyboard, so when a key closes the
+-- keyboard, the dialog has to lay itself out again without it. onClose() cannot carry
+-- that news: the dialog's own re-init closes the keyboard through it, and answering back
+-- there would restart the re-init from inside itself.
 function VirtualKeyboard:onCloseWithKey()
     self:onClose()
     local parent = self.inputbox and self.inputbox.parent
