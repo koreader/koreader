@@ -179,7 +179,7 @@ end
 function Cloud:sync(server, file_path, sync_cb, is_silent, caller_pre_callback)
     local provider = server and server.type and self.providers[server.type]
     if not provider then return end
-    provider.base = server
+    provider.base = util.tableDeepCopy(server)
     provider.run(function()
         if caller_pre_callback then
             caller_pre_callback()
