@@ -667,6 +667,12 @@ function InputDialog:lockKeyboard(toggle)
     return self._input_widget:lockKeyboard(toggle)
 end
 
+-- Whether a key that toggles the keyboard has to reach us rather than the text widget: we are
+-- the one laid out around the keyboard, so we are the one that has to be laid out again.
+function InputDialog:shouldDelegateToggleKeyboard()
+    return self.fullscreen and self.add_nav_bar and not self.readonly
+end
+
 -- NOTE: Only called by fullscreen and/or add_nav_bar codepaths
 --       We do not currently have !fullscreen add_nav_bar callers...
 function InputDialog:toggleKeyboard(force_toggle)
@@ -716,7 +722,7 @@ function InputDialog:toggleKeyboard(force_toggle)
     end
 
     -- Clear the FocusManager highlight, because that gets lost in the mess somehow...
-    local keyboard_button = self.button_table:getButtonById("keyboard") -- absent without touch
+    local keyboard_button = self.button_table:getButtonById("keyboard") -- absent where a key toggles
     if keyboard_button then
         keyboard_button:onUnfocus()
     end
@@ -954,8 +960,9 @@ function InputDialog:_addScrollButtons(nav_bar)
         row = self.buttons[1]
     end
     if nav_bar then -- Add the Home & End buttons
-        -- Also add Keyboard hide/show button if we can -- not without touch, where a key does it.
-        if self.fullscreen and not self.readonly and Device:isTouchDevice() then
+        -- Also add Keyboard hide/show button if we can -- not where a key already does it.
+        local has_keyboard_toggle_key = Device:hasScreenKB() or Device:hasSymKey()
+        if self.fullscreen and not self.readonly and not has_keyboard_toggle_key then
             table.insert(row, {
                 text = self.keyboard_visible and "↓⌨" or "↑⌨",
                 id = "keyboard",
