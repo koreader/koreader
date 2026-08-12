@@ -176,6 +176,10 @@ function ReaderHighlight:init()
                     this:lookupDict(index)
                     this:onClose(true) -- keep highlight for dictionary lookup
                 end,
+                hold_callback = function()
+                    this.ui.dictionary:onShowDictionaryLookup(util.cleanupSelectedText(this.selected_text.text))
+                    this:onClose()
+                end,
             }
         end,
         ["07_translate"] = function(this, index)
@@ -201,6 +205,10 @@ function ReaderHighlight:init()
                     -- We don't call this:onClose(), crengine will highlight
                     -- search matches on the current page, and self:clear()
                     -- would redraw and remove crengine native highlights
+                end,
+                hold_callback = function()
+                    self.ui.search:onShowFulltextSearchInput(util.cleanupSelectedText(this.selected_text.text))
+                    this:onClose()
                 end,
             }
         end,
