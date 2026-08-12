@@ -961,8 +961,8 @@ function InputDialog:_addScrollButtons(nav_bar)
     end
     if nav_bar then -- Add the Home & End buttons
         -- Also add Keyboard hide/show button if we can -- not where a key already does it.
-        local has_keyboard_toggle_key = Device:hasScreenKB() or Device:hasSymKey()
-        if self.fullscreen and not self.readonly and not has_keyboard_toggle_key then
+        local has_keyboard_toggle = Device:hasScreenKB() or Device:hasSymKey()
+        if self.fullscreen and not self.readonly and not has_keyboard_toggle then
             table.insert(row, {
                 text = self.keyboard_visible and "↓⌨" or "↑⌨",
                 id = "keyboard",
