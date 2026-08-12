@@ -200,7 +200,8 @@ local InputDialog = FocusManager:extend{
     _buttons_backup = nil,
 }
 
-function InputDialog:init()
+-- `reinit`: the caller has already decided the keyboard's visibility, don't reset it.
+function InputDialog:init(reinit)
     self.layout = {{}}
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
@@ -223,7 +224,7 @@ function InputDialog:init()
     if self.fullscreen or self.add_nav_bar then
         self.deny_keyboard_hiding = true
     end
-    if (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:nilOrFalse("virtual_keyboard_enabled") then
+    if not reinit and (Device:hasKeyboard() or Device:hasScreenKB()) and G_reader_settings:nilOrFalse("virtual_keyboard_enabled") then
         self.keyboard_visible = false
         self.skip_first_show_keyboard = true
     end
@@ -401,7 +402,7 @@ function InputDialog:init()
     -- NOTE: Never send a Focus event, as, on hasDPad device, InputText's onFocus *will* call onShowKeyboard,
     --       and that will wreak havoc on toggleKeyboard...
     --       Plus, the widget at (1, 1) will not have changed, so we don't actually need to change the visual focus anyway?
-    -- If it turns out something actually needed this, make this conditional on a new `reinit` arg passed to `init`, for toggleKeyboard & co.
+    -- If it turns out something actually needed this, make it conditional on `reinit`.
     self:refocusWidget(FocusManager.RENDER_NOW, FocusManager.NOT_FOCUS)
     -- Complementary setup for some of our added buttons
     if self.save_callback then
@@ -514,7 +515,7 @@ function InputDialog:reinit()
 
     -- Same deal as in toggleKeyboard...
     self.keyboard_visible = visible and true or false
-    self:init()
+    self:init(true)
     if self.keyboard_visible then
         self:onShowKeyboard()
     end
@@ -541,7 +542,7 @@ function InputDialog:addWidget(widget, re_init, skip_focus_layout)
         table.insert(self._added_widgets, widget)
         if is_text_height_adjustable then
             self.text_height = nil
-            self:init()
+            self:init(true)
         end
     end
     -- insert widget before the bottom buttons and their previous vspan
@@ -666,9 +667,18 @@ function InputDialog:lockKeyboard(toggle)
     return self._input_widget:lockKeyboard(toggle)
 end
 
+-- Whether a key that toggles the keyboard has to reach us rather than the text widget: we are
+-- the one laid out around the keyboard, so we are the one that has to be laid out again.
+function InputDialog:shouldDelegateToggleKeyboard()
+    return self.fullscreen and self.add_nav_bar and not self.readonly
+end
+
 -- NOTE: Only called by fullscreen and/or add_nav_bar codepaths
 --       We do not currently have !fullscreen add_nav_bar callers...
 function InputDialog:toggleKeyboard(force_toggle)
+    -- An explicit toggle must not be eaten by the startup skip.
+    self.skip_first_show_keyboard = nil
+
     -- Remember the *current* visibility, as the following close will reset it
     local visible = self:isKeyboardVisible()
 
@@ -699,7 +709,7 @@ function InputDialog:toggleKeyboard(force_toggle)
     else
         self.keyboard_visible = not visible
     end
-    self:init()
+    self:init(true)
 
     -- NOTE: If we ever have non-fullscreen add_nav_bar callers, it might make sense *not* to lock the keyboard there?
     if self.keyboard_visible then
@@ -712,7 +722,10 @@ function InputDialog:toggleKeyboard(force_toggle)
     end
 
     -- Clear the FocusManager highlight, because that gets lost in the mess somehow...
-    self.button_table:getButtonById("keyboard"):onUnfocus()
+    local keyboard_button = self.button_table:getButtonById("keyboard") -- absent where a key toggles
+    if keyboard_button then
+        keyboard_button:onUnfocus()
+    end
 
     -- Make sure we refresh the nav bar, as it will have moved, and it belongs to us, not to VK or our input widget...
     self:refreshButtons()
@@ -726,7 +739,8 @@ function InputDialog:onKeyboardClosed()
         self:onClose()
         self:free()
 
-        self:init()
+        self.keyboard_visible = false -- it is already gone
+        self:init(true)
 
         self:refreshButtons()
     end
@@ -946,8 +960,9 @@ function InputDialog:_addScrollButtons(nav_bar)
         row = self.buttons[1]
     end
     if nav_bar then -- Add the Home & End buttons
-        -- Also add Keyboard hide/show button if we can
-        if self.fullscreen and not self.readonly then
+        -- Also add Keyboard hide/show button if we can -- not where a key already does it.
+        local has_keyboard_toggle = Device:hasScreenKB() or Device:hasSymKey()
+        if self.fullscreen and not self.readonly and not has_keyboard_toggle then
             table.insert(row, {
                 text = self.keyboard_visible and "↓⌨" or "↑⌨",
                 id = "keyboard",
