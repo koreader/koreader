@@ -131,6 +131,24 @@ function Cloud:onShowCloudStorageList(caller_choose_folder_callback)
     base:show()
 end
 
+function Cloud:uploadFile(server, file_path, success_callback, failure_callback)
+    local provider = server and server.type and self.providers[server.type]
+    if not provider then return end
+    provider.base = util.tableDeepCopy(server)
+    provider.run(function()
+        local code_response = provider.uploadFile(server.url, file_path, nil, true) -- overwrite
+        if type(code_response) == "number" and code_response >= 200 and code_response < 300 then
+            if success_callback then
+                success_callback()
+            end
+        else
+            if failure_callback then
+                failure_callback()
+            end
+        end
+    end)
+end
+
 function Cloud:stopPlugin()
     Cloud.providers = nil
 end

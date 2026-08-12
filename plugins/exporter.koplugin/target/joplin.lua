@@ -1,4 +1,3 @@
-local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
 local http = require("socket.http")
@@ -8,12 +7,16 @@ local md = require("template/md")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
--- joplin exporter
-local JoplinExporter = require("base"):new {
+local JoplinExporter = require("base"):new{
     name = "joplin",
+    title = _("Joplin"),
     is_remote = true,
     notebook_name = _("KOReader Notes"),
     version = "1.1.0",
+    help_text = T(_([[For Joplin setup instructions, see %1
+
+Markdown formatting can be configured in:
+Export highlights > Choose formats and services > Markdown.]]), "https://github.com/koreader/koreader/wiki/Joplin"),
 }
 
 local function ping(ip, port)
@@ -160,109 +163,92 @@ function JoplinExporter:isReadyToExport()
     return self.settings.ip and self.settings.port and self.settings.token
 end
 
-function JoplinExporter:getMenuTable()
+function JoplinExporter:genTargetSubMenu()
     return {
-        text = _("Joplin"),
-        checked_func = function() return self:isEnabled() end,
-        sub_item_table = {
-            {
-                text = _("Set Joplin IP and Port"),
-                keep_menu_open = true,
-                callback = function()
-                    local MultiInputDialog = require("ui/widget/multiinputdialog")
-                    local url_dialog
-                    url_dialog = MultiInputDialog:new {
-                        title = _("Set Joplin IP and port number"),
-                        fields = {
+        self:genExportToMenuItem(),
+        self:genHelpMenuItem(),
+        -- separator
+        {
+            text = _("Set Joplin IP and Port"),
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                local MultiInputDialog = require("ui/widget/multiinputdialog")
+                local url_dialog
+                url_dialog = MultiInputDialog:new{
+                    title = _("Set Joplin IP and port number"),
+                    fields = {
+                        {
+                            text = self.settings.ip,
+                        },
+                        {
+                            text = self.settings.port,
+                            input_type = "number"
+                        },
+                    },
+                    buttons = {
+                        {
                             {
-                                text = self.settings.ip,
-                                input_type = "string"
+                                text = _("Cancel"),
+                                id = "close",
+                                callback = function()
+                                    UIManager:close(url_dialog)
+                                end
                             },
                             {
-                                text = self.settings.port,
-                                input_type = "number"
-                            }
-                        },
-                        buttons = {
-                            {
-                                {
-                                    text = _("Cancel"),
-                                    callback = function()
-                                        UIManager:close(url_dialog)
-                                    end
-                                },
-                                {
-                                    text = _("OK"),
-                                    callback = function()
-                                        local fields = url_dialog:getFields()
-                                        local ip = fields[1]
-                                        local port = tonumber(fields[2])
-                                        if ip ~= "" then
-                                            if port and port < 65355 then
-                                                self.settings.ip = ip
-                                                self.settings.port = port
-                                                self:saveSettings()
-                                            end
+                                text = _("OK"),
+                                callback = function()
+                                    local fields = url_dialog:getFields()
+                                    local ip = fields[1]
+                                    local port = tonumber(fields[2])
+                                    if ip ~= "" then
+                                        if port and port < 65355 then
+                                            self.settings.ip = ip
+                                            self.settings.port = port
                                         end
-                                        UIManager:close(url_dialog)
                                     end
-                                }
-                            }
-                        }
-                    }
-                    UIManager:show(url_dialog)
-                    url_dialog:onShowKeyboard()
-                end
-            },
-            {
-                text = _("Set authorization token"),
-                keep_menu_open = true,
-                callback = function()
-                    local auth_dialog
-                    auth_dialog = InputDialog:new {
-                        title = _("Set authorization token for Joplin"),
-                        input = self.settings.token,
-                        buttons = {
+                                    UIManager:close(url_dialog)
+                                    touchmenu_instance:updateItems()
+                                end
+                            },
+                        },
+                    },
+                }
+                UIManager:show(url_dialog)
+                url_dialog:onShowKeyboard()
+            end,
+        },
+        {
+            text = _("Set authorization token"),
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                local auth_dialog
+                auth_dialog = InputDialog:new{
+                    title = _("Set authorization token for Joplin"),
+                    input = self.settings.token,
+                    buttons = {
+                        {
                             {
-                                {
-                                    text = _("Cancel"),
-                                    callback = function()
-                                        UIManager:close(auth_dialog)
-                                    end
-                                },
-                                {
-                                    text = _("Set token"),
-                                    callback = function()
-                                        self.settings.token = auth_dialog:getInputText()
-                                        self:saveSettings()
-                                        UIManager:close(auth_dialog)
-                                    end
-                                }
-                            }
-                        }
-                    }
-                    UIManager:show(auth_dialog)
-                    auth_dialog:onShowKeyboard()
-                end
-            },
-            {
-                text = _("Export to Joplin"),
-                checked_func = function() return self:isEnabled() end,
-                callback = function() self:toggleEnabled() end,
-            },
-            {
-                text = _("Help"),
-                keep_menu_open = true,
-                callback = function()
-                    UIManager:show(InfoMessage:new {
-                        text = T(_([[For Joplin setup instructions, see %1
-
-Markdown formatting can be configured in:
-Export highlights > Choose formats and services > Markdown.]]), "https://github.com/koreader/koreader/wiki/Joplin")
-                    })
-                end
-            }
-        }
+                                text = _("Cancel"),
+                                id = "close",
+                                callback = function()
+                                    UIManager:close(auth_dialog)
+                                end
+                            },
+                            {
+                                text = _("Set token"),
+                                callback = function()
+                                    self.settings.token = auth_dialog:getInputText()
+                                    UIManager:close(auth_dialog)
+                                    touchmenu_instance:updateItems()
+                                end
+                            },
+                        },
+                    },
+                }
+                UIManager:show(auth_dialog)
+                auth_dialog:onShowKeyboard()
+            end,
+        },
     }
 end
 
@@ -280,7 +266,6 @@ function JoplinExporter:export(t)
             logger.info("Joplin: created new notebook",
                 "name", self.notebook_name, "id", notebook)
             self.settings.notebook_guid = notebook
-            self:saveSettings()
         else
             logger.warn("Joplin: unable to create new notebook")
             return false
@@ -288,11 +273,9 @@ function JoplinExporter:export(t)
     else
         if not self.settings.notebook_guid then
             self.settings.notebook_guid = existing_notebook
-            self:saveSettings()
         end
     end
-    local plugin_settings = G_reader_settings:readSetting("exporter") or {}
-    local markdown_settings = plugin_settings.markdown
+    local markdown_settings = self:getMarkdownSettings()
     local notebook_id = self.settings.notebook_guid
     for _, booknotes in pairs(t) do
         local note_tbl = md.prepareBookContent(booknotes, markdown_settings.formatting_options, markdown_settings.highlight_formatting)
