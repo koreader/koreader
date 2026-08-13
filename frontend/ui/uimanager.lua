@@ -44,6 +44,9 @@ local UIManager = {
     _prev_prevent_standby_count = 0,
     _input_gestures_disabled = false,
 
+    _suspend_repaints = false,
+    _repaint_watchdog_func = nil,
+
     event_hook = require("ui/hook_container"):new()
 }
 
@@ -122,6 +125,43 @@ end
 function UIManager:setIgnoreTouchInput(state)
     local InputContainer = require("ui/widget/container/inputcontainer")
     InputContainer:setIgnoreTouchInput(state)
+end
+
+--[[--
+-- This setter is used to temporarily suspend repaints in order to quickly unwind
+-- a chain of UI events that would otherwise trigger multiple unnesesary repaints.
+
+@boolean `state`: `true` to suspend repaints, `false` to resume them
+@number `timeout`: optional suspension duration in seconds (default: 2) before repaints are resumed automatically
+]]
+function UIManager:setSuspendRepaints(state, timeout)
+    self._suspend_repaints = state
+    logger.dbg("UIManager: Repaints suspended:", state)
+
+    -- Suspending repaints can be incredibly dangerous, we must
+    -- ensure we don't get stuck in this state forever, otherwise
+    -- we might end up with a frozen screen and no way out.
+    if not state then
+        -- The chain completed or halted legitimately. Disarm the watchdog.
+        if self._repaint_watchdog_func then
+            self:unschedule(self._repaint_watchdog_func)
+            self._repaint_watchdog_func = nil
+        end
+    elseif state and not self._repaint_watchdog_func then
+        -- The chain has just started. Arm the watchdog for a strict timeout (or 2 sec) deadline.
+        self._repaint_watchdog_func = function()
+            logger.warn("UIManager: Repaint suspension watchdog expired; forcing UI recovery.")
+            self._suspend_repaints = false
+            self._repaint_watchdog_func = nil
+            self:setDirty(nil, "full")
+        end
+        timeout = math.max(0, math.min(timeout or 2, 10))
+        self:scheduleIn(timeout, self._repaint_watchdog_func)
+    end
+end
+
+function UIManager:getSuspendRepaints()
+    return self._suspend_repaints
 end
 
 function UIManager:setSilentMode(toggle)
@@ -579,6 +619,7 @@ UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen e
 @bool refreshdither `true` if widget requires dithering (optional)
 ]]
 function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
+    if self._suspend_repaints then return end
     local widget_name
     if widget then
         widget_name = widget.name or widget.id or tostring(widget)
@@ -1120,6 +1161,7 @@ UIManager that a certain part of the screen is to be refreshed.
 @local Not to be used outside of UIManager!
 ]]
 function UIManager:_refresh(mode, region, dither)
+    if self._suspend_repaints then return end
     if not mode then
         -- This is most likely from a `show` or `close` that wasn't passed specific refresh details,
         -- (which is the vast majority of them), in which case we drop it to avoid enqueuing a useless full-screen refresh.
