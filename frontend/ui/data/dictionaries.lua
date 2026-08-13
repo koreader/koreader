@@ -2964,6 +2964,14 @@ local dictionaries = {
         url = "https://www.reader-dict.com/file/ja/dict-ja-ja.zip"
     },
     {
+        name = "reader.dict Korean",
+        lang_in = "kor",
+        lang_out = "kor",
+        entries = 67047,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/ko/dict-ko-ko.zip"
+    },
+    {
         name = "reader.dict Lithuanian",
         lang_in = "lit",
         lang_out = "lit",
