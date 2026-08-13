@@ -94,4 +94,22 @@ describe("Exporter plugin module", function()
         ok = readerui.exporter.targets["readwise"]:export(sample_clippings)
         assert.not_truthy(ok)
     end)
+
+    it("should share clippings as json", function()
+        local rapidjson = require("rapidjson")
+        local target = readerui.exporter.targets["json"]
+        local original_share_text = target.shareText
+        local shared_content
+        target.shareText = function(_, content)
+            shared_content = content
+        end
+
+        target:share(sample_clippings.Title1)
+
+        target.shareText = original_share_text
+        local decoded = rapidjson.decode(shared_content)
+        assert.are.equal("Title1", decoded.title)
+        assert.are.equal("Some important stuff 1", decoded.entries[1].text)
+        assert.are.equal(2, #decoded.entries)
+    end)
 end)
