@@ -16,6 +16,10 @@ local Screen = Device.screen
 
 local DEFAULT_FULL_REFRESH_COUNT = 6
 
+-- used to temporarily stop screen refreshes and repaint during fast unwinding events
+local NOP = function() return end
+local SUSPEND_REPAINTS_FUNCTIONS_TO_NOP = { "setDirty", "_refresh", "_repaint" }
+
 -- This is a singleton
 local UIManager = {
     -- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
@@ -43,6 +47,8 @@ local UIManager = {
     _prevent_standby_count = 0,
     _prev_prevent_standby_count = 0,
     _input_gestures_disabled = false,
+
+    _repaint_watchdog_func = nil,
 
     event_hook = require("ui/hook_container"):new()
 }
@@ -122,6 +128,59 @@ end
 function UIManager:setIgnoreTouchInput(state)
     local InputContainer = require("ui/widget/container/inputcontainer")
     InputContainer:setIgnoreTouchInput(state)
+end
+
+local function restore_functions(self, func_list)
+    for _, name in ipairs(func_list) do
+        self[name] = self._orig_funcs[name]
+    end
+    self._orig_funcs = nil
+end
+
+--[[--
+Suspends repaints and refreshes
+
+-- Note: The watchdog enforces a strict global deadline for the UI suspension.
+-- If a watchdog is already armed, subsequent requests to suspend repaints will
+-- deliberately not reset the timer. This ensures the timeout ticks down from the
+-- initial caller's request, preventing a chain of events from compounding the
+-- delay and freezing the screen indefinitely.
+
+@boolean `state`: `true` to suspend repaints, `false` to resume them
+@number `timeout`: optional suspension duration in seconds (default: 2) before repaints are resumed automatically
+]]
+function UIManager:setSuspendRepaints(state, timeout)
+    if not state and not self._repaint_watchdog_func then return end
+    if state and self._repaint_watchdog_func then return end
+    -- Suspending repaints can be incredibly dangerous, we must
+    -- ensure we don't get stuck in this state forever, otherwise
+    -- we might end up with a frozen screen and no way out.
+    if not state then
+        -- The chain completed or halted legitimately. Disarm the watchdog.
+        self:unschedule(self._repaint_watchdog_func)
+        self._repaint_watchdog_func = nil
+        restore_functions(self, SUSPEND_REPAINTS_FUNCTIONS_TO_NOP)
+    else
+        -- The chain has just started. Arm the watchdog for a strict timeout (or 2 sec) deadline.
+        self._repaint_watchdog_func = function()
+            logger.warn("UIManager: Repaint suspension watchdog expired; forcing UI recovery.")
+            self._repaint_watchdog_func = nil
+            restore_functions(self, SUSPEND_REPAINTS_FUNCTIONS_TO_NOP)
+            self:setDirty(nil, "full")
+        end
+        self._orig_funcs = {}
+        for _, name in ipairs(SUSPEND_REPAINTS_FUNCTIONS_TO_NOP) do
+            self._orig_funcs[name] = self[name]
+            self[name] = NOP
+        end
+        timeout = math.max(0, math.min(timeout or 2, 10))
+        self:scheduleIn(timeout, self._repaint_watchdog_func)
+    end
+    logger.dbg("UIManager: Repaints and refreshes suspended:", state)
+end
+
+function UIManager:getSuspendRepaints()
+    return self._repaint_watchdog_func
 end
 
 function UIManager:setSilentMode(toggle)
