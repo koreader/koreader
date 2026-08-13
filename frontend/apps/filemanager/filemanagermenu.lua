@@ -1004,12 +1004,17 @@ function FileManagerMenu:getStartWithMenuTable()
     end
     return {
         text_func = function()
-            local start_with = G_reader_settings:readSetting("start_with") or "filemanager"
-            for i, v in ipairs(start_withs) do
-                if v[2] == start_with then
-                    return T(_("Start with: %1"), v[1])
+            local idx = 1 -- "filemanager" by default
+            local start_with = G_reader_settings:readSetting("start_with")
+            if start_with then
+                for i, v in ipairs(start_withs) do
+                    if v[2] == start_with then
+                        idx = i
+                        break
+                    end
                 end
             end
+            return T(_("Start with: %1"), start_withs[idx][1])
         end,
         sub_item_table = sub_item_table,
     }
