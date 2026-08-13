@@ -78,7 +78,7 @@ function JsonExporter:export(t)
 end
 
 function JsonExporter:share(t)
-    local content = format(t)
+    local content = format(t, self.settings)
     content.created_on = self.timestamp or os.time()
     content.version = self:getVersion()
     self:shareText(rapidjson.encode(content, {pretty = true}))
