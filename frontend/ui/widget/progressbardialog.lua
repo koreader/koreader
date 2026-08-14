@@ -59,6 +59,7 @@ local ProgressbarDialog = InputContainer:extend {
     dismissable = true,
     dismiss_callback = nil,
     dismiss_text = nil,
+    _home_pending_callback = nil,
     refresh_time_seconds = 3,
 }
 
@@ -69,6 +70,13 @@ function ProgressbarDialog:init()
     if self.dismissable then
         if Device:hasKeys() then
             self.key_events.AnyKeyPressed = { { Input.group.Any } }
+            self._home_pending_callback = function()
+                self._home_pending = nil
+                local Event = require("ui/event")
+                UIManager:nextTick(function()
+                    UIManager:sendEvent(Event:new("Home"))
+                end)
+            end
         end
         if Device:isTouchDevice() then
             self.ges_events.TapClose = {
@@ -219,20 +227,35 @@ function ProgressbarDialog:onDismiss()
             cancel_text = _("Cancel"),
             cancel_callback = function()
                 self.dismiss_box = nil
+                if self._home_pending then UIManager:setSuspendRepaints(true) end
                 UIManager:close(self)
+                if self._home_pending then
+                    self._home_pending_callback()
+                end
             end,
             ok_text = _("Continue"),
             ok_callback = function()
                 self.dismiss_box = nil
+                self._home_pending = nil
             end,
             dismissable = false,
         }
         UIManager:show(self.dismiss_box)
     else
+        if self._home_pending then UIManager:setSuspendRepaints(true) end
         UIManager:close(self)
+        if self._home_pending then
+            self._home_pending_callback()
+        end
     end
 end
 ProgressbarDialog.onAnyKeyPressed = ProgressbarDialog.onDismiss
 ProgressbarDialog.onTapClose = ProgressbarDialog.onDismiss
+
+function ProgressbarDialog:onHome()
+    self._home_pending = true
+    self:onDismiss()
+    return true
+end
 
 return ProgressbarDialog
