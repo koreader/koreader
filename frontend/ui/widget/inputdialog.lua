@@ -100,6 +100,7 @@ local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
+local Event = require("ui/event")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -748,6 +749,28 @@ end
 
 InputDialog.onKeyboardHeightChanged = InputDialog.reinit
 
+function InputDialog:onHome(locally_called)
+    if self._text_modified then
+        self._home_pending = true
+        -- If we are in the middle of the stack, being called by the Home unwind
+        -- mechanism, we need to halt and yield back control to the user.
+        if UIManager:getSuspendRepaints() then
+            UIManager:setSuspendRepaints(false)
+            UIManager:setDirty(self, function()
+                return "ui", self.dialog_frame.dimen
+            end)
+        end
+        self:onCloseDialog()
+    else
+        UIManager:setSuspendRepaints(true)
+        self:onCloseDialog()
+        UIManager:nextTick(function()
+            UIManager:sendEvent(Event:new("Home"))
+        end)
+    end
+    return true
+end
+
 function InputDialog:onCloseDialog()
     local close_button = self.button_table:getButtonById("close")
     if close_button and close_button.enabled then
@@ -906,13 +929,25 @@ function InputDialog:_addSaveCloseButtons()
                 UIManager:show(MultiConfirmBox:new{
                     text = self.close_unsaved_confirm_text or _("You have unsaved changes."),
                     cancel_text = self.close_cancel_button_text or _("Cancel"),
+                    cancel_callback = function()
+                        if self._home_pending then
+                            self._home_pending = nil
+                        end
+                    end,
                     choice1_text = self.close_discard_button_text or _("Discard"),
                     choice1_callback = function()
+                        if self._home_pending then UIManager:setSuspendRepaints(true) end
                         if self.close_callback then self.close_callback(false) end
                         UIManager:close(self)
                         UIManager:show(Notification:new{
                             text = self.close_discarded_notif_text or _("Changes discarded"),
                         })
+                        if self._home_pending then
+                            self._home_pending = nil
+                            UIManager:nextTick(function()
+                                UIManager:sendEvent(Event:new("Home"))
+                            end)
+                        end
                     end,
                     choice2_text = self.close_save_button_text or _("Save"),
                     choice2_callback = function()
@@ -927,11 +962,20 @@ function InputDialog:_addSaveCloseButtons()
                                     })
                                 end
                             else -- nil or true
+                                if self._home_pending then UIManager:setSuspendRepaints(true) end
                                 if self.close_callback then self.close_callback(true) end
                                 UIManager:close(self)
                                 UIManager:show(Notification:new{
                                     text = msg or _("Saved"),
                                 })
+                                if self._home_pending then
+                                    self._home_pending = nil
+                                    -- Allow readerUI to catch up, otherwise we might get
+                                    -- a no document crash.
+                                    UIManager:scheduleIn(0.5, function()
+                                        UIManager:sendEvent(Event:new("Home"))
+                                    end)
+                                end
                             end
                         end)
                     end,
