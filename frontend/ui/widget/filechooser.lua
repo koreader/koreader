@@ -364,6 +364,22 @@ function FileChooser:changeToPath(path, focused_path)
     end
 end
 
+function FileChooser:onHome()
+    local FileManager = require("apps/filemanager/filemanager")
+    UIManager:setSuspendRepaints(true)
+    if FileManager.instance then
+        -- FileChooser is a Booklist (which in turn is a Menu), we need
+        -- to redirect Home calls otherwise we will unalive ourselves,
+        -- taking the whole application down with us.
+        return FileManager.instance:onHome()
+    end
+    self:onClose()
+    UIManager:nextTick(function()
+        UIManager:sendEvent(Event:new("Home"))
+    end)
+    return true
+end
+
 function FileChooser:goHome()
     local home_dir = G_reader_settings:readSetting("home_dir")
     if not home_dir or lfs.attributes(home_dir, "mode") ~= "directory" then

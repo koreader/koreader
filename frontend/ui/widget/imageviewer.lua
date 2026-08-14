@@ -101,6 +101,7 @@ function ImageViewer:init()
                 PanRight = { { "Right" }, event = "CursorPan", args="right" },
             }
         end
+        self.key_events.Home = { { "Home" } }
     end
     if Device:isTouchDevice() then
         local range = Geom:new{

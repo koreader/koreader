@@ -849,7 +849,16 @@ function InputText:onKeyPress(key)
         elseif key["End"] then
             self:goToEnd()
         elseif key["Home"] then
+            -- If our parent handles Home (e.g., InputDialog), delegate entirely
+            -- to avoid double-firing: once here and once via FocusManager routing.
+            if self.parent and self.parent.onHome then
+                return self.parent:onHome()
+            end
             self:keyBack()
+            local Event = require("ui/event")
+            UIManager:nextTick(function()
+                UIManager:sendEvent(Event:new("Home"))
+            end)
         elseif key["KeyHome"] then
             self:goToHome()
         elseif key["Press"] then
@@ -892,7 +901,7 @@ function InputText:onKeyPress(key)
             self:downLine()
         elseif key["Press"] then
             self:holdTextBox()
-        elseif key["Home"] then
+        elseif key["Home"] or key["KeyHome"] then
             self:toggleKeyboard()
         elseif key["."] and Device:hasSymKey() then
             -- Kindle does not have a dedicated button for commas
