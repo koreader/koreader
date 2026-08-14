@@ -1444,6 +1444,19 @@ function Menu:onShowingReader()
 end
 Menu.onSetupShowReader = Menu.onShowingReader
 
+-- Although Menu inherits this method from InputContainer and it is pretty
+-- much identical to that one, we need to override it here due to the
+-- complexity of the module (multiple FocusManagers and InputContainers).
+function Menu:onHome()
+    UIManager:setSuspendRepaints(true)
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:nextTick(function()
+        UIManager:sendEvent(Event:new("Home"))
+    end)
+    return true
+end
+
 function Menu:onCloseWidget()
     --- @fixme
     -- we cannot refresh regionally using the dimen field
