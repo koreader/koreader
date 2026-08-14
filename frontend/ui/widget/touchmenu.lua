@@ -972,6 +972,18 @@ function TouchMenu:onCloseWidget()
     end
 end
 
+-- Although TouchMenu inherits this method from InputContainer and it is pretty
+-- much identical to that one, we need to override it here due to the
+-- complexity of the module (multiple FocusManagers and InputContainers).
+function TouchMenu:onHome()
+    UIManager:setSuspendRepaints(true)
+    self:onClose()
+    UIManager:nextTick(function()
+        UIManager:sendEvent(Event:new("Home"))
+    end)
+    return true
+end
+
 -- Menu search feature
 function TouchMenu:search(search_for)
     local found_menu_items = {}
