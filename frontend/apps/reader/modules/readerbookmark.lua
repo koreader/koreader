@@ -467,7 +467,7 @@ end
 function ReaderBookmark:deleteItemNote(item)
     local index = self:getBookmarkItemIndex(item)
     self.ui.annotation.annotations[index].note = nil
-    if item_type == "note" then
+    if item.type == "note" then
         self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = 1, nb_notes_added = -1 }))
     end
 end
