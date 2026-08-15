@@ -8,6 +8,7 @@ local logger = require("logger")
 local ltn12 = require("ltn12")
 local socket = require("socket")
 local socket_url = require("socket.url")
+local ssl = require("ssl")
 local socketutil = require("socketutil")
 local time = require("ui/time")
 local util = require("util")
@@ -394,6 +395,224 @@ local ext_to_mimetype = {
     ttf = "application/truetype",
     woff = "application/font-woff",
 }
+
+local MAX_CONCURRENT_DOWNLOADS = 10
+
+--- Non-blocking receive; yields (socket, "r"/"w") until data/error/EOF.
+-- Partial data returned with "timeout"/"wantread" is already consumed from
+-- the socket buffer, so carry it forward via the `receive` prefix argument.
+local function async_receive(sock, pattern)
+    local acc = ""
+    while true do
+        local res, err, partial = sock:receive(pattern, acc)
+        if err == "timeout" or err == "wantread" then
+            acc = partial or acc
+            coroutine.yield(sock, "r")
+        elseif err == "wantwrite" then
+            coroutine.yield(sock, "w")
+        else
+            return res, err, partial
+        end
+    end
+end
+
+--- Non-blocking send; yields (socket, "w"/"r") while it would block.
+local function async_send(sock, data)
+    local i = 1
+    local n = #data
+    while i <= n do
+        local res, err, last = sock:send(data, i)
+        if err == "timeout" or err == "wantwrite" then
+            coroutine.yield(sock, "w")
+            -- LuaSocket reports the index of the last byte sent on error.
+            if last then i = last + 1 end
+        elseif err == "wantread" then
+            coroutine.yield(sock, "r")
+        elseif err then
+            return nil, err
+        else
+            i = res + 1
+        end
+    end
+    return true
+end
+
+--- Non-blocking connect; yields (socket, "w") until connected or failed.
+local function async_connect(sock, host, port)
+    sock:settimeout(0)
+    while true do
+        local res, err = sock:connect(host, port)
+        if res or err == "already connected" then
+            return true
+        elseif err == "timeout" or err == "Operation already in progress" then
+            coroutine.yield(sock, "w")
+        else
+            return false, err
+        end
+    end
+end
+
+--- Non-blocking TLS handshake; yields (socket, "r"/"w") while it would block.
+local function async_handshake(sock)
+    while true do
+        local res, err = sock:dohandshake()
+        if res then
+            return true
+        elseif err == "wantread" then
+            coroutine.yield(sock, "r")
+        elseif err == "wantwrite" then
+            coroutine.yield(sock, "w")
+        else
+            return false, err
+        end
+    end
+end
+
+--- Fetch one image over a raw non-blocking socket, yielding while it would
+-- block so the caller can interleave many downloads.
+local function download_image_async(url, redirect_count)
+    redirect_count = redirect_count or 0
+    if redirect_count > 5 then return false, "Too many redirects" end
+
+    local parsed = socket_url.parse(url)
+    if not parsed then return false, "invalid url" end
+    if parsed.path then
+        -- Encode invalid path chars (e.g., spaces) while preserving "/" and "%".
+        parsed.path = util.urlEncode(parsed.path, "/%%")
+        url = socket_url.build(parsed)
+    end
+
+    local host = parsed.host
+    if not host then return false, "invalid url" end
+    local port = parsed.port or (parsed.scheme == "https" and 443 or 80)
+    local path = parsed.path or "/"
+    if parsed.query then path = path .. "?" .. parsed.query end
+
+    local sock = socket.tcp()
+    local ok, err = async_connect(sock, host, port)
+    if not ok then
+        sock:close()
+        return false, "connect error: " .. tostring(err)
+    end
+
+    if parsed.scheme == "https" then
+        local ssl_params = {
+            mode = "client",
+            protocol = "any",
+            verify = "none",
+            options = {"all", "no_sslv2", "no_sslv3"},
+        }
+        local ssl_sock, wrap_err = ssl.wrap(sock, ssl_params)
+        if not ssl_sock then
+            sock:close()
+            return false, "ssl wrap error: " .. tostring(wrap_err)
+        end
+        sock = ssl_sock
+        sock:settimeout(0)
+        if sock.sni then
+            sock:sni(host)
+        end
+        local hok, herr = async_handshake(sock)
+        if not hok then
+            sock:close()
+            return false, "ssl handshake error: " .. tostring(herr)
+        end
+    end
+
+    local req = string.format(
+        "GET %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: %s\r\nConnection: close\r\n\r\n",
+        path, host, socketutil.USER_AGENT)
+    local sok, serr = async_send(sock, req)
+    if not sok then
+        sock:close()
+        return false, "send error: " .. tostring(serr)
+    end
+
+    -- Read status line and headers.
+    local headers = {}
+    local status_line
+    while true do
+        local line, lerr = async_receive(sock, "*l")
+        if not line then
+            sock:close()
+            return false, "read error: " .. tostring(lerr)
+        end
+        if line == "" then break end
+        if not status_line then
+            status_line = line
+        else
+            local k, v = line:match("^(.-):%s*(.*)")
+            if k and v then headers[k:lower()] = v end
+        end
+    end
+
+    if not status_line then
+        sock:close()
+        return false, "no status line received"
+    end
+
+    local code = tonumber(status_line:match("HTTP/%d%.%d%s+(%d%d%d)"))
+
+    if code and code >= 300 and code < 400 and headers["location"] then
+        sock:close()
+        local location = headers["location"]:gsub("\r$", "")
+        local new_url = socket_url.absolute(url, location)
+        return download_image_async(new_url, redirect_count + 1)
+    end
+
+    if code and code >= 400 then
+        sock:close()
+        return false, "HTTP error " .. tostring(code)
+    end
+
+    -- Read the body, handling both chunked and fixed/until-close encodings.
+    local body = {}
+    local transfer_encoding = headers["transfer-encoding"]
+    if transfer_encoding and transfer_encoding:lower():find("chunked", 1, true) then
+        while true do
+            local chunk_size_str = async_receive(sock, "*l")
+            if not chunk_size_str then break end
+            local hex = chunk_size_str:match("^%x+")
+            if not hex then break end
+            local chunk_size = tonumber(hex, 16)
+            if not chunk_size or chunk_size == 0 then break end
+
+            local chunk_data = async_receive(sock, chunk_size)
+            if chunk_data and #chunk_data > 0 then table.insert(body, chunk_data) end
+            async_receive(sock, 2) -- trailing CRLF
+        end
+    else
+        local content_length = tonumber(headers["content-length"])
+        if content_length then
+            local remaining = content_length
+            while remaining > 0 do
+                local chunk = async_receive(sock, remaining)
+                if not chunk then break end
+                table.insert(body, chunk)
+                remaining = remaining - #chunk
+            end
+        else
+            while true do
+                local chunk, cerr, partial = async_receive(sock, 8192)
+                if chunk then
+                    table.insert(body, chunk)
+                else
+                    if partial and #partial > 0 then table.insert(body, partial) end
+                    if cerr == "closed" then break end
+                    if cerr ~= "timeout" and cerr ~= "wantread" then
+                        -- Some other error: stop reading.
+                        break
+                    end
+                end
+            end
+        end
+    end
+
+    sock:close()
+    local content = table.concat(body)
+    return true, headers["content-type"], content
+end
+
 -- Create an epub file (with possibly images)
 function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element, block_element)
     logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ")")
@@ -673,48 +892,133 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
         local nb_images = #images
         local before_images_time = time.now()
         local time_prev = before_images_time
+
+        -- Download images concurrently: each coroutine yields its socket when
+        -- it would block, and socket.select tells us which are ready to resume.
+        local pending_tasks = {}
         for inum, img in ipairs(images) do
+            table.insert(pending_tasks, {inum = inum, img = img})
+        end
+
+        local active = {}        -- coroutines currently running
+        local co2sock = {}       -- coroutine -> socket it is waiting on
+        local co2mode = {}       -- coroutine -> "r" or "w"
+        local completed = 0
+        local failed_images = {}
+
+        local function refill_pool()
+            while #active < MAX_CONCURRENT_DOWNLOADS and #pending_tasks > 0 do
+                local task = table.remove(pending_tasks, 1)
+                local co = coroutine.create(function()
+                    local src = task.img.src
+                    if use_img_2x and task.img.src2x then
+                        src = task.img.src2x
+                    end
+                    logger.dbg("Getting img async:", src)
+                    local success, err_msg_or_headers, content = download_image_async(src)
+
+                    if not success then
+                        logger.warn("async download failed:", err_msg_or_headers, "falling back to getUrlContent")
+                        -- Fallback to the synchronous getter for edge cases.
+                        success, dummy, content = getUrlContent(src)
+                    end
+
+                    coroutine.yield("RESULT", task, success, content)
+                end)
+                table.insert(active, co)
+            end
+        end
+
+        refill_pool()
+
+        while #active > 0 do
+            -- Gather sockets we're waiting on and select() on them.
+            local recvt = {}
+            local sendt = {}
+            for _, co in ipairs(active) do
+                local sock = co2sock[co]
+                if sock then
+                    if co2mode[co] == "r" then table.insert(recvt, sock) end
+                    if co2mode[co] == "w" then table.insert(sendt, sock) end
+                end
+            end
+
+            local ready
+            if #recvt > 0 or #sendt > 0 then
+                local r, w = socket.select(recvt, sendt, 0.1)
+                ready = {}
+                for _, s in ipairs(r or {}) do ready[s] = true end
+                for _, s in ipairs(w or {}) do ready[s] = true end
+            end
+
+            -- Resume coroutines that are ready (or haven't yielded a socket yet).
+            local next_active = {}
+            for _, co in ipairs(active) do
+                local sock = co2sock[co]
+                local is_ready = not sock or (ready and ready[sock])
+
+                if not is_ready then
+                    table.insert(next_active, co)
+                else
+                    if sock then
+                        co2sock[co] = nil
+                        co2mode[co] = nil
+                    end
+
+                    local ok, yield_type, task_or_mode, success, content = coroutine.resume(co)
+
+                    if not ok then
+                        logger.warn("image download coroutine error:", yield_type)
+                        completed = completed + 1
+                    elseif coroutine.status(co) == "dead" then
+                        -- Finished without a RESULT yield; treat as done.
+                        completed = completed + 1
+                    elseif yield_type == "RESULT" then
+                        local task = task_or_mode
+                        completed = completed + 1
+                        if success and content then
+                            -- Images do not need to be compressed, so spare some cpu cycles
+                            local no_compression = true
+                            if task.img.mimetype == "image/svg+xml" then -- except for SVG images (which are XML text)
+                                no_compression = false
+                            end
+                            epub:addFileFromMemory("OEBPS/"..task.img.imgpath, content, no_compression, mtime)
+                        else
+                            logger.info("failed fetching:", task.img.src)
+                            table.insert(failed_images, task.inum)
+                        end
+                    else
+                        -- The coroutine yielded a socket to wait on.
+                        co2sock[co] = yield_type
+                        co2mode[co] = task_or_mode
+                        table.insert(next_active, co)
+                    end
+                end
+            end
+            active = next_active
+
+            refill_pool()
+
             -- Process can be interrupted every second between image downloads
-            -- by tapping while the InfoMessage is displayed
-            -- We use the fast_refresh option from image #2 for a quicker download
-            local go_on
+            -- by tapping while the InfoMessage is displayed.
             if time.to_ms(time.since(time_prev)) > 1000 then
                 time_prev = time.now()
-                go_on = UI:info((message and message ~= "" and message .. "\n\n" or "") .. T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2)
-                if not go_on then
-                    cancelled = true
-                    break
-                end
-            else
-                UI:info((message and message ~= "" and message .. "\n\n" or "") .. T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2, true)
-            end
-            local src = img.src
-            if use_img_2x and img.src2x then
-                src = img.src2x
-            end
-            logger.dbg("Getting img ", src)
-            local success, __, content = getUrlContent(src)
-            -- success, _, content = getUrlContent(src..".unexistant") -- to simulate failure
-            if success then
-                logger.dbg("success, size:", #content)
-            else
-                logger.info("failed fetching:", src)
-            end
-            if success then
-                -- Images do not need to be compressed, so spare some cpu cycles
-                local no_compression = true
-                if img.mimetype == "image/svg+xml" then -- except for SVG images (which are XML text)
-                    no_compression = false
-                end
-                epub:addFileFromMemory("OEBPS/"..img.imgpath, content, no_compression, mtime)
-            else
-                go_on = UI:confirm(T(_("Downloading image %1 failed. Continue anyway?"), inum), _("Stop"), _("Continue"))
+                local go_on = UI:info((message and message ~= "" and message .. "\n\n" or "") .. T(_("Retrieving images… %1 / %2 completed"), completed, nb_images), completed >= 1)
                 if not go_on then
                     cancelled = true
                     break
                 end
             end
         end
+
+        -- Report any failures once, rather than interrupting on each one.
+        if not cancelled and #failed_images > 0 then
+            local go_on = UI:confirm(T(_("%1 images failed to download. Continue creating the EPUB?"), #failed_images), _("Stop"), _("Continue"))
+            if not go_on then
+                cancelled = true
+            end
+        end
+
         logger.dbg("Image download time for:", page_htmltitle, time.to_ms(time.since(before_images_time)), "ms")
     end
 
