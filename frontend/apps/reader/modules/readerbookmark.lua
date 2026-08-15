@@ -1398,8 +1398,8 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note, ca
                 },
                 {
                     text = _("Paste"), -- insert highlighted text
+                    enabled = annotation.text ~= nil,
                     callback = function()
-                        enabled = annotation.text ~= nil,
                         input_dialog:addTextToInput(annotation.text)
                     end,
                 },
