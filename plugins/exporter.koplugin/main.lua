@@ -428,6 +428,7 @@ function Exporter:addToMainMenu(menu_items)
             },
             {
                 text = _("Use book folder for single export"),
+                help_text = _("When there is only a single book in the final export (current book export or no highlights in other books or highlight filtering) use the single book's folder for export."),
                 checked_func = function()
                     return settings.clipping_dir_book
                 end,
