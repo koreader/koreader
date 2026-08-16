@@ -1636,7 +1636,7 @@ abbr.abbr {
                 if time.to_ms(time.since(time_prev)) > 1000 then
                     time_prev = time.now()
                     local errors = #failed_images
-                    local go_on = true
+                    local go_on
                     if errors > 0 then
                         go_on = UI:info(T(_("Retrieving images… %1 / %2 completed (%3 errors)"), completed, total, errors), completed >= 1)
                     else

@@ -723,7 +723,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 if time.to_ms(time.since(time_prev)) > 1000 then
                     time_prev = time.now()
                     local errors = #failed_images
-                    local go_on = true
+                    local go_on
                     local prefix = message and message ~= "" and message .. "\n\n" or ""
                     if errors > 0 then
                         go_on = UI:info(prefix .. T(_("Retrieving images… %1 / %2 completed (%3 errors)"), completed, total, errors), completed >= 1)
