@@ -1635,7 +1635,14 @@ abbr.abbr {
                 -- InfoMessage is displayed.
                 if time.to_ms(time.since(time_prev)) > 1000 then
                     time_prev = time.now()
-                    local go_on = UI:info(T(_("Retrieving images… %1 / %2 completed"), completed, total), completed >= 1)
+                    local errors = #failed_images
+                    local go_on = true
+                    if errors > 0 then
+                        go_on = UI:info(T(_("Retrieving images… %1 / %2 completed (%3 errors)"), completed, total, errors), completed >= 1)
+                    else
+                        go_on = UI:info(T(_("Retrieving images… %1 / %2 completed"), completed, total), completed >= 1)
+                    end
+
                     if not go_on then
                         return false -- cancel
                     end
