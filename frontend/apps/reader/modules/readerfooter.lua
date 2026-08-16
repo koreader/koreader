@@ -240,11 +240,27 @@ footerTextGeneratorMap = {
             return prefix .. " " .. clock
         end
     end,
+
     page_progress = function(footer)
         if footer.ui.pagemap and footer.ui.pagemap:wantsPageLabels() then
             -- (Page labels might not be numbers)
-            return ("%s / %s"):format(footer.ui.pagemap:getCurrentPageLabel(true),
-                                      footer.ui.pagemap:getLastPageLabel(true))
+            if footer.ui.document:hasHiddenFlows() then
+                local flow = footer.ui.document:getPageFlow(footer.pageno)
+                local page = footer.ui.document:getPageNumberInFlow(footer.pageno)
+                local pages = footer.ui.document:getTotalPagesInFlow(flow)
+                local current_page_label = footer.ui.pagemap:getCurrentPageLabel(true)
+                local last_page_in_flow_xpointer = footer.ui.document:getPageXPointer(pages)
+                local last_page_label = footer.ui.pagemap:getXPointerPageLabel(last_page_in_flow_xpointer, true)
+
+                if flow == 0 then
+                    return ("%s // %s"):format(current_page_label, last_page_label)
+                else
+                    return ("%s [%d / %d]%d"):format(current_page_label, page, pages, flow)
+                end
+            else
+                return ("%s / %s"):format(footer.ui.pagemap:getCurrentPageLabel(true),
+                                          footer.ui.pagemap:getLastPageLabel(true))
+            end
         elseif footer.ui.document:hasHiddenFlows() then
             -- i.e., if we are hiding non-linear fragments and there's anything to hide,
             local flow = footer.ui.document:getPageFlow(footer.pageno)
