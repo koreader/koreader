@@ -76,6 +76,11 @@ PASSCODE_DISABLED="no"
 
 # List of services we stop in order to reclaim a tiny sliver of RAM...
 TOGGLED_SERVICES="stored webreader kfxreader kfxview todo tmd rcm archive scanner otav3 otaupd"
+# The KPP chrome status bar runs as a separate job, so disabling pillow doesn't stop it drawing over us
+# Verified on: PW6 @ FW 5.17.1.0.4 & 5.19.4.0.1; PW4 @ 5.18.1
+if [ -f "/etc/upstart/statusbar.conf" ]; then
+    TOGGLED_SERVICES="${TOGGLED_SERVICES} statusbar"
+fi
 
 REEXEC_FLAGS=""
 # Keep track of if we were started through KUAL
