@@ -1366,6 +1366,8 @@ end
 function ReaderLink:onGotoSelectedPageLink()
     local link = self.cur_selected_link
     if link then
+        -- Clear selected_link so further presses to Press key,
+        -- don't incorrectly launch the footnote widget agian.
         self.cur_selected_link = nil
         return self:onGotoLink(link, false, isFootnoteLinkInPopupEnabled())
     end
