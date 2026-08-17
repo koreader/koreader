@@ -1,6 +1,6 @@
 # Development Guide
 
-The whole frontend part of KOReader is scripted in [Lua](http://www.lua.org/about.html) programming language which means you can start development with just a decent text editor. Instructions about how to get and compile the source of the backend part on a linux OS are [here](https://github.com/koreader/koreader#building-prerequisites)
+The whole frontend part of KOReader is scripted in [Lua](http://www.lua.org/about.html) programming language which means you can start development with just a decent text editor. Instructions about how to get and compile the source of the backend part on a linux OS are [here](https://github.com/koreader/koreader/blob/master/doc/Building.md)
 
 The source tree of frontend looks like this:
 ```
