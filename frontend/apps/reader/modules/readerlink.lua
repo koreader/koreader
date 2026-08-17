@@ -1364,8 +1364,10 @@ function ReaderLink:selectRelPageLink(rel)
 end
 
 function ReaderLink:onGotoSelectedPageLink()
-    if self.cur_selected_link then
-        return self:onGotoLink(self.cur_selected_link, false, isFootnoteLinkInPopupEnabled())
+    local link = self.cur_selected_link
+    if link then
+        self.cur_selected_link = nil
+        return self:onGotoLink(link, false, isFootnoteLinkInPopupEnabled())
     end
 end
 
