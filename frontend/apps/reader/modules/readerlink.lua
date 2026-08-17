@@ -1373,7 +1373,7 @@ function ReaderLink:onGotoSelectedPageLink()
 end
 
 function ReaderLink:onPageUpdate()
-    if self.cur_selected_link then
+    if self.cur_selected_link or self.cur_selected_page_link_num then
         self:clearSelectedPageLink()
     end
 end
