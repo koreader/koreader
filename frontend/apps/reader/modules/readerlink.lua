@@ -1366,7 +1366,7 @@ end
 function ReaderLink:onGotoSelectedPageLink()
     local link = self.cur_selected_link
     if link then
-        -- a further key `Press` might incorrectly launch the footnote widget again
+        -- avoid a further key `Press` incorrectly launching the footnote widget again
         self.cur_selected_link = nil
         return self:onGotoLink(link, false, isFootnoteLinkInPopupEnabled())
     end
