@@ -336,13 +336,10 @@ function FocusManager:_repaintFocusChange(prev_item, next_item)
         UIManager:setDirty(nil, "fast", next_bar)
         return
     end
-    -- The widget has to be repainted whole, but only the two items change: refresh the box
-    -- holding them both, and the whole thing when we don't know where one of them is.
-    local region
-    if prev_item.dimen and next_item.dimen then
-        region = prev_item.dimen:combine(next_item.dimen)
-    end
-    UIManager:setDirty(parent, "fast", region)
+    -- The widget has to be repainted whole. We don't narrow the refresh here: a focus
+    -- border may grow outside the item's dimen (FrameContainer widens its own on focus),
+    -- and we have no way to tell how far.
+    UIManager:setDirty(parent, "fast")
 end
 
 function FocusManager:onPhysicalKeyboardConnected()
