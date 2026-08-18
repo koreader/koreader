@@ -1292,7 +1292,7 @@ end
 function ReaderLink:clearSelectedPageLink(dirty_ui)
     if self.ui.paging then return end
     self.cur_selected_page_link_num = nil
-    self.cur_selected_link = nil
+    self.cur_highlighted_link = nil
     self.document:highlightXPointer()
     if dirty_ui then
         UIManager:setDirty(self.dialog, "ui")
@@ -1346,7 +1346,7 @@ function ReaderLink:selectRelPageLink(rel)
         link_y = selected_link.end_y
     end
     -- Make it a link as expected by onGotoLink
-    self.cur_selected_link = {
+    self.cur_highlighted_link = {
         xpointer = selected_link.section or selected_link.uri,
         marker_xpointer = selected_link.section,
         from_xpointer = from_xpointer,
@@ -1358,22 +1358,22 @@ function ReaderLink:selectRelPageLink(rel)
         link_y = link_y,
     }
     self.document:highlightXPointer() -- clear any previous one
-    self.document:highlightXPointer(self.cur_selected_link.from_xpointer)
+    self.document:highlightXPointer(self.cur_highlighted_link.from_xpointer)
     UIManager:setDirty(self.dialog, "ui")
     return true
 end
 
 function ReaderLink:onGotoSelectedPageLink()
-    local link = self.cur_selected_link
+    local link = self.cur_highlighted_link
     if link then
         -- avoid a further key `Press` incorrectly launching the footnote widget again
-        self.cur_selected_link = nil
+        self.cur_highlighted_link = nil
         return self:onGotoLink(link, false, isFootnoteLinkInPopupEnabled())
     end
 end
 
 function ReaderLink:onPageUpdate()
-    if self.cur_selected_link or self.cur_selected_page_link_num then
+    if self.cur_highlighted_link or self.cur_selected_page_link_num then
         self:clearSelectedPageLink()
     end
 end
