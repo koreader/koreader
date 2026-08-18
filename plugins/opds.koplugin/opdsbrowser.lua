@@ -482,15 +482,16 @@ function OPDSBrowser:parseFeed(item_url)
     else
         feed = self:fetchFeed(item_url)
     end
-    local start = feed and feed:sub(1, 1)
-    if start == "<" then -- OPDS 1.x
-        return OPDSParser:parse(feed)
-    elseif start == "{" then -- OPDS 2.0
-        local JSON = require("json")
-        local ret, result = pcall(JSON.decode, feed)
-        if ret then
-            result.is_opds2 = true
-            return result
+    if feed then
+        if feed:match("^%s*{") then -- OPDS 2.0
+            local JSON = require("json")
+            local ret, result = pcall(JSON.decode, feed)
+            if ret then
+                result.is_opds2 = true
+                return result
+            end
+        else -- OPDS 1.x
+            return OPDSParser:parse(feed)
         end
     end
 end
