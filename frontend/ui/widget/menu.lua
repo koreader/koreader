@@ -426,7 +426,9 @@ function MenuItem:init()
         color = self.line_color,
         linesize = self.linesize,
         focus_linesize = Size.line.focus_indicator,
-        background = self.text_bgcolor or Blitbuffer.COLOR_WHITE,
+        -- A row with a coloured patch behind its text has no single background to clear
+        -- the focus strip with, so it keeps the stock repaint.
+        background = not self.text_bgcolor and Blitbuffer.COLOR_WHITE or nil,
         vertical_align = "center",
         padding = 0,
         dimen = Geom:new{
