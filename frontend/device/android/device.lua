@@ -89,7 +89,7 @@ local Device = Generic:extend{
     home_dir = android.getExternalStoragePath(),
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     isHapticFeedbackEnabled = yes,
-    isDefaultFullscreen = function() return android.app.activity.sdkVersion >= 19 end,
+    isDefaultFullscreen = yes,
     hasClipboard = yes,
     hasOTAUpdates = android.ota.isEnabled,
     hasOTARunning = function() return android.ota.isRunning end,
@@ -375,12 +375,27 @@ end
 -- to-do: implement fullscreen toggle in API19+
 local function canToggleFullscreen()
     local api = android.app.activity.sdkVersion
-    return api < 19, api
+    return true, api
 end
 
 -- toggle fullscreen API 19+
 function Device:_toggleFullscreenImmersive()
-    logger.dbg("ignoring fullscreen toggle, reason: always in immersive mode")
+
+    local width = android.getScreenWidth()
+    local height = android.getScreenHeight()
+    -- NOTE: Since we don't do HW rotation here, this should always match width
+    local available_width = android.getScreenAvailableWidth()
+    local available_height = android.getScreenAvailableHeight()
+
+    local is_fullscreen = android.isFullscreen()
+    logger.dbg(string.format("Change fullscreen to %s in _toggleFullscreenImmersive", not is_fullscreen))
+    android.setFullscreen(not is_fullscreen)
+    self.fullscreen = android.isFullscreen()
+    if self.fullscreen then
+        self:setViewport(0, 0, width, height)
+    else
+        self:setViewport(0, 0, available_width, available_height)
+    end
 end
 
 -- toggle fullscreen API 17-18
@@ -443,7 +458,7 @@ end
 
 function Device:toggleFullscreen()
     local is_fullscreen = android.isFullscreen()
-    logger.dbg(string.format("requesting fullscreen: %s", not is_fullscreen))
+    logger.dbg(string.format("requesting fullscreen: %s ___DEBUG___", not is_fullscreen))
     local dummy, api = canToggleFullscreen()
     if api >= 19 then
         self:_toggleFullscreenImmersive()
