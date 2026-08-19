@@ -249,8 +249,22 @@ footerTextGeneratorMap = {
                 local page = footer.ui.document:getPageNumberInFlow(footer.pageno)
                 local pages = footer.ui.document:getTotalPagesInFlow(flow)
                 local current_page_label = footer.ui.pagemap:getCurrentPageLabel(true)
-                local last_page_in_flow_xpointer = footer.ui.document:getPageXPointer(pages)
-                local last_page_label = footer.ui.pagemap:getXPointerPageLabel(last_page_in_flow_xpointer, true)
+
+                local total_pages = footer.ui.document:getPageCount()
+                local flows = footer.ui.document.flows
+
+                -- the "last page" displayed should be the actual last page of the document
+                -- unless it is hidden by a flow, in which case it should be the last page not in a flow
+                local last_flow = flows[#flows]
+                local last_flow_start = last_flow[1]
+                local last_flow_end = last_flow[1] + last_flow[2]
+                local last_page_label
+                if last_flow_end >= total_pages then
+                    local last_linear_page_xpointer = footer.ui.document:getPageXPointer(last_flow_start - 1)
+                    last_page_label = footer.ui.pagemap:getXPointerPageLabel(last_linear_page_xpointer, true)
+                else
+                    last_page_label = footer.ui.pagemap:getLastPageLabel(true)
+                end
 
                 if flow == 0 then
                     return ("%s // %s"):format(current_page_label, last_page_label)
