@@ -313,6 +313,11 @@ function FocusManager:onFocusMove(args)
     return true
 end
 
+-- An item that knows where its focus indicator is, and can paint it on its own.
+local function canFastRepaint(item)
+    return item.getFocusIndicatorRegion and item.repaintFocusIndicator
+end
+
 --- Repaint after focus moved from one item to another.
 --- When both items can paint their focus indicator on their own, only those strips are
 --- painted and refreshed; otherwise the parent is repainted as before.
@@ -323,8 +328,7 @@ function FocusManager:_repaintFocusChange(prev_item, next_item)
     -- Painting outside UIManager's paint pass skips Screen:beforePaint(), which is
     -- where forced HW rotation gets asserted; leave those screens the stock path.
     if not Screen.forced_rotation
-            and prev_item.getFocusIndicatorRegion and next_item.getFocusIndicatorRegion
-            and prev_item.repaintFocusIndicator and next_item.repaintFocusIndicator
+            and canFastRepaint(prev_item) and canFastRepaint(next_item)
             and UIManager:getTopmostVisibleWidget() == parent then
         prev_bar = prev_item:getFocusIndicatorRegion()
         next_bar = next_item:getFocusIndicatorRegion()
