@@ -2,9 +2,9 @@ local rapidjson = require("rapidjson")
 local md5 = require("ffi/MD5")
 local _ = require("gettext")
 
--- json exporter
-local JsonExporter = require("base"):new {
+local JsonExporter = require("base"):new{
     name = "json",
+    title = _("Json"),
     -- the proper mimetype is "application/json" as stated in
     -- https://www.iana.org/assignments/media-types/application/json
     -- but we follow google recommendations because we just share on android.
@@ -12,25 +12,14 @@ local JsonExporter = require("base"):new {
     mimetype = "text/json",
 }
 
-function JsonExporter:getMenuTable()
+function JsonExporter:genTargetSubMenu()
     return {
-        text = _("Json"),
-        checked_func = function() return self:isEnabled() end,
-        sub_item_table = {
-            {
-                text = _("Export to Json"),
-                checked_func = function() return self:isEnabled() end,
-                callback = function() self:toggleEnabled() end,
-            },
-            {
-                text = _("Include book checksum in export"),
-                checked_func = function() return self.settings.bookChecksum end,
-                callback = function()
-                    self.settings.bookChecksum = not self.settings.bookChecksum
-                    self:saveSettings()
-                end,
-            }
-        }
+        self:genExportToMenuItem(),
+        -- separator
+        self:genCloudStorageMenuItem(),
+        self:genDeleteFileMenuItem(),
+        -- separator
+        self:genToggleMenuItem(_("Include book checksum in export"), "bookChecksum"),
     }
 end
 

@@ -1,13 +1,23 @@
-local util = require("ffi/util")
-local T = util.template
+local T = require("ffi/util").template
 local _ = require("gettext")
 
--- text exporter
-local TextExporter = require("base"):new {
+local TextExporter = require("base"):new{
     name = "text",
+    title = _("Text"),
     extension = "txt",
     mimetype = "text/plain",
 }
+
+function TextExporter:genTargetSubMenu()
+    return {
+        self:genExportToMenuItem(),
+        -- separator
+        self:genCloudStorageMenuItem(),
+        self:genDeleteFileMenuItem(),
+        -- separator
+        self:genToggleMenuItem(_("Overwrite export file"), "overwrite_export_file"),
+    }
+end
 
 local function format(booknotes)
     local tbl = {}
@@ -44,7 +54,7 @@ end
 
 function TextExporter:export(t)
     local path = self:getFilePath(t)
-    local file = io.open(path, "a")
+    local file = io.open(path, self.settings.overwrite_export_file and "w" or "a")
     if not file then return false end
     for __, booknotes in ipairs(t) do
         local tbl = format(booknotes)

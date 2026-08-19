@@ -1,29 +1,25 @@
+local ButtonSelector = require("ui/widget/buttonselector")
+local InputDialog = require("ui/widget/inputdialog")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local UIManager = require("ui/uimanager")
 local md = require("template/md")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
--- markdown exporter
-local MarkdownExporter = require("base"):new {
+local MarkdownExporter = require("base"):new{
     name = "markdown",
+    title = _("Markdown"),
     extension = "md",
     mimetype = "text/markdown",
-
-    init_callback = function(self, settings)
-        local changed = false
-        if not settings.formatting_options or settings.highlight_formatting == nil then
-            settings.formatting_options = settings.formatting_options or {
-                lighten = "italic",
-                underscore = "underline_markdownit",
-                strikeout = "strikethrough",
-                invert = "bold",
-            }
-            settings.highlight_formatting = settings.highlight_formatting or true
-            changed = true
-        end
-        return changed, settings
-    end,
+    default_settings = {
+        highlight_formatting = true,
+        formatting_options = {
+            lighten    = "italic",
+            underscore = "underline_markdownit",
+            strikeout  = "strikethrough",
+            invert     = "bold",
+        },
+    },
 }
 
 local formatter_buttons = {
@@ -37,70 +33,74 @@ local formatter_buttons = {
     { _("Underline (with <u></u> tags)"), "underline_u_tag" },
 }
 
-function MarkdownExporter:editFormatStyle(drawer_style, label, touchmenu_instance)
-    local radio_buttons = {}
-    for _idx, v in ipairs(formatter_buttons) do
-        table.insert(radio_buttons, {
-            {
-                text = v[1],
-                checked = self.settings.formatting_options[drawer_style] == v[2],
-                provider = v[2],
-            },
-        })
-    end
-    UIManager:show(require("ui/widget/radiobuttonwidget"):new {
-        title_text = T(_("Formatting style for %1"), label),
-        width_factor = 0.8,
-        radio_buttons = radio_buttons,
-        callback = function(radio)
-            self.settings.formatting_options[drawer_style] = radio.provider
-            touchmenu_instance:updateItems()
-        end,
-    })
-end
-
-function MarkdownExporter:getMenuTable()
-    local menu = {
-        text = _("Markdown"),
-        checked_func = function() return self:isEnabled() end,
-        sub_item_table = {
-            {
-                text = _("Export to Markdown"),
-                checked_func = function() return self:isEnabled() end,
-                callback = function() self:toggleEnabled() end,
-            },
-            {
-                text = _("Export backlinks"),
-                checked_func = function() return self.settings.export_backlinks end,
-                callback = function() self.settings.export_backlinks = not self.settings.export_backlinks end,
-            },
-            {
-                text = _("Format highlights based on style"),
-                checked_func = function() return self.settings.highlight_formatting end,
-                callback = function() self.settings.highlight_formatting = not self.settings.highlight_formatting end,
-            },
-        },
-        hold_callback = function(touchmenu_instance)
-            self:toggleEnabled()
-            touchmenu_instance:updateItems()
-        end,
+function MarkdownExporter:genTargetSubMenu()
+    local sub_item_table = {
+        self:genExportToMenuItem(),
+        -- separator
+        self:genCloudStorageMenuItem(),
+        self:genDeleteFileMenuItem(),
+        -- separator
+        self:genToggleMenuItem(_("Export backlinks"), "export_backlinks", true),
+        -- separator
+        self:genToggleMenuItem(_("Format highlights based on style"), "highlight_formatting"),
     }
-
-    for _, entry in ipairs(ReaderHighlight.getHighlightStyles()) do
-        table.insert(menu.sub_item_table, {
+    for __, entry in ipairs(ReaderHighlight.getHighlightStyles()) do
+        local style_text, style = unpack(entry)
+        table.insert(sub_item_table, {
             text_func = function()
-                return entry[1] .. ": " .. md.formatters[self.settings.formatting_options[entry[2]]].label
+                local value = self.settings.formatting_options[style]
+                return T(_("%1: %2"), style_text, md.formatters[value] and md.formatters[value].label or value)
             end,
             enabled_func = function()
-                return self.settings.highlight_formatting
+                return self.settings.highlight_formatting and true or false
             end,
             keep_menu_open = true,
-            callback = function(touchmenu_instance)
-                self:editFormatStyle(entry[2], entry[1], touchmenu_instance)
+            callback = function(touchmenu_instance) -- default formats
+                UIManager:show(ButtonSelector:new{
+                    width_factor = 0.8,
+                    current_value = self.settings.formatting_options[style],
+                    values = formatter_buttons,
+                    callback = function(value)
+                        self.settings.formatting_options[style] = value
+                        touchmenu_instance:updateItems()
+                    end,
+                })
+            end,
+            hold_callback = function(touchmenu_instance) -- custom format
+                local value = self.settings.formatting_options[style]
+                local formatter_dialog
+                formatter_dialog = InputDialog:new{
+                    title = T("Format for: %1", style_text),
+                    input = md.formatters[value] and md.formatters[value].formatter or value,
+                    buttons = {
+                        {
+                            {
+                                text = _("Cancel"),
+                                id = "close",
+                                callback = function()
+                                    UIManager:close(formatter_dialog)
+                                end,
+                            },
+                            {
+                                text = _("Save"),
+                                callback = function()
+                                    local new_value = formatter_dialog:getInputValue()
+                                    if new_value and new_value ~= "" and new_value ~= value then
+                                        UIManager:close(formatter_dialog)
+                                        self.settings.formatting_options[style] = new_value
+                                        touchmenu_instance:updateItems()
+                                    end
+                                end,
+                            },
+                        },
+                    },
+                }
+                UIManager:show(formatter_dialog)
+                formatter_dialog:onShowKeyboard()
             end,
         })
     end
-    return menu
+    return sub_item_table
 end
 
 function MarkdownExporter:export(t)
