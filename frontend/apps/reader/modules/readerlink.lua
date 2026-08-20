@@ -1611,6 +1611,15 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
             end
             self._footnote_popup_discard_previous_close_callback = nil
         end,
+        navigate_footnote_callback = function(direction)
+            UIManager:close(popup)
+            if direction == "next" then
+                self:onSelectNextPageLink()
+            else
+                self:onSelectPrevPageLink()
+            end
+            self:onGotoSelectedPageLink()
+        end,
         dialog = self.dialog,
     }
     UIManager:show(popup)
