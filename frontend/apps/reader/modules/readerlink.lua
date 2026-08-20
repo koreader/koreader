@@ -1613,7 +1613,7 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
         end,
         navigate_footnote_callback = function(direction)
             UIManager:close(popup)
-            if direction == "next" then
+            if direction > 0 then
                 self:onSelectNextPageLink()
             else
                 self:onSelectPrevPageLink()

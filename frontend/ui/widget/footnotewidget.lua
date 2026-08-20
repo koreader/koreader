@@ -417,13 +417,13 @@ end
 
 function FootnoteWidget:onNextFootnote()
     if not self.navigate_footnote_callback then return false end
-    self.navigate_footnote_callback("next")
+    self.navigate_footnote_callback(1)
     return true
 end
 
 function FootnoteWidget:onPrevFootnote()
     if not self.navigate_footnote_callback then return false end
-    self.navigate_footnote_callback("prev")
+    self.navigate_footnote_callback(-1)
     return true
 end
 
