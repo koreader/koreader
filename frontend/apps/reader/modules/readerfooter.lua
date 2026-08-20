@@ -765,12 +765,14 @@ function ReaderFooter:updateFooterContainer()
         }
     end
 
-    if self.settings.align == "left" then
+    -- always center footer text with dynamic filler
+    local no_dynamic_filler = not (self.settings.dynamic_filler or self.settings.dynamic_filler2)
+    if no_dynamic_filler and self.settings.align == "left" then
         self.footer_container = LeftContainer:new{
             dimen = Geom:new{ w = 0, h = self.height },
             self.horizontal_group
         }
-    elseif self.settings.align == "right" then
+    elseif no_dynamic_filler and self.settings.align == "right" then
         self.footer_container = RightContainer:new{
             dimen = Geom:new{ w = 0, h = self.height },
             self.horizontal_group
@@ -2137,8 +2139,8 @@ function ReaderFooter:insertDynamicFillers(info, filler1_idx, filler2_idx)
 
     local filler_space = " "
     self.filler_space_width = self.filler_space_width or self:getTextWidth(filler_space)
-    local margin = (self.settings.disable_progress_bar or self.settings.align == "center")
-        and self.horizontal_margin or Screen:scaleBySize(self.settings.progress_margin_width)
+    local margin = self.settings.disable_progress_bar and self.horizontal_margin
+        or Screen:scaleBySize(self.settings.progress_margin_width)
     local max_width = math.floor(self._saved_screen_width - 2 * margin)
     local text_width = self:getTextWidth(table.concat(info))
 
