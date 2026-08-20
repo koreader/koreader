@@ -72,6 +72,19 @@ function ReaderBookmark:onGesture() end
 -- end
 
 function ReaderBookmark:addToMainMenu(menu_items)
+    local function genToggleMenuItem(text, setting, separator)
+        return {
+            text = text,
+            checked_func = function()
+                return G_reader_settings:isTrue(setting)
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse(setting)
+            end,
+            separator = separator,
+        }
+    end
+
     menu_items.bookmarks = {
         text = _("Bookmarks"),
         callback = function()
@@ -197,6 +210,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 end,
                 separator = true,
             },
+            -- separator
             {
                 text_func = function()
                     return T(_("Show in items: %1"), self:genShowInItemsMenuItems())
@@ -207,25 +221,9 @@ function ReaderBookmark:addToMainMenu(menu_items)
                     self:genShowInItemsMenuItems("note"),
                 },
             },
-            {
-                text = _("Show separator between items"),
-                checked_func = function()
-                    return G_reader_settings:isTrue("bookmarks_items_show_separator")
-                end,
-                callback = function()
-                    G_reader_settings:flipNilOrFalse("bookmarks_items_show_separator")
-                end,
-                separator = true,
-            },
-            {
-                text = _("Show highlight colors"),
-                checked_func = function()
-                    return G_reader_settings:isTrue("bookmarks_items_show_color")
-                end,
-                callback = function()
-                    G_reader_settings:flipNilOrFalse("bookmarks_items_show_color")
-                end,
-            },
+            genToggleMenuItem(_("Show separator between items"), "bookmarks_items_show_separator", true),
+            -- separator
+            genToggleMenuItem(_("Show highlight colors"), "bookmarks_items_show_color"),
             {
                 text = _("Also show default highlight color"),
                 enabled_func = function()
@@ -240,6 +238,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 end,
                 separator = true,
             },
+            -- separator
             {
                 text_func = function()
                     return T(_("Sort by: %1"), self:genSortByMenuItems())
@@ -248,36 +247,14 @@ function ReaderBookmark:addToMainMenu(menu_items)
                     self:genSortByMenuItems("page"),
                     self:genSortByMenuItems("date", true),
                     -- separator
-                    {
-                        text = _("Reverse sorting"),
-                        checked_func = function()
-                            return G_reader_settings:isTrue("bookmarks_items_reverse_sorting")
-                        end,
-                        callback = function()
-                            G_reader_settings:flipNilOrFalse("bookmarks_items_reverse_sorting")
-                        end,
-                    },
+                    genToggleMenuItem(_("Reverse sorting"), "bookmarks_items_reverse_sorting"),
                 },
             },
             -- page 2
-            {
-                text = _("Export annotations on book closing"),
-                checked_func = function()
-                    return G_reader_settings:isTrue("annotations_export_on_closing")
-                end,
-                callback = function()
-                    G_reader_settings:flipNilOrFalse("annotations_export_on_closing")
-                end,
-            },
-            {
-                text = _("Keep all annotations on import"),
-                checked_func = function()
-                    return G_reader_settings:isTrue("annotations_export_keep_all_on_import")
-                end,
-                callback = function()
-                    G_reader_settings:flipNilOrFalse("annotations_export_keep_all_on_import")
-                end,
-            },
+            genToggleMenuItem(_("Prompt to add note to page bookmark"), "bookmark_prompt", true),
+            -- separator
+            genToggleMenuItem(_("Export annotations on book closing"), "annotations_export_on_closing"),
+            genToggleMenuItem(_("Keep all annotations on import"), "annotations_export_keep_all_on_import"),
             {
                 text_func = function()
                     return T(_("Export / import folder: %1"),
@@ -411,6 +388,9 @@ function ReaderBookmark:toggleBookmark(pageno)
             chapter = chapter,
         }
         index = self.ui.annotation:addItem(item)
+        if G_reader_settings:isTrue("bookmark_prompt") then
+            self:setBookmarkNote(index)
+        end
     end
     self.ui:handleEvent(Event:new("AnnotationsModified", { item, index_modified = index }))
 end
@@ -487,7 +467,9 @@ end
 function ReaderBookmark:deleteItemNote(item)
     local index = self:getBookmarkItemIndex(item)
     self.ui.annotation.annotations[index].note = nil
-    self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = 1, nb_notes_added = -1 }))
+    if item.type == "note" then
+        self.ui:handleEvent(Event:new("AnnotationsModified", { item, nb_highlights_added = 1, nb_notes_added = -1 }))
+    end
 end
 
 -- navigation
@@ -677,6 +659,8 @@ function ReaderBookmark:onShowBookmark()
     self.is_reverse_sorting = G_reader_settings:isTrue("bookmarks_items_reverse_sorting")
     local bookmarks_items_show_color = G_reader_settings:isTrue("bookmarks_items_show_color")
     local bookmarks_items_show_color_default = G_reader_settings:isTrue("bookmarks_items_show_color_default")
+    local color_default = bookmarks_items_show_color and bookmarks_items_show_color_default
+        and self.ui.highlight:getHighlightColor(self.view.highlight.saved_color)
 
     -- build up item_table
     local item_table = {}
@@ -696,7 +680,7 @@ function ReaderBookmark:onShowBookmark()
             if bookmarks_items_show_color and item.drawer then
                 if item.color == self.view.highlight.saved_color or item.color == nil then
                     if bookmarks_items_show_color_default then
-                        item.text_bgcolor = self.ui.highlight:getHighlightColor(self.view.highlight.saved_color)
+                        item.text_bgcolor = color_default
                     end
                 else
                     item.text_bgcolor = self.ui.highlight:getHighlightColor(item.color)
@@ -874,7 +858,7 @@ function ReaderBookmark:onShowBookmark()
                             ok_callback = function()
                                 UIManager:close(bm_dialog)
                                 for _, v in ipairs(item_table) do
-                                    if v.dim then
+                                    if v.dim and v.note then
                                         bookmark:deleteItemNote(v)
                                     end
                                 end
@@ -1001,8 +985,8 @@ function ReaderBookmark:onShowBookmark()
                         end,
                     },
                 })
+                table.insert(buttons, {}) -- separator
             end
-            table.insert(buttons, {}) -- separator
             table.insert(buttons, {
                 {
                     text = _("Current page"),
@@ -1414,6 +1398,7 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note, ca
                 },
                 {
                     text = _("Paste"), -- insert highlighted text
+                    enabled = annotation.text ~= nil,
                     callback = function()
                         input_dialog:addTextToInput(annotation.text)
                     end,
@@ -1423,19 +1408,20 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note, ca
                     is_enter_default = true,
                     callback = function()
                         local value = input_dialog:getInputText()
-                        self.ui.highlight:writePdfAnnotation("content", annotation, value)
-                        if value == "" then -- blank input deletes note
-                            value = nil
-                        end
+                        value = value ~= "" and value or nil -- blank input deletes note
                         annotation.note = value
-                        local type_after = self.getBookmarkType(annotation)
-                        if type_before ~= type_after then
-                            if type_before == "highlight" then
-                                self.ui:handleEvent(Event:new("AnnotationsModified",
-                                    { annotation, nb_highlights_added = -1, nb_notes_added = 1 }))
-                            else
-                                self.ui:handleEvent(Event:new("AnnotationsModified",
-                                    { annotation, nb_highlights_added = 1, nb_notes_added = -1 }))
+                        local type_after
+                        if type_before ~= "bookmark" then
+                            self.ui.highlight:writePdfAnnotation("content", annotation, value or "")
+                            type_after = self.getBookmarkType(annotation)
+                            if type_before ~= type_after then
+                                if type_before == "highlight" then
+                                    self.ui:handleEvent(Event:new("AnnotationsModified",
+                                        { annotation, nb_highlights_added = -1, nb_notes_added = 1 }))
+                                else -- "note"
+                                    self.ui:handleEvent(Event:new("AnnotationsModified",
+                                        { annotation, nb_highlights_added = 1, nb_notes_added = -1 }))
+                                end
                             end
                         end
                         UIManager:close(input_dialog)
@@ -1444,7 +1430,9 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note, ca
                             item.type = type_after
                             item.text = self:getBookmarkItemText(item)
                         end
-                        caller_callback()
+                        if caller_callback then
+                            caller_callback()
+                        end
                     end,
                 },
             }
