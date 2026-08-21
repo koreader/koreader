@@ -1,8 +1,6 @@
 [submodule "koreader-base"]
 	path = base
-	# NOTE: the bookeen target needs the fork: upstream koreader-base has no
-	#       bookeen framebuffer/input support at all.
-	url = https://github.com/banzai200/koreader-base.git
+	url = https://github.com/koreader/koreader-base.git
 [submodule "platform/android/luajit-launcher"]
 	path = platform/android/luajit-launcher
 	url = https://github.com/koreader/android-luajit-launcher.git
