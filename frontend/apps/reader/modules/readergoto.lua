@@ -22,6 +22,15 @@ function ReaderGoto:addToMainMenu(menu_items)
             self:onShowGotoDialog()
         end,
     }
+    menu_items.go_to_furthest_read = {
+        text = _("Go to furthest read position"),
+        enabled_func = function()
+            return self.ui.rolling ~= nil or self.ui.paging ~= nil
+        end,
+        callback = function()
+            self:onGoToFurthestReadPage()
+        end,
+    }
     menu_items.skim_to = {
         text = _("Skim document"),
         callback = function()
@@ -325,6 +334,24 @@ function ReaderGoto:getPinnedPageNumber()
             return self.document:getPageFromXPointer(pn_or_xp)
         end
     end
+end
+
+function ReaderGoto:onGoToFurthestReadPage()
+    if self.ui.rolling then
+        local furthest_xp = self.ui.rolling.furthest_xpointer
+        if not furthest_xp then return true end
+        local cmp = self.ui.document:compareXPointers(self.ui.document:getXPointer(), furthest_xp)
+        if cmp ~= 1 then return true end
+        self.ui.link:addCurrentLocationToStack()
+        self.ui.rolling:onGotoXPointer(furthest_xp)
+    elseif self.ui.paging then
+        local furthest_page = self.ui.paging.furthest_page
+        if not furthest_page then return true end
+        if self.ui.paging.current_page >= furthest_page then return true end
+        self.ui.link:addCurrentLocationToStack()
+        self.ui.paging:onGotoPage(furthest_page)
+    end
+    return true
 end
 
 return ReaderGoto
