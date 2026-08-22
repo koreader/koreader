@@ -5,6 +5,10 @@ Unlike `httpclient.lua` (Turbo's I/O loop), this works without Turbo: it
 drives LuaSocket/LuaSec sockets in non-blocking mode, yielding to a
 `socket.select`-based scheduler so one Lua state can interleave many
 downloads.
+
+Sources:
+- The coroutine scheduler is based on <https://www.lua.org/pil/9.4.html>
+- The HTTP request/response handling (request lines, header parsing, redirects, chunked and content-length body reading) is adapted from LuaSocket (http.lua / the LTN12/http client).
 ]]
 
 local logger = require("logger")
