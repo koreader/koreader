@@ -23,6 +23,9 @@ local HttpAsync = {}
 local MAX_REDIRECTS = 5
 local DEFAULT_CONCURRENCY = 10
 
+-- Yielded by a fetch coroutine to signal completion (followed by item, success, content). Any other first yield value is a socket + "r"/"w" mode.
+local DONE = "DONE"
+
 --- Non-blocking receive; yields (socket, "r"/"w") until data/error/EOF.
 -- LuaSocket's receive(pattern, prefix) prepends `prefix` to the buffer it
 -- reads into, so any partial data already consumed from the socket on a
@@ -265,6 +268,13 @@ end
 -- The scheduler runs up to `opts.concurrency` fetches at once, resuming each
 -- coroutine whenever `socket.select` says its socket is ready.
 --
+-- Yield contract: a fetch coroutine either yields a socket object together
+-- with a "r"/"w" mode (meaning "I'm blocked waiting on this socket, resume me
+-- when it's ready"), or yields the sentinel `DONE` followed by
+-- (item, success, content) to signal completion. The scheduler never sees the
+-- downloaded content as a yield value, so a response body cannot be mistaken
+-- for the completion sentinel.
+--
 -- @param tasks list of arbitrary task values
 -- @param opts table:
 --   concurrency  number  max simultaneous fetches (default 10)
@@ -302,7 +312,7 @@ function HttpAsync.fetch_many(tasks, opts)
             local item = table.remove(pending, 1)
             local co = coroutine.create(function()
                 local ok, content = fetch(get_url(item.task))
-                coroutine.yield("RESULT", item, ok, content)
+                coroutine.yield(DONE, item, ok, content)
             end)
             table.insert(active, co)
         end
@@ -350,9 +360,9 @@ function HttpAsync.fetch_many(tasks, opts)
                     logger.warn("httpasync coroutine error:", yield_type)
                     completed = completed + 1
                 elseif coroutine.status(co) == "dead" then
-                    -- Finished without a RESULT yield; treat as done.
+                    -- Finished without a DONE yield; treat as done.
                     completed = completed + 1
-                elseif yield_type == "RESULT" then
+                elseif yield_type == DONE then
                     completed = completed + 1
                     local item = yield_arg2
                     if success and content then
