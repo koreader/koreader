@@ -96,19 +96,19 @@ function WebDavApi.listFolder(address, user, pass, folder_path, include_folders)
     local show_unsupported = G_reader_settings:isTrue("show_unsupported")
     local item_list = {}
     -- iterate through the <d:response> tags, each containing an entry
-    for item in res:gmatch("<[^:]*:response[^>]*>(.-)</[^:]*:response>") do
+    for item in res:gmatch("<[^>]*response[^>]*>(.-)</[^>]*response>") do
         --logger.dbg("WebDav catalog item=", item)
         -- <d:href> is the path and filename of the entry.
-        local item_fullpath = util.urlDecode(item:match("<[^:]*:href[^>]*>(.*)</[^:]*:href>"))
+        local item_fullpath = util.urlDecode(item:match("<[^>]*href[^>]*>(.*)</[^>]*href>"))
         local item_name = ffiUtil.basename(util.htmlEntitiesToUtf8(item_fullpath))
-        local is_not_collection = item:find("<[^:]*:resourcetype%s*/>") or
-                                  item:find("<[^:]*:resourcetype>%s*</[^:]*:resourcetype>")
+        local is_not_collection = item:find("<[^>]*resourcetype%s*/>") or
+                                  item:find("<[^>]*resourcetype>%s*</[^>]*resourcetype>")
         if is_not_collection then
             if show_unsupported or DocumentRegistry:hasProvider(item_name) then
-                local file_size = tonumber(item:match("<[^:]*:getcontentlength[^>]*>(%d+)</[^:]*:getcontentlength>"))
+                local file_size = tonumber(item:match("<[^>]*getcontentlength[^>]*>(%d+)</[^>]*getcontentlength>"))
                 local modification, suffix, mandatory
                 if include_folders then
-                    local item_modified = item:match("<[^:]*:getlastmodified[^>]*>(.*)</[^:]*:getlastmodified>")
+                    local item_modified = item:match("<[^>]*getlastmodified[^>]*>(.*)</[^>]*getlastmodified>")
                     modification = item_modified and datetime.stringRFC1123ToSeconds(item_modified)
                     suffix = util.getFileNameSuffix(item_name)
                     mandatory = util.getFriendlySize(file_size)
@@ -123,7 +123,7 @@ function WebDavApi.listFolder(address, user, pass, folder_path, include_folders)
                     mandatory = mandatory,
                 })
             end
-        elseif item:find("<[^:]*:collection[^<]*/>") or item:find("<[^:]*:collection>%s*</[^:]*:collection>") then
+        elseif item:find("<[^>]*collection[^<]*/>") or item:find("<[^>]*collection>%s*</[^>]*collection>") then
             if include_folders then
                 local is_not_current_dir = WebDavApi.trim_slashes(item_fullpath) ~= webdav_url_path
                 if is_not_current_dir then
