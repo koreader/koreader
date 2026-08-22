@@ -59,6 +59,7 @@ local function populateEventMappings()
 
         table.insert(event_keys, { "FocusLeft",  { { "Left" },  event = "FocusMove", args = {-1, 0} } })
 
+        table.insert(event_keys, { "Home",           { { "Home" },         event = "Home" } })
         -- Advanced features: more event handlers can be enabled via settings.reader.lua in a similar manner
         table.insert(event_keys, { "HoldContext",    { { "ContextMenu" },  event = "Hold" } })
         table.insert(event_keys, { "HoldShift",      { { "Shift", "Press" }, event = "Hold" } })

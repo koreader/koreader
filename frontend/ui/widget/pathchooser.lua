@@ -53,6 +53,16 @@ function PathChooser:init()
     FileChooser.init(self)
 end
 
+function PathChooser:onHome()
+    UIManager:setSuspendRepaints(true)
+    self:onClose()
+    local Event = require("ui/event")
+    UIManager:nextTick(function()
+        UIManager:sendEvent(Event:new("Home"))
+    end)
+    return true
+end
+
 function PathChooser:onMenuSelect(item)
     local path = item.path
     if path:sub(-2, -1) == "/." then -- with show_current_dir_for_hold
