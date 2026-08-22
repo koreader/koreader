@@ -3028,6 +3028,14 @@ local dictionaries = {
         url = "https://www.reader-dict.com/file/tr/dict-tr-tr.zip"
     },
     {
+        name = "reader.dict Ukranian",
+        lang_in = "ukr",
+        lang_out = "ukr",
+        entries = 193778,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/uk/dict-uk-uk.zip"
+    },
+    {
         name = "reader.dict Chinese",
         lang_in = "zho",
         lang_out = "zho",
