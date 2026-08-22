@@ -2863,7 +2863,7 @@ local dictionaries = {
         name = "reader.dict Catalan",
         lang_in = "cat",
         lang_out = "cat",
-        entries = 413187,
+        entries = 421834,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/ca/dict-ca-ca.zip"
     },
@@ -2871,7 +2871,7 @@ local dictionaries = {
         name = "reader.dict Danish",
         lang_in = "dan",
         lang_out = "dan",
-        entries = 12047,
+        entries = 34941,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/da/dict-da-da.zip"
     },
@@ -2879,7 +2879,7 @@ local dictionaries = {
         name = "reader.dict German",
         lang_in = "deu",
         lang_out = "deu",
-        entries = 926615,
+        entries = 998869,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/de/dict-de-de.zip"
     },
@@ -2887,7 +2887,7 @@ local dictionaries = {
         name = "reader.dict Dutch",
         lang_in = "nld",
         lang_out = "nld",
-        entries = 579600,
+        entries = 589195,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/nl/dict-nl-nl.zip"
     },
@@ -2895,7 +2895,7 @@ local dictionaries = {
         name = "reader.dict Greek",
         lang_in = "ell",
         lang_out = "ell",
-        entries = 369173,
+        entries = 413661,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/el/dict-el-el.zip"
     },
@@ -2903,7 +2903,7 @@ local dictionaries = {
         name = "reader.dict English",
         lang_in = "eng",
         lang_out = "eng",
-        entries = 1366611,
+        entries = 1470678,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/en/dict-en-en.zip"
     },
@@ -2911,7 +2911,7 @@ local dictionaries = {
         name = "reader.dict Esperanto",
         lang_in = "epo",
         lang_out = "epo",
-        entries = 12761,
+        entries = 378828,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/eo/dict-eo-eo.zip"
     },
@@ -2927,7 +2927,7 @@ local dictionaries = {
         name = "reader.dict Spanish",
         lang_in = "spa",
         lang_out = "spa",
-        entries = 565838,
+        entries = 933377,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/es/dict-es-es.zip"
     },
@@ -2935,7 +2935,7 @@ local dictionaries = {
         name = "reader.dict French",
         lang_in = "fra",
         lang_out = "fra",
-        entries = 2137109,
+        entries = 2060373,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/fr/dict-fr-fr.zip"
     },
@@ -2943,7 +2943,7 @@ local dictionaries = {
         name = "reader.dict Italian",
         lang_in = "ita",
         lang_out = "ita",
-        entries = 294449,
+        entries = 329201,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/it/dict-it-it.zip"
     },
@@ -2959,7 +2959,7 @@ local dictionaries = {
         name = "reader.dict Japanese",
         lang_in = "jpn",
         lang_out = "jpn",
-        entries = 278586,
+        entries = 323373,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/ja/dict-ja-ja.zip"
     },
@@ -2975,7 +2975,7 @@ local dictionaries = {
         name = "reader.dict Lithuanian",
         lang_in = "lit",
         lang_out = "lit",
-        entries = 662554,
+        entries = 654958,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/lt/dict-lt-lt.zip"
     },
@@ -2983,7 +2983,7 @@ local dictionaries = {
         name = "reader.dict Norwegian",
         lang_in = "nor",
         lang_out = "nor",
-        entries = 19410,
+        entries = 64991,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/no/dict-no-no.zip"
     },
@@ -2991,7 +2991,7 @@ local dictionaries = {
         name = "reader.dict Portuguese",
         lang_in = "por",
         lang_out = "por",
-        entries = 379474,
+        entries = 547983,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/pt/dict-pt-pt.zip"
     },
@@ -2999,7 +2999,7 @@ local dictionaries = {
         name = "reader.dict Romanian",
         lang_in = "rom",
         lang_out = "rom",
-        entries = 98645,
+        entries = 380513,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/ro/dict-ro-ro.zip"
     },
@@ -3007,7 +3007,7 @@ local dictionaries = {
         name = "reader.dict Russian",
         lang_in = "rus",
         lang_out = "rus",
-        entries = 445563,
+        entries = 2882238,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/ru/dict-ru-ru.zip"
     },
@@ -3015,7 +3015,7 @@ local dictionaries = {
         name = "reader.dict Swedish",
         lang_in = "swe",
         lang_out = "swe",
-        entries =  443028,
+        entries =  537111,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/sv/dict-sv-sv.zip"
     },
@@ -3023,7 +3023,7 @@ local dictionaries = {
         name = "reader.dict Turkish",
         lang_in = "tur",
         lang_out = "tur",
-        entries =  751227,
+        entries =  1263984,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/tr/dict-tr-tr.zip"
     },
@@ -3039,7 +3039,7 @@ local dictionaries = {
         name = "reader.dict Chinese",
         lang_in = "zho",
         lang_out = "zho",
-        entries = 48472,
+        entries = 119123,
         license = "MIT https://github.com/reader-dict/monolingual",
         url = "https://www.reader-dict.com/file/zh/dict-zh-zh.zip"
     },
