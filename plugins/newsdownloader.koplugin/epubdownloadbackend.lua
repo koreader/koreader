@@ -9,6 +9,7 @@ local ltn12 = require("ltn12")
 local socket = require("socket")
 local socket_url = require("socket.url")
 local socketutil = require("socketutil")
+local httpasync = require("httpasync")
 local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
@@ -394,6 +395,9 @@ local ext_to_mimetype = {
     ttf = "application/truetype",
     woff = "application/font-woff",
 }
+
+local MAX_CONCURRENT_DOWNLOADS = 10
+
 -- Create an epub file (with possibly images)
 function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element, block_element)
     logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ")")
@@ -670,51 +674,74 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     -- ----------------------------------------------------------------
     -- OEBPS/images/*
     if include_images then
-        local nb_images = #images
         local before_images_time = time.now()
         local time_prev = before_images_time
+        local failed_images = {}
+
+        local tasks = {}
         for inum, img in ipairs(images) do
-            -- Process can be interrupted every second between image downloads
-            -- by tapping while the InfoMessage is displayed
-            -- We use the fast_refresh option from image #2 for a quicker download
-            local go_on
-            if time.to_ms(time.since(time_prev)) > 1000 then
-                time_prev = time.now()
-                go_on = UI:info((message and message ~= "" and message .. "\n\n" or "") .. T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2)
-                if not go_on then
-                    cancelled = true
-                    break
+            table.insert(tasks, {inum = inum, img = img})
+        end
+
+        local download_completed = httpasync.fetch_many(tasks, {
+            concurrency = MAX_CONCURRENT_DOWNLOADS,
+            get_url = function(task)
+                local src = task.img.src
+                if use_img_2x and task.img.src2x then
+                    src = task.img.src2x
                 end
-            else
-                UI:info((message and message ~= "" and message .. "\n\n" or "") .. T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2, true)
-            end
-            local src = img.src
-            if use_img_2x and img.src2x then
-                src = img.src2x
-            end
-            logger.dbg("Getting img ", src)
-            local success, __, content = getUrlContent(src)
-            -- success, _, content = getUrlContent(src..".unexistant") -- to simulate failure
-            if success then
-                logger.dbg("success, size:", #content)
-            else
-                logger.info("failed fetching:", src)
-            end
-            if success then
+                return src
+            end,
+            fetch = function(src)
+                logger.dbg("Getting img async:", src)
+                return httpasync.fetch_url(src)
+            end,
+            on_success = function(task, content)
                 -- Images do not need to be compressed, so spare some cpu cycles
                 local no_compression = true
-                if img.mimetype == "image/svg+xml" then -- except for SVG images (which are XML text)
+                if task.img.mimetype == "image/svg+xml" then -- except for SVG images (which are XML text)
                     no_compression = false
                 end
-                epub:addFileFromMemory("OEBPS/"..img.imgpath, content, no_compression, mtime)
-            else
-                go_on = UI:confirm(T(_("Downloading image %1 failed. Continue anyway?"), inum), _("Stop"), _("Continue"))
-                if not go_on then
-                    cancelled = true
-                    break
+                epub:addFileFromMemory("OEBPS/"..task.img.imgpath, content, no_compression, mtime)
+            end,
+            on_failure = function(task, err)
+                logger.info("failed fetching:", task.img.src, err)
+                table.insert(failed_images, task.inum)
+            end,
+            on_progress = function(completed, total)
+                -- Process can be interrupted every second by tapping while the
+                -- InfoMessage is displayed.
+                if time.to_ms(time.since(time_prev)) > 1000 then
+                    time_prev = time.now()
+                    local errors = #failed_images
+                    local go_on
+                    local prefix = message and message ~= "" and message .. "\n\n" or ""
+                    if errors > 0 then
+                        go_on = UI:info(prefix .. T(_("Retrieving images… %1 / %2 completed (%3 errors)"), completed, total, errors), completed >= 1)
+                    else
+                        go_on = UI:info(prefix .. T(_("Retrieving images… %1 / %2 completed"), completed, total), completed >= 1)
+                    end
+
+                    if not go_on then
+                        return false -- cancel
+                    end
                 end
+                return true
+            end,
+        })
+
+        if not download_completed then
+            cancelled = true
+        end
+
+        -- Report any failures once, rather than interrupting on each one.
+        if not cancelled and #failed_images > 0 then
+            local go_on = UI:confirm(T(_("%1 images failed to download. Continue creating the EPUB?"), #failed_images), _("Stop"), _("Continue"))
+            if not go_on then
+                cancelled = true
             end
         end
+
         logger.dbg("Image download time for:", page_htmltitle, time.to_ms(time.since(before_images_time)), "ms")
     end
 
