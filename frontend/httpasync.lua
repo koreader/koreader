@@ -20,14 +20,19 @@ local MAX_REDIRECTS = 5
 local DEFAULT_CONCURRENCY = 10
 
 --- Non-blocking receive; yields (socket, "r"/"w") until data/error/EOF.
--- Partial data returned with "timeout"/"wantread" is already consumed from
--- the socket buffer, so carry it forward via the `receive` prefix argument.
+-- LuaSocket's receive(pattern, prefix) prepends `prefix` to the buffer it
+-- reads into, so any partial data already consumed from the socket on a
+-- previous (timed-out) call must be passed back as the prefix on the next
+-- call. We accumulate that partial data in `accumulated` and always prepend
+-- it, so a resumed receive continues exactly where it left off instead of
+-- discarding bytes already pulled from the socket.
 local function async_receive(sock, pattern)
-    local acc = ""
+    local accumulated = ""
     while true do
-        local res, err, partial = sock:receive(pattern, acc)
+        local res, err, partial = sock:receive(pattern, accumulated)
         if err == "timeout" or err == "wantread" then
-            acc = partial or acc
+            -- Carry forward the partial data already consumed from the socket.
+            accumulated = partial or accumulated
             coroutine.yield(sock, "r")
         elseif err == "wantwrite" then
             coroutine.yield(sock, "w")
