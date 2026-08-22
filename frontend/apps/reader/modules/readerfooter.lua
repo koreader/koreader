@@ -240,11 +240,41 @@ footerTextGeneratorMap = {
             return prefix .. " " .. clock
         end
     end,
+
     page_progress = function(footer)
         if footer.ui.pagemap and footer.ui.pagemap:wantsPageLabels() then
             -- (Page labels might not be numbers)
-            return ("%s / %s"):format(footer.ui.pagemap:getCurrentPageLabel(true),
-                                      footer.ui.pagemap:getLastPageLabel(true))
+            if footer.ui.document:hasHiddenFlows() then
+                local flow = footer.ui.document:getPageFlow(footer.pageno)
+                local page = footer.ui.document:getPageNumberInFlow(footer.pageno)
+                local pages = footer.ui.document:getTotalPagesInFlow(flow)
+                local current_page_label = footer.ui.pagemap:getCurrentPageLabel(true)
+
+                local total_pages = footer.ui.document:getPageCount()
+                local flows = footer.ui.document.flows
+
+                -- the "last page" displayed should be the actual last page of the document
+                -- unless it is hidden by a flow, in which case it should be the last page not in a flow
+                local last_flow = flows[#flows]
+                local last_flow_start = last_flow[1]
+                local last_flow_end = last_flow[1] + last_flow[2]
+                local last_page_label
+                if last_flow_end >= total_pages then
+                    local last_linear_page_xpointer = footer.ui.document:getPageXPointer(last_flow_start - 1)
+                    last_page_label = footer.ui.pagemap:getXPointerPageLabel(last_linear_page_xpointer, true)
+                else
+                    last_page_label = footer.ui.pagemap:getLastPageLabel(true)
+                end
+
+                if flow == 0 then
+                    return ("%s // %s"):format(current_page_label, last_page_label)
+                else
+                    return ("%s [%d / %d]%d"):format(current_page_label, page, pages, flow)
+                end
+            else
+                return ("%s / %s"):format(footer.ui.pagemap:getCurrentPageLabel(true),
+                                          footer.ui.pagemap:getLastPageLabel(true))
+            end
         elseif footer.ui.document:hasHiddenFlows() then
             -- i.e., if we are hiding non-linear fragments and there's anything to hide,
             local flow = footer.ui.document:getPageFlow(footer.pageno)
