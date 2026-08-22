@@ -2265,7 +2265,8 @@ function ReaderHighlight:writePdfAnnotation(action, item, content)
     logger.dbg("write to pdf document", action, item)
     local function doAction(action_, page_, item_, content_)
         if action_ == "save" then
-            self.document:saveHighlight(page_, item_, self:getHighlightColor(item_.color))
+            local color = (item_.color and item_.color ~= "gray") and self:getHighlightColor(item_.color) or nil
+            self.document:saveHighlight(page_, item_, color)
         elseif action_ == "delete" then
             self.document:deleteHighlight(page_, item_)
         elseif action_ == "content" then
