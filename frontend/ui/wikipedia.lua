@@ -1598,7 +1598,7 @@ abbr.abbr {
             table.insert(tasks, {inum = inum, img = img})
         end
 
-        local cancelled_download = httpasync.fetch_many(tasks, {
+        local download_completed = httpasync.fetch_many(tasks, {
             get_url = function(task)
                 local src = task.img.src
                 if use_img_2x and task.img.src2x then
@@ -1651,7 +1651,7 @@ abbr.abbr {
             end,
         })
 
-        if cancelled_download then
+        if not download_completed then
             cancelled = true
         end
 

@@ -692,7 +692,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
             table.insert(tasks, {inum = inum, img = img})
         end
 
-        local cancelled_download = httpasync.fetch_many(tasks, {
+        local download_completed = httpasync.fetch_many(tasks, {
             concurrency = MAX_CONCURRENT_DOWNLOADS,
             get_url = function(task)
                 local src = task.img.src
@@ -739,7 +739,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
             end,
         })
 
-        if cancelled_download then
+        if not download_completed then
             cancelled = true
         end
 

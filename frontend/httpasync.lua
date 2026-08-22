@@ -283,7 +283,7 @@ end
 --   on_success(task, content) called for each successful download
 --   on_failure(task, err)     called for each failed download
 --   on_progress(completed, total) -> bool  called periodically; return false to cancel
--- @return true if cancelled, false if all tasks completed
+-- @return true if all tasks completed, false if cancelled
 function HttpAsync.fetch_many(tasks, opts)
     opts = opts or {}
     local concurrency = opts.concurrency or DEFAULT_CONCURRENCY
@@ -387,7 +387,8 @@ function HttpAsync.fetch_many(tasks, opts)
         end
     end
 
-    return cancelled
+    -- true = all tasks completed (success), false = cancelled by on_progress.
+    return not cancelled
 end
 
 return HttpAsync
