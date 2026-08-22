@@ -164,6 +164,7 @@ local Input = {
 
     timer_callbacks = nil, -- instance-specific table, because the object may get destroyed & recreated at runtime
     disable_double_tap = true,
+    allow_concurrent_taps = false,
     tap_interval_override = nil,
 
     -- keyboard state:

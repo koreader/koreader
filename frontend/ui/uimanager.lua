@@ -186,6 +186,8 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     widget:handleEvent(Event:new("Show"))
     -- check if this widget disables double tap gesture
     Input.disable_double_tap = widget.disable_double_tap ~= false
+    -- a widget may handle concurrent contacts as independent taps
+    Input.allow_concurrent_taps = widget.allow_concurrent_taps == true
     -- a widget may override tap interval (when it doesn't, nil restores the default)
     Input.tap_interval_override = widget.tap_interval_override
     -- If input was disabled, re-enable it while this widget is shown so we can actually interact with it.
@@ -225,6 +227,7 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     widget:handleEvent(Event:new("CloseWidget"))
     -- Make sure it's disabled by default and check if there are any widgets that want it disabled or enabled.
     Input.disable_double_tap = true
+    Input.allow_concurrent_taps = false
     local requested_disable_double_tap = nil
     local is_covered = false
     local start_idx = 1
@@ -265,8 +268,10 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
         Input.disable_double_tap = requested_disable_double_tap
     end
     if self._window_stack[1] then
-        -- set tap interval override to what the topmost widget specifies (when it doesn't, nil restores the default)
-        Input.tap_interval_override = self._window_stack[#self._window_stack].widget.tap_interval_override
+        local top_widget = self._window_stack[#self._window_stack].widget
+        -- set input overrides to what the topmost widget specifies
+        Input.allow_concurrent_taps = top_widget.allow_concurrent_taps == true
+        Input.tap_interval_override = top_widget.tap_interval_override
     end
     if dirty and not widget.invisible then
         -- schedule the remaining visible (i.e., uncovered) widgets to be painted
