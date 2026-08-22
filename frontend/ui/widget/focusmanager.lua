@@ -6,6 +6,7 @@ local UIManager = require("ui/uimanager")
 local bit = require("bit")
 local logger = require("logger")
 local util = require("util")
+local Screen = Device.screen
 --[[
 Wrapper Widget that manages focus for a whole dialog
 
@@ -302,16 +303,47 @@ function FocusManager:onFocusMove(args)
         if self.layout[self.selected.y][self.selected.x] ~= current_item
         or not self.layout[self.selected.y][self.selected.x].is_inactive then
             -- we found a different object to focus
+            local next_item = self.layout[self.selected.y][self.selected.x]
             current_item:handleEvent(Event:new("Unfocus"))
-            self.layout[self.selected.y][self.selected.x]:handleEvent(Event:new("Focus"))
-            -- Trigger a fast repaint, this does not count toward a flashing eink refresh
-            -- NOTE: Ideally, we'd only have to repaint the specific subwidget we're highlighting,
-            --       but we may not know its exact coordinates, so, redraw the parent widget instead.
-            UIManager:setDirty(self.show_parent or self, "fast")
+            next_item:handleEvent(Event:new("Focus"))
+            self:_repaintFocusChange(current_item, next_item)
             break
         end
     end
     return true
+end
+
+-- An item that knows where its focus indicator is, and can paint it on its own.
+local function canFastRepaint(item)
+    return item.getFocusIndicatorRegion and item.repaintFocusIndicator
+end
+
+--- Repaint after focus moved from one item to another.
+--- When both items can paint their focus indicator on their own, only those strips are
+--- painted and refreshed; otherwise the parent is repainted as before.
+--- A fast repaint does not count toward a flashing eink refresh.
+function FocusManager:_repaintFocusChange(prev_item, next_item)
+    local parent = self.show_parent or self
+    local prev_bar, next_bar
+    -- Painting outside UIManager's paint pass skips Screen:beforePaint(), which is
+    -- where forced HW rotation gets asserted; leave those screens the stock path.
+    if not Screen.forced_rotation
+            and canFastRepaint(prev_item) and canFastRepaint(next_item)
+            and UIManager:getTopmostVisibleWidget() == parent then
+        prev_bar = prev_item:getFocusIndicatorRegion()
+        next_bar = next_item:getFocusIndicatorRegion()
+    end
+    if prev_bar and next_bar
+            and prev_item:repaintFocusIndicator(Screen.bb) and next_item:repaintFocusIndicator(Screen.bb) then
+        -- Refresh each strip on its own, so nothing between the two items is touched.
+        UIManager:setDirty(nil, "fast", prev_bar)
+        UIManager:setDirty(nil, "fast", next_bar)
+        return
+    end
+    -- The widget has to be repainted whole. We don't narrow the refresh here: a focus
+    -- border may grow outside the item's dimen (FrameContainer widens its own on focus),
+    -- and we have no way to tell how far.
+    UIManager:setDirty(parent, "fast")
 end
 
 function FocusManager:onPhysicalKeyboardConnected()
@@ -380,6 +412,8 @@ function FocusManager:moveFocusTo(x, y, focus_flags)
     if self.layout[y] then
         target_item = self.layout[y][x]
     end
+    -- The item we sent Unfocus to, when we could pin it down to a single one.
+    local unfocused_item
     if target_item then
         logger.dbg("FocusManager: Move focus position to:", x, ",", y)
         self.selected.x = x
@@ -398,6 +432,7 @@ function FocusManager:moveFocusTo(x, y, focus_flags)
                 if current_item and current_item ~= target_item then
                     -- This is the absolute best-case scenario, when self.layout's integrity is sound
                     current_item:handleEvent(Event:new("Unfocus"))
+                    unfocused_item = current_item
                 else
                     -- Couldn't find the current item, or it matches the target_item: blast the whole widget container,
                     -- just in case we still have a different, older widget visually focused.
@@ -407,7 +442,12 @@ function FocusManager:moveFocusTo(x, y, focus_flags)
             end
             if bit.band(focus_flags, FocusManager.NOT_FOCUS) ~= FocusManager.NOT_FOCUS then
                 target_item:handleEvent(Event:new("Focus"))
-                UIManager:setDirty(self.show_parent or self, "fast")
+                if unfocused_item then
+                    self:_repaintFocusChange(unfocused_item, target_item)
+                else
+                    -- We blasted the whole container above, so it all has to go out.
+                    UIManager:setDirty(self.show_parent or self, "fast")
+                end
             end
         end
         return true

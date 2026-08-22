@@ -426,6 +426,9 @@ function MenuItem:init()
         color = self.line_color,
         linesize = self.linesize,
         focus_linesize = Size.line.focus_indicator,
+        -- A row with a coloured patch behind its text has no single background to clear
+        -- the focus strip with, so it keeps the stock repaint.
+        background = not self.text_bgcolor and Blitbuffer.COLOR_WHITE or nil,
         vertical_align = "center",
         padding = 0,
         dimen = Geom:new{
@@ -485,6 +488,14 @@ function MenuItem:getDotsText(face)
         }
     end
     return _dots_cached_info.text, _dots_cached_info.min_width
+end
+
+function MenuItem:getFocusIndicatorRegion()
+    return self._underline_container and self._underline_container:getFocusIndicatorRegion()
+end
+
+function MenuItem:repaintFocusIndicator(bb)
+    return self._underline_container and self._underline_container:repaintFocusIndicator(bb)
 end
 
 function MenuItem:onFocus()
