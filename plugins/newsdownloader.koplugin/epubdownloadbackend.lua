@@ -398,15 +398,6 @@ local ext_to_mimetype = {
 
 local MAX_CONCURRENT_DOWNLOADS = 10
 
--- Fetch one image, falling back to the synchronous getter on failure.
-local function download_image(url)
-    local success, _, content = httpasync.fetch_url(url)
-    if not success then
-        success, _, content = getUrlContent(url)
-    end
-    return success, content
-end
-
 -- Create an epub file (with possibly images)
 function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element, block_element)
     logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ")")
@@ -703,7 +694,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
             end,
             fetch = function(src)
                 logger.dbg("Getting img async:", src)
-                return download_image(src)
+                return httpasync.fetch_url(src)
             end,
             on_success = function(task, content)
                 -- Images do not need to be compressed, so spare some cpu cycles

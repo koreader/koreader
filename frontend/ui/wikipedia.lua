@@ -1608,15 +1608,10 @@ abbr.abbr {
             end,
             fetch = function(src)
                 logger.dbg("Getting img async:", src)
-                local success, _, content = httpasync.fetch_url(src, 0, {
+                return httpasync.fetch_url(src, 0, {
                     cookie = cached_cookie,
                     referer = "https://en.wikipedia.org/",
                 })
-                if not success then
-                    -- Fallback to the synchronous getter for edge cases.
-                    success, content = getUrlContent(src, nil, nil, true) -- reuse_cookie
-                end
-                return success, content
             end,
             on_success = function(task, content)
                 -- Images do not need to be compressed, so spare some cpu cycles
