@@ -12,6 +12,8 @@ local function probeDevice()
             return require("device/kindle/device")
         elseif platform:sub(1, #"kobo") == "kobo" then
             return require("device/kobo/device")
+        elseif platform:sub(1, #"bookeen") == "bookeen" then
+            return require("device/bookeen/device")
         elseif platform:sub(1, #"pocketbook") == "pocketbook" then
             return require("device/pocketbook/device")
         elseif platform:sub(1, #"sony-prstux") == "sony-prstux" then

@@ -130,6 +130,7 @@ TARGET:
     android-arm64
     android-x86
     android-x86_64
+    bookeen                   Compatible with Bookeen Cybook Muse/Ocean (Allwinner A13)
     cervantes
     emulator                  Default if no TARGET is given
     kindle                    Compatible with all Kindle models >= Kindle4
@@ -168,6 +169,7 @@ function setup_target() {
         win32) is_system Windows ;;
         # Devices.
         android-arm | android-arm64 | android-x86 | android-x86_64) ;;
+        bookeen) ;;
         cervantes) ;;
         kindle | kindlehf | kindlepw2 | kindle-legacy) ;;
         kobo | kobov4 | kobov5) ;;
