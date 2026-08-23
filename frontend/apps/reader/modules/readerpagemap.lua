@@ -381,6 +381,25 @@ function ReaderPageMap:getPageLabelProps(page_label)
     end
 end
 
+function ReaderPageMap:getPageLastLabel(page)
+    -- for the cases when the page contains several labels
+    -- or top of the page belongs to the previous label
+    local labels_nb = self:getPageLabelProps() -- ensure cache and backup the array sole entry
+    self.page_labels_cache[1] = nil -- hash table only for pairs
+    local last_label_idx = 0
+    local last_label
+    for label, label_prop in pairs(self.page_labels_cache) do
+        if page == label_prop[2] and last_label_idx < label_prop[1] then
+            last_label_idx = label_prop[1]
+            last_label = label
+        end
+    end
+    self.page_labels_cache[1] = labels_nb -- restore
+    -- if there is no label in the page (no cache entry for this page), use page xpointer
+    last_label = last_label or self:getXPointerPageLabel(self.ui.document:getPageXPointer(page), true)
+    return last_label, self.page_labels_cache[last_label][1] -- index
+end
+
 function ReaderPageMap:onDocumentRerendered()
     self.page_labels_cache = nil
 end
