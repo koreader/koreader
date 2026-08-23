@@ -651,7 +651,7 @@ function ReaderHandMade:updateDocFlows()
             first_linear_page = flow[1] + flow[2]
         end
         flow = flows[#flows]
-        if flow[1] + flow[2] == nb_pages then -- book last page is in a hidden flow
+        if flow[1] + flow[2] - 1 == nb_pages then -- book last page is in a hidden flow
             last_linear_page = flow[1] - 1
         end
     end
