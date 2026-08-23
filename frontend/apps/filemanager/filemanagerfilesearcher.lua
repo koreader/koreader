@@ -21,6 +21,7 @@ local T = require("ffi/util").template
 local FileSearcher = InputContainer:extend{
     case_sensitive = false,
     include_subfolders = true,
+    use_patterns = false,
     include_metadata = false,
 }
 
@@ -44,8 +45,11 @@ function FileSearcher:addToMainMenu(menu_items)
         text = _("File search"),
         help_text = _([[Search a book by filename in the current or home folder and its subfolders.
 
-Wildcards for one '?' or more '*' characters can be used.
-A search for '*' will show all files.
+The query is matched as plain text, except that a search
+for '*' will show all files.
+
+Check 'Use Lua patterns' for advanced matching with Lua patterns
+(%d, [a-z], ^, …), where '*' and '?' act as wildcards.
 
 The sorting order is the same as in filemanager.
 
@@ -63,7 +67,7 @@ Tap a book in the search results to open it.]]),
 end
 
 function FileSearcher:onShowFileSearch(search_string)
-    local search_dialog, check_button_case, check_button_subfolders, check_button_metadata
+    local search_dialog, check_button_case, check_button_subfolders, check_button_patterns, check_button_metadata
     local function _doSearch()
         local search_str = search_dialog:getInputText()
         if search_str == "" then return end
@@ -71,6 +75,7 @@ function FileSearcher:onShowFileSearch(search_string)
         UIManager:close(search_dialog)
         self.case_sensitive = check_button_case.checked
         self.include_subfolders = check_button_subfolders.checked
+        self.use_patterns = check_button_patterns.checked
         self.include_metadata = check_button_metadata and check_button_metadata.checked
         local Trapper = require("ui/trapper")
         Trapper:wrap(function()
@@ -120,6 +125,12 @@ function FileSearcher:onShowFileSearch(search_string)
         parent = search_dialog,
     }
     search_dialog:addWidget(check_button_subfolders)
+    check_button_patterns = CheckButton:new{
+        text = _("Use Lua patterns"),
+        checked = self.use_patterns,
+        parent = search_dialog,
+    }
+    search_dialog:addWidget(check_button_patterns)
     if self.ui.coverbrowser then
         check_button_metadata = CheckButton:new{
             text = _("Also search in book metadata"),
@@ -135,14 +146,17 @@ end
 
 function FileSearcher:doSearch()
     local search_hash = FileSearcher.search_path .. (FileSearcher.search_string or "") ..
-        tostring(self.case_sensitive) .. tostring(self.include_subfolders) .. tostring(self.include_metadata)
+        tostring(self.case_sensitive) .. tostring(self.include_subfolders) ..
+        tostring(self.use_patterns) .. tostring(self.include_metadata)
     local not_cached = FileSearcher.search_hash ~= search_hash
+    local invalid_pattern
     if not_cached then
         local Trapper = require("ui/trapper")
         local info = InfoMessage:new{ text = _("Searching… (tap to cancel)") }
         UIManager:show(info)
         UIManager:forceRePaint()
-        local completed, dirs, files, no_metadata_count = Trapper:dismissableRunInSubprocess(function()
+        local completed, dirs, files, no_metadata_count
+        completed, dirs, files, no_metadata_count, invalid_pattern = Trapper:dismissableRunInSubprocess(function()
             return self:getList()
         end, info)
         if not completed then return end
@@ -165,12 +179,13 @@ function FileSearcher:doSearch()
     if #FileSearcher.search_results > 0 then
         self:onShowSearchResults(not_cached)
     else
-        self:showSearchResultsMessage(true)
+        self:showSearchResultsMessage(true, not_cached and invalid_pattern)
     end
 end
 
 function FileSearcher:getList()
     self.no_metadata_count = 0 -- will be updated in doSearch() with result from subprocess
+    self.invalid_pattern = false
     local sys_folders = { -- do not search in sys_folders
         ["/dev"] = true,
         ["/proc"] = true,
@@ -182,12 +197,19 @@ function FileSearcher:getList()
         if not self.case_sensitive then
             search_string = util.stringLower(search_string)
         end
-        -- replace '.' with '%.'
-        search_string = search_string:gsub("%.","%%%.")
-        -- replace '*' with '.*'
-        search_string = search_string:gsub("%*","%.%*")
-        -- replace '?' with '.'
-        search_string = search_string:gsub("%?","%.")
+        -- fully escaped variant of the raw query
+        local literal_pattern = search_string:gsub("([%^%$%(%)%%%.%[%]%+%-%*%?])", "%%%1")
+        if self.use_patterns then
+            -- replace '.' with '%.'
+            search_string = search_string:gsub("%.","%%%.")
+            -- replace '*' with '.*'
+            search_string = search_string:gsub("%*","%.%*")
+            -- replace '?' with '.'
+            search_string = search_string:gsub("%?","%.")
+        else
+            -- plain text search: match the query literally
+            search_string = literal_pattern
+        end
     end
 
     local dirs, files = {}, {}
@@ -228,7 +250,7 @@ function FileSearcher:getList()
         end
         scan_dirs = new_dirs
     end
-    return dirs, files, self.no_metadata_count
+    return dirs, files, self.no_metadata_count, self.invalid_pattern
 end
 
 function FileSearcher:isFileMatch(filename, fullpath, search_string, is_file)
@@ -238,7 +260,13 @@ function FileSearcher:isFileMatch(filename, fullpath, search_string, is_file)
     if not self.case_sensitive then
         filename = util.stringLower(filename)
     end
-    if string.find(filename, search_string) then
+    local ok, from = pcall(string.find, filename, search_string)
+    if not ok then
+        -- invalid pattern (e.g., unbalanced '(' or '['); LuaJIT only detects this while matching
+        self.invalid_pattern = true
+        return false
+    end
+    if from then
         return true
     end
     if self.include_metadata and is_file and DocumentRegistry:hasProvider(fullpath) then
@@ -251,8 +279,11 @@ function FileSearcher:isFileMatch(filename, fullpath, search_string, is_file)
     end
 end
 
-function FileSearcher:showSearchResultsMessage(no_results)
+function FileSearcher:showSearchResultsMessage(no_results, invalid_pattern)
     local text = no_results and T(_("No results for '%1'."), FileSearcher.search_string)
+    if invalid_pattern then
+        text = T(_("Invalid Lua pattern: '%1'.\nUncheck 'Use Lua patterns' to search as plain text."), FileSearcher.search_string)
+    end
     if self.no_metadata_count == 0 then
         UIManager:show(ConfirmBox:new{
             text = text,
