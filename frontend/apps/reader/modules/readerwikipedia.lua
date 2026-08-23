@@ -43,7 +43,7 @@ end
 --     onShowWikipediaLookup = { { "Alt", "W" }, { "Ctrl", "W" } }
 -- end
 
-function getKeyboardLayoutLanguage()
+local function getKeyboardLayoutLanguage()
     local VirtualKeyboard = require("ui/widget/virtualkeyboard")
     local layout = VirtualKeyboard.getKeyboardLayout()
     if not layout or layout == "" then
