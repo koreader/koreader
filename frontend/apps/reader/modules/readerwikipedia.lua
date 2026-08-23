@@ -43,6 +43,15 @@ end
 --     onShowWikipediaLookup = { { "Alt", "W" }, { "Ctrl", "W" } }
 -- end
 
+function getKeyboardLayoutLanguage()
+    local VirtualKeyboard = require("ui/widget/virtualkeyboard")
+    local layout = VirtualKeyboard.getKeyboardLayout()
+    if not layout or layout == "" then
+        return nil
+    end
+    return layout:match("^[^_-]+")
+end
+
 function ReaderWikipedia:lookupInput()
     self.input_dialog = InputDialog:new{
         title = _("Enter a word or phrase to look up"),
@@ -64,7 +73,7 @@ function ReaderWikipedia:lookupInput()
                         if self.input_dialog:getInputText() == "" then return end
                         UIManager:close(self.input_dialog)
                         -- Trust that input text does not need any cleaning (allows querying for "-suffix")
-                        self:onLookupWikipedia(self.input_dialog:getInputText(), true)
+                        self:onLookupWikipedia(self.input_dialog:getInputText(), true, nil, nil, getKeyboardLayoutLanguage())
                     end,
                 },
             }
