@@ -91,7 +91,7 @@ update: all
 	rm -rf $(ANDROID_LAUNCHER_DIR)/assets/{libs,module}
 	# APK version.
 	mkdir -p $(ANDROID_ASSETS)/module $(ANDROID_LIBS)
-	echo $(VERSION) >$(ANDROID_ASSETS)/module/version.txt
+	echo '$(VERSION)_$(DIST)' >$(ANDROID_ASSETS)/module/version.txt
 	# Libraries.
 	cp -v $(INSTALL_DIR)/koreader/libs/*$(LIB_EXT) $(ANDROID_LIBS)/
 	# Binaries are stored as shared libraries to prevent W^X exception on Android 10+
