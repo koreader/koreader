@@ -435,9 +435,9 @@ function ReaderKeySelection:startHighlightIndicator()
         local nearest_word = self:_getNearestWordFromScreenPoint(center_x, center_y)
         if nearest_word then
             self:_setIndicatorToWord(nearest_word)
-            -- Flash nearest_word in case the crosshairs if hard to find.
-            local coor = nearest_word.sbox
-            if self.ui.highlight:highlightWordAtCoordinates(coor.x + coor.w * 0.5, coor.y + coor.h * 0.5) then
+            -- Flash nearest_word in case the crosshairs are hard to find.
+            local anchor_x, anchor_y = self:_getWordAnchorCoordinates(nearest_word)
+            if self.ui.highlight:highlightWordAtCoordinates(anchor_x, anchor_y) then
                 self._flashing_nearest_word = true
                 UIManager:scheduleIn(G_defaults:readSetting("DELAY_CLEAR_HIGHLIGHT_S"), function()
                     self:clearFlashHighlight()
