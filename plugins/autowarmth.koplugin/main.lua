@@ -39,7 +39,6 @@ local activate_closer_midnight = 4
 local midnight_index = 11
 
 local device_max_warmth = Device:hasNaturalLight() and Powerd.fl_warmth_max or 100
-local device_warmth_fit_scale = device_max_warmth * (1/100)
 
 local function frac(x)
     return x - math.floor(x)
@@ -335,9 +334,10 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
             local delta_w = warmth_diff > 0 and 1 or -1
             for i = 1, math.abs(warmth_diff) - 1 do
                 local next_warmth = math.min(self.warmth[index1], 100) + delta_w * i
-                -- only apply warmth for steps the hardware has (e.g. Tolino has 0-10 hw steps
-                -- which map to warmth 0, 10, 20, 30 ... 100)
-                if frac(next_warmth * device_warmth_fit_scale) == 0 then
+                local next_native_warmth = Powerd:toNativeWarmth(next_warmth)
+                -- Only apply warmth when reaching a new native hardware step.
+                if next_native_warmth ~= Powerd:toNativeWarmth(next_warmth - delta_w)
+                    and next_native_warmth ~= Powerd:toNativeWarmth(math.min(self.warmth[index2], 100)) then
                     table.insert(self.sched_times_s, time1_s + delta_t * i)
                     table.insert(self.sched_warmths, next_warmth)
                 end
