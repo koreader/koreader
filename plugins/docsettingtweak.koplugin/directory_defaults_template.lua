@@ -16,6 +16,10 @@ return {--do NOT change this line
  -- examples:
 
  --[[
+    ["/mnt/onboard/comics"] = {
+        ["kopt_page_scroll"] = 0, -- view mode: page
+        ["kopt_trim_page"] = 3,   -- page crop: none
+    },
     ["/mnt/us/documents/hebrew"] = {
         ["inverse_reading_order"] = true
         ["invert_ui_layout"] = true
