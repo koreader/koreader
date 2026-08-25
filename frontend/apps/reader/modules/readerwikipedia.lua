@@ -44,6 +44,9 @@ end
 -- end
 
 local function getKeyboardLayoutLanguage()
+    if not G_reader_settings:isTrue("wikipedia_use_keyboard_language") then
+        return nil
+    end
     local VirtualKeyboard = require("ui/widget/virtualkeyboard")
     local layout = VirtualKeyboard.getKeyboardLayout()
     if not layout or layout == "" then
@@ -199,6 +202,19 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                     }
                     UIManager:show(wikilang_input)
                     wikilang_input:onShowKeyboard()
+                end,
+            },
+            {
+                text = ("Use virtual keyboard language"),
+                help_text = _([[
+When looking up a word or phrase typed with the virtual keyboard, search the Wikipedia of the current keyboard layout's language instead of your first Wikipedia language.
+
+This has no effect on lookups from text selection or from the Wikipedia history.]]),
+                checked_func = function()
+                    return G_reader_settings:isTrue("wikipedia_use_keyboard_language")
+                end,
+                callback = function()
+                    G_reader_settings:flipTrue("wikipedia_use_keyboard_language")
                 end,
                 separator = true,
             },
