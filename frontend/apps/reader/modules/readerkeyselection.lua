@@ -259,7 +259,6 @@ function ReaderKeySelection:addToMainMenu(menu_items)
             UIManager:show(double_spin_widget)
         end,
     }
-    table.insert(menu_items.long_press.sub_item_table, crosshairs_speed_item)
     local crosshairs_speedup_item = {
         text = _("Increase crosshairs speed on consecutive keystrokes"),
         checked_func = function()
@@ -272,7 +271,6 @@ function ReaderKeySelection:addToMainMenu(menu_items)
             G_reader_settings:flipNilOrTrue("highlight_non_touch_spedup")
         end,
     }
-    table.insert(menu_items.long_press.sub_item_table, crosshairs_speedup_item)
     local crosshairs_interval_item = {
         text_func = function()
             local highlight_non_touch_interval = G_reader_settings:readSetting("highlight_non_touch_interval") or 1
@@ -301,7 +299,6 @@ function ReaderKeySelection:addToMainMenu(menu_items)
             UIManager:show(spin_widget)
         end,
     }
-    table.insert(menu_items.long_press.sub_item_table, crosshairs_interval_item)
 
     local text_label = _("Text selection tools")
 
@@ -320,9 +317,13 @@ function ReaderKeySelection:addToMainMenu(menu_items)
     end
 
     if menu_items.long_press then
+        table.insert(menu_items.long_press.sub_item_table, crosshairs_speed_item)
+        table.insert(menu_items.long_press.sub_item_table, crosshairs_speedup_item)
+        table.insert(menu_items.long_press.sub_item_table, crosshairs_interval_item)
+        menu_items.long_press.sub_item_table[1].separator = false
         local long_press_action = ReaderHighlight.long_press_action
         -- long_press settings are under the taps_and_gestures menu, which is not available for non-touch devices
-        -- Clone long_press settings, and change its label, making it much more meaningful for non-touch device users.
+        -- Surface long_press settings, and change its label, making it much more meaningful for non-touch device users.
         menu_items.selection_text = {
             text = text_label,
             sub_item_table = {
