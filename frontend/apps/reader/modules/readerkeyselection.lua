@@ -316,10 +316,27 @@ function ReaderKeySelection:addToMainMenu(menu_items)
         return true
     end
 
+    local dict_mode_item = {
+        text = _("Fast dictionary mode (single word selection)"),
+        help_text = _("When enabled, pressing 'Down' will trigger fast dictionary mode while 'Up' will call regular text selection mode.")
+            .. "\n\n" .. _("Fast dictionary mode skips multi-word selection and opens the dictionary immediately on any single word selection."),
+        checked_func = function()
+            return self:dictionaryModeActive() and self:directDictSearchActive()
+        end,
+        enabled_func = function()
+            return not self.view.highlight.disabled and self:directDictSearchActive()
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("highlight_non_touch_dict_mode")
+        end,
+        separator = true,
+    }
+
     if menu_items.long_press then
         table.insert(menu_items.long_press.sub_item_table, crosshairs_speed_item)
         table.insert(menu_items.long_press.sub_item_table, crosshairs_speedup_item)
         table.insert(menu_items.long_press.sub_item_table, crosshairs_interval_item)
+        -- Dictionary on single word selection won't be alone
         menu_items.long_press.sub_item_table[1].separator = false
         local long_press_action = ReaderHighlight.long_press_action
         -- long_press settings are under the taps_and_gestures menu, which is not available for non-touch devices
@@ -328,6 +345,7 @@ function ReaderKeySelection:addToMainMenu(menu_items)
             text = text_label,
             sub_item_table = {
                 menu_items.long_press.sub_item_table[1], -- Dictionary on single word selection
+                dict_mode_item,
                 {
                     text_func = function()
                         local multi_word = G_reader_settings:readSetting("default_highlight_action")
@@ -373,6 +391,11 @@ end
 
 function ReaderKeySelection:onStartOrMoveHighlightIndicator(args)
     if not self._current_indicator_pos then
+        -- If dict mode is enabled, 'Down' (dy=1) calls fast_dict_mode, 'Up' (dy=-1) is regular text selection.
+        if self:dictionaryModeActive() and self:directDictSearchActive() then
+            local _, dy = unpack(args)
+            self._fast_dict_mode = dy == 1
+        end
         self:startHighlightIndicator()
     else
         self:moveHighlightIndicator(args)
@@ -382,6 +405,14 @@ end
 
 function ReaderKeySelection:isActive()
     return self._current_indicator_pos ~= nil
+end
+
+function ReaderKeySelection:directDictSearchActive()
+    return G_reader_settings:nilOrFalse("highlight_action_on_single_word") or G_reader_settings:readSetting("default_highlight_action") == "dictionary"
+end
+
+function ReaderKeySelection:dictionaryModeActive()
+    return G_reader_settings:isTrue("highlight_non_touch_dict_mode")
 end
 
 function ReaderKeySelection:clearOverlay()
@@ -474,6 +505,7 @@ function ReaderKeySelection:stopHighlightIndicator(need_clear_selection)
     self._edge_dx, self._edge_dy = nil, nil
     self._last_move_was_quick_move = nil
     self._previous_indicator_word = nil
+    self._fast_dict_mode = nil
     if self._indicator_overlay then
         self._indicator_overlay:freeSavedBB()
         UIManager:close(self._indicator_overlay)
@@ -496,7 +528,8 @@ function ReaderKeySelection:highlightPress(skip_tap_check)
         return true
     end
     -- Check if we're in select mode (or extending an existing highlight)
-    if self.ui.highlight.select_mode and self.ui.highlight.highlight_idx then
+    local in_select_mode = self.ui.highlight.select_mode and self.ui.highlight.highlight_idx
+    if in_select_mode or self._fast_dict_mode then
         self.ui.highlight:onHold(nil, self:_createHighlightGesture("hold"))
         self.ui.highlight:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
         self:stopHighlightIndicator()
