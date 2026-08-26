@@ -91,7 +91,7 @@ You can access the complete user manual from [our GitHub page](https://github.co
 end
 
 if Device:isKindle() then
-    table.insert(quickstart_guide, _([[**IMPORTANT: KOReader barely supports Amazon-specific book formats like MOBI, KFX, AZW3. Use EPUB instead.**
+    table.insert(quickstart_guide, _([[**IMPORTANT: KOReader's best supported format is EPUB. Other formats like MOBI may not support all features. KFX is not supported at all. DRMed books are not supported either.**
             ]])
     ) -- insert warning about formats for Kindle devices
 end
