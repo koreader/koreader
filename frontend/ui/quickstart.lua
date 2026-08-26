@@ -90,6 +90,12 @@ You can access the complete user manual from [our GitHub page](https://github.co
     ) -- insert toc
 end
 
+if Device:Kindle() then
+    table.insert(quickstart_guide, _([[**IMPORTANT: KOReader barely supports Amazon-specific book formats like MOBI, KFX, AZW3. Use EPUB instead.**
+            ]])
+    ) -- insert warning about formats for Kindle devices
+end
+
 -- User interface
 if Device:hasScreenKB() then
     -- Use correct k4 illustration and appropriate button mapping
