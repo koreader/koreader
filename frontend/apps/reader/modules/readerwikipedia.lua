@@ -44,9 +44,6 @@ end
 -- end
 
 local function getKeyboardLayoutLanguage()
-    if not G_reader_settings:isTrue("wikipedia_use_keyboard_language") then
-        return nil
-    end
     local VirtualKeyboard = require("ui/widget/virtualkeyboard")
     local layout = VirtualKeyboard.getKeyboardLayout()
     if not layout or layout == "" then
@@ -75,8 +72,12 @@ function ReaderWikipedia:lookupInput()
                     callback = function()
                         if self.input_dialog:getInputText() == "" then return end
                         UIManager:close(self.input_dialog)
+                        local kb_lang = nil
+                        if G_reader_settings:isTrue("wikipedia_use_keyboard_language") then
+                            kb_lang = getKeyboardLayoutLanguage()
+                        end
                         -- Trust that input text does not need any cleaning (allows querying for "-suffix")
-                        self:onLookupWikipedia(self.input_dialog:getInputText(), true, nil, nil, getKeyboardLayoutLanguage())
+                        self:onLookupWikipedia(self.input_dialog:getInputText(), true, nil, nil, kb_lang)
                     end,
                 },
             }
