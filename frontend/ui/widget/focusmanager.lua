@@ -324,21 +324,21 @@ end
 --- A fast repaint does not count toward a flashing eink refresh.
 function FocusManager:_repaintFocusChange(prev_item, next_item)
     local parent = self.show_parent or self
-    local prev_bar, next_bar
     -- Painting outside UIManager's paint pass skips Screen:beforePaint(), which is
     -- where forced HW rotation gets asserted; leave those screens the stock path.
     if not Screen.forced_rotation
             and canFastRepaint(prev_item) and canFastRepaint(next_item)
             and UIManager:getTopmostVisibleWidget() == parent then
-        prev_bar = prev_item:getFocusIndicatorRegion()
-        next_bar = next_item:getFocusIndicatorRegion()
-    end
-    if prev_bar and next_bar
-            and prev_item:repaintFocusIndicator(Screen.bb) and next_item:repaintFocusIndicator(Screen.bb) then
-        -- Refresh each one on its own, so nothing between the two items is touched.
-        UIManager:setDirty(nil, "fast", prev_bar)
-        UIManager:setDirty(nil, "fast", next_bar)
-        return
+        local prev_region = prev_item:getFocusIndicatorRegion()
+        local next_region = next_item:getFocusIndicatorRegion()
+        if prev_region and next_region
+                and prev_item:repaintFocusIndicator(Screen.bb)
+                and next_item:repaintFocusIndicator(Screen.bb) then
+            -- Refresh each one on its own, so nothing between the two items is touched.
+            UIManager:setDirty(nil, "fast", prev_region)
+            UIManager:setDirty(nil, "fast", next_region)
+            return
+        end
     end
     -- The widget has to be repainted whole. We don't narrow the refresh here: a focus
     -- border may grow outside the item's dimen (FrameContainer widens its own on focus),
