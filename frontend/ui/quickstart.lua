@@ -90,6 +90,12 @@ You can access the complete user manual from [our GitHub page](https://github.co
     ) -- insert toc
 end
 
+if Device:isKindle() then
+    table.insert(quickstart_guide, _([[**IMPORTANT: KOReader's best supported format is EPUB. Other formats like MOBI may not support all features. KFX is not supported at all. DRM-protected books are not supported either.**
+]])
+    )
+end
+
 -- User interface
 if Device:hasScreenKB() then
     -- Use correct k4 illustration and appropriate button mapping
