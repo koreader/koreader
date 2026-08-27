@@ -39,7 +39,7 @@ end
 --- Valid only after paintTo: dimen may be set from the outside, its coordinates are not.
 function UnderlineContainer:getFocusIndicatorRegion()
     if not self._painted then return end
-    local line_x, line_width = self:_lineGeometry()
+    local line_x, line_width = self:_getLineXAndWidth()
     return Geom:new{
         x = line_x,
         y = self:_focusBarTop(self.dimen.y + self:getSize().h),
@@ -48,7 +48,7 @@ function UnderlineContainer:getFocusIndicatorRegion()
     }
 end
 
-function UnderlineContainer:_lineGeometry()
+function UnderlineContainer:_getLineXAndWidth()
     local line_width = self.line_width or self.dimen.w
     if BD.mirroredUILayout() then
         return self.dimen.x + self.dimen.w - line_width, line_width
@@ -81,7 +81,7 @@ function UnderlineContainer:repaintFocusIndicator(bb)
     if not self._painted then return false end
     -- With no background there is nowhere to erase the bar to once it is unfocused.
     if self:_focusBarHeight() > 0 and not self.background then return false end
-    local line_x, line_width = self:_lineGeometry()
+    local line_x, line_width = self:_getLineXAndWidth()
     local bottom = self.dimen.y + self:getSize().h
     self:_paintFocusBar(bb, line_x, bottom, line_width)
     bb:paintRect(line_x, bottom - self.linesize, line_width, self.linesize, self.color)
@@ -102,7 +102,7 @@ function UnderlineContainer:paintTo(bb, x, y)
     end
     self._painted = true
 
-    local line_x, line_width = self:_lineGeometry()
+    local line_x, line_width = self:_getLineXAndWidth()
     local bottom = y + container_size.h
 
     -- Erase a bar left over from a previous focus before the content goes in: it sits
