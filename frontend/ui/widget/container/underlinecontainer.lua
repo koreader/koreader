@@ -21,7 +21,6 @@ local UnderlineContainer = WidgetContainer:extend{
     color = Blitbuffer.COLOR_WHITE,
     vertical_align = "top",
     line_width = nil, -- (Don't use this, it's there because of the complex and ugly layout in TouchMenuItem)
-    line_x_offset = nil, -- shifts the line right (left in RTL), to keep it clear of other content
     background = nil, -- what to clear the strip with; without it, the bar can only be drawn
 }
 
@@ -48,11 +47,10 @@ end
 
 function UnderlineContainer:_lineGeometry()
     local line_width = self.line_width or self.dimen.w
-    local line_x_offset = self.line_x_offset or 0
     if BD.mirroredUILayout() then
-        return self.dimen.x + self.dimen.w - line_width - line_x_offset, line_width
+        return self.dimen.x + self.dimen.w - line_width, line_width
     end
-    return self.dimen.x + line_x_offset, line_width
+    return self.dimen.x, line_width
 end
 
 -- The bar, without the line: together they occupy focus_linesize.
