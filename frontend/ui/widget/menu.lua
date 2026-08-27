@@ -426,8 +426,9 @@ function MenuItem:init()
         color = self.line_color,
         linesize = self.linesize,
         focus_linesize = Size.line.focus_indicator,
-        -- A row with a coloured patch behind its text has no single background to clear
-        -- the focus strip with, so it keeps the stock repaint.
+        -- With text_bgcolor the row has a coloured frame behind its text only, so no
+        -- single colour erases the focus bar over the whole width; without background
+        -- set, such a row falls back to the stock full repaint.
         background = not self.text_bgcolor and Blitbuffer.COLOR_WHITE or nil,
         vertical_align = "center",
         padding = 0,
