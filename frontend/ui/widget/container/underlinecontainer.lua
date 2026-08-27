@@ -12,8 +12,8 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
 local UnderlineContainer = WidgetContainer:extend{
     linesize = Size.line.thick,
-    -- Painted while focused. It grows upwards, into the room linesize already reserves,
-    -- so switching focus repaints the line and nothing else.
+    -- Line thickness while focused. The extra thickness (focus_linesize - linesize) is
+    -- the focus bar, painted just above the line and inside the room linesize reserves.
     focus_linesize = nil,
     focused = false,
     padding = Size.padding.tiny,
@@ -21,7 +21,10 @@ local UnderlineContainer = WidgetContainer:extend{
     color = Blitbuffer.COLOR_WHITE,
     vertical_align = "top",
     line_width = nil, -- (Don't use this, it's there because of the complex and ugly layout in TouchMenuItem)
-    background = nil, -- what to clear the strip with; without it, the bar can only be drawn
+    -- The colour behind the line, so the focus bar can be erased where it was painted.
+    -- Set it to whatever the parent clears that row with. Leaving it nil means this
+    -- container can only draw the bar, never undraw it, so it declines the repaint below.
+    background = nil,
 }
 
 function UnderlineContainer:getSize()
@@ -32,8 +35,8 @@ function UnderlineContainer:getSize()
     }
 end
 
---- The strip this container paints its line and focus bar into, in screen coordinates.
---- Only after paintTo: dimen may be set from the outside, its coordinates are not.
+--- Where the line and the focus bar above it sit, in screen coordinates.
+--- Valid only after paintTo: dimen may be set from the outside, its coordinates are not.
 function UnderlineContainer:getFocusIndicatorRegion()
     if not self._painted then return end
     local line_x, line_width = self:_lineGeometry()
@@ -53,13 +56,11 @@ function UnderlineContainer:_lineGeometry()
     return self.dimen.x, line_width
 end
 
--- The bar, without the line: together they occupy focus_linesize.
 function UnderlineContainer:_focusBarHeight()
     if not self.focus_linesize then return 0 end
     return math.max(self.focus_linesize - self.linesize, 0)
 end
 
--- Right on top of our line, so dropping the bar leaves the line untouched.
 function UnderlineContainer:_focusBarTop(bottom)
     return bottom - self.linesize - self:_focusBarHeight()
 end
@@ -67,18 +68,18 @@ end
 function UnderlineContainer:_paintFocusBar(bb, line_x, bottom, line_width)
     local h = self:_focusBarHeight()
     if h == 0 then return end
-    -- An unfocused bar is erased with the background: only a focus-only repaint asks
-    -- for that, a full repaint has the parent clearing the row for us.
+    -- Erasing only happens on a focus-only repaint; on a full repaint the parent has
+    -- already cleared the row for us.
     local color = self.focused and self.color or self.background
     if not color then return end
     bb:paintRect(line_x, self:_focusBarTop(bottom), line_width, h, color)
 end
 
---- Repaint the strip -- our line and the bar above it -- and nothing else of the widget.
+--- Repaint the line and the focus bar above it, leaving the child content alone.
+--- Returns false when this container cannot do that by itself.
 function UnderlineContainer:repaintFocusIndicator(bb)
     if not self._painted then return false end
-    -- A bar of its own needs somewhere to go when unfocused; a line that merely changes
-    -- colour just gets repainted.
+    -- With no background there is nowhere to erase the bar to once it is unfocused.
     if self:_focusBarHeight() > 0 and not self.background then return false end
     local line_x, line_width = self:_lineGeometry()
     local bottom = self.dimen.y + self:getSize().h
@@ -104,8 +105,8 @@ function UnderlineContainer:paintTo(bb, x, y)
     local line_x, line_width = self:_lineGeometry()
     local bottom = y + container_size.h
 
-    -- Erase a bar left over from a previous focus before the content goes in: the strip
-    -- has no room of its own, so clearing it afterwards would cut into what we just drew.
+    -- Erase a bar left over from a previous focus before the content goes in: it sits
+    -- over the content's bottom, so clearing it afterwards would cut into what we drew.
     if not self.focused and self.background then
         self:_paintFocusBar(bb, line_x, bottom, line_width)
     end

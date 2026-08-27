@@ -319,8 +319,8 @@ local function canFastRepaint(item)
 end
 
 --- Repaint after focus moved from one item to another.
---- When both items can paint their focus indicator on their own, only those strips are
---- painted and refreshed; otherwise the parent is repainted as before.
+--- When both items can paint their focus indicator on their own, only those two
+--- indicators are painted and refreshed; otherwise the parent is repainted as before.
 --- A fast repaint does not count toward a flashing eink refresh.
 function FocusManager:_repaintFocusChange(prev_item, next_item)
     local parent = self.show_parent or self
@@ -335,7 +335,7 @@ function FocusManager:_repaintFocusChange(prev_item, next_item)
     end
     if prev_bar and next_bar
             and prev_item:repaintFocusIndicator(Screen.bb) and next_item:repaintFocusIndicator(Screen.bb) then
-        -- Refresh each strip on its own, so nothing between the two items is touched.
+        -- Refresh each one on its own, so nothing between the two items is touched.
         UIManager:setDirty(nil, "fast", prev_bar)
         UIManager:setDirty(nil, "fast", next_bar)
         return
