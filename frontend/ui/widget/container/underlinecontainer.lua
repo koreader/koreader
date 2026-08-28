@@ -68,8 +68,7 @@ end
 function UnderlineContainer:_paintFocusBar(bb, line_x, bottom, line_width)
     local h = self:_focusBarHeight()
     if h == 0 then return end
-    -- Erasing only happens on a focus-only repaint; on a full repaint the parent has
-    -- already cleared the row for us.
+    -- Unfocused, the bar gets painted over with the background: that is what undraws it.
     local color = self.focused and self.color or self.background
     if not color then return end
     bb:paintRect(line_x, self:_focusBarTop(bottom), line_width, h, color)
