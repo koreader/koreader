@@ -1404,6 +1404,13 @@ end
 -- @tparam string path Local path of the article
 -- @treturn bool Successfully archived or not.
 function Wallabag:archiveLocalArticle(path)
+    -- Skip if it's the currently opened document
+    if self.ui.document then
+        if path == self.ui.document.file then
+            return false
+        end
+    end
+
     -- Check if the archive directory is valid
     local dir_mode = lfs.attributes(self.archive_directory, "mode")
     if dir_mode == nil then
@@ -1435,14 +1442,19 @@ end
 -- @tparam string path Local path of the article
 -- @treturn bool Successfully deleted or not.
 function Wallabag:deleteLocalArticle(path)
-    local result = false
+    -- Skip if it's the currently opened document
+    if self.ui.document then
+        if path == self.ui.document.file then
+            return false
+        end
+    end
 
     if lfs.attributes(path, "mode") == "file" then
         FileManager:deleteFile(path, true)
-        result = true
+        return true
     end
 
-    return result
+    return false
 end
 
 --- Extract the Wallabag ID from the file name.
