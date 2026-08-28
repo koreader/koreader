@@ -319,8 +319,8 @@ local function canFastRepaint(item)
 end
 
 --- Repaint after focus moved from one item to another.
---- When both items can paint their focus indicator on their own, only those two
---- indicators are painted and refreshed; otherwise the parent repaints it all.
+--- When both items can paint their focus indicator on their own, we paint and refresh
+--- only those two indicators; otherwise we let the parent repaint it all.
 --- A fast repaint does not count toward a flashing eink refresh.
 function FocusManager:_repaintFocusChange(prev_item, next_item)
     local parent = self.show_parent or self
@@ -340,7 +340,7 @@ function FocusManager:_repaintFocusChange(prev_item, next_item)
             return
         end
     end
-    -- The widget has to be repainted whole. We don't narrow the refresh here: a focus
+    -- We have to repaint the widget whole. We don't narrow the refresh here: a focus
     -- border may grow outside the item's dimen (FrameContainer widens its own on focus),
     -- and we have no way to tell how far.
     UIManager:setDirty(parent, "fast")
@@ -445,7 +445,7 @@ function FocusManager:moveFocusTo(x, y, focus_flags)
                 if unfocused_item then
                     self:_repaintFocusChange(unfocused_item, target_item)
                 else
-                    -- No single item was unfocused, so there is nothing to narrow to.
+                    -- We did not unfocus a single item, so there is nothing to narrow to.
                     UIManager:setDirty(self.show_parent or self, "fast")
                 end
             end

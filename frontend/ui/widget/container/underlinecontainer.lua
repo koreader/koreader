@@ -13,8 +13,8 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UnderlineContainer = WidgetContainer:extend{
     linesize = Size.line.thick,
     -- Line thickness while focused. The extra thickness (focus_linesize - linesize) is
-    -- the focus bar, painted just above the line and over the bottom of the content:
-    -- getSize only ever reserves linesize.
+    -- the focus bar: we paint it just above the line, over the bottom of the content,
+    -- as getSize only ever reserves linesize.
     focus_linesize = nil,
     focused = false,
     padding = Size.padding.tiny,
@@ -22,9 +22,9 @@ local UnderlineContainer = WidgetContainer:extend{
     color = Blitbuffer.COLOR_WHITE,
     vertical_align = "top",
     line_width = nil, -- (Don't use this, it's there because of the complex and ugly layout in TouchMenuItem)
-    -- The colour behind the focus bar, so it can be erased where it was painted.
-    -- Set it to whatever the parent clears that row with. Leaving it nil means this
-    -- container can only draw the bar, never undraw it, so repaintFocusIndicator declines.
+    -- The colour behind the focus bar, so we can erase it where we painted it.
+    -- Set it to whatever the parent clears that row with. Leaving it nil means we can
+    -- only draw the bar, never undraw it, so repaintFocusIndicator declines.
     background = nil,
 }
 
@@ -69,14 +69,14 @@ end
 function UnderlineContainer:_paintFocusBar(bb, line_x, bottom, line_width)
     local h = self:_focusBarHeight()
     if h == 0 then return end
-    -- Unfocused, the bar gets painted over with the background: that is what undraws it.
+    -- Unfocused, we paint the bar over with the background: that is what undraws it.
     local color = self.focused and self.color or self.background
     if not color then return end
     bb:paintRect(line_x, self:_focusBarTop(bottom), line_width, h, color)
 end
 
 --- Repaint the line and the focus bar above it, leaving the child content alone.
---- Returns false when this container cannot do that by itself.
+--- Returns false when we cannot do that by ourselves.
 function UnderlineContainer:repaintFocusIndicator(bb)
     if not self._painted then return false end
     -- Without a background we don't know what colour to paint the now-unfocused bar.
