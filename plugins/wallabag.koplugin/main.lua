@@ -26,6 +26,7 @@ local Math = require("optmath")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
+local ReadCollection = require("readcollection")
 local ReadHistory = require("readhistory")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -1416,19 +1417,18 @@ function Wallabag:archiveLocalArticle(path)
         return false
     end
 
-    local result = false
-
     if lfs.attributes(path, "mode") == "file" then
         local _, file = util.splitFilePathName(path)
         local new_path = ffiUtil.joinPath(self.archive_directory, file)
         if FileManager:moveFile(path, new_path) then
-            result = true
+            DocSettings.updateLocation(path, new_path, false) -- move sdr
+            ReadHistory:updateItem(path, new_path)
+            ReadCollection:updateItem(path, new_path)
+            return true
         end
-        DocSettings.updateLocation(path, new_path, false) -- move sdr
-        --- @todo Why is sdr copied instead of moved?
     end
 
-    return result
+    return false
 end
 
 --- Delete an article and its sidecar locally.
