@@ -72,7 +72,7 @@ function ReaderWikipedia:lookupInput()
                     callback = function()
                         if self.input_dialog:getInputText() == "" then return end
                         UIManager:close(self.input_dialog)
-                        local kb_lang = nil
+                        local kb_lang
                         if G_reader_settings:isTrue("wikipedia_use_keyboard_language") then
                             kb_lang = getKeyboardLayoutLanguage()
                         end
