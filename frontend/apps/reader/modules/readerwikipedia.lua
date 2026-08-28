@@ -208,7 +208,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
             {
                 text = ("Use virtual keyboard language"),
                 help_text = _([[
-When looking up a word or phrase typed with the virtual keyboard, search the Wikipedia of the current keyboard layout's language instead of your first Wikipedia language.
+When looking up a word or phrase, search in the Wikipedia edition matching the current keyboard layout language.
 
 This has no effect on lookups from text selection or from the Wikipedia history.]]),
                 checked_func = function()
