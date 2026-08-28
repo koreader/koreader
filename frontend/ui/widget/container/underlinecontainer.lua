@@ -79,7 +79,7 @@ end
 --- Returns false when this container cannot do that by itself.
 function UnderlineContainer:repaintFocusIndicator(bb)
     if not self._painted then return false end
-    -- With no background there is nowhere to erase the bar to once it is unfocused.
+    -- Without a background we don't know what colour to paint the now-unfocused bar.
     if self:_focusBarHeight() > 0 and not self.background then return false end
     local line_x, line_width = self:_getLineXAndWidth()
     local bottom = self.dimen.y + self:getSize().h

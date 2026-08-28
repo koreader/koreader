@@ -320,7 +320,7 @@ end
 
 --- Repaint after focus moved from one item to another.
 --- When both items can paint their focus indicator on their own, only those two
---- indicators are painted and refreshed; otherwise the parent is repainted as before.
+--- indicators are painted and refreshed; otherwise the parent repaints it all.
 --- A fast repaint does not count toward a flashing eink refresh.
 function FocusManager:_repaintFocusChange(prev_item, next_item)
     local parent = self.show_parent or self
