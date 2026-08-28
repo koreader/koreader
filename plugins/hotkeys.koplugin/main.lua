@@ -25,6 +25,17 @@ local HotKeys = InputContainer:extend{
 local hotkeys_path = ffiUtil.joinPath(DataStorage:getSettingsDir(), "hotkeys.lua")
 local hotkeys_list, base_keys, key_emitter_actions
 
+-- This function determines the appropriate "Home" key,
+-- as a 'Home' button on eink devices and a 'Home' key on a keyboard
+-- are treated differently in the codebase.
+local function getHomeKey()
+    local isSDL = Device:isSDL()
+    if isSDL and os.getenv("DISABLE_TOUCH") == "1" then
+        return "Home"
+    end
+    return isSDL and "KeyHome" or "Home"
+end
+
 local function buildHotkeysList()
     -- Define hotkeys_list
     hotkeys_list = {}
@@ -32,7 +43,7 @@ local function buildHotkeysList()
         up = "Up", down = "Down", left = "Left", right = "Right",
         left_page_back = "LPgBack", left_page_forward = "LPgFwd",
         right_page_back = "RPgBack", right_page_forward = "RPgFwd",
-        back = "Back", home = "Home", press = "Press"
+        back = "Back", home = getHomeKey(), press = "Press"
     }
     key_emitter_actions = {
         key_up = { key = "Up", title = T(_("Send key: %1"), _("Up")) },
@@ -202,7 +213,8 @@ function HotKeys:registerKeyEvents()
     self:overrideConflictingKeyEvents()
     local cursor_keys = { "Up", "Down", "Left", "Right" }
     local page_turn_keys = { "LPgBack", "LPgFwd", "RPgBack", "RPgFwd" }
-    local function_keys = { "Back", "Home", "Press", "Menu" }
+    local home_key = getHomeKey()
+    local function_keys = { "Back", home_key, "Press", "Menu" }
     local key_name_mapping = {
         LPgBack = "left_page_back",    RPgBack = "right_page_back",
         LPgFwd  = "left_page_forward", RPgFwd  = "right_page_forward",
@@ -228,7 +240,7 @@ function HotKeys:registerKeyEvents()
         end
     end
     addKeyEvent(modifier, "Back", "HotkeyAction", "modifier_plus_back")
-    addKeyEvent(modifier, "Home", "HotkeyAction", "modifier_plus_home")
+    addKeyEvent(modifier, home_key, "HotkeyAction", "modifier_plus_home")
     -- remember, screenkb+menu is already used for screenshots (on k4), don't add it here.
 
     if Device:hasKeyboard() then

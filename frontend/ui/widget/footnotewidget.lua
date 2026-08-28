@@ -134,6 +134,7 @@ local FootnoteWidget = InputContainer:extend{
     follow_callback = nil,
     on_tap_close_callback = nil,
     close_callback = nil,
+    navigate_footnote_callback = nil,
     dialog = nil,
     covers_footer = true,
 }
@@ -203,10 +204,13 @@ function FootnoteWidget:init()
         }
     end
     if Device:hasKeys() then
-        self.key_events = {
-            Close = { { Device.input.group.Back } },
-            Follow = { { "Press" } },
-        }
+        self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.Follow = { { "Press" } }
+        if Device:hasScreenKB() or Device:hasKeyboard() then
+            local modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+            self.key_events.NextFootnote = { { modifier, Device.input.group.PgFwd  } }
+            self.key_events.PrevFootnote = { { modifier, Device.input.group.PgBack } }
+        end
     end
 
     -- Workaround bugs in MuPDF:
@@ -409,6 +413,18 @@ function FootnoteWidget:onFollow()
         end
         return self.follow_callback()
     end
+end
+
+function FootnoteWidget:onNextFootnote()
+    if not self.navigate_footnote_callback then return false end
+    self.navigate_footnote_callback(1)
+    return true
+end
+
+function FootnoteWidget:onPrevFootnote()
+    if not self.navigate_footnote_callback then return false end
+    self.navigate_footnote_callback(-1)
+    return true
 end
 
 function FootnoteWidget:onTapClose(arg, ges)
