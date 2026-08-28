@@ -2868,7 +2868,7 @@ local dictionaries = {
         url = "https://www.reader-dict.com/file/ca/dict-ca-ca.zip"
     },
     {
-        name = "reader.dict Czesh",
+        name = "reader.dict Czech",
         lang_in = "ces",
         lang_out = "ces",
         entries = 373601,
