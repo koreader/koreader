@@ -675,11 +675,14 @@ function Dispatcher:removeAction(name)
     return true
 end
 
-function Dispatcher.getActionArgs(settings)
+function Dispatcher.getActionArgs(settings, get_args)
     if Dispatcher:_itemsCount(settings) == 1 then
         local action = next(settings)
         if action == "settings" then action = next(settings, action) end
         local args = settingsList[action] and (settingsList[action].args_func or settingsList[action].args)
+        if get_args then
+            args = type(args) == "function" and args() or args
+        end
         return args, action
     end
 end
@@ -688,8 +691,7 @@ function Dispatcher.iter_func(settings, to_execute)
     local order, action
     local is_cycle = settings.settings and settings.settings.cycle
     if is_cycle and to_execute then
-        order, action = Dispatcher.getActionArgs(settings)
-        order = type(order) == "function" and order() or order -- args array
+        order, action = Dispatcher.getActionArgs(settings, true) -- args array
     else
         order = settings.settings and settings.settings.order -- actions array
     end
@@ -1185,8 +1187,10 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
         callback = function()
             local actions = location[settings]
             if actions and not util.tableGetValue(actions, "settings", "execute_one_by_one") then
-                util.tableSetValue(actions, 1, "settings", "execute_one_by_one") -- start from the first action
-                actions.settings.cycle = Dispatcher.getActionArgs(location[settings]) ~= nil or nil
+                local args, action = Dispatcher.getActionArgs(actions, true)
+                local start_idx = args and util.arrayContains(args, actions[action]) -- start from the selected option
+                util.tableSetValue(actions, start_idx or 1, "settings", "execute_one_by_one")
+                actions.settings.cycle = args and true
                 actions.settings.show_as_quickmenu = nil
                 actions.settings.quickmenu_separators = nil
                 actions.settings.keep_open_on_apply = nil
