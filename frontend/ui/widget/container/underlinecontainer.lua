@@ -13,7 +13,8 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UnderlineContainer = WidgetContainer:extend{
     linesize = Size.line.thick,
     -- Line thickness while focused. The extra thickness (focus_linesize - linesize) is
-    -- the focus bar, painted just above the line and inside the room linesize reserves.
+    -- the focus bar, painted just above the line and over the bottom of the content:
+    -- getSize only ever reserves linesize.
     focus_linesize = nil,
     focused = false,
     padding = Size.padding.tiny,
@@ -21,9 +22,9 @@ local UnderlineContainer = WidgetContainer:extend{
     color = Blitbuffer.COLOR_WHITE,
     vertical_align = "top",
     line_width = nil, -- (Don't use this, it's there because of the complex and ugly layout in TouchMenuItem)
-    -- The colour behind the line, so the focus bar can be erased where it was painted.
+    -- The colour behind the focus bar, so it can be erased where it was painted.
     -- Set it to whatever the parent clears that row with. Leaving it nil means this
-    -- container can only draw the bar, never undraw it, so it declines the repaint below.
+    -- container can only draw the bar, never undraw it, so repaintFocusIndicator declines.
     background = nil,
 }
 

@@ -445,7 +445,7 @@ function FocusManager:moveFocusTo(x, y, focus_flags)
                 if unfocused_item then
                     self:_repaintFocusChange(unfocused_item, target_item)
                 else
-                    -- We blasted the whole container above, so it all has to go out.
+                    -- No single item was unfocused, so there is nothing to narrow to.
                     UIManager:setDirty(self.show_parent or self, "fast")
                 end
             end
