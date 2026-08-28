@@ -2868,6 +2868,14 @@ local dictionaries = {
         url = "https://www.reader-dict.com/file/ca/dict-ca-ca.zip"
     },
     {
+        name = "reader.dict Czech",
+        lang_in = "ces",
+        lang_out = "ces",
+        entries = 373601,
+        license = "MIT https://github.com/reader-dict/monolingual",
+        url = "https://www.reader-dict.com/file/cs/dict-cs-cs.zip"
+    },
+    {
         name = "reader.dict Danish",
         lang_in = "dan",
         lang_out = "dan",
