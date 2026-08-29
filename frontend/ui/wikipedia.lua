@@ -245,7 +245,7 @@ local WIKIPEDIA_IMAGES = 4
 --[[
 --  return decoded JSON table from Wikipedia
 --]]
-function Wikipedia:loadPage(text, lang, page_type, plain)
+function Wikipedia:loadPage(text, lang, page_type, plain, extparams)
     local url = require("socket.url")
     local query = ""
     local parsed = url.parse(self:getWikiServer(lang))
@@ -254,6 +254,11 @@ function Wikipedia:loadPage(text, lang, page_type, plain)
         self.wiki_search_params.explaintext = plain and "" or nil
         for k,v in pairs(self.wiki_search_params) do
             query = string.format("%s%s=%s&", query, k, v)
+        end
+        if extparams then
+            for k,v in pairs(extparams) do
+                query = string.format("%s%s=%s&", query, k, v)
+            end
         end
         parsed.query = query .. "gsrsearch=" .. url.escape(text)
     elseif page_type == WIKIPEDIA_FULL then -- full page content
@@ -330,6 +335,18 @@ function Wikipedia:searchAndGetIntros(text, lang)
             if show_image then
                 for pageid, page in pairs(query.pages) do
                     self:addImages(page, lang, false, image_size_factor, 8)
+                end
+            end
+            if result.continue and result.continue.excontinue then
+                result = self:loadPage(text, lang, WIKIPEDIA_INTRO, true, {excontinue = result.continue.excontinue})
+                if result and result.query and result.query.pages then
+                    local origpages = query.pages
+                    local extpages = result.query.pages
+                    for pageid, page in pairs(extpages) do
+                        if origpages[pageid] and not origpages[pageid].extract then
+                            origpages[pageid].extract = extpages[pageid].extract
+                        end
+                    end
                 end
             end
             return query.pages
