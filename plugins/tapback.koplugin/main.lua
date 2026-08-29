@@ -25,11 +25,11 @@ function Tapback:init()
     end
 
     self.ui.menu:registerToMainMenu(self)
-
+    
     self.thresh_x = G_reader_settings:readSetting("tapback_thresh_x") or 5
     self.thresh_y = G_reader_settings:readSetting("tapback_thresh_y") or 5
     self.thresh_z = G_reader_settings:readSetting("tapback_thresh_z") or 5
-
+    
     write_thresh("x", self.thresh_x)
     write_thresh("y", self.thresh_y)
     write_thresh("z", self.thresh_z)
@@ -68,39 +68,41 @@ function Tapback:showConfigDialog()
         },
         buttons = {
             {
-                text = _("Cancel"),
-                id = "close",
-                callback = function()
-                    UIManager:close(dialog)
-                end,
-            },
-            {
-                text = _("Save"),
-                is_enter_default = true,
-                callback = function()
-                    local fields = dialog:getFields()
-                    local x = tonumber(fields[1]) or 5
-                    local y = tonumber(fields[2]) or 5
-                    local z = tonumber(fields[3]) or 5
-
-                    self.thresh_x = x
-                    self.thresh_y = y
-                    self.thresh_z = z
-
-                    G_reader_settings:saveSetting("tapback_thresh_x", x)
-                    G_reader_settings:saveSetting("tapback_thresh_y", y)
-                    G_reader_settings:saveSetting("tapback_thresh_z", z)
-
-                    write_thresh("x", x)
-                    write_thresh("y", y)
-                    write_thresh("z", z)
-
-                    UIManager:close(dialog)
-                    UIManager:show(InfoMessage:new{
-                        text = _("Tapback sensitivity adjusted!"),
-                    })
-                end,
-            },
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(dialog)
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    is_enter_default = true,
+                    callback = function()
+                        local fields = dialog:getFields()
+                        local x = tonumber(fields[1]) or 5
+                        local y = tonumber(fields[2]) or 5
+                        local z = tonumber(fields[3]) or 5
+                        
+                        self.thresh_x = x
+                        self.thresh_y = y
+                        self.thresh_z = z
+                        
+                        G_reader_settings:saveSetting("tapback_thresh_x", x)
+                        G_reader_settings:saveSetting("tapback_thresh_y", y)
+                        G_reader_settings:saveSetting("tapback_thresh_z", z)
+                        
+                        write_thresh("x", x)
+                        write_thresh("y", y)
+                        write_thresh("z", z)
+                        
+                        UIManager:close(dialog)
+                        UIManager:show(InfoMessage:new{
+                            text = _("Tapback sensitivity adjusted!"),
+                        })
+                    end,
+                },
+            }
         }
     }
     UIManager:show(dialog)
