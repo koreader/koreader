@@ -24,7 +24,7 @@ local UnderlineContainer = WidgetContainer:extend{
     line_width = nil, -- (Don't use this, it's there because of the complex and ugly layout in TouchMenuItem)
     -- The colour behind the focus bar, so we can erase it where we painted it.
     -- Set it to whatever the parent clears that row with. Leaving it nil means we can
-    -- only draw the bar, never undraw it, so repaintFocusIndicator declines.
+    -- only draw the bar, never erase it, so repaintFocusIndicator declines.
     background = nil,
 }
 
@@ -36,8 +36,9 @@ function UnderlineContainer:getSize()
     }
 end
 
---- Where the line and the focus bar above it sit, in screen coordinates.
---- Valid only after paintTo: dimen may be set from the outside, its coordinates are not.
+--- Returns the screen-coordinate region occupied by the line and the focus bar.
+--- Only valid after paintTo: `dimen` may be supplied externally, but
+--- its coordinates are not valid screen coordinates until then.
 function UnderlineContainer:getFocusIndicatorRegion()
     if not self._painted then return end
     local line_x, line_width = self:_getLineXAndWidth()
@@ -105,7 +106,7 @@ function UnderlineContainer:paintTo(bb, x, y)
     local line_x, line_width = self:_getLineXAndWidth()
     local bottom = y + container_size.h
 
-    -- Erase a bar left over from a previous focus before the content goes in: it sits
+    -- Erase any bar the previous focus left behind, before the content goes in: it sits
     -- over the content's bottom, so clearing it afterwards would cut into what we drew.
     if not self.focused and self.background then
         self:_paintFocusBar(bb, line_x, bottom, line_width)

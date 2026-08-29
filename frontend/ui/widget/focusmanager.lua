@@ -324,7 +324,7 @@ end
 --- A fast repaint does not count toward a flashing eink refresh.
 function FocusManager:_repaintFocusChange(prev_item, next_item)
     local parent = self.show_parent or self
-    -- Painting outside UIManager's paint pass skips Screen:beforePaint(), which is
+    -- Painting outside UIManager's paint-pass skips Screen:beforePaint(), which is
     -- where forced HW rotation gets asserted; leave those screens the stock path.
     if not Screen.forced_rotation
             and canFastRepaint(prev_item) and canFastRepaint(next_item)
