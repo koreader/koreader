@@ -76,7 +76,7 @@ function Tapback:showConfigDialog()
                     end,
                 },
                 {
-                    text = _("Save"),
+                    text = _("OK"),
                     is_enter_default = true,
                     callback = function()
                         local fields = dialog:getFields()
