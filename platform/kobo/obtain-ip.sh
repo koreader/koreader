@@ -56,5 +56,5 @@ done
 if [ -x "/sbin/dhcpcd" ]; then
     dhcpcd -d -t 30 -w "${INTERFACE}"
 else
-    udhcpc -S -i "${INTERFACE}" -s /etc/udhcpc.d/default.script -x hostname:$(hostname) -b -q
+    udhcpc -S -i "${INTERFACE}" -s /etc/udhcpc.d/default.script -x "hostname:$(hostname)" -b -q
 fi
