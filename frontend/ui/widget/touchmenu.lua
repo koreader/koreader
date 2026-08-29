@@ -148,6 +148,7 @@ function TouchMenuItem:init()
     self._underline_container = UnderlineContainer:new{
         vertical_align = "center",
         focus_linesize = Size.line.focus_indicator,
+        background = Blitbuffer.COLOR_WHITE,
         dimen = self.dimen:copy(),
         line_width = self.item_frame:getSize().w, -- we'll draw a shorter line
         self.item_frame,
@@ -157,6 +158,14 @@ function TouchMenuItem:init()
     function self:isEnabled()
         return item_enabled ~= false and true
     end
+end
+
+function TouchMenuItem:getFocusIndicatorRegion()
+    return self._underline_container and self._underline_container:getFocusIndicatorRegion()
+end
+
+function TouchMenuItem:repaintFocusIndicator(bb)
+    return self._underline_container and self._underline_container:repaintFocusIndicator(bb)
 end
 
 function TouchMenuItem:onFocus()
