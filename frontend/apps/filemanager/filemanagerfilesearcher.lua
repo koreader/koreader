@@ -162,7 +162,7 @@ function FileSearcher:doSearch()
         if not completed then return end
         UIManager:close(info)
         if invalid_pattern then
-            self:onShowFileSearch(FileSearcher.search_string)
+            self:onShowFileSearch()
             UIManager:show(InfoMessage:new{ text = _("Incorrect pattern") })
             return
         end
@@ -184,7 +184,7 @@ function FileSearcher:doSearch()
     if #FileSearcher.search_results > 0 then
         self:onShowSearchResults(not_cached)
     else
-        self:showSearchResultsMessage(true, not_cached and invalid_pattern)
+        self:showSearchResultsMessage(true)
     end
 end
 
@@ -285,12 +285,7 @@ function FileSearcher:isFileMatch(filename, fullpath, search_string, is_file)
     end
 end
 
-function FileSearcher:showSearchResultsMessage(no_results, invalid_pattern)
-    if invalid_pattern then
-        self:onShowFileSearch(FileSearcher.search_string)
-        UIManager:show(InfoMessage:new{ text = _("Incorrect pattern") })
-        return
-    end
+function FileSearcher:showSearchResultsMessage(no_results)
     local text = no_results and T(_("No results for '%1'."), FileSearcher.search_string)
     if self.no_metadata_count == 0 then
         UIManager:show(ConfirmBox:new{
