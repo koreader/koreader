@@ -532,6 +532,36 @@ function Kindle:supportsScreensaver()
     end
 end
 
+
+function Kindle:hasTapbackSensitivity()
+    return self.tapback_sysfs_path ~= nil
+end
+
+function Kindle:getTapbackSensitivity()
+    if not self:hasTapbackSensitivity() then return nil, nil, nil end
+    local function readVal(axis)
+        local f = io.open(self.tapback_sysfs_path .. "/threshold_tap_" .. axis, "r")
+        if f then
+            local val = f:read("*a")
+            f:close()
+            return tonumber(val)
+        end
+        return nil
+    end
+    local x = readVal("x") or 5
+    local y = readVal("y") or 5
+    local z = readVal("z") or 5
+    return x, y, z
+end
+
+function Kindle:setTapbackSensitivity(x, y, z)
+    if not self:hasTapbackSensitivity() then return end
+    local util = require("ffi/util")
+    util.writeToSysfs(tostring(x), self.tapback_sysfs_path .. "/threshold_tap_x")
+    util.writeToSysfs(tostring(y), self.tapback_sysfs_path .. "/threshold_tap_y")
+    util.writeToSysfs(tostring(z), self.tapback_sysfs_path .. "/threshold_tap_z")
+end
+
 function Kindle:openInputDevices()
     -- Auto-detect input devices (via FBInk's fbink_input_scan)
     local ok, FBInkInput = pcall(ffi.loadlib, "fbink_input", 1)
