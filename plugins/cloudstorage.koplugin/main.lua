@@ -194,6 +194,9 @@ end
 -- After merging, the income file is no longer needed and is deleted. The local file is uploaded and then a copy of it is saved
 -- and renamed to replace the old cached file (thus the naming). The cached file stays (in the same folder) till being replaced
 -- in the next round.
+--
+-- `is_silent` suppresses both the failure message and the success notification, so a caller can run
+-- a sync the user did not ask for without interrupting what they are doing.
 function Cloud:sync(server, file_path, sync_cb, is_silent, caller_pre_callback)
     local provider = server and server.type and self.providers[server.type]
     if not provider then return end
@@ -238,10 +241,12 @@ function Cloud:sync(server, file_path, sync_cb, is_silent, caller_pre_callback)
             if type(code_response) == "number" and code_response >= 200 and code_response < 300 then
                 os.remove(cached_file_path)
                 ffiUtil.copyFile(file_path, cached_file_path)
-                UIManager:show(Notification:new{
-                    text = _("Successfully synchronized."),
-                    timeout = 2,
-                })
+                if not is_silent then
+                    UIManager:show(Notification:new{
+                        text = _("Successfully synchronized."),
+                        timeout = 2,
+                    })
+                end
             else
                 show_msg()
             end
