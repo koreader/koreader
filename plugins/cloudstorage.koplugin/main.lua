@@ -211,7 +211,11 @@ function Cloud:sync(server, file_path, sync_cb, is_silent, caller_pre_callback)
             local cached_file_path = file_path .. ".sync" -- file uploaded to server last time
             local fail_msg = _("Something went wrong when syncing, please check your network connection and try again later.")
             local show_msg = function(msg)
-                if is_silent then return end
+                if is_silent then
+                    -- nobody is watching: log it
+                    logger.warn("cloud sync failed:", msg or fail_msg)
+                    return
+                end
                 UIManager:show(InfoMessage:new{
                     text = msg or fail_msg,
                     timeout = 3,
