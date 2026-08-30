@@ -56,7 +56,7 @@ done
 if [ -x "/sbin/dhcpcd" ]; then
     dhcpcd -d -t 30 -w "${INTERFACE}"
 else
-    -- Stock sets hostname to kobo, mimic that in case we're on a custom OS that didn't set hostname.
+    # Stock sets hostname to kobo, mimic that in case we're on a custom OS that didn't set hostname.
     hn="$(hostname -s)"
     [ "${hn}" = "(none)" ] && hn="kobo"
     udhcpc -S -i "${INTERFACE}" -s /etc/udhcpc.d/default.script -x "hostname:${hn}" -b -q
