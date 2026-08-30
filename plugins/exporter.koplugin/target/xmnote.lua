@@ -60,10 +60,6 @@ function XMNoteExporter:genTargetSubMenu()
     }
 end
 
-local function emptyJsonArray()
-    return rapidjson.array({})
-end
-
 function XMNoteExporter:findBookIdInStatistics(conn, title, author, md5)
     local function findByMd5(author_value)
         local stmt = conn:prepare([[
@@ -129,7 +125,7 @@ end
 
 function XMNoteExporter:getBookReadingDurationsByDay(title, author, md5, md5_source)
     if not util.fileExists(db_location) then
-        return emptyJsonArray()
+        return rapidjson.null
     end
 
     local ok, durations = pcall(function()
@@ -137,7 +133,7 @@ function XMNoteExporter:getBookReadingDurationsByDay(title, author, md5, md5_sou
         local book_id = self:findBookIdInStatistics(conn, title, author, md5)
         if not book_id then
             conn:close()
-            return emptyJsonArray()
+            return rapidjson.null
         end
 
         local sql_query_durations = [[
@@ -155,7 +151,7 @@ function XMNoteExporter:getBookReadingDurationsByDay(title, author, md5, md5_sou
         conn:close()
 
         if not (result_durations and result_durations.date) then
-            return emptyJsonArray()
+            return rapidjson.null
         end
 
         local result = {}
@@ -168,7 +164,7 @@ function XMNoteExporter:getBookReadingDurationsByDay(title, author, md5, md5_sou
             table.insert(result, entry)
         end
         if #result == 0 then
-            return emptyJsonArray()
+            return rapidjson.null
         end
         return result
     end)
@@ -177,7 +173,7 @@ function XMNoteExporter:getBookReadingDurationsByDay(title, author, md5, md5_sou
         logger.warn("XMNote: statistics query failed",
             string.format("title=%q author=%q md5_source=%s err=%s",
                 title or "", author or "", tostring(md5_source), err))
-        return emptyJsonArray()
+        return rapidjson.null
     end
     return durations
 end
