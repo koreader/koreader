@@ -149,14 +149,12 @@ function FileSearcher:doSearch()
         tostring(self.case_sensitive) .. tostring(self.include_subfolders) ..
         tostring(self.use_patterns) .. tostring(self.include_metadata)
     local not_cached = FileSearcher.search_hash ~= search_hash
-    local invalid_pattern
     if not_cached then
         local Trapper = require("ui/trapper")
         local info = InfoMessage:new{ text = _("Searching… (tap to cancel)") }
         UIManager:show(info)
         UIManager:forceRePaint()
-        local completed, dirs, files, no_metadata_count
-        completed, dirs, files, no_metadata_count, invalid_pattern = Trapper:dismissableRunInSubprocess(function()
+        local completed, dirs, files, no_metadata_count, invalid_pattern = Trapper:dismissableRunInSubprocess(function()
             return self:getList()
         end, info)
         if not completed then return end
