@@ -752,6 +752,14 @@ function MosaicMenuItem:paintTo(bb, x, y)
     end
 end
 
+function MosaicMenuItem:getFocusIndicatorRegion()
+    return self._underline_container and self._underline_container:getFocusIndicatorRegion()
+end
+
+function MosaicMenuItem:repaintFocusIndicator(bb)
+    return self._underline_container and self._underline_container:repaintFocusIndicator(bb)
+end
+
 -- As done in MenuItem
 function MosaicMenuItem:onFocus()
     self._underline_container.color = Blitbuffer.COLOR_BLACK
