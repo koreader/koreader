@@ -675,8 +675,26 @@ function Dispatcher:removeAction(name)
     return true
 end
 
+function Dispatcher.getActionArgs(settings, get_args)
+    if Dispatcher:_itemsCount(settings) == 1 then
+        local action = next(settings)
+        if action == "settings" then action = next(settings, action) end
+        local args = settingsList[action] and (settingsList[action].args_func or settingsList[action].args)
+        if get_args then
+            args = type(args) == "function" and args() or args
+        end
+        return args, action
+    end
+end
+
 function Dispatcher.iter_func(settings, to_execute)
-    local order = util.tableGetValue(settings, "settings", "order")
+    local order, action
+    local is_cycle = settings.settings and settings.settings.cycle
+    if is_cycle and to_execute then
+        order, action = Dispatcher.getActionArgs(settings, true) -- args array
+    else
+        order = settings.settings and settings.settings.order -- actions array
+    end
     if order then
         local idx = settings.settings.execute_one_by_one
         if idx and to_execute then
@@ -688,6 +706,10 @@ function Dispatcher.iter_func(settings, to_execute)
             end
             idx = idx > #order and 1 or idx
             settings.settings.execute_one_by_one = idx == #order and 1 or idx + 1
+            if is_cycle then
+                settings[action] = order[idx] -- action next arg to execute with
+                return ipairs({ action })
+            end
             return ipairs({ order[idx] })
         end
         return ipairs(order)
@@ -707,7 +729,7 @@ function Dispatcher:_itemsCount(settings)
 end
 
 -- Returns a display name for the item.
-function Dispatcher:getNameFromItem(item, settings, dont_show_value)
+function Dispatcher:getNameFromItem(item, settings, dont_show_value, honor_cycle)
     if settingsList[item] == nil then
         return _("Unknown item")
     end
@@ -715,6 +737,9 @@ function Dispatcher:getNameFromItem(item, settings, dont_show_value)
     local title = settingsList[item].title
     if dont_show_value or value == nil then
         return title
+    elseif honor_cycle and settings and settings.settings and settings.settings.cycle
+            and Dispatcher.getActionArgs(settings) ~= nil then
+        return title .. " \u{F01E}" -- 'repeat'
     end
     local display_value
     local category = settingsList[item].category
@@ -764,6 +789,7 @@ function Dispatcher._addToOrder(location, settings, item)
             end
         end
         actions.settings = actions.settings or {}
+        actions.settings.cycle = nil -- available for single-action gestures/profiles only
         actions.settings.order = { first_item, item }
     elseif count > 2 then
         local order = util.tableGetValue(actions, "settings", "order")
@@ -802,7 +828,7 @@ function Dispatcher._removeFromOrder(location, settings, item)
 end
 
 -- Get a textual representation of the enabled actions to display in a menu item.
-function Dispatcher:menuTextFunc(settings)
+function Dispatcher:menuTextFunc(settings, honor_cycle)
     if settings then
         local count = Dispatcher:_itemsCount(settings)
         if count == 0 then
@@ -810,7 +836,7 @@ function Dispatcher:menuTextFunc(settings)
         elseif count == 1 then
             local item = next(settings)
             if item == "settings" then item = next(settings, item) end
-            return Dispatcher:getNameFromItem(item, settings)
+            return Dispatcher:getNameFromItem(item, settings, nil, honor_cycle)
         end
         return T(NC_("Dispatcher", "1 action", "%1 actions", count), count)
     end
@@ -1140,6 +1166,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
                     util.tableRemoveValue(actions, "settings", "show_as_quickmenu")
                     caller.updated = true
                 elseif util.tableGetValue(actions, "settings", "execute_one_by_one") then
+                    actions.settings.cycle = nil
                     util.tableRemoveValue(actions, "settings", "execute_one_by_one")
                     caller.updated = true
                 end
@@ -1149,16 +1176,21 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     table.insert(menu, {
         text = _("Execute one by one"),
         enabled_func = function()
-            return util.tableGetValue(location[settings], "settings", "order") and true or false
+            return (util.tableGetValue(location[settings], "settings", "order")
+                or Dispatcher.getActionArgs(location[settings]) ~= nil) and true or false
         end,
         checked_func = function()
             return util.tableGetValue(location[settings], "settings", "execute_one_by_one")
+                and Dispatcher.getActionArgs(location[settings]) ~= nil
         end,
         radio = true,
         callback = function()
             local actions = location[settings]
             if actions and not util.tableGetValue(actions, "settings", "execute_one_by_one") then
-                util.tableSetValue(actions, 1, "settings", "execute_one_by_one") -- start from the first action
+                local args, action = Dispatcher.getActionArgs(actions, true)
+                local start_idx = args and util.arrayContains(args, actions[action]) -- start from the selected option
+                util.tableSetValue(actions, start_idx or 1, "settings", "execute_one_by_one")
+                actions.settings.cycle = args and true
                 actions.settings.show_as_quickmenu = nil
                 actions.settings.quickmenu_separators = nil
                 actions.settings.keep_open_on_apply = nil
@@ -1178,6 +1210,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             local actions = location[settings]
             if actions and not util.tableGetValue(actions, "settings", "show_as_quickmenu") then
                 util.tableSetValue(actions, true, "settings", "show_as_quickmenu")
+                actions.settings.cycle = nil
                 actions.settings.execute_one_by_one = nil
                 caller.updated = true
             end

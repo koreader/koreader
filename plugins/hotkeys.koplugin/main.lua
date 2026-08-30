@@ -298,7 +298,7 @@ end
 function HotKeys:shortcutTitleFunc(hotkey)
     local title = hotkeys_list[hotkey]
     local action_list = self.hotkeys[hotkey]
-    local action_text = action_list and Dispatcher:menuTextFunc(action_list) or _("No action")
+    local action_text = action_list and Dispatcher:menuTextFunc(action_list, true) or _("No action")
     return T(_("%1: (%2)"), title, action_text)
 end
 

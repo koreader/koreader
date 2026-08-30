@@ -207,7 +207,7 @@ function Profiles:getSubMenuItems()
             },
             {
                 text_func = function()
-                    return T(_("Edit actions: (%1)"), Dispatcher:menuTextFunc(v))
+                    return T(_("Edit actions: (%1)"), Dispatcher:menuTextFunc(v, true)) -- honor cycle
                 end,
                 sub_item_table_func = function()
                     local edit_actions_sub_items = {}
