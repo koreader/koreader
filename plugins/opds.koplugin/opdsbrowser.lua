@@ -1085,7 +1085,8 @@ function OPDSBrowser:showDownloads(item)
                     callback = function()
                         UIManager:close(self.download_dialog)
                         local local_path = self:getLocalDownloadPath(filename, filetype, acquisition.href)
-                        self:checkDownloadFile(local_path, acquisition.href, self.root_catalog_username, self.root_catalog_password, self.file_downloaded_callback)
+                        self:checkDownloadFile(local_path, acquisition.href, self.root_catalog_username, self.root_catalog_password,
+                            self.file_downloaded_callback, self.file_read_now_callback)
                     end,
                     hold_callback = function()
                         UIManager:close(self.download_dialog)
@@ -1236,7 +1237,7 @@ function OPDSBrowser:getLocalDownloadPath(filename, filetype, remote_url)
 end
 
 -- Downloads a book (with "File already exists" dialog)
-function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, password, caller_callback)
+function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, password, caller_callback, read_now_callback)
     local function download()
         UIManager:scheduleIn(1, function()
             self:downloadFile(local_path, remote_url, username, password, caller_callback)
@@ -1247,12 +1248,24 @@ function OPDSBrowser:checkDownloadFile(local_path, remote_url, username, passwor
         })
     end
     if lfs.attributes(local_path) then
+        local other_buttons
+        if read_now_callback then -- offer to read the local file instead of downloading it again
+            other_buttons = {{
+                {
+                    text = _("Read now"),
+                    callback = function()
+                        read_now_callback(local_path)
+                    end,
+                },
+            }}
+        end
         UIManager:show(ConfirmBox:new{
             text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filepath(local_path)),
             ok_text = _("Overwrite"),
             ok_callback = function()
                 download()
             end,
+            other_buttons = other_buttons,
         })
     else
         download()
@@ -1562,8 +1575,14 @@ function OPDSBrowser:showDownloadListItemDialog(item)
                         remove_item()
                         self._manager.file_downloaded_callback(local_path)
                     end
+                    local function file_read_now_callback(local_path)
+                        -- Keep the item in the download list, it has not been downloaded
+                        textviewer:onClose()
+                        self._manager.file_read_now_callback(local_path)
+                    end
                     NetworkMgr:runWhenConnected(function()
-                        self._manager:checkDownloadFile(dl_item.file, dl_item.url, dl_item.username, dl_item.password, file_downloaded_callback)
+                        self._manager:checkDownloadFile(dl_item.file, dl_item.url, dl_item.username, dl_item.password,
+                            file_downloaded_callback, file_read_now_callback)
                     end)
                 end,
             },
