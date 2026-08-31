@@ -79,15 +79,15 @@ function ReadTimer:init()
                 cancel_callback = function()
                     self.last_interval_time = 0
                 end,
-                choice1_text = _("Repeat"),
+                choice1_text = T(_("+%1 min"), self:getSnoozeMinutes()),
                 choice1_callback = function()
-                    logger.dbg("Schedule a new time:", self.last_interval_time)
-                    self:rescheduleIn(self.last_interval_time)
-                end,
-                choice2_text = T(_("+%1 min"), self:getSnoozeMinutes()),
-                choice2_callback = function()
                     logger.dbg("ReadTimer: snoozing for", self:getSnoozeMinutes(), "minutes")
                     self:rescheduleIn(self:getSnoozeMinutes() * 60)
+                end,
+                choice2_text = _("Repeat"),
+                choice2_callback = function()
+                    logger.dbg("Schedule a new time:", self.last_interval_time)
+                    self:rescheduleIn(self.last_interval_time)
                 end,
             })
         else
