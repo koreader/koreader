@@ -1,6 +1,6 @@
 local CheckButton = require("ui/widget/checkbutton")
-local ConfirmBox = require("ui/widget/confirmbox")
 local DateTimeWidget = require("ui/widget/datetimewidget")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
@@ -70,32 +70,26 @@ function ReadTimer:init()
             maybeRescheduleInterval()
             return
         end
-        local confirm_box
         -- only interval support repeat
         if self.last_interval_time > 0 and not self.settings.auto_reschedule_interval then
             logger.dbg("can_repeat, show confirm_box")
-            confirm_box = ConfirmBox:new{
+            UIManager:show(MultiConfirmBox:new{
                 text = tip_text,
-                ok_text = _("Repeat"),
-                ok_callback = function()
+                cancel_text = _("Done"),
+                cancel_callback = function()
+                    self.last_interval_time = 0
+                end,
+                choice1_text = _("Repeat"),
+                choice1_callback = function()
                     logger.dbg("Schedule a new time:", self.last_interval_time)
                     self:rescheduleIn(self.last_interval_time)
                 end,
-                cancel_text = _("Done"),
-                cancel_callback = function ()
-                    self.last_interval_time = 0
+                choice2_text = T(_("+%1 min"), self:getSnoozeMinutes()),
+                choice2_callback = function()
+                    logger.dbg("ReadTimer: snoozing for", self:getSnoozeMinutes(), "minutes")
+                    self:rescheduleIn(self:getSnoozeMinutes() * 60)
                 end,
-                other_buttons = {{
-                    {
-                        text = T(_("+%1 min"), self:getSnoozeMinutes()),
-                        callback = function()
-                            logger.dbg("ReadTimer: snoozing for", self:getSnoozeMinutes(), "minutes")
-                            self:rescheduleIn(self:getSnoozeMinutes() * 60)
-                        end,
-                    },
-                }},
-            }
-            UIManager:show(confirm_box)
+            })
         else
             logger.dbg("can`t_repeat, show infomessage")
             local top_wg = UIManager:getTopmostVisibleWidget()
