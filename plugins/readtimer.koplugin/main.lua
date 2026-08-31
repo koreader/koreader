@@ -1,6 +1,6 @@
 local CheckButton = require("ui/widget/checkbutton")
-local ConfirmBox = require("ui/widget/confirmbox")
 local DateTimeWidget = require("ui/widget/datetimewidget")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
@@ -70,24 +70,26 @@ function ReadTimer:init()
             maybeRescheduleInterval()
             return
         end
-        local confirm_box
         -- only interval support repeat
         if self.last_interval_time > 0 and not self.settings.auto_reschedule_interval then
             logger.dbg("can_repeat, show confirm_box")
-            confirm_box = ConfirmBox:new{
+            UIManager:show(MultiConfirmBox:new{
                 text = tip_text,
-                ok_text = _("Repeat"),
-                ok_callback = function()
-                    logger.dbg("Schedule a new time:", self.last_interval_time)
-                    UIManager:close(confirm_box)
-                    self:rescheduleIn(self.last_interval_time)
-                end,
                 cancel_text = _("Done"),
-                cancel_callback = function ()
+                cancel_callback = function()
                     self.last_interval_time = 0
                 end,
-            }
-            UIManager:show(confirm_box)
+                choice1_text = T(_("+%1 min"), self:getSnoozeMinutes()),
+                choice1_callback = function()
+                    logger.dbg("ReadTimer: snoozing for", self:getSnoozeMinutes(), "minutes")
+                    self:rescheduleIn(self:getSnoozeMinutes() * 60)
+                end,
+                choice2_text = _("Repeat"),
+                choice2_callback = function()
+                    logger.dbg("Schedule a new time:", self.last_interval_time)
+                    self:rescheduleIn(self.last_interval_time)
+                end,
+            })
         else
             logger.dbg("can`t_repeat, show infomessage")
             local top_wg = UIManager:getTopmostVisibleWidget()
@@ -157,25 +159,29 @@ function ReadTimer:init()
     self:onDispatcherRegisterActions()
 end
 
-function ReadTimer:update_status_bars(seconds)
+function ReadTimer:update_status_bars()
     if self.settings.show_value_in_header then
         UIManager:broadcastEvent(Event:new("UpdateHeader"))
     end
     if self.settings.show_value_in_footer then
         UIManager:broadcastEvent(Event:new("RefreshAdditionalContent"))
     end
-    -- if seconds schedule 1ms later
-    if seconds and seconds >= 0 then
-        UIManager:scheduleIn(math.max(math.floor(seconds)%60, 0.001), self.update_status_bars, self)
-    elseif seconds and seconds < 0 and self:scheduled() then
-        UIManager:scheduleIn(math.max(math.floor(self:remaining())%60, 0.001), self.update_status_bars, self)
-    else
-        UIManager:scheduleIn(60, self.update_status_bars, self)
+    if not self:scheduled() then
+        -- Timer expired or stopped: stop ticking, no need to keep waking up the device.
+        return
     end
+    -- Schedule the next tick for the remaining time's next minute boundary,
+    -- based on the actual remaining time (not a stale constant), so the
+    -- countdown display flips right when a minute is crossed.
+    UIManager:scheduleIn(math.max(self:remaining()%60, 0.001), self.update_status_bars, self)
 end
 
 function ReadTimer:scheduled()
     return self.time ~= 0
+end
+
+function ReadTimer:getSnoozeMinutes()
+    return self.settings.snooze_minutes or 5
 end
 
 function ReadTimer:remaining()
@@ -217,20 +223,20 @@ end
 function ReadTimer:addAdditionalHeaderContent()
     if self.ui.crelistener then
         self.ui.crelistener:addAdditionalHeaderContent(self.additional_header_content_func)
-        self:update_status_bars(-1)
+        self:update_status_bars()
     end
 end
 function ReadTimer:addAdditionalFooterContent()
     if self.ui.view then
         self.ui.view.footer:addAdditionalFooterContent(self.additional_footer_content_func)
-        self:update_status_bars(-1)
+        self:update_status_bars()
     end
 end
 
 function ReadTimer:removeAdditionalHeaderContent()
     if self.ui.crelistener then
         self.ui.crelistener:removeAdditionalHeaderContent(self.additional_header_content_func)
-        self:update_status_bars(-1)
+        self:update_status_bars()
         UIManager:broadcastEvent(Event:new("UpdateHeader"))
     end
 end
@@ -238,7 +244,7 @@ end
 function ReadTimer:removeAdditionalFooterContent()
     if self.ui.view then
         self.ui.view.footer:removeAdditionalFooterContent(self.additional_footer_content_func)
-        self:update_status_bars(-1)
+        self:update_status_bars()
         UIManager:broadcastEvent(Event:new("UpdateFooter", true))
     end
 end
@@ -256,7 +262,7 @@ function ReadTimer:rescheduleIn(seconds)
     self.time = time.now() + time.s(seconds)
     UIManager:scheduleIn(seconds, self.alarm_callback)
     if self.settings.show_value_in_header or self.settings.show_value_in_footer then
-        self:update_status_bars(seconds)
+        self:update_status_bars()
     end
 end
 
@@ -349,6 +355,28 @@ function ReadTimer:addToMainMenu(menu_items)
                     self:onStopTimer(touchmenu_instance)
                 end,
                 separator = true,
+            },
+            {
+                text_func = function()
+                    return T(_("Snooze time: %1"), T(_("%1 min"), self:getSnoozeMinutes()))
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    UIManager:show(SpinWidget:new{
+                        title_text = _("Snooze time"),
+                        info_text = _("Extra minutes added when tapping the snooze button on the timer expiry dialog."),
+                        value = self:getSnoozeMinutes(),
+                        value_min = 1,
+                        value_max = 60,
+                        value_hold_step = 5,
+                        ok_text = _("Set"),
+                        callback = function(spin)
+                            self.settings.snooze_minutes = spin.value
+                            touchmenu_instance:updateItems()
+                        end,
+                    })
+                end,
             },
             {
                 text_func = function()
@@ -515,6 +543,8 @@ function ReadTimer:onStopTimer(touchmenu_instance)
     if self:scheduled() then
         self.last_interval_time = 0
         self:unschedule()
+        -- Final refresh so the timer value disappears from the status bar right away.
+        self:update_status_bars()
         if touchmenu_instance then
             touchmenu_instance:updateItems()
         else
