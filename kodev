@@ -709,6 +709,174 @@ function kodev-log() {
 
 # }}}
 
+# Command: docker. {{{
+
+function docker_is_rootless() {
+    docker info --format "{{.SecurityOptions}}" | grep -qw name=rootless
+}
+
+function docker_create() {
+    local image="$1"
+    shift
+    case "${image}" in
+        android-arm | android-arm64 | android-x86 | android-x86_64) image=koreader/koandroid ;;
+        cervantes) image=koreader/kocervantes ;;
+        kindle | kindlehf | kindlepw2 | kindle-legacy) image=koreader/kokindle ;;
+        kobo | kobov4 | kobov5) image=koreader/kokobo ;;
+        linux) image=koreader/koappimage ;;
+        pocketbook | pocketbookhf) image=koreader/kopb ;;
+        remarkable | remarkable-aarch64) image=koreader/koremarkable ;;
+    esac
+    local user uid gid
+    if docker_is_rootless; then
+        user=root uid=0 gid=0
+    else
+        user="${USER}" uid="$(id -u)" gid="$(id -g)"
+    fi
+    local cmd=(
+        docker run
+        --detach
+        --tty
+        --user=root
+    )
+    if type -P ccache >/dev/null; then
+        local cache_dir
+        cache_dir="$(ccache --get-config cache_dir)"
+        cmd+=(
+            --env=CCACHE_DIR=/ccache
+            --volume="${cache_dir}:/ccache"
+        )
+    fi
+    local add_cwd_volume=1 gitrepo
+    gitrepo="$(git rev-parse --path-format=absolute --git-common-dir)"
+    if [[ "${gitrepo}" != "${PWD}/.git" ]]; then
+        # Worktree? Ensure real repo is available with the same path.
+        cmd+=(--volume="${gitrepo}:${gitrepo}")
+        if [[ "${PWD}" = "${gitrepo}"/* ]]; then
+            # No need for current directory volume: it's under the git repository volume.
+            add_cwd_volume=0
+        fi
+    fi
+    if [[ ${add_cwd_volume} -ne 0 ]]; then
+        cmd+=(--volume="${PWD}:${PWD}")
+    fi
+    # NOTE: we'll bind the current directory to the same path in the container
+    # so relative git-dir references are not broken and build output paths are
+    # identical too (e.g. compiler errors / warnings).
+    cmd+=(
+        --workdir="${PWD}"
+        "$@" "${image}"
+        ./kodev docker entrypoint "${user}" "${uid}" "${gid}"
+    )
+    CONTAINER_ID="$(run "${cmd[@]}")"
+    CONTAINER_ID="$(docker inspect --type=container --format='{{ .Name }}' "${CONTAINER_ID}")"
+    cat <<EOF
+Docker container ID: ${CONTAINER_ID}:
+- to run kodev commands in this container:
+  ./kodev docker ${CONTAINER_ID} <KODEV_COMMAND> …
+- to launch an interactive shell:
+  ./kodev docker ${CONTAINER_ID} activate
+- to destroy the container:
+  ./kodev docker destroy ${CONTAINER_ID}
+- to automatically use this container for docker commands:
+  export CONTAINER_ID=${CONTAINER_ID}
+EOF
+}
+
+function docker_destroy() {
+    if [[ $# -ge 1 ]]; then
+        CONTAINER_ID="$1"
+        shift
+    fi
+    run docker rm --force "${CONTAINER_ID}"
+}
+
+function docker_entrypoint() {
+    user="$1" uid="$2" gid="$3"
+    if [[ "${user}" != 'root' ]]; then
+        kouid="$(id -u ko)" kogid="$(id -g ko)"
+        if [[ "${gid}" != "${kogid}" ]]; then
+            groupadd --gid "${gid}" "${user}"
+        fi
+        if [[ "${uid}" != "${kouid}" ]]; then
+            useradd --uid "${uid}" --gid "${gid}" --shell /bin/bash "${user}"
+            echo "${user} ALL=(ALL:ALL) NOPASSWD:ALL" >>/etc/sudoers
+        fi
+    fi
+    while true; do sleep 0.5; done
+}
+
+function docker_exec() {
+    if ! is_kodev_command "$1"; then
+        CONTAINER_ID="$1"
+        shift
+    fi
+    local running
+    running="$(docker inspect --type=container --format='{{ .State.Running }}' "${CONTAINER_ID}")"
+    if [[ "${running}" != 'true' ]]; then
+        run docker start "${CONTAINER_ID}"
+    fi
+    local uid gid
+    if docker_is_rootless; then
+        uid=0 gid=0
+    else
+        uid="$(id -u)" gid="$(id -g)"
+    fi
+    run docker exec --interactive --tty --user="${uid}:${gid}" "${CONTAINER_ID}" ./kodev "$@"
+}
+
+function kodev-docker() {
+    HELP="
+USAGE: $0 ${CMD} <COMMAND> …
+
+COMMANDS:
+
+    create <DOCKER_IMAGE> DOCKER_ARGS*   setup docker container (DOCKER_IMAGE
+                                         can be a target name to use the right
+                                         corresponding koreader/koxxx image)
+
+    destroy [CONTAINER_ID]               destroy docker container
+
+    [CONTAINER_ID] <KODEV_COMMAND> …     run kodev command in docker container
+"
+    # Stop getopt parsing at the first non-option argument.
+    export POSIXLY_CORRECT=1
+    parse_options '' '' '+' "$@"
+    unset POSIXLY_CORRECT
+    set -- "${ARGS[@]}"
+    local CMD="$1" expected valid=0
+    case "${CMD}" in
+        create)
+            shift
+            expected='1 or more'
+            [[ $# -ge 1 ]] || valid=1
+            ;;
+        destroy)
+            shift
+            expected='1 optional'
+            [[ $# -le 1 ]] || valid=1
+            ;;
+        entrypoint) # Hidden entrypoint subcommand.
+            shift
+            expected='3'
+            [[ $# -eq 3 ]] || valid=1
+            ;;
+        *)
+            CMD='exec'
+            expected='1 or more'
+            [[ $# -ge 1 ]] || valid=1
+            ;;
+    esac
+    if [[ ${valid} -ne 0 ]]; then
+        err "ERROR: invalid docker ${CMD} arguments; ${expected} expected but $# received"
+        echo "${HELP}" 1>&2
+        exit ${E_OPTERR}
+    fi
+    "docker_${CMD}" "$@"
+}
+
+# }}}
+
 HELP_MSG="
 USAGE: $0 COMMAND <ARGS>
 
