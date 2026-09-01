@@ -50,6 +50,10 @@ local Button = InputContainer:extend{
     enabled = true,
     hidden = false,
     allow_hold_when_disabled = false,
+    -- Allow any button to have a physical key_binding(s), same shape as InputContainer.key_events
+    -- entries: a single key string, or an array of keys/modifier-key combinations.
+    key_bindings = nil,
+    hold_key_bindings = nil,
     margin = 0,
     bordersize = Size.border.button,
     background = nil, -- white by default
@@ -265,6 +269,36 @@ function Button:init()
             },
         }
     }
+    if self.key_bindings then
+        if type(self.key_bindings) ~= "string" and type(self.key_bindings) ~= "table" then
+            logger.warn("Button: invalid key_bindings for button", self.text, "-", type(self.key_bindings))
+        else
+            local bind = type(self.key_bindings) == "string" and { self.key_bindings } or self.key_bindings
+            self.key_events.Shortcut = { bind }
+            self.onShortcut = function(this)
+                if this.enabled and this.callback then
+                    this.callback()
+                    return true
+                end
+                return false
+            end
+        end
+    end
+    if self.hold_key_bindings then
+        if type(self.hold_key_bindings) ~= "string" and type(self.hold_key_bindings) ~= "table" then
+            logger.warn("Button: invalid hold_key_bindings for button", self.text, "-", type(self.hold_key_bindings))
+        else
+            local bind = type(self.hold_key_bindings) == "string" and { self.hold_key_bindings } or self.hold_key_bindings
+            self.key_events.HoldShortcut = { bind }
+            self.onHoldShortcut = function(this)
+                if this.enabled and this.hold_callback then
+                    this.hold_callback()
+                    return true
+                end
+                return false
+            end
+        end
+    end
 end
 
 function Button:getMinNeededWidth()
