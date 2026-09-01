@@ -23,6 +23,8 @@ cd "${KOREADER_DIR}" || exit
 ko_update_check() {
     NEWUPDATE="${KOREADER_DIR}/ota/update.tar.xz"
     if [ -f "${NEWUPDATE}" ]; then
+        # Clear screen to delete UI leftovers
+        ./fbink --cls
         ./fbink -q -y -7 -pmh "Updating KOReader"
         # Keep a copy of the old manifest for cleaning leftovers later.
         cp "${KOREADER_DIR}/ota/package.index" /tmp/
