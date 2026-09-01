@@ -119,6 +119,11 @@ show_help() {
     printf '\n%s\n\n' "${help}"
 }
 
+is_kodev_command() {
+    local fn="kodev-$1"
+    type "${fn}" 2>/dev/null | grep -Fqx "${fn} is a function"
+}
+
 # }}}
 
 # Target setup. {{{.
@@ -742,32 +747,20 @@ if [[ $# -lt 1 ]]; then
     exit 1
 fi
 
-CMD="$1"
-shift
-case "${CMD}" in
-    # Commands.
-    activate) ;;
-    build) ;;
-    check) ;;
-    clean) ;;
-    cov) ;;
-    fetch-thirdparty) ;;
-    log) ;;
-    prompt) ;;
-    release) ;;
-    run) ;;
-    test) ;;
-    wbuilder) ;;
+case "$1" in
     # Options.
     -h | --help)
         echo "${HELP_MSG}"
         exit 0
         ;;
-    # Invalid.
     *)
-        err "Unknown command: $1."
-        echo "${HELP_MSG}"
-        exit 8
+        if ! is_kodev_command "$1"; then
+            err "Unknown command: $1."
+            echo "${HELP_MSG}"
+            exit 8
+        fi
+        CMD="$1"
+        shift
         ;;
 esac
 
