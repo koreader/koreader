@@ -31,8 +31,8 @@ local valid_ext = {
     "zip",
 }
 
---- If the file "calibre-extensions.lua", under dataDir, returns a table,
---- then use it instead of default extensions.
+-- If the file "calibre-extensions.lua", under dataDir, returns a table,
+-- then use it instead of default extensions.
 local function getCustomConfig()
     local path = require("datastorage"):getDataDir()
     local ok, extensions = pcall(dofile, string.format("%s/%s", path, "calibre-extensions.lua"))
@@ -45,7 +45,7 @@ local CalibreExtensions = {
     user_overrides = getCustomConfig(),
 }
 
---- Get all formats that we report as supported for calibre.
+-- Get all formats that we report as supported for calibre.
 function CalibreExtensions:get()
     if type(self.user_overrides) == "table" then
         return self.user_overrides
