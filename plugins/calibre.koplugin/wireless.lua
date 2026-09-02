@@ -81,7 +81,7 @@ end
 --- Supported formats list.
 local extensions = CalibreExtensions:get()
 
---- Get all the required length of all extensions.
+--- Get all the required lengths of all extensions.
 --- In calibre 9.14, this length is the amount protected against being shortend at the end of the path
 --- and is defined as "dotless extension".
 local function getExtensionPathLengths()
