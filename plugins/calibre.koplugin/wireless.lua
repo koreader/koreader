@@ -78,15 +78,17 @@ if false then
 end
 -- luacheck: pop
 
--- supported formats
+--- Supported formats list.
 local extensions = CalibreExtensions:get()
 
+--- Get all the required lengths of all extensions.
+--- In calibre 9.14, this length is the amount protected against being shortend at the end of the path
+--- and is defined as "dotless extension".
 local function getExtensionPathLengths()
     local t = {}
     for _, v in ipairs(extensions) do
-        -- magic number from calibre, see
-        -- https://github.com/koreader/koreader/pull/6177#discussion_r430753964
-        t[v] = 37
+        -- Set the required length to length of the actual extension.
+        t[v] = string.len(v)
     end
     return t
 end
