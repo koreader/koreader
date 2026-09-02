@@ -78,7 +78,7 @@ if false then
 end
 -- luacheck: pop
 
--- supported formats
+--- Supported formats list.
 local extensions = CalibreExtensions:get()
 
 --- Get all extension required length.

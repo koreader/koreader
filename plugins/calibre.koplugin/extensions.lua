@@ -45,7 +45,7 @@ local CalibreExtensions = {
     user_overrides = getCustomConfig(),
 }
 
---- Get all formats that we report as supported for calibre
+--- Get all formats that we report as supported for calibre.
 function CalibreExtensions:get()
     if type(self.user_overrides) == "table" then
         return self.user_overrides
