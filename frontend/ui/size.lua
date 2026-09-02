@@ -64,7 +64,9 @@ local Size = {
         thin = Screen:scaleBySize(0.5),
         medium = Screen:scaleBySize(1),
         thick = Screen:scaleBySize(1.5),
-        focus_indicator = Screen:scaleBySize(3),
+        -- Underline under a focused mosaic cover. The argument drops on denser screens because
+        -- scaleBySize, which goes by the screen's shorter side, already grows it there.
+        focus_indicator = Screen:scaleBySize(Screen:getDPI() < 200 and 5 or 3),
         progress = Screen:scaleBySize(7),
     },
     item = {

@@ -425,7 +425,7 @@ function MenuItem:init()
     self._underline_container = UnderlineContainer:new{
         color = self.line_color,
         linesize = self.linesize,
-        focus_linesize = Size.line.focus_indicator,
+        focus_linesize = Size.line.thick,
         -- With text_bgcolor the row has a coloured frame behind its text only, so no
         -- single colour erases the focus bar over the whole width; without background
         -- set, such a row falls back to the stock full repaint.
