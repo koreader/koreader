@@ -31,7 +31,7 @@ local valid_ext = {
     "zip",
 }
 
---- if the file "calibre-extensions.lua", under dataDir, returns a table
+--- If the file "calibre-extensions.lua", under dataDir, returns a table,
 --- then use it instead of default extensions.
 local function getCustomConfig()
     local path = require("datastorage"):getDataDir()
