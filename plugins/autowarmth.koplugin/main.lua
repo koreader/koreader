@@ -51,6 +51,7 @@ local AutoWarmth = WidgetContainer:extend{
     sched_warmths = nil, -- array
     event_auto_night_mode_activated = "AutoNightModeActivated",
     event_auto_warmth_activated = "AutoWarmthActivated",
+    event_auto_standby_setting_changed = "AutoStandbySettingChanged",
 
     -- Static member that shall survive reloading of the plugin but not a restart
     fl_user_toggle = false, -- true/false if someone (AutoWarmth, gesture ...) has toggled the frontlight
@@ -126,6 +127,11 @@ function AutoWarmth:init()
         end
         i = j
     end
+
+    -- Auto-standby pauses the task scheduler while reading, so on devices with
+    -- delayed timer execution we need to re-check the current warmth on the next
+    -- user interaction.
+    self:_updateAutoStandbyInputHook()
 
     -- schedule recalculation shortly after midnight
     self:scheduleMidnightUpdate()
@@ -293,6 +299,26 @@ function AutoWarmth:clearEventHandlers()
     self.onToggleNightMode = nil
     self.onSetNightMode = nil
     self.onToggleFrontlight = nil
+end
+
+function AutoWarmth:_updateAutoStandbyInputHook()
+    local is_auto_standby_enabled = G_reader_settings:readSetting("auto_standby_timeout_seconds", -1) > 0
+    if is_auto_standby_enabled then
+        if self._auto_standby_input_hook then
+            return
+        end
+        self._auto_standby_input_hook = function()
+            self:onInputEvent()
+        end
+        UIManager.event_hook:register("InputEvent", self._auto_standby_input_hook)
+    elseif self._auto_standby_input_hook then
+        UIManager.event_hook:unregister("InputEvent", self._auto_standby_input_hook)
+        self._auto_standby_input_hook = nil
+    end
+end
+
+function AutoWarmth:onAutoStandbySettingChanged()
+    self:_updateAutoStandbyInputHook()
 end
 
 -- from_resume ... true if called from onResume
@@ -484,6 +510,22 @@ end
 -- schedules the next warmth change
 -- search_pos ... start searching from that index
 -- from_resume ... true if first call after resume
+function AutoWarmth:onInputEvent()
+    self:_updateAutoStandbyInputHook()
+
+    if G_reader_settings:readSetting("auto_standby_timeout_seconds", -1) <= 0 then
+        return
+    end
+
+    if self.activate == 0 or #self.sched_warmths == 0 or self.sched_warmth_index > #self.sched_warmths then
+        return
+    end
+
+    if SunTime:getTimeInSec() >= self.sched_times_s[self.sched_warmth_index] then
+        self:scheduleNextWarmthChange(false)
+    end
+end
+
 function AutoWarmth:scheduleNextWarmthChange(from_resume)
     logger.dbg("AutoWarmth: scheduleNextWarmthChange")
     UIManager:unschedule(self.scheduleNextWarmthChange)
