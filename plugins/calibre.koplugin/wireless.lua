@@ -81,13 +81,13 @@ end
 --- Supported formats list.
 local extensions = CalibreExtensions:get()
 
---- Get all extension required length.
+--- Get all the required length of all extensions.
 --- In calibre 9.14, this length is the amount protected against being shortend at the end of the path
 --- and is defined as "dotless extension".
 local function getExtensionPathLengths()
     local t = {}
     for _, v in ipairs(extensions) do
-        -- set the required length to the actual extension's length
+        -- Set the required length to length of the actual extension.
         t[v] = string.len(v)
     end
     return t
