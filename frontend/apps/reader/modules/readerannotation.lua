@@ -410,7 +410,7 @@ function ReaderAnnotation:isItemInPositionOrderRolling(a, b)
     end
     local compare_xp = self.document:compareXPointers(a.page, b.page)
     if a.drawer and compare_xp == 0 then -- both highlights with the same start, compare ends
-        order = self:getInvalidXPointersOrder(a, b, "pos2")
+        order = self:getInvalidXPointersOrder(a, b, "pos1")
         if order ~= nil then
             return order
         end
