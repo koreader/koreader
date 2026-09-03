@@ -115,7 +115,7 @@ function ListMenuItem:init()
             h = self.height
         },
         linesize = self.underline_h,
-        focus_linesize = Size.line.focus_indicator,
+        focus_linesize = Size.line.focus_row,
         -- widget : will be filled in self:update()
     }
     self[1] = self._underline_container
