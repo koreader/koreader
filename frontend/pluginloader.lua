@@ -44,6 +44,7 @@ local BUILTIN_PLUGINS = {
     ["hotkeys"] = true,
     ["httpinspector"] = true,
     ["japanese"] = true,
+    ["kazakh"] = true,
     ["keepalive"] = true,
     ["kosync"] = true,
     ["movetoarchive"] = true,
