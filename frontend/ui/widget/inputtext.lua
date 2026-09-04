@@ -795,6 +795,16 @@ local sym_key_map = {
     ["Z"] = "{", ["X"] = "}", ["C"] = "[", ["V"] = "]", ["B"] = "1", ["N"] = "2", ["M"] = "3", ["."] = ":", ["AA"] = ";",
 }
 
+-- NOTE: This maps the US-QWERTY number row and punctuation keys to the symbol
+--       produced when Shift is held on a physical keyboard (e.g. Shift+1 -> "!").
+--       Letters are already handled by the uppercase path in onKeyPress, so they
+--       are not listed here. Non-US layouts are not covered (see issue #13278).
+local shift_symbol_map = {
+    ["1"] = "!", ["2"] = "@", ["3"] = "#", ["4"] = "$", ["5"] = "%", ["6"] = "^", ["7"] = "&", ["8"] = "*", ["9"] = "(", ["0"] = ")",
+    ["-"] = "_", ["="] = "+", ["["] = "{", ["]"] = "}", ["\\"] = "|",
+    [";"] = ":", ["'"] = '"', ["`"] = "~", [","] = "<", ["."] = ">", ["/"] = "?",
+}
+
 -- Handle real keypresses from a physical keyboard, even if the virtual keyboard
 -- is shown. Mostly likely to be in the emulator, but could be Android + BT
 -- keyboard, or a "coder's keyboard" Android input method.
@@ -942,6 +952,8 @@ function InputText:onKeyPress(key)
             end
             if not key["Shift"] then
                 key_code = string.lower(key_code)
+            elseif shift_symbol_map[key_code] then
+                key_code = shift_symbol_map[key_code]
             end
             for modifier, flag in pairs(key.modifiers) do
                 if modifier ~= "Shift" and flag then -- Other modifier: not a single char insert
