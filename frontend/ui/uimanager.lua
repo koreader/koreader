@@ -87,7 +87,7 @@ function UIManager:init()
         logger.info("Powering off the device...")
         self:broadcastEvent(Event:new("PowerOff"))
         self:broadcastEvent(Event:new("Close", { keep_screensaver = true }))
-        self:nextTick(function()
+        local function doQuit()
             Device:saveSettings()
             Device:powerOff()
             if Device:isKobo() then
@@ -95,7 +95,14 @@ function UIManager:init()
             else
                 self:quit()
             end
-        end)
+        end
+        if not self._window_stack[1] then
+            -- Leave screen as-is
+            doQuit()
+        else
+            -- Allow screensaver to be painted
+            self:nextTick(doQuit)
+        end
     end
     self.reboot_action = function()
         local Screensaver = require("ui/screensaver")
@@ -105,7 +112,7 @@ function UIManager:init()
         logger.info("Rebooting the device...")
         self:broadcastEvent(Event:new("Reboot"))
         self:broadcastEvent(Event:new("Close", { keep_screensaver = true }))
-        self:nextTick(function()
+        local function doQuit()
             Device:saveSettings()
             Device:reboot()
             if Device:isKobo() then
@@ -113,7 +120,14 @@ function UIManager:init()
             else
                 self:quit()
             end
-        end)
+        end
+        if not self._window_stack[1] then
+            -- Leave screen as-is
+            doQuit()
+        else
+            -- Allow screensaver to be painted
+            self:nextTick(doQuit)
+        end
     end
 
     -- Tell Device that we're now available, so that it can setup PM event handlers
