@@ -543,50 +543,101 @@ function ReaderSearch:onShowSearchDialog(text, direction, search_type, case_inse
             return do_search(func, pattern, param)
         end
     end
+    local _mirrored_ui = self.mirrored_ui
+    local invert_buttons = self.ui.view:shouldInvertBiDiLayoutMirroring()
     local backward_text, forward_text, from_start_text, from_end_text = BD.getArrowLabels()
+    -- We can't use BD.invert() as we are not fullscreen and it would re-invert other
+    -- Reader features like footer. So, we need to re-order all the things ourselves.
+    if invert_buttons then
+        backward_text, forward_text = forward_text, backward_text
+        from_start_text, from_end_text = from_end_text, from_start_text
+        _mirrored_ui = not _mirrored_ui
+    end
+    local has_keys, has_modifier, modifier, direction_left, direction_right
+    if Device:hasKeys() then
+        has_keys = true
+        has_modifier = Device:hasScreenKB() or Device:hasKeyboard()
+        modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+        direction_left = _mirrored_ui and "Right" or "Left"
+        direction_right = _mirrored_ui and "Left" or "Right"
+    end
+    local buttons = {
+        {
+            text = from_start_text,
+            vsync = true,
+            key_bindings = has_modifier and { modifier, { "LPgBack", "RPgBack" } } or nil,
+            callback = search(self.searchFromStart, text, nil),
+        },
+        {
+            text = backward_text,
+            vsync = true,
+            key_bindings = has_modifier and { modifier, direction_left } or nil,
+            callback = function()
+                if self.ui.rolling or zoom_to_page or not self.ui.paging:onGotoViewRel(-1, true) then
+                    search(self.searchNext, text, 1)()
+                end
+            end,
+        },
+        {
+            text = "-1",
+            font_bold = false,
+            vsync = true,
+            key_bindings = has_keys and { { "LPgBack", "RPgBack" } } or nil,
+            callback = function()
+                self:askForPageTurnRelative(-1)
+            end,
+        },
+        {
+            text = "\u{21BA}", -- Anticlockwise Open Circle Arrow
+            key_bindings = has_modifier and { modifier, "Back" } or nil,
+            callback = function()
+                self.search_dialog:onClose()
+                self:onGoToStartPage()
+                self.ui.link:popFromLocationStack()
+            end,
+        },
+        {
+            icon = "appbar.search",
+            icon_width = icon_size,
+            icon_height = icon_size,
+            key_bindings = has_keys and { { "ScreenKBPress", "AA" } } or nil,
+            callback = function()
+                self.search_dialog:onClose()
+                self:onShowFulltextSearchInput()
+            end,
+        },
+        {
+            text = "+1",
+            font_bold = false,
+            vsync = true,
+            key_bindings = has_keys and { { "LPgFwd", "RPgFwd" } } or nil,
+            callback = function()
+                self:askForPageTurnRelative(1)
+            end,
+        },
+        {
+            text = forward_text,
+            vsync = true,
+            key_bindings = has_modifier and { modifier, direction_right } or nil,
+            callback = function()
+                if self.ui.rolling or zoom_to_page or not self.ui.paging:onGotoViewRel(1, true) then
+                    search(self.searchNext, text, 0)()
+                end
+            end,
+        },
+        {
+            text = from_end_text,
+            vsync = true,
+            key_bindings = has_modifier and { modifier, { "LPgFwd", "RPgFwd" } } or nil,
+            callback = search(self.searchFromEnd, text, nil),
+        },
+    }
+    if invert_buttons then
+        util.arrayReverse(buttons)
+    end
     self.search_dialog = ButtonDialog:new{
         -- alpha = 0.7,
-        buttons = {
-            {
-                {
-                    text = from_start_text,
-                    vsync = true,
-                    callback = search(self.searchFromStart, text, nil),
-                },
-                {
-                    text = backward_text,
-                    vsync = true,
-                    callback = function()
-                        if self.ui.rolling or zoom_to_page or not self.ui.paging:onGotoViewRel(-1, true) then
-                            search(self.searchNext, text, 1)()
-                        end
-                    end,
-                },
-                {
-                    icon = "appbar.search",
-                    icon_width = icon_size,
-                    icon_height = icon_size,
-                    callback = function()
-                        self.search_dialog:onClose()
-                        self:onShowFulltextSearchInput()
-                    end,
-                },
-                {
-                    text = forward_text,
-                    vsync = true,
-                    callback = function()
-                        if self.ui.rolling or zoom_to_page or not self.ui.paging:onGotoViewRel(1, true) then
-                            search(self.searchNext, text, 0)()
-                        end
-                    end,
-                },
-                {
-                    text = from_end_text,
-                    vsync = true,
-                    callback = search(self.searchFromEnd, text, nil),
-                },
-            }
-        },
+        buttons = { buttons },
         tap_close_callback = function()
             self:restorePageView()
         end,
