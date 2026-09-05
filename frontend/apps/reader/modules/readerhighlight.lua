@@ -495,6 +495,19 @@ function ReaderHighlight:addToMainMenu(menu_items)
         end,
     })
     table.insert(hl_sub_item_table, {
+        text = _("Invert highlight color in night mode"),
+        enabled_func = function()
+            return self.view.highlight.saved_drawer ~= "invert"
+        end,
+        checked_func = function()
+            return self.view.highlight.saved_drawer ~= "invert" and G_reader_settings:isTrue("highlight_selection_invert_highlight_color")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("highlight_selection_invert_highlight_color")
+            UIManager:setDirty(self.dialog, "ui")
+        end,
+    })
+    table.insert(hl_sub_item_table, {
         text = _("Use highlight color for selection"),
         enabled_func = function()
             return self.view.highlight.saved_drawer ~= "invert"
