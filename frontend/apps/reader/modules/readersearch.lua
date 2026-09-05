@@ -17,6 +17,7 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local Screen = Device.screen
@@ -75,6 +76,7 @@ function ReaderSearch:init()
     self.current_search_type = self.default_search_type
 
     self.ui.menu:registerToMainMenu(self)
+    self.mirrored_ui = BD.mirroredUILayout()
 end
 
 local regex_help_text = _([[
@@ -870,99 +872,188 @@ function ReaderSearch:showAllResultsMenuDialog()
     UIManager:show(button_dialog)
 end
 
-function ReaderSearch:gotoResultsItem(index, save_current_location)
-    local item = self.result_menu.item_table[index]
-    if self.ui.rolling then
-        if save_current_location then
-            self.ui.link:addCurrentLocationToStack()
-        end
-        self.ui.rolling:onGotoXPointer(item.start)
-        self.ui.document:getTextFromXPointers(item.start, item["end"], true) -- highlight
-    else
-        if not self.skim_mode then
-            self.skim_mode = true
-            self.ui.paging:enterSkimMode() -- "page" view
-        end
-        local page = item.start
-        local boxes = {}
-        for i, box in ipairs(item.boxes) do
-            boxes[i] = self.ui.document:nativeToPageRectTransform(page, box)
-        end
-        self.ui.link:onGotoLink({ page = page - 1 }, not save_current_location)
-        self.view.highlight.temp[page] = boxes
-    end
+function ReaderSearch:gotoResultsItem(start_index, save_current_location)
+    local current_index = start_index
+    local max_items = #self.result_menu.item_table
 
-    local chevron_left = "chevron.left"
-    local chevron_right = "chevron.right"
-    if BD.mirroredUILayout() then
+    -- Decoupled navigation logic
+    local function navigateTo(index, save_loc)
+        local item = self.result_menu.item_table[index]
+        if self.ui.rolling then
+            if save_loc then
+                self.ui.link:addCurrentLocationToStack()
+            end
+            self.ui.rolling:onGotoXPointer(item.start)
+            self.ui.document:getTextFromXPointers(item.start, item["end"], true) -- highlight
+        else
+            if not self.skim_mode then
+                self.skim_mode = true
+                self.ui.paging:enterSkimMode() -- "page" view
+            end
+            local page = item.start
+            local boxes = {}
+            for i, box in ipairs(item.boxes) do
+                boxes[i] = self.ui.document:nativeToPageRectTransform(page, box)
+            end
+            self.ui.link:onGotoLink({ page = page - 1 }, not save_loc)
+            self.view.highlight.temp[page] = boxes
+        end
+        UIManager:setDirty(nil, "ui")
+    end
+    navigateTo(current_index, save_current_location)
+
+    local chevron_left, chevron_right = "chevron.left", "chevron.right"
+    local _mirrored_ui = self.mirrored_ui
+    local invert_buttons = self.ui.view:shouldInvertBiDiLayoutMirroring()
+    if invert_buttons then
+        _mirrored_ui = not _mirrored_ui
+    end
+    if _mirrored_ui then
         chevron_left, chevron_right = chevron_right, chevron_left
     end
-    local dialog
-    dialog = ButtonDialog:new{
-        buttons = {
-            {
-                {
-                    text = "\u{21BA}", -- Anticlockwise Open Circle Arrow
-                    callback = function()
-                        dialog:onClose()
-                        self:onGoToStartPage()
-                        self.ui.link:popFromLocationStack()
-                    end,
-                },
-                {
-                    icon = chevron_left,
-                    icon_width = icon_size,
-                    icon_height = icon_size,
-                    enabled = index > 1,
-                    callback = function()
-                        UIManager:close(dialog)
-                        self:gotoResultsItem(index - 1)
-                    end,
-                    hold_callback = function()
-                        UIManager:close(dialog)
-                        self:gotoResultsItem(1)
-                    end,
-                },
-                {
-                    text = T("%1 / %2", index, #self.result_menu.item_table),
-                    font_bold = false,
-                    width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.25),
-                    callback = function()
-                        dialog:onClose()
-                        self.findall_results_item_index = index
-                        self:onShowFindAllResults()
-                    end,
-                },
-                {
-                    icon = chevron_right,
-                    icon_width = icon_size,
-                    icon_height = icon_size,
-                    enabled = index < #self.result_menu.item_table,
-                    callback = function()
-                        UIManager:close(dialog)
-                        self:gotoResultsItem(index + 1)
-                    end,
-                    hold_callback = function()
-                        UIManager:close(dialog)
-                        self:gotoResultsItem(#self.result_menu.item_table)
-                    end,
-                },
-                {
-                    icon = "appbar.search",
-                    icon_width = icon_size,
-                    icon_height = icon_size,
-                    callback = function()
-                        dialog:onClose()
-                        self:onShowFulltextSearchInput()
-                    end,
-                },
-            }
+
+    local dialog, btn_left, btn_right, btn_text
+    -- Closure to handle state mutation and UI updates
+    local function updateInPlace(new_index)
+        current_index = new_index
+        navigateTo(current_index, nil)
+
+        if btn_left then
+            local should_enable = current_index > 1
+            if btn_left.enabled ~= should_enable then
+                btn_left:enableDisable(should_enable)
+                btn_left:refresh()
+            end
+        end
+        if btn_right then
+            local should_enable = current_index < max_items
+            if btn_right.enabled ~= should_enable then
+                btn_right:enableDisable(should_enable)
+                btn_right:refresh()
+            end
+        end
+        if btn_text then
+            btn_text:setText(T("%1 / %2", current_index, max_items), btn_text.width)
+            btn_text:refresh()
+        end
+        if dialog.refocusWidget then
+            -- will draw focus on NT only
+            dialog:refocusWidget(dialog.RENDER_IN_NEXT_TICK)
+        end
+    end
+
+    local has_keys, has_modifier, modifier, direction_left, direction_right
+    if Device:hasKeys() then
+        has_keys = true
+        has_modifier = Device:hasScreenKB() or Device:hasKeyboard()
+        modifier = Device:hasScreenKB() and "ScreenKB" or "Shift"
+        direction_left = _mirrored_ui and "Right" or "Left"
+        direction_right = _mirrored_ui and "Left" or "Right"
+    end
+    local button_row = {
+        {
+            text = "\u{21BA}", -- Anticlockwise Open Circle Arrow
+            key_bindings = has_modifier and { modifier, "Back" } or nil,
+            callback = function()
+                dialog:onClose()
+                self:onGoToStartPage()
+                self.ui.link:popFromLocationStack()
+            end,
         },
+        {
+            text = "-1",
+            font_bold = false,
+            key_bindings = has_keys and { { "LPgBack", "RPgBack" } } or nil,
+            callback = function()
+                self:askForPageTurnRelative(-1)
+            end,
+        },
+        {
+            id = "prev_result",
+            icon = chevron_left,
+            icon_width = icon_size,
+            icon_height = icon_size,
+            enabled = current_index > 1,
+            key_bindings = has_modifier and { modifier, direction_left } or nil,
+            callback = function()
+                if current_index > 1 then
+                    updateInPlace(current_index - 1)
+                end
+            end,
+            hold_callback = function()
+                if current_index > 1 then
+                    updateInPlace(1)
+                end
+            end,
+        },
+        {
+            id = "result_counter",
+            text = T("%1 / %2", current_index, max_items),
+            font_bold = false,
+            width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.25),
+            callback = function()
+                dialog:onClose()
+                self.findall_results_item_index = current_index
+                self:onShowFindAllResults()
+            end,
+        },
+        {
+            id = "next_result",
+            icon = chevron_right,
+            icon_width = icon_size,
+            icon_height = icon_size,
+            key_bindings = has_keys and { modifier, direction_right } or nil,
+            enabled = current_index < max_items,
+            callback = function()
+                if current_index < max_items then
+                    updateInPlace(current_index + 1)
+                end
+            end,
+            hold_callback = function()
+                if current_index < max_items then
+                    updateInPlace(max_items)
+                end
+            end,
+        },
+        {
+            text = "+1",
+            key_bindings = has_keys and { { "LPgFwd", "RPgFwd" } } or nil,
+            font_bold = false,
+            callback = function()
+                self:askForPageTurnRelative(1)
+            end,
+        },
+        {
+            icon = "appbar.search",
+            icon_width = icon_size,
+            icon_height = icon_size,
+            key_bindings = has_modifier and { { "ScreenKBPress", "AA" } } or nil,
+            callback = function()
+                dialog:onClose()
+                self:onShowFulltextSearchInput()
+            end,
+        },
+    }
+    -- Row Layout is already reversed when self.mirrored_ui is true.
+    -- We can't use BD.invert() as we are not fullscreen and it would re-invert other
+    -- Reader features like footer. So, we need to re-order all the things ourselves.
+    if invert_buttons then
+        util.arrayReverse(button_row)
+    end
+
+    dialog = ButtonDialog:new{
+        buttons = { button_row },
         tap_close_callback = function()
             self:restorePageView()
         end,
     }
     UIManager:show(dialog)
+    -- One-time widget lookup by id, cached for updateInPlace. Reversal above
+    -- changes button_row's order, not each widget's own fields, so matching
+    -- on id is unaffected by _mirrored_ui either way.
+    btn_left = dialog:getButtonById("prev_result")
+    btn_right = dialog:getButtonById("next_result")
+    btn_text = dialog:getButtonById("result_counter")
 end
 
 function ReaderSearch:onGoToStartPage()
@@ -983,6 +1074,14 @@ function ReaderSearch:restorePageView()
         self.ui.paging:exitSkimMode()
     end
     UIManager:setDirty(self.dialog, "ui")
+end
+
+function ReaderSearch:askForPageTurnRelative(direction)
+    if self.ui.rolling then
+        self.ui.rolling:onGotoViewRel(direction)
+    elseif self.ui.paging then
+        self.ui.paging:onGotoViewRel(direction)
+    end
 end
 
 return ReaderSearch
