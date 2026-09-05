@@ -35,19 +35,9 @@ function AndroidPowerD:init()
         self.fl_warmth_max = android.getScreenMaxWarmth()
         self.warm_diff = self.fl_warmth_max - self.fl_warmth_min
 
-        -- BasePowerD:new() assigns warmth_scale to the class rather than the instance, and
-        -- only *after* init() returns -- and the module-level BasePowerD:new{} that built
-        -- this class already set it to 1, from the default fl_warmth_max of 100. setWarmth()
-        -- below would otherwise scale with that stale 1 and hand the controller an
-        -- unscaled value, so compute the real one here (c.f. KoboPowerD:init).
+        -- BasePowerD only sets warmth_scale after init() returns, c.f. KoboPowerD:init.
         self.warmth_scale = 100 / self.fl_warmth_max
 
-        -- Nothing else restores warmth on Android. Brightness is restored by the framework,
-        -- but warmth is only ever written when the user moves the slider, so whatever the
-        -- hardware happens to hold at startup wins. That is harmless where the hardware
-        -- keeps our value, but not where a vendor layer re-applies its own: on the Nook
-        -- Glowlight 4 Plus, B&N's colour temperature service resets warmth to cold on every
-        -- unlock. Push our saved value back so that ours is the one that sticks.
         local warmth = G_reader_settings:readSetting("frontlight_warmth")
         if warmth then
             self.fl_warmth = warmth
