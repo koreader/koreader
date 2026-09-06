@@ -57,7 +57,6 @@ function FileManagerMenu:registerKeyEvents()
         if Device:hasFewKeys() then
             self.key_events.KeyPressShowMenu = { { { "Menu", "Right" } } }
         end
-        -- OpenLastDoc = { { "ScreenKB", "Back" } } handled by hotkeys
     end
 end
 
@@ -125,27 +124,6 @@ function FileManagerMenu:initGesListener()
             handler = function(ges) return self:onSwipeShowMenu(ges) end,
         },
     })
-end
-
-function FileManagerMenu:onOpenLastDoc()
-    local last_file = G_reader_settings:readSetting("lastfile")
-    if not last_file or lfs.attributes(last_file, "mode") ~= "file" then
-        local InfoMessage = require("ui/widget/infomessage")
-        UIManager:show(InfoMessage:new{
-            text = _("Cannot open last document"),
-        })
-        return
-    end
-
-    -- Only close menu if we were called from the menu
-    if self.menu_container then
-        -- Mimic's FileManager's onShowingReader refresh optimizations
-        self.ui.tearing_down = true
-        self.ui.dithered = nil
-        self:onCloseFileManagerMenu()
-    end
-
-    self.ui:openFile(last_file)
 end
 
 function FileManagerMenu:setUpdateItemTable()
@@ -839,7 +817,7 @@ To:
             return G_reader_settings:has("lastfile")
         end,
         callback = function()
-            self:onOpenLastDoc()
+            self.ui:onOpenLastDoc()
         end,
         hold_callback = function()
             local last_file = G_reader_settings:readSetting("lastfile")
@@ -847,7 +825,7 @@ To:
                 text = T(_("Would you like to open the last document: %1?"), BD.filepath(last_file)),
                 ok_text = _("OK"),
                 ok_callback = function()
-                    self:onOpenLastDoc()
+                    self.ui:onOpenLastDoc()
                 end,
             })
         end
