@@ -680,6 +680,20 @@ function FileManager:getPlusDialogButtons()
             },
             {
                 {
+                    text = _("New text file"),
+                    enabled = self.texteditor and true or false,
+                    callback = function()
+                        UIManager:close(self.plus_dialog)
+                        if self.texteditor then
+                            local new_file_folder = folder
+                            if new_file_folder:sub(-1) ~= "/" then new_file_folder = new_file_folder .. "/" end
+                            self.texteditor:newFile(new_file_folder)
+                        end
+                    end,
+                },
+            },
+            {
+                {
                     text = _("Paste"),
                     enabled = self.clipboard and true or false,
                     callback = function()
