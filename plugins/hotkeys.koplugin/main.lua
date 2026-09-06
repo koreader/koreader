@@ -341,13 +341,18 @@ function HotKeys:genMenu(hotkey)
         end,
         separator = true,
     })
+    local NUM_SUB_ITEMS = #sub_items
     Dispatcher:addSubMenu(self, sub_items, self.hotkeys, hotkey)
-    -- Since we are already handling potential conflicts via overrideConflictingKeyEvents(), both "No action" and "Nothing",
-    -- introduced through Dispatcher:addSubMenu(), are effectively the same (from a user point of view); thus, we can do away
-    -- with "Nothing".
-    -- We prioritize "No action" as it will allow the predefined underlaying actions to be executed for hotkeys in the 'reader_only'
-    -- array in the genSubItem() function.
-    table.remove(sub_items, 3) -- removes the 'Nothing' option as it is redundant.
+    -- Both "No action" and "Nothing", introduced through Dispatcher:addSubMenu(), are effectively
+    -- the same (from a user point of view); thus, we can do away with "Nothing".
+    -- We prioritize "No action" as it will allow the predefined underlaying actions to be executed
+    -- for hotkeys in the 'reader_only' array in the genSubItem() function.
+    for i = NUM_SUB_ITEMS + 1, #sub_items do
+        if sub_items[i].id == "nothing" then
+            table.remove(sub_items, i) -- removes the 'Nothing' option as it is redundant.
+            break
+        end
+    end
     sub_items.max_per_page = 9 -- push settings ('Arrange actions', 'Show as quick menu', 'keep quick menu open') to page 2
     return sub_items
 end
