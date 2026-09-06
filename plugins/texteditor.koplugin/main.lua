@@ -544,7 +544,7 @@ function TextEditor:editFile(file_path, readonly, caller_callback)
         readonly = readonly,
         add_nav_bar = true,
         title_bar_left_icon = "appbar.menu",
-        title_bar_left_icon_tap_callback = function() self:showMenu() end,
+        title_bar_left_icon_tap_callback = function() self:showMenu(file_path) end,
         rotation_enabled = true,
         keyboard_visible = self.show_keyboard_on_start, -- InputDialog will enforce false if readonly
         scroll_by_pan = true,
@@ -681,7 +681,7 @@ function TextEditor:quickEditFile(file_path, done_callback, possible_new_file)
 end
 
 -- TitleBar left button tap
-function TextEditor:showMenu()
+function TextEditor:showMenu(file_path)
     local dialog
     local buttons = {}
     local optionsutil = require("ui/data/optionsutil")
@@ -697,6 +697,13 @@ function TextEditor:showMenu()
             end,
         }}
     end
+    table.insert(buttons, {{
+        text = _("Save as"),
+        callback = function()
+            UIManager:close(dialog)
+            self:saveAs(file_path)
+        end,
+    }})
     dialog = ButtonDialog:new{
         shrink_unneeded_width = true,
         buttons = buttons,
@@ -706,6 +713,78 @@ function TextEditor:showMenu()
         modal = true,
     }
     UIManager:show(dialog)
+end
+
+-- Save the current buffer to a new path chosen by the user, then continue
+-- editing that new file. Mirrors newFile()'s prompt (InputDialog + folder
+-- picker) and reuses saveFileContent()/checkEditFile().
+function TextEditor:saveAs(file_path)
+    local content = self.input and self.input:getInputText() or ""
+    local dir = (file_path and file_path:match("(.*)/")) or self.last_path
+    if not dir or dir == "" then dir = "/" end
+    local start_path = dir == "/" and "/" or dir .. "/"
+    self:_showSaveAsDialog(start_path, content)
+end
+
+function TextEditor:_showSaveAsDialog(new_path, content)
+    local file_input
+    file_input = InputDialog:new{
+        title = _("Save as"),
+        input = new_path,
+        buttons = {
+            {
+                {
+                    text = _("Choose folder"),
+                    callback = function()
+                        UIManager:close(file_input)
+                        UIManager:show(PathChooser:new{
+                            select_file = false,
+                            path = new_path:match("(.*)/"),
+                            onConfirm = function(dir_path)
+                                self:_showSaveAsDialog(dir_path .. "/", content)
+                            end,
+                        })
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(file_input)
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    is_enter_default = true,
+                    callback = function()
+                        local save_path = file_input:getInputText()
+                        UIManager:close(file_input)
+                        if save_path and save_path ~= "" then
+                            self.last_path = save_path:match("(.*)/")
+                            if not self.last_path or self.last_path == "" then self.last_path = "/" end
+                            if self:saveFileContent(save_path, content) then
+                                -- Close the editor we launched Save as from before opening the
+                                -- new file, so we don't stack a second editor on the window
+                                -- stack and its close_callback (which reads the self.input
+                                -- field) runs against the correct dialog. saveFileContent above
+                                -- was called without a caller_callback, so self.caller_callback
+                                -- is already cleared and won't fire spuriously on this close.
+                                local current_editor = self.input
+                                if current_editor then
+                                    UIManager:close(current_editor)
+                                end
+                                self:checkEditFile(save_path, false, true)
+                            end
+                        end
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(file_input)
+    file_input:onShowKeyboard()
 end
 
 return TextEditor
