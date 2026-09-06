@@ -68,7 +68,7 @@ local function buildHotkeysList()
         hotkeys_list["modifier_plus_" .. key] = T(modifier_one, label)
         -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
     end
-    if LuaSettings:open(hotkeys_path).data["press_key_does_hotkeys"] then
+    if Device:hasScreenKB() or Device:hasSymKey() then
         util.tableMerge(hotkeys_list, { press = _("Press") })
     end
 
@@ -210,7 +210,7 @@ end
 ]]
 function HotKeys:registerKeyEvents()
     self.key_events = {}
-    self:overrideConflictingKeyEvents()
+    self:hardcodedEvents()
     local cursor_keys = { "Up", "Down", "Left", "Right" }
     local page_turn_keys = { "LPgBack", "LPgFwd", "RPgBack", "RPgFwd" }
     local home_key = getHomeKey()
@@ -235,7 +235,7 @@ function HotKeys:registerKeyEvents()
     if not self.is_docless then
         addKeyEvents(modifier, page_turn_keys, "HotkeyAction", "modifier_plus_")
         addKeyEvent(modifier, "Press", "HotkeyAction", "modifier_plus_press")
-        if self.settings_data.data["press_key_does_hotkeys"] then
+        if Device:hasScreenKB() or Device:hasSymKey() then
             self.key_events.Press = { { "Press" }, event = "HotkeyAction", args = "press" }
         end
     end
@@ -362,7 +362,7 @@ function HotKeys:genSubItem(hotkey, separator, hold_callback)
         modifier_plus_right_page_forward = true,
         modifier_plus_press = true,
     }
-    if self.settings_data.data["press_key_does_hotkeys"] then
+    if Device:hasScreenKB() or Device:hasSymKey() then
         local do_not_allow_press_key_do_shortcuts_in_fm = { press = true }
         util.tableMerge(reader_only, do_not_allow_press_key_do_shortcuts_in_fm)
     end
@@ -424,7 +424,7 @@ function HotKeys:addToMainMenu(menu_items)
         -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
     }
     -- 2. Adds the "press" key to function keys if the corresponding setting is enabled.
-    if self.settings_data.data["press_key_does_hotkeys"] then
+    if Device:hasScreenKB() or Device:hasSymKey() then
         table.insert(fn_keys, 1, "press")
     end
     -- 3. If the device has a keyboard, additional sets of keys (cursor, page-turn, and function keys) are appended.
@@ -464,23 +464,6 @@ function HotKeys:addToMainMenu(menu_items)
                 self.type_to_search = not self.type_to_search
                 self.settings_data.data["type_to_search"] = self.type_to_search
                 self.updated = true
-                self:onFlushSettings()
-                UIManager:askForRestart()
-            end,
-        }
-    end
-    -- 4b. Adds a menu item for enabling/disabling the use of the press key for shortcuts.
-    if Device:hasScreenKB() or Device:hasSymKey() then
-        menu_items.button_press_does_hotkeys = {
-            sorting_hint = "physical_buttons_setup",
-            text = _("Use the press key for shortcuts"),
-            checked_func = function()
-                return self.settings_data.data["press_key_does_hotkeys"]
-            end,
-            callback = function()
-                self.settings_data.data["press_key_does_hotkeys"] = not self.settings_data.data["press_key_does_hotkeys"]
-                self.updated = true
-                self:onFlushSettings()
                 UIManager:askForRestart()
             end,
         }
@@ -552,19 +535,10 @@ end
 
 --[[
     Description:
-    This function resets existing key_event tables in various modules to resolve conflicts and customize key event handling
-    - Logs debug messages indicating which key events have been overridden.
+    This function hardcodes specific key events.
 ]]
-function HotKeys:overrideConflictingKeyEvents()
+function HotKeys:hardcodedEvents()
     if not self.is_docless then
-        if Device:hasScreenKB() or Device:hasSymKey() then
-            if self.settings_data.data["press_key_does_hotkeys"] then
-                local readerconfig = self.ui.config
-                readerconfig.key_events = {} -- reset it, then add our own
-                readerconfig.key_events.ShowConfigMenu = { { "AA" }, event = "ShowConfigMenu" }
-                logger.dbg("Hotkey ReaderConfig:registerKeyEvents() overridden. press_key_does_hotkeys = true")
-            end
-        end
         if Device:hasKeyboard() then
             local readersearch = self.ui.search
             readersearch.key_events.ShowFulltextSearchInputBlank = {
@@ -589,7 +563,7 @@ function HotKeys:overrideConflictingKeyEvents()
             args = ""
         }
     end
-end -- overrideConflictingKeyEvents()
+end -- hardcodedEvents()
 
 --[[
     This function checks if the `settings_data` exists and if it has been marked as updated.
