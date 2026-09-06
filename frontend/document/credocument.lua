@@ -2057,9 +2057,7 @@ function CreDocument:setupCallCache()
 end
 
 function CreDocument:getVisibleWords()
-    if self._document and self._document.getVisibleWords then
-        return self._document:getVisibleWords()
-    end
+    return self._document:getVisibleWords()
 end
 
 return CreDocument
