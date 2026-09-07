@@ -156,7 +156,6 @@ local settingsList = {
     file_search = {category="none", event="ShowFileSearch", title=_("File search"), filemanager=true},
     file_search_results = {category="none", event="ShowSearchResults", title=_("Last file search results"), filemanager=true},
     ----
-    open_last_document = {category="none", event="OpenLastDocFM", title=_("Open last document"), filemanager=true},
     folder_shortcuts = {category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true},
     folder_up = {category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
     fm_go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), filemanager=true},
@@ -418,7 +417,6 @@ local dispatcher_menu_order = {
     "file_search",
     "file_search_results",
     ----
-    "open_last_document",
     "folder_shortcuts",
     "folder_up",
     "fm_go_to",
