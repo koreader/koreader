@@ -908,6 +908,7 @@ Supported commands:
     activate            Bootstrap shell environment for kodev
     fetch-thirdparty    Fetch & synchronize thirdparty dependencies
     check               Run various linters
+    docker              Docker support
 "
 if [[ $# -lt 1 ]]; then
     err "Missing command."
