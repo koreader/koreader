@@ -23,6 +23,8 @@ cd "${KOREADER_DIR}" || exit
 ko_update_check() {
     NEWUPDATE="${KOREADER_DIR}/ota/update.tar.xz"
     if [ -f "${NEWUPDATE}" ]; then
+        # Clear screen to delete UI leftovers
+        ./fbink --cls
         ./fbink -q -y -7 -pmh "Updating KOReader"
         # Keep a copy of the old manifest for cleaning leftovers later.
         cp "${KOREADER_DIR}/ota/package.index" /tmp/
@@ -30,7 +32,11 @@ ko_update_check() {
         export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
         rm -f "${FBINK_NAMED_PIPE}"
         FBINK_PID="$(./fbink --daemon 1 %KOREADER% -q -y -6 -P 0)"
-        (cd "${UNPACK_DIR}" && "${KOREADER_DIR}/unpack" -X "${NEWUPDATE}" >"${FBINK_NAMED_PIPE}")
+        # Open a handle to the fifo ourselves too: this prevent writes to the
+        # fifo from hanging if fbink crashed (even with no one reading, its
+        # buffer should still be big enough to never be full either).
+        exec 3<>"${FBINK_NAMED_PIPE}"
+        (cd "${UNPACK_DIR}" && "${KOREADER_DIR}/unpack" -X "${NEWUPDATE}" >&3)
         fail=$?
         kill -TERM "${FBINK_PID}"
         # Cleanup behind us...
@@ -45,6 +51,9 @@ ko_update_check() {
             ./fbink -q -y -5 -pm "KOReader may fail to function properly!"
         fi
         rm -f /tmp/package.index "${NEWUPDATE}" # always purge newupdate to prevent update loops
+        # Fifo cleanup: close our handle, and unlink the path too (in case fbink crashed).
+        exec 3>&-
+        rm -f "${FBINK_NAMED_PIPE}"
         unset FBINK_NAMED_PIPE FBINK_PID
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         sync

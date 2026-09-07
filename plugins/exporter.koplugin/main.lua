@@ -170,20 +170,10 @@ function Exporter:isReadyToExport()
     return self:isDocReady() and self:isReady()
 end
 
-function Exporter:requiresFile()
+function Exporter:isRemote(is_remote)
     for _, v in pairs(self.targets) do
-        if v:isEnabled() and not v.is_remote then
+        if v.is_remote == is_remote and v:isEnabled() then
             return true
-        end
-    end
-end
-
-function Exporter:requiresNetwork()
-    for _, v in pairs(self.targets) do
-        if v:isEnabled() then
-            if v.is_remote or (v.settings.upload and self.ui.cloudstorage) then
-                return true
-            end
         end
     end
 end
@@ -230,7 +220,7 @@ function Exporter:exportClippings(clippings)
     end
     local timestamp = os.time()
     local clipping_filepath
-    if self:requiresFile() then
+    if self:isRemote(false) then
         local file, clipping_dir, clipping_filename
         if #exportables == 1 then
             file = exportables[1].file
@@ -284,7 +274,7 @@ function Exporter:exportClippings(clippings)
             timeout = 1,
         })
     end
-    if self:requiresNetwork() then
+    if self:isRemote(true) then
         NetworkMgr:runWhenOnline(export_callback)
     else
         export_callback()

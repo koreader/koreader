@@ -128,9 +128,10 @@ function AutoWarmth:init()
         i = j
     end
 
-    -- Auto-standby pauses the task scheduler while reading, so on devices with
-    -- delayed timer execution we need to re-check the current warmth on the next
-    -- user interaction.
+    -- AutoStandby can pause the task scheduler while reading 
+    -- (e.g. on Pocketbook Era 700).
+    -- To prevent missing or delayed events we hook into InputEvent 
+    -- and check if we need to schedule the next warmth change.
     self:_updateAutoStandbyInputHook()
 
     -- schedule recalculation shortly after midnight

@@ -50,7 +50,7 @@ local function prepareBookContent(book, formatting_options, highlight_formatting
         end
         table.insert(tbl, "### Page " .. entry.page .. " @ " .. os.date("%d %B %Y %I:%M:%S %p", entry.time))
         if highlight_formatting then
-            local value = formatting_options[entry.drawer]
+            local value = formatting_options[entry.drawer] or formatting_options["lighten"]
             table.insert(tbl, string.format(formatters[value] and formatters[value].formatter or value, entry.text))
         else
             table.insert(tbl, entry.text)
