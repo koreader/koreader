@@ -83,7 +83,7 @@ LICENSE*
 NOTICE
 endef
 
-update: all
+update-apk: all
 	# Note: do not remove the module directory so there's no need
 	# for `mk7z.sh` to always recreate `koreader.7z` from scratch.
 	rm -rf $(ANDROID_LIBS)
@@ -118,6 +118,8 @@ update: all
 		$(GRADLE_FLAGS) \
 		'app:assemble$(ANDROID_ARCH)$(ANDROID_FLAVOR)$(if $(KODEBUG),Debug,Release)'
 	cp $(ANDROID_LAUNCHER_BUILD)/outputs/apk/$(ANDROID_ARCH)$(ANDROID_FLAVOR)/$(if $(KODEBUG),debug,release)/NativeActivity.apk $(ANDROID_APK)
+
+update: update-apk
 
 # }}}
 
