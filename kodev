@@ -29,7 +29,7 @@ function info() {
         color="ANSI_${1#-c}"
         shift
     fi
-    if [[ -t 2 ]]; then
+    if [[ -n "${CLICOLOR_FORCE}" ]] || [[ -t 2 ]]; then
         printf '%b%s%b\n' "${!color}" "$*" "${ANSI_RESET}" 1>&2
     else
         printf '%s\n' "$*" 1>&2
