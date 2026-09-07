@@ -28,7 +28,7 @@ if ! [ -d "${1}" ]; then
     exit 1
 fi
 
-VERSION="$(cat "${1}/koreader/git-rev")"
+VERSION="$(cat "${1}/koreader/git-rev" | sed 's/_macos$//')"
 APP_PATH="${1}/bundle"
 APP_BUNDLE="${1}/../KOReader"
 APP_ARCH="$(uname -m)"
