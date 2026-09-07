@@ -965,7 +965,7 @@ function FileManagerMenu:getStartWithMenuTable()
         { _("history"), "history" },
         { _("favorites"), "favorites" },
         { _("folder shortcuts"), "folder_shortcuts" },
-        { _("last file"), "last" },
+        { _("most recent document"), "last" },
     }
     local sub_item_table = {}
     for i, v in ipairs(start_withs) do
