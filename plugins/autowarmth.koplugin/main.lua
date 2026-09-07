@@ -506,9 +506,6 @@ function AutoWarmth:toggleFrontlight(now_s)
     self:setFrontlight(sunrise_in_s > 0 or sunset_in_s < 0)
 end
 
--- schedules the next warmth change
--- search_pos ... start searching from that index
--- from_resume ... true if first call after resume
 function AutoWarmth:onInputEvent()
     if G_reader_settings:readSetting("auto_standby_timeout_seconds", -1) <= 0 then
         return
@@ -523,6 +520,9 @@ function AutoWarmth:onInputEvent()
     end
 end
 
+-- schedules the next warmth change
+-- search_pos ... start searching from that index
+-- from_resume ... true if first call after resume
 function AutoWarmth:scheduleNextWarmthChange(from_resume)
     logger.dbg("AutoWarmth: scheduleNextWarmthChange")
     UIManager:unschedule(self.scheduleNextWarmthChange)
