@@ -304,7 +304,7 @@ function FileManagerMenu:setUpdateItemTable()
                         separator = true,
                     },
                     {
-                        text = _("Show filename in Open last/previous menu items"),
+                        text = _("Show filename in Open previous menu items"),
                         checked_func = function()
                             return G_reader_settings:isTrue("open_last_menu_show_filename")
                         end,
@@ -807,11 +807,11 @@ To:
     self.menu_items.open_last_document = {
         text_func = function()
             if not G_reader_settings:isTrue("open_last_menu_show_filename") or G_reader_settings:hasNot("lastfile") then
-                return _("Open last document")
+                return _("Open previous document")
             end
             local last_file = G_reader_settings:readSetting("lastfile")
             local path, file_name = util.splitFilePathName(last_file) -- luacheck: no unused
-            return T(_("Last: %1"), BD.filename(file_name))
+            return T(_("Previous: %1"), BD.filename(file_name))
         end,
         enabled_func = function()
             return G_reader_settings:has("lastfile")
@@ -822,7 +822,7 @@ To:
         hold_callback = function()
             local last_file = G_reader_settings:readSetting("lastfile")
             UIManager:show(ConfirmBox:new{
-                text = T(_("Would you like to open the last document: %1?"), BD.filepath(last_file)),
+                text = T(_("Would you like to open the previous document: %1?"), BD.filepath(last_file)),
                 ok_text = _("OK"),
                 ok_callback = function()
                     self.ui:onOpenLastDoc()
