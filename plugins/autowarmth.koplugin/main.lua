@@ -128,9 +128,9 @@ function AutoWarmth:init()
         i = j
     end
 
-    -- AutoStandby can pause the task scheduler while reading 
+    -- AutoStandby can pause the task scheduler while reading
     -- (e.g. on Pocketbook Era 700).
-    -- To prevent missing or delayed events we hook into InputEvent 
+    -- To prevent missing or delayed events we hook into InputEvent
     -- and check if we need to schedule the next warmth change.
     self:_updateAutoStandbyInputHook()
 
