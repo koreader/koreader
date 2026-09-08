@@ -543,31 +543,42 @@ end
     This function hardcodes specific key events.
 ]]
 function HotKeys:hardcodedEvents()
+    if not Device:hasKeyboard() then return end
     if not self.is_docless then
-        if Device:hasKeyboard() then
-            local readersearch = self.ui.search
-            readersearch.key_events.ShowFulltextSearchInputBlank = {
-                { "Alt", "Shift", "S" }, { "Ctrl", "Shift", "S" },
+        local readersearch = self.ui.search
+        readersearch.key_events.ShowFulltextSearchInputBlank = {
+            { "Alt", "Shift", "S" }, { "Ctrl", "Shift", "S" },
+            event = "ShowFulltextSearchInput",
+            args = ""
+        }
+        if self.type_to_search then
+            readersearch.key_events.Alphabet = {
+                { Device.input.group.Alphabet }, { "Shift", Device.input.group.Alphabet },
                 event = "ShowFulltextSearchInput",
                 args = ""
             }
-            if self.type_to_search then
-                readersearch.key_events.Alphabet = {
-                    { Device.input.group.Alphabet }, { "Shift", Device.input.group.Alphabet },
-                    event = "ShowFulltextSearchInput",
-                    args = ""
-                }
-            end
+        end
+        -- These are some sneaky emulator events that ensure shortcuts
+        -- won't drift which mod key (Ctrl or Alt) is needed during testing.
+        if Device:isSDL() and os.getenv("DISABLE_TOUCH") == "1" then
+            readersearch.key_events.ShowFulltextSearchInput = {
+                { "Ctrl", "S" }, { "Super", "S" },
+                event = "ShowFulltextSearchInput"
+            }
+            local readerdictionary = self.ui.dictionary
+            readerdictionary.key_events.ShowDictionaryInput = {
+                { "Ctrl", "D" }, { "Super", "D" },
+                event = "ShowDictionaryLookup",
+                args = ""
+            }
         end
     end
-    if Device:hasKeyboard() then
-        local filesearcher = self.ui.filesearcher
-        filesearcher.key_events.ShowFileSearchBlank = {
-            { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" },
-            event = "ShowFileSearch",
-            args = ""
-        }
-    end
+    local filesearcher = self.ui.filesearcher
+    filesearcher.key_events.ShowFileSearchBlank = {
+        { "Alt", "Shift", "F" }, { "Ctrl", "Shift", "F" },
+        event = "ShowFileSearch",
+        args = ""
+    }
 end -- hardcodedEvents()
 
 --[[
