@@ -1297,6 +1297,15 @@ function ReaderHighlight:showChooseHighlightDialog(highlights)
                 end,
             }}
         end
+        if self.ui.rolling then
+            table.insert(buttons, {{
+                text = _("Merge highlights"),
+                callback = function()
+                    UIManager:close(dialog)
+                    self:mergeHighlights(highlights)
+                end,
+            }})
+        end
         dialog = ButtonDialog:new{
             buttons = buttons,
         }
@@ -2658,6 +2667,47 @@ function ReaderHighlight:extendSelection()
         pboxes = new_pboxes,
         ext = ext,
     }
+    UIManager:setDirty(self.dialog, "ui")
+end
+
+function ReaderHighlight:mergeHighlights(highlights)
+    local annotations = self.ui.annotation.annotations
+    local hl_pos0 = {} -- annotation indexes ordered by pos0
+    local hl_pos1 = {} -- annotation indexes ordered by pos1
+    for i, idx in ipairs(highlights) do
+        hl_pos0[i] = idx
+        hl_pos1[i] = idx
+    end
+    local compare = self.ui.rolling and self.ui.document.compareXPointers or self.ui.document.comparePositions
+    table.sort(hl_pos0, function(a, b)
+        return compare(self.ui.document, annotations[a].pos0, annotations[b].pos0) == 1
+    end)
+    table.sort(hl_pos1, function(a, b)
+        return compare(self.ui.document, annotations[a].pos1, annotations[b].pos1) == 1
+    end)
+
+    local notes = {} -- combine notes ordered by pos0
+    for _, idx in ipairs(hl_pos0) do
+        if annotations[idx].note then
+            table.insert(notes, annotations[idx].note)
+        end
+    end
+    local item1 = annotations[hl_pos0[1]] -- all properties from the first (by pos0) highlight
+    local pos1 = annotations[hl_pos1[#hl_pos1]].pos1 -- from the last (by pos1) highlight
+    self.selected_text = {
+        datetime = item1.datetime,
+        drawer = item1.drawer,
+        color = item1.color,
+        note = next(notes) and table.concat(notes, "\n"),
+        text = self.ui.document:getTextFromXPointers(item1.pos0, pos1, false),
+        pos0 = item1.pos0,
+        pos1 = pos1,
+    }
+    table.sort(highlights)
+    for i = #highlights, 1, -1 do
+        self:deleteHighlight(highlights[i])
+    end
+    self:saveHighlight()
     UIManager:setDirty(self.dialog, "ui")
 end
 
