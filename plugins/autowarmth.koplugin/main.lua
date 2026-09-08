@@ -131,12 +131,7 @@ function AutoWarmth:init()
     -- (e.g. on Pocketbook Era 700).
     -- To prevent missing or delayed events we hook into InputEvent
     -- and check if we need to schedule the next warmth change.
-    if G_reader_settings:readSetting("auto_standby_timeout_seconds", -1) > 0 then
-        self._auto_standby_input_hook = function()
-            self:onInputEvent()
-        end
-        UIManager.event_hook:register("InputEvent", self._auto_standby_input_hook)
-    end
+    self:onAutoStandbySettingChanged()
 
     -- schedule recalculation shortly after midnight
     self:scheduleMidnightUpdate()
@@ -507,10 +502,6 @@ function AutoWarmth:toggleFrontlight(now_s)
 end
 
 function AutoWarmth:onInputEvent()
-    if G_reader_settings:readSetting("auto_standby_timeout_seconds", -1) <= 0 then
-        return
-    end
-
     if self.activate == 0 or #self.sched_warmths == 0 or self.sched_warmth_index > #self.sched_warmths then
         return
     end
