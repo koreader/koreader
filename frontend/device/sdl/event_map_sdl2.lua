@@ -61,15 +61,15 @@ return {
     [1073741893] = "F12", -- F[12]
 
     [1073742049] = "Shift", -- left shift
-    [1073742053] = os.getenv("DISABLE_TOUCH") == "1" and "Sym" or "Shift", -- right shift
+    [1073742053] = "Shift", -- right shift
     [1073742050] = "Alt", -- left alt
     [1073742054] = "AA", -- right alt key
     [1073741925] = "ContextMenu", -- Context menu key
     [1073741942] = "ContextMenu", -- Context menu key
     [0x400000E0] = "Ctrl", -- Left Ctrl
     [0x400000E4] = "Ctrl", -- Right Ctrl
-    [1073742051] = "Win", -- Left Win/Cmd
-    [1073742055] = "Win", -- Right Win/Cmd
+    [1073742051] = "Super", -- Left Win/Cmd
+    [1073742055] = os.getenv("DISABLE_TOUCH") == "1" and "Sym" or "Super", -- Right Win/Cmd
 
     [1073741906] = "Up", -- arrow up
     [1073741899] = "RPgBack", -- normal PageUp
