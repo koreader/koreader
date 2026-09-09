@@ -1,5 +1,4 @@
 local Device = require("device")
-local Event = require("ui/event")
 
 -- If a device can power off or go into standby, it can also suspend ;).
 if not Device:canSuspend() then
@@ -473,7 +472,6 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
                 self:_unschedule_standby()
                 self:toggleStandbyHandler(self:_enabledStandby())
                 self:_start_standby()
-                UIManager:broadcastEvent(Event:new("AutoStandbySettingChanged"))
             else
                 self:_unschedule()
                 self:_start()
@@ -510,7 +508,6 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
             if is_standby then
                 self:_unschedule_standby()
                 self:toggleStandbyHandler(false)
-                UIManager:broadcastEvent(Event:new("AutoStandbySettingChanged"))
             else
                 self:_unschedule()
             end
