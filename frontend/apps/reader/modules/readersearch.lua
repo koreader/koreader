@@ -796,6 +796,11 @@ function ReaderSearch:onShowFindAllResults(not_cached)
         end
     end
 
+    local invert_layout = self.ui.view:shouldInvertBiDiLayoutMirroring()
+    if invert_layout then
+        BD.invert()
+    end
+
     self.result_menu = Menu:new{
         subtitle = T(_("Query: %1"), self.last_search_text),
         item_table = self.findall_results,
@@ -828,6 +833,9 @@ function ReaderSearch:onShowFindAllResults(not_cached)
         close_callback = function()
             self.findall_results_item_index = self.result_menu:getFirstVisibleItemIndex() -- save page number to reopen
             UIManager:close(self.result_menu)
+            if invert_layout then
+                BD.resetInvert()
+            end
         end,
     }
     self:updateAllResultsMenu(nil, self.findall_results_item_index)
