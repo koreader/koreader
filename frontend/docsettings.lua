@@ -18,6 +18,8 @@ local HISTORY_DIR = DataStorage:getHistoryDir()
 local DOCSETTINGS_DIR = DataStorage:getDocSettingsDir()
 local DOCSETTINGS_HASH_DIR = DataStorage:getDocSettingsHashDir()
 local custom_metadata_filename = "custom_metadata.lua"
+local annotation_data_keys = {"annotations", "highlight", "bookmarks"} -- const
+
 
 function DocSettings.getSidecarStorage(location)
     if location == "dir" then
@@ -142,8 +144,14 @@ end
 
 function DocSettings.getSidecarFilename(doc_path)
     local suffix = doc_path:match(".*%.(.+)") or "_"
-    return "metadata." .. suffix .. ".lua"
+    return  "metadata." .. suffix .. ".lua"
 end
+
+function DocSettings.getAnnotationFilename(doc_path)
+    local suffix = doc_path:match(".*%.(.+)") or "_"
+    return  "annotation." .. suffix .. ".lua"
+end
+
 
 --- Returns `true` if there is a `metadata.lua` file.
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
@@ -287,12 +295,56 @@ function DocSettings:open(doc_path)
         new.data = stored
         new.candidates = candidates
         new.source_candidate = candidate_path
+
     else
         new.data = {}
     end
     new.data.doc_path = doc_path
 
+
+    if G_reader_settings:isTrue("separate_annotation_file") then
+        local annotation_candidates
+        if new.source_candidate ~= nil then
+            annotation_candidates = { new.source_candidate}
+        else
+            -- metadata file doesn't exist yet, so this is a new book on this debvice.
+            -- We try to load annotation file from these locations in case they are synced from other devices.
+            annotation_candidates = { doc_sidecar_file, dir_sidecar_file, hash_sidecar_file }
+        end
+
+        for _, sidecar_file in ipairs(annotation_candidates) do
+            if sidecar_file ~= nil then
+                local found = DocSettings.loadAnnotationFile(sidecar_file, doc_path, new)
+                if found then
+                    break
+                end
+            end
+        end
+    end
+
     return new
+end
+
+
+-- return whether a valid annotation file is loaded.
+function DocSettings.loadAnnotationFile(sidecar_file, doc_path, docSettings)
+    local source_dir, _ = util.splitFilePathName(sidecar_file)
+    local annotation_fname = DocSettings.getAnnotationFilename(doc_path)
+    local annotation_path = source_dir .. annotation_fname
+    if isFile(annotation_path) and lfs.attributes(annotation_path, "size") > 0 then
+        local ok, stored_annotations = pcall(dofile, annotation_path)
+        if ok and next(stored_annotations) ~= nil then
+            logger.dbg("DocSettings: annotation data is read from", annotation_path)
+            for _, k in ipairs(annotation_data_keys) do
+                if stored_annotations[k] ~= nil then
+                    docSettings.data[k] = stored_annotations[k]
+                end
+            end
+            return true
+        end
+    end
+
+    return false
 end
 
 --- Light version of open(). Opens a sidecar file or a custom metadata file.
@@ -360,6 +412,17 @@ function DocSettings:flush(data, no_custom_metadata)
                         self:getCustomMetadataFile(true) -- reset cache
                     end
                 end
+            end
+
+            if G_reader_settings:isTrue("separate_annotation_file") then
+                local annotation_fname = DocSettings.getAnnotationFilename(data.doc_path)
+                local annotation_path = sidecar_dir_slash .. annotation_fname
+                local annotation_data = {}
+                for _, k in ipairs(annotation_data_keys) do
+                    annotation_data[k] = data[k]
+                end
+                logger.dbg("DocSettings: Writing annotations addintionally to", annotation_path)
+                util.writeToFile(dump(annotation_data, nil, true), annotation_path, true, true)
             end
 
             self:purge(sidecar_file) -- remove old candidates and empty sidecar folders
