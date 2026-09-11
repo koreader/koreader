@@ -1297,15 +1297,13 @@ function ReaderHighlight:showChooseHighlightDialog(highlights)
                 end,
             }}
         end
-        if self.ui.rolling then
-            table.insert(buttons, {{
-                text = _("Merge highlights"),
-                callback = function()
-                    UIManager:close(dialog)
-                    self:mergeHighlights(highlights)
-                end,
-            }})
-        end
+        table.insert(buttons, {{
+            text = _("Merge highlights"),
+            callback = function()
+                UIManager:close(dialog)
+                self:mergeHighlights(highlights)
+            end,
+        }})
         dialog = ButtonDialog:new{
             buttons = buttons,
         }
@@ -2683,19 +2681,43 @@ end
 
 function ReaderHighlight:mergeHighlights(highlights)
     local annotations = self.ui.annotation.annotations
+    local doc = self.ui.document
+    local is_reflow = doc.configurable.text_wrap
+
+    local function get_paging_ordered_pos(anno) -- pos0 and pos1 may be not in order
+        if anno.ext -- multi-page highlight, ordered
+                or doc:comparePositions(anno.pos0, anno.pos1) == 1 then
+            return anno.pos0, anno.pos1
+        end
+        return anno.pos1, anno.pos0
+    end
+
     local hl_pos0 = {} -- annotation indexes ordered by pos0
     local hl_pos1 = {} -- annotation indexes ordered by pos1
     for i, idx in ipairs(highlights) do
         hl_pos0[i] = idx
         hl_pos1[i] = idx
     end
-    local compare = self.ui.rolling and self.ui.document.compareXPointers or self.ui.document.comparePositions
-    table.sort(hl_pos0, function(a, b)
-        return compare(self.ui.document, annotations[a].pos0, annotations[b].pos0) == 1
-    end)
-    table.sort(hl_pos1, function(a, b)
-        return compare(self.ui.document, annotations[a].pos1, annotations[b].pos1) == 1
-    end)
+    if self.ui.rolling then
+        table.sort(hl_pos0, function(a, b)
+            return doc:compareXPointers(annotations[a].pos0, annotations[b].pos0) == 1
+        end)
+        table.sort(hl_pos1, function(a, b)
+            return doc:compareXPointers(annotations[a].pos1, annotations[b].pos1) == 1
+        end)
+    else -- paging
+        doc.configurable.text_wrap = 0 -- native positions
+        table.sort(hl_pos0, function(a, b)
+            local a_pos0 = get_paging_ordered_pos(annotations[a])
+            local b_pos0 = get_paging_ordered_pos(annotations[b])
+            return doc:comparePositions(a_pos0, b_pos0) == 1
+        end)
+        table.sort(hl_pos1, function(a, b)
+            local a_pos1 = select(2, get_paging_ordered_pos(annotations[a]))
+            local b_pos1 = select(2, get_paging_ordered_pos(annotations[b]))
+            return doc:comparePositions(a_pos1, b_pos1) == 1
+        end)
+    end
 
     local notes = {} -- combine notes ordered by pos0
     for _, idx in ipairs(hl_pos0) do
@@ -2703,16 +2725,46 @@ function ReaderHighlight:mergeHighlights(highlights)
             table.insert(notes, annotations[idx].note)
         end
     end
-    local item1 = annotations[hl_pos0[1]] -- all properties from the first (by pos0) highlight
-    local pos1 = annotations[hl_pos1[#hl_pos1]].pos1 -- from the last (by pos1) highlight
+
+    local item1 = annotations[hl_pos0[1]] -- first (by pos0) highlight
+    local item2 = annotations[hl_pos1[#hl_pos1]] -- last (by pos1) highlight
+    local pos0, pos1, text, pboxes, ext
+    if self.ui.rolling then
+        pos0 = item1.pos0
+        pos1 = item2.pos1
+        text = doc:getTextFromXPointers(pos0, pos1, false)
+    else -- paging
+        pos0 = get_paging_ordered_pos(item1)
+        pos1 = select(2, get_paging_ordered_pos(item2))
+        if pos0.page == pos1.page then -- single-page highlight
+            local text_boxes = doc:getTextFromPositions(pos0, pos1)
+            text = text_boxes.text
+            pboxes = text_boxes.pboxes
+        else -- multi-page highlight, see ReaderHighlight:extendSelection()
+            text = ""
+            ext = {}
+            for page = pos0.page, pos1.page do
+                local item = self:getExtendedHighlightPage(pos0, pos1, page)
+                text = text .. item.text
+                ext[page] = {
+                    pos0 = item.pos0,
+                    pos1 = item.pos1,
+                    pboxes = item.pboxes,
+                }
+            end
+        end
+        doc.configurable.text_wrap = is_reflow
+    end
     self.selected_text = {
         datetime = item1.datetime,
         drawer = item1.drawer,
         color = item1.color,
         note = next(notes) and table.concat(notes, "\n"),
-        text = self.ui.document:getTextFromXPointers(item1.pos0, pos1, false),
-        pos0 = item1.pos0,
+        text = text,
+        pos0 = pos0,
         pos1 = pos1,
+        pboxes = pboxes,
+        ext = ext,
     }
     table.sort(highlights)
     for i = #highlights, 1, -1 do
