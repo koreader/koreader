@@ -127,6 +127,12 @@ function AutoWarmth:init()
         i = j
     end
 
+    -- AutoStandby can pause the task scheduler while reading
+    -- (e.g. on Pocketbook Era 700).
+    -- To prevent missing or delayed events we hook into InputEvent
+    -- and check if we need to schedule the next warmth change.
+    UIManager.event_hook:registerWidget("InputEvent", self)
+
     -- schedule recalculation shortly after midnight
     self:scheduleMidnightUpdate()
 end
@@ -479,6 +485,16 @@ function AutoWarmth:toggleFrontlight(now_s)
     local sunset_in_s = sr and (ss * 3600 - self.fl_off_during_day_offset_s - now_s) or 0
 
     self:setFrontlight(sunrise_in_s > 0 or sunset_in_s < 0)
+end
+
+function AutoWarmth:onInputEvent()
+    if self.activate == 0 or #self.sched_warmths == 0 or self.sched_warmth_index > #self.sched_warmths then
+        return
+    end
+
+    if SunTime:getTimeInSec() >= self.sched_times_s[self.sched_warmth_index] then
+        self:scheduleNextWarmthChange(false)
+    end
 end
 
 -- schedules the next warmth change

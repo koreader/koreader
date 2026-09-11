@@ -112,7 +112,7 @@ end
 
 function BookShortcuts:getSubMenuItems()
     local FM_text = _("file browser")
-    local last_text = _("last book")
+    local last_text = _("most recent document")
 
     local sub_item_table = {
         {

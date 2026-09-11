@@ -2241,7 +2241,7 @@ function ReaderFooter:setTocMarkers(reset)
             if self.ui.toc then
                 self.progress_bar.ticks = self.ui.toc:getTocTicksFlattened()
             end
-            if self.view.view_mode == "page" then
+            if self.ui.paging or self.view.view_mode == "page" then
                 self.progress_bar.last = self.pages
             else
                 -- in scroll mode, convert pages to positions
