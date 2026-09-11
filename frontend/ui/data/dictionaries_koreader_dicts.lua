@@ -136,7 +136,7 @@ return {
         name = "Portuguese-English (WordNet + Wiktionary)",
         lang_in = "por",
         lang_out = "eng",
-        entries = 63133,
+        entries = 102769,
         license = "CC BY-SA 4.0",
         url = "https://github.com/DanielGregorini/koreader-dicts/releases/latest/download/pt-en.zip",
     },
