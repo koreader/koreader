@@ -279,6 +279,24 @@ function Calibre:getWirelessMenuTable()
             end,
         },
         {
+            text = _("Create collections from tags"),
+            enabled_func = isEnabled,
+            checked_func = function()
+                return G_reader_settings:isTrue("calibre_collections_from_tags")
+            end,
+            callback = function()
+                G_reader_settings:toggle("calibre_collections_from_tags")
+            end,
+        },
+        {
+            text = _("Sync collections from tags now"),
+            enabled_func = isEnabled,
+            keep_menu_open = true,
+            callback = function()
+                CalibreWireless:syncCollectionsFromTags()
+            end,
+        },
+        {
             text_func = function()
                 local address = _("automatic")
                 if G_reader_settings:has("calibre_wireless_url") then
