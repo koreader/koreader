@@ -9001,4 +9001,8 @@ local dictionaries = {
 local wikdict = require("ui/data/dictionaries_wikdict")
 table.move(wikdict, 1, #wikdict, #dictionaries + 1, dictionaries)
 
+-- koreader-dicts dictionaries (generated, see dictionaries_koreader_dicts.lua)
+local koreader_dicts = require("ui/data/dictionaries_koreader_dicts")
+table.move(koreader_dicts, 1, #koreader_dicts, #dictionaries + 1, dictionaries)
+
 return dictionaries
