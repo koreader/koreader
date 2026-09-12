@@ -1,15 +1,5 @@
 BOOKEEN_DIR = $(PLATFORM_DIR)/bookeen
 
-# $(VERSION) is derived from `git describe` plus the *commit* date, so it is
-# byte-identical across rebuilds of the same commit -- which means every package
-# overwrote the last one and there was no way to tell two builds apart on the
-# device. Stamp the build time into the filename instead.
-#
-# Deliberately filename-only: $(VERSION) itself is left alone, so the `git-rev`
-# written into the package (Makefile `all:`) and the version comparison
-# OTAManager does against it are unchanged. `:=` matters here -- with `=` this
-# would re-run `date` for each mkupdate call below and could straddle a second
-# boundary, naming the packages differently.
 BOOKEEN_BUILD_STAMP := $(shell date -u +%Y%m%d-%H%M%S)
 
 BOOKEEN_PACKAGE = koreader-bookeen$(KODEDUG_SUFFIX)-$(VERSION)-$(BOOKEEN_BUILD_STAMP).zip

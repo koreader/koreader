@@ -1,32 +1,9 @@
 #!/bin/sh
 #
 # Drop the DHCP lease and deconfigure the Wi-Fi interface.
-#
-# This one is deliberately synchronous: it is fast (a signal plus a short wait),
-# and both callers -- NetworkMgr:turnOffWifi() and obtain-ip.sh -- need the old
-# address gone before the next step runs. Leaving a stale address behind is the
-# other half of the "connected but nothing works" failure: after switching APs,
-# the interface still carries the previous subnet's IP and default route, so
-# every packet is routed at the wrong gateway (c.f. hasLeaseForCurrentNetwork()
-# in frontend/ui/network/manager.lua).
-#
-# BusyBox on this rootfs has `killall` and `pidof` but NOT `pkill`/`pgrep`
-# (checked against the applet table in the stock /bin/busybox), so this uses
-# killall/pidof throughout -- unlike platform/kobo/release-ip.sh, which relies on
-# `pkill -0`.
-#
-# SIGTERM rather than SIGUSR2: the vendor's own reader uses
-# `killall -SIGTERM udhcpc` to release (strings on /mnt/app/boordr), and busybox
-# udhcpc's SIGTERM path exits cleanly. It does not necessarily run the script's
-# `deconfig` case on the way out, though, so the address is cleared explicitly
-# below rather than assumed gone.
 
 INTERFACE="${INTERFACE:-wlan0}"
 
-# Save resolv.conf so a client that wipes it on release cannot leave us with an
-# empty one (the same #6424 defence kobo's release-ip.sh has). /etc/resolv.conf
-# is a symlink to ../tmp/resolv.conf here, i.e. tmpfs, so this is writable even
-# though / is mounted read-only.
 old_hash=""
 if [ -r /etc/resolv.conf ]; then
     cp -f /etc/resolv.conf /tmp/resolv.ko 2>/dev/null
