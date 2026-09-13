@@ -928,14 +928,14 @@ function InputText:onKeyPress(key)
             FocusManagerInstance = FocusManager:new{}
         end
         local is_alternative_key = FocusManagerInstance:isAlternativeKey(key)
-        if not is_alternative_key and Device:isSDL() then
-            -- SDL already insert char via TextInput event
+        if not is_alternative_key and Device:hasKeyboardTextInput() then
+            -- The device already inserts text via TextInput.
             -- Stop event propagate to FocusManager
             return true
         end
         -- if it is single text char, insert it
         local key_code = key.key -- is in upper case
-        if not Device.isSDL() and #key_code == 1 then
+        if not Device:hasKeyboardTextInput() and #key_code == 1 then
             if key["Shift"] and key["Alt"] and key["G"] then
                 -- Allow the screenshot keyboard-shortcut to work when focus is on InputText
                 return false

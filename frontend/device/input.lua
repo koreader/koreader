@@ -109,6 +109,8 @@ local Input = {
     event_map = nil, -- hash
     -- adapters are post processing functions that transform a given event to another event
     event_map_adapter = nil, -- hash
+    -- Optional physical-keyboard resolver. Printable presses emit TextInput when set.
+    hw_text_layout = nil,
     -- EV_ABS event to honor for pressure event (if any)
     pressure_event = nil,
 
@@ -170,6 +172,7 @@ local Input = {
     -- keyboard state:
     modifiers = {
         Alt = false,
+        AltGr = false,
         Ctrl = false,
         Shift = false,
         Super = false, -- Windows key, or "Command" key on Mac
@@ -900,6 +903,14 @@ function Input:handleKeyBoardEv(ev)
     end
 
     local key = Key:new(keycode, self.modifiers)
+
+    -- Emit composed physical-keyboard text on press; retain KeyPress for shortcuts.
+    if self.hw_text_layout and ev.value == KEY_PRESS then
+        local ch = self.hw_text_layout(keycode, self.modifiers)
+        if ch then
+            UIManager:sendEvent(Event:new("TextInput", ch))
+        end
+    end
 
     if ev.value == KEY_PRESS then
         return Event:new("KeyPress", key)
