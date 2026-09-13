@@ -867,6 +867,8 @@ function InputText:onKeyPress(key)
             self:addChars("    ")
         elseif key["Back"] then
             self:keyBack()
+        elseif key["F9"] then
+            self:toggleKeyboard()
         else
             handled = false
         end
