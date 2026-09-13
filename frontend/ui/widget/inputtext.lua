@@ -929,6 +929,10 @@ function InputText:onKeyPress(key)
         end
         local is_alternative_key = FocusManagerInstance:isAlternativeKey(key)
         if not is_alternative_key and Device:isSDL() then
+            if key["F8"] then
+                -- Allow the screenshot keyboard-shortcut to work when focus is on InputText
+                return false
+            end
             -- SDL already insert char via TextInput event
             -- Stop event propagate to FocusManager
             return true
