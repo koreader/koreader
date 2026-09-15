@@ -298,12 +298,13 @@ end
 function CreDocument:loadDocument(full_document)
     if not self._loaded then
         local only_metadata = full_document == false
-        logger.dbg("CreDocument: loading document...")
+        logger.info("CreDocument: loading document...")
+        local start_ts = time.now()
         if self._document:loadDocument(self.file, only_metadata) then
             self._loaded = true
-            logger.dbg("CreDocument: loading done.")
+            logger.info("CreDocument: loading done. (" .. time.to_s(time.since(start_ts)) .. "s)")
         else
-            logger.dbg("CreDocument: loading failed.")
+            logger.info("CreDocument: loading failed. (" .. time.to_s(time.since(start_ts)) .. "s)")
         end
     end
     return self._loaded
@@ -318,11 +319,12 @@ function CreDocument:render()
     --     < G_defaults:readSetting("DCREREADER_TWO_PAGE_THRESHOLD") then
     --     self:setVisiblePageCount(1)
     -- end
-    logger.dbg("CreDocument: rendering document...")
+    logger.info("CreDocument: rendering document...")
+    local start_ts = time.now()
     self._document:renderDocument()
     self.info.doc_height = self._document:getFullHeight()
     self.been_rendered = true
-    logger.dbg("CreDocument: rendering done.")
+    logger.info("CreDocument: rendering done. (" .. time.to_s(time.since(start_ts)) .. "s)")
 end
 
 function CreDocument:getDocumentRenderingHash(extended)
