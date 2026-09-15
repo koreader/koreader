@@ -150,7 +150,6 @@ TARGET:
     pocketbookhf
     remarkable
     remarkable-aarch64
-    sony-prstux
     win32
 "
 # shellcheck disable=2155
@@ -179,7 +178,6 @@ function setup_target() {
         pocketbook | pocketbookhf) ;;
         remarkable) ;;
         remarkable-aarch64) ;;
-        sony-prstux) ;;
         # Invalid.
         *)
             valid=0

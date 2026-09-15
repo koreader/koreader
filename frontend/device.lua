@@ -16,8 +16,6 @@ local function probeDevice()
             return require("device/pocketbook/device")
         elseif platform:sub(1, #"remarkable") == "remarkable" then
             return require("device/remarkable/device")
-        elseif platform:sub(1, #"sony-prstux") == "sony-prstux" then
-            return require("device/sony-prstux/device")
         end
     end
     if util.loadSDL3() then
