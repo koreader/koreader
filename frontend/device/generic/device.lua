@@ -155,7 +155,6 @@ local Device = {
     isKobo = no,
     isPocketBook = no,
     isRemarkable = no,
-    isSonyPRSTUX = no,
     isSDL = no,
     isEmulator = no,
     isDesktop = no,
