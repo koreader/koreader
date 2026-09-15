@@ -532,6 +532,36 @@ function Kindle:supportsScreensaver()
     end
 end
 
+
+function Kindle:hasTapbackSensitivity()
+    return self.tapback_sysfs_path ~= nil
+end
+
+function Kindle:getTapbackSensitivity()
+    if not self:hasTapbackSensitivity() then return nil, nil, nil end
+    local function readVal(axis)
+        local f = io.open(self.tapback_sysfs_path .. "/threshold_tap_" .. axis, "r")
+        if f then
+            local val = f:read("*a")
+            f:close()
+            return tonumber(val)
+        end
+        return nil
+    end
+    local x = readVal("x") or 5
+    local y = readVal("y") or 5
+    local z = readVal("z") or 5
+    return x, y, z
+end
+
+function Kindle:setTapbackSensitivity(x, y, z)
+    if not self:hasTapbackSensitivity() then return end
+    local util = require("ffi/util")
+    util.writeToSysfs(tostring(x), self.tapback_sysfs_path .. "/threshold_tap_x")
+    util.writeToSysfs(tostring(y), self.tapback_sysfs_path .. "/threshold_tap_y")
+    util.writeToSysfs(tostring(z), self.tapback_sysfs_path .. "/threshold_tap_z")
+end
+
 function Kindle:openInputDevices()
     -- Auto-detect input devices (via FBInk's fbink_input_scan)
     local ok, FBInkInput = pcall(ffi.loadlib, "fbink_input", 1)
@@ -676,6 +706,8 @@ function Kindle:init()
 
         -- And that we map the double-tap keycode properly, because, sure, F7, why not, lab126...
         self.input.event_map[65] = "RPgFwd"
+
+
     end
 
     -- Follow user preference for the hall effect sensor's state
@@ -694,6 +726,33 @@ function Kindle:init()
         else
             self.key_repeat[C.REP_DELAY] = 400
             self.key_repeat[C.REP_PERIOD] = 120
+        end
+    end
+
+    -- Automagic sysfs discovery for tapback thresholds
+    for file in lfs.dir("/sys/bus/iio/devices") do
+        if file:match("^iio:device%d+$") then
+            local path = "/sys/bus/iio/devices/" .. file
+            local name = nil
+            local f = io.open(path .. "/name", "r")
+            if f then
+                name = f:read("*a")
+                f:close()
+            end
+            if name and name:match("lis2du12_tap") then
+                self.tapback_sysfs_path = path
+                break
+            end
+        end
+    end
+
+    -- Apply saved tap sensitivity if available
+    if self:hasTapbackSensitivity() then
+        local x = G_reader_settings:readSetting("tapback_thresh_x")
+        local y = G_reader_settings:readSetting("tapback_thresh_y")
+        local z = G_reader_settings:readSetting("tapback_thresh_z")
+        if x and y and z then
+            self:setTapbackSensitivity(x, y, z)
         end
     end
 

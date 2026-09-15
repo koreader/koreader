@@ -162,6 +162,7 @@ local order = {
         "gesture_manager",
         "gesture_overview",
         "gesture_intervals",
+        "tapback_sensitivity", -- if Device:hasFancyTaps()
         "----------------------------",
         "ignore_hold_corners",
         "screen_disable_double_tap",
