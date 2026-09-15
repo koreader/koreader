@@ -563,7 +563,7 @@ end
 
 -- Set warmth and schedule the next warmth change
 function AutoWarmth:setWarmth(val, force_warmth)
-    -- A value > 100 means to set night mode and set warmth to maximum.
+    -- A value > 100 means to set night mode.
     -- We use an offset of 1000 to "flag", that night mode is on.
     if val then
         if self.control_nightmode then
@@ -572,7 +572,8 @@ function AutoWarmth:setWarmth(val, force_warmth)
         end
 
         if self.control_warmth and Device:hasNaturalLight() then
-            val = math.min(val, 100) -- "mask" night mode
+            -- "mask" night mode (stored as an offset of 1000)
+            val = val > 100 and val - 1000 or val
             Powerd:setWarmth(val, force_warmth)
             UIManager:broadcastEvent(Event:new(self.event_auto_warmth_activated))
         end
