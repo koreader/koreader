@@ -1046,7 +1046,7 @@ function AutoWarmth:getWarmthMenu()
                         if self.warmth[num] <= 100 then
                             return T(_("%1: %2 %"), text, self.warmth[num])
                         else
-                            return T(_("%1: 100 % + ☾"), text)
+                            return T(_("%1: %2 % + ☾"), text, math.max(self.warmth[num] - 1000, 0))
                         end
                     else
                         if self.warmth[num] <= 100 then
