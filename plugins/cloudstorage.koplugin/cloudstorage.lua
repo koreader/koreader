@@ -15,7 +15,6 @@ local UIManager = require("ui/uimanager")
 local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
-local sort = require("sort")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
