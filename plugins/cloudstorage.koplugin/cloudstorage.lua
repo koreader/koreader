@@ -78,7 +78,7 @@ function CloudStorage:init(re_init)
         end
     end
     if re_init then
-        self.paths = {}
+        self.paths = {} -- list of visited urls, including the current one; used as flag that we are in cloud
         self:switchItemTable(self.title, self.item_table, self.item_idx, nil, "")
         self.item_idx = nil -- set item_idx before opening a server to keep the page when reopening the root list
         self.remote_selected_files = nil -- select mode off
@@ -166,23 +166,21 @@ function CloudStorage:show()
     local default_server_idx = self.settings:readSetting("default_server")
     if default_server_idx then -- open default server
         self.server_idx = default_server_idx
-        local url = self.servers[default_server_idx].url
-        table.insert(self.paths, { url = url })
-        self:openCloudServer(url, true)
+        self:openCloudServer(self.servers[default_server_idx].url, nil, true)
     else -- show root list of servers
         UIManager:show(self)
     end
 end
 
-function CloudStorage:openCloudServer(url, do_show)
-    if self.caller_choose_folder_callback then
-        self.choose_folder_callback = true
-    end
+function CloudStorage:openCloudServer(url, choose_folder_callback, do_show)
     local server = self:initServer(self.server_idx)
-    url = url or server.url
     self.provider.run(function()
         local tbl = self.provider.listFolder(url, true) -- including folders
         if tbl then
+            self.choose_folder_callback = self.caller_choose_folder_callback or choose_folder_callback
+            if self.paths[#self.paths] ~= url then
+                table.insert(self.paths, url)
+            end
             if self.remote_selected_files then
                 for _, item in ipairs(tbl) do
                     if self.remote_selected_files[item.url] then
@@ -198,8 +196,6 @@ function CloudStorage:openCloudServer(url, do_show)
                 UIManager:show(self)
             end
         else
-            table.remove(self.paths)
-            self.choose_folder_callback = nil
             if do_show then
                 -- could not show the server content; show the root list of servers
                 -- "flashui" is needed when called with wi-fi off (NetworkMgr:willRerunWhenConnected())
@@ -214,11 +210,10 @@ function CloudStorage:openCloudServer(url, do_show)
 end
 
 function CloudStorage:onReturn()
-    if #self.paths > 0 then
+    if next(self.paths) then -- up one level
         table.remove(self.paths)
-        local path = self.paths[#self.paths]
-        if path then
-            self:openCloudServer(path.url)
+        if next(self.paths) then
+            self:openCloudServer(self.paths[#self.paths])
         else -- return to root list
             self:init(true)
         end
@@ -229,24 +224,18 @@ end
 function CloudStorage:onHoldReturn()
     if #self.paths > 1 then -- return to the server start folder
         local path = self.paths[1]
-        if path then
-            for i = #self.paths, 2, -1 do
-                table.remove(self.paths)
-            end
-            self:openCloudServer(path.url)
-        end
+        self.paths = { path }
+        self:openCloudServer(path)
     end
     return true
 end
 
 function CloudStorage:onMenuSelect(item)
     if item.server_idx then -- root list
-        table.insert(self.paths, { url = item.url })
         self.item_idx = item.idx
         self.server_idx = item.server_idx
-        self:openCloudServer()
+        self:openCloudServer(item.url)
     elseif item.is_folder then
-        table.insert(self.paths, { url = item.url })
         self:openCloudServer(item.url)
     elseif item.is_file and not self.choose_folder_callback then
         if self.remote_selected_files then
@@ -594,7 +583,7 @@ function CloudStorage:showPlusRootDialog()
 end
 
 function CloudStorage:showPlusCloudDialog()
-    local url = self.paths[#self.paths].url
+    local url = self.paths[#self.paths]
     local plus_cloud_dialog
     plus_cloud_dialog = ButtonDialog:new{
         buttons = {
@@ -920,7 +909,6 @@ function CloudStorage:showFolderCreateDialog(url)
                         if ok then
                             if check_button_enter_folder.checked then
                                 url = url_base .. "/" .. folder_name
-                                table.insert(self.paths, { url = url })
                             end
                             self:openCloudServer(url)
                         else
@@ -971,7 +959,7 @@ function CloudStorage:showSelectedFilesDeleteDialog()
                     if not next(files) then
                         self:toggleSelectMode() -- turn off
                     end
-                    self:openCloudServer(self.paths[#self.paths].url)
+                    self:openCloudServer(self.paths[#self.paths]) -- refresh
                 end
                 local text = T(N_("Deleted 1 file.", "Deleted %1 files.", success_files), success_files)
                 if unsuccess_files > 0 then
@@ -1033,7 +1021,7 @@ function CloudStorage:showSelectedFilesDownloadDialog()
                     if not next(files) then
                         self:toggleSelectMode() -- turn off
                     end
-                    self:openCloudServer(self.paths[#self.paths].url)
+                    self:openCloudServer(self.paths[#self.paths]) -- refresh
                 end
                 local text = T(N_("Downloaded 1 file.", "Downloaded %1 files.", success_files), success_files)
                 if unsuccess_files > 0 then
@@ -1061,15 +1049,14 @@ function CloudStorage:showSyncSettingsDialog(item)
                     text = _("Choose remote folder"),
                     callback = function()
                         UIManager:close(sync_dialog)
-                        self.choose_folder_callback = function(path)
+                        local choose_folder_callback = function(path)
                             server.sync_source_folder = path
                             self._manager.updated = true
                             self:showSyncSettingsDialog(item)
                         end
-                        table.insert(self.paths, { url = item.url })
                         self.item_idx = item.idx
                         self.server_idx = item.server_idx
-                        self:openCloudServer()
+                        self:openCloudServer(item.url, choose_folder_callback)
                     end,
                 },
             },
