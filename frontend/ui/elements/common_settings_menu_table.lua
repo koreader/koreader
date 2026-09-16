@@ -543,7 +543,7 @@ Setting it to some interval may help prevent losing new settings/sidecar data af
 
 -- Some devices with FAT32 storage may not like having settings rewritten too often,
 -- so let that be known. See https://github.com/koreader/koreader/pull/3625
-local warn_about_auto_save = Device:isKobo() or Device:isKindle() or Device:isCervantes() or Device:isPocketBook() or Device:isSonyPRSTUX()
+local warn_about_auto_save = Device:isKobo() or Device:isKindle() or Device:isCervantes() or Device:isPocketBook()
 if warn_about_auto_save then
     local auto_save_help_warning = _([[Please be warned that on this device, setting a low interval may exacerbate the potential for filesystem corruption and complete data loss after a hardware crash.]])
     auto_save_help_text = auto_save_help_text .. "\n\n" .. auto_save_help_warning

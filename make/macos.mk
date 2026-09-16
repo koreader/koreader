@@ -8,7 +8,7 @@ plugins/timesync.koplugin
 tools
 endef
 
-update: all
+update-7z: all
 	mkdir -p $(INSTALL_DIR)/bundle/Contents/{MacOS,Resources}
 	cp -pv $(MACOS_DIR)/koreader.icns $(INSTALL_DIR)/bundle/Contents/Resources/icon.icns
 	cd $(INSTALL_DIR)/koreader && '$(abspath tools/mkrelease.sh)' ../bundle/Contents/koreader/ . $(release_excludes)
@@ -16,3 +16,5 @@ update: all
 	ibtool --compile $(INSTALL_DIR)/bundle/Contents/Resources/Base.lproj/MainMenu.nib $(INSTALL_DIR)/bundle/Contents/MainMenu.xib
 	rm -vf $(INSTALL_DIR)/bundle/Contents/MainMenu.xib
 	$(CURDIR)/platform/mac/do_mac_bundle.sh $(INSTALL_DIR)
+
+update: update-7z

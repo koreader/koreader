@@ -13,6 +13,7 @@ local FFIUtil = require("ffi/util")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local NetworkMgr = require("ui/network/manager")
+local ReadCollection = require("readcollection")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -52,6 +53,8 @@ local OPCODES = {
     CALIBRE_BUSY              = 18,
     SET_LIBRARY_INFO          = 19,
     ERROR                     = 20,
+    GET_COLLECTIONS           = 21,
+    UPDATE_COLLECTIONS        = 22,
 }
 
 -- Mark some strings for translation.
@@ -91,6 +94,32 @@ local function getExtensionPathLengths()
         t[v] = string.len(v)
     end
     return t
+end
+local extension_path_lengths = getExtensionPathLengths()
+
+-- Validates a peer-supplied lpath: relative, no traversal/Windows syntax/NUL, and a supported extension when check_extension is set.
+local function isSafeLpath(lpath, check_extension)
+    if type(lpath) ~= "string" or lpath == "" or lpath:find("\0", 1, true) then
+        return false
+    end
+    if lpath:sub(1, 1) == "/" or lpath:find("\\", 1, true) or lpath:match("^%a:") then
+        return false
+    end
+    local filename
+    for component in lpath:gmatch("[^/]+") do
+        if component == ".." then
+            return false
+        end
+        filename = component
+    end
+    if not filename then
+        return false
+    end
+    if check_extension then
+        local ext = filename:match("%.([^%.]+)$")
+        return ext ~= nil and extension_path_lengths[ext:lower()] or false
+    end
+    return true
 end
 
 -- get real free space on disk or fallback to 1GB
@@ -440,6 +469,10 @@ function CalibreWireless:onReceiveJSON(data)
                 self:sendToCalibre(arg)
             elseif opcode == OPCODES.DISPLAY_MESSAGE then
                 self:serverFeedback(arg)
+            elseif opcode == OPCODES.GET_COLLECTIONS then
+                self:getCollections(arg)
+            elseif opcode == OPCODES.UPDATE_COLLECTIONS then
+                self:updateCollections(arg)
             elseif opcode == OPCODES.NOOP then
                 self:noop(arg)
             end
@@ -497,7 +530,7 @@ function CalibreWireless:getInitInfo(arg)
         coverHeight = 240,
         deviceKind = self.model,
         deviceName = T("%1 (%2)", self.id, self.model),
-        extensionPathLengths = getExtensionPathLengths(),
+        extensionPathLengths = extension_path_lengths,
         passwordHash = getPasswordHash(),
         maxBookContentPacketLen = 4096,
         useUuidFileNames = false,
@@ -625,23 +658,15 @@ end
 function CalibreWireless:sendBook(arg)
     logger.dbg("SEND_BOOK", arg)
     local inbox_dir = G_reader_settings:readSetting("inbox_dir")
-    local filename = inbox_dir .. "/" .. arg.lpath
-    local fits = getFreeSpace(inbox_dir) >= (arg.length + 128 * 1024)
-    local to_write_bytes = arg.length
-    local calibre_device = self
-    local calibre_socket = self.calibre_socket
-    local outfile
-    if fits then
-        logger.dbg("write to file", filename)
-        util.makePath((util.splitFilePathName(filename)))
-        outfile = io.open(filename, "wb")
-    else
-        local msg = T(_("Can't receive file %1/%2: %3\nNo space left on device"),
-            arg.thisBook + 1, arg.totalBooks, BD.filepath(filename))
+    -- Refuse anything that could escape the inbox: calibre >= 4.18 understands
+    -- ERROR replies, older versions are told via the UI, and their file content
+    -- is simply discarded below.
+    local refuse = function(msg)
+        logger.warn("calibre:", msg)
         if self:isCalibreAtLeast(4, 18, 0) then
             -- report the error back to calibre
             self:sendJsonData('ERROR', {message = msg})
-            return
+            return true
         else
             -- report the error in the client
             UIManager:show(InfoMessage:new{
@@ -649,6 +674,70 @@ function CalibreWireless:sendBook(arg)
                 timeout = 2,
             })
             self.error_on_copy = true
+            return false
+        end
+    end
+
+    local filename
+    local fits = false
+    local to_write_bytes = tonumber(arg.length) or 0
+    local this_book = tonumber(arg.thisBook) or 0
+    local total_books = tonumber(arg.totalBooks) or 0
+    local calibre_device = self
+    local calibre_socket = self.calibre_socket
+    local outfile
+
+    if not isSafeLpath(arg.lpath, true) then
+        if refuse(T(_("Can't receive file %1/%2: %3\nInvalid file name"), this_book + 1, total_books, BD.filepath(arg.lpath or ""))) then
+            return
+        end
+    elseif type(arg.metadata) ~= "table" then
+        if refuse(T(_("Can't receive file %1/%2: %3\nInvalid book metadata"), this_book + 1, total_books, BD.filepath(arg.lpath or ""))) then
+            return
+        end
+    elseif not inbox_dir or lfs.attributes(inbox_dir, "mode") ~= "directory" then
+        if refuse(T(_("Can't receive file %1/%2: %3\nInbox directory not found"), this_book + 1, total_books, BD.filepath(arg.lpath))) then
+            return
+        end
+    else
+        filename = inbox_dir .. "/" .. arg.lpath
+        fits = getFreeSpace(inbox_dir) >= (to_write_bytes + 128 * 1024)
+        if fits then
+            logger.dbg("write to file", filename)
+            local dir = util.splitFilePathName(filename)
+            if dir == "" then
+                dir = inbox_dir
+            end
+            util.makePath(dir)
+            -- Containment check: the directory we are about to write into must
+            -- resolve inside the inbox, protecting against symlinked components.
+            local real_dir, real_inbox = FFIUtil.realpath(dir), FFIUtil.realpath(inbox_dir)
+            if real_dir and real_inbox then
+                real_dir = real_dir:gsub("\\", "/"):gsub("/+$", "")
+                real_inbox = real_inbox:gsub("\\", "/"):gsub("/+$", "")
+            end
+            local contained = real_dir and real_inbox
+                and (real_dir == real_inbox or real_dir:sub(1, #real_inbox + 1) == real_inbox .. "/")
+            if not contained then
+                logger.warn("calibre: refusing to receive file outside of inbox", filename)
+                if refuse(T(_("Can't receive file %1/%2: %3\nPath is outside of the inbox directory"), this_book + 1, total_books, BD.filepath(arg.lpath))) then
+                    return
+                end
+                fits = false
+            else
+                outfile = io.open(filename, "wb")
+                if not outfile then
+                    logger.warn("calibre: cannot open file for writing", filename)
+                    if refuse(T(_("Can't receive file %1/%2: %3\nCannot write file"), this_book + 1, total_books, BD.filepath(arg.lpath))) then
+                        return
+                    end
+                    fits = false
+                end
+            end
+        else
+            if refuse(T(_("Can't receive file %1/%2: %3\nNo space left on device"), this_book + 1, total_books, BD.filepath(filename))) then
+                return
+            end
         end
     end
     -- switching to raw data receiving mode
@@ -667,10 +756,12 @@ function CalibreWireless:sendBook(arg)
                 outfile:close()
                 logger.dbg("complete writing file", filename)
                 -- add book to local database/table
+                -- pin the lpath we validated and wrote to, calibre's metadata may differ
+                arg.metadata.lpath = arg.lpath
                 CalibreMetadata:addBook(arg.metadata)
                 UIManager:show(InfoMessage:new{
                     text = T(_("Received file %1/%2: %3"),
-                        arg.thisBook + 1, arg.totalBooks, BD.filepath(filename)),
+                        this_book + 1, total_books, BD.filepath(filename)),
                     timeout = 2,
                 })
                 CalibreMetadata:saveBookList()
@@ -691,7 +782,7 @@ function CalibreWireless:sendBook(arg)
     end
     self:sendJsonData('OK', {})
     -- end of the batch
-    if (arg.thisBook + 1) == arg.totalBooks then
+    if (this_book + 1) == total_books then
         if not self.error_on_copy then return end
         self.error_on_copy = nil
         UIManager:show(ConfirmBox:new{
@@ -725,13 +816,16 @@ function CalibreWireless:deleteBook(arg)
     logger.dbg("DELETE_BOOK", arg)
     self:sendJsonData('OK', {})
     local inbox_dir = G_reader_settings:readSetting("inbox_dir")
-    if not inbox_dir then return end
+    if not inbox_dir or type(arg.lpaths) ~= "table" then return end
     -- remove all books requested by calibre
     local titles = ""
     for i, v in ipairs(arg.lpaths) do
         local book_uuid, index = CalibreMetadata:getBookUuid(v)
         if not index then
             logger.warn("requested to delete a book no longer on device", arg.lpaths[i])
+        elseif not isSafeLpath(v) then
+            -- Do not let a malformed request delete anything outside of the inbox.
+            logger.warn("requested to delete a book with an unsafe path", v)
         else
             titles = titles .. "\n" .. CalibreMetadata.books[index].title
             util.removeFile(inbox_dir.."/"..v)
@@ -768,6 +862,10 @@ end
 function CalibreWireless:sendToCalibre(arg)
     logger.dbg("GET_BOOK_FILE_SEGMENT", arg)
     local inbox_dir = G_reader_settings:readSetting("inbox_dir")
+    if not inbox_dir or not isSafeLpath(arg.lpath) then
+        self:sendJsonData("NOOP", {})
+        return
+    end
     local path = inbox_dir .. "/" .. arg.lpath
 
     local file_size = lfs.attributes(path, "size")
@@ -794,11 +892,98 @@ function CalibreWireless:sendToCalibre(arg)
 end
 
 function CalibreWireless:isCalibreAtLeast(x, y, z)
-    local v = self.calibre.version
+    local v = self.calibre and self.calibre.version
+    -- Unknown version (e.g., no handshake yet): be conservative.
+    if type(v) ~= "table" or type(v[1]) ~= "number" then
+        return false
+    end
     local function semanticVersion(a, b, c)
         return ((a * 100000) + (b * 1000)) + c
     end
-    return semanticVersion(v[1], v[2], v[3]) >= semanticVersion(x, y, z)
+    return semanticVersion(v[1], v[2] or 0, v[3] or 0) >= semanticVersion(x, y, z)
+end
+
+function CalibreWireless:getCollections(arg)
+    local collections = {}
+    for collection_name, collection in pairs(ReadCollection.coll) do
+        local files = rapidjson.array()
+        for file in pairs(collection) do
+            table.insert(files, file)
+        end
+        collections[collection_name] = files
+    end
+    self:sendJsonData("OK", {collections = collections})
+end
+
+function CalibreWireless:updateCollections(arg)
+    if not arg or type(arg) ~= "table" then
+        logger.warn("CalibreWireless: invalid UPDATE_COLLECTIONS payload")
+        return
+    end
+
+    local updated_collections = {}
+
+    -- Remove collections first so that membership changes cannot recreate
+    -- a collection which Calibre explicitly wants removed.
+    if arg.remove_collections then
+        for _, coll_name in ipairs(arg.remove_collections) do
+            if ReadCollection.coll[coll_name] then
+                ReadCollection:removeCollection(coll_name)
+                updated_collections[coll_name] = true
+            end
+        end
+    end
+
+    -- Explicit collection additions are needed for empty collections.
+    if arg.add_collections then
+        for _, coll_name in ipairs(arg.add_collections) do
+            if not ReadCollection.coll[coll_name] then
+                ReadCollection:addCollection(coll_name)
+                updated_collections[coll_name] = true
+            end
+        end
+    end
+
+    -- Add individual book memberships.
+    if arg.add then
+        for coll_name, files in pairs(arg.add) do
+            local coll = ReadCollection.coll[coll_name]
+            if coll then
+                for _, file in ipairs(files) do
+                    if lfs.attributes(file, "mode") == "file"
+                        and not ReadCollection:isFileInCollection(file, coll_name)
+                    then
+                        ReadCollection:addItem(file, coll_name)
+                        updated_collections[coll_name] = true
+                    end
+                end
+            else
+                logger.warn("CalibreWireless: collection missing for add:", coll_name)
+            end
+        end
+    end
+
+    -- Remove individual book memberships.
+    if arg.remove then
+        for coll_name, files in pairs(arg.remove) do
+            local coll = ReadCollection.coll[coll_name]
+            if coll then
+                for _, file in ipairs(files) do
+                    if ReadCollection:removeItem(file, coll_name, true) then
+                        updated_collections[coll_name] = true
+                    end
+                end
+            else
+                logger.warn("CalibreWireless: collection missing for remove:", coll_name)
+            end
+        end
+    end
+
+    if next(updated_collections) then
+        ReadCollection:write(updated_collections)
+    end
+
+    self:sendJsonData("OK", {})
 end
 
 return CalibreWireless

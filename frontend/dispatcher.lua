@@ -1077,6 +1077,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     Dispatcher:init()
     menu.ignored_by_menu_search = true -- all those would be duplicated
     table.insert(menu, {
+        id = "nothing", -- used by Hotkeys
         text = _("Nothing"),
         checked_func = function()
             return location[settings] ~= nil and Dispatcher:_itemsCount(location[settings]) == 0

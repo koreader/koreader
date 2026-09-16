@@ -673,6 +673,9 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, color, draw_note
             bb:darkenRect(x, y, w, h, lighten_factor)
         else
             if bb:getInverse() == 1 then
+                if G_reader_settings:isTrue("highlight_selection_invert_highlight_color") then
+                    color = color:invert()
+                end
                 -- MUL doesn't really work on a black background, so, switch to OVER if we're in software nightmode...
                 -- NOTE: If we do *not* invert the color here, it *will* get inverted by the blitter given that the target bb is inverted.
                 --       While not particularly pretty, this (roughly) matches with hardware nightmode, *and* how MuPDF renders highlights...

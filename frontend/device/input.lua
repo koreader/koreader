@@ -177,6 +177,7 @@ local Input = {
         AltGr = false,
         Ctrl = false,
         Shift = false,
+        Super = false, -- Windows key, or "Command" key on Mac
         Sym = false,
         Meta = false,
         ScreenKB = false,

@@ -222,7 +222,7 @@ function CreDocument:setAltDocumentProp(prop, value)
 end
 
 function CreDocument:setupDefaultView()
-    if self.loaded then
+    if self._loaded then
         -- Don't apply defaults if the document has already been loaded
         -- as this must be done before calling loadDocument()
         return

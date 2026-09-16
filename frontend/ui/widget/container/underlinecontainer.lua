@@ -22,6 +22,8 @@ local UnderlineContainer = WidgetContainer:extend{
     color = Blitbuffer.COLOR_WHITE,
     vertical_align = "top",
     line_width = nil, -- (Don't use this, it's there because of the complex and ugly layout in TouchMenuItem)
+    -- Start of the line, from the container's edge (mirrored in RTL), for parents that paint over that corner.
+    line_x_offset = nil,
     -- The colour behind the focus bar, so we can erase it where we painted it.
     -- Set it to whatever the parent clears that row with. Leaving it nil means we can
     -- only draw the bar, never erase it, so repaintFocusIndicator declines.
@@ -52,10 +54,11 @@ end
 
 function UnderlineContainer:_getLineXAndWidth()
     local line_width = self.line_width or self.dimen.w
+    local line_x_offset = self.line_x_offset or 0
     if BD.mirroredUILayout() then
-        return self.dimen.x + self.dimen.w - line_width, line_width
+        return self.dimen.x + self.dimen.w - line_width - line_x_offset, line_width
     end
-    return self.dimen.x, line_width
+    return self.dimen.x + line_x_offset, line_width
 end
 
 function UnderlineContainer:_focusBarHeight()

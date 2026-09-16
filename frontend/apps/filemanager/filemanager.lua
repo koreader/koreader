@@ -1707,6 +1707,16 @@ function FileManager:onSetFlatView(toggle)
     return true
 end
 
+function FileManager:onOpenLastDoc()
+    local last_file = G_reader_settings:readSetting("lastfile")
+    if last_file and lfs.attributes(last_file, "mode") == "file" then
+        self:openFile(last_file)
+    else
+        UIManager:show(InfoMessage:new{ text = _("Cannot open previous document") })
+    end
+    return true
+end
+
 function FileManager:onOpenNextOrPreviousFileInFolder(prev)
     local last_file = G_reader_settings:readSetting("lastfile")
     if not last_file then return true end
