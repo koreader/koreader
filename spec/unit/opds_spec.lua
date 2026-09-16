@@ -599,6 +599,8 @@ describe("OPDS module", function()
             -- An existing, usable extension is left alone.
             assert.are.same("file.pdf",
                 OPDSBrowser:getServerFileName("http://example.org/books/file.pdf?opds", "pdf"))
+        end)
+
         describe("sync settings", function()
             it("should prefer a catalog sync folder and fall back to the default sync folder", function()
                 local browser = OPDSBrowser:extend{
