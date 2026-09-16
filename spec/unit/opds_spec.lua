@@ -602,6 +602,17 @@ describe("OPDS module", function()
             assert.are.same("shared=def", cookie_jar:headerFor("http://flibusta.is/b/619104/fb2"))
         end)
 
+        it("should split combined response cookies without splitting quoted values or expiry dates", function()
+            local cookie_jar = CookieJar:new()
+            cookie_jar:store("https://example.test/catalog", {
+                ["set-cookie"] = 'quoted="a,b"; Path=/, session=abc; Expires=Wed, 21 Oct 2030 07:28:00 GMT; Path=/',
+            })
+
+            assert.are.same(2, #cookie_jar.cookies)
+            assert.are.same('"a,b"', cookie_jar.cookies[1].value)
+            assert.are.same("abc", cookie_jar.cookies[2].value)
+        end)
+
         it("should retain shared-domain cookies but not credentials across redirects", function()
             local http = require("socket.http")
             local requests = {}

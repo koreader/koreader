@@ -19,6 +19,8 @@ local function defaultPath(request_path)
     return last_slash and request_path:sub(1, last_slash) or "/"
 end
 
+local token_class = '[^%c%s%(%)%<%>%@%,%;%:%\\%"%/%[%]%?%=%{%}]'
+
 local function splitSetCookie(value)
     local cookies = {}
     if type(value) == "table" then
@@ -30,15 +32,24 @@ local function splitSetCookie(value)
         return cookies
     end
 
-    local start = 1
-    while start <= #value do
-        local separator = value:find(",%s*[^%c%s%(%)%<%>%@%,%;%:%\"%/%[%]%?%=%{%}]+%s*=", start)
-        if not separator then
-            table.insert(cookies, value:sub(start))
-            break
-        end
-        table.insert(cookies, value:sub(start, separator - 1))
-        start = separator + 1
+    local quoted = {}
+    value = value:gsub('"(.-)"', function(quote)
+        table.insert(quoted, quote)
+        return "$" .. #quoted
+    end)
+    value = value .. ",$last="
+
+    local index = 1
+    while true do
+        local _, _, cookie, next_index, next_token = value:find(
+            "(.-)%s*,%s*()(" .. token_class .. "+)%s*=", index)
+        if not next_token then break end
+        cookie = cookie:gsub("%$(%d+)", function(quote_index)
+            return '"' .. quoted[tonumber(quote_index)] .. '"'
+        end)
+        table.insert(cookies, cookie)
+        if next_token == "$last" then break end
+        index = next_index
     end
     return cookies
 end
