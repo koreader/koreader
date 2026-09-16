@@ -339,7 +339,12 @@ function FileChooser:refreshPath()
 end
 
 function FileChooser:changeToPath(path, focused_path)
-    path = ffiUtil.realpath(path)
+    local real_path = ffiUtil.realpath(path)
+    while real_path == nil do -- go up
+        path = path:match("(.*)/.*")
+        real_path = ffiUtil.realpath(path ~= "" and path or "/")
+    end
+    path = real_path
     self.path = path
 
     if focused_path then
