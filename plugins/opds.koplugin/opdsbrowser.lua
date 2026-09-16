@@ -3,6 +3,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local Cache = require("cache")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
+local CookieJar = require("cookiejar")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
@@ -11,6 +12,7 @@ local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
 local Notification = require("ui/widget/notification")
+local OPDSClient = require("opdsclient")
 local OPDSParser = require("opdsparser")
 local OPDSPSE = require("opdspse")
 local SpinWidget = require("ui/widget/spinwidget")
@@ -73,7 +75,7 @@ local OPDSBrowser = Menu:extend{
     root_catalog_username = nil,
     root_catalog_password = nil,
     facet_groups          = nil, -- Stores OPDS facet groups
-    cookie_jar            = nil,
+    http_client           = nil,
 
     title_shrink_font_to_fit = true,
 }
@@ -87,7 +89,7 @@ end
 
 function OPDSBrowser:init()
     self.item_table = self:genItemTableFromRoot()
-    self.cookie_jar = {}
+    self:getHttpClient()
     self.catalog_title = nil
     self.title_bar_left_icon = "appbar.menu"
     self.onLeftButtonTap = function()
@@ -95,6 +97,15 @@ function OPDSBrowser:init()
     end
     self.facet_groups = nil -- Initialize facet groups storage
     Menu.init(self) -- call parent's init()
+end
+
+function OPDSBrowser:getHttpClient()
+    if not self.http_client then
+        self.http_client = OPDSClient:new{
+            cookie_jar = CookieJar:new(),
+        }
+    end
+    return self.http_client
 end
 
 function OPDSBrowser:showOPDSMenu()
@@ -409,154 +420,6 @@ function OPDSBrowser:deleteCatalog(item)
     self._manager.updated = true
 end
 
-local function getResponseCookies(headers)
-    local cookies = {}
-    for name, value in pairs(headers or {}) do
-        if name:lower() == "set-cookie" then
-            if type(value) == "table" then
-                for _, cookie in ipairs(value) do
-                    table.insert(cookies, cookie)
-                end
-            else
-                table.insert(cookies, value)
-            end
-        end
-    end
-    return cookies
-end
-
-local function domainMatches(host, domain)
-    return host == domain or host:sub(-#domain - 1) == "." .. domain
-end
-
-local function pathMatches(request_path, cookie_path)
-    if request_path == cookie_path then return true end
-    if request_path:sub(1, #cookie_path) ~= cookie_path then return false end
-    return cookie_path:sub(-1) == "/" or request_path:sub(#cookie_path + 1, #cookie_path + 1) == "/"
-end
-
-local function defaultCookiePath(request_path)
-    if not request_path or request_path:sub(1, 1) ~= "/" then return "/" end
-    local last_slash = request_path:match("^.*()/")
-    return last_slash and request_path:sub(1, last_slash) or "/"
-end
-
-function OPDSBrowser:storeResponseCookies(response_url, headers)
-    local parsed_url = url.parse(response_url)
-    local host = parsed_url.host and parsed_url.host:lower()
-    if not host then return end
-
-    self.cookie_jar = self.cookie_jar or {}
-    for _, set_cookie in ipairs(getResponseCookies(headers)) do
-        local name, value = set_cookie:match("^%s*([^=;%s]+)=([^;]*)")
-        if name then
-            local cookie = {
-                name = name,
-                value = value,
-                domain = host,
-                host_only = true,
-                path = defaultCookiePath(parsed_url.path),
-            }
-            for attribute in set_cookie:gmatch(";([^;]+)") do
-                local attribute_name, attribute_value = attribute:match("^%s*([^=;%s]+)%s*=?%s*(.-)%s*$")
-                attribute_name = attribute_name and attribute_name:lower()
-                if attribute_name == "domain" and attribute_value ~= "" then
-                    local domain = attribute_value:lower():gsub("^%.", "")
-                    if domainMatches(host, domain) then
-                        cookie.domain = domain
-                        cookie.host_only = false
-                    end
-                elseif attribute_name == "path" and attribute_value:sub(1, 1) == "/" then
-                    cookie.path = attribute_value
-                elseif attribute_name == "secure" then
-                    cookie.secure = true
-                elseif attribute_name == "max-age" then
-                    local max_age = tonumber(attribute_value)
-                    if max_age then cookie.expires_at = os.time() + max_age end
-                end
-            end
-
-            for index = #self.cookie_jar, 1, -1 do
-                local existing = self.cookie_jar[index]
-                if existing.name == cookie.name and existing.domain == cookie.domain and existing.path == cookie.path then
-                    table.remove(self.cookie_jar, index)
-                end
-            end
-            if not cookie.expires_at or cookie.expires_at > os.time() then
-                table.insert(self.cookie_jar, cookie)
-            end
-        end
-    end
-end
-
-function OPDSBrowser:getRequestCookies(request_url)
-    local parsed_url = url.parse(request_url)
-    local host = parsed_url.host and parsed_url.host:lower()
-    if not host then return nil end
-
-    self.cookie_jar = self.cookie_jar or {}
-    local request_path = parsed_url.path or "/"
-    local cookies = {}
-    for index = #self.cookie_jar, 1, -1 do
-        local cookie = self.cookie_jar[index]
-        if cookie.expires_at and cookie.expires_at <= os.time() then
-            table.remove(self.cookie_jar, index)
-        elseif (cookie.host_only and host == cookie.domain or not cookie.host_only and domainMatches(host, cookie.domain))
-            and pathMatches(request_path, cookie.path)
-            and (not cookie.secure or parsed_url.scheme == "https") then
-            table.insert(cookies, cookie.name .. "=" .. cookie.value)
-        end
-    end
-    return #cookies > 0 and table.concat(cookies, "; ") or nil
-end
-
-function OPDSBrowser:requestWithCookies(request)
-    local request_url = request.url
-    local original_headers = request.headers or {}
-    local original_origin = url.parse(request_url)
-
-    for _ = 1, 5 do
-        local headers = {}
-        for name, value in pairs(original_headers) do
-            headers[name] = value
-        end
-        local cookies = self:getRequestCookies(request_url)
-        if cookies then headers.Cookie = cookies end
-
-        local request_origin = url.parse(request_url)
-        local same_origin = request_origin.scheme == original_origin.scheme
-            and request_origin.host == original_origin.host
-            and request_origin.port == original_origin.port
-        local code, response_headers, status = socket.skip(1, http.request {
-            url = request_url,
-            method = request.method,
-            headers = headers,
-            sink = request.sink,
-            user = same_origin and request.user or nil,
-            password = same_origin and request.password or nil,
-            redirect = false,
-            response_headers = function(response_code)
-                if response_code == 301 or response_code == 302 or response_code == 303
-                    or response_code == 307 or response_code == 308 then
-                    return true
-                end
-            end,
-        })
-        self:storeResponseCookies(request_url, response_headers)
-
-        if code ~= 301 and code ~= 302 and code ~= 303 and code ~= 307 and code ~= 308
-            or not response_headers or not response_headers.location then
-            return code, response_headers, status
-        end
-
-        local redirected_url = url.absolute(request_url, response_headers.location)
-        if request_url:match("^https:") and redirected_url:match("^http:") then
-            return code, response_headers, status
-        end
-        request_url = redirected_url
-    end
-end
-
 -- Fetches feed from server
 function OPDSBrowser:fetchFeed(item_url, headers_only)
     local sink = {}
@@ -571,11 +434,11 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
             ["Accept"] = self.opds20_feed, -- prefer OPDS 2.0
         },
         sink     = ltn12.sink.table(sink),
-        user     = self.root_catalog_username,
+        username = self.root_catalog_username,
         password = self.root_catalog_password,
     }
     logger.dbg("Request:", socketutil.redact_request(request))
-    local code, headers, status = self:requestWithCookies(request)
+    local code, headers, status = self:getHttpClient():request(request)
     socketutil:reset_timeout()
 
     if headers_only then
@@ -1425,13 +1288,13 @@ function OPDSBrowser:downloadFile(local_path, remote_url, username, password, ca
     local parsed = url.parse(remote_url)
     if parsed.scheme == "http" or parsed.scheme == "https" then
         socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-        code, headers, status = self:requestWithCookies {
+        code, headers, status = self:getHttpClient():request {
             url      = remote_url,
             headers  = {
                 ["Accept-Encoding"] = "identity",
             },
             sink     = ltn12.sink.file(io.open(local_path, "w")),
-            user     = username,
+            username = username,
             password = password,
         }
         socketutil:reset_timeout()

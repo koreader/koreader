@@ -356,7 +356,7 @@ local pdf_acquisition_sample = [[
 
 describe("OPDS module", function()
     local socketutil
-    local OPDSParser, OPDSBrowser
+    local CookieJar, OPDSClient, OPDSParser, OPDSBrowser
     local orig_path, orig_lbt, orig_ltt, orig_fbt, orig_ftt
 
     setup(function()
@@ -364,6 +364,8 @@ describe("OPDS module", function()
         package.path = "plugins/opds.koplugin/?.lua;" .. package.path
         require("commonrequire")
         socketutil = require("socketutil")
+        CookieJar = require("cookiejar")
+        OPDSClient = require("opdsclient")
         OPDSParser = require("opdsparser")
         OPDSBrowser = require("opdsbrowser")
 
@@ -586,18 +588,51 @@ describe("OPDS module", function()
         end)
 
         it("should retain response cookies only for matching URLs", function()
-            local browser = setmetatable({ cookie_jar = {} }, { __index = OPDSBrowser })
-            browser:storeResponseCookies("https://flibusta.is/opds", {
+            local cookie_jar = CookieJar:new()
+            cookie_jar:store("https://flibusta.is/opds", {
                 ["set-cookie"] = "session=abc; Path=/; Secure",
             })
-            browser:storeResponseCookies("https://flibusta.is/opds", {
+            cookie_jar:store("https://flibusta.is/opds", {
                 ["set-cookie"] = "shared=def; Domain=.flibusta.is; Path=/b",
             })
 
-            assert.are.same("session=abc", browser:getRequestCookies("https://flibusta.is/opds/polka"))
-            assert.are.same("shared=def; session=abc", browser:getRequestCookies("https://flibusta.is/b/619104/fb2"))
-            assert.are.same("shared=def", browser:getRequestCookies("https://static.flibusta.is/b/619104/fb2"))
-            assert.are.same("shared=def", browser:getRequestCookies("http://flibusta.is/b/619104/fb2"))
+            assert.are.same("session=abc", cookie_jar:headerFor("https://flibusta.is/opds/polka"))
+            assert.are.same("shared=def; session=abc", cookie_jar:headerFor("https://flibusta.is/b/619104/fb2"))
+            assert.are.same("shared=def", cookie_jar:headerFor("https://static.flibusta.is/b/619104/fb2"))
+            assert.are.same("shared=def", cookie_jar:headerFor("http://flibusta.is/b/619104/fb2"))
+        end)
+
+        it("should retain shared-domain cookies but not credentials across redirects", function()
+            local http = require("socket.http")
+            local requests = {}
+            local responses = {
+                { 302, { location = "https://static.example.test/book", ["set-cookie"] = "session=abc; Domain=.example.test; Path=/" } },
+                { 200, {} },
+            }
+            local request_stub = stub(http, "request", function(request)
+                table.insert(requests, request)
+                local response = table.remove(responses, 1)
+                request.response_headers(response[1], response[2])
+                return 1, response[1], response[2], "HTTP " .. response[1]
+            end)
+            finally(function() request_stub:revert() end)
+
+            local client = OPDSClient:new{
+                cookie_jar = CookieJar:new(),
+            }
+            local code = client:request{
+                url = "https://example.test/catalog",
+                headers = { ["Accept-Encoding"] = "identity" },
+                username = "reader",
+                password = "secret",
+            }
+
+            assert.are.same(200, code)
+            assert.are.same("reader", requests[1].user)
+            assert.are.same("secret", requests[1].password)
+            assert.is_nil(requests[2].user)
+            assert.is_nil(requests[2].password)
+            assert.are.same("session=abc", requests[2].headers.Cookie)
         end)
 
         it("should add the file extension to a server filename that lacks a usable one #internet", function()
