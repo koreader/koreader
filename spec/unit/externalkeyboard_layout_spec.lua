@@ -51,6 +51,11 @@ describe("ExternalKeyboard layout resolver (us)", function()
         assert.are.equal("#", KeyboardLayout.resolve("test_altgr", "1", { Shift = true, AltGr = true }))
     end)
 
+    it("uses AltGr for the shipped US international layout", function()
+        assert.are.equal("é", KeyboardLayout.resolve("us-altgr-intl", "E", { AltGr = true }))
+        assert.are.equal("É", KeyboardLayout.resolve("us-altgr-intl", "E", { Shift = true, AltGr = true }))
+    end)
+
     it("resolves the ISO extra key", function()
         KeyboardLayout.layouts.test_lsgt = {
             ["<"] = { "<", ">" },

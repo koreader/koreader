@@ -227,6 +227,7 @@ function ExternalKeyboard:getKeyboardLayoutMenu()
                 end,
                 callback = function()
                     G_reader_settings:saveSetting("external_keyboard_layout", layout)
+                    logger.dbg("ExternalKeyboard: selected layout", layout)
                 end,
             })
         end
@@ -483,7 +484,10 @@ function ExternalKeyboard:setupKeyboard(data)
     Device.input.event_map = event_map
     local KeyboardLayout = dofile("plugins/externalkeyboard.koplugin/keyboard_layout.lua")
     Device.input.hw_text_layout = function(key_name, modifiers)
-        return KeyboardLayout.resolve(G_reader_settings:readSetting("external_keyboard_layout", "us"), key_name, modifiers)
+        local layout_name = G_reader_settings:readSetting("external_keyboard_layout", "us")
+        local text = KeyboardLayout.resolve(layout_name, key_name, modifiers)
+        logger.dbg("ExternalKeyboard: layout", layout_name, "key", key_name, "AltGr", modifiers.AltGr, "Shift", modifiers.Shift, "=>", text)
+        return text
     end
     Device.hasKeyboard = yes
     Device.hasKeys = yes
