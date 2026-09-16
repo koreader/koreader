@@ -56,7 +56,7 @@ function OPDSClient:request(request)
             password = same_origin and request.password or nil,
             redirect = false,
             response_headers = function(response_code)
-                if redirect_codes[response_code] then return true end
+                return redirect_codes[response_code]
             end,
         })
         self.cookie_jar:store(request_url, response_headers)
