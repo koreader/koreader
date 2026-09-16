@@ -250,7 +250,6 @@ local function buildRootEntry(server)
         raw_names  = server.raw_names, -- use server raw filenames for download
         searchable = server.url and server.url:match("%%s") and true or false,
         sync       = server.sync,
-        sync_dir   = server.sync_dir,
     }
 end
 
@@ -270,16 +269,6 @@ end
 
 function OPDSBrowser:getServerFromRootItem(item)
     return item and item.idx and self.servers[item.idx - 1]
-end
-
-function OPDSBrowser:refreshRootItemFromServer(item, server)
-    if item and item.idx and server then
-        local new_item = buildRootEntry(server)
-        new_item.idx = item.idx
-        self.item_table[item.idx] = new_item
-        return new_item
-    end
-    return item
 end
 
 -- Shows dialog to edit properties of the new/existing catalog
@@ -1384,6 +1373,15 @@ function OPDSBrowser:onMenuHold(item)
         buttons = {
             {
                 {
+                    text = _("Sync settings"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:showSyncSettingsDialog(item)
+                    end,
+                },
+            },
+            {
+                {
                     text = _("Force sync"),
                     callback = function()
                         UIManager:close(dialog)
@@ -1401,16 +1399,6 @@ function OPDSBrowser:onMenuHold(item)
                             self.sync_force = false
                             self:checkSyncDownload(item.idx)
                         end)
-                    end,
-                },
-            },
-            {},
-            {
-                {
-                    text = _("Sync settings"),
-                    callback = function()
-                        UIManager:close(dialog)
-                        self:showSyncSettingsDialog(item)
                     end,
                 },
             },
@@ -1703,7 +1691,7 @@ end
 function OPDSBrowser:showSyncSettingsDialog(item)
     local server = self:getServerFromRootItem(item)
     local sync_dialog
-    local catalog_sync_dir = server.sync_dir and BD.dirpath(server.sync_dir) or _("not set")
+    local catalog_sync_dir = server.sync_dir and BD.dirpath(server.sync_dir) or _("default sync folder")
     local default_sync_dir = self.settings.sync_dir and BD.dirpath(self.settings.sync_dir) or _("not set")
     sync_dialog = ButtonDialog:new{
         title = server.title .. "\n\n" .. T(_("Catalog sync folder:\n%1\n\nDefault sync folder:\n%2"),
@@ -1712,11 +1700,10 @@ function OPDSBrowser:showSyncSettingsDialog(item)
         buttons = {
             {
                 {
-                    text = _("Choose catalog folder"),
+                    text = _("Choose catalog sync folder"),
                     callback = function()
                         UIManager:close(sync_dialog)
                         self:setSyncDir(server, function()
-                            item = self:refreshRootItemFromServer(item, server)
                             self:showSyncSettingsDialog(item)
                         end)
                     end,
@@ -1724,22 +1711,13 @@ function OPDSBrowser:showSyncSettingsDialog(item)
             },
             {
                 {
-                    text = _("Use default folder"),
+                    text = _("Use default sync folder"),
                     enabled = server.sync_dir ~= nil,
                     callback = function()
                         server.sync_dir = nil
-                        item = self:refreshRootItemFromServer(item, server)
                         self._manager.updated = true
                         UIManager:close(sync_dialog)
                         self:showSyncSettingsDialog(item)
-                    end,
-                },
-            },
-            {
-                {
-                    text = _("OK"),
-                    callback = function()
-                        UIManager:close(sync_dialog)
                     end,
                 },
             },
