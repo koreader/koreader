@@ -585,6 +585,21 @@ describe("OPDS module", function()
             assert.are.same("http://example.org/get/PDF/123/library", acquisitions[1].href)
         end)
 
+        it("should retain response cookies only for matching URLs", function()
+            local browser = setmetatable({ cookie_jar = {} }, { __index = OPDSBrowser })
+            browser:storeResponseCookies("https://flibusta.is/opds", {
+                ["set-cookie"] = "session=abc; Path=/; Secure",
+            })
+            browser:storeResponseCookies("https://flibusta.is/opds", {
+                ["set-cookie"] = "shared=def; Domain=.flibusta.is; Path=/b",
+            })
+
+            assert.are.same("session=abc", browser:getRequestCookies("https://flibusta.is/opds/polka"))
+            assert.are.same("shared=def; session=abc", browser:getRequestCookies("https://flibusta.is/b/619104/fb2"))
+            assert.are.same("shared=def", browser:getRequestCookies("https://static.flibusta.is/b/619104/fb2"))
+            assert.are.same("shared=def", browser:getRequestCookies("http://flibusta.is/b/619104/fb2"))
+        end)
+
         it("should add the file extension to a server filename that lacks a usable one #internet", function()
             local orig_fetchFeed = OPDSBrowser.fetchFeed
             OPDSBrowser.fetchFeed = function() return nil end -- no headers: fall back to the URL
