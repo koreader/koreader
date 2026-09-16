@@ -931,8 +931,8 @@ function InputText:onKeyPress(key)
         end
         local is_alternative_key = FocusManagerInstance:isAlternativeKey(key)
         if not is_alternative_key and Device:hasKeyboardTextInput() then
-            if Device:isSDL() and key["F8"] then
-                -- Keep the SDL screenshot shortcut working in InputText.
+            if key["PrintScr"] or (Device:isSDL() and key["F8"]) then
+                -- Keep physical keyboard screenshot shortcuts working in InputText.
                 return false
             end
             -- SDL and an external keyboard already emit TextInput.
