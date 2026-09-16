@@ -25,25 +25,15 @@ local CloudStorage = BookList:extend{
     collates = {
         strcoll = {
             text = _("name"),
-            sort_func = function(a, b)
-                return ffiUtil.strcoll(a.text, b.text)
-            end,
+            sort_func = BookList.collates.strcoll.init_sort_func(),
         },
         natural = {
             text = _("name (natural sorting)"),
-            sort_func = function(a, b)
-                local natsort = sort.natsort_cmp()
-                return natsort(a.text, b.text)
-            end,
+            sort_func = BookList.collates.natural.init_sort_func(),
         },
         type = {
             text = _("type"),
-            sort_func = function(a, b)
-                if (a.suffix or b.suffix) and a.suffix ~= b.suffix then
-                    return ffiUtil.strcoll(a.suffix, b.suffix)
-                end
-                return ffiUtil.strcoll(a.text, b.text)
-            end,
+            sort_func = BookList.collates.type.init_sort_func(),
         },
         size = {
             text = _("size"),

@@ -1,9 +1,9 @@
 local Archiver = require("ffi/archiver")
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
 local DocumentRegistry = require("document/documentregistry")
 local ImageViewer = require("ui/widget/imageviewer")
-local BookList = require("ui/widget/booklist")
 local InfoMessage = require("ui/widget/infomessage")
 local RenderImage = require("ui/renderimage")
 local TextViewer = require("ui/widget/textviewer")
@@ -180,9 +180,7 @@ function ArchiveViewer:getItemTable(path)
             })
         end
     end
-    local sorting = function(a, b) -- by name, folders first
-        return ffiUtil.strcoll(a.text, b.text)
-    end
+    local sorting = BookList.collates.strcoll.init_sort_func() -- by name, folders first
     table.sort(dirs, sorting)
     table.sort(files, sorting)
     table.move(dirs, 1, #dirs, #item_table + 1, item_table)
