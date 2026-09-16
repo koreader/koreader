@@ -163,6 +163,8 @@ local Input = {
 
     -- This might be modified at runtime, so we don't want any inheritance
     rotation_map = nil, -- hash
+    -- Input-device fds that must not follow screen rotation (e.g., external keyboards).
+    rotation_ignored_fds = {},
 
     timer_callbacks = nil, -- instance-specific table, because the object may get destroyed & recreated at runtime
     disable_double_tap = true,
@@ -814,7 +816,7 @@ function Input:handleKeyBoardEv(ev)
 
     -- take device rotation into account
     local rota = self.device.screen:getRotationMode()
-    if self.rotation_map[rota][keycode] then
+    if not self.rotation_ignored_fds[ev.fd] and self.rotation_map[rota][keycode] then
         keycode = self.rotation_map[rota][keycode]
     end
 

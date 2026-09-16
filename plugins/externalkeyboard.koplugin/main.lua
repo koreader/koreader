@@ -321,6 +321,9 @@ function ExternalKeyboard:_onEvdevInputRemove(event_path)
         return
     end
 
+    -- Clear the screen-rotation exemption before its fd can be reused.
+    Device.input.rotation_ignored_fds[ExternalKeyboard.keyboard_fds[event_path]] = nil
+
     -- Close our Input handle on it
     Device.input:close(event_path)
 
@@ -449,6 +452,8 @@ function ExternalKeyboard:setupKeyboard(data)
         end
 
         ExternalKeyboard.keyboard_fds[keyboard_info.event_path] = fd
+        -- External keyboard arrows are keyboard-relative, not device-relative.
+        Device.input.rotation_ignored_fds[fd] = true
         ExternalKeyboard.connected_keyboards = ExternalKeyboard.connected_keyboards + 1
         logger.dbg("ExternalKeyboard: USB keyboard", keyboard_info.name, "@", keyboard_info.event_path, "was connected; total:", ExternalKeyboard.connected_keyboards)
 
