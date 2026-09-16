@@ -375,6 +375,12 @@ function Device:init()
     end
 end
 
+-- True if the active input layer emits TextInput events for physical keys.
+-- InputText then defers insertion to onTextInput instead of using the key name.
+function Device:hasKeyboardTextInput()
+    return self.input.hw_text_layout ~= nil
+end
+
 function Device:setScreenDPI(dpi_override)
     -- Passing a nil resets to defaults and clears the override flag
     self.screen:setDPI(dpi_override)
