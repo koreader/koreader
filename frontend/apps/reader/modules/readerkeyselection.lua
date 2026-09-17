@@ -447,7 +447,6 @@ function ReaderKeySelection:startHighlightIndicator()
             rect.w = Size.item.height_default
             rect.h = rect.w
         end
-        self._current_indicator_pos = rect
 
         -- Compute padded saved region (match paintTo padding)
         local max_w = self.screen_w or Screen:getWidth()
@@ -457,11 +456,7 @@ function ReaderKeySelection:startHighlightIndicator()
         if not save_r then
             save_r = Geom:new{ x = math.floor(rect.x), y = math.floor(rect.y), w = rect.w, h = rect.h }
         end
-        self._indicator_overlay = IndicatorOverlay:new{
-            dimen = Geom:new{ x = save_r.x, y = save_r.y, w = save_r.w, h = save_r.h },
-            parent_ui = self.ui,
-        }
-        UIManager:show(self._indicator_overlay)
+        self:_beginIndicator(rect, save_r)
         if self.ui.paging then
             self._last_indicator_move_args = {dx = 0, dy = 0, distance = 0, time = time:now()}
             self._indicator_overlay.indicator_rect = rect
@@ -488,6 +483,17 @@ function ReaderKeySelection:startHighlightIndicator()
         return true
     end
     return false
+end
+
+function ReaderKeySelection:_beginIndicator(rect, save_r)
+    -- The only place _current_indicator_pos and _indicator_overlay are created together,
+    -- the same way _resetIndicatorState is the only place they're torn down together.
+    self._current_indicator_pos = rect
+    self._indicator_overlay = IndicatorOverlay:new{
+        dimen = Geom:new{ x = save_r.x, y = save_r.y, w = save_r.w, h = save_r.h },
+        parent_ui = self.ui,
+    }
+    UIManager:show(self._indicator_overlay)
 end
 
 -- Resets the fields that must never be allowed to outlive the word/position they were
@@ -829,12 +835,15 @@ function ReaderKeySelection:_setIndicatorToWord(word)
 end
 
 function ReaderKeySelection:_setIndicatorRect(rect)
-    local old_rect = self._current_indicator_pos
-    self._current_indicator_pos = rect
     if not self._indicator_overlay then
-        logger.warn("ReaderKeySelection: _setIndicatorRect: no overlay")
+        -- Should be unreachable: _current_indicator_pos and _indicator_overlay are only
+        -- ever created together (_beginIndicator) or torn down together (_resetIndicatorState).
+        -- Bail before mutating state if that invariant has somehow broken.
+        logger.warn("ReaderKeySelection: _setIndicatorRect called with no overlay - indicator state is out of sync.")
         return
     end
+    local old_rect = self._current_indicator_pos
+    self._current_indicator_pos = rect
     logger.dbg("ReaderKeySelection: _setIndicatorRect: dirtying overlay, rect=", rect)
     self._indicator_overlay.indicator_rect = rect
     local dirty = getIndicatorDirtyRect(old_rect, rect, self.screen_w, self.screen_h)
