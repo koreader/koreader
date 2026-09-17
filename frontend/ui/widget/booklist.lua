@@ -267,6 +267,10 @@ BookList.collates = {
     },
 }
 
+function BookList.getCollateSortFunc(collate)
+    return BookList.collates[collate or "strcoll"].init_sort_func()
+end
+
 function BookList:init()
     self.title_bar_fm_style = not self.custom_title_bar
     Menu.init(self)

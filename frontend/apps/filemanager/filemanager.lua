@@ -1417,7 +1417,7 @@ function FileManager:onShowFolderMenu()
         end
         if #subfolders > 0 then
             if #subfolders > 1 then
-                table.sort(subfolders, BookList.collates.strcoll.init_sort_func())
+                table.sort(subfolders, BookList.getCollateSortFunc())
             end
             table.insert(buttons, {}) -- separator
             local prefix = (" "):rep(indent + 1) .. "└ "
@@ -1446,7 +1446,7 @@ function FileManager:showSelectedFilesList()
             bidi_wrap_func = BD.filepath,
         })
     end
-    local sort_func = BookList.collates.strcoll.init_sort_func()
+    local sort_func = BookList.getCollateSortFunc()
     local function sorting(a, b)
         local a_path, a_name = util.splitFilePathName(a.text)
         local b_path, b_name = util.splitFilePathName(b.text)

@@ -50,7 +50,7 @@ function BookMetadataArchive.getBookList()
         end
     end, false)
     if #book_list > 1 then
-        table.sort(book_list, BookList.collates.strcoll.init_sort_func())
+        table.sort(book_list, BookList.getCollateSortFunc())
     end
     return book_list
 end

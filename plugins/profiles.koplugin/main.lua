@@ -538,7 +538,7 @@ function Profiles:genAllAutoExecMenu()
         })
     end
     if #sub_item_table > 1 then
-        local sort_func = BookList.collates.strcoll.init_sort_func()
+        local sort_func = BookList.getCollateSortFunc()
         table.sort(sub_item_table, function(a, b) return sort_func({ text = a.name }, { text = b.name }) end)
     end
     return sub_item_table

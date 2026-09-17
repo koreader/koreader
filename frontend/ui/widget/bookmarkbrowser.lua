@@ -376,7 +376,7 @@ function BookmarkBrowser:getBookList(files)
         end
     end
     if #books > 1 then
-        table.sort(books, BookList.collates.strcoll.init_sort_func())
+        table.sort(books, BookList.getCollateSortFunc())
     end
     return books
 end
@@ -955,7 +955,7 @@ function BookmarkBrowser:showPropValueList(prop, prop_values, caller_callback)
         })
     end
     if #prop_item_table > 1 then
-        table.sort(prop_item_table, BookList.collates.strcoll.init_sort_func())
+        table.sort(prop_item_table, BookList.getCollateSortFunc())
     end
     prop_list = BookList:new{
         title = T(_("%1: %2"), self.ui.bookinfo.prop_text[prop]:sub(1, -2), #prop_item_table),

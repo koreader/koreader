@@ -744,7 +744,7 @@ function FileManagerCollection:showPropValueList(prop)
         })
     end
     if #prop_item_table > 1 then
-        table.sort(prop_item_table, BookList.collates.strcoll.init_sort_func())
+        table.sort(prop_item_table, BookList.getCollateSortFunc())
     end
     prop_menu = Menu:new{
         title = T("%1 (%2)", self.ui.bookinfo.prop_text[prop]:gsub(":", ""), #prop_item_table),
@@ -1244,7 +1244,7 @@ function FileManagerCollection:updateCollFolderListItemTable()
             })
         end
         if #item_table > 1 then
-            table.sort(item_table, BookList.collates.strcoll.init_sort_func())
+            table.sort(item_table, BookList.getCollateSortFunc())
         end
     end
     local subtitle = T(_("Connected folders: %1"), #item_table)
@@ -1667,7 +1667,7 @@ function FileManagerCollection:searchCollections(coll_name)
             text = T(_("No results for: %1"), self.search_str),
         })
     else
-        local sort_func = BookList.collates.strcoll.init_sort_func()
+        local sort_func = BookList.getCollateSortFunc()
         table.sort(files_found_order, function(a, b)
             if a.coll_order ~= b.coll_order then
                 return a.coll_order < b.coll_order

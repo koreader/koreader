@@ -180,9 +180,9 @@ function ArchiveViewer:getItemTable(path)
             })
         end
     end
-    local sorting = BookList.collates.strcoll.init_sort_func() -- by name, folders first
-    table.sort(dirs, sorting)
-    table.sort(files, sorting)
+    local sort_func = BookList.getCollateSortFunc() -- by name, folders first
+    table.sort(dirs, sort_func)
+    table.sort(files, sort_func)
     table.move(dirs, 1, #dirs, #item_table + 1, item_table)
     table.move(files, 1, #files, #item_table + 1, item_table)
     return item_table

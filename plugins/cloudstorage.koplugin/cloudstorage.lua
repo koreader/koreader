@@ -24,15 +24,15 @@ local CloudStorage = BookList:extend{
     collates = {
         strcoll = {
             text = _("name"),
-            sort_func = BookList.collates.strcoll.init_sort_func(),
+            sort_func = BookList.getCollateSortFunc(),
         },
         natural = {
             text = _("name (natural sorting)"),
-            sort_func = BookList.collates.natural.init_sort_func(),
+            sort_func = BookList.getCollateSortFunc("natural"),
         },
         type = {
             text = _("type"),
-            sort_func = BookList.collates.type.init_sort_func(),
+            sort_func = BookList.getCollateSortFunc("type"),
         },
         size = {
             text = _("size"),

@@ -266,7 +266,7 @@ function FileManagerShortcuts:updateItemTable()
         end
     end
     if #item_table > 1 then
-        local sort_func = BookList.collates.strcoll.init_sort_func()
+        local sort_func = BookList.getCollateSortFunc()
         table.sort(item_table, function(a, b)
             if (not a.provider) ~= (not b.provider) then
                 return a.provider -- system shortcuts first
