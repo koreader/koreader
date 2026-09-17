@@ -368,7 +368,7 @@ function BookmarkBrowser:getBookList(files)
                 doc_props = doc_props,
                 annotations = annotations,
                 authors = authors,
-                sort_string = util.stringLower(authors .. doc_props.display_title),
+                text = util.stringLower(authors .. doc_props.display_title),
                 -- will be filled when building item table
                 item_table_idx = nil,
                 bookmarks_nb = nil,
@@ -376,7 +376,7 @@ function BookmarkBrowser:getBookList(files)
         end
     end
     if #books > 1 then
-        table.sort(books, function(a, b) return ffiUtil.strcoll(a.sort_string, b.sort_string) end)
+        table.sort(books, BookList.getCollateSortFunc())
     end
     return books
 end
@@ -955,7 +955,7 @@ function BookmarkBrowser:showPropValueList(prop, prop_values, caller_callback)
         })
     end
     if #prop_item_table > 1 then
-        table.sort(prop_item_table, function(a, b) return ffiUtil.strcoll(a.text, b.text) end)
+        table.sort(prop_item_table, BookList.getCollateSortFunc())
     end
     prop_list = BookList:new{
         title = T(_("%1: %2"), self.ui.bookinfo.prop_text[prop]:sub(1, -2), #prop_item_table),

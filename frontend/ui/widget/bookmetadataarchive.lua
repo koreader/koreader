@@ -50,7 +50,7 @@ function BookMetadataArchive.getBookList()
         end
     end, false)
     if #book_list > 1 then
-        table.sort(book_list, function(a, b) return ffiUtil.strcoll(a.text, b.text) end)
+        table.sort(book_list, BookList.getCollateSortFunc())
     end
     return book_list
 end

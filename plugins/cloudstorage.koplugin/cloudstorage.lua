@@ -15,7 +15,6 @@ local UIManager = require("ui/uimanager")
 local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
-local sort = require("sort")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
@@ -25,25 +24,15 @@ local CloudStorage = BookList:extend{
     collates = {
         strcoll = {
             text = _("name"),
-            sort_func = function(a, b)
-                return ffiUtil.strcoll(a.text, b.text)
-            end,
+            sort_func = BookList.getCollateSortFunc(),
         },
         natural = {
             text = _("name (natural sorting)"),
-            sort_func = function(a, b)
-                local natsort = sort.natsort_cmp()
-                return natsort(a.text, b.text)
-            end,
+            sort_func = BookList.getCollateSortFunc("natural"),
         },
         type = {
             text = _("type"),
-            sort_func = function(a, b)
-                if (a.suffix or b.suffix) and a.suffix ~= b.suffix then
-                    return ffiUtil.strcoll(a.suffix, b.suffix)
-                end
-                return ffiUtil.strcoll(a.text, b.text)
-            end,
+            sort_func = BookList.getCollateSortFunc("type"),
         },
         size = {
             text = _("size"),

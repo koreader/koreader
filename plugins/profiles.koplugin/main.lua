@@ -1,3 +1,4 @@
+local BookList = require("ui/widget/booklist")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local DateTimeWidget = require("ui/widget/datetimewidget")
@@ -537,7 +538,8 @@ function Profiles:genAllAutoExecMenu()
         })
     end
     if #sub_item_table > 1 then
-        table.sort(sub_item_table, function(a, b) return ffiUtil.strcoll(a.name, b.name) end)
+        local sort_func = BookList.getCollateSortFunc()
+        table.sort(sub_item_table, function(a, b) return sort_func({ text = a.name }, { text = b.name }) end)
     end
     return sub_item_table
 end

@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
 local InfoMessage = require("ui/widget/infomessage")
@@ -8,7 +9,6 @@ local PathChooser = require("ui/widget/pathchooser")
 local Screenshoter = require("ui/widget/screenshoter")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
@@ -266,11 +266,12 @@ function FileManagerShortcuts:updateItemTable()
         end
     end
     if #item_table > 1 then
+        local sort_func = BookList.getCollateSortFunc()
         table.sort(item_table, function(a, b)
             if (not a.provider) ~= (not b.provider) then
                 return a.provider -- system shortcuts first
             end
-            return ffiUtil.strcoll(a.text, b.text)
+            return sort_func(a, b)
         end)
     end
     self.shortcuts_menu:switchItemTable(nil, item_table, -1)
