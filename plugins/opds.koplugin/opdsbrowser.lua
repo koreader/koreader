@@ -3,6 +3,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local Cache = require("cache")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
+local CookieJar = require("cookiejar")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
@@ -11,18 +12,17 @@ local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
 local Notification = require("ui/widget/notification")
+local OPDSClient = require("opdsclient")
 local OPDSParser = require("opdsparser")
 local OPDSPSE = require("opdspse")
 local SpinWidget = require("ui/widget/spinwidget")
 local TextViewer = require("ui/widget/textviewer")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
-local http = require("socket.http")
 local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local ltn12 = require("ltn12")
-local socket = require("socket")
 local socketutil = require("socketutil")
 local url = require("socket.url")
 local util = require("util")
@@ -73,6 +73,7 @@ local OPDSBrowser = Menu:extend{
     root_catalog_username = nil,
     root_catalog_password = nil,
     facet_groups          = nil, -- Stores OPDS facet groups
+    http_client           = nil,
 
     title_shrink_font_to_fit = true,
 }
@@ -86,6 +87,7 @@ end
 
 function OPDSBrowser:init()
     self.item_table = self:genItemTableFromRoot()
+    self:getHttpClient()
     self.catalog_title = nil
     self.title_bar_left_icon = "appbar.menu"
     self.onLeftButtonTap = function()
@@ -93,6 +95,15 @@ function OPDSBrowser:init()
     end
     self.facet_groups = nil -- Initialize facet groups storage
     Menu.init(self) -- call parent's init()
+end
+
+function OPDSBrowser:getHttpClient()
+    if not self.http_client then
+        self.http_client = OPDSClient:new{
+            cookie_jar = CookieJar:new(),
+        }
+    end
+    return self.http_client
 end
 
 function OPDSBrowser:showOPDSMenu()
@@ -432,11 +443,11 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
             ["Accept"] = self.opds20_feed, -- prefer OPDS 2.0
         },
         sink     = ltn12.sink.table(sink),
-        user     = self.root_catalog_username,
+        username = self.root_catalog_username,
         password = self.root_catalog_password,
     }
     logger.dbg("Request:", socketutil.redact_request(request))
-    local code, headers, status = socket.skip(1, http.request(request))
+    local code, headers, status = self:getHttpClient():request(request)
     socketutil:reset_timeout()
 
     if headers_only then
@@ -1290,15 +1301,15 @@ function OPDSBrowser:downloadFile(local_path, remote_url, username, password, ca
     local parsed = url.parse(remote_url)
     if parsed.scheme == "http" or parsed.scheme == "https" then
         socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-        code, headers, status = socket.skip(1, http.request {
+        code, headers, status = self:getHttpClient():request {
             url      = remote_url,
             headers  = {
                 ["Accept-Encoding"] = "identity",
             },
             sink     = ltn12.sink.file(io.open(local_path, "w")),
-            user     = username,
+            username = username,
             password = password,
-        })
+        }
         socketutil:reset_timeout()
     else
         UIManager:show(InfoMessage:new {
