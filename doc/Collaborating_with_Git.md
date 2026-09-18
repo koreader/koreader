@@ -125,17 +125,14 @@ Go to your github page and issue pull request
 
 ## Before opening a pull request
 
-- **Check for existing pull requests before opening a new one.** Search the
-  repository's open and recently closed PRs for work that overlaps with the
-  change you are about to propose.
-  - If a PR already covers the same functionality, do not open a duplicate.
+* **Check for existing pull requests before opening a new one.**
+  * If a PR already covers the same functionality, don't open a duplicate.
     Instead, review it, leave feedback, or ask to take it over.
-  - If a related PR exists but is stale or incomplete, consider reviving or
-    building on it rather than starting from scratch.
-  - Only open a new PR when the change is genuinely new or the existing PR
-    cannot be reused.
-- Reference the existing PR or issue number in your PR description when
-  your work is related to prior efforts.
-- Follow the project's existing code style and conventions.
-- Keep changes focused; one logical change per pull request.
-- Ensure the build and tests pass before submitting.
+  * If a related PR exists but is stale or incomplete, consider reviving or building on it rather than starting from scratch.
+  * Only open a new PR when the change is genuinely new or the existing PR cannot be reused.
+* **Write your own commit messages and Pull Request descriptions.** Those explain why you are making the change, which is the part a tool cannot know.
+  * Respond to review comments yourself. If you cannot discuss your own patch with a reviewer, it will not be merged. There's no reason for us to read that which you don't care to write.
+* Reference the existing PR or issue number in your PR description when your work is related to prior efforts.
+* Follow the project's existing code style and conventions.
+* Keep changes focused; one logical change per pull request.
+* Ensure the build and tests pass before submitting.
