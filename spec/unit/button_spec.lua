@@ -1,10 +1,12 @@
 describe("Button widget", function()
     local Button
+    local ButtonTable
     local Dbg
 
     setup(function()
         require("commonrequire")
         Button = require("ui/widget/button")
+        ButtonTable = require("ui/widget/buttontable")
         Dbg = require("dbg")
     end)
 
@@ -43,6 +45,22 @@ describe("Button widget", function()
     it("should not register a Shortcut event when key_bindings is unset", function()
         local btn = Button:new{ text = "Test" }
         assert.is_nil(btn.key_events.Shortcut)
+    end)
+
+    it("should pass alpha to an icon label", function()
+        local btn = Button:new{ icon = "check", alpha = true }
+        assert.is_true(btn.label_widget.alpha)
+    end)
+
+    it("should pass alpha from a button table entry to an icon label", function()
+        local button_table = ButtonTable:new{
+            buttons = {
+                {
+                    { id = "check", icon = "check", alpha = true, callback = function() end },
+                },
+            },
+        }
+        assert.is_true(button_table.button_by_id.check.label_widget.alpha)
     end)
 
     it("should reject a malformed key_bindings", function()
