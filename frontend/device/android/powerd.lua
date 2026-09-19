@@ -34,6 +34,15 @@ function AndroidPowerD:init()
         self.fl_warmth_min = android.getScreenMinWarmth()
         self.fl_warmth_max = android.getScreenMaxWarmth()
         self.warm_diff = self.fl_warmth_max - self.fl_warmth_min
+
+        -- BasePowerD only sets warmth_scale after init() returns, c.f. KoboPowerD:init.
+        self.warmth_scale = 100 / self.fl_warmth_max
+
+        local warmth = G_reader_settings:readSetting("frontlight_warmth")
+        if warmth then
+            self.fl_warmth = warmth
+            self:setWarmth(warmth, true)
+        end
     end
 end
 
