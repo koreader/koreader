@@ -21,7 +21,11 @@ function ReaderHandMade:onReadSettings(config)
     self.toc_enabled = config:isTrue("handmade_toc_enabled")
     self.toc_edit_enabled = config:nilOrTrue("handmade_toc_edit_enabled")
     self.toc = config:readSetting("handmade_toc") or {}
-    self.flows_enabled = config:isTrue("handmade_flows_enabled")
+    if config:has("handmade_flows_enabled") then
+        self.flows_enabled = config:isTrue("handmade_flows_enabled")
+    else
+        self.flows_enabled = G_reader_settings:isTrue("handmade_flows_enabled")
+    end
     self.flows_edit_enabled = config:nilOrTrue("handmade_flows_edit_enabled")
     self.flow_points = config:readSetting("handmade_flow_points") or {}
     self.inactive_flow_points = {}
@@ -113,7 +117,7 @@ function ReaderHandMade:onToggleHandmadeToc()
 end
 
 function ReaderHandMade:onToggleHandmadeFlows()
-    self.flows_enabled = not self.flows_enabled
+    self.flows_enabled = not self.flows_enabled -- keep it true or false
     self:setupFlows()
     -- Have footer updated, so we may see this took effect
     self.view.footer:maybeUpdateFooter()
@@ -135,10 +139,16 @@ function ReaderHandMade:addToMainMenu(menu_items)
         end,
     }
     menu_items.handmade_hidden_flows = {
-        text = _("Custom hidden flows"),
+        text_func = function()
+            return _("Custom hidden flows") .. (G_reader_settings:isTrue("handmade_flows_enabled") and "   ★" or "")
+        end,
         checked_func = function() return self.flows_enabled end,
         callback = function()
             self:onToggleHandmadeFlows()
+        end,
+        hold_callback = function(touchmenu_instance)
+            G_reader_settings:flipNilOrFalse("handmade_flows_enabled")
+            touchmenu_instance:updateItems()
         end,
     }
     --[[ Not yet implemented
@@ -670,7 +680,7 @@ function ReaderHandMade:setupFlows(no_event)
         -- If enabled, plug some methods into the document object,
         -- so they are used instead of the methods from its class.
         self.document.hasHiddenFlows = function(this)
-            return true
+            return #self.flow_points > #self.inactive_flow_points
         end
         self.document.cacheFlows = function(this)
             return
