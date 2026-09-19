@@ -3,6 +3,8 @@ describe("CalibreWireless collections", function()
     local ReadCollection
     local original_readcollection
     local original_lfs
+    local original_reader_settings
+    local original_inbox_dir
     local original_package_path
     local original_extensions
     local original_metadata
@@ -18,6 +20,7 @@ describe("CalibreWireless collections", function()
         original_search = package.loaded["search"]
         original_readcollection = require("readcollection")
         original_lfs = require("libs/libkoreader-lfs")
+        original_reader_settings = G_reader_settings
     end)
 
     before_each(function()
@@ -63,6 +66,7 @@ describe("CalibreWireless collections", function()
         end
 
         local lfs_mock = { attributes_results = {} }
+        lfs_mock.attributes_results[HOME .. "/books"] = { mode = "directory" }
 
         function lfs_mock.attributes(path, key)
             local attrs = lfs_mock.attributes_results[path]
@@ -81,6 +85,8 @@ describe("CalibreWireless collections", function()
         package.replace("libs/libkoreader-lfs", lfs_mock)
         package.path = "plugins/calibre.koplugin/?.lua;" .. original_package_path
         CalibreWireless = dofile("plugins/calibre.koplugin/wireless.lua")
+        original_inbox_dir = G_reader_settings:readSetting("inbox_dir")
+        G_reader_settings:saveSetting("inbox_dir", HOME .. "/books")
         ReadCollection = readcollection_mock
     end)
 
@@ -91,6 +97,11 @@ describe("CalibreWireless collections", function()
         package.loaded["search"] = original_search
         package.replace("readcollection", original_readcollection)
         package.replace("libs/libkoreader-lfs", original_lfs)
+        if original_inbox_dir == nil then
+            original_reader_settings:delSetting("inbox_dir")
+        else
+            original_reader_settings:saveSetting("inbox_dir", original_inbox_dir)
+        end
     end)
 
     local function new_wireless()
@@ -120,7 +131,7 @@ describe("CalibreWireless collections", function()
 
             assert.is_table(collections.fiction)
             assert.equals(1, #collections.fiction)
-            assert.equals(HOME .. "/books/one.epub", collections.fiction[1])
+            assert.equals("one.epub", collections.fiction[1])
             assert.is_table(collections.empty)
             assert.equals(0, #collections.empty)
         end)
@@ -132,7 +143,9 @@ describe("CalibreWireless collections", function()
             ReadCollection.coll_settings = { fiction = { order = 1 }, history = { order = 2 } }
 
             local wireless = new_wireless()
-            wireless:updateCollections{ remove_collections = {"fiction"} }
+            wireless:updateCollections{
+                remove_collections = {"fiction"},
+            }
 
             assert.is_nil(ReadCollection.coll.fiction)
             assert.is_not_nil(ReadCollection.coll.history)
@@ -146,7 +159,9 @@ describe("CalibreWireless collections", function()
             ReadCollection.coll = {}
             ReadCollection.coll_settings = {}
             local wireless = new_wireless()
-            wireless:updateCollections{ add_collections = {"new collection"} }
+            wireless:updateCollections{
+                add_collections = {"new collection"},
+            }
 
             assert.is_not_nil(ReadCollection.coll["new collection"])
             assert.same({}, ReadCollection.coll["new collection"])
@@ -160,11 +175,10 @@ describe("CalibreWireless collections", function()
             ReadCollection.coll_settings = {}
             local lfs = require("libs/libkoreader-lfs")
             lfs.attributes_results[HOME .. "/books/one.epub"] = { mode = "file" }
-
             local wireless = new_wireless()
             wireless:updateCollections{
                 add_collections = {"fiction"},
-                add = { fiction = { HOME .. "/books/one.epub" } },
+                add = { fiction = { "one.epub" } },
             }
 
             assert.is_not_nil(ReadCollection.coll.fiction)
@@ -179,7 +193,10 @@ describe("CalibreWireless collections", function()
             ReadCollection.coll_settings = { fiction = { order = 7 } }
 
             local wireless = new_wireless()
-            wireless:updateCollections{ remove_collections = {"fiction"}, remove = { fiction = { "books/one.epub" } } }
+            wireless:updateCollections{
+                remove_collections = {"fiction"},
+                remove = { fiction = { "books/one.epub" } },
+            }
 
             assert.is_nil(ReadCollection.coll.fiction)
             assert.is_nil(ReadCollection.coll_settings.fiction)
@@ -194,7 +211,9 @@ describe("CalibreWireless collections", function()
             lfs.attributes_results[HOME .. "/books/one.epub"] = { mode = "file" }
 
             local wireless = new_wireless()
-            wireless:updateCollections{ add = { fiction = { HOME .. "/books/one.epub" } } }
+            wireless:updateCollections{
+                add = { fiction = { "one.epub" } },
+            }
 
             assert.same({ [HOME .. "/books/one.epub"] = {file = HOME .. "/books/one.epub"} }, ReadCollection.coll.fiction)
             assert.is_nil(ReadCollection.written)
@@ -209,11 +228,7 @@ describe("CalibreWireless collections", function()
 
             local wireless = new_wireless()
             wireless:updateCollections{
-                add = {
-                    fiction = {
-                        HOME .. "/books/one.epub",
-                    },
-                },
+                add = { fiction = {"one.epub"} },
             }
 
             local item = ReadCollection.coll.fiction[HOME .. "/books/one.epub"]
@@ -229,7 +244,9 @@ describe("CalibreWireless collections", function()
             ReadCollection.coll_settings = { fiction = { order = 7 } }
 
             local wireless = new_wireless()
-            wireless:updateCollections{ remove = { fiction = { HOME .. "/books/one.epub" } } }
+            wireless:updateCollections{
+                remove = { fiction = { "one.epub" } },
+            }
 
             assert.is_nil(ReadCollection.coll.fiction[HOME .. "/books/one.epub"])
             assert.is_true(ReadCollection.written.fiction)
@@ -243,7 +260,9 @@ describe("CalibreWireless collections", function()
             local wireless = new_wireless()
             local lfs = require("libs/libkoreader-lfs")
             lfs.attributes_results[HOME .. "/books/one.epub"] = { mode = "file" }
-            wireless:updateCollections{ add = { fiction = { HOME .. "/books/one.epub" } } }
+            wireless:updateCollections{
+                add = { fiction = { "one.epub" } },
+            }
 
             assert.same({ order = 42, collate = true, custom = "preserve me" }, ReadCollection.coll_settings.fiction)
         end)
@@ -256,7 +275,9 @@ describe("CalibreWireless collections", function()
             ReadCollection.coll_settings = { fiction = { order = 1 }, history = { order = 2 } }
 
             local wireless = new_wireless()
-            wireless:updateCollections{ add_collections = {"new"} }
+            wireless:updateCollections{
+                add_collections = { "new" },
+            }
 
             assert.is_not_nil(ReadCollection.coll.history)
             assert.is_not_nil(ReadCollection.coll.history[HOME .. "/books/history.epub"])
@@ -271,7 +292,13 @@ describe("CalibreWireless collections", function()
 
             local wireless = new_wireless()
             wireless:updateCollections{
-                add = { fiction = { HOME .. "/books/missing.epub", HOME .. "/outside.epub", "/absolute/path.epub" } },
+                add = {
+                    fiction = {
+                        "missing.epub",
+                        "../outside.epub",
+                        "/absolute/path.epub",
+                    },
+                },
             }
 
             assert.same({}, ReadCollection.coll.fiction)
