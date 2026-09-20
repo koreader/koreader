@@ -159,6 +159,8 @@ fi
 
 # Ensure a "traditional" sort order.
 export LC_ALL=C
+# And UTC times.
+export TZ=UTC
 
 # We need to use the full path to the executable to avoid
 # a weird issue when using the p7zip project pre-built
