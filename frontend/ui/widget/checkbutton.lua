@@ -204,7 +204,7 @@ function CheckButton:onHoldCheckButton()
     -- sure to also handle its hold_release below, so it's
     -- not propagated up to a MovableContainer
     self._hold_handled = nil
-    if self.enabled then
+    if self.enabled or self.allow_hold_when_disabled then
         if self.hold_callback then
             self.hold_callback()
             self._hold_handled = true
@@ -244,7 +244,7 @@ end
 
 function CheckButton:disable()
     self.enabled = false
-    self:initCheckButton(false)
+    self:initCheckButton(self.allow_checked_when_disabled)
     UIManager:setDirty(self.parent, function()
         return "ui", self.dimen
     end)
