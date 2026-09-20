@@ -119,6 +119,7 @@ fi
 case "$1" in
     */) format='/' ;;
     *.7z | *.zip) format="${1##*.}" ;;
+    *.tar) format=tar ;;
     *.tar.gz | *.targz | *.tgz) format=tar.gz ;;
     *.tar.xz | *.txz) format=tar.xz ;;
     *.tar.zst | *.tzst) format=tar.zst ;;
@@ -314,6 +315,10 @@ case "${format}" in
     7z)
         # Note: sort by type (for better compression).
         "${sevenzip_compress_cmd[@]}" -mqs
+        ;;
+    tar)
+        echo "Creating archive: ${output}"
+        "${tar_compress_cmd[@]}" | write_to_file "${output}"
         ;;
     tar.gz)
         echo "Creating archive: ${output}"
