@@ -119,9 +119,9 @@ fi
 case "$1" in
     */) format='/' ;;
     *.7z | *.zip) format="${1##*.}" ;;
-    *.tar.gz | *.targz) format=tar.gz ;;
-    *.tar.xz) format=tar.xz ;;
-    *.tar.zst) format=tar.zst ;;
+    *.tar.gz | *.targz | *.tgz) format=tar.gz ;;
+    *.tar.xz | *.txz) format=tar.xz ;;
+    *.tar.zst | *.tzst) format=tar.zst ;;
     *)
         echo "ERROR: unsupported release format: ${1##*.}" 1>&2
         exit 2
