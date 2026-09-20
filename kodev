@@ -805,7 +805,7 @@ function docker_entrypoint() {
 }
 
 function docker_exec() {
-    if ! is_kodev_command "$1"; then
+    if [[ "$1" != 'exec' ]] && ! is_kodev_command "$1"; then
         CONTAINER_ID="$1"
         shift
     fi
@@ -820,7 +820,17 @@ function docker_exec() {
     else
         uid="$(id -u)" gid="$(id -g)"
     fi
-    run docker exec --interactive --tty --user="${uid}:${gid}" "${CONTAINER_ID}" ./kodev "$@"
+    if [[ "$1" != 'exec' ]]; then
+        set -- ./kodev "$@"
+    else
+        shift
+    fi
+    local cmd=(docker exec)
+    if [[ -z "${CI}" ]]; then
+        cmd+=(--interactive --tty)
+    fi
+    cmd+=(--user="${uid}:${gid}" "${CONTAINER_ID}")
+    run "${cmd[@]}" "$@"
 }
 
 function kodev-docker() {
@@ -836,6 +846,8 @@ COMMANDS:
     destroy [CONTAINER_ID]               destroy docker container
 
     [CONTAINER_ID] <KODEV_COMMAND> …     run kodev command in docker container
+
+    [CONTAINER_ID] exec …                run arbitrary command in docker container
 "
     # Stop getopt parsing at the first non-option argument.
     export POSIXLY_CORRECT=1
