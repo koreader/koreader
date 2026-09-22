@@ -646,6 +646,31 @@ describe("OPDS module", function()
             assert.are.same("session=abc", requests[2].headers.Cookie)
         end)
 
+        it("should retry an interrupted TLS handshake for idempotent requests", function()
+            local http = require("socket.http")
+            local requests = 0
+            local request_stub = stub(http, "request", function()
+                requests = requests + 1
+                if requests == 1 then
+                    return nil, socketutil.SSL_HANDSHAKE_CODE
+                end
+                return 1, 200, {}, "HTTP 200"
+            end)
+            finally(function() request_stub:revert() end)
+
+            local client = OPDSClient:new{
+                cookie_jar = CookieJar:new(),
+            }
+            local code = client:request{
+                url = "https://example.test/catalog",
+                method = "GET",
+                sink = function() end,
+            }
+
+            assert.are.same(200, code)
+            assert.are.same(2, requests)
+        end)
+
         it("should add the file extension to a server filename that lacks a usable one #internet", function()
             local orig_fetchFeed = OPDSBrowser.fetchFeed
             OPDSBrowser.fetchFeed = function() return nil end -- no headers: fall back to the URL
