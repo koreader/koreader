@@ -1,0 +1,77 @@
+# This workflow is managed by gh actions-lock.
+
+name: Update doc & l10n
+
+permissions:
+  contents: read
+
+on:
+  push:
+    # NOTE: ignore tags.
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: stdbuf --error=L --output=L bash --noprofile --norc -eo pipefail {0}
+
+jobs:
+
+  update_documentation:
+    name: Update documentation
+    environment: documentation
+    runs-on: ubuntu-26.04
+    container: &CONTAINER
+      image: koreader/kobase:3.0.0-22.04
+    steps:
+      - &CHECKOUT
+        name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          clean: false
+          fetch-depth: 1
+          show-progress: false
+      - name: Checkout documentation
+        uses: actions/checkout@v7.0.1
+        with:
+          clean: false
+          fetch-depth: 1
+          path: doc/html
+          ref: gh-pages
+          repository: ${{ vars.GH_REPO }}
+          show-progress: false
+          token: ${{ secrets.GH_TOKEN }}
+      - name: Checkout submodules
+        run: git submodule update --depth 1 --init --jobs 2 base platform/android/luajit-launcher
+      - name: Update documentation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./.ci/documentation_update.sh
+
+  update_translations:
+    name: Update translations
+    environment: translations
+    runs-on: ubuntu-26.04
+    container: *CONTAINER
+    steps:
+      - *CHECKOUT
+      - name: Checkout translations
+        uses: actions/checkout@v7.0.1
+        with:
+          clean: false
+          fetch-depth: 1
+          path: l10n
+          ref: master
+          repository: ${{ vars.GH_REPO }}
+          show-progress: false
+          sparse-checkout: templates
+          token: ${{ secrets.GH_TOKEN }}
+      - name: Update translations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./.ci/translations_update.sh
