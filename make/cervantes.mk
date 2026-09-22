@@ -1,7 +1,5 @@
 CERVANTES_DIR = $(PLATFORM_DIR)/cervantes
 CERVANTES_PACKAGE = koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).zip
-CERVANTES_PACKAGE_OTA = koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).tar.xz
-CERVANTES_PACKAGE_OLD_OTA = koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).targz
 
 define UPDATE_PATH_EXCLUDES +=
 tools
@@ -18,10 +16,4 @@ update-prepare: all
 update-zip: update-prepare
 	$(strip $(call mkupdate,$(CERVANTES_PACKAGE)))
 
-update-txz: update-prepare
-	$(strip $(call mkupdate,$(CERVANTES_PACKAGE_OTA)))
-
-update-tgz: update-prepare
-	$(strip $(call mkupdate,$(CERVANTES_PACKAGE_OLD_OTA)))
-
-update: update-zip update-txz update-tgz
+update: update-zip
