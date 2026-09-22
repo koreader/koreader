@@ -73,23 +73,27 @@ describe("Persist module", function()
         end)
     end
 
-    for _, codec in ipairs({"dump", "bitser", "luajit", "zstd"}) do
+    for _, codec in ipairs({"bitser", "luajit", "zstd"}) do
+        it("should fail to serialize functions with "..codec, function()
+            assert.is_true(Persist.getCodec(codec).id == codec)
+            local ser = Persist.getCodec(codec).serialize
+            local str, err = ser(fail)
+            assert.is_nil(str)
+            assert.is_not_nil(err)
+        end)
+    end
+
+    -- The "dump" and "serpent" codecs will actually happily "serialize"
+    -- functions (`tostring(func)`), and of course fail to deserialize
+    -- the resulting string back…
+    for _, codec in ipairs({"dump", "serpent"}) do
         it("should fail to serialize functions with "..codec, function()
             assert.is_true(Persist.getCodec(codec).id == codec)
             local ser = Persist.getCodec(codec).serialize
             local deser = Persist.getCodec(codec).deserialize
             local str = ser(fail)
-            assert.are_not.same(deser(str), fail)
-        end)
-    end
-
-    for _, codec in ipairs({"serpent"}) do
-        it("should successfully serialize functions with "..codec, function()
-            assert.is_true(Persist.getCodec(codec).id == codec)
-            local ser = Persist.getCodec(codec).serialize
-            local deser = Persist.getCodec(codec).deserialize
-            local str = ser(fail)
-            assert.are_not.same(deser(str), fail)
+            assert.is_not_nil(str)
+            assert.is_nil(deser(str))
         end)
     end
 
