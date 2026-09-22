@@ -268,14 +268,8 @@ Hidden flows are shown with gray or hatched background in Book map and Page brow
                                     table.remove(self.flow_points, self.inactive_flow_points[i])
                                 end
                                 self:updateDocFlows()
-                                self.ui:handleEvent(Event:new("UpdateToc"))
-                                self.ui:handleEvent(Event:new("InitScrollPageStates"))
-                                -- The footer may be visible, so have it update its dependent items
-                                self.view.footer:maybeUpdateFooter()
-                                self.ui.annotation:setNeedsUpdateFlag()
-                                if touchmenu_instance then
-                                    touchmenu_instance:updateItems()
-                                end
+                                self:updateModules(true)
+                                touchmenu_instance:updateItems()
                             end,
                         })
                     end,
@@ -290,16 +284,8 @@ Hidden flows are shown with gray or hatched background in Book map and Page brow
                         UIManager:show(ConfirmBox:new{
                             text = _("Are you sure you want to clear all your custom hidden flows?"),
                             ok_callback = function()
-                                self.flow_points = {}
-                                self:updateDocFlows()
-                                self.ui:handleEvent(Event:new("UpdateToc"))
-                                self.ui:handleEvent(Event:new("InitScrollPageStates"))
-                                -- The footer may be visible, so have it update its dependent items
-                                self.view.footer:maybeUpdateFooter()
-                                self.ui.annotation:setNeedsUpdateFlag()
-                                if touchmenu_instance then
-                                    touchmenu_instance:updateItems()
-                                end
+                                self:unhideAll(true)
+                                touchmenu_instance:updateItems()
                             end,
                         })
                     end,
@@ -575,6 +561,66 @@ function ReaderHandMade:addOrEditPageTocItem(pageno, when_updated_callback, sele
     return true
 end
 
+function ReaderHandMade:updateModules(update_toc)
+    if update_toc then
+        self.ui.toc:onUpdateToc()
+    end
+    self.ui:handleEvent(Event:new("InitScrollPageStates"))
+    self.ui.annotation:setNeedsUpdateFlag()
+    self.view.footer:maybeUpdateFooter()
+end
+
+function ReaderHandMade:unhideAll(update_toc)
+    self.flow_points = {}
+    self:updateDocFlows()
+    self:updateModules(update_toc)
+end
+
+function ReaderHandMade:hideUnhidePages(first_page, last_page, hide)
+    local next_page, next_page_hidden
+    if last_page < self.document:getPageCount() then
+        next_page = last_page + 1
+        next_page_hidden = self:isInHiddenFlow(next_page)
+    end
+    local updated
+    if self:isInHiddenFlow(first_page) then
+        self:toggleHiddenFlow(first_page)
+        updated = true
+    end
+    if self:isInHiddenFlow(last_page) then
+        self:toggleHiddenFlow(last_page)
+        updated = true
+    end
+    local points_changed
+    for i = #self.flow_points, 1, -1 do -- remove all points between first_page and last_page
+        local point = self.flow_points[i]
+        if point.page < last_page then
+            if point.page <= first_page then break end
+            table.remove(self.flow_points, i)
+            points_changed = true
+        end
+    end
+    if points_changed then
+        self:updateDocFlows()
+        updated = true
+    end
+    if updated and next_page_hidden and not self:isInHiddenFlow(next_page) then
+        self:toggleHiddenFlow(next_page)
+    end
+
+    if hide then
+        self:toggleHiddenFlow(first_page)
+        if next_page and not next_page_hidden and self:isInHiddenFlow(next_page) then
+            self:toggleHiddenFlow(next_page)
+        end
+        updated = true
+    end
+
+    if updated then
+        self:updateModules()
+    end
+end
+
 function ReaderHandMade:isInHiddenFlow(pageno)
     local idx, is_match = self:_getItemIndex(self.flow_points, pageno)
     if is_match then
@@ -592,9 +638,11 @@ function ReaderHandMade:toggleHiddenFlow(pageno)
     self.ui.annotation:setNeedsUpdateFlag()
     local idx, is_match = self:_getItemIndex(self.flow_points, pageno)
     if is_match then
-        -- Just remove the item (it feels we can, and that we don't
-        -- have to just toggle its hidden value)
-        table.remove(self.flow_points, idx)
+        if util.arrayContains(self.inactive_flow_points, idx) then
+            self.flow_points[idx].hidden = not self.flow_points[idx].hidden
+        else
+            table.remove(self.flow_points, idx)
+        end
         self:updateDocFlows()
         return
     end
