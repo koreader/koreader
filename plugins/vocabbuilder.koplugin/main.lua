@@ -2073,7 +2073,7 @@ end
 
 function VocabBuilder:hasDictVocabButtons()
     return self.ui and self.ui.dictionary and self.ui.dictionary._dict_buttons
-        and self.ui.dictionary._dict_buttons.vocab_add
+        and self.ui.dictionary._dict_buttons.vocabulary
 end
 
 function VocabBuilder:rebuildDictVocabButtons(dict_popup)
@@ -2131,7 +2131,7 @@ local function install_vocab_dict_button_rows(layout)
         end
     end
     table.insert(layout, 1, { "vocab_remove", "vocab_word_info" })
-    table.insert(layout, 1, { "vocab_add" })
+    table.insert(layout, 1, { "vocabulary" })
 end
 
 function VocabBuilder:registerDictButtons()
@@ -2149,10 +2149,11 @@ function VocabBuilder:registerDictButtons()
     end
 
     self.ui.dictionary:addToDictButtons({
-        id = "vocab_add",
-        menu_text = _("Add to vocabulary builder"),
+        id = "vocabulary",
+        menu_text = _("Vocabulary builder"),
         text = _("Add to vocabulary builder"),
         font_bold = false,
+        insert_first = true,
         show_func = function(dict_popup)
             local show, item = get_dict_vocab_button_state(dict_popup)
             return show and not item
