@@ -662,6 +662,48 @@ describe("OPDS module", function()
                 OPDSBrowser:getServerFileName("http://example.org/books/file.pdf?opds", "pdf"))
         end)
 
+        it("should conditionally revalidate cached catalog feeds", function()
+            local parsed_feeds = {}
+            local cached_feed
+            local parse_stub = stub(OPDSParser, "parse", function(feed)
+                table.insert(parsed_feeds, feed)
+                return { feed = {} }
+            end)
+            finally(function() parse_stub:revert() end)
+            local browser = OPDSBrowser:extend{
+                catalog_cache = {
+                    check = function()
+                        return cached_feed
+                    end,
+                    insert = function(_, _, entry)
+                        cached_feed = entry
+                    end,
+                },
+            }
+            local requests = {}
+            browser.fetchFeed = function(_, _, headers_only, headers)
+                assert.is_false(headers_only)
+                table.insert(requests, headers)
+                if #requests == 1 then
+                    return "<feed/>", {
+                        etag = '"catalog-v1"',
+                        ["last-modified"] = "Wed, 21 Oct 2015 07:28:00 GMT",
+                    }, 200
+                end
+                return nil, {}, 304
+            end
+
+            local first_catalog = browser:parseFeed("https://example.org/catalog")
+            local second_catalog = browser:parseFeed("https://example.org/catalog")
+
+            assert.truthy(first_catalog.feed)
+            assert.truthy(second_catalog.feed)
+            assert.are.same({ "<feed/>", "<feed/>" }, parsed_feeds)
+            assert.is_nil(requests[1])
+            assert.are.same('"catalog-v1"', requests[2]["If-None-Match"])
+            assert.are.same("Wed, 21 Oct 2015 07:28:00 GMT", requests[2]["If-Modified-Since"])
+        end)
+
         it("should restore a cached parent catalog when returning", function()
             local parent_items = { { text = "Parent book" } }
             local browser = OPDSBrowser:extend{

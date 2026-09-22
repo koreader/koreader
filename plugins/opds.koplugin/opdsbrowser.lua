@@ -30,12 +30,6 @@ local _ = require("gettext")
 local N_ = _.ngettext
 local T = ffiUtil.template
 
--- cache catalog parsed from feed xml
-local CatalogCache = Cache:new{
-    -- Make it 20 slots, with no storage space constraints
-    slots = 20,
-}
-
 local OPDSBrowser = Menu:extend{
     opds20_feed          = "application/opds+json, application/atom+xml;profile=opds-catalog, */*",
     catalog_type         = "application/atom%+xml",
@@ -429,8 +423,18 @@ function OPDSBrowser:deleteCatalog(item)
     self._manager.updated = true
 end
 
+function OPDSBrowser:getCatalogCache()
+    if not self.catalog_cache then
+        self.catalog_cache = Cache:new{
+            -- Make it 20 slots, with no storage space constraints.
+            slots = 20,
+        }
+    end
+    return self.catalog_cache
+end
+
 -- Fetches feed from server
-function OPDSBrowser:fetchFeed(item_url, headers_only)
+function OPDSBrowser:fetchFeed(item_url, headers_only, extra_headers)
     local sink = {}
     socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
     local request = {
@@ -446,6 +450,9 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
         username = self.root_catalog_username,
         password = self.root_catalog_password,
     }
+    for name, value in pairs(extra_headers or {}) do
+        request.headers[name] = value
+    end
     logger.dbg("Request:", socketutil.redact_request(request))
     local code, headers, status = self:getHttpClient():request(request)
     socketutil:reset_timeout()
@@ -455,7 +462,9 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
     end
     if code == 200 then
         local xml = table.concat(sink)
-        return xml ~= "" and xml
+        return xml ~= "" and xml, headers, code
+    elseif code == 304 then
+        return nil, headers, code
     end
 
     local text, icon
@@ -485,24 +494,32 @@ end
 
 -- Parses feed to catalog
 function OPDSBrowser:parseFeed(item_url)
-    local headers = self:fetchFeed(item_url, true)
-    local feed_last_modified = headers and headers["last-modified"]
-    local feed
-    if feed_last_modified then
-        local hash = "opds|catalog|" .. item_url .. "|" .. feed_last_modified
-        feed = CatalogCache:check(hash)
-        if feed then
-            logger.dbg("Cache hit for", hash)
-        else
-            logger.dbg("Cache miss for", hash)
-            feed = self:fetchFeed(item_url)
-            if feed then
-                logger.dbg("Caching", hash)
-                CatalogCache:insert(hash, feed)
-            end
+    local cache_key = "opds|catalog|" .. item_url
+    local cache = self:getCatalogCache()
+    local cached_feed = cache:check(cache_key)
+    local conditional_headers
+    if cached_feed then
+        conditional_headers = {}
+        if cached_feed.etag then
+            conditional_headers["If-None-Match"] = cached_feed.etag
         end
-    else
-        feed = self:fetchFeed(item_url)
+        if cached_feed.last_modified then
+            conditional_headers["If-Modified-Since"] = cached_feed.last_modified
+        end
+        logger.dbg("Revalidating cache entry for", cache_key)
+    end
+
+    local feed, headers, code = self:fetchFeed(item_url, false, conditional_headers)
+    if code == 304 and cached_feed then
+        feed = cached_feed.content
+        logger.dbg("Cache hit for", cache_key)
+    elseif feed and headers and (headers.etag or headers["last-modified"]) then
+        cache:insert(cache_key, {
+            content = feed,
+            etag = headers.etag,
+            last_modified = headers["last-modified"],
+        })
+        logger.dbg("Caching", cache_key)
     end
     if feed then
         if feed:match("^%s*{") then -- OPDS 2.0
