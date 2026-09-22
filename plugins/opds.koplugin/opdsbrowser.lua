@@ -433,6 +433,21 @@ function OPDSBrowser:getCatalogCache()
     return self.catalog_cache
 end
 
+function OPDSBrowser:getConditionalFeedHeaders(cached_feed)
+    if not cached_feed then
+        return nil
+    end
+
+    local headers = {}
+    if cached_feed.etag then
+        headers["If-None-Match"] = cached_feed.etag
+    end
+    if cached_feed.last_modified then
+        headers["If-Modified-Since"] = cached_feed.last_modified
+    end
+    return headers
+end
+
 -- Fetches feed from server
 function OPDSBrowser:fetchFeed(item_url, headers_only, extra_headers)
     local sink = {}
@@ -482,6 +497,7 @@ function OPDSBrowser:fetchFeed(item_url, headers_only, extra_headers)
             ["403"] = _("Failed to authenticate. Please check your username and password."),
             ["404"] = _("Catalog not found."),
             ["406"] = _("Cannot get catalog. Server refuses to serve uncompressed content."),
+            [socketutil.SSL_HANDSHAKE_CODE] = _("Cannot get catalog. TLS connection interrupted."),
         }
         text = code and error_message[tostring(code)] or T(_("Cannot get catalog. Server response status: %1."), status or code)
     end
@@ -497,15 +513,8 @@ function OPDSBrowser:parseFeed(item_url)
     local cache_key = "opds|catalog|" .. item_url
     local cache = self:getCatalogCache()
     local cached_feed = cache:check(cache_key)
-    local conditional_headers
-    if cached_feed then
-        conditional_headers = {}
-        if cached_feed.etag then
-            conditional_headers["If-None-Match"] = cached_feed.etag
-        end
-        if cached_feed.last_modified then
-            conditional_headers["If-Modified-Since"] = cached_feed.last_modified
-        end
+    local conditional_headers = self:getConditionalFeedHeaders(cached_feed)
+    if conditional_headers then
         logger.dbg("Revalidating cache entry for", cache_key)
     end
 
