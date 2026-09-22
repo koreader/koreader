@@ -118,6 +118,7 @@ update-apk: all
 		$(GRADLE_FLAGS) \
 		'app:assemble$(ANDROID_ARCH)$(ANDROID_FLAVOR)$(if $(KODEBUG),Debug,Release)'
 	cp $(ANDROID_LAUNCHER_BUILD)/outputs/apk/$(ANDROID_ARCH)$(ANDROID_FLAVOR)/$(if $(KODEBUG),debug,release)/NativeActivity.apk $(ANDROID_APK)
+	type -P uber-apk-signer >/dev/null && uber-apk-signer --overwrite --apks $(ANDROID_APK) || echo 'WARNING: uber-apk-signer not found, APK is unsigned!'
 
 update: update-apk
 
