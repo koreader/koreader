@@ -662,6 +662,41 @@ describe("OPDS module", function()
                 OPDSBrowser:getServerFileName("http://example.org/books/file.pdf?opds", "pdf"))
         end)
 
+        it("should restore a cached parent catalog when returning", function()
+            local parent_items = { { text = "Parent book" } }
+            local browser = OPDSBrowser:extend{
+                paths = {
+                    {
+                        url = "https://example.org/parent",
+                        snapshot = {
+                            catalog_title = "Parent",
+                            facet_groups = { Genre = {} },
+                            item_table = parent_items,
+                            search_url = "https://example.org/search?q=%s",
+                        },
+                    },
+                    { url = "https://example.org/child" },
+                },
+                switchItemTable = function(self, title, items)
+                    self.restored_title = title
+                    self.restored_items = items
+                end,
+                setTitleBarLeftIcon = function(self, icon)
+                    self.restored_icon = icon
+                end,
+                updateCatalog = function()
+                    error("cached parent should not be fetched")
+                end,
+            }
+
+            browser:onReturn()
+
+            assert.are.same("Parent", browser.restored_title)
+            assert.are.same(parent_items, browser.restored_items)
+            assert.are.same("appbar.menu", browser.restored_icon)
+            assert.are.same(1, #browser.paths)
+        end)
+
         describe("sync settings", function()
             it("should resolve sync paths for each catalog without a global folder", function()
                 local browser = OPDSBrowser:extend{

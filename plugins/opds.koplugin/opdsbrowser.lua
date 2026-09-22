@@ -964,6 +964,35 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
     return item_table
 end
 
+function OPDSBrowser:saveCatalogSnapshot()
+    local path = self.paths[#self.paths]
+    if path then
+        path.snapshot = {
+            catalog_title = self.catalog_title,
+            facet_groups = self.facet_groups,
+            item_table = self.item_table,
+            search_url = self.search_url,
+        }
+    end
+end
+
+function OPDSBrowser:setCatalogMenu(item_url, menu_table)
+    self:switchItemTable(self.catalog_title, menu_table)
+
+    -- Set appropriate title bar icon based on content
+    if self.facet_groups or self.search_url then
+        self:setTitleBarLeftIcon("appbar.menu")
+        self.onLeftButtonTap = function()
+            self:showCatalogMenu()
+        end
+    else
+        self:setTitleBarLeftIcon("plus")
+        self.onLeftButtonTap = function()
+            self:addSubCatalog(item_url)
+        end
+    end
+end
+
 -- Requests and shows updated list of catalog entries
 function OPDSBrowser:updateCatalog(item_url, paths_updated)
     local menu_table = self:genItemTableFromURL(item_url)
@@ -974,25 +1003,13 @@ function OPDSBrowser:updateCatalog(item_url, paths_updated)
                 title = self.catalog_title,
             })
         end
-        self:switchItemTable(self.catalog_title, menu_table)
-
-        -- Set appropriate title bar icon based on content
-        if self.facet_groups or self.search_url then
-            self:setTitleBarLeftIcon("appbar.menu")
-            self.onLeftButtonTap = function()
-                self:showCatalogMenu()
-            end
-        else
-            self:setTitleBarLeftIcon("plus")
-            self.onLeftButtonTap = function()
-                self:addSubCatalog(item_url)
-            end
-        end
+        self:setCatalogMenu(item_url, menu_table)
 
         if self.page_num <= 1 then
             -- Request more content, but don't change the page
             self:onNextPage(true)
         end
+        self:saveCatalogSnapshot()
     end
 end
 
@@ -1447,9 +1464,16 @@ function OPDSBrowser:onReturn()
     table.remove(self.paths)
     local path = self.paths[#self.paths]
     if path then
-        -- return to last path
-        self.catalog_title = path.title
-        self:updateCatalog(path.url, true)
+        if path.snapshot then
+            self.catalog_title = path.snapshot.catalog_title
+            self.facet_groups = path.snapshot.facet_groups
+            self.search_url = path.snapshot.search_url
+            self:setCatalogMenu(path.url, path.snapshot.item_table)
+        else
+            -- Return to a path that predates session caching.
+            self.catalog_title = path.title
+            self:updateCatalog(path.url, true)
+        end
     else
         -- return to root path, we simply reinit opdsbrowser
         self:init()
@@ -1478,6 +1502,7 @@ function OPDSBrowser:onNextPage(fill_only)
             break
         end
     end
+    self:saveCatalogSnapshot()
     if not fill_only then
         -- We also *do* want to paginate, so call the base class.
         Menu.onNextPage(self)
