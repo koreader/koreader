@@ -61,16 +61,17 @@ describe("KOSyncIdentifiers module", function()
             props = { title = "The Dispossessed", authors = "Ursula K. Le Guin" },
         }
 
-        it("should lead with the document digest, strongest first after it", function()
-            local list = KOSyncIdentifiers.build(parts.content, parts)
-            assert.are.same({ "content", "structure", "metadata", "filename" },
-                            { list[1].type, list[2].type, list[3].type, list[4].type })
-            assert.are.equal(parts.content, list[1].value)
+        it("should order strongest first whichever digest addresses the document", function()
+            local order = { "content", "structure", "metadata", "filename" }
 
+            local list = KOSyncIdentifiers.build(parts.content, parts)
+            assert.are.same(order, { list[1].type, list[2].type, list[3].type, list[4].type })
+
+            -- Matching by filename does not demote the rest: the server takes
+            -- position as preference, and only requires the document among them.
             list = KOSyncIdentifiers.build(parts.filename, parts)
-            assert.are.same({ "filename", "content", "structure", "metadata" },
-                            { list[1].type, list[2].type, list[3].type, list[4].type })
-            assert.are.equal(parts.filename, list[1].value)
+            assert.are.same(order, { list[1].type, list[2].type, list[3].type, list[4].type })
+            assert.are.equal(parts.filename, list[4].value)
         end)
 
         it("should skip identifiers it cannot derive", function()
