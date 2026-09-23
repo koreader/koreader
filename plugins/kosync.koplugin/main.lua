@@ -450,7 +450,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
             {
                 text = _("Match documents by several identifiers"),
                 checked_func = function() return self.settings.identifier_matching end,
-                help_text = _([[When enabled, a book is also identified by its list of chapters and by its filename, so a server that supports this can recognize a copy that is not byte-for-byte identical: one that was recompressed, or downloaded again from elsewhere. A position taken from such a copy is approximate. Servers that do not support this answer as they do today.]]),
+                help_text = _([[When enabled, a book is also identified by its list of chapters, by its title and author, and by its filename, so a server that supports this can recognize a copy that is not byte-for-byte identical: one that was recompressed, converted, or downloaded again from elsewhere. A position taken from such a copy is approximate. Servers that do not support this answer as they do today.]]),
                 callback = function()
                     self.settings.identifier_matching = not self.settings.identifier_matching
                     self.identifiers = nil
@@ -724,6 +724,7 @@ function KOSync:getIdentifiers()
             content = self:getFileDigest(),
             filename = self:getFileNameDigest(),
             file = self.ui.document.file,
+            props = self.ui.doc_props,
         }) or false
     end
     return self.identifiers or nil

@@ -12,7 +12,14 @@ local luxl = require("luxl")
 local md5 = require("ffi/sha2").md5
 local util = require("util")
 
-local TYPE_ORDER = { "content", "structure", "filename" }
+local TYPE_ORDER = { "content", "structure", "metadata", "filename" }
+
+-- Identifier types that can name a different work, so the server is told not to
+-- let one claim a record that already exists. The flag travels in the PUT body
+-- alone; the `ids` grammar of a read has no equivalent.
+local WEAK = {
+    metadata = true,
+}
 
 -- Identifier types that guarantee the file the position was written against has
 -- this one's internal structure, so its xpointer resolves here.
@@ -179,25 +186,54 @@ function KOSyncIdentifiers.structureDigest(filepath)
     return spineDigest(opf)
 end
 
+local function normalize(str)
+    if not str then return end
+    str = util.stringLower(str):gsub("%s+", " "):gsub("^ ", ""):gsub(" $", "")
+    return str ~= "" and str or nil
+end
+
+--- Digest of the title and the authors, lowercased and with whitespace
+--- collapsed, the authors sorted so their order does not matter. Two editions of
+--- the same work share it, which is what carries a position across a spine the
+--- conversion re-chunked; two books a library tagged alike share it too, which
+--- is why it goes out weak.
+function KOSyncIdentifiers.metadataDigest(props)
+    if not props then return end
+    local title = normalize(props.title)
+    if not title then return end
+    local authors = {}
+    for author in (props.authors or ""):gmatch("[^\n]+") do
+        local normalized = normalize(author)
+        if normalized then
+            authors[#authors + 1] = normalized
+        end
+    end
+    -- A title alone names a shelf of editions, reprints and unrelated books
+    if #authors == 0 then return end
+    table.sort(authors)
+    return md5("title:" .. title .. "\nauthors:" .. table.concat(authors, ";"))
+end
+
 --- Build the list to send, strongest first. The server requires the document
 --- digest to be among the entries, and takes its position as preference rather
 --- than identity, so the digest this document happens to be addressed by does
 --- not have to lead.
 -- @param document the digest the document is addressed by
--- @param parts table of content and filename digests, and the file path
+-- @param parts table of content and filename digests, the file path and doc props
 function KOSyncIdentifiers.build(document, parts)
     if not document then return end
     local values = {
         content = parts.content,
         filename = parts.filename,
         structure = KOSyncIdentifiers.structureDigest(parts.file),
+        metadata = KOSyncIdentifiers.metadataDigest(parts.props),
     }
 
     local list, has_document = {}, false
     for _, id_type in ipairs(TYPE_ORDER) do
         local value = values[id_type]
         if value and #list < MAX_IDENTIFIERS then
-            list[#list + 1] = { type = id_type, value = value }
+            list[#list + 1] = { type = id_type, value = value, weak = WEAK[id_type] }
             has_document = has_document or value == document
         end
     end
@@ -206,7 +242,9 @@ function KOSyncIdentifiers.build(document, parts)
     return list
 end
 
---- Flatten the list into the `ids` query parameter of a progress read.
+--- Flatten the list into the `ids` query parameter of a progress read. A read
+--- adopts nothing, so the weak flag has no place here and the parameter is
+--- `type:value` pairs as it has always been.
 function KOSyncIdentifiers.query(identifiers)
     if not identifiers then return end
     local parts = {}
