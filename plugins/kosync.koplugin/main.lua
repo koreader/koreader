@@ -458,7 +458,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
             {
                 text = _("Match documents by several identifiers"),
                 checked_func = function() return self.settings.identifier_matching end,
-                help_text = _([[When enabled, progress sync requests also name the document's structure, metadata and filename digests, so a server that supports it can recognize a recompressed or re-downloaded copy of the same book. Servers that do not support it answer as they do today.]]),
+                help_text = _([[When enabled, progress sync requests also name the document's structure and filename digests, so a server that supports it can recognize a recompressed or re-downloaded copy of the same book. Servers that do not support it answer as they do today.]]),
                 callback = function()
                     self.settings.identifier_matching = not self.settings.identifier_matching
                     self.identifiers = nil
@@ -723,7 +723,6 @@ function KOSync:getIdentifiers()
             content = self:getFileDigest(),
             filename = self:getFileNameDigest(),
             file = self.ui.document.file,
-            props = self.ui.doc_props,
         }) or false
     end
     return self.identifiers or nil

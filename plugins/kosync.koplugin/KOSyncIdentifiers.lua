@@ -7,9 +7,8 @@ the first entry that resolves, and reports which one did.
 ]]
 
 local md5 = require("ffi/sha2").md5
-local util = require("util")
 
-local TYPE_ORDER = { "content", "structure", "metadata", "filename" }
+local TYPE_ORDER = { "content", "structure", "filename" }
 
 -- Identifier types that guarantee the file the position was written against has
 -- this one's internal structure, so its xpointer resolves here.
@@ -97,45 +96,18 @@ function KOSyncIdentifiers.structureDigest(filepath)
     return md5(table.concat(entries))
 end
 
-local function normalize(str)
-    if not str then return end
-    str = util.stringLower(str):gsub("%s+", " "):gsub("^ ", ""):gsub(" $", "")
-    return str ~= "" and str or nil
-end
-
---- Digest of the title and the authors, lowercased and with whitespace
---- collapsed, the authors sorted so their order does not matter. Two editions of
---- the same work share it; two books do not.
-function KOSyncIdentifiers.metadataDigest(props)
-    if not props then return end
-    local title = normalize(props.title)
-    if not title then return end
-    local authors = {}
-    for author in (props.authors or ""):gmatch("[^\n]+") do
-        local normalized = normalize(author)
-        if normalized then
-            authors[#authors + 1] = normalized
-        end
-    end
-    -- A title alone is not distinctive enough to move one book's position onto another's
-    if #authors == 0 then return end
-    table.sort(authors)
-    return md5("title:" .. title .. "\nauthors:" .. table.concat(authors, ";"))
-end
-
 --- Build the list to send, strongest first. The server requires the document
 --- digest to be among the entries, and takes its position as preference rather
 --- than identity, so the digest this document happens to be addressed by does
 --- not have to lead.
 -- @param document the digest the document is addressed by
--- @param parts table of content and filename digests, the file path and doc props
+-- @param parts table of content and filename digests, and the file path
 function KOSyncIdentifiers.build(document, parts)
     if not document then return end
     local values = {
         content = parts.content,
         filename = parts.filename,
         structure = KOSyncIdentifiers.structureDigest(parts.file),
-        metadata = KOSyncIdentifiers.metadataDigest(parts.props),
     }
 
     local list, has_document = {}, false

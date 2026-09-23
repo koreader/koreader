@@ -26,52 +26,24 @@ describe("KOSyncIdentifiers module", function()
         end)
     end)
 
-    describe("metadataDigest()", function()
-        local props = { title = "The Dispossessed", authors = "Ursula K. Le Guin" }
-
-        it("should ignore case, padding and author order", function()
-            assert.are.equal(KOSyncIdentifiers.metadataDigest(props),
-                             KOSyncIdentifiers.metadataDigest({ title = "  the   dispossessed ",
-                                                                authors = "ursula k. le guin" }))
-            assert.are.equal(KOSyncIdentifiers.metadataDigest({ title = "Good Omens",
-                                                                authors = "Neil Gaiman\nTerry Pratchett" }),
-                             KOSyncIdentifiers.metadataDigest({ title = "Good Omens",
-                                                                authors = "Terry Pratchett\nNeil Gaiman" }))
-        end)
-
-        it("should tell two works apart", function()
-            assert.are_not.equal(KOSyncIdentifiers.metadataDigest(props),
-                                 KOSyncIdentifiers.metadataDigest({ title = "The Dispossessed",
-                                                                    authors = "Someone Else" }))
-        end)
-
-        it("should require both a title and an author", function()
-            assert.is_nil(KOSyncIdentifiers.metadataDigest({ title = "The Dispossessed" }))
-            assert.is_nil(KOSyncIdentifiers.metadataDigest({ authors = "Ursula K. Le Guin" }))
-            assert.is_nil(KOSyncIdentifiers.metadataDigest({ title = "  ", authors = "  " }))
-            assert.is_nil(KOSyncIdentifiers.metadataDigest(nil))
-        end)
-    end)
-
     describe("build()", function()
         local parts = {
             content = "1234567890abcdef1234567890abcdef",
             filename = "fedcba0987654321fedcba0987654321",
             file = "spec/front/unit/data/leaves.epub",
-            props = { title = "The Dispossessed", authors = "Ursula K. Le Guin" },
         }
 
         it("should order strongest first whichever digest addresses the document", function()
-            local order = { "content", "structure", "metadata", "filename" }
+            local order = { "content", "structure", "filename" }
 
             local list = KOSyncIdentifiers.build(parts.content, parts)
-            assert.are.same(order, { list[1].type, list[2].type, list[3].type, list[4].type })
+            assert.are.same(order, { list[1].type, list[2].type, list[3].type })
 
             -- Matching by filename does not demote the rest: the server takes
             -- position as preference, and only requires the document among them.
             list = KOSyncIdentifiers.build(parts.filename, parts)
-            assert.are.same(order, { list[1].type, list[2].type, list[3].type, list[4].type })
-            assert.are.equal(parts.filename, list[4].value)
+            assert.are.same(order, { list[1].type, list[2].type, list[3].type })
+            assert.are.equal(parts.filename, list[3].value)
         end)
 
         it("should skip identifiers it cannot derive", function()
