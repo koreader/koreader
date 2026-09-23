@@ -11,6 +11,16 @@ describe("KOSyncIdentifiers module", function()
         KOSyncIdentifiers = require("KOSyncIdentifiers")
     end)
 
+    local function writeEpub(dest, members)
+        local writer = Archiver.Writer:new()
+        assert(writer:open(dest, "epub"))
+        writer:setZipCompression("store")
+        for _, member in ipairs(members) do
+            writer:addFileFromMemory(member.path, member.content)
+        end
+        writer:close()
+    end
+
     -- Repack an EPUB storing its members in reverse order, passing each through
     -- `rewrite`, as an optimizer that re-encodes images and injects a stylesheet
     -- into every chapter does.
@@ -20,26 +30,28 @@ describe("KOSyncIdentifiers module", function()
         assert(arc:open(source))
         for entry in arc:iterate() do
             if entry.mode == "file" then
-                members[#members + 1] = { path = entry.path, content = arc:extractToMemory(entry.path) }
+                table.insert(members, 1, { path = entry.path,
+                                           content = rewrite(entry.path, arc:extractToMemory(entry.path)) })
             end
         end
         arc:close()
+        writeEpub(dest, members)
+    end
 
-        local writer = Archiver.Writer:new()
-        assert(writer:open(dest, "epub"))
-        writer:setZipCompression("store")
-        for i = #members, 1, -1 do
-            local member = members[i]
-            writer:addFileFromMemory(member.path, rewrite(member.path, member.content))
-        end
-        writer:close()
+    local function writePackage(dest, opf_path, opf)
+        writeEpub(dest, {
+            { path = "mimetype", content = "application/epub+zip" },
+            { path = "META-INF/container.xml", content = [[<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+ <rootfiles><rootfile full-path="]] .. opf_path:gsub("&", "&amp;") .. [[" media-type="application/oebps-package+xml"/></rootfiles>
+</container>]] },
+            { path = opf_path, content = opf },
+        })
     end
 
     describe("structureDigest()", function()
         it("should digest an EPUB", function()
-            local digest = KOSyncIdentifiers.structureDigest(leaves)
-            assert.is_truthy(digest:match("^%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x$"))
-            assert.are.equal(digest, KOSyncIdentifiers.structureDigest(leaves))
+            assert.are.equal("3d550f5e63e45c11087f7548bd4bc37c", KOSyncIdentifiers.structureDigest(leaves))
         end)
 
         it("should tell two books apart", function()
@@ -73,6 +85,65 @@ describe("KOSyncIdentifiers module", function()
             assert.are_not.equal(KOSyncIdentifiers.structureDigest(leaves),
                                  KOSyncIdentifiers.structureDigest(shortened))
             os.remove(shortened)
+        end)
+
+        it("should expand entity references in the href, the identifier and the rootfile path", function()
+            local entities = DataStorage:getDataDir() .. "/kosync-entities.tests.epub"
+            writePackage(entities, "a&b.opf", [[<?xml version="1.0"?>
+<package xmlns:opf="http://www.idpf.org/2007/opf" unique-identifier="pid" version="3.0">
+ <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <dc:identifier id="pid">urn:uuid:a&amp;b&#45;&#x63;</dc:identifier>
+ </metadata>
+ <manifest>
+  <item id="c1" href="a&amp;b/ch1.xhtml" media-type="application/xhtml+xml"/>
+  <item id="c2" href="q&quot;&apos;&lt;&gt;.xhtml" media-type="application/xhtml+xml"/>
+  <item id="c3" href="caf&#233;.xhtml#frag" media-type="application/xhtml+xml"/>
+ </manifest>
+ <spine>
+  <itemref idref="c1"/>
+  <itemref idref="c2"/>
+  <itemref idref="c3"/>
+ </spine>
+</package>]])
+            -- md5 of urn:uuid:a&b-c\na&b/ch1.xhtml\nq"'<>.xhtml\ncaf\u{00E9}.xhtml
+            assert.are.equal("6feb75d3d45bfa712496e43b4335f26d", KOSyncIdentifiers.structureDigest(entities))
+            os.remove(entities)
+        end)
+
+        it("should match elements on the local name", function()
+            local plain = DataStorage:getDataDir() .. "/kosync-plain.tests.epub"
+            writePackage(plain, "x.opf", [[<?xml version="1.0"?>
+<package xmlns:opf="http://www.idpf.org/2007/opf" unique-identifier="pid" version="3.0">
+ <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <identifier id="pid">local-name-match</identifier>
+ </metadata>
+ <manifest>
+  <item id="a" href="a.xhtml"/>
+ </manifest>
+ <spine>
+  <itemref idref="a"/>
+ </spine>
+</package>]])
+
+            local prefixed = DataStorage:getDataDir() .. "/kosync-prefixed.tests.epub"
+            writePackage(prefixed, "x.opf", [[<?xml version="1.0"?>
+<opf:package xmlns:opf="http://www.idpf.org/2007/opf" unique-identifier="pid" version="3.0">
+ <opf:metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <dc:identifier id="pid">local-name-match</dc:identifier>
+ </opf:metadata>
+ <opf:manifest>
+  <opf:item id="a" href="a.xhtml"/>
+ </opf:manifest>
+ <opf:spine>
+  <opf:itemref idref="a"/>
+ </opf:spine>
+</opf:package>]])
+
+            -- md5 of local-name-match\na.xhtml
+            assert.are.equal("71b57c6f13f1912eadb56e0791799540", KOSyncIdentifiers.structureDigest(plain))
+            assert.are.equal(KOSyncIdentifiers.structureDigest(plain), KOSyncIdentifiers.structureDigest(prefixed))
+            os.remove(plain)
+            os.remove(prefixed)
         end)
 
         it("should return nothing for a file that is not an EPUB", function()

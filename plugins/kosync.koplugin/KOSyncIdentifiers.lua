@@ -10,6 +10,7 @@ local Archiver = require("ffi/archiver")
 local ffi = require("ffi")
 local luxl = require("luxl")
 local md5 = require("ffi/sha2").md5
+local util = require("util")
 
 local TYPE_ORDER = { "content", "structure", "filename" }
 
@@ -22,6 +23,7 @@ local FOLLOWABLE = {
 
 local MAX_IDENTIFIERS = 8
 local CONTAINER_PATH = "META-INF/container.xml"
+local OPF_MEDIA_TYPE = "application/oebps-package+xml"
 
 local KOSyncIdentifiers = {}
 
@@ -40,20 +42,46 @@ local function lexer(xml)
     return luxl.new(xml, #xml)
 end
 
---- Path of the OPF package document, from the container's first rootfile.
+--- The name an element is matched by, with any namespace prefix and the end
+--- tag's slash dropped.
+local function localName(tag)
+    return tag:match("([^:/]+)$")
+end
+
+-- luxl hands out the source text of an attribute or a text node; every value
+-- the digest takes is the one a parser yields.
+local function expand(text)
+    if not text:find("&", 1, true) then return text end
+    return util.htmlEntitiesToUtf8(text)
+end
+
+local function trim(text)
+    return text:match("^[ \t\r\n]*(.-)[ \t\r\n]*$")
+end
+
+--- Path of the OPF package document, from the container's declared rootfile.
 local function rootfilePath(container)
     local xlex = lexer(container)
-    local tag, attr
+    local tag, attr, attrs
+    local declared, first
     for event, offset, size in xlex:Lexemes() do
         local text = ffi.string(xlex.buf + offset, size)
         if event == luxl.EVENT_START then
-            tag = text
+            tag, attrs = localName(text), {}
         elseif event == luxl.EVENT_ATTR_NAME then
             attr = text
-        elseif event == luxl.EVENT_ATTR_VAL and tag == "rootfile" and attr == "full-path" then
-            return text
+        elseif event == luxl.EVENT_ATTR_VAL and tag == "rootfile" then
+            attrs[attr] = expand(text)
+            local path = attrs["full-path"]
+            if path then
+                first = first or path
+                if attrs["media-type"] == OPF_MEDIA_TYPE then
+                    declared = declared or path
+                end
+            end
         end
     end
+    return declared or first
 end
 
 --- Digest of the spine, as the kosync identifier registry defines `structure`:
@@ -61,37 +89,38 @@ end
 --- manifest href in spine order, joined with newlines.
 local function spineDigest(opf)
     local xlex = lexer(opf)
-    local tag, attr, attrs
+    local tag, attr, attrs, scope
     local unique_id, identifiers = nil, {}
-    local manifest, spine, in_spine = {}, {}, false
+    local manifest, spine = {}, {}
 
     for event, offset, size in xlex:Lexemes() do
         local text = ffi.string(xlex.buf + offset, size)
         if event == luxl.EVENT_START then
-            tag, attrs = text, {}
-            if tag == "spine" then
-                in_spine = true
+            tag, attrs = localName(text), {}
+            if tag == "metadata" or tag == "manifest" or tag == "spine" then
+                scope = tag
             end
         elseif event == luxl.EVENT_END then
-            if text == "/spine" then
-                in_spine = false
+            if localName(text) == scope then
+                scope = nil
             end
             tag = nil
         elseif event == luxl.EVENT_ATTR_NAME then
             attr = text
         elseif event == luxl.EVENT_ATTR_VAL then
-            attrs[attr] = text
+            local value = expand(text)
+            attrs[attr] = value
             if tag == "package" and attr == "unique-identifier" then
-                unique_id = text
-            elseif tag == "item" and (attr == "id" or attr == "href") then
+                unique_id = value
+            elseif tag == "item" and scope == "manifest" and (attr == "id" or attr == "href") then
                 if attrs.id and attrs.href then
                     manifest[attrs.id] = attrs.href
                 end
-            elseif tag == "itemref" and attr == "idref" and in_spine then
-                spine[#spine + 1] = text
+            elseif tag == "itemref" and scope == "spine" and attr == "idref" then
+                spine[#spine + 1] = value
             end
-        elseif event == luxl.EVENT_TEXT and tag == "dc:identifier" then
-            identifiers[#identifiers + 1] = { id = attrs.id, value = text }
+        elseif event == luxl.EVENT_TEXT and tag == "identifier" and scope == "metadata" then
+            identifiers[#identifiers + 1] = { id = attrs.id, value = expand(text) }
         end
     end
 
@@ -99,21 +128,29 @@ local function spineDigest(opf)
     for _, idref in ipairs(spine) do
         local href = manifest[idref]
         if href then
-            -- the href exactly as written, minus any fragment
             lines[#lines + 1] = (href:gsub("#.*", ""))
         end
     end
     if #lines == 0 then return end
 
-    local identifier = identifiers[1]
+    local identifier
     for _, candidate in ipairs(identifiers) do
         if candidate.id and candidate.id == unique_id then
-            identifier = candidate
+            identifier = trim(candidate.value)
             break
         end
     end
-    identifier = identifier and identifier.value:match("^%s*(.-)%s*$")
-    if identifier and identifier ~= "" then
+    if not identifier or identifier == "" then
+        identifier = nil
+        for _, candidate in ipairs(identifiers) do
+            local value = trim(candidate.value)
+            if value ~= "" then
+                identifier = value
+                break
+            end
+        end
+    end
+    if identifier then
         table.insert(lines, 1, identifier)
     end
 
