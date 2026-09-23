@@ -33,6 +33,7 @@ local KOSync = WidgetContainer:extend{
     last_page_turn_timestamp = nil,
     periodic_push_task = nil,
     periodic_push_scheduled = nil,
+    identifiers = nil,
 
     settings = nil,
 }
@@ -64,6 +65,7 @@ KOSync.default_settings = {
     sync_backward = SYNC_STRATEGY.DISABLE,
     checksum_method = CHECKSUM_METHOD.BINARY,
     send_metadata = false,
+    identifier_matching = false,
 }
 
 function KOSync:loadSettings()
@@ -87,6 +89,7 @@ function KOSync:init()
     self.last_page = -1
     self.last_page_turn_timestamp = 0
     self.periodic_push_scheduled = false
+    self.identifiers = nil
 
     -- Like AutoSuspend, we need an instance-specific task for scheduling/resource management reasons.
     self.periodic_push_task = function()
@@ -452,6 +455,16 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                     self.updated = true
                 end,
             },
+            {
+                text = _("Match documents by several identifiers"),
+                checked_func = function() return self.settings.identifier_matching end,
+                help_text = _([[When enabled, progress sync requests also name the document's structure, metadata and filename digests, so a server that supports it can recognize a recompressed or re-downloaded copy of the same book. Servers that do not support it answer as they do today.]]),
+                callback = function()
+                    self.settings.identifier_matching = not self.settings.identifier_matching
+                    self.identifiers = nil
+                    self.updated = true
+                end,
+            },
         }
     }
 end
@@ -702,9 +715,27 @@ function KOSync:getMetadata()
     }
 end
 
-function KOSync:syncToProgress(progress)
+function KOSync:getIdentifiers()
+    if not self.settings.identifier_matching then return end
+    if self.identifiers == nil then
+        local KOSyncIdentifiers = require("KOSyncIdentifiers")
+        self.identifiers = KOSyncIdentifiers.build(self:getDocumentDigest(), {
+            content = self:getFileDigest(),
+            filename = self:getFileNameDigest(),
+            file = self.ui.document.file,
+            props = self.ui.doc_props,
+        }) or false
+    end
+    return self.identifiers or nil
+end
+
+function KOSync:syncToProgress(progress, percentage, exact)
     logger.dbg("KOSync: [Sync] progress to", progress)
-    if self.ui.document.info.has_pages then
+    if not exact then
+        -- The position was written against a related copy, so seek by percentage
+        logger.dbg("KOSync: [Sync] position is not this file's, seeking to", percentage)
+        self.ui:handleEvent(Event:new("GotoPercent", percentage * 100))
+    elseif self.ui.document.info.has_pages then
         self.ui:handleEvent(Event:new("GotoPage", tonumber(progress)))
     else
         self.ui:handleEvent(Event:new("GotoXPointer", progress))
@@ -736,12 +767,14 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
     }
     local doc_digest = self:getDocumentDigest()
     local metadata = self:getMetadata()
+    local identifiers = self:getIdentifiers()
     local progress = self:getLastProgress()
     local percentage = self:getLastPercent()
     local chosen_device_name = self.settings.kosync_hostname or Device.model
     local queue_item = {
         document = doc_digest,
         metadata = metadata,
+        identifiers = identifiers,
         progress = progress,
         percentage = percentage,
         device = chosen_device_name,
@@ -753,6 +786,7 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
         self.settings.userkey,
         doc_digest,
         metadata,
+        identifiers,
         progress,
         percentage,
         chosen_device_name,
@@ -832,12 +866,14 @@ function KOSync:getProgress(ensure_networking, interactive)
         custom_url = self.settings.custom_server,
         service_spec = self.path .. "/api.json"
     }
+    local KOSyncIdentifiers = require("KOSyncIdentifiers")
     local doc_digest = self:getDocumentDigest()
     local ok, err = pcall(client.get_progress,
         client,
         self.settings.username,
         self.settings.userkey,
         doc_digest,
+        KOSyncIdentifiers.query(self:getIdentifiers()),
         function(ok, body)
             logger.dbg("KOSync: [Pull] progress for", self.view.document.file)
             logger.dbg("KOSync: ok:", ok, "body:", body)
@@ -870,12 +906,13 @@ function KOSync:getProgress(ensure_networking, interactive)
             end
 
             body.percentage = Math.roundPercent(body.percentage)
+            local exact = KOSyncIdentifiers.canFollowProgress(body.progress_match)
             local progress = self:getLastProgress()
             local percentage = self:getLastPercent()
             logger.dbg("KOSync: Current progress:", percentage * 100, "% =>", progress)
 
             if percentage == body.percentage
-            or body.progress == progress then
+            or (exact and body.progress == progress) then
                 if interactive then
                     UIManager:show(InfoMessage:new{
                         text = _("The progress has already been synchronized."),
@@ -889,7 +926,7 @@ function KOSync:getProgress(ensure_networking, interactive)
             if interactive then
                 -- If user actively pulls progress from other devices,
                 -- we always update the progress without further confirmation.
-                self:syncToProgress(body.progress)
+                self:syncToProgress(body.progress, body.percentage, exact)
                 showSyncedMessage()
                 return
             end
@@ -903,7 +940,7 @@ function KOSync:getProgress(ensure_networking, interactive)
             end
             if self_older then
                 if self.settings.sync_forward == SYNC_STRATEGY.SILENT then
-                    self:syncToProgress(body.progress)
+                    self:syncToProgress(body.progress, body.percentage, exact)
                     showSyncedMessage()
                 elseif self.settings.sync_forward == SYNC_STRATEGY.PROMPT then
                     UIManager:show(ConfirmBox:new{
@@ -911,13 +948,13 @@ function KOSync:getProgress(ensure_networking, interactive)
                                  Math.round(body.percentage * 100),
                                  body.device),
                         ok_callback = function()
-                            self:syncToProgress(body.progress)
+                            self:syncToProgress(body.progress, body.percentage, exact)
                         end,
                     })
                 end
             else -- if not self_older then
                 if self.settings.sync_backward == SYNC_STRATEGY.SILENT then
-                    self:syncToProgress(body.progress)
+                    self:syncToProgress(body.progress, body.percentage, exact)
                     showSyncedMessage()
                 elseif self.settings.sync_backward == SYNC_STRATEGY.PROMPT then
                     UIManager:show(ConfirmBox:new{
@@ -925,7 +962,7 @@ function KOSync:getProgress(ensure_networking, interactive)
                                  Math.round(body.percentage * 100),
                                  body.device),
                         ok_callback = function()
-                            self:syncToProgress(body.progress)
+                            self:syncToProgress(body.progress, body.percentage, exact)
                         end,
                     })
                 end
@@ -956,6 +993,7 @@ function KOSync:_onCloseDocument()
             KOSyncQueue:push({
                 document = doc_digest,
                 metadata = self:getMetadata(),
+                identifiers = self:getIdentifiers(),
                 progress = self:getLastProgress(),
                 percentage = self:getLastPercent(),
                 device = self.settings.kosync_hostname or Device.model,
@@ -1036,6 +1074,7 @@ function KOSync:drainQueue()
             self.settings.userkey,
             item.document,
             item.metadata,
+            item.identifiers,
             item.progress,
             item.percentage,
             item.device,
