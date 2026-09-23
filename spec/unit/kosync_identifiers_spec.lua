@@ -179,15 +179,50 @@ describe("KOSyncIdentifiers module", function()
         end)
     end)
 
+    describe("metadataDigest()", function()
+        local props = { title = "The Dispossessed", authors = "Ursula K. Le Guin" }
+
+        it("should digest the title and the authors", function()
+            -- md5 of title:leaves of grass\nauthors:walt whitman
+            assert.are.equal("e31fbadda910cfd764fb8c03b8cf4e03",
+                             KOSyncIdentifiers.metadataDigest({ title = "Leaves of Grass",
+                                                                authors = "Walt Whitman" }))
+        end)
+
+        it("should ignore case, padding and author order", function()
+            assert.are.equal(KOSyncIdentifiers.metadataDigest(props),
+                             KOSyncIdentifiers.metadataDigest({ title = "  the   dispossessed ",
+                                                                authors = "ursula k. le guin" }))
+            assert.are.equal(KOSyncIdentifiers.metadataDigest({ title = "Good Omens",
+                                                                authors = "Neil Gaiman\nTerry Pratchett" }),
+                             KOSyncIdentifiers.metadataDigest({ title = "Good Omens",
+                                                                authors = "Terry Pratchett\nNeil Gaiman" }))
+        end)
+
+        it("should tell two works apart", function()
+            assert.are_not.equal(KOSyncIdentifiers.metadataDigest(props),
+                                 KOSyncIdentifiers.metadataDigest({ title = "The Dispossessed",
+                                                                    authors = "Someone Else" }))
+        end)
+
+        it("should require both a title and an author", function()
+            assert.is_nil(KOSyncIdentifiers.metadataDigest({ title = "The Dispossessed" }))
+            assert.is_nil(KOSyncIdentifiers.metadataDigest({ authors = "Ursula K. Le Guin" }))
+            assert.is_nil(KOSyncIdentifiers.metadataDigest({ title = "  ", authors = "  " }))
+            assert.is_nil(KOSyncIdentifiers.metadataDigest(nil))
+        end)
+    end)
+
     describe("build()", function()
         local parts = {
             content = "1234567890abcdef1234567890abcdef",
             filename = "fedcba0987654321fedcba0987654321",
             file = leaves,
+            props = { title = "The Dispossessed", authors = "Ursula K. Le Guin" },
         }
 
         it("should order strongest first whichever digest addresses the document", function()
-            local order = { "content", "structure", "filename" }
+            local order = { "content", "structure", "metadata", "filename" }
 
             local function shape(document)
                 local list = KOSyncIdentifiers.build(document, parts)
@@ -208,6 +243,17 @@ describe("KOSyncIdentifiers module", function()
             end
         end)
 
+        it("should mark the identifier that can name another work as weak", function()
+            local weak = {}
+            for _, entry in ipairs(KOSyncIdentifiers.build(parts.content, parts)) do
+                weak[entry.type] = entry.weak
+            end
+            assert.is_true(weak.metadata)
+            assert.is_nil(weak.content)
+            assert.is_nil(weak.structure)
+            assert.is_nil(weak.filename)
+        end)
+
         it("should skip identifiers it cannot derive", function()
             local list = KOSyncIdentifiers.build(parts.content, { content = parts.content })
             assert.are.equal(1, #list)
@@ -222,9 +268,9 @@ describe("KOSyncIdentifiers module", function()
 
     describe("query()", function()
         it("should flatten a list", function()
-            assert.are.equal("content:C1,structure:S1",
+            assert.are.equal("content:C1,metadata:M1",
                              KOSyncIdentifiers.query({ { type = "content", value = "C1" },
-                                                       { type = "structure", value = "S1" } }))
+                                                       { type = "metadata", value = "M1", weak = true } }))
             assert.is_nil(KOSyncIdentifiers.query(nil))
         end)
     end)
