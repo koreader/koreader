@@ -133,9 +133,10 @@ local function getNameStrategy(type)
     end
 end
 
-local function showSyncedMessage()
+local function showSyncedMessage(exact)
     UIManager:show(InfoMessage:new{
-        text = _("Progress has been synchronized."),
+        text = exact and _("Progress has been synchronized.")
+            or _("Progress has been synchronized to an approximate location.\nThis copy of the book differs from the one that saved it."),
         timeout = 3,
     })
 end
@@ -447,21 +448,21 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                 }
             },
             {
+                text = _("Match documents by several identifiers"),
+                checked_func = function() return self.settings.identifier_matching end,
+                help_text = _([[When enabled, a book is also identified by its list of chapters and by its filename, so a server that supports this can recognize a copy that is not byte-for-byte identical: one that was recompressed, or downloaded again from elsewhere. A position taken from such a copy is approximate. Servers that do not support this answer as they do today.]]),
+                callback = function()
+                    self.settings.identifier_matching = not self.settings.identifier_matching
+                    self.identifiers = nil
+                    self.updated = true
+                end,
+            },
+            {
                 text = _("Send document metadata"),
                 checked_func = function() return self.settings.send_metadata end,
                 help_text = _([[When enabled, document metadata (filename, title, and authors) will be sent along with progress sync requests. This data is ignored by the official sync server but may be used by custom sync servers.]]),
                 callback = function()
                     self.settings.send_metadata = not self.settings.send_metadata
-                    self.updated = true
-                end,
-            },
-            {
-                text = _("Match documents by several identifiers"),
-                checked_func = function() return self.settings.identifier_matching end,
-                help_text = _([[When enabled, progress sync requests also name the document's structure and filename digests, so a server that supports it can recognize a recompressed or re-downloaded copy of the same book. Servers that do not support it answer as they do today.]]),
-                callback = function()
-                    self.settings.identifier_matching = not self.settings.identifier_matching
-                    self.identifiers = nil
                     self.updated = true
                 end,
             },
@@ -926,7 +927,7 @@ function KOSync:getProgress(ensure_networking, interactive)
                 -- If user actively pulls progress from other devices,
                 -- we always update the progress without further confirmation.
                 self:syncToProgress(body.progress, body.percentage, exact)
-                showSyncedMessage()
+                showSyncedMessage(exact)
                 return
             end
 
@@ -940,7 +941,7 @@ function KOSync:getProgress(ensure_networking, interactive)
             if self_older then
                 if self.settings.sync_forward == SYNC_STRATEGY.SILENT then
                     self:syncToProgress(body.progress, body.percentage, exact)
-                    showSyncedMessage()
+                    showSyncedMessage(exact)
                 elseif self.settings.sync_forward == SYNC_STRATEGY.PROMPT then
                     UIManager:show(ConfirmBox:new{
                         text = T(_("Sync to latest location %1% from device '%2'?"),
@@ -954,7 +955,7 @@ function KOSync:getProgress(ensure_networking, interactive)
             else -- if not self_older then
                 if self.settings.sync_backward == SYNC_STRATEGY.SILENT then
                     self:syncToProgress(body.progress, body.percentage, exact)
-                    showSyncedMessage()
+                    showSyncedMessage(exact)
                 elseif self.settings.sync_backward == SYNC_STRATEGY.PROMPT then
                     UIManager:show(ConfirmBox:new{
                         text = T(_("Sync to previous location %1% from device '%2'?"),
