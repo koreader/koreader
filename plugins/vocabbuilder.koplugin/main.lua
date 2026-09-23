@@ -2187,8 +2187,8 @@ function VocabBuilder:registerDictButtons()
         id = "vocabulary",
         menu_text = _("Vocabulary builder"),
         text = _("Add to vocabulary builder"),
-        font_bold = false,
         insert_first = true,
+        font_bold = false,
         auto_row_style_width_min_row_size = 2,
         auto_row_style_width_ratio = 0.7,
         show_func = function(dict_popup)
