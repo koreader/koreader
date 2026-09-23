@@ -6,6 +6,9 @@ The list is ordered strongest first: the server walks it in that order, stops at
 the first entry that resolves, and reports which one did.
 ]]
 
+local Archiver = require("ffi/archiver")
+local ffi = require("ffi")
+local luxl = require("luxl")
 local md5 = require("ffi/sha2").md5
 
 local TYPE_ORDER = { "content", "structure", "filename" }
@@ -18,82 +21,125 @@ local FOLLOWABLE = {
 }
 
 local MAX_IDENTIFIERS = 8
-local MAX_CENTRAL_DIRECTORY = 4 * 1024 * 1024
+local CONTAINER_PATH = "META-INF/container.xml"
 
 local KOSyncIdentifiers = {}
 
-local function le(str, pos, bytes)
-    local n = 0
-    for i = bytes - 1, 0, -1 do
-        n = n * 256 + str:byte(pos + i)
+-- Stops at the wanted member instead of walking the whole archive.
+local function readEntry(arc, path)
+    for entry in arc:iterate() do
+        if entry.path == path then
+            return arc:extractToMemory(path)
+        end
     end
-    return n
 end
 
--- Locate and read the zip central directory, which lists every member with the
--- CRC-32 and size of its *uncompressed* bytes.
-local function readCentralDirectory(file)
-    local size = file:seek("end")
-    local tail_len = math.min(size, 66000) -- end of central directory record, plus its maximum comment
-    file:seek("set", size - tail_len)
-    local tail = file:read(tail_len)
-    if not tail then return end
+local function lexer(xml)
+    -- luxl has no notion of comments
+    xml = xml:gsub("<!%-%-.-%-%->", "")
+    return luxl.new(xml, #xml)
+end
 
-    local eocd
-    for i = #tail - 21, 1, -1 do
-        if le(tail, i, 4) == 0x06054b50 then
-            eocd = i
+--- Path of the OPF package document, from the container's first rootfile.
+local function rootfilePath(container)
+    local xlex = lexer(container)
+    local tag, attr
+    for event, offset, size in xlex:Lexemes() do
+        local text = ffi.string(xlex.buf + offset, size)
+        if event == luxl.EVENT_START then
+            tag = text
+        elseif event == luxl.EVENT_ATTR_NAME then
+            attr = text
+        elseif event == luxl.EVENT_ATTR_VAL and tag == "rootfile" and attr == "full-path" then
+            return text
+        end
+    end
+end
+
+--- Digest of the spine, as the kosync identifier registry defines `structure`:
+--- the package's own `dc:identifier` when it has one, then every spine item's
+--- manifest href in spine order, joined with newlines.
+local function spineDigest(opf)
+    local xlex = lexer(opf)
+    local tag, attr, attrs
+    local unique_id, identifiers = nil, {}
+    local manifest, spine, in_spine = {}, {}, false
+
+    for event, offset, size in xlex:Lexemes() do
+        local text = ffi.string(xlex.buf + offset, size)
+        if event == luxl.EVENT_START then
+            tag, attrs = text, {}
+            if tag == "spine" then
+                in_spine = true
+            end
+        elseif event == luxl.EVENT_END then
+            if text == "/spine" then
+                in_spine = false
+            end
+            tag = nil
+        elseif event == luxl.EVENT_ATTR_NAME then
+            attr = text
+        elseif event == luxl.EVENT_ATTR_VAL then
+            attrs[attr] = text
+            if tag == "package" and attr == "unique-identifier" then
+                unique_id = text
+            elseif tag == "item" and (attr == "id" or attr == "href") then
+                if attrs.id and attrs.href then
+                    manifest[attrs.id] = attrs.href
+                end
+            elseif tag == "itemref" and attr == "idref" and in_spine then
+                spine[#spine + 1] = text
+            end
+        elseif event == luxl.EVENT_TEXT and tag == "dc:identifier" then
+            identifiers[#identifiers + 1] = { id = attrs.id, value = text }
+        end
+    end
+
+    local lines = {}
+    for _, idref in ipairs(spine) do
+        local href = manifest[idref]
+        if href then
+            -- the href exactly as written, minus any fragment
+            lines[#lines + 1] = (href:gsub("#.*", ""))
+        end
+    end
+    if #lines == 0 then return end
+
+    local identifier = identifiers[1]
+    for _, candidate in ipairs(identifiers) do
+        if candidate.id and candidate.id == unique_id then
+            identifier = candidate
             break
         end
     end
-    if not eocd then return end
-
-    local count = le(tail, eocd + 10, 2)
-    local cd_size = le(tail, eocd + 12, 4)
-    local cd_offset = le(tail, eocd + 16, 4)
-    if count == 0xFFFF or cd_size == 0xFFFFFFFF or cd_offset == 0xFFFFFFFF then
-        return -- zip64, whose real values live in an extra record
+    identifier = identifier and identifier.value:match("^%s*(.-)%s*$")
+    if identifier and identifier ~= "" then
+        table.insert(lines, 1, identifier)
     end
-    if cd_size == 0 or cd_size > MAX_CENTRAL_DIRECTORY or cd_offset + cd_size > size then return end
 
-    file:seek("set", cd_offset)
-    return file:read(cd_size), count
+    return md5(table.concat(lines, "\n"))
 end
 
---- Digest of a zip container's members: name, CRC-32 and uncompressed size of
---- each, sorted by name. Unpacking and repacking an EPUB changes every byte of
---- the file and none of these.
+--- Digest of an EPUB's spine. Repacking, recompressing and rewriting the
+--- contents of every chapter and image all leave it alone; adding, removing or
+--- reordering a chapter changes it.
 function KOSyncIdentifiers.structureDigest(filepath)
     if not filepath then return end
     local file = io.open(filepath, "rb")
     if not file then return end
-    if file:read(4) ~= "PK\3\4" then
-        file:close()
-        return
-    end
-    local cd, count = readCentralDirectory(file)
+    local magic = file:read(4)
     file:close()
-    if not cd then return end
+    if magic ~= "PK\3\4" then return end
 
-    local entries, pos = {}, 1
-    for _ = 1, count do
-        if pos + 45 > #cd or le(cd, pos, 4) ~= 0x02014b50 then return end
-        local crc = le(cd, pos + 16, 4)
-        local uncompressed = le(cd, pos + 24, 4)
-        local name_len = le(cd, pos + 28, 2)
-        local extra_len = le(cd, pos + 30, 2)
-        local comment_len = le(cd, pos + 32, 2)
-        if pos + 45 + name_len > #cd then return end
-        local name = cd:sub(pos + 46, pos + 45 + name_len)
-        -- Repackers disagree about storing directory entries
-        if name:sub(-1) ~= "/" then
-            entries[#entries + 1] = string.format("%s\0%08x\0%d\n", name, crc, uncompressed)
-        end
-        pos = pos + 46 + name_len + extra_len + comment_len
-    end
-    if #entries == 0 then return end
-    table.sort(entries)
-    return md5(table.concat(entries))
+    local arc = Archiver.Reader:new()
+    if not arc:open(filepath) then return end
+    local container = readEntry(arc, CONTAINER_PATH)
+    local rootfile = container and rootfilePath(container)
+    local opf = rootfile and readEntry(arc, rootfile)
+    arc:close()
+    if not opf then return end
+
+    return spineDigest(opf)
 end
 
 --- Build the list to send, strongest first. The server requires the document

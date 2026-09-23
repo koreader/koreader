@@ -1,25 +1,81 @@
 describe("KOSyncIdentifiers module", function()
-    local KOSyncIdentifiers
+    local Archiver, DataStorage, KOSyncIdentifiers
+    local leaves = "spec/front/unit/data/leaves.epub"
+    local juliet = "spec/front/unit/data/juliet.epub"
 
     setup(function()
         require("commonrequire")
         package.path = "plugins/kosync.koplugin/?.lua;" .. package.path
+        Archiver = require("ffi/archiver")
+        DataStorage = require("datastorage")
         KOSyncIdentifiers = require("KOSyncIdentifiers")
     end)
 
+    -- Repack an EPUB storing its members in reverse order, passing each through
+    -- `rewrite`, as an optimizer that re-encodes images and injects a stylesheet
+    -- into every chapter does.
+    local function repack(source, dest, rewrite)
+        local members = {}
+        local arc = Archiver.Reader:new()
+        assert(arc:open(source))
+        for entry in arc:iterate() do
+            if entry.mode == "file" then
+                members[#members + 1] = { path = entry.path, content = arc:extractToMemory(entry.path) }
+            end
+        end
+        arc:close()
+
+        local writer = Archiver.Writer:new()
+        assert(writer:open(dest, "epub"))
+        writer:setZipCompression("store")
+        for i = #members, 1, -1 do
+            local member = members[i]
+            writer:addFileFromMemory(member.path, rewrite(member.path, member.content))
+        end
+        writer:close()
+    end
+
     describe("structureDigest()", function()
-        it("should digest a zip container", function()
-            local digest = KOSyncIdentifiers.structureDigest("spec/front/unit/data/leaves.epub")
+        it("should digest an EPUB", function()
+            local digest = KOSyncIdentifiers.structureDigest(leaves)
             assert.is_truthy(digest:match("^%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x$"))
-            assert.are.equal(digest, KOSyncIdentifiers.structureDigest("spec/front/unit/data/leaves.epub"))
+            assert.are.equal(digest, KOSyncIdentifiers.structureDigest(leaves))
         end)
 
-        it("should tell two containers apart", function()
-            assert.are_not.equal(KOSyncIdentifiers.structureDigest("spec/front/unit/data/leaves.epub"),
-                                 KOSyncIdentifiers.structureDigest("spec/front/unit/data/juliet.epub"))
+        it("should tell two books apart", function()
+            assert.are_not.equal(KOSyncIdentifiers.structureDigest(leaves),
+                                 KOSyncIdentifiers.structureDigest(juliet))
         end)
 
-        it("should return nothing for a file that is not a zip", function()
+        it("should survive a repack that rewrites every image and chapter", function()
+            local repacked = DataStorage:getDataDir() .. "/kosync-repacked.tests.epub"
+            repack(leaves, repacked, function(path, content)
+                if path:match("%.jpe?g$") or path:match("%.png$") then
+                    return content .. "JPEG re-encoded by the optimizer"
+                elseif path:match("%.x?html?$") then
+                    return (content:gsub("<head>", '<head><link rel="stylesheet" href="optimized.css"/>', 1))
+                end
+                return content
+            end)
+            assert.are.equal(KOSyncIdentifiers.structureDigest(leaves),
+                             KOSyncIdentifiers.structureDigest(repacked))
+            os.remove(repacked)
+        end)
+
+        it("should notice a spine entry going away", function()
+            local shortened = DataStorage:getDataDir() .. "/kosync-shortened.tests.epub"
+            repack(leaves, shortened, function(path, content)
+                if path == "content.opf" then
+                    return (content:gsub("<itemref[^>]*/>", "", 1))
+                end
+                return content
+            end)
+            assert.are_not.equal(KOSyncIdentifiers.structureDigest(leaves),
+                                 KOSyncIdentifiers.structureDigest(shortened))
+            os.remove(shortened)
+        end)
+
+        it("should return nothing for a file that is not an EPUB", function()
             assert.is_nil(KOSyncIdentifiers.structureDigest("spec/front/unit/data/tall.pdf"))
             assert.is_nil(KOSyncIdentifiers.structureDigest("spec/front/unit/data/no-such-file.epub"))
             assert.is_nil(KOSyncIdentifiers.structureDigest(nil))
@@ -30,7 +86,7 @@ describe("KOSyncIdentifiers module", function()
         local parts = {
             content = "1234567890abcdef1234567890abcdef",
             filename = "fedcba0987654321fedcba0987654321",
-            file = "spec/front/unit/data/leaves.epub",
+            file = leaves,
         }
 
         it("should order strongest first whichever digest addresses the document", function()
