@@ -588,13 +588,14 @@ function WordInfoDialog:init()
 
     local buttons
     if self.update_callback then
-        if self.review_due then
-            buttons = {{ got_it_button, forgot_button, update_button }}
-        else
-            buttons = {{ update_button }}
-        end
+        buttons = {}
         if self.remove_callback then
             table.insert(buttons, { remove_button })
+        end
+        if self.review_due then
+            table.insert(buttons, { got_it_button, forgot_button, update_button })
+        else
+            table.insert(buttons, { update_button })
         end
     else
         buttons = {{ reset_button, remove_button }}
