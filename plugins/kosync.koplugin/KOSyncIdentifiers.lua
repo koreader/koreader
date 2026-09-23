@@ -123,8 +123,10 @@ function KOSyncIdentifiers.metadataDigest(props)
     return md5("title:" .. title .. "\nauthors:" .. table.concat(authors, ";"))
 end
 
---- Build the list to send, led by the entry whose value is the document digest,
---- which the server requires.
+--- Build the list to send, strongest first. The server requires the document
+--- digest to be among the entries, and takes its position as preference rather
+--- than identity, so the digest this document happens to be addressed by does
+--- not have to lead.
 -- @param document the digest the document is addressed by
 -- @param parts table of content and filename digests, the file path and doc props
 function KOSyncIdentifiers.build(document, parts)
@@ -136,24 +138,16 @@ function KOSyncIdentifiers.build(document, parts)
         metadata = KOSyncIdentifiers.metadataDigest(parts.props),
     }
 
-    local list, leader = {}, nil
+    local list, has_document = {}, false
     for _, id_type in ipairs(TYPE_ORDER) do
         local value = values[id_type]
-        if value then
-            local entry = { type = id_type, value = value }
-            if value == document and not leader then
-                leader = entry
-            else
-                list[#list + 1] = entry
-            end
+        if value and #list < MAX_IDENTIFIERS then
+            list[#list + 1] = { type = id_type, value = value }
+            has_document = has_document or value == document
         end
     end
-    if not leader then return end
+    if not has_document then return end
 
-    table.insert(list, 1, leader)
-    while #list > MAX_IDENTIFIERS do
-        table.remove(list)
-    end
     return list
 end
 
