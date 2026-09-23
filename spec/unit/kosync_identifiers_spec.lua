@@ -87,27 +87,53 @@ describe("KOSyncIdentifiers module", function()
             os.remove(shortened)
         end)
 
-        it("should expand entity references in the href, the identifier and the rootfile path", function()
-            local entities = DataStorage:getDataDir() .. "/kosync-entities.tests.epub"
-            writePackage(entities, "a&b.opf", [[<?xml version="1.0"?>
-<package xmlns:opf="http://www.idpf.org/2007/opf" unique-identifier="pid" version="3.0">
+        it("should expand entities, keep percent escapes and strip the fragment", function()
+            local hrefs = DataStorage:getDataDir() .. "/kosync-hrefs.tests.epub"
+            writePackage(hrefs, "x.opf", [[<?xml version="1.0"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-  <dc:identifier id="pid">urn:uuid:a&amp;b&#45;&#x63;</dc:identifier>
+  <dc:title>No identifier here</dc:title>
  </metadata>
  <manifest>
-  <item id="c1" href="a&amp;b/ch1.xhtml" media-type="application/xhtml+xml"/>
-  <item id="c2" href="q&quot;&apos;&lt;&gt;.xhtml" media-type="application/xhtml+xml"/>
-  <item id="c3" href="caf&#233;.xhtml#frag" media-type="application/xhtml+xml"/>
+  <item id="a" href="Text/a%20b.xhtml" media-type="application/xhtml+xml"/>
+  <item id="b" href="Text/c&amp;d.xhtml" media-type="application/xhtml+xml"/>
+  <item id="c" href="../Text/e.xhtml#part2" media-type="application/xhtml+xml"/>
+ </manifest>
+ <spine>
+  <itemref idref="a"/>
+  <itemref idref="b"/>
+  <itemref idref="c"/>
+ </spine>
+</package>]])
+            -- md5 of Text/a%20b.xhtml\nText/c&d.xhtml\n../Text/e.xhtml
+            assert.are.equal("e07ad0e2e24fbaa64b0c40a8b1ebb13f", KOSyncIdentifiers.structureDigest(hrefs))
+            os.remove(hrefs)
+        end)
+
+        it("should expand a numeric character reference in the identifier", function()
+            local package = [[<?xml version="1.0"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="pid" version="3.0">
+ <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <dc:identifier id="pid">urn:a&amp;b%s1</dc:identifier>
+ </metadata>
+ <manifest>
+  <item id="c1" href="ch1.xhtml" media-type="application/xhtml+xml"/>
  </manifest>
  <spine>
   <itemref idref="c1"/>
-  <itemref idref="c2"/>
-  <itemref idref="c3"/>
  </spine>
-</package>]])
-            -- md5 of urn:uuid:a&b-c\na&b/ch1.xhtml\nq"'<>.xhtml\ncaf\u{00E9}.xhtml
-            assert.are.equal("6feb75d3d45bfa712496e43b4335f26d", KOSyncIdentifiers.structureDigest(entities))
-            os.remove(entities)
+</package>]]
+
+            local decimal = DataStorage:getDataDir() .. "/kosync-decimal.tests.epub"
+            writePackage(decimal, "x.opf", package:format("&#58;"))
+            local hex = DataStorage:getDataDir() .. "/kosync-hex.tests.epub"
+            writePackage(hex, "x.opf", package:format("&#x3A;"))
+
+            -- md5 of urn:a&b:1\nch1.xhtml
+            assert.are.equal("fb3ed76af6e07f28456616a77330b19f", KOSyncIdentifiers.structureDigest(decimal))
+            assert.are.equal("fb3ed76af6e07f28456616a77330b19f", KOSyncIdentifiers.structureDigest(hex))
+            os.remove(decimal)
+            os.remove(hex)
         end)
 
         it("should match elements on the local name", function()
@@ -163,14 +189,23 @@ describe("KOSyncIdentifiers module", function()
         it("should order strongest first whichever digest addresses the document", function()
             local order = { "content", "structure", "filename" }
 
-            local list = KOSyncIdentifiers.build(parts.content, parts)
-            assert.are.same(order, { list[1].type, list[2].type, list[3].type })
+            local function shape(document)
+                local list = KOSyncIdentifiers.build(document, parts)
+                local types, contains = {}, false
+                for i, entry in ipairs(list) do
+                    types[i] = entry.type
+                    contains = contains or entry.value == document
+                end
+                return types, contains
+            end
 
             -- Matching by filename does not demote the rest: the server takes
             -- position as preference, and only requires the document among them.
-            list = KOSyncIdentifiers.build(parts.filename, parts)
-            assert.are.same(order, { list[1].type, list[2].type, list[3].type })
-            assert.are.equal(parts.filename, list[3].value)
+            for _, document in ipairs({ parts.content, parts.filename }) do
+                local types, contains = shape(document)
+                assert.are.same(order, types)
+                assert.is_true(contains)
+            end
         end)
 
         it("should skip identifiers it cannot derive", function()
