@@ -42,6 +42,7 @@ local Button = InputContainer:extend{
     checkmark = "  \u{2713}",
     lang = nil,
     icon = nil,
+    alpha = false,
     icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
     icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
     icon_rotation_angle = 0,
@@ -189,6 +190,7 @@ function Button:init()
     else
         self.label_widget = IconWidget:new{
             icon = self.icon,
+            alpha = self.alpha,
             rotation_angle = self.icon_rotation_angle,
             dim = not self.enabled,
             width = self.icon_width,
