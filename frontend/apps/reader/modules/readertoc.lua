@@ -832,7 +832,7 @@ function ReaderToc:onShowToc()
             }
         self.toc_indent = tmp:getSize().w
         tmp:free()
-        self:updateItemsTextMandatory()
+        self:updateChaptersDisplayedTitlePageNumber()
     end
 
     -- Estimate expand/collapse icon size
@@ -960,7 +960,7 @@ function ReaderToc:onShowToc()
                 local toc_hide_dialog
                 local function updateToc()
                     UIManager:close(toc_hide_dialog)
-                    self.ui.toc:updateItemsTextMandatory()
+                    self.ui.toc:updateChaptersDisplayedTitlePageNumber()
                     self:switchItemTable(nil, nil, -1)
                 end
                 toc_hide_dialog = ButtonDialog:new{
@@ -970,7 +970,7 @@ function ReaderToc:onShowToc()
                     buttons = {
                         {
                             {
-                                text = _("Unhide all"),
+                                text = _("Mark all chapters as regular flow"),
                                 enabled = self.ui.document:hasHiddenFlows(),
                                 callback = function()
                                     self.ui.handmade:unhideAll()
@@ -980,15 +980,17 @@ function ReaderToc:onShowToc()
                         },
                         {
                             {
-                                text = _("Unhide chapter"),
+                                text = _("Mark chapter as regular flow"),
                                 enabled = self.ui.document:hasHiddenFlows(),
                                 callback = function()
                                     self.ui.handmade:hideUnhidePages(toc_start, toc_end)
                                     updateToc()
                                 end,
                             },
+                        },
+                        {
                             {
-                                text = _("Hide chapter"),
+                                text = _("Mark chapter as hidden flow"),
                                 callback = function()
                                     self.ui.handmade:hideUnhidePages(toc_start, toc_end, true)
                                     updateToc()
@@ -1086,7 +1088,7 @@ function ReaderToc:onShowToc()
     return true
 end
 
-function ReaderToc:updateItemsTextMandatory()
+function ReaderToc:updateChaptersDisplayedTitlePageNumber()
     local items_show_chapter_length = G_reader_settings:isTrue("toc_items_show_chapter_length")
     local has_hidden_flows = self.ui.document:hasHiddenFlows()
     for k, v in ipairs(self.toc) do
