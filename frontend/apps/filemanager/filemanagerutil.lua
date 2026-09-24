@@ -439,12 +439,12 @@ function filemanagerutil.showChooseDialog(title_header, caller_callback, current
     UIManager:show(dialog)
 end
 
-function filemanagerutil.showSearchResultsOpenFileDialog(ui, text, file, search_str, found_pos, caller_pre_callback)
+function filemanagerutil.showSearchResultsOpenFileDialog(caller_ui, text, file, search_str, found_pos, caller_pre_callback)
     local ButtonDialog = require("ui/widget/buttondialog")
     local open_file_dialog
     local function doOpen(after_open_callback)
         UIManager:close(open_file_dialog)
-        filemanagerutil.openFile(ui, file, caller_pre_callback, true, after_open_callback)
+        filemanagerutil.openFile(caller_ui, file, caller_pre_callback, true, after_open_callback)
     end
     open_file_dialog = ButtonDialog:new{
         title = BD.filename(text),
