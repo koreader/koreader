@@ -15,7 +15,6 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
-local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
