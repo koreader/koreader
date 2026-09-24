@@ -4,6 +4,7 @@ This module contains miscellaneous helper functions for FileManager
 
 local BD = require("ui/bidi")
 local BookList = require("ui/widget/booklist")
+local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -437,6 +438,61 @@ function filemanagerutil.showChooseDialog(title_header, caller_callback, current
         buttons = buttons,
     }
     UIManager:show(dialog)
+end
+
+function filemanagerutil.showSearchResultsOpenFileDialog(ui, text, file, search_str, found_pos, caller_pre_callback)
+    local open_file_dialog
+    local function doOpen(after_open_callback)
+        UIManager:close(open_file_dialog)
+        filemanagerutil.openFile(ui, file, caller_pre_callback, true, after_open_callback)
+    end
+    open_file_dialog = ButtonDialog:new{
+        title = BD.filename(text),
+        title_align = "center",
+        buttons = {
+            {{
+                text = _("Open"),
+                callback = function()
+                    doOpen()
+                end,
+            }},
+            {{
+                text = _("Open at first search result"),
+                callback = function()
+                    doOpen(function(ui)
+                        ui.link:addCurrentLocationToStack()
+                        ui.search.last_search_text = search_str
+                        if ui.rolling and type(found_pos) == "string" then
+                            ui.rolling:onGotoXPointer(found_pos, found_pos)
+                        elseif ui.paging and type(found_pos) == "number" then
+                            ui.paging:onGotoPage(found_pos)
+                        end
+                    end)
+                end,
+            }},
+            {{
+                text = _("Open and search forward"),
+                callback = function()
+                    doOpen(function(ui)
+                        UIManager:nextTick(function()
+                            ui.search:searchCallback(0, search_str)
+                        end)
+                    end)
+                end,
+            }},
+            {{
+                text = _("Open and search all results"),
+                callback = function()
+                    doOpen(function(ui)
+                        UIManager:nextTick(function()
+                            ui.search:searchCallback(nil, search_str)
+                        end)
+                    end)
+                end,
+            }},
+        },
+    }
+    UIManager:show(open_file_dialog)
 end
 
 function filemanagerutil.openFile(ui, file, caller_pre_callback, no_dialog, after_open_callback)
