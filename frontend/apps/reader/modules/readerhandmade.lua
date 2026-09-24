@@ -268,7 +268,7 @@ Hidden flows are shown with gray or hatched background in Book map and Page brow
                                     table.remove(self.flow_points, self.inactive_flow_points[i])
                                 end
                                 self:updateDocFlows()
-                                self:updateModules(true)
+                                self:updateTocInfo(true)
                                 touchmenu_instance:updateItems()
                             end,
                         })
@@ -561,7 +561,7 @@ function ReaderHandMade:addOrEditPageTocItem(pageno, when_updated_callback, sele
     return true
 end
 
-function ReaderHandMade:updateModules(update_toc)
+function ReaderHandMade:updateTocInfo(update_toc)
     if update_toc then
         self.ui.toc:onUpdateToc()
     end
@@ -573,7 +573,7 @@ end
 function ReaderHandMade:unhideAll(update_toc)
     self.flow_points = {}
     self:updateDocFlows()
-    self:updateModules(update_toc)
+    self:updateTocInfo(update_toc)
 end
 
 function ReaderHandMade:hideUnhidePages(first_page, last_page, hide)
@@ -617,7 +617,7 @@ function ReaderHandMade:hideUnhidePages(first_page, last_page, hide)
     end
 
     if updated then
-        self:updateModules()
+        self:updateTocInfo()
     end
 end
 
