@@ -43,6 +43,15 @@ end
 --     onShowWikipediaLookup = { { "Alt", "W" }, { "Ctrl", "W" } }
 -- end
 
+local function getKeyboardLayoutLanguage()
+    local VirtualKeyboard = require("ui/widget/virtualkeyboard")
+    local layout = VirtualKeyboard.getKeyboardLayout()
+    if not layout or layout == "" then
+        return nil
+    end
+    return layout:match("^[^_-]+")
+end
+
 function ReaderWikipedia:lookupInput()
     self.input_dialog = InputDialog:new{
         title = _("Enter a word or phrase to look up"),
@@ -63,8 +72,12 @@ function ReaderWikipedia:lookupInput()
                     callback = function()
                         if self.input_dialog:getInputText() == "" then return end
                         UIManager:close(self.input_dialog)
+                        local kb_lang
+                        if G_reader_settings:isTrue("wikipedia_use_keyboard_language") then
+                            kb_lang = getKeyboardLayoutLanguage()
+                        end
                         -- Trust that input text does not need any cleaning (allows querying for "-suffix")
-                        self:onLookupWikipedia(self.input_dialog:getInputText(), true)
+                        self:onLookupWikipedia(self.input_dialog:getInputText(), true, nil, nil, kb_lang)
                     end,
                 },
             }
@@ -190,6 +203,19 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                     }
                     UIManager:show(wikilang_input)
                     wikilang_input:onShowKeyboard()
+                end,
+            },
+            {
+                text = ("Use virtual keyboard language"),
+                help_text = _([[
+When looking up a word or phrase, search in the Wikipedia edition matching the current keyboard layout language.
+
+This has no effect on lookups from text selection or from the Wikipedia history.]]),
+                checked_func = function()
+                    return G_reader_settings:isTrue("wikipedia_use_keyboard_language")
+                end,
+                callback = function()
+                    G_reader_settings:flipTrue("wikipedia_use_keyboard_language")
                 end,
                 separator = true,
             },

@@ -83,7 +83,7 @@ LICENSE*
 NOTICE
 endef
 
-update: all
+update-apk: all
 	# Note: do not remove the module directory so there's no need
 	# for `mk7z.sh` to always recreate `koreader.7z` from scratch.
 	rm -rf $(ANDROID_LIBS)
@@ -91,7 +91,7 @@ update: all
 	rm -rf $(ANDROID_LAUNCHER_DIR)/assets/{libs,module}
 	# APK version.
 	mkdir -p $(ANDROID_ASSETS)/module $(ANDROID_LIBS)
-	echo $(VERSION) >$(ANDROID_ASSETS)/module/version.txt
+	echo '$(VERSION)_$(DIST)' >$(ANDROID_ASSETS)/module/version.txt
 	# Libraries.
 	cp -v $(INSTALL_DIR)/koreader/libs/*$(LIB_EXT) $(ANDROID_LIBS)/
 	# Binaries are stored as shared libraries to prevent W^X exception on Android 10+
@@ -118,6 +118,8 @@ update: all
 		$(GRADLE_FLAGS) \
 		'app:assemble$(ANDROID_ARCH)$(ANDROID_FLAVOR)$(if $(KODEBUG),Debug,Release)'
 	cp $(ANDROID_LAUNCHER_BUILD)/outputs/apk/$(ANDROID_ARCH)$(ANDROID_FLAVOR)/$(if $(KODEBUG),debug,release)/NativeActivity.apk $(ANDROID_APK)
+
+update: update-apk
 
 # }}}
 

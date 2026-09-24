@@ -60,7 +60,14 @@ function Screenshoter:onScreenshot(screenshot_name, caller_callback)
     if not screenshot_name then
         screenshot_name = os.date(self:getScreenshotDir() .. "/" .. prefix .. "_%Y-%m-%d_%H%M%S.png")
     end
-    Screen:shot(screenshot_name)
+    local ok, err = Screen:shot(screenshot_name)
+    if not ok then
+        local InfoMessage = require("ui/widget/infomessage")
+        UIManager:show(InfoMessage:new{
+            text = _("Screenshot failed:") .. "\n\n" .. tostring(err),
+        })
+        return false
+    end
 
     local dialog
     local buttons = {
@@ -148,6 +155,8 @@ function Screenshoter:registerKeyEvents()
     if Device:hasKeyboard() then
         self.key_events.KeyPressShoot = {
             { "Alt", "Shift", "G" }, -- same as stock Kindle firmware
+            { "F8" },
+            { "PrintScr" },
         }
     elseif Device:hasScreenKB() then
         -- kindle 4 case: same as stock firmware.

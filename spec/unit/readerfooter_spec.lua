@@ -4,6 +4,7 @@ describe("Readerfooter module", function()
     local tapFooterMenu
     local sample_epub = "spec/front/unit/data/juliet.epub"
     local sample_pdf = "spec/front/unit/data/2col.pdf"
+    local toc_pdf = "spec/front/unit/data/paper.pdf"
     local doc_epub, doc_pdf
 
     local function is_am()
@@ -97,6 +98,8 @@ describe("Readerfooter module", function()
         os.remove(DocSettings:getHistoryPath(sample_epub))
         purgeDir(DocSettings:getSidecarDir(sample_pdf))
         os.remove(DocSettings:getHistoryPath(sample_pdf))
+        purgeDir(DocSettings:getSidecarDir(toc_pdf))
+        os.remove(DocSettings:getHistoryPath(toc_pdf))
     end)
 
     it("should setup footer as visible in all_at_once mode", function()
@@ -348,6 +351,28 @@ describe("Readerfooter module", function()
         footer.settings.toc_markers = false
         footer:setTocMarkers()
         assert.are.same(nil, footer.progress_bar.ticks)
+    end)
+
+    it("should not crash with paging documents in scroll mode", function()
+        G_reader_settings:saveSetting("reader_footer_mode", 1)
+        local ReaderView = require("apps/reader/modules/readerview")
+        local default_view_mode = ReaderView.view_mode
+        ReaderView.view_mode = "scroll"
+
+        readerui = ReaderUI:new{
+            dimen = Screen:getSize(),
+            document = DocumentRegistry:openDocument(toc_pdf),
+        }
+        local footer = readerui.view.footer
+        assert.is.same("scroll", readerui.view.view_mode)
+        -- the progress bar scale and ticks must remain page-based
+        assert.is.same(footer.pages, footer.progress_bar.last)
+        assert.is.truthy(#footer.progress_bar.ticks > 0)
+        for _, tick in ipairs(footer.progress_bar.ticks) do
+            assert.is_true(tick <= footer.progress_bar.last)
+        end
+
+        ReaderView.view_mode = default_view_mode
     end)
 
     it("should schedule/unschedule auto refresh time task", function()

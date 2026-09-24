@@ -303,7 +303,12 @@ function Font:getFace(font, size, faceindex)
         end
     else
         -- Build face size if not found
-        local builtin_font_location = FontList.fontdir.."/"..realname
+        local builtin_font_location
+        if realname:match("^%./") or realname:match("^/") then
+            builtin_font_location = realname
+        else
+            builtin_font_location = FontList.fontdir.."/"..realname
+        end
         local ok, ftsize = pcall(Freetype.newFaceSize, builtin_font_location, size, faceindex)
 
         -- Not all fonts are bundled on all platforms because they come with the system.

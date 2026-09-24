@@ -26,6 +26,7 @@ local Math = require("optmath")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
+local ReadCollection = require("readcollection")
 local ReadHistory = require("readhistory")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -1404,6 +1405,13 @@ end
 -- @tparam string path Local path of the article
 -- @treturn bool Successfully archived or not.
 function Wallabag:archiveLocalArticle(path)
+    -- Skip if it's the currently opened document
+    if self.ui.document then
+        if path == self.ui.document.file then
+            return false
+        end
+    end
+
     -- Check if the archive directory is valid
     local dir_mode = lfs.attributes(self.archive_directory, "mode")
     if dir_mode == nil then
@@ -1416,33 +1424,37 @@ function Wallabag:archiveLocalArticle(path)
         return false
     end
 
-    local result = false
-
     if lfs.attributes(path, "mode") == "file" then
         local _, file = util.splitFilePathName(path)
         local new_path = ffiUtil.joinPath(self.archive_directory, file)
         if FileManager:moveFile(path, new_path) then
-            result = true
+            DocSettings.updateLocation(path, new_path, false) -- move sdr
+            ReadHistory:updateItem(path, new_path)
+            ReadCollection:updateItem(path, new_path)
+            return true
         end
-        DocSettings.updateLocation(path, new_path, false) -- move sdr
-        --- @todo Why is sdr copied instead of moved?
     end
 
-    return result
+    return false
 end
 
 --- Delete an article and its sidecar locally.
 -- @tparam string path Local path of the article
 -- @treturn bool Successfully deleted or not.
 function Wallabag:deleteLocalArticle(path)
-    local result = false
+    -- Skip if it's the currently opened document
+    if self.ui.document then
+        if path == self.ui.document.file then
+            return false
+        end
+    end
 
     if lfs.attributes(path, "mode") == "file" then
         FileManager:deleteFile(path, true)
-        result = true
+        return true
     end
 
-    return result
+    return false
 end
 
 --- Extract the Wallabag ID from the file name.

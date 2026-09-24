@@ -257,7 +257,7 @@ To run unit tests:
 To run a specific unit test (for test development):
 
 ```
-./kodev test front readerbookmark_spec.lua
+./kodev test front readerbookmark
 ```
 
 To run Lua static analysis:

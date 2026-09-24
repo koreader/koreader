@@ -113,6 +113,10 @@ local Device = Generic:extend{
     window = G_reader_settings:readSetting("sdl_window", {}),
 }
 
+function Device:hasKeyboardTextInput()
+    return true
+end
+
 local AppImage = Device:extend{
     model = "AppImage",
     hasOTAUpdates = yes,

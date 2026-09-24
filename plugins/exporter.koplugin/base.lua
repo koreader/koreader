@@ -6,15 +6,23 @@ Each target should inherit from this class and implement *at least* an `export` 
 @module baseexporter
 ]]
 
+local ButtonDialog = require("ui/widget/buttondialog")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local InfoMessage = require("ui/widget/infomessage")
+local Notification = require("ui/widget/notification")
+local UIManager = require("ui/uimanager")
 local http = require("socket.http")
 local ltn12 = require("ltn12")
 local rapidjson = require("rapidjson")
 local socket = require("socket")
 local socketutil = require("socketutil")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
-local BaseExporter = {}
+local BaseExporter = {
+    settings_key = "exporter", -- same as in main.lua
+}
 
 function BaseExporter:new(o)
     o = o or {}
@@ -30,15 +38,20 @@ function BaseExporter:_init()
     self.version = self.version or "1.0.0"
     self.shareable = self.is_remote and nil or Device:canShareText()
     self:loadSettings()
-    if self.init_callback then
-        local changed, settings = self:init_callback(self.settings)
-        if changed then
-            self.settings = settings
-            self:saveSettings()
-        end
-    end
     return self
 end
+
+function BaseExporter:loadSettings()
+    local plugin_settings = G_reader_settings:readSetting(self.settings_key, {})
+    plugin_settings[self.name] = plugin_settings[self.name] or self.default_settings or {}
+    self.settings = plugin_settings[self.name]
+end
+
+function BaseExporter:getMarkdownSettings()
+    return G_reader_settings:readSetting(self.settings_key).markdown
+end
+
+function BaseExporter:saveSettings() end -- for backward compatibility
 
 --[[--
 Export timestamp
@@ -57,24 +70,6 @@ Exporter version
 ]]
 function BaseExporter:getVersion()
     return self.name .. "/" .. self.version
-end
-
---[[--
-Loads settings for the exporter
-]]
-function BaseExporter:loadSettings()
-    local plugin_settings = G_reader_settings:readSetting("exporter") or {}
-    self.settings = plugin_settings[self.name] or {}
-end
-
---[[--
-Saves settings for the exporter
-]]
-function BaseExporter:saveSettings()
-    local plugin_settings = G_reader_settings:readSetting("exporter") or {}
-    plugin_settings[self.name] = self.settings
-    G_reader_settings:saveSetting("exporter", plugin_settings)
-    self.new_settings = true
 end
 
 --[[--
@@ -135,7 +130,178 @@ Toggles exporter enabled state if it's ready to export
 function BaseExporter:toggleEnabled()
     if self:isReadyToExport() then
         self.settings.enabled = not self.settings.enabled
-        self:saveSettings()
+    end
+end
+
+function BaseExporter:genTargetMenu()
+    return {
+        text = self.title,
+        checked_func = function()
+            return self:isEnabled()
+        end,
+        hold_callback = function(touchmenu_instance)
+            self:toggleEnabled()
+            touchmenu_instance:updateItems()
+        end,
+        sub_item_table = self:genTargetSubMenu(), -- provided by targets
+    }
+end
+
+function BaseExporter:genToggleMenuItem(item_text, item_setting, separator)
+    return {
+        text = item_text,
+        checked_func = function()
+            return self.settings[item_setting]
+        end,
+        callback = function()
+            self.settings[item_setting] = not self.settings[item_setting] or nil
+        end,
+        separator = separator,
+    }
+end
+
+function BaseExporter:genExportToMenuItem()
+    return {
+        text = T(_("Export to %1"), self.title),
+        checked_func = function()
+            return self:isEnabled()
+        end,
+        enabled_func = function()
+            return self:isReadyToExport() and true or false
+        end,
+        callback = function()
+            self:toggleEnabled()
+        end,
+        separator = self.help_text == nil,
+    }
+end
+
+function BaseExporter:genHelpMenuItem()
+    return {
+        text = _("Help"),
+        keep_menu_open = true,
+        callback = function()
+            UIManager:show(InfoMessage:new{ text = self.help_text or self.title })
+        end,
+        separator = true,
+    }
+end
+
+function BaseExporter:genCloudStorageMenuItem()
+    return {
+        text_func = function()
+            return T("Upload to cloud storage: %1",
+                self.settings.upload_server and self.settings.upload_server.name or _("not set"))
+        end,
+        enabled_func = function()
+            return self.plugin.ui.cloudstorage ~= nil
+        end,
+        checked_func = function()
+            return self.plugin.ui.cloudstorage and self.settings.upload
+        end,
+        check_callback_updates_menu = true,
+        callback = function(touchmenu_instance)
+            self:setUploadServer(touchmenu_instance)
+        end,
+    }
+end
+
+function BaseExporter:genDeleteFileMenuItem()
+    return {
+        text = _("Delete local export file after uploading"),
+        enabled_func = function()
+            return self.plugin.ui.cloudstorage ~= nil and self.settings.upload ~= nil
+        end,
+        checked_func = function()
+            return self.plugin.ui.cloudstorage and self.settings.upload and self.settings.upload_delete_local
+        end,
+        callback = function()
+            self.settings.upload_delete_local = not self.settings.upload_delete_local or nil
+        end,
+        separator = true,
+    }
+end
+
+function BaseExporter:setUploadServer(touchmenu_instance)
+    local cs = self.plugin.ui.cloudstorage
+    local server = self.settings.upload_server
+    local server_dialogue
+    local text = cs:getServerNameType(server) or _("not set")
+    if server then
+        text = text .. "\n\n" .. T(_("Folder path:\n%1"), cs.getReadablePath(server)) .. "\n"
+    end
+    server_dialogue = ButtonDialog:new{
+        title = T(_("Cloud storage: %1"), text),
+        buttons = {
+            {
+                {
+                    text = _("Delete"),
+                    enabled = server ~= nil,
+                    callback = function()
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Delete server info?"),
+                            ok_text = _("Delete"),
+                            ok_callback = function()
+                                UIManager:close(server_dialogue)
+                                self.settings.upload_server = nil
+                                self.settings.upload = nil
+                                touchmenu_instance:updateItems()
+                            end,
+                        })
+                    end,
+                },
+                {
+                    text = _("Edit"),
+                    callback = function()
+                        UIManager:close(server_dialogue)
+                        cs:onShowCloudStorageList(function(sv)
+                            self.settings.upload_server = sv
+                            touchmenu_instance:updateItems()
+                            self:setUploadServer(touchmenu_instance) -- keep the dialog open
+                        end)
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("Close"),
+                    callback = function()
+                        UIManager:close(server_dialogue)
+                    end,
+                },
+                {
+                    text = self.settings.upload and _("Disable") or _("Enable"),
+                    enabled = server ~= nil,
+                    callback = function()
+                        UIManager:close(server_dialogue)
+                        self.settings.upload = not self.settings.upload or nil
+                        touchmenu_instance:updateItems()
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(server_dialogue)
+end
+
+function BaseExporter:uploadFile(file_path)
+    if self.settings.upload and self.plugin.ui.cloudstorage then
+        local function success_callback()
+            if self.settings.upload_delete_local then
+                os.remove(file_path)
+            end
+            UIManager:show(Notification:new{
+                text = _("Successfully uploaded export file"),
+                timeout = 3,
+            })
+        end
+        local function failure_callback()
+            UIManager:show(Notification:new{
+                text = _("Could not upload export file"),
+                timeout = 3,
+            })
+        end
+        self.plugin.ui.cloudstorage:uploadFile(self.settings.upload_server, file_path, success_callback, failure_callback)
     end
 end
 

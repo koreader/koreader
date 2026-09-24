@@ -776,6 +776,14 @@ function InputText:focus()
     Device:startTextInput()
 end
 
+function InputText:keyBack()
+    if self.parent.onCloseDialog then
+        self.parent:onCloseDialog()
+    else
+        UIManager:close(self.parent)
+    end
+end
+
 -- NOTE: This key_map can be used for keyboards without numeric keys, such as on Kindles with keyboards. It is loosely 'inspired' by the symbol layer on the virtual keyboard but,
 --       we have taken the liberty of making some adjustments since:
 --       * K3 does not have numeric keys (top row) and,
@@ -841,17 +849,26 @@ function InputText:onKeyPress(key)
         elseif key["End"] then
             self:goToEnd()
         elseif key["Home"] then
+            -- If our parent handles Home (e.g., InputDialog), delegate entirely
+            -- to avoid double-firing: once here and once via FocusManager routing.
+            if self.parent and self.parent.onHome then
+                return self.parent:onHome()
+            end
+            self:keyBack()
+            local Event = require("ui/event")
+            UIManager:nextTick(function()
+                UIManager:sendEvent(Event:new("Home"))
+            end)
+        elseif key["KeyHome"] then
             self:goToHome()
         elseif key["Press"] then
             self:addChars("\n")
         elseif key["Tab"] then
             self:addChars("    ")
         elseif key["Back"] then
-            if self.parent.onCloseDialog then
-                self.parent:onCloseDialog()
-            else
-                UIManager:close(self.parent)
-            end
+            self:keyBack()
+        elseif key["F9"] then
+            self:toggleKeyboard()
         else
             handled = false
         end
@@ -886,7 +903,7 @@ function InputText:onKeyPress(key)
             self:downLine()
         elseif key["Press"] then
             self:holdTextBox()
-        elseif key["Home"] then
+        elseif key["Home"] or key["KeyHome"] then
             self:toggleKeyboard()
         elseif key["."] and Device:hasSymKey() then
             -- Kindle does not have a dedicated button for commas
@@ -913,14 +930,18 @@ function InputText:onKeyPress(key)
             FocusManagerInstance = FocusManager:new{}
         end
         local is_alternative_key = FocusManagerInstance:isAlternativeKey(key)
-        if not is_alternative_key and Device:isSDL() then
-            -- SDL already insert char via TextInput event
-            -- Stop event propagate to FocusManager
+        if not is_alternative_key and Device:hasKeyboardTextInput() then
+            if key["PrintScr"] or key["F8"] then
+                -- Keep physical keyboard screenshot shortcuts working in InputText.
+                return false
+            end
+            -- SDL and an external keyboard already emit TextInput.
+            -- Stop propagation to FocusManager.
             return true
         end
         -- if it is single text char, insert it
         local key_code = key.key -- is in upper case
-        if not Device.isSDL() and #key_code == 1 then
+        if not Device:hasKeyboardTextInput() and #key_code == 1 then
             if key["Shift"] and key["Alt"] and key["G"] then
                 -- Allow the screenshot keyboard-shortcut to work when focus is on InputText
                 return false
@@ -982,6 +1003,10 @@ end
 
 -- Temporarily show/hide the on-screen keyboard, e.g. via Shift/ScreenKB + Home or a lone Sym/ScreenKB press.
 function InputText:toggleKeyboard()
+    local parent = self.parent
+    if parent and parent.shouldDelegateToggleKeyboard and parent:shouldDelegateToggleKeyboard() then
+        return parent:toggleKeyboard()
+    end
     if self:isKeyboardVisible() then
         self:onCloseKeyboard()
     else

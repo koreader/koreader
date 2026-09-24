@@ -127,6 +127,12 @@ function AutoWarmth:init()
         i = j
     end
 
+    -- AutoStandby can pause the task scheduler while reading
+    -- (e.g. on Pocketbook Era 700).
+    -- To prevent missing or delayed events we hook into InputEvent
+    -- and check if we need to schedule the next warmth change.
+    UIManager.event_hook:registerWidget("InputEvent", self)
+
     -- schedule recalculation shortly after midnight
     self:scheduleMidnightUpdate()
 end
@@ -481,6 +487,16 @@ function AutoWarmth:toggleFrontlight(now_s)
     self:setFrontlight(sunrise_in_s > 0 or sunset_in_s < 0)
 end
 
+function AutoWarmth:onInputEvent()
+    if self.activate == 0 or #self.sched_warmths == 0 or self.sched_warmth_index > #self.sched_warmths then
+        return
+    end
+
+    if SunTime:getTimeInSec() >= self.sched_times_s[self.sched_warmth_index] then
+        self:scheduleNextWarmthChange(false)
+    end
+end
+
 -- schedules the next warmth change
 -- search_pos ... start searching from that index
 -- from_resume ... true if first call after resume
@@ -547,7 +563,7 @@ end
 
 -- Set warmth and schedule the next warmth change
 function AutoWarmth:setWarmth(val, force_warmth)
-    -- A value > 100 means to set night mode and set warmth to maximum.
+    -- A value > 100 means to set night mode.
     -- We use an offset of 1000 to "flag", that night mode is on.
     if val then
         if self.control_nightmode then
@@ -556,7 +572,8 @@ function AutoWarmth:setWarmth(val, force_warmth)
         end
 
         if self.control_warmth and Device:hasNaturalLight() then
-            val = math.min(val, 100) -- "mask" night mode
+            -- "mask" night mode (stored as an offset of 1000)
+            val = val > 100 and val - 1000 or val
             Powerd:setWarmth(val, force_warmth)
             UIManager:broadcastEvent(Event:new(self.event_auto_warmth_activated))
         end
@@ -1029,7 +1046,7 @@ function AutoWarmth:getWarmthMenu()
                         if self.warmth[num] <= 100 then
                             return T(_("%1: %2 %"), text, self.warmth[num])
                         else
-                            return T(_("%1: 100 % + ☾"), text)
+                            return T(_("%1: %2 % + ☾"), text, math.max(self.warmth[num] - 1000, 0))
                         end
                     else
                         if self.warmth[num] <= 100 then

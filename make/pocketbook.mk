@@ -1,7 +1,7 @@
 POCKETBOOK_DIR = $(PLATFORM_DIR)/pocketbook
-PB_PACKAGE = koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).zip
-PB_PACKAGE_OTA = koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).tar.xz
-PB_PACKAGE_OLD_OTA = koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).targz
+PB_PACKAGE = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).zip
+PB_PACKAGE_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).tar.xz
+PB_PACKAGE_OLD_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).targz
 
 define UPDATE_PATH_EXCLUDES +=
 tools

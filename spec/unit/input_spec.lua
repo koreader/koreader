@@ -255,4 +255,59 @@ Event: time 1510346969.076908, -------------- SYN_REPORT ------------
         end)
     end)
 
+    describe("keyboard rotation", function()
+        local function withInputState(overrides, callback)
+            local old_state = {}
+            for key, value in pairs(overrides) do
+                old_state[key] = Input[key]
+                Input[key] = value
+            end
+
+            local ok, err = pcall(callback)
+
+            for key, value in pairs(old_state) do
+                Input[key] = value
+            end
+            if not ok then error(err) end
+        end
+
+        it("does not rotate directional keys from an exempt input fd", function()
+            withInputState({
+                device = {
+                    isSDL = function() return false end,
+                    screen = { getRotationMode = function() return C.DEVICE_ROTATED_UPSIDE_DOWN end },
+                },
+                event_map = { [103] = "Up" },
+                event_map_adapter = {},
+                hw_text_layout = nil,
+                rotation_map = {
+                    [C.DEVICE_ROTATED_UPSIDE_DOWN] = { Up = "Down" },
+                },
+                rotation_ignored_fds = { [42] = true },
+            }, function()
+                local event = Input:handleKeyBoardEv({ code = 103, value = 1, fd = 42 })
+                assert.are.equal("Up", event.args[1].key)
+            end)
+        end)
+
+        it("continues to rotate directional keys from other devices", function()
+            withInputState({
+                device = {
+                    isSDL = function() return false end,
+                    screen = { getRotationMode = function() return C.DEVICE_ROTATED_UPSIDE_DOWN end },
+                },
+                event_map = { [103] = "Up" },
+                event_map_adapter = {},
+                hw_text_layout = nil,
+                rotation_map = {
+                    [C.DEVICE_ROTATED_UPSIDE_DOWN] = { Up = "Down" },
+                },
+                rotation_ignored_fds = { [42] = true },
+            }, function()
+                local event = Input:handleKeyBoardEv({ code = 103, value = 1, fd = 41 })
+                assert.are.equal("Down", event.args[1].key)
+            end)
+        end)
+    end)
+
 end)

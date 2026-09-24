@@ -76,6 +76,11 @@ PASSCODE_DISABLED="no"
 
 # List of services we stop in order to reclaim a tiny sliver of RAM...
 TOGGLED_SERVICES="stored webreader kfxreader kfxview todo tmd rcm archive scanner otav3 otaupd"
+# The KPP chrome status bar runs as a separate job, so disabling pillow doesn't stop it drawing over us
+# Verified on: PW6 @ FW 5.17.1.0.4 & 5.19.4.0.1; PW4 @ 5.18.1
+if [ -f "/etc/upstart/statusbar.conf" ]; then
+    TOGGLED_SERVICES="${TOGGLED_SERVICES} statusbar"
+fi
 
 REEXEC_FLAGS=""
 # Keep track of if we were started through KUAL
@@ -138,12 +143,16 @@ ko_update_check() {
         export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
         rm -f "${FBINK_NAMED_PIPE}"
         FBINK_PID="$(/var/tmp/fbink --daemon 1 %KOREADER% -q -y -6 -P 0)"
+        # Open a handle to the fifo ourselves too: this prevent writes to the
+        # fifo from hanging if fbink crashed (even with no one reading, its
+        # buffer should still be big enough to never be full either).
+        exec 3<>"${FBINK_NAMED_PIPE}"
         # NOTE: To avoid blowing up when an executable get truncated during use, we copy our binaries to the system's
         # tmpfs, and run them from there (c.f., #4602)...  This is most likely a side-effect of the weird fuse overlay
         # being used for /mnt/us (vs. the real vfat on /mnt/base-us), which we cannot use because it's been mounted
         # noexec for a few years now...
         cp -pf "${KOREADER_DIR}/unpack" /var/tmp/
-        (cd "${UNPACK_DIR}" && /var/tmp/unpack -X "${NEWUPDATE}" >"${FBINK_NAMED_PIPE}")
+        (cd "${UNPACK_DIR}" && /var/tmp/unpack -X "${NEWUPDATE}" >&3)
         fail=$?
         kill -TERM "${FBINK_PID}"
         # And remove our temporary binaries...
@@ -167,6 +176,9 @@ ko_update_check() {
             eips_print_bottom_centered "KOReader may fail to function properly" 1
         fi
         rm -f /tmp/package.index "${NEWUPDATE}" # always purge newupdate to prevent update loops
+        # Fifo cleanup: close our handle, and unlink the path too (in case fbink crashed).
+        exec 3>&-
+        rm -f "${FBINK_NAMED_PIPE}"
         unset FBINK_NAMED_PIPE FBINK_PID
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         sync

@@ -3,9 +3,9 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
 
--- readwise exporter
-local ReadwiseExporter = require("base"):new {
+local ReadwiseExporter = require("base"):new{
     name = "readwise",
+    title = _("Readwise"),
     is_remote = true,
 }
 
@@ -14,49 +14,43 @@ function ReadwiseExporter:isReadyToExport()
     return false
 end
 
-function ReadwiseExporter:getMenuTable()
+function ReadwiseExporter:genTargetSubMenu()
+    local dialog_title = _("Set authorization token")
     return {
-        text = _("Readwise"),
-        checked_func = function() return self:isEnabled() end,
-        sub_item_table = {
-            {
-                text = _("Set authorization token"),
-                keep_menu_open = true,
-                callback = function()
-                    local auth_dialog
-                    auth_dialog = InputDialog:new {
-                        title = _("Set authorization token for Readwise"),
-                        input = self.settings.token,
-                        buttons = {
+        self:genExportToMenuItem(),
+        -- separator
+        {
+            text = dialog_title,
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                local auth_dialog
+                auth_dialog = InputDialog:new{
+                    title = dialog_title,
+                    input = self.settings.token,
+                    buttons = {
+                        {
                             {
-                                {
-                                    text = _("Cancel"),
-                                    callback = function()
-                                        UIManager:close(auth_dialog)
-                                    end
-                                },
-                                {
-                                    text = _("Set token"),
-                                    callback = function()
-                                        self.settings.token = auth_dialog:getInputText()
-                                        self:saveSettings()
-                                        UIManager:close(auth_dialog)
-                                    end
-                                }
-                            }
-                        }
+                                text = _("Cancel"),
+                                id = "close",
+                                callback = function()
+                                    UIManager:close(auth_dialog)
+                                end,
+                            },
+                            {
+                                text = _("Set token"),
+                                callback = function()
+                                    self.settings.token = auth_dialog:getInputText()
+                                    UIManager:close(auth_dialog)
+                                    touchmenu_instance:updateItems()
+                                end,
+                            },
+                        },
                     }
-                    UIManager:show(auth_dialog)
-                    auth_dialog:onShowKeyboard()
-                end
-            },
-            {
-                text = _("Export to Readwise"),
-                checked_func = function() return self:isEnabled() end,
-                callback = function() self:toggleEnabled() end,
-            },
-
-        }
+                }
+                UIManager:show(auth_dialog)
+                auth_dialog:onShowKeyboard()
+            end,
+        },
     }
 end
 

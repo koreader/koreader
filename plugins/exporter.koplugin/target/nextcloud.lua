@@ -1,4 +1,3 @@
-local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local UIManager = require("ui/uimanager")
 local mime = require("mime")
@@ -7,11 +6,15 @@ local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
--- nextcloud notes exporter
-local NextcloudExporter = require("base"):new {
+local NextcloudExporter = require("base"):new{
     name = "nextcloud_notes",
+    title = _("Nextcloud Notes"),
     default_category = _("KOReader"),
     is_remote = true,
+    help_text = T(_([[For Nextcloud Notes setup instructions, see %1
+
+Markdown formatting can be configured in:
+Export highlights > Choose formats and services > Markdown.]]), "https://github.com/koreader/koreader/wiki/Nextcloud-notes"),
 }
 
 -- fetching all notes from Nextcloud is costly, so we keep a copy here
@@ -22,105 +25,81 @@ function NextcloudExporter:isReadyToExport()
     return self.settings.host and self.settings.username and self.settings.password
 end
 
-function NextcloudExporter:getMenuTable()
+function NextcloudExporter:genTargetSubMenu()
     local dialog_title = _("Setup Nextcloud Notes plugin")
     return {
-        text = _("Nextcloud Notes"),
-        checked_func = function() return self:isEnabled() end,
-        sub_item_table = {
-            {
-                text = dialog_title,
-                keep_menu_open = true,
-                callback = function()
-                    local url_dialog
-                    url_dialog = MultiInputDialog:new {
-                        title = dialog_title,
-                        fields = {
-                            {
-                                description = _("Nextcloud URL"),
-                                hint = "https://yournextcloud.com",
-                                text = self.settings.host,
-                                input_type = "string"
-                            },
-                            {
-                                description = _("Username"),
-                                hint = _("Username"),
-                                text = self.settings.username,
-                                input_type = "string"
-                            },
-                            {
-                                description = _("App password"),
-                                hint = _("Security → Devices & sessions"),
-                                text = self.settings.password,
-                                input_type = "string"
-                            },
-                            {
-                                description = _("Category"),
-                                hint = _("Category applied to the note"),
-                                text = self.settings.category or self.default_category,
-                                input_type = "string"
-                            }
+        self:genExportToMenuItem(),
+        self:genHelpMenuItem(),
+        -- separator
+        {
+            text = dialog_title,
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                local url_dialog
+                url_dialog = MultiInputDialog:new{
+                    title = dialog_title,
+                    fields = {
+                        {
+                            description = _("Nextcloud URL"),
+                            hint = "https://yournextcloud.com",
+                            text = self.settings.host,
                         },
-                        buttons = {
+                        {
+                            description = _("Username"),
+                            hint = _("Username"),
+                            text = self.settings.username,
+                        },
+                        {
+                            description = _("App password"),
+                            hint = _("Security → Devices & sessions"),
+                            text = self.settings.password,
+                        },
+                        {
+                            description = _("Category"),
+                            hint = _("Category applied to the note"),
+                            text = self.settings.category or self.default_category,
+                        },
+                    },
+                    buttons = {
+                        {
                             {
-                                {
-                                    text = _("Cancel"),
-                                    callback = function()
-                                        UIManager:close(url_dialog)
+                                text = _("Cancel"),
+                                id = "close",
+                                callback = function()
+                                    UIManager:close(url_dialog)
+                                end,
+                            },
+                            {
+                                text = _("OK"),
+                                callback = function()
+                                    local fields = url_dialog:getFields()
+                                    local host = fields[1]
+                                    local username = fields[2]
+                                    local password = fields[3]
+                                    local category = fields[4]
+                                    if host ~= "" then
+                                        self.settings.host = host
                                     end
-                                },
-                                {
-                                    text = _("OK"),
-                                    callback = function()
-                                        local fields = url_dialog:getFields()
-                                        local host = fields[1]
-                                        local username = fields[2]
-                                        local password = fields[3]
-                                        local category = fields[4]
-                                        if host ~= "" then
-                                            self.settings.host = host
-                                            self:saveSettings()
-                                        end
-                                        if username ~= "" then
-                                            self.settings.username = username
-                                            self:saveSettings()
-                                        end
-                                        if password ~= "" then
-                                            self.settings.password = password
-                                            self:saveSettings()
-                                        end
-                                        if category ~= "" then
-                                            self.settings.category = category
-                                            self:saveSettings()
-                                        end
-                                        UIManager:close(url_dialog)
+                                    if username ~= "" then
+                                        self.settings.username = username
                                     end
-                                }
-                            }
-                        }
-                    }
-                    UIManager:show(url_dialog)
-                    url_dialog:onShowKeyboard()
-                end
-            },
-            {
-                text = _("Export to Nextcloud Notes"),
-                checked_func = function() return self:isEnabled() end,
-                callback = function() self:toggleEnabled() end,
-            },
-            {
-                text = _("Help"),
-                keep_menu_open = true,
-                callback = function()
-                    UIManager:show(InfoMessage:new {
-                        text = T(_([[For Nextcloud Notes setup instructions, see %1
-
-Markdown formatting can be configured in:
-Export highlights > Choose formats and services > Markdown.]]), "https://github.com/koreader/koreader/wiki/Nextcloud-notes")
-                    })
-                end
-            }
-        }
+                                    if password ~= "" then
+                                        self.settings.password = password
+                                    end
+                                    if category ~= "" then
+                                        self.settings.category = category
+                                    end
+                                    UIManager:close(url_dialog)
+                                    touchmenu_instance:updateItems()
+                                end,
+                            },
+                        },
+                    },
+                }
+                UIManager:show(url_dialog)
+                url_dialog:onShowKeyboard()
+            end,
+        },
     }
 end
 
@@ -128,10 +107,6 @@ function NextcloudExporter:export(t)
     if not self:isReadyToExport() then
         return false
     end
-
-    -- determine if markdown export is set
-    local plugin_settings = G_reader_settings:readSetting("exporter") or {}
-    local markdown_settings = plugin_settings.markdown
 
     -- setup Nextcloud variables
     local url_base = string.format("%s/index.php/apps/notes/api/v1/", self.settings.host)
@@ -158,6 +133,7 @@ function NextcloudExporter:export(t)
     end
 
     -- export each note
+    local markdown_settings = self:getMarkdownSettings()
     for _, booknotes in pairs(t) do
         local note = md.prepareBookContent(booknotes, markdown_settings.formatting_options, markdown_settings.highlight_formatting)
         local note_title = string.format("%s - %s", string.gsub(booknotes.author, "\n", ", "), booknotes.title)

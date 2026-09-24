@@ -147,6 +147,8 @@ function TouchMenuItem:init()
 
     self._underline_container = UnderlineContainer:new{
         vertical_align = "center",
+        focus_linesize = Size.line.focus_row,
+        background = Blitbuffer.COLOR_WHITE,
         dimen = self.dimen:copy(),
         line_width = self.item_frame:getSize().w, -- we'll draw a shorter line
         self.item_frame,
@@ -158,13 +160,23 @@ function TouchMenuItem:init()
     end
 end
 
+function TouchMenuItem:getFocusIndicatorRegion()
+    return self._underline_container and self._underline_container:getFocusIndicatorRegion()
+end
+
+function TouchMenuItem:repaintFocusIndicator(bb)
+    return self._underline_container and self._underline_container:repaintFocusIndicator(bb)
+end
+
 function TouchMenuItem:onFocus()
     self._underline_container.color = Blitbuffer.COLOR_BLACK
+    self._underline_container.focused = true
     return true
 end
 
 function TouchMenuItem:onUnfocus()
     self._underline_container.color = Blitbuffer.COLOR_WHITE
+    self._underline_container.focused = false
     return true
 end
 
@@ -970,6 +982,18 @@ function TouchMenu:onCloseWidget()
             or (ReaderUI.instance and not ReaderUI.instance.tearing_down) then
         UIManager:setDirty(nil, "flashui")
     end
+end
+
+-- Although TouchMenu inherits this method from InputContainer and it is pretty
+-- much identical to that one, we need to override it here due to the
+-- complexity of the module (multiple FocusManagers and InputContainers).
+function TouchMenu:onHome()
+    UIManager:setSuspendRepaints(true)
+    self:onClose()
+    UIManager:nextTick(function()
+        UIManager:sendEvent(Event:new("Home"))
+    end)
+    return true
 end
 
 -- Menu search feature

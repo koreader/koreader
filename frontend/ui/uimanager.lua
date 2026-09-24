@@ -16,6 +16,10 @@ local Screen = Device.screen
 
 local DEFAULT_FULL_REFRESH_COUNT = 6
 
+-- used to temporarily stop screen refreshes and repaint during fast unwinding events
+local NOP = function() return end
+local SUSPEND_REPAINTS_FUNCTIONS_TO_NOP = { "setDirty", "_refresh", "_repaint" }
+
 -- This is a singleton
 local UIManager = {
     -- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
@@ -43,6 +47,8 @@ local UIManager = {
     _prevent_standby_count = 0,
     _prev_prevent_standby_count = 0,
     _input_gestures_disabled = false,
+
+    _repaint_watchdog_func = nil,
 
     event_hook = require("ui/hook_container"):new()
 }
@@ -81,7 +87,7 @@ function UIManager:init()
         logger.info("Powering off the device...")
         self:broadcastEvent(Event:new("PowerOff"))
         self:broadcastEvent(Event:new("Close", { keep_screensaver = true }))
-        self:nextTick(function()
+        local function doQuit()
             Device:saveSettings()
             Device:powerOff()
             if Device:isKobo() then
@@ -89,7 +95,14 @@ function UIManager:init()
             else
                 self:quit()
             end
-        end)
+        end
+        if not self._window_stack[1] then
+            -- Leave screen as-is
+            doQuit()
+        else
+            -- Allow screensaver to be painted
+            self:nextTick(doQuit)
+        end
     end
     self.reboot_action = function()
         local Screensaver = require("ui/screensaver")
@@ -99,7 +112,7 @@ function UIManager:init()
         logger.info("Rebooting the device...")
         self:broadcastEvent(Event:new("Reboot"))
         self:broadcastEvent(Event:new("Close", { keep_screensaver = true }))
-        self:nextTick(function()
+        local function doQuit()
             Device:saveSettings()
             Device:reboot()
             if Device:isKobo() then
@@ -107,7 +120,14 @@ function UIManager:init()
             else
                 self:quit()
             end
-        end)
+        end
+        if not self._window_stack[1] then
+            -- Leave screen as-is
+            doQuit()
+        else
+            -- Allow screensaver to be painted
+            self:nextTick(doQuit)
+        end
     end
 
     -- Tell Device that we're now available, so that it can setup PM event handlers
@@ -122,6 +142,59 @@ end
 function UIManager:setIgnoreTouchInput(state)
     local InputContainer = require("ui/widget/container/inputcontainer")
     InputContainer:setIgnoreTouchInput(state)
+end
+
+local function restore_functions(self, func_list)
+    for _, name in ipairs(func_list) do
+        self[name] = self._orig_funcs[name]
+    end
+    self._orig_funcs = nil
+end
+
+--[[--
+Suspends repaints and refreshes
+
+-- Note: The watchdog enforces a strict global deadline for the UI suspension.
+-- If a watchdog is already armed, subsequent requests to suspend repaints will
+-- deliberately not reset the timer. This ensures the timeout ticks down from the
+-- initial caller's request, preventing a chain of events from compounding the
+-- delay and freezing the screen indefinitely.
+
+@boolean `state`: `true` to suspend repaints, `false` to resume them
+@number `timeout`: optional suspension duration in seconds (default: 2) before repaints are resumed automatically
+]]
+function UIManager:setSuspendRepaints(state, timeout)
+    if not state and not self._repaint_watchdog_func then return end
+    if state and self._repaint_watchdog_func then return end
+    -- Suspending repaints can be incredibly dangerous, we must
+    -- ensure we don't get stuck in this state forever, otherwise
+    -- we might end up with a frozen screen and no way out.
+    if not state then
+        -- The chain completed or halted legitimately. Disarm the watchdog.
+        self:unschedule(self._repaint_watchdog_func)
+        self._repaint_watchdog_func = nil
+        restore_functions(self, SUSPEND_REPAINTS_FUNCTIONS_TO_NOP)
+    else
+        -- The chain has just started. Arm the watchdog for a strict timeout (or 2 sec) deadline.
+        self._repaint_watchdog_func = function()
+            logger.warn("UIManager: Repaint suspension watchdog expired; forcing UI recovery.")
+            self._repaint_watchdog_func = nil
+            restore_functions(self, SUSPEND_REPAINTS_FUNCTIONS_TO_NOP)
+            self:setDirty(nil, "full")
+        end
+        self._orig_funcs = {}
+        for _, name in ipairs(SUSPEND_REPAINTS_FUNCTIONS_TO_NOP) do
+            self._orig_funcs[name] = self[name]
+            self[name] = NOP
+        end
+        timeout = math.max(0, math.min(timeout or 2, 10))
+        self:scheduleIn(timeout, self._repaint_watchdog_func)
+    end
+    logger.dbg("UIManager: Repaints and refreshes suspended:", state)
+end
+
+function UIManager:getSuspendRepaints()
+    return self._repaint_watchdog_func
 end
 
 function UIManager:setSilentMode(toggle)
@@ -186,6 +259,8 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     widget:handleEvent(Event:new("Show"))
     -- check if this widget disables double tap gesture
     Input.disable_double_tap = widget.disable_double_tap ~= false
+    -- a widget may handle concurrent contacts as independent taps
+    Input.allow_concurrent_taps = widget.allow_concurrent_taps == true
     -- a widget may override tap interval (when it doesn't, nil restores the default)
     Input.tap_interval_override = widget.tap_interval_override
     -- If input was disabled, re-enable it while this widget is shown so we can actually interact with it.
@@ -225,6 +300,7 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     widget:handleEvent(Event:new("CloseWidget"))
     -- Make sure it's disabled by default and check if there are any widgets that want it disabled or enabled.
     Input.disable_double_tap = true
+    Input.allow_concurrent_taps = false
     local requested_disable_double_tap = nil
     local is_covered = false
     local start_idx = 1
@@ -265,8 +341,10 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
         Input.disable_double_tap = requested_disable_double_tap
     end
     if self._window_stack[1] then
-        -- set tap interval override to what the topmost widget specifies (when it doesn't, nil restores the default)
-        Input.tap_interval_override = self._window_stack[#self._window_stack].widget.tap_interval_override
+        local top_widget = self._window_stack[#self._window_stack].widget
+        -- set input overrides to what the topmost widget specifies
+        Input.allow_concurrent_taps = top_widget.allow_concurrent_taps == true
+        Input.tap_interval_override = top_widget.tap_interval_override
     end
     if dirty and not widget.invisible then
         -- schedule the remaining visible (i.e., uncovered) widgets to be painted

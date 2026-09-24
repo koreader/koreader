@@ -259,7 +259,6 @@ function ReaderKeySelection:addToMainMenu(menu_items)
             UIManager:show(double_spin_widget)
         end,
     }
-    table.insert(menu_items.long_press.sub_item_table, crosshairs_speed_item)
     local crosshairs_speedup_item = {
         text = _("Increase crosshairs speed on consecutive keystrokes"),
         checked_func = function()
@@ -272,7 +271,6 @@ function ReaderKeySelection:addToMainMenu(menu_items)
             G_reader_settings:flipNilOrTrue("highlight_non_touch_spedup")
         end,
     }
-    table.insert(menu_items.long_press.sub_item_table, crosshairs_speedup_item)
     local crosshairs_interval_item = {
         text_func = function()
             local highlight_non_touch_interval = G_reader_settings:readSetting("highlight_non_touch_interval") or 1
@@ -301,7 +299,6 @@ function ReaderKeySelection:addToMainMenu(menu_items)
             UIManager:show(spin_widget)
         end,
     }
-    table.insert(menu_items.long_press.sub_item_table, crosshairs_interval_item)
 
     local text_label = _("Text selection tools")
 
@@ -319,14 +316,36 @@ function ReaderKeySelection:addToMainMenu(menu_items)
         return true
     end
 
+    local dict_mode_item = {
+        text = _("Fast dictionary mode (single word selection)"),
+        help_text = _("When enabled, pressing 'Down' will trigger fast dictionary mode while 'Up' will call regular text selection mode.")
+            .. "\n\n" .. _("Fast dictionary mode skips multi-word selection and opens the dictionary immediately on any single word selection."),
+        checked_func = function()
+            return self:dictionaryModeActive() and self:directDictSearchActive()
+        end,
+        enabled_func = function()
+            return not self.view.highlight.disabled and self:directDictSearchActive()
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("highlight_non_touch_dict_mode")
+        end,
+        separator = true,
+    }
+
     if menu_items.long_press then
+        table.insert(menu_items.long_press.sub_item_table, crosshairs_speed_item)
+        table.insert(menu_items.long_press.sub_item_table, crosshairs_speedup_item)
+        table.insert(menu_items.long_press.sub_item_table, crosshairs_interval_item)
+        -- Dictionary on single word selection won't be alone
+        menu_items.long_press.sub_item_table[1].separator = false
         local long_press_action = ReaderHighlight.long_press_action
         -- long_press settings are under the taps_and_gestures menu, which is not available for non-touch devices
-        -- Clone long_press settings, and change its label, making it much more meaningful for non-touch device users.
+        -- Surface long_press settings, and change its label, making it much more meaningful for non-touch device users.
         menu_items.selection_text = {
             text = text_label,
             sub_item_table = {
                 menu_items.long_press.sub_item_table[1], -- Dictionary on single word selection
+                dict_mode_item,
                 {
                     text_func = function()
                         local multi_word = G_reader_settings:readSetting("default_highlight_action")
@@ -372,6 +391,11 @@ end
 
 function ReaderKeySelection:onStartOrMoveHighlightIndicator(args)
     if not self._current_indicator_pos then
+        -- If dict mode is enabled, 'Down' (dy=1) calls fast_dict_mode, 'Up' (dy=-1) is regular text selection.
+        if self:dictionaryModeActive() and self:directDictSearchActive() then
+            local _, dy = unpack(args)
+            self._fast_dict_mode = dy == 1
+        end
         self:startHighlightIndicator()
     else
         self:moveHighlightIndicator(args)
@@ -379,8 +403,23 @@ function ReaderKeySelection:onStartOrMoveHighlightIndicator(args)
     return true
 end
 
+function ReaderKeySelection:onCloseDocument()
+    -- The document (self.ui.document) is about to go away, shred all our evidence ;)
+    self:clearFlashHighlight()
+    self._previous_indicator_pos = nil
+    self:_resetIndicatorState()
+end
+
 function ReaderKeySelection:isActive()
     return self._current_indicator_pos ~= nil
+end
+
+function ReaderKeySelection:directDictSearchActive()
+    return G_reader_settings:nilOrFalse("highlight_action_on_single_word") or G_reader_settings:readSetting("default_highlight_action") == "dictionary"
+end
+
+function ReaderKeySelection:dictionaryModeActive()
+    return G_reader_settings:isTrue("highlight_non_touch_dict_mode")
 end
 
 function ReaderKeySelection:clearOverlay()
@@ -408,7 +447,6 @@ function ReaderKeySelection:startHighlightIndicator()
             rect.w = Size.item.height_default
             rect.h = rect.w
         end
-        self._current_indicator_pos = rect
 
         -- Compute padded saved region (match paintTo padding)
         local max_w = self.screen_w or Screen:getWidth()
@@ -418,11 +456,7 @@ function ReaderKeySelection:startHighlightIndicator()
         if not save_r then
             save_r = Geom:new{ x = math.floor(rect.x), y = math.floor(rect.y), w = rect.w, h = rect.h }
         end
-        self._indicator_overlay = IndicatorOverlay:new{
-            dimen = Geom:new{ x = save_r.x, y = save_r.y, w = save_r.w, h = save_r.h },
-            parent_ui = self.ui,
-        }
-        UIManager:show(self._indicator_overlay)
+        self:_beginIndicator(rect, save_r)
         if self.ui.paging then
             self._last_indicator_move_args = {dx = 0, dy = 0, distance = 0, time = time:now()}
             self._indicator_overlay.indicator_rect = rect
@@ -435,9 +469,9 @@ function ReaderKeySelection:startHighlightIndicator()
         local nearest_word = self:_getNearestWordFromScreenPoint(center_x, center_y)
         if nearest_word then
             self:_setIndicatorToWord(nearest_word)
-            -- Flash nearest_word in case the crosshairs if hard to find.
-            local coor = nearest_word.sbox
-            if self.ui.highlight:highlightWordAtCoordinates(coor.x + coor.w * 0.5, coor.y + coor.h * 0.5) then
+            -- Flash nearest_word in case the crosshairs are hard to find.
+            local anchor_x, anchor_y = self:_getWordAnchorCoordinates(nearest_word)
+            if self.ui.highlight:highlightWordAtCoordinates(anchor_x, anchor_y) then
                 self._flashing_nearest_word = true
                 UIManager:scheduleIn(G_defaults:readSetting("DELAY_CLEAR_HIGHLIGHT_S"), function()
                     self:clearFlashHighlight()
@@ -449,6 +483,35 @@ function ReaderKeySelection:startHighlightIndicator()
         return true
     end
     return false
+end
+
+function ReaderKeySelection:_beginIndicator(rect, save_r)
+    -- The only place _current_indicator_pos and _indicator_overlay are created together,
+    -- the same way _resetIndicatorState is the only place they're torn down together.
+    self._current_indicator_pos = rect
+    self._indicator_overlay = IndicatorOverlay:new{
+        dimen = Geom:new{ x = save_r.x, y = save_r.y, w = save_r.w, h = save_r.h },
+        parent_ui = self.ui,
+    }
+    UIManager:show(self._indicator_overlay)
+end
+
+-- Resets the fields that must never be allowed to outlive the word/position they were
+-- computed against. Shared by stopHighlightIndicator and onCloseDocument teardown.
+function ReaderKeySelection:_resetIndicatorState()
+    self._current_indicator_pos = nil
+    self._previous_indicator_word = nil
+    self._vertical_move_anchor_x = nil
+    self._last_move_was_vertical = false
+    self._start_indicator_highlight = false
+    self._edge_dx, self._edge_dy = nil, nil
+    self._last_move_was_quick_move = nil
+    self._fast_dict_mode = nil
+    if self._indicator_overlay then
+        self._indicator_overlay:freeSavedBB()
+        UIManager:close(self._indicator_overlay)
+        self._indicator_overlay = nil
+    end
 end
 
 function ReaderKeySelection:stopHighlightIndicator(need_clear_selection)
@@ -465,19 +528,7 @@ function ReaderKeySelection:stopHighlightIndicator(need_clear_selection)
     end
     local rect = self._current_indicator_pos
     self._previous_indicator_pos = rect
-    self._vertical_move_anchor_x = nil
-    self._last_move_was_vertical = false
-    self._start_indicator_highlight = false
-    self._current_indicator_pos = nil
-    self.view.highlight.indicator = nil
-    self._edge_dx, self._edge_dy = nil, nil
-    self._last_move_was_quick_move = nil
-    self._previous_indicator_word = nil
-    if self._indicator_overlay then
-        self._indicator_overlay:freeSavedBB()
-        UIManager:close(self._indicator_overlay)
-        self._indicator_overlay = nil
-    end
+    self:_resetIndicatorState()
     self._last_indicator_move_args = nil
     UIManager:setDirty(self.dialog, "ui", rect)
     if need_clear_selection then
@@ -495,7 +546,8 @@ function ReaderKeySelection:highlightPress(skip_tap_check)
         return true
     end
     -- Check if we're in select mode (or extending an existing highlight)
-    if self.ui.highlight.select_mode and self.ui.highlight.highlight_idx then
+    local in_select_mode = self.ui.highlight.select_mode and self.ui.highlight.highlight_idx
+    if in_select_mode or self._fast_dict_mode then
         self.ui.highlight:onHold(nil, self:_createHighlightGesture("hold"))
         self.ui.highlight:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
         self:stopHighlightIndicator()
@@ -535,6 +587,7 @@ end
 
 function ReaderKeySelection:moveHighlightIndicator(args)
     if not (self.view.visible_area and self._current_indicator_pos) then return false end
+    if not self.ui.document then return false end -- document was closed out from under a queued key event
     self:clearFlashHighlight() -- delay may not have cleared it yet
     local dx, dy, quick_move = unpack(args)
     if dx == self._edge_dx and dy == self._edge_dy and self._last_move_was_quick_move == quick_move then
@@ -782,12 +835,15 @@ function ReaderKeySelection:_setIndicatorToWord(word)
 end
 
 function ReaderKeySelection:_setIndicatorRect(rect)
-    local old_rect = self._current_indicator_pos
-    self._current_indicator_pos = rect
     if not self._indicator_overlay then
-        logger.warn("ReaderKeySelection: _setIndicatorRect: no overlay")
+        -- Should be unreachable: _current_indicator_pos and _indicator_overlay are only
+        -- ever created together (_beginIndicator) or torn down together (_resetIndicatorState).
+        -- Bail before mutating state if that invariant has somehow broken.
+        logger.warn("ReaderKeySelection: _setIndicatorRect called with no overlay - indicator state is out of sync.")
         return
     end
+    local old_rect = self._current_indicator_pos
+    self._current_indicator_pos = rect
     logger.dbg("ReaderKeySelection: _setIndicatorRect: dirtying overlay, rect=", rect)
     self._indicator_overlay.indicator_rect = rect
     local dirty = getIndicatorDirtyRect(old_rect, rect, self.screen_w, self.screen_h)
@@ -876,6 +932,7 @@ function ReaderKeySelection:_getNearestWordFromScreenPoint(screen_x, screen_y)
     local probe = { x = screen_x, y = screen_y }
     local pos = self.view:screenToPageTransform(probe)
     local doc = self.ui.document
+    if not doc then return nil end -- document was closed out from under a queued key event
 
     local origin_word = doc:getWordFromPosition(pos, true)
     if origin_word and origin_word.sbox then
@@ -919,6 +976,7 @@ end
 
 function ReaderKeySelection:_getQuickVerticalWordRolling(anchor_x, target_y, dy, exclude_word, current_anchor_y)
     local doc = self.ui.document
+    if not doc then return nil end -- document was closed out from under a queued key event
     -- Prevent wrapping off the current page.
     local safe_y = math_max(self.view.visible_area.y, math_min(target_y, self.view.visible_area.y + self.view.visible_area.h))
 
@@ -973,6 +1031,7 @@ function ReaderKeySelection:_getAdjacentWordRolling(word, direction, lock_line_c
         end
     end
     local doc = self.ui.document
+    if not doc then return nil end -- document was closed out from under a queued key event
     -- Map physical direction to logical XPointer direction
     local logical_dir = self.mirroredUI and -direction or direction
 
@@ -1048,6 +1107,7 @@ function ReaderKeySelection:_getAdjacentLineWordRolling(word, direction, preferr
     if not (word and word.pos0 and word.sbox) then return end
 
     local doc = self.ui.document
+    if not doc then return nil end -- document was closed out from under a queued key event
     local target_x = preferred_center_x or (word.sbox.x + word.sbox.w * 0.5)
 
     -- Align to the physical top of the line to prevent offset drift

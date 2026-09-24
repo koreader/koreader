@@ -863,6 +863,7 @@ FileManager.onRefreshContent = FileManager.onRefresh
 FileManager.onBookMetadataChanged = FileManager.onRefresh
 
 function FileManager:onHome()
+    UIManager:setSuspendRepaints(false)
     if not self.file_chooser:goHome() then
         self:setHome()
     end
@@ -1409,19 +1410,19 @@ function FileManager:onShowFolderMenu()
                     local attributes = lfs.attributes(curr_path .. "/" .. f)
                     if attributes and attributes.mode == "directory" and f ~= "." and f ~= ".."
                             and self.file_chooser:show_dir(f) then
-                        table.insert(subfolders, f)
+                        table.insert(subfolders, { text = f })
                     end
                 end
             end
         end
         if #subfolders > 0 then
             if #subfolders > 1 then
-                table.sort(subfolders, function(a, b) return ffiUtil.strcoll(a, b) end)
+                table.sort(subfolders, BookList.getCollateSortFunc())
             end
             table.insert(buttons, {}) -- separator
             local prefix = (" "):rep(indent + 1) .. "└ "
             for _, f in ipairs(subfolders) do
-                table.insert(buttons, genButton(prefix .. f, curr_path .. "/" .. f))
+                table.insert(buttons, genButton(prefix .. f.text, curr_path .. "/" .. f.text))
             end
         end
     end
@@ -1445,13 +1446,14 @@ function FileManager:showSelectedFilesList()
             bidi_wrap_func = BD.filepath,
         })
     end
+    local sort_func = BookList.getCollateSortFunc()
     local function sorting(a, b)
         local a_path, a_name = util.splitFilePathName(a.text)
         local b_path, b_name = util.splitFilePathName(b.text)
         if a_path == b_path then
-            return ffiUtil.strcoll(a_name, b_name)
+            return sort_func({ text = a_name }, { text = b_name })
         end
-        return ffiUtil.strcoll(a_path, b_path)
+        return sort_func({ text = a_path }, { text = b_path })
     end
     table.sort(selected_files, sorting)
 
@@ -1703,6 +1705,16 @@ function FileManager:onSetFlatView(toggle)
     FileChooser.show_flat_view = toggle
     G_reader_settings:saveSetting("show_flat_view", toggle)
     self.file_chooser:refreshPath()
+    return true
+end
+
+function FileManager:onOpenLastDoc()
+    local last_file = G_reader_settings:readSetting("lastfile")
+    if last_file and lfs.attributes(last_file, "mode") == "file" then
+        self:openFile(last_file)
+    else
+        UIManager:show(InfoMessage:new{ text = _("Cannot open previous document") })
+    end
     return true
 end
 

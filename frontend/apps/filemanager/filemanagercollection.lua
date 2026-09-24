@@ -205,7 +205,68 @@ function FileManagerCollection:onMenuSelect(item)
         self._manager.selected_files[item.file] = item.dim
         self:updateItems(1, true)
     else
-        filemanagerutil.openFile(self.ui, item.file, self.close_callback)
+        local coll_settings = ReadCollection.coll_settings[self.path]
+        local pos = coll_settings and coll_settings.find_results and coll_settings.find_results[item.file]
+        if pos then -- 'search results' collection
+            local search_str = coll_settings.find_results[1]
+            local open_file_dialog
+            open_file_dialog = ButtonDialog:new{
+                title = BD.filename(item.text),
+                title_align = "center",
+                buttons = {
+                    {{
+                        text = _("Open"),
+                        callback = function()
+                            UIManager:close(open_file_dialog)
+                            filemanagerutil.openFile(self.ui, item.file, self.close_callback)
+                        end,
+                    }},
+                    {{
+                        text = _("Open at first search result"),
+                        callback = function()
+                            UIManager:close(open_file_dialog)
+                            local after_open_callback = function(ui)
+                                ui.link:addCurrentLocationToStack()
+                                ui.search.last_search_text = search_str
+                                if ui.rolling and type(pos) == "string" then
+                                    ui.rolling:onGotoXPointer(pos, pos)
+                                elseif ui.paging and type(pos) == "number" then
+                                    ui.paging:onGotoPage(pos)
+                                end
+                            end
+                            filemanagerutil.openFile(self.ui, item.file, self.close_callback, true, after_open_callback)
+                        end,
+                    }},
+                    {{
+                        text = _("Open and search forward"),
+                        callback = function()
+                            UIManager:close(open_file_dialog)
+                            local after_open_callback = function(ui)
+                                UIManager:nextTick(function()
+                                    ui.search:searchCallback(0, search_str)
+                                end)
+                            end
+                            filemanagerutil.openFile(self.ui, item.file, self.close_callback, true, after_open_callback)
+                        end,
+                    }},
+                    {{
+                        text = _("Open and search all results"),
+                        callback = function()
+                            UIManager:close(open_file_dialog)
+                            local after_open_callback = function(ui)
+                                UIManager:nextTick(function()
+                                    ui.search:searchCallback(nil, search_str)
+                                end)
+                            end
+                            filemanagerutil.openFile(self.ui, item.file, self.close_callback, true, after_open_callback)
+                        end,
+                    }},
+                },
+            }
+            UIManager:show(open_file_dialog)
+        else -- usual collection
+            filemanagerutil.openFile(self.ui, item.file, self.close_callback)
+        end
     end
 end
 
@@ -683,7 +744,7 @@ function FileManagerCollection:showPropValueList(prop)
         })
     end
     if #prop_item_table > 1 then
-        table.sort(prop_item_table, function(a, b) return ffiUtil.strcoll(a.text, b.text) end)
+        table.sort(prop_item_table, BookList.getCollateSortFunc())
     end
     prop_menu = Menu:new{
         title = T("%1 (%2)", self.ui.bookinfo.prop_text[prop]:gsub(":", ""), #prop_item_table),
@@ -1183,7 +1244,7 @@ function FileManagerCollection:updateCollFolderListItemTable()
             })
         end
         if #item_table > 1 then
-            table.sort(item_table, function(a, b) return ffiUtil.strcoll(a.text, b.text) end)
+            table.sort(item_table, BookList.getCollateSortFunc())
         end
     end
     local subtitle = T(_("Connected folders: %1"), #item_table)
@@ -1555,8 +1616,8 @@ function FileManagerCollection:searchCollections(coll_name)
                     found = document:findText(self.search_str, 0, 0, not self.case_sensitive, 1, false, 1)
                 end
                 document:close()
-                if found then
-                    return true
+                if type(found) == "table" then
+                    return found.page or found[1]["start"]
                 end
             end
         end
@@ -1582,6 +1643,7 @@ function FileManagerCollection:searchCollections(coll_name)
                     if order_idx == nil then -- new
                         table.insert(_files_found_order, {
                             file = file,
+                            pos = match_cache[file],
                             coll_order = coll_order,
                             item_order = item.order,
                         })
@@ -1605,6 +1667,7 @@ function FileManagerCollection:searchCollections(coll_name)
             text = T(_("No results for: %1"), self.search_str),
         })
     else
+        local sort_func = BookList.getCollateSortFunc()
         table.sort(files_found_order, function(a, b)
             if a.coll_order ~= b.coll_order then
                 return a.coll_order < b.coll_order
@@ -1612,7 +1675,7 @@ function FileManagerCollection:searchCollections(coll_name)
             if a.item_order and b.item_order then
                 return a.item_order < b.item_order
             end
-            return ffiUtil.strcoll(a.text, b.text)
+            return sort_func(a, b)
         end)
         local new_coll_name = T(_("Search results: %1"), self.search_str)
         if coll_name then
@@ -1624,6 +1687,13 @@ function FileManagerCollection:searchCollections(coll_name)
         ReadCollection:addCollection(new_coll_name)
         ReadCollection:addItemsMultiple(files_found, { [new_coll_name] = true })
         ReadCollection:updateCollectionOrder(new_coll_name, files_found_order)
+        local coll_settings = ReadCollection.coll_settings[new_coll_name]
+        coll_settings.find_results = { self.search_str }
+        for _, v in ipairs(files_found_order) do
+            if type(v.pos) ~= "boolean" then -- found in book content
+                coll_settings.find_results[v.file] = v.pos
+            end
+        end
         if self.coll_list ~= nil then
             UIManager:close(self.coll_list)
             self.coll_list = nil

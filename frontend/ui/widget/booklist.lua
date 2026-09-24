@@ -15,6 +15,8 @@ local BookList = Menu:extend{
     book_info_cache = {}, -- cache in the base class
 }
 
+BookList.strcoll = ffiUtil.strcoll
+
 BookList.collates = {
     strcoll = {
         text = _("name"),
@@ -22,7 +24,7 @@ BookList.collates = {
         can_collate_mixed = true,
         init_sort_func = function()
             return function(a, b)
-                return ffiUtil.strcoll(a.text, b.text)
+                return BookList.strcoll(a.text, b.text)
             end
         end,
     },
@@ -79,9 +81,9 @@ BookList.collates = {
         init_sort_func = function()
             return function(a, b)
                 if (a.suffix or b.suffix) and a.suffix ~= b.suffix then
-                    return ffiUtil.strcoll(a.suffix, b.suffix)
+                    return BookList.strcoll(a.suffix, b.suffix)
                 end
-                return ffiUtil.strcoll(a.text, b.text)
+                return BookList.strcoll(a.text, b.text)
             end
         end,
         item_func = function(item)
@@ -97,7 +99,7 @@ BookList.collates = {
                     if a.opened then
                         return a.percent_finished < b.percent_finished
                     end
-                    return ffiUtil.strcoll(a.text, b.text)
+                    return BookList.strcoll(a.text, b.text)
                 end
                 return b.opened
             end
@@ -121,7 +123,7 @@ BookList.collates = {
                     if a.opened then
                         return a.percent_finished < b.percent_finished
                     end
-                    return ffiUtil.strcoll(a.text, b.text)
+                    return BookList.strcoll(a.text, b.text)
                 end
                 return a.opened
             end
@@ -186,7 +188,7 @@ BookList.collates = {
         end,
         init_sort_func = function()
             return function(a, b)
-                return ffiUtil.strcoll(a.doc_props.display_title, b.doc_props.display_title)
+                return BookList.strcoll(a.doc_props.display_title, b.doc_props.display_title)
             end
         end,
     },
@@ -201,9 +203,9 @@ BookList.collates = {
         init_sort_func = function()
             return function(a, b)
                 if a.doc_props.authors ~= b.doc_props.authors then
-                    return ffiUtil.strcoll(a.doc_props.authors, b.doc_props.authors)
+                    return BookList.strcoll(a.doc_props.authors, b.doc_props.authors)
                 end
-                return ffiUtil.strcoll(a.doc_props.display_title, b.doc_props.display_title)
+                return BookList.strcoll(a.doc_props.display_title, b.doc_props.display_title)
             end
         end,
     },
@@ -219,12 +221,12 @@ BookList.collates = {
         init_sort_func = function()
             return function(a, b)
                 if a.doc_props.series ~= b.doc_props.series then
-                    return ffiUtil.strcoll(a.doc_props.series, b.doc_props.series)
+                    return BookList.strcoll(a.doc_props.series, b.doc_props.series)
                 end
                 if a.doc_props.series_index and b.doc_props.series_index then
                     return a.doc_props.series_index < b.doc_props.series_index
                 end
-                return ffiUtil.strcoll(a.doc_props.display_title, b.doc_props.display_title)
+                return BookList.strcoll(a.doc_props.display_title, b.doc_props.display_title)
             end
         end,
     },
@@ -239,9 +241,9 @@ BookList.collates = {
         init_sort_func = function()
             return function(a, b)
                 if a.doc_props.keywords ~= b.doc_props.keywords then
-                    return ffiUtil.strcoll(a.doc_props.keywords, b.doc_props.keywords)
+                    return BookList.strcoll(a.doc_props.keywords, b.doc_props.keywords)
                 end
-                return ffiUtil.strcoll(a.doc_props.display_title, b.doc_props.display_title)
+                return BookList.strcoll(a.doc_props.display_title, b.doc_props.display_title)
             end
         end,
     },
@@ -258,7 +260,7 @@ BookList.collates = {
                 if a.rating ~= b.rating then
                     return a.rating > b.rating
                 end
-                return ffiUtil.strcoll(a.doc_props.display_title, b.doc_props.display_title)
+                return BookList.strcoll(a.doc_props.display_title, b.doc_props.display_title)
             end
         end,
         mandatory_func = function(item)
@@ -266,6 +268,10 @@ BookList.collates = {
         end,
     },
 }
+
+function BookList.getCollateSortFunc(collate)
+    return BookList.collates[collate or "strcoll"].init_sort_func()
+end
 
 function BookList:init()
     self.title_bar_fm_style = not self.custom_title_bar

@@ -338,9 +338,25 @@ local pdf_query_sample = [[
 </feed>
 ]]
 
+local pdf_acquisition_sample = [[
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/terms/" xmlns:os="http://a9.com/-/spec/opensearch/1.1/" xmlns:opds="http://opds-spec.org/2010/catalog">
+    <id>tag:root:pdfacquisition</id>
+    <title>PDF Acquisition Test</title>
+    <updated>2025-09-11T00:00:00Z</updated>
+    <entry>
+        <title>Sample PDF Without Suffix</title>
+        <id>urn:pdf:no:suffix</id>
+        <updated>2025-09-11T00:00:00Z</updated>
+        <content type="text">A PDF whose download link carries no .pdf suffix.</content>
+        <link href="/get/PDF/123/library" type="application/pdf" rel="http://opds-spec.org/acquisition" />
+    </entry>
+</feed>
+]]
+
 describe("OPDS module", function()
     local socketutil
-    local OPDSParser, OPDSBrowser
+    local CookieJar, OPDSClient, OPDSParser, OPDSBrowser
     local orig_path, orig_lbt, orig_ltt, orig_fbt, orig_ftt
 
     setup(function()
@@ -348,6 +364,8 @@ describe("OPDS module", function()
         package.path = "plugins/opds.koplugin/?.lua;" .. package.path
         require("commonrequire")
         socketutil = require("socketutil")
+        CookieJar = require("cookiejar")
+        OPDSClient = require("opdsclient")
         OPDSParser = require("opdsparser")
         OPDSBrowser = require("opdsbrowser")
 
@@ -554,6 +572,365 @@ describe("OPDS module", function()
             assert(href:match("file%.pdf%?opds$"))
             -- And must NOT have an extra .pdf appended after the query string.
             assert(not href:match("opds%.pdf$"))
+        end)
+
+        it("should not duplicate a PDF acquisition whose href has no .pdf suffix #internet", function()
+            local catalog = OPDSParser:parse(pdf_acquisition_sample)
+            local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "http://example.org/opds")
+
+            assert.truthy(item_table)
+            assert.are.same(1, #item_table)
+            local acquisitions = item_table[1].acquisitions
+            assert.truthy(acquisitions)
+            -- The acquisition link is added once, by the rel handling above.
+            assert.are.same(1, #acquisitions)
+            assert.are.same("http://example.org/get/PDF/123/library", acquisitions[1].href)
+        end)
+
+        it("should retain response cookies only for matching URLs", function()
+            local cookie_jar = CookieJar:new()
+            cookie_jar:store("https://flibusta.is/opds", {
+                ["set-cookie"] = "session=abc; Path=/; Secure",
+            })
+            cookie_jar:store("https://flibusta.is/opds", {
+                ["set-cookie"] = "shared=def; Domain=.flibusta.is; Path=/b",
+            })
+
+            assert.are.same("session=abc", cookie_jar:headerFor("https://flibusta.is/opds/polka"))
+            assert.are.same("shared=def; session=abc", cookie_jar:headerFor("https://flibusta.is/b/619104/fb2"))
+            assert.are.same("shared=def", cookie_jar:headerFor("https://static.flibusta.is/b/619104/fb2"))
+            assert.are.same("shared=def", cookie_jar:headerFor("http://flibusta.is/b/619104/fb2"))
+        end)
+
+        it("should split combined response cookies without splitting quoted values or expiry dates", function()
+            local cookie_jar = CookieJar:new()
+            cookie_jar:store("https://example.test/catalog", {
+                ["set-cookie"] = 'quoted="a,b"; Path=/, session=abc; Expires=Wed, 21 Oct 2030 07:28:00 GMT; Path=/',
+            })
+
+            assert.are.same(2, #cookie_jar.cookies)
+            assert.are.same('"a,b"', cookie_jar.cookies[1].value)
+            assert.are.same("abc", cookie_jar.cookies[2].value)
+        end)
+
+        it("should retain shared-domain cookies but not credentials across redirects", function()
+            local http = require("socket.http")
+            local requests = {}
+            local responses = {
+                { 302, { location = "https://static.example.test/book", ["set-cookie"] = "session=abc; Domain=.example.test; Path=/" } },
+                { 200, {} },
+            }
+            local request_stub = stub(http, "request", function(request)
+                table.insert(requests, request)
+                local response = table.remove(responses, 1)
+                request.response_headers(response[1], response[2])
+                return 1, response[1], response[2], "HTTP " .. response[1]
+            end)
+            finally(function() request_stub:revert() end)
+
+            local client = OPDSClient:new{
+                cookie_jar = CookieJar:new(),
+            }
+            local code = client:request{
+                url = "https://example.test/catalog",
+                headers = { ["Accept-Encoding"] = "identity" },
+                username = "reader",
+                password = "secret",
+            }
+
+            assert.are.same(200, code)
+            assert.are.same("reader", requests[1].user)
+            assert.are.same("secret", requests[1].password)
+            assert.is_nil(requests[2].user)
+            assert.is_nil(requests[2].password)
+            assert.are.same("session=abc", requests[2].headers.Cookie)
+        end)
+
+        it("should add the file extension to a server filename that lacks a usable one #internet", function()
+            local orig_fetchFeed = OPDSBrowser.fetchFeed
+            OPDSBrowser.fetchFeed = function() return nil end -- no headers: fall back to the URL
+            finally(function() OPDSBrowser.fetchFeed = orig_fetchFeed end)
+
+            -- No suffix at all.
+            assert.are.same("library.pdf",
+                OPDSBrowser:getServerFileName("http://example.org/get/PDF/123/library", "pdf"))
+            -- A dotted tail that is not a known extension is not a suffix either.
+            assert.are.same("2509.07924v1.pdf",
+                OPDSBrowser:getServerFileName("http://arxiv.org/pdf/2509.07924v1", "pdf"))
+            -- An existing, usable extension is left alone.
+            assert.are.same("file.pdf",
+                OPDSBrowser:getServerFileName("http://example.org/books/file.pdf?opds", "pdf"))
+        end)
+
+        describe("sync settings", function()
+            it("should resolve sync paths for each catalog without a global folder", function()
+                local browser = OPDSBrowser:extend{
+                    settings = {},
+                    sync = true,
+                    sync_server = { sync_dir = "/comics" },
+                }
+                assert.are.same("/comics", browser:getCurrentDownloadDir())
+                browser.sync_server = { sync_dir = "/ebooks" }
+                assert.are.same("/ebooks", browser:getCurrentDownloadDir())
+                browser.sync_server = {}
+                assert.is_nil(browser:getCurrentDownloadDir())
+                browser.settings.sync_dir = "/default"
+                assert.are.same("/default", browser:getCurrentDownloadDir())
+            end)
+
+            describe("dialogs", function()
+                local UIManager, browser, shown
+
+                before_each(function()
+                    UIManager = require("ui/uimanager")
+                    local ButtonDialog = require("ui/widget/buttondialog")
+                    stub(ButtonDialog, "new", function(_, options) return options end)
+                    stub(UIManager, "show", function(_, dialog) shown = dialog end)
+                    stub(UIManager, "close")
+                    browser = OPDSBrowser:extend{
+                        paths = {},
+                        settings = { sync_dir = "/default" },
+                        servers = {{ title = "Catalog", url = "http://example.org/opds" }},
+                        _manager = {},
+                    }
+                end)
+
+                after_each(function()
+                    require("ui/widget/buttondialog").new:revert()
+                    UIManager.show:revert()
+                    UIManager.close:revert()
+                end)
+
+                it("should put sync settings first without a following separator", function()
+                    browser:onMenuHold{ idx = 2, text = "Catalog" }
+                    assert.are.same("Sync settings", shown.buttons[1][1].text)
+                    assert.are.same("Force sync", shown.buttons[2][1].text)
+                    shown.buttons[1][1].callback()
+                    assert.are.same("Choose catalog sync folder", shown.buttons[1][1].text)
+                end)
+
+                it("should explain fallback and offer only the two folder actions", function()
+                    browser:showSyncSettingsDialog{ idx = 2 }
+                    assert.truthy(shown.title:find("default sync folder", 1, true))
+                    assert.are.same(2, #shown.buttons)
+                    assert.are.same("Choose catalog sync folder", shown.buttons[1][1].text)
+                    assert.are.same("Use default sync folder", shown.buttons[2][1].text)
+                    assert.is_false(shown.buttons[2][1].enabled)
+                end)
+
+                it("should clear only the catalog folder and refresh the dialog", function()
+                    local server = browser.servers[1]
+                    server.sync_dir = "/catalog"
+                    server.last_download = "latest"
+                    browser:showSyncSettingsDialog{ idx = 2 }
+                    assert.is_true(shown.buttons[2][1].enabled)
+                    shown.buttons[2][1].callback()
+                    assert.is_nil(server.sync_dir)
+                    assert.are.same("/default", browser.settings.sync_dir)
+                    assert.are.same("latest", server.last_download)
+                    assert.is_true(browser._manager.updated)
+                    assert.is_false(shown.buttons[2][1].enabled)
+                end)
+
+                it("should choose and persist a catalog folder without changing the default", function()
+                    local DownloadMgr = require("ui/downloadmgr")
+                    local Device = require("device")
+                    local picker, initial_dir
+                    stub(DownloadMgr, "new", function(_, options)
+                        picker = options
+                        options.chooseDir = function(_, path) initial_dir = path end
+                        return options
+                    end)
+                    stub(Device, "isAndroid", function() return false end)
+                    finally(function()
+                        DownloadMgr.new:revert()
+                        Device.isAndroid:revert()
+                    end)
+                    browser:showSyncSettingsDialog{ idx = 2 }
+                    shown.buttons[1][1].callback()
+                    assert.are.same("/default", initial_dir)
+                    picker.onConfirm("/catalog")
+                    assert.are.same("/catalog", browser.servers[1].sync_dir)
+                    assert.are.same("/default", browser.settings.sync_dir)
+                    assert.is_true(browser._manager.updated)
+                    assert.is_true(shown.buttons[2][1].enabled)
+                end)
+            end)
+
+            describe("sync selection", function()
+                local UIManager, browser, collected, downloaded, messages
+
+                before_each(function()
+                    UIManager = require("ui/uimanager")
+                    stub(require("ui/widget/infomessage"), "new", function(_, options) return options end)
+                    stub(UIManager, "show", function(_, dialog) table.insert(messages, dialog.text) end)
+                    stub(UIManager, "close")
+                    stub(UIManager, "forceRePaint")
+                    stub(require("ui/trapper"), "wrap", function(_, callback) callback() end)
+                    collected, messages = {}, {}
+                    downloaded = false
+                    browser = OPDSBrowser:extend{
+                        settings = {},
+                        servers = {
+                            { url = "comics", sync = true, sync_dir = "/comics" },
+                            { url = "ebooks", sync = true, sync_dir = "/ebooks" },
+                            { url = "disabled", sync_dir = "/disabled" },
+                            { url = "no-folder", sync = true },
+                        },
+                        pending_syncs = {},
+                        fillPendingSyncs = function(self, server)
+                            table.insert(collected, server.url)
+                            self.sync_server_list[server.url] = true
+                        end,
+                        downloadPendingSyncs = function() downloaded = true end,
+                    }
+                end)
+
+                after_each(function()
+                    require("ui/widget/infomessage").new:revert()
+                    require("ui/trapper").wrap:revert()
+                    UIManager.show:revert()
+                    UIManager.close:revert()
+                    UIManager.forceRePaint:revert()
+                end)
+
+                it("should sync enabled catalogs with their own folders without a global folder", function()
+                    browser:checkSyncDownload()
+                    assert.are.same({ "comics", "ebooks" }, collected)
+                    assert.is_false(browser.sync)
+                    assert.is_false(downloaded)
+                end)
+
+                it("should include catalogs using the global fallback", function()
+                    browser.settings.sync_dir = "/default"
+                    browser:checkSyncDownload()
+                    assert.are.same({ "comics", "ebooks", "no-folder" }, collected)
+                end)
+
+                it("should allow explicit sync of a catalog excluded from automatic sync", function()
+                    browser:checkSyncDownload(4)
+                    assert.are.same({ "disabled" }, collected)
+                end)
+
+                it("should ignore pending downloads from a previous catalog selection", function()
+                    browser.sync_server_list = { ebooks = true }
+                    browser.pending_syncs = {{ catalog = "ebooks" }}
+                    browser:checkSyncDownload(2)
+                    assert.is_false(downloaded)
+                    assert.is_nil(browser.sync_server_list.ebooks)
+                    browser.pending_syncs = {{ catalog = "comics" }}
+                    browser:checkSyncDownload(2)
+                    assert.is_true(downloaded)
+                end)
+
+                it("should request a folder when the selected catalog has no destination", function()
+                    browser:checkSyncDownload(5)
+                    assert.are.same({}, collected)
+                    assert.are.same("Please choose a folder for this catalog's sync downloads first", messages[1])
+                    assert.is_false(downloaded)
+                end)
+
+                it("should leave sync mode after feed collection fails", function()
+                    browser.fillPendingSyncs = function() error("feed failed") end
+                    local ok, err = pcall(function() browser:checkSyncDownload(2) end)
+                    assert.is_false(ok)
+                    assert.truthy(err:find("feed failed", 1, true))
+                    assert.is_false(browser.sync)
+                    assert.is_false(downloaded)
+                end)
+            end)
+
+            it("should prefer a catalog sync folder and fall back to the default sync folder", function()
+                local browser = OPDSBrowser:extend{
+                    settings = {
+                        sync_dir = "/default",
+                    },
+                }
+
+                assert.are.same("/catalog", browser:getSyncDir{
+                    sync_dir = "/catalog",
+                })
+                assert.are.same("/default", browser:getSyncDir{})
+            end)
+
+            it("should preserve sync metadata when editing a catalog", function()
+                local browser = OPDSBrowser:extend{
+                    servers = {
+                        {
+                            title = "Old catalog",
+                            url = "http://example.org/opds",
+                            sync_dir = "/catalog",
+                            last_download = "http://example.org/book.epub",
+                        },
+                    },
+                    item_table = {
+                        {},
+                        {},
+                    },
+                    _manager = {},
+                }
+
+                browser:editCatalogFromInput({
+                    "New catalog",
+                    "http://example.org/opds",
+                    "",
+                    "",
+                    nil,
+                    true,
+                }, { idx = 2 }, true)
+
+                assert.are.same("/catalog", browser.servers[1].sync_dir)
+                assert.are.same("http://example.org/book.epub", browser.servers[1].last_download)
+            end)
+
+            it("should reset last download when editing a catalog URL", function()
+                local browser = OPDSBrowser:extend{
+                    servers = {
+                        {
+                            title = "Old catalog",
+                            url = "http://example.org/opds",
+                            sync_dir = "/catalog",
+                            last_download = "http://example.org/book.epub",
+                        },
+                    },
+                    item_table = {
+                        {},
+                        {},
+                    },
+                    _manager = {},
+                }
+
+                browser:editCatalogFromInput({
+                    "New catalog",
+                    "http://example.com/opds",
+                    "",
+                    "",
+                    nil,
+                    true,
+                }, { idx = 2 }, true)
+
+                assert.are.same("/catalog", browser.servers[1].sync_dir)
+                assert.is_nil(browser.servers[1].last_download)
+            end)
+
+            it("should keep sync folders on servers without copying them to root items", function()
+                local browser = OPDSBrowser:extend{
+                    servers = {
+                        {
+                            title = "Catalog",
+                            url = "http://example.org/opds",
+                            sync_dir = "/catalog",
+                        },
+                    },
+                    downloads = {},
+                }
+
+                local items = browser:genItemTableFromRoot()
+
+                assert.is_nil(items[2].sync_dir)
+                assert.are.same("/catalog", browser.servers[1].sync_dir)
+                assert.are.same("/catalog", browser:getSyncDir(browser.servers[1]))
+            end)
         end)
     end)
 end)

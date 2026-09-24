@@ -233,6 +233,15 @@ function ReadCollection:removeItemsByPath(path) -- FM: delete folder
                 do_write = true
             end
         end
+        local folders = self.coll_settings[coll_name].folders
+        if folders then
+            for folder in pairs(folders) do
+                if util.stringStartsWith(folder, path) then
+                    util.tableRemoveValue(self.coll_settings[coll_name], "folders", folder)
+                    do_write = true
+                end
+            end
+        end
     end
     if do_write then
         self:write()
@@ -289,6 +298,19 @@ function ReadCollection:updateItemsByPath(path, new_path) -- FM: rename folder, 
                 local new_file_name = self:_updateItem(coll_name, file_name, new_path .. file_name:sub(len + 1))
                 seen[new_file_name] = true
                 do_write = true
+            end
+        end
+        local folders = self.coll_settings[coll_name].folders
+        if folders then
+            local seen_folders = {}
+            for folder, folder_settings in pairs(folders) do
+                if not seen_folders[folder] and folder:sub(1, len) == path then
+                    local new_folder = new_path .. folder:sub(len + 1)
+                    folders[new_folder] = folder_settings
+                    seen_folders[new_folder] = true
+                    folders[folder] = nil
+                    do_write = true
+                end
             end
         end
     end

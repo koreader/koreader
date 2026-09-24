@@ -70,6 +70,7 @@ function ButtonTable:init()
                 no_refresh_checkmark = btn_entry.no_refresh_checkmark,
                 lang = btn_entry.lang,
                 icon = btn_entry.icon,
+                alpha = btn_entry.alpha,
                 icon_width = btn_entry.icon_width,
                 icon_height = btn_entry.icon_height,
                 align = btn_entry.align,
@@ -82,6 +83,8 @@ function ButtonTable:init()
                     btn_entry.callback()
                 end,
                 hold_callback = btn_entry.hold_callback,
+                key_bindings = btn_entry.key_bindings,
+                hold_key_bindings = btn_entry.hold_key_bindings,
                 allow_hold_when_disabled = btn_entry.allow_hold_when_disabled,
                 vsync = btn_entry.vsync,
                 width = btn_entry.width or default_button_width,

@@ -109,6 +109,8 @@ local Input = {
     event_map = nil, -- hash
     -- adapters are post processing functions that transform a given event to another event
     event_map_adapter = nil, -- hash
+    -- Optional physical-keyboard resolver. Printable presses emit TextInput when set.
+    hw_text_layout = nil,
     -- EV_ABS event to honor for pressure event (if any)
     pressure_event = nil,
 
@@ -141,7 +143,7 @@ local Input = {
             "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
             "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
             "Up", "Down", "Left", "Right", "Press", "Backspace", "End",
-            "Back", "Sym", "AA", "Menu", "Home", "Del", "ScreenKB",
+            "Back", "Sym", "AA", "Menu", "KeyHome", "Del", "ScreenKB",
             "LPgBack", "RPgBack", "LPgFwd", "RPgFwd"
         },
     },
@@ -161,16 +163,21 @@ local Input = {
 
     -- This might be modified at runtime, so we don't want any inheritance
     rotation_map = nil, -- hash
+    -- Input-device fds that must not follow screen rotation (e.g., external keyboards).
+    rotation_ignored_fds = {},
 
     timer_callbacks = nil, -- instance-specific table, because the object may get destroyed & recreated at runtime
     disable_double_tap = true,
+    allow_concurrent_taps = false,
     tap_interval_override = nil,
 
     -- keyboard state:
     modifiers = {
         Alt = false,
+        AltGr = false,
         Ctrl = false,
         Shift = false,
+        Super = false, -- Windows key, or "Command" key on Mac
         Sym = false,
         Meta = false,
         ScreenKB = false,
@@ -810,7 +817,7 @@ function Input:handleKeyBoardEv(ev)
 
     -- take device rotation into account
     local rota = self.device.screen:getRotationMode()
-    if self.rotation_map[rota][keycode] then
+    if not self.rotation_ignored_fds[ev.fd] and self.rotation_map[rota][keycode] then
         keycode = self.rotation_map[rota][keycode]
     end
 
@@ -898,6 +905,14 @@ function Input:handleKeyBoardEv(ev)
     end
 
     local key = Key:new(keycode, self.modifiers)
+
+    -- Emit composed physical-keyboard text on press; retain KeyPress for shortcuts.
+    if self.hw_text_layout and ev.value == KEY_PRESS then
+        local ch = self.hw_text_layout(keycode, self.modifiers)
+        if ch then
+            UIManager:sendEvent(Event:new("TextInput", ch))
+        end
+    end
 
     if ev.value == KEY_PRESS then
         return Event:new("KeyPress", key)
