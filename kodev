@@ -135,7 +135,7 @@ TARGET:
     android-arm64
     android-x86
     android-x86_64
-    bookeen                   Compatible with Bookeen Cybook Muse/Ocean (Allwinner A13)
+    bookeen
     cervantes
     emulator                  Default if no TARGET is given
     kindle                    Compatible with all Kindle models >= Kindle4
