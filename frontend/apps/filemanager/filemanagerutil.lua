@@ -4,7 +4,6 @@ This module contains miscellaneous helper functions for FileManager
 
 local BD = require("ui/bidi")
 local BookList = require("ui/widget/booklist")
-local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -441,6 +440,7 @@ function filemanagerutil.showChooseDialog(title_header, caller_callback, current
 end
 
 function filemanagerutil.showSearchResultsOpenFileDialog(ui, text, file, search_str, found_pos, caller_pre_callback)
+    local ButtonDialog = require("ui/widget/buttondialog")
     local open_file_dialog
     local function doOpen(after_open_callback)
         UIManager:close(open_file_dialog)
