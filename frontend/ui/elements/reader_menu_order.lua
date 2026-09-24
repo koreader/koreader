@@ -23,6 +23,7 @@ local order = {
         "page_browser", -- if Device:isTouchDevice() or useDPadAsActionKeys()
         "----------------------------",
         "go_to",
+        "go_to_furthest_read",
         "skim_to",
         "autoturn",
         "----------------------------",

@@ -37,6 +37,28 @@ describe("Readerpaging module", function()
             assert.is.truthy(called)
             readerui.onEndOfBook = nil
         end)
+
+        it("should update furthest_page only when advancing", function()
+            paging.furthest_page = nil
+            paging.ui.doc_settings:delSetting("furthest_page")
+            paging:onGotoPage(1)
+            paging:onSaveSettings()
+
+            -- go forward
+            paging:onGotoPage(4)
+            paging:onSaveSettings()
+            assert.are.same(4, paging.ui.doc_settings:readSetting("furthest_page"))
+
+            -- go backward
+            paging:onGotoPage(2)
+            paging:onSaveSettings()
+            assert.are.same(4, paging.ui.doc_settings:readSetting("furthest_page"))
+
+            -- go forward again to a new furthest page
+            paging:onGotoPage(23)
+            paging:onSaveSettings()
+            assert.are.same(23, paging.ui.doc_settings:readSetting("furthest_page"))
+        end)
     end)
 
     describe("Scroll mode", function()
