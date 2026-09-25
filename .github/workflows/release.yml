@@ -1,0 +1,117 @@
+# This workflow is managed by gh actions-lock.
+
+name: Release
+
+permissions:
+  contents: read
+
+on:
+  push:
+    # NOTE: stable tags only.
+    tags:
+      - "v*"
+  schedule:
+    # Every day at 2:45 AM (UTC, default branch only).
+    - cron: '45 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.sha }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: stdbuf --error=L --output=L bash --noprofile --norc -eo pipefail {0}
+
+env:
+  GH_TELEMETRY: false
+
+jobs:
+
+  check:
+    name: Check
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          clean: false
+          fetch-tags: true
+          show-progress: false
+          sparse-checkout: .ci
+      - name: Check staleness
+        id: check
+        run: ./.ci/release_staleness_check.sh
+    outputs:
+      stale: ${{ steps.check.outputs.stale }}
+  
+  build:
+    name: Build
+    needs: check
+    if: needs.check.outputs.stale
+    uses: $/.github/workflows/build.yml
+    with:
+      artifacts: true
+      fail_fast: true
+      jobs: release
+
+  sign_android_apks:
+    name: Sign Android APKs
+    needs: build
+    environment: android
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          clean: false
+          show-progress: false
+          sparse-checkout: .ci
+      - name: Download APKs
+        uses: actions/download-artifact@v8.0.1
+        with:
+          merge-multiple: true
+          path: assets
+          pattern: "*.apk"
+          skip-decompress: true
+      - name: Sign APKs
+        if: hashFiles('assets/*.apk')
+        env:
+          APK_SIGN_KEY_ALIAS: ${{ vars.APK_SIGN_KEY_ALIAS }}
+          APK_SIGN_KEY_PASS: ${{ secrets.APK_SIGN_KEY_PASS }}
+          APK_SIGN_STORE_BASE64: ${{ secrets.APK_SIGN_STORE_BASE64 }}
+          APK_SIGN_STORE_PASS: ${{ secrets.APK_SIGN_STORE_PASS }}
+        run: ./.ci/android_apks_sign.sh assets
+      - name: Re-upload APKs
+        if: hashFiles('assets/*.apk')
+        uses: $/.github/actions/upload-artifacts
+        with:
+          overwrite: true
+          patterns: assets/*.apk
+
+  release:
+    name: Release
+    needs: sign_android_apks
+    permissions:
+      contents: write
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          clean: false
+          fetch-tags: true
+          show-progress: false
+          sparse-checkout: |
+            .ci
+            tools
+      - name: Download artifacts
+        uses: actions/download-artifact@v8.0.1
+        with:
+          merge-multiple: true
+          path: assets
+          skip-decompress: true
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./.ci/release_create.sh assets

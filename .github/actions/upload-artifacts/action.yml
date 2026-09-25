@@ -1,0 +1,102 @@
+# This workflow is managed by gh actions-lock.
+# Workaround for uploading multiple unarchived artifacts until
+# https://github.com/actions/upload-artifact#766 is resolved.
+
+name: Upload multiple (unarchived) artifacts
+
+inputs:
+  patterns:
+    description: Artifact pattern(s)
+    required: true
+  overwrite:
+    description: Overwrite existing artifacts
+    required: false
+    default: false
+
+runs:
+
+  using: "composite"
+
+  steps:
+
+      - name: Expand patterns
+        id: expand
+        shell: bash
+        run: |
+          set -x
+          count=0
+          patterns=(${{ inputs.patterns }})
+          for m in "${patterns[@]}"; do
+            [[ -e "${m}" ]] || continue
+            count=$((count + 1))
+            printf 'artifact_%u=%s\n' "${count}" "${m}" >>"${GITHUB_OUTPUT}"
+          done
+          if [[ ${count} -gt 8 ]]; then
+            echo "too many artifacts (> 8): ${count}" 1>&2
+            exit 1
+          fi
+          printf 'artifact_count=%u\n' "${count}" >>"${GITHUB_OUTPUT}"
+
+      - name: Upload artifact (1/${{ steps.expand.outputs.artifact_count }})
+        if: steps.expand.outputs.artifact_1
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ steps.expand.outputs.artifact_1 }}
+          overwrite: ${{ inputs.overwrite }}
+
+      - name: Upload artifact (2/${{ steps.expand.outputs.artifact_count }})
+        if: steps.expand.outputs.artifact_2
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ steps.expand.outputs.artifact_2 }}
+          overwrite: ${{ inputs.overwrite }}
+
+      - name: Upload artifact (3/${{ steps.expand.outputs.artifact_count }})
+        if: steps.expand.outputs.artifact_3
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ steps.expand.outputs.artifact_3 }}
+          overwrite: ${{ inputs.overwrite }}
+
+      - name: Upload artifact (4/${{ steps.expand.outputs.artifact_count }})
+        if: steps.expand.outputs.artifact_4
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ steps.expand.outputs.artifact_4 }}
+          overwrite: ${{ inputs.overwrite }}
+
+      - name: Upload artifact (5/${{ steps.expand.outputs.artifact_count }})
+        if: steps.expand.outputs.artifact_5
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ steps.expand.outputs.artifact_5 }}
+          overwrite: ${{ inputs.overwrite }}
+
+      - name: Upload artifact (6/${{ steps.expand.outputs.artifact_count }})
+        if: steps.expand.outputs.artifact_6
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ steps.expand.outputs.artifact_6 }}
+          overwrite: ${{ inputs.overwrite }}
+
+      - name: Upload artifact (7/${{ steps.expand.outputs.artifact_count }})
+        if: steps.expand.outputs.artifact_7
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ steps.expand.outputs.artifact_7 }}
+          overwrite: ${{ inputs.overwrite }}
+
+      - name: Upload artifact (8/${{ steps.expand.outputs.artifact_count }})
+        if: steps.expand.outputs.artifact_8
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ steps.expand.outputs.artifact_8 }}
+          overwrite: ${{ inputs.overwrite }}

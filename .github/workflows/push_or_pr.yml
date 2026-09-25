@@ -1,0 +1,33 @@
+# This workflow is managed by gh actions-lock.
+
+name: Push / PR
+
+permissions:
+  contents: read
+
+on:
+  push:
+    # NOTE: ignore tags.
+    branches:
+      - "*"
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # FIXME: only on PRs?
+  lint:
+    name: Lint
+    uses: $/.github/workflows/lint.yml
+
+  build:
+    name: Build
+    needs: lint
+    uses: $/.github/workflows/build.yml
+    with:
+      jobs: ${{ github.event_name }}
+      ffi_cdecls_check: true
+      tests: true

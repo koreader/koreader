@@ -1,7 +1,7 @@
 describe("Persist module", function()
     local Persist
     local sample
-    local bitserInstance, luajitInstance, zstdInstance, dumpInstance, serpentInstance
+    local datadir
     local fail = { a = function() end, }
 
     local function arrayOf(n)
@@ -27,61 +27,30 @@ describe("Persist module", function()
     setup(function()
         require("commonrequire")
         Persist = require("persist")
-        local datadir = require("datastorage"):getDataDir()
-        bitserInstance = Persist:new{ path = datadir .. "/test.dat", codec = "bitser" }
-        luajitInstance = Persist:new{ path = datadir .. "/testj.dat", codec = "luajit" }
-        zstdInstance = Persist:new{ path = datadir .. "/test.zst", codec = "zstd" }
-        dumpInstance = Persist:new{ path = datadir .. "/test.lua", codec = "dump" }
-        serpentInstance = Persist:new{ path = datadir .. "/tests.lua", codec = "serpent" }
         sample = arrayOf(1000)
+        datadir = require("datastorage"):getDataDir()
     end)
 
-    it("should save a table to file", function()
-        assert.is_true(bitserInstance:save(sample))
-        assert.is_true(luajitInstance:save(sample))
-        assert.is_true(zstdInstance:save(sample))
-        assert.is_true(dumpInstance:save(sample))
-        assert.is_true(serpentInstance:save(sample))
-    end)
+    for _, codec in ipairs({"dump", "serpent", "bitser", "luajit", "zstd"}) do
+        it("should save/reload a table to/from file with "..codec, function()
+            -- save table to file
+            local instance = Persist:new{ path = datadir .. "/test_" .. codec .. ".dat", codec = codec }
+            assert.is_true(instance:save(sample))
+            -- check file is valid
+            assert.is_true(instance:exists())
+            assert.is_true(instance:size() > 0)
+            assert.is_true(type(instance:timestamp()) == "number")
+            -- load back table from file
+            assert.are.same(sample, instance:load())
+            -- delete file
+            instance:delete()
+            assert.is_nil(instance:exists())
+        end)
+    end
 
-    it("should generate a valid file", function()
-        assert.is_true(bitserInstance:exists())
-        assert.is_true(bitserInstance:size() > 0)
-        assert.is_true(type(bitserInstance:timestamp()) == "number")
-
-        assert.is_true(luajitInstance:exists())
-        assert.is_true(luajitInstance:size() > 0)
-        assert.is_true(type(luajitInstance:timestamp()) == "number")
-
-        assert.is_true(zstdInstance:exists())
-        assert.is_true(zstdInstance:size() > 0)
-        assert.is_true(type(zstdInstance:timestamp()) == "number")
-    end)
-
-    it("should load a table from file", function()
-        assert.are.same(sample, bitserInstance:load())
-        assert.are.same(sample, luajitInstance:load())
-        assert.are.same(sample, zstdInstance:load())
-        assert.are.same(sample, dumpInstance:load())
-        assert.are.same(sample, serpentInstance:load())
-    end)
-
-    it("should delete the file", function()
-        bitserInstance:delete()
-        luajitInstance:delete()
-        zstdInstance:delete()
-        dumpInstance:delete()
-        serpentInstance:delete()
-        assert.is_nil(bitserInstance:exists())
-        assert.is_nil(luajitInstance:exists())
-        assert.is_nil(zstdInstance:exists())
-        assert.is_nil(dumpInstance:exists())
-        assert.is_nil(serpentInstance:exists())
-    end)
-
-    it("should return standalone serializers/deserializers", function()
-        local tab = sample
-        for _, codec in ipairs({"dump", "serpent", "bitser", "luajit", "zstd"}) do
+    for _, codec in ipairs({"dump", "serpent", "bitser", "luajit", "zstd"}) do
+        it("should return standalone serializers/deserializers with "..codec, function()
+            local tab = sample
             assert.is_true(Persist.getCodec(codec).id == codec)
             local ser = Persist.getCodec(codec).serialize
             local deser = Persist.getCodec(codec).deserialize
@@ -91,37 +60,41 @@ describe("Persist module", function()
                 print(codec, "deser failed:", err)
             end
             assert.are.same(tab, t)
-        end
-    end)
+        end)
+    end
 
-    it("should work with huge tables", function()
+    for _, codec in ipairs({"bitser", "luajit"}) do
         local tab = arrayOf(10000)
-        for _, codec in ipairs({"bitser", "luajit"}) do
+        it("should handle huge tables with "..codec, function()
             local ser = Persist.getCodec(codec).serialize
             local deser = Persist.getCodec(codec).deserialize
             local str = ser(tab)
             assert.are.same(tab, deser(str))
-        end
-    end)
+        end)
+    end
 
-    it("should fail to serialize functions", function()
-        for _, codec in ipairs({"dump", "bitser", "luajit", "zstd"}) do
+    for _, codec in ipairs({"bitser", "luajit", "zstd"}) do
+        it("should fail to serialize functions with "..codec, function()
+            assert.is_true(Persist.getCodec(codec).id == codec)
+            local ser = Persist.getCodec(codec).serialize
+            local str, err = ser(fail)
+            assert.is_nil(str)
+            assert.is_not_nil(err)
+        end)
+    end
+
+    -- The "dump" and "serpent" codecs will actually happily "serialize"
+    -- functions (`tostring(func)`), and of course fail to deserialize
+    -- the resulting string back…
+    for _, codec in ipairs({"dump", "serpent"}) do
+        it("should fail to serialize functions with "..codec, function()
             assert.is_true(Persist.getCodec(codec).id == codec)
             local ser = Persist.getCodec(codec).serialize
             local deser = Persist.getCodec(codec).deserialize
             local str = ser(fail)
-            assert.are_not.same(deser(str), fail)
-        end
-    end)
-
-    it("should successfully serialize functions", function()
-        for _, codec in ipairs({"serpent"}) do
-            assert.is_true(Persist.getCodec(codec).id == codec)
-            local ser = Persist.getCodec(codec).serialize
-            local deser = Persist.getCodec(codec).deserialize
-            local str = ser(fail)
-            assert.are_not.same(deser(str), fail)
-        end
-    end)
+            assert.is_not_nil(str)
+            assert.is_nil(deser(str))
+        end)
+    end
 
 end)

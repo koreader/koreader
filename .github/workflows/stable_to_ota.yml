@@ -1,0 +1,47 @@
+# This workflow is managed by gh actions-lock.
+
+name: Stable to OTA
+
+permissions:
+  contents: write
+
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: stdbuf --error=L --output=L bash --noprofile --norc -eo pipefail {0}
+
+env:
+  GH_TELEMETRY: false
+
+jobs:
+
+  upload_to_ota:
+    name: Upload to OTA
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          clean: false
+          # NOTE: we need a non-shallow clone for determining commit
+          # count (`git rev-list --count $version`) when generating
+          # F-Droid's metadata (`koreader-android-fdroid-latest`).
+          fetch-depth: 0
+          fetch-tags: true
+          filter: tree:0
+          show-progress: false
+          sparse-checkout: |
+            .ci
+            tools
+      - name: Upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./.ci/stable_upload_to_ota.sh assets '${{ inputs.tag_name || github.event.release.tag_name }}'

@@ -1,0 +1,291 @@
+# This workflow is managed by gh actions-lock.
+
+name: Build Matrix
+
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      cache_epoch:
+        required: true
+        type: string
+      fail_fast:
+        required: true
+        type: boolean
+      jobs:
+        required: true
+        type: string
+
+jobs:
+
+  build:
+
+    strategy:
+      fail-fast: ${{ inputs.fail_fast }}
+      matrix:
+        include: ${{ fromJSON(inputs.jobs) }}
+
+    name: ${{ matrix.job }}
+    runs-on: ${{ matrix.runs-on || 'ubuntu-26.04' }}
+
+    defaults:
+      run:
+        # NOTE: can't use `runner.os` context here…
+        shell: >
+          ${{
+            format('{0}{1}bash --noprofile --norc -eo pipefail {{0}}',
+              matrix.target != 'macos' && 'stdbuf --error=L --output=L ' || '',
+              matrix.image != '' && format('{0}/kodev docker kontainer exec ', github.workspace) || ''
+            )
+          }}
+
+    steps:
+
+      # Checkout. {{{
+
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          clean: false
+          fetch-depth: 0
+          fetch-tags: true
+          filter: tree:0
+          show-progress: false
+
+      - name: Checkout submodules
+        # NOTE: can't use contexts here…
+        shell: bash
+        run: git submodule update --depth 1 --init --jobs 4 --recursive
+
+      # }}}
+
+      # Setup. {{{
+
+      - name: Setup Python (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/setup-python@v7.0.0
+        with:
+          python-version: '3.14'
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          CCACHE_VERSION: '4.14'
+          NINJATRACING_VERSION: '084212eaf68f25c70579958a2ed67fb4ec2a9ca4'
+        run: |
+          . ./.ci/common.sh
+          # python packages
+          run python3 -m pip install --disable-pip-version-check meson ruamel.yaml
+          # ninjatracing
+          run wget -qO ninjatracing.zip "https://github.com/nico/ninjatracing/archive/${NINJATRACING_VERSION}.zip"
+          run unzip -j ninjatracing.zip '*/ninjatracing'
+          run install -m755 ninjatracing /usr/local/bin/
+          run rm ninjatracing*
+          # brew packages
+          packages=(
+              autoconf
+              automake
+              bash
+              binutils
+              coreutils
+              findutils
+              libtool
+              make
+              nasm
+              ninja
+              pkg-config
+              util-linux
+          )
+          # Don't auto-update.
+          run export HOMEBREW_NO_AUTO_UPDATE=1
+          # Don't upgrade already installed formulas.
+          run export HOMEBREW_NO_INSTALL_UPGRADE=1
+          # Remove some installed packages to prevent brew
+          # from attempting (and failing) to upgrade them.
+          run brew uninstall gradle maven
+          run brew install --formula --overwrite --quiet "${packages[@]}"
+          brew_paths=(
+              "$(brew --prefix)/opt/findutils/libexec/gnubin"
+              "$(brew --prefix)/opt/make/libexec/gnubin"
+              "$(brew --prefix)/opt/util-linux/bin"
+          )
+          run printf '%s\n' "${brew_paths[@]}" >>"${GITHUB_PATH}"
+          # ccache
+          run wget -qO ccache.tar.gz "https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}-darwin.tar.gz"
+          run tar xf ccache.tar.gz -C /usr/local/bin --strip-components=1 "ccache-${CCACHE_VERSION}-darwin/ccache"
+          run rm -rf ccache.tar.gz
+          # xcode
+          run sudo xcode-select -s "/Applications/Xcode_${{ matrix.xcode_version }}.app"
+          run xcodebuild -version
+          run xcode-select -p
+
+      - name: Setup build environment
+        shell: bash
+        run: ./.ci/build_environment_setup.sh '${{ toJSON(matrix) }}'
+
+      # }}}
+
+      - name: Restore build directory
+        id: build-restore
+        uses: actions/cache/restore@v6.1.0
+        with:
+          # NOTE:
+          # - we need to use `build/*` to work around https://github.com/actions/toolkit#713
+          # - the same `path` must be used when restoring and saving (or the mismatch will
+          #   result in failures to restore)
+          path: &BUILD_PATHS |
+            build/*
+            !build/cmake
+            !build/staging
+            !build/thirdparty
+          key: ${{ matrix.cache_key_build }}
+
+      # Restore / setup build cache. {{{
+
+      - name: Lookup or restore build cache
+        id: ccache-restore
+        uses: actions/cache/restore@v6.1.0
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ matrix.cache_key_ccache_exact }}
+          restore-keys: ${{ matrix.cache_key_ccache_partial }}
+          # When not building, do a lookup so the cache
+          # does not get removed after 7 days with no use.
+          lookup-only: ${{ steps.build-restore.outputs.cache-hit }}
+
+      - name: Setup build cache
+        if: steps.build-restore.outputs.cache-hit != 'true'
+        run: |
+          set -x
+          which ccache
+          ccache --version
+          ccache --zero-stats
+          ccache --max-size=${{ matrix.cache_size }}
+          ccache --show-config
+
+      # }}}
+
+      # Download. {{{
+
+      - name: Lookup or restore download cache
+        id: download-restore
+        uses: actions/cache/restore@v6.1.0
+        with:
+          path: &DOWNLOAD_PATHS |
+            base/thirdparty/*/build
+          key: ${{ inputs.cache_epoch }}-download-${{ hashFiles('base/Makefile', 'base/thirdparty/*/CMakeLists.txt') }}
+          # When not building, do a lookup so the cache
+          # does not get removed after 7 days with no use.
+          lookup-only: ${{ steps.build-restore.outputs.cache-hit }}
+
+      - name: Download
+        if: steps.build-restore.outputs.cache-hit != 'true' && steps.download-restore.outputs.cache-hit != 'true'
+        run: make download-all buildstats
+
+      - name: Save download cache
+        uses: actions/cache/save@v6.1.0
+        if: steps.build-restore.outputs.cache-hit != 'true' && steps.download-restore.outputs.cache-hit != 'true'
+        with:
+          path: *DOWNLOAD_PATHS
+          key: ${{ steps.download-restore.outputs.cache-primary-key }}
+
+      # }}}
+
+      # Build. {{{
+
+      - name: Build
+        id: build
+        if: steps.build-restore.outputs.cache-hit != 'true'
+        run: make base
+
+      - name: Dump build timings
+        if: contains('failure success', steps.build.conclusion) && !cancelled()
+        run: make buildstats
+
+      # }}}
+
+      # Clean & save build cache. {{{
+
+      - name: Clean build cache
+        if: contains('failure success', steps.build.conclusion) && !cancelled()
+        run: |
+          set -x
+          ccache --cleanup >/dev/null
+          ccache --show-stats --verbose
+
+      - name: Save build cache
+        uses: actions/cache/save@v6.1.0
+        if: >
+          contains('failure success', steps.build.conclusion) && !cancelled()
+          && steps.build-restore.outputs.cache-hit != 'true'
+          && steps.ccache-restore.outputs.cache-hit != 'true'
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
+
+      # }}}
+
+      # Check FFI cdecls are up-to-date. {{{
+
+      - name: Check FFI cdecls are up-to-date
+        if: steps.build-restore.outputs.cache-hit != 'true' && matrix.check_ffi_cdecls
+        run: |
+          set -x
+          make ffi
+          git --no-pager diff --color=always --exit-code base/ffi
+
+      # }}}
+
+      # Dump & check binaries. {{{
+
+      - name: Dump binaries runtime path & dependencies
+        run: make bininfo
+
+      - name: Checking binaries for missing dependencies
+        if: steps.build-restore.outputs.cache-hit != 'true'
+        run: make bincheck
+
+      # }}}
+
+      - name: Save build directory
+        uses: actions/cache/save@v6.1.0
+        if: steps.build-restore.outputs.cache-hit != 'true'
+        with:
+          path: *BUILD_PATHS
+          key: ${{ steps.build-restore.outputs.cache-primary-key }}
+
+      - name: Install
+        if: matrix.artifacts || matrix.tests
+        run: make --assume-old=base all
+
+      - name: Test
+        if: matrix.tests
+        run: ./base/utils/fake_tty.py make --assume-old=all test
+
+      # Generate & upload artifacts. {{{
+
+      - name: Generate artifacts
+        if: matrix.artifacts
+        # Note: ensure the build skeleton is created, so there are no dangling
+        # symlinks (e.g. `data/dict`) to trip 7zip during artifact generation…
+        run: make --assume-old=all skeleton po update
+
+      - name: Upload artifacts
+        if: matrix.artifacts
+        uses: $/.github/actions/upload-artifacts
+        with:
+          patterns: |
+            koreader-*.7z
+            koreader-*.apk
+            koreader-*.AppImage
+            koreader_*.deb
+            koreader-*.tar.xz
+            koreader-*.targz
+            koreader-*.zip
+
+      # }}}
+
+# vim: foldmethod=marker foldlevel=0
