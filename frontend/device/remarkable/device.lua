@@ -149,6 +149,7 @@ local RemarkablePaperPro = Remarkable:extend{
     status_path = "/sys/class/power_supply/max1726x_battery/status",
     canSuspend = no, -- Suspend and Standby should be handled by xochitl with KO_DONT_GRAB_INPUT=1 set, otherwise bad things will happen
     canStandby = no,
+    hasGSensor = yes,
     hasFrontlight = yes,
     canTurnFrontlightOff = yes,
     hasColorScreen = yes,
@@ -176,7 +177,8 @@ local RemarkablePaperPure = Remarkable:extend{
     battery_path = "/sys/class/power_supply/max77818_battery/capacity",
     status_path = "/sys/class/power_supply/max77818_battery/status",
     canSuspend = no,
-    canStandby = no
+    canStandby = no,
+    hasGSensor = yes
 }
 
 function RemarkablePaperPro:adjustTouchEvent(ev, by)
@@ -359,6 +361,15 @@ function Remarkable:init()
     if self.powerd:hasHallSensor() then
         if G_reader_settings:has("remarkable_hall_effect_sensor_enabled") then
             self.powerd:onToggleHallSensor(G_reader_settings:readSetting("remarkable_hall_effect_sensor_enabled"))
+        end
+    end
+
+    -- Gyro sensor
+    if self:hasGSensor() then
+        self.input.handleMiscEv = function(this, ev)
+            if ev.code == C.MSC_GYRO then
+                return this:handleGyroEv(ev)
+            end
         end
     end
 
