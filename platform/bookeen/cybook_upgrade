@@ -1,0 +1,128 @@
+#!/bin/sh
+# Bookeen drop-in KOReader installer.
+# Copy this script to the root of the mounted user partition as cybook_upgrade,
+# then reboot. Bookeen's ebrmain runs and removes it once during startup.
+#
+# The installer places a shim at /mnt/app/boordr, preserving the stock reader as
+# /mnt/app/boordr.stock. The shim starts KOReader when available and otherwise
+# falls back to the stock reader. Create /mnt/fat/koreader/.disabled to disable
+# KOReader without a shell; remove the marker to enable it again.
+# untouched by any of this, so reflashing rootfs.fex from a CybUpdate restores
+# /mnt/app/boordr wholesale.
+
+set -u
+
+KO_DIR="/mnt/fat/koreader"
+STOCK="/mnt/app/boordr"
+STOCK_SAVED="/mnt/app/boordr.stock"
+SHIM="/mnt/app/boordr"
+LOG="/mnt/fat/koreader-install.log"
+
+# ebrmain has no terminal; keep the log on the user partition for USB access.
+log() {
+    echo "[$(date)] $*" >>"${LOG}" 2>&1
+}
+
+# Show progress with the Bookeen stock update images when available.
+splash() {
+    [ -x /bin/eink ] && [ -e "$1" ] && /bin/eink d "$1" >/dev/null 2>&1
+}
+
+# Mount the user partition if needed, then restore its original mount state.
+FAT_WAS_MOUNTED="no"
+if grep -q ' /mnt/fat ' /proc/mounts 2>/dev/null; then
+    FAT_WAS_MOUNTED="yes"
+else
+    mount /mnt/fat >/dev/null 2>&1 || mount /dev/fat /mnt/fat >/dev/null 2>&1
+fi
+
+log "cybook_upgrade: starting (KOReader drop-in installer)"
+log "  kernel:  $(uname -r)"
+log "  rootfs:  $(grep ' / ' /proc/mounts 2>/dev/null | head -1)"
+
+# Verify the KOReader launcher before changing the read-only rootfs.
+if [ ! -x "${KO_DIR}/koreader.sh" ]; then
+    log "!! ${KO_DIR}/koreader.sh not found or not executable -- nothing installed."
+    log "   Unzip a koreader-bookeen-*.zip into the root of this partition first,"
+    log "   so that ${KO_DIR}/koreader.sh exists, then copy this file again."
+    splash /system/update_finished_error.bmp
+    [ "${FAT_WAS_MOUNTED}" = "no" ] && { sync; umount /mnt/fat >/dev/null 2>&1; }
+    exit 0
+fi
+log "  found ${KO_DIR}/koreader.sh"
+
+splash /system/factory_processing.bmp
+
+# The Bookeen rootfs is read-only during normal operation.
+mount -o remount,rw / >/dev/null 2>&1 || {
+    log "!! could not remount / rw -- nothing installed."
+    splash /system/update_finished_error.bmp
+    [ "${FAT_WAS_MOUNTED}" = "no" ] && { sync; umount /mnt/fat >/dev/null 2>&1; }
+    exit 0
+}
+
+# Keep the original reader when refreshing an existing installation.
+if [ -e "${STOCK_SAVED}" ]; then
+    log "  ${STOCK_SAVED} already present -- refreshing the shim only."
+else
+    mv "${STOCK}" "${STOCK_SAVED}" || {
+        log "!! could not move ${STOCK} aside -- nothing installed."
+        mount -o remount,ro / >/dev/null 2>&1
+        splash /system/update_finished_error.bmp
+        [ "${FAT_WAS_MOUNTED}" = "no" ] && { sync; umount /mnt/fat >/dev/null 2>&1; }
+        exit 0
+    }
+    log "  moved stock reader to ${STOCK_SAVED}"
+fi
+
+# ebrmain execv()s this small, dependency-free shim directly.
+cat >"${SHIM}" <<'SHIM_EOF'
+#!/bin/sh
+# Bookeen reader shim. Start KOReader when available, otherwise use the stock reader.
+# ebrmain passes wake/USB reason codes that KOReader must not receive as filenames.
+
+KO_DIR="/mnt/fat/koreader"
+
+# ebrmain does not mount the user partition; the reader is expected to.
+grep -q ' /mnt/fat ' /proc/mounts 2>/dev/null || mount /mnt/fat >/dev/null 2>&1
+
+if [ -x "${KO_DIR}/koreader.sh" ] && [ ! -e "${KO_DIR}/.disabled" ]; then
+    cd "${KO_DIR}" || exit 13
+
+    # Prevent KOReader shutdown handling from killing its Bookeen supervisor.
+    KO_VIA_BOORDR_SHIM=1
+    export KO_VIA_BOORDR_SHIM
+
+    ./koreader.sh
+    rc=$?
+
+    # Return Bookeen ebrmain codes, not KOReader's exit status. Code 101 powers
+    # off after a clean exit; code 11 exposes the user partition after a crash.
+    if [ "${rc}" -eq 0 ]; then
+        exit 101
+    fi
+    exit 11
+fi
+
+# No KOReader: hand over to the stock reader, preserving ebrmain's argv.
+exec /mnt/app/boordr.stock "$@"
+SHIM_EOF
+
+chmod 755 "${SHIM}"
+sync
+mount -o remount,ro / >/dev/null 2>&1
+
+log "  installed shim at ${SHIM}"
+log "cybook_upgrade: done. ebrmain will now start KOReader."
+log ""
+log "To undo: delete ${SHIM} and move ${STOCK_SAVED} back to ${STOCK}"
+log "  (mount -o remount,rw / first). Or, without any shell at all, create the"
+log "  file ${KO_DIR}/.disabled -- the shim then starts the stock reader."
+
+splash /system/update_finished_good.bmp
+
+# Restore the user partition's original mount state.
+[ "${FAT_WAS_MOUNTED}" = "no" ] && { sync; umount /mnt/fat >/dev/null 2>&1; }
+
+# ebrmain removes this hook and launches the shim on the same boot.
+exit 0
