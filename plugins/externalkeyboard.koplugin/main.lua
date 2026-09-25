@@ -444,7 +444,11 @@ function ExternalKeyboard:setupKeyboard(data)
     -- Check if we already know about this event file.
     if ExternalKeyboard.keyboard_fds[keyboard_info.event_path] == nil then
         local ok, fd = pcall(Device.input.fdopen, Device.input, keyboard_info.event_fd, keyboard_info.event_path, keyboard_info.name)
-        if not ok then
+        -- fdopen returns nil (not an error) when the device is already open.
+        if ok and not fd then
+            fd = require("device/input").opened_devices[keyboard_info.event_path]
+        end
+        if not ok or not fd then
             UIManager:show(InfoMessage:new{
                 text = "Error opening keyboard:\n" .. tostring(fd),
             })
