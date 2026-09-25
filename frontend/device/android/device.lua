@@ -315,12 +315,9 @@ function Device:isIReaderEink()
 end
 
 function Device:getIReaderPageEffect()
-    local value
     local ok, ReaderUI = pcall(require, "apps/reader/readerui")
-    if ok and ReaderUI and ReaderUI.instance and ReaderUI.instance.doc_settings then
-        value = ReaderUI.instance.doc_settings:readSetting("ireader_page_effect")
-    end
-    return value or G_reader_settings:readSetting("ireader_page_effect") or "ripple_standard"
+    local ui = ok and ReaderUI and ReaderUI.instance
+    return require("ui/ireaderpageeffect").resolve(ui)
 end
 
 function Device:UIManagerReady(uimgr)

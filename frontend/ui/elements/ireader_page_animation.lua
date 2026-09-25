@@ -1,9 +1,5 @@
-local Device = require("device")
-local Notification = require("ui/widget/notification")
-local UIManager = require("ui/uimanager")
+local IReaderPageEffect = require("ui/ireaderpageeffect")
 local _ = require("gettext")
-
-local DEFAULT_EFFECT = "ripple_standard"
 
 local OPTIONS = {
     { id = "none",             text = _("无动效") },
@@ -12,61 +8,39 @@ local OPTIONS = {
     { id = "ripple_fast",      text = _("水波纹-快") },
 }
 
-local function defaultEffect()
-    return G_reader_settings:readSetting("ireader_page_effect") or DEFAULT_EFFECT
-end
-
-local function documentEffect(ui)
-    if ui and ui.doc_settings then
-        local value = ui.doc_settings:readSetting("ireader_page_effect")
-        if value then
-            return value
-        end
+local function currentUI(menu)
+    local ok, ReaderUI = pcall(require, "apps/reader/readerui")
+    if ok and ReaderUI and ReaderUI.instance then
+        return ReaderUI.instance
     end
-    return defaultEffect()
+    return menu and menu.ui
 end
 
--- ReaderMenu passes itself so we can read/write the current document settings.
+-- Same idea as the font list: radio choice is per-document.
+-- Defaults are updated only via “Save document settings as default”.
 return function(menu)
-    if not (Device.isIReaderEink and Device:isIReaderEink()) then
+    if not IReaderPageEffect.enabled() then
         return nil
     end
 
     local sub_item_table = {}
     for _, opt in ipairs(OPTIONS) do
         local id = opt.id
-        local label = opt.text
         table.insert(sub_item_table, {
-            text_func = function()
-                local text = label
-                if defaultEffect() == id then
-                    text = text .. "   ★"
-                end
-                return text
-            end,
+            text = opt.text,
             checked_func = function()
-                return documentEffect(menu.ui) == id
+                return IReaderPageEffect.resolve(currentUI(menu)) == id
             end,
+            radio = true,
             callback = function()
-                if menu.ui and menu.ui.doc_settings then
-                    menu.ui.doc_settings:saveSetting("ireader_page_effect", id)
-                end
-            end,
-            hold_callback = function(touchmenu_instance)
-                G_reader_settings:saveSetting("ireader_page_effect", id)
-                UIManager:show(Notification:new{
-                    text = _("Default settings updated"),
-                })
-                if touchmenu_instance then
-                    touchmenu_instance:updateItems()
-                end
+                IReaderPageEffect.persist(currentUI(menu), id)
             end,
         })
     end
 
     return {
         text = _("翻页动画"),
-        help_text = _("Official eink page-turn animation. Long-press an item to save it as the default for new documents. “Save document settings as default” also keeps the current choice."),
+        help_text = _("Page-turn animation for this document. Use “Save document settings as default” to apply the current choice to new documents."),
         sub_item_table = sub_item_table,
     }
 end
