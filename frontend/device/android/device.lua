@@ -306,6 +306,7 @@ function Device:init()
     end
 
     Generic.init(self)
+    self:setupIReaderRipple()
 end
 
 function Device:UIManagerReady(uimgr)
@@ -600,5 +601,61 @@ end
 
 android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
     android.prop.version, getCodename(), Device.firmware_rev, android.prop.flavor))
+
+
+function Device:setupIReaderRipple()
+    local _, eink_platform = android.isEink()
+    if eink_platform ~= "ireader" then
+        return
+    end
+    local bit = require("bit")
+    local last_page
+    local function current_page()
+        local ok, ReaderUI = pcall(require, "apps/reader/readerui")
+        if not (ok and ReaderUI and ReaderUI.instance) then
+            return nil
+        end
+        local inst = ReaderUI.instance
+        if inst.paging and inst.paging.current_page then
+            return inst.paging.current_page
+        end
+        if inst.rolling and inst.rolling.current_page then
+            return inst.rolling.current_page
+        end
+        return nil
+    end
+    local function encode(forward)
+        local rot = 0
+        pcall(function()
+            rot = android.orientation.get()
+        end)
+        local n
+        if forward then
+            n = ({[0]=1,[1]=4,[2]=2,[3]=3})[rot] or 1
+        else
+            n = ({[0]=2,[1]=3,[2]=1,[3]=4})[rot] or 2
+        end
+        return bit.bor(n, 64)
+    end
+    local function wrap(name)
+        local orig = self.screen[name]
+        if type(orig) ~= "function" then
+            return
+        end
+        self.screen[name] = function(screen, x, y, w, h, ...)
+            local page = current_page()
+            if page and last_page and page ~= last_page then
+                android.einkPrepareRipple(encode(page > last_page))
+            end
+            if page then
+                last_page = page
+            end
+            return orig(screen, x, y, w, h, ...)
+        end
+    end
+    wrap("refreshFullImp")
+    wrap("refreshPartialImp")
+    wrap("refreshFlashPartialImp")
+end
 
 return Device
