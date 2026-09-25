@@ -309,6 +309,20 @@ function Device:init()
     self:setupIReaderRipple()
 end
 
+function Device:isIReaderEink()
+    local _, eink_platform = android.isEink()
+    return eink_platform == "ireader"
+end
+
+function Device:getIReaderPageEffect()
+    local value
+    local ok, ReaderUI = pcall(require, "apps/reader/readerui")
+    if ok and ReaderUI and ReaderUI.instance and ReaderUI.instance.doc_settings then
+        value = ReaderUI.instance.doc_settings:readSetting("ireader_page_effect")
+    end
+    return value or G_reader_settings:readSetting("ireader_page_effect") or "ripple_standard"
+end
+
 function Device:UIManagerReady(uimgr)
     UIManager = uimgr
 end
@@ -604,12 +618,17 @@ android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
 
 
 function Device:setupIReaderRipple()
-    local _, eink_platform = android.isEink()
-    if eink_platform ~= "ireader" then
+    if not self:isIReaderEink() then
         return
     end
     local bit = require("bit")
     local last_page
+    local speed_bit = {
+        none = nil,
+        ripple_slow = 128,
+        ripple_standard = 64,
+        ripple_fast = 0,
+    }
     local function current_page()
         local ok, ReaderUI = pcall(require, "apps/reader/readerui")
         if not (ok and ReaderUI and ReaderUI.instance) then
@@ -635,7 +654,11 @@ function Device:setupIReaderRipple()
         else
             n = ({[0]=2,[1]=3,[2]=1,[3]=4})[rot] or 2
         end
-        return bit.bor(n, 64)
+        local extra = speed_bit[self:getIReaderPageEffect()]
+        if extra == nil then
+            return nil
+        end
+        return bit.bor(n, extra)
     end
     local function wrap(name)
         local orig = self.screen[name]
@@ -645,7 +668,10 @@ function Device:setupIReaderRipple()
         self.screen[name] = function(screen, x, y, w, h, ...)
             local page = current_page()
             if page and last_page and page ~= last_page then
-                android.einkPrepareRipple(encode(page > last_page))
+                local effect = encode(page > last_page)
+                if effect then
+                    android.einkPrepareRipple(effect)
+                end
             end
             if page then
                 last_page = page

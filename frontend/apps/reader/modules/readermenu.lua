@@ -222,6 +222,14 @@ function ReaderMenu:setUpdateItemTable()
         },
     }
 
+    local ireader_page_animation = dofile("frontend/ui/elements/ireader_page_animation.lua")
+    if type(ireader_page_animation) == "function" then
+        ireader_page_animation = ireader_page_animation(self)
+    end
+    if ireader_page_animation then
+        table.insert(self.menu_items.document_settings.sub_item_table, ireader_page_animation)
+    end
+
     if not Device:isTouchDevice() then
         -- This menu entry is a duplicate of the one found in page_turns for touch devices
         -- but we need to add it here for non-touch devices.
@@ -377,6 +385,11 @@ function ReaderMenu:saveDocumentSettingsAsDefault()
     end
     for k, v in pairs(self.ui.document.configurable) do
         G_reader_settings:saveSetting(prefix .. k, v)
+    end
+    if Device.isIReaderEink and Device:isIReaderEink() then
+        local effect = self.ui.doc_settings and self.ui.doc_settings:readSetting("ireader_page_effect")
+        effect = effect or G_reader_settings:readSetting("ireader_page_effect") or "ripple_standard"
+        G_reader_settings:saveSetting("ireader_page_effect", effect)
     end
 end
 
