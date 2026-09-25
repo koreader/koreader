@@ -773,9 +773,13 @@ function ReaderUI:doShowReader(file, provider, seamless)
         document = document,
         reloading = self.reloading,
         after_open_callback = self.after_open_callback,
+        md5_checksum = self.md5_checksum,
+        arc_settings_data = self.arc_settings_data,
     }
     self.reloading = nil
     self.after_open_callback = nil
+    self.md5_checksum = nil
+    self.arc_settings_data = nil
     logger.info(string.format("  opening took %.3f seconds", time.to_s(time.since(start_time))))
 
     Screen:setWindowTitle(reader.doc_props.display_title)
