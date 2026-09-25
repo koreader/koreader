@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
+local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -829,55 +830,9 @@ function ReaderToc:onShowToc()
             text = "    ",
             face = Font:getFace("smallinfofont", items_font_size),
             }
-        local toc_indent = tmp:getSize().w
+        self.toc_indent = tmp:getSize().w
         tmp:free()
-
-        local has_hidden_flows = self.ui.document:hasHiddenFlows()
-        for k, v in ipairs(self.toc) do
-            v.index = k
-            v.indent = toc_indent * (v.depth-1)
-            v.text = self:cleanUpTocTitle(v.title, true)
-            if items_show_chapter_length then
-                v.post_text = T("(%1)", v.chapter_length)
-            else
-                v.post_text = nil
-            end
-            v.bidi_wrap_func = BD.auto
-            v.mandatory = v.page
-            if has_hidden_flows then
-                local flow = self.ui.document:getPageFlow(v.page)
-                if v.orig_page then -- bogus page fixed: show original page number
-                    -- This is an ugly piece of code, which can result in an ugly TOC,
-                    -- but it shouldn't be needed very often, only when bogus page numbers
-                    -- are fixed, and then showing everything gets complicated
-                    local orig_flow = self.ui.document:getPageFlow(v.orig_page)
-                    if flow == 0 and orig_flow == flow then
-                        v.mandatory = T("(%1) %2", self.ui.document:getPageNumberInFlow(v.orig_page), self.ui.document:getPageNumberInFlow(v.page))
-                    elseif flow == 0 and orig_flow ~= flow then
-                        v.mandatory = T("[%1]%2", self.ui.document:getPageNumberInFlow(v.orig_page), self.ui.document:getPageFlow(v.orig_page))
-                    elseif flow > 0 and orig_flow == flow then
-                        v.mandatory = T("[(%1) %2]%3", self.ui.document:getPageNumberInFlow(v.orig_page),
-                                                       self.ui.document:getPageNumberInFlow(v.page), self.ui.document:getPageFlow(v.page))
-                    else
-                        v.mandatory = T("([%1]%2) [%3]%4", self.ui.document:getPageNumberInFlow(v.orig_page), self.ui.document:getPageFlow(v.orig_page),
-                                                           self.ui.document:getPageNumberInFlow(v.page), self.ui.document:getPageFlow(v.page))
-                    end
-                else
-                    -- Plain numbers for the linear entries,
-                    -- for non-linear entries we use the same syntax as in the Go to dialog
-                    if flow == 0 then
-                        v.mandatory = self.ui.document:getPageNumberInFlow(v.page)
-                    else
-                        v.mandatory = T("[%1]%2", self.ui.document:getPageNumberInFlow(v.page), self.ui.document:getPageFlow(v.page))
-                    end
-                end
-            elseif v.orig_page then -- bogus page fixed: show original page number
-                v.mandatory = T("(%1) %2", v.orig_page, v.page)
-            end
-            if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
-                v.mandatory = self.ui.pagemap:getXPointerPageLabel(v.xpointer)
-            end
-        end
+        self:updateChaptersDisplayedTitlePageNumber()
     end
 
     -- Estimate expand/collapse icon size
@@ -999,15 +954,62 @@ function ReaderToc:onShowToc()
             -- non touch to expand toc
             item.state.callback(item.index)
         else
-            -- Match the items' width
-            local infomessage = InfoMessage:new{
-                width = Screen:getWidth() - (Size.padding.fullscreen * (can_collapse and 4 or 3)),
-                alignment = "center",
-                show_icon = false,
-                text = item.text,
-                face = Font:getFace("infofont", self.items_font_size),
-            }
-            UIManager:show(infomessage)
+            if self.ui.handmade:isHandmadeHiddenFlowsEnabled() and self.ui.handmade:isHandmadeHiddenFlowsEditEnabled() then
+                local toc_start = item.page
+                local toc_end = toc_start + item.chapter_length - 1
+                local toc_hide_dialog
+                local function updateToc()
+                    UIManager:close(toc_hide_dialog)
+                    self.ui.toc:updateChaptersDisplayedTitlePageNumber()
+                    self:switchItemTable(nil, nil, -1)
+                end
+                toc_hide_dialog = ButtonDialog:new{
+                    title = item.text,
+                    title_align = "center",
+                    width_factor = 0.8,
+                    buttons = {
+                        {
+                            {
+                                text = _("Mark all chapters as regular flow"),
+                                enabled = self.ui.document:hasHiddenFlows(),
+                                callback = function()
+                                    self.ui.handmade:unhideAll()
+                                    updateToc()
+                                end,
+                            },
+                        },
+                        {
+                            {
+                                text = _("Mark chapter as regular flow"),
+                                enabled = self.ui.document:hasHiddenFlows(),
+                                callback = function()
+                                    self.ui.handmade:hideUnhidePages(toc_start, toc_end)
+                                    updateToc()
+                                end,
+                            },
+                        },
+                        {
+                            {
+                                text = _("Mark chapter as hidden flow"),
+                                callback = function()
+                                    self.ui.handmade:hideUnhidePages(toc_start, toc_end, true)
+                                    updateToc()
+                                end,
+                            },
+                        },
+                    },
+                }
+                UIManager:show(toc_hide_dialog)
+            else
+                -- Match the items' width
+                UIManager:show(InfoMessage:new{
+                    width = Screen:getWidth() - (Size.padding.fullscreen * (can_collapse and 4 or 3)),
+                    alignment = "center",
+                    show_icon = false,
+                    text = item.text,
+                    face = Font:getFace("infofont", self.items_font_size),
+                })
+            end
         end
         return true
     end
@@ -1084,6 +1086,56 @@ function ReaderToc:onShowToc()
     UIManager:show(menu_container)
 
     return true
+end
+
+function ReaderToc:updateChaptersDisplayedTitlePageNumber()
+    local items_show_chapter_length = G_reader_settings:isTrue("toc_items_show_chapter_length")
+    local has_hidden_flows = self.ui.document:hasHiddenFlows()
+    for k, v in ipairs(self.toc) do
+        v.index = k
+        v.indent = self.toc_indent * (v.depth-1)
+        v.text = self:cleanUpTocTitle(v.title, true)
+        if items_show_chapter_length then
+            v.post_text = T("(%1)", v.chapter_length)
+        else
+            v.post_text = nil
+        end
+        v.bidi_wrap_func = BD.auto
+        v.mandatory = v.page
+        if has_hidden_flows then
+            local flow = self.ui.document:getPageFlow(v.page)
+            if v.orig_page then -- bogus page fixed: show original page number
+                -- This is an ugly piece of code, which can result in an ugly TOC,
+                -- but it shouldn't be needed very often, only when bogus page numbers
+                -- are fixed, and then showing everything gets complicated
+                local orig_flow = self.ui.document:getPageFlow(v.orig_page)
+                if flow == 0 and orig_flow == flow then
+                    v.mandatory = T("(%1) %2", self.ui.document:getPageNumberInFlow(v.orig_page), self.ui.document:getPageNumberInFlow(v.page))
+                elseif flow == 0 and orig_flow ~= flow then
+                    v.mandatory = T("[%1]%2", self.ui.document:getPageNumberInFlow(v.orig_page), self.ui.document:getPageFlow(v.orig_page))
+                elseif flow > 0 and orig_flow == flow then
+                    v.mandatory = T("[(%1) %2]%3", self.ui.document:getPageNumberInFlow(v.orig_page),
+                                                   self.ui.document:getPageNumberInFlow(v.page), self.ui.document:getPageFlow(v.page))
+                else
+                    v.mandatory = T("([%1]%2) [%3]%4", self.ui.document:getPageNumberInFlow(v.orig_page), self.ui.document:getPageFlow(v.orig_page),
+                                                       self.ui.document:getPageNumberInFlow(v.page), self.ui.document:getPageFlow(v.page))
+                end
+            else
+                -- Plain numbers for the linear entries,
+                -- for non-linear entries we use the same syntax as in the Go to dialog
+                if flow == 0 then
+                    v.mandatory = self.ui.document:getPageNumberInFlow(v.page)
+                else
+                    v.mandatory = T("[%1]%2", self.ui.document:getPageNumberInFlow(v.page), self.ui.document:getPageFlow(v.page))
+                end
+            end
+        elseif v.orig_page then -- bogus page fixed: show original page number
+            v.mandatory = T("(%1) %2", v.orig_page, v.page)
+        end
+        if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+            v.mandatory = self.ui.pagemap:getXPointerPageLabel(v.xpointer)
+        end
+    end
 end
 
 function ReaderToc:showTocDialog()
@@ -1462,7 +1514,7 @@ Enabling this option will restrict display to the chapter titles of progress bar
         end
     }
     menu_items.toc_items_with_dots = {
-        text = _("Dot leaders"),
+        text = _("Show dot leaders"),
         keep_menu_open = true,
         checked_func = function()
             return G_reader_settings:nilOrTrue("toc_items_with_dots")
