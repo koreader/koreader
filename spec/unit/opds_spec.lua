@@ -646,6 +646,31 @@ describe("OPDS module", function()
             assert.are.same("session=abc", requests[2].headers.Cookie)
         end)
 
+        it("should retry an interrupted TLS handshake for idempotent requests", function()
+            local http = require("socket.http")
+            local requests = 0
+            local request_stub = stub(http, "request", function()
+                requests = requests + 1
+                if requests == 1 then
+                    return nil, socketutil.SSL_HANDSHAKE_CODE
+                end
+                return 1, 200, {}, "HTTP 200"
+            end)
+            finally(function() request_stub:revert() end)
+
+            local client = OPDSClient:new{
+                cookie_jar = CookieJar:new(),
+            }
+            local code = client:request{
+                url = "https://example.test/catalog",
+                method = "GET",
+                sink = function() end,
+            }
+
+            assert.are.same(200, code)
+            assert.are.same(2, requests)
+        end)
+
         it("should add the file extension to a server filename that lacks a usable one #internet", function()
             local orig_fetchFeed = OPDSBrowser.fetchFeed
             OPDSBrowser.fetchFeed = function() return nil end -- no headers: fall back to the URL
@@ -660,6 +685,52 @@ describe("OPDS module", function()
             -- An existing, usable extension is left alone.
             assert.are.same("file.pdf",
                 OPDSBrowser:getServerFileName("http://example.org/books/file.pdf?opds", "pdf"))
+        end)
+
+        it("should conditionally revalidate cached catalog feeds", function()
+            local headers = OPDSBrowser:getConditionalFeedHeaders{
+                etag = '"catalog-v1"',
+                last_modified = "Wed, 21 Oct 2015 07:28:00 GMT",
+            }
+
+            assert.are.same('"catalog-v1"', headers["If-None-Match"])
+            assert.are.same("Wed, 21 Oct 2015 07:28:00 GMT", headers["If-Modified-Since"])
+            assert.is_nil(OPDSBrowser:getConditionalFeedHeaders())
+        end)
+
+        it("should restore a cached parent catalog when returning", function()
+            local parent_items = { { text = "Parent book" } }
+            local browser = OPDSBrowser:extend{
+                paths = {
+                    {
+                        url = "https://example.org/parent",
+                        snapshot = {
+                            catalog_title = "Parent",
+                            facet_groups = { Genre = {} },
+                            item_table = parent_items,
+                            search_url = "https://example.org/search?q=%s",
+                        },
+                    },
+                    { url = "https://example.org/child" },
+                },
+                switchItemTable = function(self, title, items)
+                    self.restored_title = title
+                    self.restored_items = items
+                end,
+                setTitleBarLeftIcon = function(self, icon)
+                    self.restored_icon = icon
+                end,
+                updateCatalog = function()
+                    error("cached parent should not be fetched")
+                end,
+            }
+
+            browser:onReturn()
+
+            assert.are.same("Parent", browser.restored_title)
+            assert.are.same(parent_items, browser.restored_items)
+            assert.are.same("appbar.menu", browser.restored_icon)
+            assert.are.same(1, #browser.paths)
         end)
 
         describe("sync settings", function()
