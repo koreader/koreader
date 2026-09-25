@@ -98,6 +98,10 @@ function filemanagerutil.resetDocumentSettings(file)
             end
         end
         doc_settings:makeTrue("docsettings_reset_done") -- for readertypeset block_rendering_mode
+        local ok, IReaderPageEffect = pcall(require, "ui/ireaderpageeffect")
+        if ok and IReaderPageEffect and IReaderPageEffect.onDocumentReset then
+            IReaderPageEffect.onDocumentReset(file_abs_path, doc_settings)
+        end
         doc_settings:flush()
         BookList.setBookInfoCache(file_abs_path, doc_settings)
     end

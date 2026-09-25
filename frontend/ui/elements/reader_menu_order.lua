@@ -58,6 +58,7 @@ local order = {
         "switch_zoom_mode",
         "----------------------------",
         "page_overlap",
+        "ireader_page_animation",
         "speed_reading_module_perception_expander",
         "----------------------------",
         "highlight_options",

@@ -269,6 +269,14 @@ Useful when used alongside 'Invert page turn taps and swipes'.]]),
 
     self.menu_items.page_overlap = dofile("frontend/ui/elements/page_overlap.lua")
 
+    local ireader_page_animation = dofile("frontend/ui/elements/ireader_page_animation.lua")
+    if type(ireader_page_animation) == "function" then
+        ireader_page_animation = ireader_page_animation(self)
+    end
+    if ireader_page_animation then
+        self.menu_items.ireader_page_animation = ireader_page_animation
+    end
+
     -- settings tab
     -- insert common settings
     for id, common_setting in pairs(dofile("frontend/ui/elements/common_settings_menu_table.lua")) do
@@ -377,6 +385,9 @@ function ReaderMenu:saveDocumentSettingsAsDefault()
     end
     for k, v in pairs(self.ui.document.configurable) do
         G_reader_settings:saveSetting(prefix .. k, v)
+    end
+    if Device.isIReaderEink and Device:isIReaderEink() then
+        require("ui/ireaderpageeffect").saveAsDefault(self.ui)
     end
 end
 
@@ -518,10 +529,16 @@ end
 
 function ReaderMenu:onReadSettings(config)
     self.last_tab_index = config:readSetting("readermenu_tab_index") or 1
+    if Device.isIReaderEink and Device:isIReaderEink() then
+        require("ui/ireaderpageeffect").pinCurrent(self.ui, config)
+    end
 end
 
 function ReaderMenu:onSaveSettings()
     self.ui.doc_settings:saveSetting("readermenu_tab_index", self.last_tab_index)
+    if Device.isIReaderEink and Device:isIReaderEink() then
+        require("ui/ireaderpageeffect").pinCurrent(self.ui, self.ui.doc_settings)
+    end
 end
 
 function ReaderMenu:onMenuSearch()
