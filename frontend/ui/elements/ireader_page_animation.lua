@@ -2,10 +2,10 @@ local IReaderPageEffect = require("ui/ireaderpageeffect")
 local _ = require("gettext")
 
 local OPTIONS = {
-    { id = "none",             text = _("无动效") },
-    { id = "ripple_slow",      text = _("水波纹-慢") },
-    { id = "ripple_standard",  text = _("水波纹-标准") },
-    { id = "ripple_fast",      text = _("水波纹-快") },
+    { id = "none",             text = _("No animation") },
+    { id = "ripple_slow",      text = _("Water ripple – slow") },
+    { id = "ripple_standard",  text = _("Water ripple – standard") },
+    { id = "ripple_fast",      text = _("Water ripple – fast") },
 }
 
 local function currentUI(menu)
@@ -39,7 +39,7 @@ return function(menu)
     end
 
     return {
-        text = _("翻页动画"),
+        text = _("Page-turn animation"),
         help_text = _("Page-turn animation for this document. Use “Save document settings as default” to apply the current choice to new documents."),
         sub_item_table = sub_item_table,
     }
