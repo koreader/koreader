@@ -641,10 +641,17 @@ function Device:setupIReaderRipple()
         return nil
     end
     local function encode(forward)
+        -- Official q0/t0 index Display.getRotation() (0/90/180/270).
+        -- android.orientation.get() is LinuxFB. On Neo 3 Ultra, landscape
+        -- 90 and 270 are swapped vs Surface.ROTATION_90/270, which made
+        -- PAGE_H run backward in landscape.
         local rot = 0
         pcall(function()
             rot = android.orientation.get()
         end)
+        if rot == 1 or rot == 3 then
+            rot = 4 - rot
+        end
         local n
         if forward then
             n = ({[0]=1,[1]=4,[2]=2,[3]=3})[rot] or 1
