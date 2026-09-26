@@ -813,8 +813,12 @@ FileManager.rotate = FileManager.reinit
 
 -- So that the key navigation shortcuts apply right away.
 -- This will also naturally call registerKeyEvents
-FileManager.onPhysicalKeyboardConnected = FileManager.reinit
-FileManager.onPhysicalKeyboardDisconnected = FileManager.reinit
+function FileManager:onPhysicalKeyboardConnected()
+    self:reinit()
+    local Dispatcher = require("dispatcher")
+    Dispatcher:reinitKeyboardConditions()
+end
+FileManager.onPhysicalKeyboardDisconnected = FileManager.onPhysicalKeyboardConnected
 
 function FileManager:onClose()
     logger.dbg("close filemanager")

@@ -553,7 +553,12 @@ function ReaderUI:registerKeyEvents()
     end
 end
 
-ReaderUI.onPhysicalKeyboardConnected = ReaderUI.registerKeyEvents
+function ReaderUI:onPhysicalKeyboardConnected()
+    self:registerKeyEvents()
+    local Dispatcher = require("dispatcher")
+    Dispatcher:reinitKeyboardConditions()
+end
+ReaderUI.onPhysicalKeyboardDisconnected = ReaderUI.onPhysicalKeyboardConnected
 
 function ReaderUI:setLastDirForFileBrowser(dir)
     if dir and #dir > 1 and dir:sub(-1) == "/" then
