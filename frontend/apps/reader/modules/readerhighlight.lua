@@ -2266,6 +2266,8 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             if extend_to_sentence then
                 local extended_text = self.ui.document:extendXPointersToSentenceSegment(self.selected_text.pos0, self.selected_text.pos1)
                 if extended_text then
+                    extended_text.drawer = self.selected_text.drawer
+                    extended_text.color = self.selected_text.color
                     self.selected_text = extended_text
                 end
             end
