@@ -26,6 +26,10 @@ Each setting contains:
 * toggle: display name for args
 * separator: put a separator after in the menu list
 * configurable: can be parsed from cre/kopt and used to set `document.configurable`. Should not be set manually
+* condition: static boolean, set once when the table loads
+* keyboard_condition: like condition, but a function re-evaluated by reinitKeyboardConditions() on physical
+    keyboard connect/disconnect. Use this instead of `condition` for anything gated on
+    `Device:hasKeyboard()`/`hasKeys()` (or similar), so its value doesn't go stale once the keyboard state changes.
 --]]--
 
 local CreOptions = require("ui/data/creoptions")
@@ -96,12 +100,12 @@ local settingsList = {
     touch_input_off = {category="none", event="IgnoreTouchInput", arg=true, title=_("Disable touch input"), device=true, condition=Device:isTouchDevice()},
     toggle_touch_input = {category="none", event="IgnoreTouchInput", title=_("Toggle touch input"), device=true, separator=true, condition=Device:isTouchDevice()},
     ----
-    swap_left_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg="left", title=_("Invert left-side page-turn buttons"), device=true, condition= Device:hasDPad() and Device:useDPadAsActionKeys()},
-    swap_right_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg="right", title=_("Invert right-side page-turn buttons"), device=true, condition= Device:hasDPad() and Device:useDPadAsActionKeys()},
-    swap_page_turn_buttons = {category="none", event="SwapPageTurnButtons", title=_("Invert page-turn buttons"), device=true, condition=Device:hasKeys()},
-    set_page_turn_buttons = {category="string", event="SetPageTurnButtonDirection", title=_("Set page-turn button inversion"), device=true, condition=Device:hasKeys(), args = {true, false}, toggle = { _("on"), _("off")}, separator=true},
+    swap_left_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg="left", title=_("Invert left-side page-turn buttons"), device=true, keyboard_condition=function() return Device:hasDPad() and Device:useDPadAsActionKeys() end},
+    swap_right_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg="right", title=_("Invert right-side page-turn buttons"), device=true, keyboard_condition=function() return Device:hasDPad() and Device:useDPadAsActionKeys() end},
+    swap_page_turn_buttons = {category="none", event="SwapPageTurnButtons", title=_("Invert page-turn buttons"), device=true, keyboard_condition=function() return Device:hasKeys() end},
+    set_page_turn_buttons = {category="string", event="SetPageTurnButtonDirection", title=_("Set page-turn button inversion"), device=true, keyboard_condition=function() return Device:hasKeys() end, args = {true, false}, toggle = { _("on"), _("off")}, separator=true},
     ----
-    toggle_key_repeat = {category="none", event="ToggleKeyRepeat", title=_("Toggle key repeat"), device=true, condition=Device:hasKeys() and Device:canKeyRepeat(), separator=true},
+    toggle_key_repeat = {category="none", event="ToggleKeyRepeat", title=_("Toggle key repeat"), device=true, keyboard_condition=function() return Device:hasKeys() and Device:canKeyRepeat() end, separator=true},
     toggle_gsensor = {category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:hasGSensor()},
     temp_gsensor_on = {category="none", event="TempGSensorOn", title=_("Enable accelerometer for 5 seconds"), device=true, condition=Device:hasGSensor()},
     lock_gsensor = {category="none", event="LockGSensor", title=_("Toggle lock auto rotation to current orientation"), device=true, condition=Device:hasGSensor()},
@@ -219,7 +223,7 @@ local settingsList = {
     toggle_handmade_toc = {category="none", event="ToggleHandmadeToc", title=_("Toggle custom TOC"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
     toggle_handmade_flows = {category="none", event="ToggleHandmadeFlows", title=_("Toggle custom hidden flows"), reader=true, separator=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
     ----
-    text_selection = {category="none", event="StartHighlightIndicator", title=_("Toggle text selection mode"), reader=true, condition=Device:hasKeyboard()},
+    text_selection = {category="none", event="StartHighlightIndicator", title=_("Toggle text selection mode"), reader=true, keyboard_condition=function() return Device:hasKeyboard() end},
     set_highlight_action = {category="string", event="SetHighlightAction", title=_("Set highlight action"), args_func=ReaderHighlight.getHighlightActions, reader=true},
     cycle_highlight_action = {category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), reader=true},
     cycle_highlight_style = {category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), reader=true, separator=true},
@@ -634,7 +638,16 @@ function Dispatcher:init()
         parseoptions(KoptOptions[i].options, "kopt_")
     end
     UIManager:broadcastEvent(Event:new("DispatcherRegisterActions"))
+    Dispatcher:reinitKeyboardConditions()
     Dispatcher.initialized = true
+end
+
+function Dispatcher:reinitKeyboardConditions()
+    for _, action in pairs(settingsList) do
+        if action.keyboard_condition then
+            action.condition = action.keyboard_condition()
+        end
+    end
 end
 
 --[[--
