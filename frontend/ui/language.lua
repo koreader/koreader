@@ -56,7 +56,7 @@ local Language = {
         zh = "中文",
         zh_CN = "简体中文",
         zh_TW = "繁體中文（台灣）",
-        ["zh_TW.Big5"] = "繁體中文（台灣）（Big5）",
+        ["zh_TW.Big5"] = "繁體中文（台灣，Big5）",
     },
     -- Languages that are written RTL, and should have the UI mirrored.
     -- Should match lang tags defined in harfbuzz/src/hb-ot-tag-table.hh.
