@@ -10,7 +10,6 @@ describe("EPUB CFI wiring", function()
         UIManager.getNthTopWidget.returns({})
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
-        Event = require("ui/event")
         Screen = require("device").screen
 
         local sample_epub = "spec/front/unit/data/juliet.epub"
