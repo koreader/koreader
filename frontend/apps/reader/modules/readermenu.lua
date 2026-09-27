@@ -269,6 +269,14 @@ Useful when used alongside 'Invert page turn taps and swipes'.]]),
 
     self.menu_items.page_overlap = dofile("frontend/ui/elements/page_overlap.lua")
 
+    local page_turn_animation = dofile("frontend/ui/elements/page_turn_animation.lua")
+    if type(page_turn_animation) == "function" then
+        page_turn_animation = page_turn_animation(self)
+    end
+    if page_turn_animation then
+        self.menu_items.page_turn_animation = page_turn_animation
+    end
+
     -- settings tab
     -- insert common settings
     for id, common_setting in pairs(dofile("frontend/ui/elements/common_settings_menu_table.lua")) do
