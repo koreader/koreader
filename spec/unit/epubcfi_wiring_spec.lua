@@ -1,5 +1,5 @@
 describe("EPUB CFI wiring", function()
-    local DocumentRegistry, UIManager, ReaderUI, Event, Screen
+    local DocumentRegistry, UIManager, ReaderUI, Screen
     local readerui, rolling
 
     setup(function()
