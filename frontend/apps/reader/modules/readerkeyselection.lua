@@ -435,8 +435,9 @@ function ReaderKeySelection:clearFlashHighlight()
 end
 
 function ReaderKeySelection:startHighlightIndicator()
-    -- disable long-press icon (poke-ball), as it is triggered constantly due to NT devices needing a workaround for text selection to work.
-    self.ui.highlight.long_hold_reached_action = function() end
+    -- disable long-press icon (poke-ball), as it is triggered constantly due
+    -- to NT devices needing a workaround for text selection to work.
+    self.ui.highlight:disableLongHoldReachedAction()
     if self.view.visible_area and not self._current_indicator_pos then
         local rect = self._previous_indicator_pos
         -- set start position to centre of page
@@ -516,6 +517,7 @@ end
 
 function ReaderKeySelection:stopHighlightIndicator(need_clear_selection)
     if not self._current_indicator_pos then return false end
+    self.ui.highlight:restoreLongHoldReachedAction()
     -- If we're in select mode and user presses back, end the selection
     if self.ui.highlight.select_mode and self.ui.highlight.highlight_idx then
         self.ui.highlight.select_mode = false
