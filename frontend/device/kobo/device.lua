@@ -21,6 +21,69 @@ local function yes() return true end
 local function no() return false end
 local function NOP() return end
 
+-- The include/linux/usb/role.h calls the USB roles "host" and "device".
+local USB_ROLE_DEVICE = "device"
+local USB_ROLE_HOST   = "host"
+-- The Chipidea driver calls them "host" and "gadget".
+-- This plugin sticks to Linux naming except when interacting with drivers.
+local CHIPIDEA_TO_USB = {
+    host   = USB_ROLE_HOST,
+    gadget = USB_ROLE_DEVICE,
+}
+local USB_TO_CHIPIDEA = {
+    [USB_ROLE_HOST]   = "host",
+    [USB_ROLE_DEVICE] = "gadget",
+}
+-- sunxi just adds a "usb_" prefix
+local SUNXI_TO_USB = {
+    usb_host   = USB_ROLE_HOST,
+    usb_device = USB_ROLE_DEVICE,
+}
+local USB_TO_SUNXI = {
+    [USB_ROLE_HOST]   = "usb_host",
+    [USB_ROLE_DEVICE] = "usb_device",
+}
+
+-- This path exists on Kobo Clara and newer. Other devices w/ Chipidea drivers should have it too.
+-- Also, the kernel must be compiled with CONFIG_DEBUG_FS and the debugfs must be mounted (we'll ensure the latter).
+local OTG_CHIPIDEA_ROLE_PATH = "/sys/kernel/debug/ci_hdrc.0/role"
+-- This one is for devices on a sunxi SoC (tested on a B300, as found on the Kobo Elipsa & Sage).
+-- It does not require debugfs, but the point is moot as debugfs is mounted by default on those,
+-- as Nickel relies on it for PM interaction with the display driver.
+local OTG_SUNXI_ROLE_PATH = "/sys/devices/platform/soc/usbc0/otg_role"
+
+local function setupDebugFS()
+    local mounts = io.open("/proc/mounts", "re")
+    if not mounts then
+        return false
+    end
+
+    local found = false
+    for line in mounts:lines() do
+        if line:find("^none /sys/kernel/debug debugfs") or
+           line:find("^debugfs /sys/kernel/debug debugfs") then
+            found = true
+            break
+        end
+    end
+    mounts:close()
+
+    if not found then
+        -- If we're not root, we won't be able to mount it
+        if C.getuid() ~= 0 then
+            logger.dbg("Kobo setupDebugFS: Cannot mount debugfs (unprivileged user)")
+            return false
+        end
+
+        if os.execute("mount -t debugfs none /sys/kernel/debug") ~= 0 then
+            logger.dbg("Kobo setupDebugFS: Failed to mount debugfs")
+            return false
+        end
+    end
+
+    return true
+end
+
 local function koboEnableWifi(toggle)
     if toggle == true then
         logger.info("Kobo Wi-Fi: enabling Wi-Fi")
@@ -597,6 +660,43 @@ local KoboSpaColour = Kobo:extend{
     hasColorScreen = yes,
 }
 
+function Kobo:getOTGRole()
+    local role = USB_ROLE_DEVICE
+    if self.otg_mode == "chipidea" then
+        local file = io.open(OTG_CHIPIDEA_ROLE_PATH, "re")
+        if file then
+            local chipidea_role = file:read("l")
+            file:close()
+            return CHIPIDEA_TO_USB[chipidea_role] or role
+        end
+    elseif self.otg_mode == "sunxi" then
+        local file = io.open(OTG_SUNXI_ROLE_PATH, "re")
+        if file then
+            local sunxi_role = file:read("l")
+            file:close()
+            return SUNXI_TO_USB[sunxi_role] or role
+        end
+    end
+    return role
+end
+
+function Kobo:setOTGRole(role)
+    logger.dbg("Kobo: setting OTG role to", role)
+    if self.otg_mode == "chipidea" then
+        local file = io.open(OTG_CHIPIDEA_ROLE_PATH, "we")
+        if file then
+            file:write(USB_TO_CHIPIDEA[role])
+            file:close()
+        end
+    elseif self.otg_mode == "sunxi" then
+        local file = io.open(OTG_SUNXI_ROLE_PATH, "we")
+        if file then
+            file:write(USB_TO_SUNXI[role])
+            file:close()
+        end
+    end
+end
+
 function Kobo:setupChargingLED()
     if G_reader_settings:nilOrTrue("enable_charging_led") then
         if self:hasAuxBattery() and self.powerd:isAuxBatteryConnected() then
@@ -976,6 +1076,22 @@ function Kobo:init()
     -- Disable key repeat if requested
     if G_reader_settings:isTrue("input_no_key_repeat") then
         self:toggleKeyRepeat(false)
+    end
+
+    -- The mount point probably doesn't exist on kernels built w/o CONFIG_DEBUG_FS
+    if lfs.attributes("/sys/kernel/debug", "mode") == "directory" then
+        -- This should be in init() but the check must come first. So this part
+        -- of initialization is here. It is quick and harmless enough for a check.
+        setupDebugFS()
+        if lfs.attributes(OTG_CHIPIDEA_ROLE_PATH, "mode") == "file" then
+            self.supportsExternalKeyboard = yes
+            self.hasOTGManagement = yes
+            self.otg_mode = "chipidea"
+        elseif lfs.attributes(OTG_SUNXI_ROLE_PATH, "mode") == "file" then
+            self.supportsExternalKeyboard = yes
+            self.hasOTGManagement = yes
+            self.otg_mode = "sunxi"
+        end
     end
 
     -- Finally, Let Generic properly setup the standard stuff.
