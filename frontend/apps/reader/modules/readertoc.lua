@@ -970,7 +970,7 @@ function ReaderToc:onShowToc()
                     buttons = {
                         {
                             {
-                                text = _("Mark all chapters as regular flow"),
+                                text = _("Include all chapters to regular flow"),
                                 enabled = self.ui.document:hasHiddenFlows(),
                                 callback = function()
                                     self.ui.handmade:unhideAll()
@@ -980,7 +980,7 @@ function ReaderToc:onShowToc()
                         },
                         {
                             {
-                                text = _("Mark chapter as regular flow"),
+                                text = _("Include chapter to regular flow"),
                                 enabled = self.ui.document:hasHiddenFlows(),
                                 callback = function()
                                     self.ui.handmade:hideUnhidePages(toc_start, toc_end)
@@ -990,7 +990,7 @@ function ReaderToc:onShowToc()
                         },
                         {
                             {
-                                text = _("Mark chapter as hidden flow"),
+                                text = _("Include chapter to hidden flow"),
                                 callback = function()
                                     self.ui.handmade:hideUnhidePages(toc_start, toc_end, true)
                                     updateToc()
