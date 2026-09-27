@@ -110,7 +110,10 @@ local codecs = {
         end,
 
         deserialize = function(str, path)
-            if str and not path then
+            if (not str) == (not path) then
+                return nil, "invalid arguments"
+            end
+            if str then
                 local buff, ulen = zstd.zstd_uncompress(str, #str)
                 if not buff then
                     return nil, "failed to decompress string"
