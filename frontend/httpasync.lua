@@ -106,7 +106,7 @@ end
 -- @param url string
 -- @param redirect_count number internal recursion guard
 -- @param headers table optional extra request headers (e.g. cookie)
--- @return (true, content_type, content) or (false, err)
+-- @return (true, content, content_type) or (false, err)
 function HttpAsync.fetch_url(url, redirect_count, headers)
     redirect_count = redirect_count or 0
     if redirect_count > MAX_REDIRECTS then return false, "Too many redirects" end
@@ -259,7 +259,7 @@ function HttpAsync.fetch_url(url, redirect_count, headers)
 
     sock:close()
     local content = table.concat(body)
-    return true, resp_headers["content-type"], content
+    return true, content, resp_headers["content-type"]
 end
 
 --- Download many tasks concurrently via a coroutine scheduler.
@@ -289,8 +289,7 @@ function HttpAsync.fetch_many(tasks, opts)
     local concurrency = opts.concurrency or DEFAULT_CONCURRENCY
     local get_url = opts.get_url or function(task) return task end
     local fetch = opts.fetch or function(url)
-        local ok, _, content = HttpAsync.fetch_url(url)
-        return ok, content
+        return HttpAsync.fetch_url(url)
     end
     local on_success = opts.on_success
     local on_failure = opts.on_failure
