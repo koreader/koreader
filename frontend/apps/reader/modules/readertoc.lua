@@ -973,7 +973,7 @@ function ReaderToc:onShowToc()
                                 text = _("Include all chapters in regular flow"),
                                 enabled = self.ui.document:hasHiddenFlows(),
                                 callback = function()
-                                    self.ui.handmade:unhideAll()
+                                    self.ui.handmade:includeAllPagesInRegularFlow()
                                     updateToc()
                                 end,
                             },
@@ -983,7 +983,7 @@ function ReaderToc:onShowToc()
                                 text = _("Include chapter in regular flow"),
                                 enabled = self.ui.document:hasHiddenFlows(),
                                 callback = function()
-                                    self.ui.handmade:hideUnhidePages(toc_start, toc_end)
+                                    self.ui.handmade:includePagesInRegularOrHiddenFlow(toc_start, toc_end)
                                     updateToc()
                                 end,
                             },
@@ -992,7 +992,7 @@ function ReaderToc:onShowToc()
                             {
                                 text = _("Include chapter in hidden flow"),
                                 callback = function()
-                                    self.ui.handmade:hideUnhidePages(toc_start, toc_end, true)
+                                    self.ui.handmade:includePagesInRegularOrHiddenFlow(toc_start, toc_end, true)
                                     updateToc()
                                 end,
                             },
