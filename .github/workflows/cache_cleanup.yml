@@ -15,8 +15,14 @@ jobs:
   cleanup:
     runs-on: ubuntu-26.04
     steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          clean: false
+          fetch-depth: 1
+          show-progress: false
+          sparse-checkout: .ci
       - name: Cleanup
         env:
           GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
         run: ./.ci/cache_cleanup.sh refs/pull/${{ github.event.pull_request.number }}/merge
