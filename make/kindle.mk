@@ -1,8 +1,5 @@
 KINDLE_DIR = $(PLATFORM_DIR)/kindle
 KINDLE_PACKAGE = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).zip
-KINDLE_PACKAGE_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).tar.xz
-# Note: the targz extension is intended to keep ISP from caching the file (Cf. koreader#1644).
-KINDLE_PACKAGE_OLD_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).targz
 
 # Don't bundle launchpad on touch devices..
 ifeq ($(TARGET), kindle-legacy)
@@ -27,10 +24,4 @@ update-prepare: all
 update-zip: update-prepare
 	$(strip $(call mkupdate,$(KINDLE_PACKAGE))) extensions $(KINDLE_LEGACY_LAUNCHER)
 
-update-txz: update-prepare
-	$(strip $(call mkupdate,$(KINDLE_PACKAGE_OTA))) extensions $(KINDLE_LEGACY_LAUNCHER)
-
-update-tgz: update-prepare
-	$(strip $(call mkupdate,$(KINDLE_PACKAGE_OLD_OTA))) extensions $(KINDLE_LEGACY_LAUNCHER)
-
-update: update-zip update-txz update-tgz
+update: update-zip
