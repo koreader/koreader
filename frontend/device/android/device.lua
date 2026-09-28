@@ -615,9 +615,12 @@ function Device:getPageTurnEffect()
     return require("ui/pageturneffect").resolve(ui)
 end
 
--- iReader Neo 3 Ultra: fire the hardware "water ripple" right before the page
--- commit, pacing consecutive page turns so the panel is never asked to play the
--- next animation while the previous one is still running (which dropped it).
+-- iReader Neo 3 Ultra: fire the hardware "water ripple" right before a page-turn
+-- commit. The ripple is an EPDC waveform applied to the very same frame commit
+-- that draws the page, so it cannot be decoupled from the content: we must not
+-- delay a page turn to let an animation finish. The panel plays the ripple when
+-- it is free and simply skips it while a previous one is still running, which
+-- keeps page turns responsive.
 function Device:setupPageTurnAnimation()
     if not self:hasPageTurnAnimation() then
         return
@@ -625,9 +628,6 @@ function Device:setupPageTurnAnimation()
 
     local bit = require("bit")
     local last_page
-    local last_turn_at = 0 -- monotonic seconds of the last page-turn commit
-    local scheduled = false
-    local pending -- coalesced deferred page-turn commit
 
     -- Direction nibble for next-effect-type N.
     -- The panel encodes rotation via Display.getRotation() (0/90/180/270), but
@@ -641,13 +641,6 @@ function Device:setupPageTurnAnimation()
         ripple_slow = 128,
         ripple_standard = 64,
         ripple_fast = 0,
-    }
-    -- Seconds the panel stays busy playing each animation, calibrated to match
-    -- the stock reader (~310 ms per standard turn).
-    local turn_window = {
-        ripple_slow = 0.55,
-        ripple_standard = 0.31,
-        ripple_fast = 0.16,
     }
 
     local function current_page()
@@ -691,35 +684,16 @@ function Device:setupPageTurnAnimation()
             if page then
                 last_page = page
             end
-            -- Non-page-turn refreshes are never throttled.
-            if not changed then
-                return orig(screen, x, y, w, h, unpack(extra))
-            end
-
-            local effect = self:getPageTurnEffect()
-            pending = function()
-                pending = nil
-                last_turn_at = UIManager:getTime()
-                local e = encode(forward, effect)
+            -- Only page turns play the ripple; other refreshes pass straight
+            -- through. The commit is never deferred: the panel plays the ripple
+            -- if it is free, otherwise the page still turns immediately.
+            if changed then
+                local e = encode(forward, self:getPageTurnEffect())
                 if e then
                     android.einkPrepareRipple(e)
                 end
-                orig(screen, x, y, w, h, unpack(extra))
             end
-            local wait = last_turn_at + (turn_window[effect] or 0) - UIManager:getTime()
-            if wait > 0 then
-                if not scheduled then
-                    scheduled = true
-                    UIManager:scheduleIn(wait, function()
-                        scheduled = false
-                        if pending then
-                            pending()
-                        end
-                    end)
-                end
-            else
-                pending()
-            end
+            orig(screen, x, y, w, h, unpack(extra))
         end
     end
     wrap("refreshFullImp")
