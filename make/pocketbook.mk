@@ -1,7 +1,5 @@
 POCKETBOOK_DIR = $(PLATFORM_DIR)/pocketbook
 PB_PACKAGE = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).zip
-PB_PACKAGE_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).tar.xz
-PB_PACKAGE_OLD_OTA = koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).targz
 
 define UPDATE_PATH_EXCLUDES +=
 tools
@@ -21,10 +19,4 @@ update-prepare: all
 update-zip: update-prepare
 	$(strip $(call mkupdate,--manifest-transform=/^system\//d $(PB_PACKAGE),applications/koreader)) applications system
 
-update-txz: update-prepare
-	$(strip $(call mkupdate,--manifest-transform=/^system\//d $(PB_PACKAGE_OTA),applications/koreader)) applications system
-
-update-tgz: update-prepare
-	$(strip $(call mkupdate,--manifest-transform=s/^/..\// $(PB_PACKAGE_OLD_OTA),applications/koreader)) applications
-
-update: update-zip update-txz update-tgz
+update: update-zip
