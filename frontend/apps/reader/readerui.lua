@@ -1004,4 +1004,35 @@ function ReaderUI:getCurrentPage()
     return self.paging and self.paging.current_page or self.document:getCurrentPage()
 end
 
+function ReaderUI:findTextInBookContent(caller, file, search_string)
+    -- Must be called within a subprocess (Trapper).
+    -- Must not be called from modules over Reader to avoid two instances of crengine.
+    logger.dbg("Search in book:", file)
+    local provider = self:extendProvider(file, DocumentRegistry:getProvider(file))
+    local document = DocumentRegistry:openDocument(file, provider)
+    if not document then return false end
+    local loaded, found
+    if document.loadDocument then -- crengine
+        -- We will be half-loading documents and may mess with crengine's state.
+        -- Fortunately, this is run in a subprocess, so we won't be affecting the
+        -- main process's crengine state or any document opened in the main
+        -- process (we furthermore prevent this feature when one is opened).
+        -- To avoid creating half-rendered/invalid cache files, it's best to disable
+        -- crengine saving of such cache files.
+        if not caller.is_cre_cache_disabled then
+            local cre = require("document/credocument"):engineInit()
+            cre.initCache("", 0, true, 40)
+            caller.is_cre_cache_disabled = true
+        end
+        loaded = document:loadDocument()
+    else
+        loaded = true
+    end
+    if loaded then
+        found = document:findText(search_string, 0, 0, not caller.case_sensitive, 1, false, 1)
+    end
+    document:close()
+    return type(found) == "table" and (found.page or found[1]["start"])
+end
+
 return ReaderUI
