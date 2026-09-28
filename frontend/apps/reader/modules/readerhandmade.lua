@@ -284,7 +284,7 @@ Hidden flows are shown with gray or hatched background in Book map and Page brow
                         UIManager:show(ConfirmBox:new{
                             text = _("Are you sure you want to clear all your custom hidden flows?"),
                             ok_callback = function()
-                                self:unhideAll(true)
+                                self:includeAllPagesInRegularFlow(true)
                                 touchmenu_instance:updateItems()
                             end,
                         })
@@ -570,13 +570,13 @@ function ReaderHandMade:updateDocFlowsRelatedInfo(update_toc)
     self.view.footer:maybeUpdateFooter()
 end
 
-function ReaderHandMade:unhideAll(update_toc)
+function ReaderHandMade:includeAllPagesInRegularFlow(update_toc)
     self.flow_points = {}
     self:updateDocFlows()
     self:updateDocFlowsRelatedInfo(update_toc)
 end
 
-function ReaderHandMade:hideUnhidePages(first_page, last_page, hide)
+function ReaderHandMade:includePagesInRegularOrHiddenFlow(first_page, last_page, hidden_flow)
     local next_page, next_page_hidden
     if last_page < self.document:getPageCount() then
         next_page = last_page + 1
@@ -608,7 +608,7 @@ function ReaderHandMade:hideUnhidePages(first_page, last_page, hide)
         self:toggleHiddenFlow(next_page)
     end
 
-    if hide then
+    if hidden_flow then
         self:toggleHiddenFlow(first_page)
         if next_page and not next_page_hidden and self:isInHiddenFlow(next_page) then
             self:toggleHiddenFlow(next_page)
