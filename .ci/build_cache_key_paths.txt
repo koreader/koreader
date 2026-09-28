@@ -1,0 +1,15 @@
+*.[ch]
+*.cpp
+cmake
+CMakeLists.txt
+Makefile
+Makefile.defs
+origin.ldflags
+thirdparty/*/*
+utils/gen_linker_exports.sh
+:!**/.*
+:!*.lua
+:!*.md
+:!ffi-cdecl/ffi-cdecl.h
+:!ffi-cdecl/include
+:!utils/bincheck

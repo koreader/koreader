@@ -1,0 +1,22 @@
+# This workflow is managed by gh actions-lock.
+
+name: Cache cleanup
+
+permissions:
+  actions: write
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+
+  cleanup:
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Cleanup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: ./.ci/cache_cleanup.sh refs/pull/${{ github.event.pull_request.number }}/merge
