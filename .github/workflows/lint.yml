@@ -1,0 +1,35 @@
+# This workflow is managed by gh actions-lock.
+
+name: Lint
+
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: stdbuf --error=L --output=L bash --noprofile --norc -eo pipefail {0}
+
+jobs:
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-26.04
+    container:
+      image: koreader/kobase:3.0.0-22.04
+    env:
+      CLICOLOR_FORCE: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          clean: false
+          fetch-depth: 1
+          show-progress: false
+      - name: Checkout submodules
+        run: git submodule update --depth 1 --init --jobs 2 base l10n
+      - name: Lint
+        run: ./.ci/check.sh
