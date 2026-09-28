@@ -1014,6 +1014,7 @@ function OPDSBrowser:saveCatalogSnapshot()
             facet_groups = self.facet_groups,
             item_table = self.item_table,
             search_url = self.search_url,
+            alt_search_url = self.alt_search_url,
         }
     end
 end
@@ -1510,6 +1511,7 @@ function OPDSBrowser:onReturn()
             self.catalog_title = path.snapshot.catalog_title
             self.facet_groups = path.snapshot.facet_groups
             self.search_url = path.snapshot.search_url
+            self.alt_search_url = path.snapshot.alt_search_url
             self:setCatalogMenu(path.url, path.snapshot.item_table)
         else
             -- Return to a path that predates session caching.
