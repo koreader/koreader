@@ -20,14 +20,6 @@ local T = require("ffi/util").template
 
 local band = bit.band
 
--- Record the current reading position, keeping the EPUB CFI in sync with the
--- XPointer it is derived from. Without an explicit xpointer, the position is
--- taken from the document's current view.
-local function recordPosition(self, xpointer)
-    self.xpointer = xpointer or self.ui.document:getXPointer()
-    self.epubcfi = self.ui.document:getEPubCFIFromXPointer(self.xpointer)
-end
-
 -- We need a small mmap'ped segment to exchange states with forked
 -- subproceses doing background rerenderings.
 -- Used as:
@@ -217,7 +209,6 @@ function ReaderRolling:onReadSettings(config)
             -- we have to do a real jump in self.ui.document._document to
             -- update status information in CREngine.
             self.ui.document:gotoXPointer(self.xpointer)
-            recordPosition(self, self.xpointer)
         end
     -- we read last_percent just for backward compatibility
     --- @fixme remove this branch with migration script
@@ -235,11 +226,11 @@ function ReaderRolling:onReadSettings(config)
                 self.ui:handleEvent(
                     Event:new("PageUpdate", self.ui.document:getCurrentPage()))
             end
-            recordPosition(self)
+            self.xpointer = self.ui.document:getXPointer()
         end
     else
         self.setupXpointer = function()
-            recordPosition(self)
+            self.xpointer = self.ui.document:getXPointer()
             if self.view.view_mode == "page" then
                 self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getNextPage(0)))
             end
@@ -296,6 +287,8 @@ function ReaderRolling:onCloseDocument()
 
     self.current_header_height = nil -- show unload progress bar at top
 
+    self.ui.doc_settings:saveSetting("last_epubcfi", self.ui.document:getEPubCFIFromXPointer(self.xpointer))
+
     local cache_file_path = self.ui.document:getCacheFilePath() -- nil if no cache file
     self.ui.doc_settings:saveSetting("cache_file_path", cache_file_path)
     if self.ui.document:hasCacheFile() then
@@ -347,7 +340,6 @@ function ReaderRolling:onSaveSettings()
     self.ui.doc_settings:saveSetting("percent_finished", self.view.footer.percent_finished)
     self.ui.doc_settings:delSetting("last_percent") -- deprecated
     self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
-    self.ui.doc_settings:saveSetting("last_epubcfi", self.epubcfi)
     self.ui.doc_settings:saveSetting("hide_nonlinear_flows", self.hide_nonlinear_flows)
     self.ui.doc_settings:saveSetting("partial_rerendering", self.partial_rerendering)
 end
@@ -538,7 +530,7 @@ function ReaderRolling:onScrollSettingsUpdated(scroll_method, inertial_scroll_en
             function() -- scroll_done_callback
                 UIManager.currently_scrolling = false
                 if self.ui.document then
-                    recordPosition(self)
+                    self.xpointer = self.ui.document:getXPointer()
                 end
                 UIManager:setDirty(self.view.dialog, "partial")
             end
@@ -673,7 +665,7 @@ function ReaderRolling:onPanRelease(_, ges)
     UIManager.currently_scrolling = false
     if self._pan_has_scrolled then
         self._pan_has_scrolled = false
-        recordPosition(self)
+        self.xpointer = self.ui.document:getXPointer()
         -- Don't do any inertial scrolling if pan events come from
         -- a mousewheel (which may have itself some inertia)
         if (ges and ges.from_mousewheel) or not self.ui.scrolling:startInertialScroll() then
@@ -759,7 +751,7 @@ end
 function ReaderRolling:onGotoPercent(percent)
     logger.dbg("goto document offset in percent:", percent)
     self:_gotoPercent(percent)
-    recordPosition(self)
+    self.xpointer = self.ui.document:getXPointer()
     return true
 end
 
@@ -767,7 +759,7 @@ function ReaderRolling:onGotoPage(number)
     if number then
         self:_gotoPage(number)
     end
-    recordPosition(self)
+    self.xpointer = self.ui.document:getXPointer()
     return true
 end
 
@@ -775,7 +767,7 @@ function ReaderRolling:onGotoRelativePage(number)
     if number then
         self:_gotoPage(self.current_page + number)
     end
-    recordPosition(self)
+    self.xpointer = self.ui.document:getXPointer()
     return true
 end
 
@@ -792,7 +784,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
         self.unmark_func = nil
     end
     self:_gotoXPointer(xp)
-    recordPosition(self, xp)
+    self.xpointer = xp
 
     -- Allow tweaking this marker behaviour with a manual setting:
     --   followed_link_marker = false: no marker shown
@@ -954,7 +946,7 @@ function ReaderRolling:onGotoViewRel(diff)
         end
     end
     if self.ui.document ~= nil then
-        recordPosition(self)
+        self.xpointer = self.ui.document:getXPointer()
     end
     if self.ui.keyselection:isActive() then
         self.ui.keyselection:pageTurnDuringSelection()
@@ -969,7 +961,7 @@ function ReaderRolling:onPanning(args, _)
         return
     end
     self:_gotoPos(self.current_pos + dy * self.panning_steps.normal)
-    recordPosition(self)
+    self.xpointer = self.ui.document:getXPointer()
     return true
 end
 
