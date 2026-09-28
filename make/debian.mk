@@ -12,4 +12,6 @@ update-deb: all
 	# Cleanup.
 	rm -rf $(INSTALL_DIR)/deb
 
+ifneq (,$(shell command -v dpkg-deb))
 update: update-deb
+endif
