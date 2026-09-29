@@ -189,6 +189,16 @@ function OPDSBrowser:showCatalogMenu()
             align = "left",
         }})
     end
+    if self.alt_search_url then
+        table.insert(buttons, {{
+            text = "\u{f002} " .. _("Alt search"),
+            callback = function()
+                UIManager:close(dialog)
+                self:searchCatalog(self.alt_search_url)
+            end,
+            align = "left",
+        }})
+    end
     if self.facet_groups then
         table.insert(buttons, {}) -- separator
         for group_name, links in ffiUtil.orderedPairs(self.facet_groups) do
@@ -616,6 +626,7 @@ function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
     self.catalog_title = catalog.metadata and catalog.metadata.title or self.catalog_title
     self.facet_groups = nil
     self.search_url = nil
+    self.alt_search_url = nil
     local item_table = { hrefs = {} }
 
     if type(catalog.links) == "table" then
@@ -808,21 +819,21 @@ end
 -- Generates catalog item table and processes OPDS facets/search links
 function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
     local item_table = {}
-    self.facet_groups = nil -- Reset facets
-    self.search_url = nil   -- Reset search URL
+    self.facet_groups = nil
+    self.search_url = nil
+    self.alt_search_url = nil
 
     if not catalog then
         return item_table
     end
 
     local feed = catalog.feed or catalog
-    self.facet_groups = {} -- Initialize table to store facet groups
+    self.facet_groups = {}
 
     local function build_href(href)
         return url.absolute(item_url, href)
     end
 
-    local has_opensearch = false
     local hrefs = {}
     if feed.link then
         for __, link in ipairs(feed.link) do
@@ -833,17 +844,14 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                     end
                 end
                 if not self.sync then
-                    -- OpenSearch
-                    if link.type:find(self.search_type) then
-                        if link.href then
-                            self.search_url = build_href(self:getSearchTemplate(build_href(link.href)))
-                            has_opensearch = true
+                    if link.href then
+                        if not self.search_url and link.type:find(self.search_type) then
+                            local template = self:getSearchTemplate(build_href(link.href))
+                            self.search_url = template and build_href(template)
                         end
-                    end
-                    -- Calibre search (also matches the actual template for OpenSearch!)
-                    if link.type:find(self.search_template_type) and link.rel and link.rel:find("search") then
-                        if link.href and not has_opensearch then
-                            self.search_url = build_href(link.href:gsub("{searchTerms}", "%%s"))
+                        if not self.alt_search_url and link.type:find(self.search_template_type)
+                                and link.rel and link.rel:find("search") then
+                            self.alt_search_url = build_href(link.href:gsub("{searchTerms}", "%%s"))
                         end
                     end
                     -- Process OPDS facets
@@ -855,6 +863,14 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                         table.insert(self.facet_groups[group_name], link)
                     end
                 end
+            end
+        end
+        if self.alt_search_url then
+            if not self.search_url then
+                self.search_url = self.alt_search_url
+                self.alt_search_url = nil
+            elseif self.alt_search_url == self.search_url then
+                self.alt_search_url = nil
             end
         end
     end
@@ -998,6 +1014,7 @@ function OPDSBrowser:saveCatalogSnapshot()
             facet_groups = self.facet_groups,
             item_table = self.item_table,
             search_url = self.search_url,
+            alt_search_url = self.alt_search_url,
         }
     end
 end
@@ -1494,6 +1511,7 @@ function OPDSBrowser:onReturn()
             self.catalog_title = path.snapshot.catalog_title
             self.facet_groups = path.snapshot.facet_groups
             self.search_url = path.snapshot.search_url
+            self.alt_search_url = path.snapshot.alt_search_url
             self:setCatalogMenu(path.url, path.snapshot.item_table)
         else
             -- Return to a path that predates session caching.
@@ -2206,4 +2224,5 @@ function OPDSBrowser:downloadPendingSyncs()
         UIManager:show(textviewer)
     end
 end
+
 return OPDSBrowser
