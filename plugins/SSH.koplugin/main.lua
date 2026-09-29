@@ -2,6 +2,7 @@ local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
 local Device =  require("device")
 local Dispatcher = require("dispatcher")
+local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")  -- luacheck:ignore
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
@@ -24,6 +25,7 @@ end
 local SSH = WidgetContainer:extend{
     name = "SSH",
     is_doc_only = false,
+    footer_symbol = "ꜱꜱʜ", -- small caps
 }
 
 function SSH:init()
@@ -36,6 +38,23 @@ function SSH:init()
 
     if self.autostart then
         self:start()
+    end
+
+    self.show_in_footer = G_reader_settings:isTrue("SSH_show_in_footer")
+    self.additional_footer_content_func = function()
+        if self:isRunning() then
+            local item_prefix = self.ui.view.footer.settings.item_prefix
+            local insecure = self.allow_no_password and not self.key_only_auth
+            if item_prefix == "letters" then
+                return T(_("%1 on"), self.footer_symbol)
+            else
+                return insecure and "🔓" .. self.footer_symbol or self.footer_symbol
+            end
+        end
+        return
+    end
+    if self.show_in_footer then
+        self:addAdditionalFooterContent()
     end
 
     self.ui.menu:registerToMainMenu(self)
@@ -84,6 +103,7 @@ function SSH:start()
     end
     logger.dbg("[Network] Launching SSH server : ", cmd)
     if os.execute(cmd) == 0 then
+        self:update_footer()
         local info = InfoMessage:new{
                 timeout = 10,
                 -- @translators: %1 is the SSH port, %2 is the network info.
@@ -194,6 +214,7 @@ function SSH:stop()
         end
     end
     if ok then
+        self:update_footer()
         UIManager:show(InfoMessage:new{
             text = self.force_kill_clients
                    and _("SSH server stopped.")
@@ -244,6 +265,27 @@ function SSH:show_port_dialog(touchmenu_instance)
     }
     UIManager:show(self.port_dialog)
     self.port_dialog:onShowKeyboard()
+end
+
+function SSH:update_footer()
+    if self.show_in_footer then
+        UIManager:broadcastEvent(Event:new("RefreshAdditionalContent"))
+    end
+end
+
+function SSH:addAdditionalFooterContent()
+    if self.ui.view then
+        self.ui.view.footer:addAdditionalFooterContent(self.additional_footer_content_func)
+        self:update_footer()
+    end
+end
+
+function SSH:removeAdditionalFooterContent()
+    if self.ui.view then
+        self.ui.view.footer:removeAdditionalFooterContent(self.additional_footer_content_func)
+        self:update_footer()
+        UIManager:broadcastEvent(Event:new("UpdateFooter", true))
+    end
 end
 
 function SSH:addToMainMenu(menu_items)
@@ -337,6 +379,19 @@ function SSH:addToMainMenu(menu_items)
                     G_reader_settings:flipNilOrFalse("SSH_force_kill_clients")
                 end,
                 separator = true,
+            },
+            {
+                text = _("Show SSH status in status bar"),
+                checked_func = function() return self.show_in_footer end,
+                callback = function()
+                    self.show_in_footer = not self.show_in_footer
+                    G_reader_settings:flipNilOrFalse("SSH_show_in_footer")
+                    if self.show_in_footer then
+                        self:addAdditionalFooterContent()
+                    else
+                        self:removeAdditionalFooterContent()
+                    end
+                end,
             },
        }
     }
