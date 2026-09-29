@@ -493,6 +493,7 @@ local WordInfoDialog = FocusManager:extend{
     reset_callback = nil,
     update_callback = nil, -- used when duplicate word found when adding
     review_due = false, -- show Got it / Forgot when updating an entry due for review
+    dict_review = false, -- dictionary Review button: allow study actions when due
     dismissable = true, -- set to false if any button callback is required
 }
 local book_title_triangle = BD.mirroredUILayout() and " ⯇" or " ⯈"
@@ -588,14 +589,9 @@ function WordInfoDialog:init()
 
     local buttons
     if self.update_callback then
-        buttons = {}
-        if self.remove_callback then
-            table.insert(buttons, { remove_button })
-        end
-        if self.review_due then
-            table.insert(buttons, { got_it_button, forgot_button, update_button })
-        else
-            table.insert(buttons, { update_button })
+        buttons = {{ remove_button, update_button }}
+        if self.dict_review and self.review_due then
+            table.insert(buttons, { got_it_button, forgot_button })
         end
     else
         buttons = {{ reset_button, remove_button }}
@@ -2011,8 +2007,16 @@ function VocabBuilder:getDictVocabItem(dict_popup)
     return dict_popup._vocabbuilder_item
 end
 
-function VocabBuilder:invalidateDictVocabCache(dict_popup)
-    dict_popup._vocabbuilder_cached_word = nil
+function VocabBuilder:syncDictVocabLookup(dict_popup)
+    if not dict_popup then return end
+    local word = self:getDictLookupWord(dict_popup)
+    if dict_popup._vocabbuilder_lookup_word == word then return end
+    dict_popup._vocabbuilder_lookup_word = word
+    local item = DB:hasWord(word)
+    dict_popup._vocabbuilder_was_saved = item ~= nil
+    dict_popup._vocabbuilder_added_here = false
+    dict_popup._vocabbuilder_cached_word = word
+    dict_popup._vocabbuilder_item = item
 end
 
 function VocabBuilder:refreshDictVocabItem(dict_popup, word)
@@ -2048,17 +2052,17 @@ function VocabBuilder:makeDictWordUpdate(word, book_title)
     end
 end
 
-function VocabBuilder:showVocabWordInfoDialog(word, item, update_callback, dict_popup)
+function VocabBuilder:showVocabWordInfoDialog(word, item, update_callback, dict_popup, dict_review)
     local date_str = T(_("Added on %1"), os.date("%Y-%m-%d", item.create_time))
     local time_str = T(_("Review scheduled at %1"), os.date("%Y-%m-%d %H:%M", item.due_time))
-    local refresh_item = function()
+    local refresh_dict = function()
         if dict_popup then
             self:refreshDictVocabItem(dict_popup, word)
             self:rebuildDictVocabButtons(dict_popup)
         end
     end
     UIManager:show(WordInfoDialog:new{
-        title = _("Vocabulary exists:") .. " " .. word,
+        title = (dict_review and _("Review:") or _("Vocabulary exists:")) .. " " .. word,
         word = word,
         highlighted_word = item.highlight or word,
         book_title = item.book_title,
@@ -2066,16 +2070,17 @@ function VocabBuilder:showVocabWordInfoDialog(word, item, update_callback, dict_
         prev_context = item.prev_context,
         next_context = item.next_context,
         review_due = item.due_time <= os.time(),
+        dict_review = dict_review,
         update_callback = function()
             update_callback()
-            refresh_item()
+            refresh_dict()
         end,
         forgot_callback = function()
             local current = DB:hasWord(word)
             if current then
                 DB:gotOrForgot(current, false)
                 DB:batchUpdateItems({ current })
-                refresh_item()
+                refresh_dict()
             end
         end,
         got_it_callback = function()
@@ -2083,30 +2088,15 @@ function VocabBuilder:showVocabWordInfoDialog(word, item, update_callback, dict_
             if current then
                 DB:gotOrForgot(current, true)
                 DB:batchUpdateItems({ current })
-                refresh_item()
+                refresh_dict()
             end
         end,
         remove_confirm_text = T(_("Remove word \"%1\" from vocabulary builder?"), word),
         remove_callback = function()
             DB:remove({ word = word })
-            refresh_item()
+            refresh_dict()
         end,
     })
-end
-
-function VocabBuilder:hasDictVocabButtons()
-    return self.ui and self.ui.dictionary and self.ui.dictionary._dict_buttons
-        and self.ui.dictionary._dict_buttons.vocabulary
-end
-
-function VocabBuilder:getDictVocabularyButtonText(dict_popup)
-    if not dict_popup then
-        return _("Add to vocabulary builder")
-    end
-    if self:getDictVocabItem(dict_popup) then
-        return _("Review in vocabulary builder")
-    end
-    return _("Add to vocabulary builder")
 end
 
 function VocabBuilder:rebuildDictVocabButtons(dict_popup)
@@ -2118,7 +2108,7 @@ function VocabBuilder:rebuildDictVocabButtons(dict_popup)
     dict_popup.button_table:init()
     local vocab_btn = dict_popup.button_table:getButtonById("vocabulary")
     if vocab_btn then
-        vocab_btn:setText(self:getDictVocabularyButtonText(dict_popup), vocab_btn.width)
+        vocab_btn:setText(self:dictVocabButtonLabel(dict_popup), vocab_btn.width)
     end
     local prev_dict_btn = dict_popup.button_table:getButtonById("prev_dict")
     if prev_dict_btn then
@@ -2141,8 +2131,9 @@ function VocabBuilder:installDictQuickLookupHooks()
     function DictQuickLookup:changeDictionary(index, skip_update)
         local old_word = self.lookupword
         orig_change_dictionary(self, index, skip_update)
-        if vocabbuilder:hasDictVocabButtons() and self.lookupword ~= old_word then
-            vocabbuilder:invalidateDictVocabCache(self)
+        if vocabbuilder.ui and vocabbuilder.ui.dictionary and vocabbuilder.ui.dictionary._dict_buttons.vocabulary
+            and self.lookupword ~= old_word then
+            vocabbuilder:syncDictVocabLookup(self)
             vocabbuilder:rebuildDictVocabButtons(self)
         end
     end
@@ -2170,19 +2161,24 @@ local function install_vocab_dict_button_rows(layout)
     table.insert(layout, 1, { "vocabulary" })
 end
 
+function VocabBuilder:dictVocabButtonLabel(dict_popup)
+    if not dict_popup then
+        return _("Add to vocabulary builder")
+    end
+    self:syncDictVocabLookup(dict_popup)
+    local item = self:getDictVocabItem(dict_popup)
+    if not item then
+        return _("Add to vocabulary builder")
+    end
+    if dict_popup._vocabbuilder_was_saved and not dict_popup._vocabbuilder_added_here then
+        return _("Review in vocabulary builder")
+    end
+    return _("Remove from vocabulary builder")
+end
+
 function VocabBuilder:registerDictButtons()
     if not self.ui or not self.ui.dictionary then return end
     self:installDictQuickLookupHooks()
-
-    local function get_dict_vocab_button_state(dict_popup)
-        if settings.enabled then
-            return false, nil
-        end
-        if self.widget and self.widget.current_lookup_word == dict_popup.word then
-            return false, nil
-        end
-        return true, self:getDictVocabItem(dict_popup)
-    end
 
     self.ui.dictionary:addToDictButtons({
         id = "vocabulary",
@@ -2193,23 +2189,29 @@ function VocabBuilder:registerDictButtons()
         auto_row_style_width_min_row_size = 2,
         auto_row_style_width_ratio = 0.7,
         show_func = function(dict_popup)
-            -- Button calls text_func() with no args; stash popup for label lookup.
-            self._dict_vocab_label_popup = dict_popup
-            local show, _ = get_dict_vocab_button_state(dict_popup)
-            return show
+            if settings.enabled then return false end
+            if self.widget and self.widget.current_lookup_word == dict_popup.word then return false end
+            self._dict_vocab_label_popup = dict_popup -- text_func() has no dict_popup arg
+            self:syncDictVocabLookup(dict_popup)
+            return true
         end,
         text_func = function()
-            return self:getDictVocabularyButtonText(self._dict_vocab_label_popup)
+            return self:dictVocabButtonLabel(self._dict_vocab_label_popup)
         end,
         callback = function(dict_popup)
             local lookup_word = self:getDictLookupWord(dict_popup)
             local item = self:getDictVocabItem(dict_popup)
-            if item then
-                local book_title = (dict_popup.ui.doc_props and dict_popup.ui.doc_props.display_title) or item.book_title
-                self:showVocabWordInfoDialog(lookup_word, item, self:makeDictWordUpdate(lookup_word, book_title), dict_popup)
+            local book_title = (dict_popup.ui.doc_props and dict_popup.ui.doc_props.display_title)
+                or (item and item.book_title) or _("Dictionary lookup")
+            if item and dict_popup._vocabbuilder_was_saved and not dict_popup._vocabbuilder_added_here then
+                self:showVocabWordInfoDialog(lookup_word, item, self:makeDictWordUpdate(lookup_word, book_title), dict_popup, true)
+            elseif item then
+                DB:remove({ word = lookup_word })
+                self:refreshDictVocabItem(dict_popup, lookup_word)
+                self:rebuildDictVocabButtons(dict_popup)
             else
-                local book_title = (dict_popup.ui.doc_props and dict_popup.ui.doc_props.display_title) or _("Dictionary lookup")
-                dict_popup.ui:handleEvent(Event:new("WordLookedUp", lookup_word, book_title, true)) -- is_manual: true
+                self:makeDictWordUpdate(lookup_word, book_title)()
+                dict_popup._vocabbuilder_added_here = true
                 self:refreshDictVocabItem(dict_popup, lookup_word)
                 self:rebuildDictVocabButtons(dict_popup)
             end
@@ -2299,7 +2301,7 @@ function VocabBuilder:onWordLookedUp(word, title, is_manual)
     local update = self:makeDictWordUpdate(word, title)
     local item = DB:hasWord(word)
     if item then
-        self:showVocabWordInfoDialog(word, item, update, nil)
+        self:showVocabWordInfoDialog(word, item, update, nil, false)
     else
         update()
     end
