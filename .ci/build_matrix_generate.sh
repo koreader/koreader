@@ -23,6 +23,7 @@ cache_epoch="$(jq --raw-output .cache_epoch <<<"${inputs}")"
 caches=
 for ref in "$@"; do
     [[ -n "${ref}" ]] || continue
+    [[ "${ref}" = refs/* ]] || ref="refs/heads/${ref}"
     caches+="$(run gh api -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2026-03-10' "/repos/{owner}/{repo}/actions/caches?per_page=100&key=${cache_epoch}-build&ref=${ref}")"
 done
 caches="$(run jq --compact-output --slurp '[.[] | .actions_caches] | flatten | unique' <<<"${caches}")"
