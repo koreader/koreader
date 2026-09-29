@@ -79,10 +79,7 @@ end
 function ReaderMenu:onPhysicalKeyboardConnected()
     self.key_events = {}
     self:registerKeyEvents()
-    if self.menu_container then
-        self:onCloseReaderMenu()
-    end
-    self.tab_item_table = nil
+    self:onTeardownRebuildAndReopenMenu()
 end
 ReaderMenu.onPhysicalKeyboardDisconnected = ReaderMenu.onPhysicalKeyboardConnected
 
@@ -514,6 +511,31 @@ end
 function ReaderMenu:onTapCloseMenu()
     self:onCloseReaderMenu()
     self.ui:handleEvent(Event:new("CloseConfigMenu"))
+end
+
+function ReaderMenu:teardownMenu()
+    if self.menu_container then
+        self:onCloseReaderMenu()
+    end
+    self.tab_item_table = nil
+end
+
+function ReaderMenu:onTeardownRebuildAndReopenMenu()
+    local was_open = self.menu_container ~= nil
+    local state
+    if was_open and self.menu_container[1] then
+        state = self.menu_container[1]:getState()
+    end
+    self:teardownMenu()
+
+    if was_open then
+        self:onShowMenu(nil, true)
+        local menu = self.menu_container[1]
+        if state and menu.restoreState then
+            menu:restoreState(state.path_stack, state.page)
+        end
+        UIManager:show(self.menu_container)
+    end
 end
 
 function ReaderMenu:onReadSettings(config)
