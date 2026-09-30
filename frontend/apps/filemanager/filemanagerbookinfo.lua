@@ -145,15 +145,7 @@ function BookInfo:show(doc_settings_or_file, book_props)
         elseif prop_key == "title" then
             prop = BD.auto(prop)
         elseif prop_key == "authors" or prop_key == "keywords" then
-            if prop:find("\n") then -- BD auto isolate each entry
-                prop = util.splitToArray(prop, "\n")
-                for i = 1, #prop do
-                    prop[i] = BD.auto(prop[i])
-                end
-                prop = table.concat(prop, "\n")
-            else
-                prop = BD.auto(prop)
-            end
+            prop = self.prettifyAuthors(prop) -- BD auto isolate each entry
         elseif prop_key == "language" then
             -- Get a chance to have title, authors... rendered with alternate
             -- glyphs for the book language (e.g. japanese book in chinese UI)
@@ -290,6 +282,28 @@ Source (print edition):
         end,
     }
     UIManager:show(self.kvp_widget)
+end
+
+function BookInfo.prettifyAuthors(authors, max_lines_nb)
+    if type(authors) ~= "string" or authors == "" then
+        return
+    elseif not authors:find("\n") then
+        return BD.auto(authors)
+    end
+    local t = util.splitToArray(authors, "\n")
+    for i = 1, #t do
+        t[i] = BD.auto(t[i])
+    end
+    if max_lines_nb and max_lines_nb < #t then
+        t[max_lines_nb] = T(_("%1 et al."), t[max_lines_nb])
+        return table.concat(t, "\n", 1, max_lines_nb), true
+    end
+    return table.concat(t, "\n"), true
+end
+
+function BookInfo.combineAuthorsTitle(authors, title, separate_lines)
+    return authors and T(separate_lines and "%1\n%2" or _("%1 • %2"), BookInfo.prettifyAuthors(authors, 1), title)
+        or title
 end
 
 function BookInfo.getCustomProp(prop_key, filepath)

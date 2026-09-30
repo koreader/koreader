@@ -277,8 +277,9 @@ function FileManagerHistory:onMenuHold(item)
         end
     end
 
+    local title = book_props and (book_props.title or book_props.display_title)
     self.file_dialog = ButtonDialog:new{
-        title = BD.filename(item.text),
+        title = title and self.ui.bookinfo.combineAuthorsTitle(book_props.authors, title, true) or BD.filename(item.text),
         title_align = "center",
         buttons = buttons,
     }

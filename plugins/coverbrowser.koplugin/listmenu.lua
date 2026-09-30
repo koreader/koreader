@@ -446,26 +446,12 @@ function ListMenuItem:update()
                 authors = nil
             else
                 title = bookinfo.title or filename_without_suffix
-                authors = bookinfo.authors
                 -- If multiple authors (crengine separates them with \n), we
                 -- can display them on multiple lines, but limit to 2, and
-                -- append "et al." to the 2nd if there are more
-                if authors and authors:find("\n") then
-                    authors = util.splitToArray(authors, "\n")
-                    for i=1, #authors do
-                        authors[i] = BD.auto(authors[i])
-                    end
-                    if #authors > 1 and bookinfo.series and series_mode == "series_in_separate_line" then
-                        authors = { T(_("%1 et al."), authors[1]) }
-                    elseif #authors > 2 then
-                        authors = { authors[1], T(_("%1 et al."), authors[2]) }
-                    end
-                    authors = table.concat(authors, "\n")
-                    -- as we'll fit 3 lines instead of 2, we can avoid some loops by starting from a lower font size
-                    reduce_font_size = true
-                elseif authors then
-                    authors = BD.auto(authors)
-                end
+                -- append "et al." to the 2nd if there are more.
+                -- If we'll fit 3 lines instead of 2, we can avoid some loops by starting from a lower font size.
+                local lines_nb = (bookinfo.series and series_mode == "series_in_separate_line") and 1 or 2
+                authors, reduce_font_size = self.menu.ui.bookinfo.prettifyAuthors(bookinfo.authors, lines_nb)
             end
             title = BD.auto(title)
             -- add Series metadata if requested
