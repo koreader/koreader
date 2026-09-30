@@ -2279,6 +2279,7 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             page = self.ui.paging and self.selected_text.pos0.page or self.selected_text.pos0,
             pos0 = self.selected_text.pos0,
             pos1 = self.selected_text.pos1,
+            epubcfi = self.ui.document:getEPubCFIRangeFromXPointers(self.selected_text.pos0, self.selected_text.pos1),
             text = util.cleanupSelectedText(self.selected_text.text),
             datetime = self.selected_text.datetime,
             drawer = self.selected_text.drawer or self.view.highlight.saved_drawer,
