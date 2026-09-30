@@ -5,11 +5,9 @@ local DocSettings = require("docsettings")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("util")
 local _ = require("gettext")
-local T = ffiUtil.template
 
 local BookMetadataArchive = WidgetContainer:extend{
 }
