@@ -901,6 +901,10 @@ function CreDocument:getEPubCFIFromXPointer(xp)
     return self._document:getEPubCFIFromXPointer(xp)
 end
 
+function CreDocument:getEPubCFIRangeFromXPointers(start_xp, end_xp)
+    return self._document:getEPubCFIRangeFromXPointers(start_xp, end_xp)
+end
+
 function CreDocument:isXPointerInDocument(xp)
     return self._document:isXPointerInDocument(xp)
 end
