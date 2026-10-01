@@ -5,18 +5,16 @@ local DocSettings = require("docsettings")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("util")
 local _ = require("gettext")
-local T = ffiUtil.template
 
 local BookMetadataArchive = WidgetContainer:extend{
 }
 
 function BookMetadataArchive:showBookList(ui)
     self.ui = ui or require("apps/filemanager/filemanager").instance or require("apps/reader/readerui").instance
-    self.books = self.getBookList()
+    self.books = self:getBookList()
     self.book_list = BookList:new{
         onMenuSelect = function(self_menu, item)
             self:showBookDialog(item)
@@ -39,13 +37,13 @@ function BookMetadataArchive:updateBookList()
     self.book_list:switchItemTable(title, self.books, -1)
 end
 
-function BookMetadataArchive.getBookList()
+function BookMetadataArchive:getBookList()
     local book_list = {}
     util.findFiles(G_reader_settings:readSetting("document_metadata_arc_folder"), function(fullpath, filename)
         if filename:match("%.lua$") then
             local doc_settings = LuaSettings:open(fullpath)
             if doc_settings:has("metadata_arc") then
-                table.insert(book_list, BookMetadataArchive.buildItem(doc_settings))
+                table.insert(book_list, self:buildItem(doc_settings))
             end
         end
     end, false)
@@ -55,7 +53,7 @@ function BookMetadataArchive.getBookList()
     return book_list
 end
 
-function BookMetadataArchive.buildItem(doc_settings)
+function BookMetadataArchive:buildItem(doc_settings)
     local doc_props = doc_settings:readSetting("doc_props")
     local metadata_arc = doc_settings:readSetting("metadata_arc")
     if metadata_arc.custom_props then
@@ -63,13 +61,13 @@ function BookMetadataArchive.buildItem(doc_settings)
             doc_props[prop_key] = prop_value
         end
     end
-    doc_props.display_title = doc_props.title
+    doc_props.display_title = doc_props.display_title or doc_props.title
         or filemanagerutil.splitFileNameType(doc_settings:readSetting("doc_path"))
-    local authors = doc_props.authors and doc_props.authors:gsub("\n.*", " et al.") or _("Unknown author")
     return {
-        text = T(_("%1 • %2"), authors, doc_props.display_title),
-        mandatory = BookMetadataArchive.getItemMandatory(doc_settings),
+        text = self.ui.bookinfo.combineAuthorsTitle(doc_props.authors, doc_props.display_title),
+        mandatory = self.getItemMandatory(doc_settings),
         doc_settings = doc_settings,
+        doc_props = doc_props,
     }
 end
 
@@ -138,11 +136,11 @@ function BookMetadataArchive:showBookDialog(item)
                     })
                 end,
             },
-            filemanagerutil.genBookInformationButton(doc_settings, doc_settings:readSetting("doc_props"), close_dialog_callback),
+            filemanagerutil.genBookInformationButton(doc_settings, item.doc_props, close_dialog_callback),
         },
     }
     book_dialog = ButtonDialog:new{
-        title = item.text:gsub(" • ", "\n"),
+        title = self.ui.bookinfo.combineAuthorsTitle(item.doc_props.authors, item.doc_props.display_title, true),
         title_align = "center",
         buttons = buttons,
     }

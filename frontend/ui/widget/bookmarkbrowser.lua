@@ -358,7 +358,6 @@ function BookmarkBrowser:getBookList(files)
                 doc_props = self.ui.bookinfo.extendProps(doc_props, file)
             end
             doc_props.has_cover = true -- enable "Book cover" button in the book dialog
-            local authors = doc_props.authors and doc_props.authors:gsub("\n.*", " et al.") or _("Unknown author")
             table.insert(books, {
                 enabled = true, -- start with showing all books from the source
                 file = file,
@@ -367,8 +366,7 @@ function BookmarkBrowser:getBookList(files)
                 doc_settings = doc_settings,
                 doc_props = doc_props,
                 annotations = annotations,
-                authors = authors,
-                text = util.stringLower(authors .. doc_props.display_title),
+                text = util.stringLower((doc_props.authors or "") .. doc_props.display_title), -- for sorting
                 -- will be filled when building item table
                 item_table_idx = nil,
                 bookmarks_nb = nil,
@@ -449,7 +447,7 @@ function BookmarkBrowser:getItemTable()
                     mandatory = "\u{e28b} " .. mandatory
                 end
                 table.insert(item_table, { -- book entry
-                    text = T(_("%1 • %2"), book.authors, book.doc_props.display_title),
+                    text = self.ui.bookinfo.combineAuthorsTitle(book.doc_props.authors, book.doc_props.display_title),
                     bold = true,
                     mandatory = mandatory,
                     self_books_idx = self_books_idx,
@@ -458,7 +456,6 @@ function BookmarkBrowser:getItemTable()
                     is_deleted = book.is_deleted,
                     doc_props = book.doc_props,
                     doc_settings = book.doc_settings,
-                    authors = book.authors,
                     bookmarks_nb = annotations_nb,
                 })
                 if date_sort_func and annotations_nb > 1 then
@@ -522,7 +519,7 @@ function BookmarkBrowser:showBookDialog(item)
         },
     }
     book_dialog = ButtonDialog:new{
-        title = item.authors .. "\n" .. item.doc_props.display_title,
+        title = self.ui.bookinfo.combineAuthorsTitle(item.doc_props.authors, item.doc_props.display_title, true),
         title_align = "center",
         buttons = buttons,
     }
@@ -787,7 +784,7 @@ function BookmarkBrowser:showBookList(multi_choice)
         for i, book in ipairs(self.books) do
             books_enabled[i] = book.enabled
             item_table[i] = {
-                text = T(_("%1 • %2"), book.authors, book.doc_props.display_title),
+                text = self.ui.bookinfo.combineAuthorsTitle(book.doc_props.authors, book.doc_props.display_title),
                 bold = book.is_current_file,
                 mandatory = book.enabled and self.checkmark,
             }

@@ -1178,7 +1178,8 @@ function ReaderBookmark:getBookmarkDetailsText(bookmark, book)
         table.insert(t, 1,
             T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Title")..TextBoxWidget.PTF_BOLD_END, book.doc_props.display_title))
         table.insert(t, 2,
-            T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Author(s)")..TextBoxWidget.PTF_BOLD_END, book.authors))
+            T(_("%1: %2"), TextBoxWidget.PTF_BOLD_START.._("Author(s)")..TextBoxWidget.PTF_BOLD_END,
+                self.ui.bookinfo.prettifyAuthors(book.doc_props.authors, 1)))
     end
     return TextBoxWidget.PTF_HEADER .. table.concat(t, "\n")
 end
