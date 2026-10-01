@@ -2276,10 +2276,8 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             pg_or_xp = self.selected_text.pos0.page
         end
         local item = {
-            page = self.ui.paging and self.selected_text.pos0.page or self.selected_text.pos0,
             pos0 = self.selected_text.pos0,
             pos1 = self.selected_text.pos1,
-            epubcfi = self.ui.rolling and self.ui.document:getEPubCFIRangeFromXPointers(self.selected_text.pos0, self.selected_text.pos1),
             text = util.cleanupSelectedText(self.selected_text.text),
             datetime = self.selected_text.datetime,
             drawer = self.selected_text.drawer or self.view.highlight.saved_drawer,
@@ -2288,9 +2286,13 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             chapter = self.ui.toc:getTocTitleByPage(pg_or_xp),
         }
         if self.ui.paging then
+            item.page = self.selected_text.pos0.page
             item.pboxes = self.selected_text.pboxes
             item.ext = self.selected_text.ext
             self:writePdfAnnotation("save", item)
+        else -- rolling
+            item.page = self.selected_text.pos0
+            item.epubcfi = self.document:getEPubCFIRangeFromXPointers(item.pos0, item.pos1)
         end
         local index = self.ui.annotation:addItem(item)
         self.view.footer:maybeUpdateFooter()
