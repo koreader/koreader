@@ -98,6 +98,7 @@ local function inside_box(pos, box)
 end
 
 function ReaderHighlight:init()
+    self.is_touch_device = Device:isTouchDevice()
     self.screen_w = Screen:getWidth()
     self.screen_h = Screen:getHeight()
     self.select_mode = false -- extended highlighting
@@ -114,7 +115,7 @@ function ReaderHighlight:init()
                 callback = function()
                     this:startSelection(index)
                     this:onClose()
-                    if not Device:isTouchDevice() then
+                    if not self.is_touch_device then
                         self.ui.keyselection:startHighlightIndicator()
                     end
                 end,
@@ -287,7 +288,7 @@ end
 function ReaderHighlight:onGesture() end
 
 function ReaderHighlight:setupTouchZones()
-    if not Device:isTouchDevice() then return end
+    if not self.is_touch_device then return end
     local hold_pan_rate = G_reader_settings:readSetting("hold_pan_rate")
     if not hold_pan_rate then
         hold_pan_rate = Screen.low_pan_rate and 5.0 or 30.0
@@ -841,7 +842,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
         end,
         sub_item_table = prompt_sub_item_table,
     })
-    if Device:isTouchDevice() then
+    if self.is_touch_device then
         -- highlight very-long-press interval
         table.insert(menu_items.long_press.sub_item_table, {
             text_func = function()
@@ -1595,7 +1596,28 @@ function ReaderHighlight:_getDialogAnchor(dialog, index)
     end
 end
 
+-- For Non-touch devices, where long_hold is set with mod+press
+function ReaderHighlight:setLongHoldReached(state)
+    self.long_hold_reached = state
+end
+
+function ReaderHighlight:disableLongHoldReachedAction()
+    if self.is_touch_device then
+        self.long_hold_disabled = true
+        if self.long_hold_reached_action then
+            UIManager:unschedule(self.long_hold_reached_action)
+        end
+    end
+end
+
+function ReaderHighlight:restoreLongHoldReachedAction()
+    if self.is_touch_device then
+        self.long_hold_disabled = false
+    end
+end
+
 function ReaderHighlight:_resetHoldTimer(clear)
+    if not self.is_touch_device then return end
     if not self.long_hold_reached_action then
         self.long_hold_reached_action = function()
             self.long_hold_reached = true
@@ -1628,7 +1650,7 @@ function ReaderHighlight:_resetHoldTimer(clear)
                 handle_long_hold = false
             end
         end
-        if handle_long_hold then
+        if handle_long_hold and not self.long_hold_disabled then
             UIManager:scheduleIn(G_reader_settings:readSetting("highlight_long_hold_threshold_s")
                 or GestureDetector.LONG_HOLD_INTERVAL_S, self.long_hold_reached_action)
         end
