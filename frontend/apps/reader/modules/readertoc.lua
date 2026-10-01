@@ -955,8 +955,14 @@ function ReaderToc:onShowToc()
             item.state.callback(item.index)
         else
             if self.ui.handmade:isHandmadeHiddenFlowsEnabled() and self.ui.handmade:isHandmadeHiddenFlowsEditEnabled() then
-                local toc_start = item.page
-                local toc_end = toc_start + item.chapter_length - 1
+                local chapter_start = item.page
+                local chapter_end
+                if item.chapter_length then
+                    chapter_end = chapter_start + item.chapter_length - 1
+                else
+                    local next_start = self.ui.toc:getNextChapter(chapter_start)
+                    chapter_end = next_start and next_start - 1 or self.ui.document:getPageCount()
+                end
                 local toc_hide_dialog
                 local function updateToc()
                     UIManager:close(toc_hide_dialog)
@@ -983,7 +989,7 @@ function ReaderToc:onShowToc()
                                 text = _("Include chapter in regular flow"),
                                 enabled = self.ui.document:hasHiddenFlows(),
                                 callback = function()
-                                    self.ui.handmade:includePagesInRegularOrHiddenFlow(toc_start, toc_end)
+                                    self.ui.handmade:includePagesInRegularOrHiddenFlow(chapter_start, chapter_end)
                                     updateToc()
                                 end,
                             },
@@ -992,7 +998,7 @@ function ReaderToc:onShowToc()
                             {
                                 text = _("Include chapter in hidden flow"),
                                 callback = function()
-                                    self.ui.handmade:includePagesInRegularOrHiddenFlow(toc_start, toc_end, true)
+                                    self.ui.handmade:includePagesInRegularOrHiddenFlow(chapter_start, chapter_end, true)
                                     updateToc()
                                 end,
                             },
