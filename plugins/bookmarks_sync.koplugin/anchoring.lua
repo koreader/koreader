@@ -283,8 +283,17 @@ function Anchoring.findAnchor(doc, anchor, view_state)
     -- Затем, на найденной странице, ищем только 'exact', чтобы получить точные координаты для выделения.
     -- Эта стратегия особенно эффективна для PDF/DjVu.
     -- =================================================================
-    if is_fixed_layout and anchor.prefix and anchor.prefix ~= "" and anchor.suffix and anchor.suffix ~= "" then
-        local full_context_text = table.concat({ anchor.prefix, anchor.exact, anchor.suffix }, " ")
+    if is_fixed_layout and ((anchor.prefix and anchor.prefix ~= "") or (anchor.suffix and anchor.suffix ~= "")) then
+        local context_parts = {}
+        if anchor.prefix and anchor.prefix ~= "" then
+            table.insert(context_parts, anchor.prefix)
+        end
+        table.insert(context_parts, anchor.exact)
+        if anchor.suffix and anchor.suffix ~= "" then
+            table.insert(context_parts, anchor.suffix)
+        end
+        local full_context_text = table.concat(context_parts, " ")
+
         logger.dbg("bookmarks_sync: findAnchor: Strategy 1 (Fast Path): Attempting full context search for:",
             full_context_text)
 
