@@ -1114,6 +1114,7 @@ function ReaderHighlight:updateHighlightRolling(highlight, side, direction, move
 
     local new_beginning = highlight.pos0
     local new_end = highlight.pos1
+    highlight.epubcfi = self.document:getEPubCFIRangeFromXPointers(new_beginning, new_end)
     highlight.text = self.ui.document:getTextFromXPointers(new_beginning, new_end)
     if side == 0 then
         -- Ensure we show the page with the new beginning of highlight
