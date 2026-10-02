@@ -10,32 +10,47 @@ local C = ffi.C
 local key_str = os.getenv("QTFB_KEY")
 local key = key_str and tonumber(key_str) or 245209899 -- QTFB_DEFAULT_FRAMEBUFFER
 
-local shmType = 0 -- FBFMT_RM2FB as default
-if qtfb.is_rmpp then
-    shmType = 3 -- FBFMT_RMPP_RGB565
-elseif qtfb.is_rmppm then
-    shmType = 6 -- FBFMT_RMPPM_RGB565
-end
-
--- Create UNIX domain socket
-local sock = C.socket(C.AF_UNIX, C.SOCK_SEQPACKET, 0)
-assert(sock >= 0, "Failed to create UNIX socket")
-
 local addr = ffi.new("struct sockaddr_un", C.AF_UNIX, "/tmp/qtfb.sock")
 
--- Retry loop to wait for the QTFB server (xochitl/rm-appload) to start listening
-while C.connect(sock, ffi.cast("const struct sockaddr *", addr), ffi.sizeof(addr)) ~= 0 do
-    C.sleep(1)
+-- Connects to the QTFB server and asks for our framebuffer in the given format.
+-- Returns the socket, or nil if the server refused that format.
+local function qtfb_connect(shmType)
+    -- Create UNIX domain socket
+    local sock = C.socket(C.AF_UNIX, C.SOCK_SEQPACKET, 0)
+    assert(sock >= 0, "Failed to create UNIX socket")
+
+    -- Retry loop to wait for the QTFB server (xochitl/rm-appload) to start listening
+    while C.connect(sock, ffi.cast("const struct sockaddr *", addr), ffi.sizeof(addr)) ~= 0 do
+        C.sleep(1)
+    end
+
+    -- Send MESSAGE_INITIALIZE (0)
+    local initMsg = ffi.new("struct ClientMessage")
+    initMsg.type = qtfb.MESSAGE_INITIALIZE
+    initMsg.init.framebufferKey = key
+    initMsg.init.framebufferType = shmType
+
+    local bytes_sent = C.send(sock, initMsg, ffi.sizeof(initMsg), 0)
+    assert(bytes_sent >= 0, "Failed to send init message to QTFB server")
+
+    -- Wait for the server's reply
+    local respMsg = ffi.new("struct ServerMessage")
+    if C.recv(sock, respMsg, ffi.sizeof(respMsg), 0) == 0 then
+        -- Orderly close without a reply: that is how AppLoad refuses us.
+        C.close(sock)
+        return nil
+    end
+    return sock
 end
 
--- Send MESSAGE_INITIALIZE (0)
-local initMsg = ffi.new("struct ClientMessage")
-initMsg.type = qtfb.MESSAGE_INITIALIZE
-initMsg.init.framebufferKey = key
-initMsg.init.framebufferType = shmType
-
-local bytes_sent = C.send(sock, initMsg, ffi.sizeof(initMsg), 0)
-assert(bytes_sent >= 0, "Failed to send init message to QTFB server")
+-- Must be the format ffi/framebuffer_qtfb.lua asks for:
+-- AppLoad refuses mismatched formats on the same key.
+local sock = qtfb_connect(qtfb.fb_format)
+if not sock and qtfb.fb_format_fallback then
+    -- Same fallback as ffi/framebuffer_qtfb.lua
+    sock = qtfb_connect(qtfb.fb_format_fallback)
+end
+assert(sock, "QTFB server refused our framebuffer format")
 
 -- Keep the socket open indefinitely until killed by the parent process.
 -- pause() blocks the process indefinitely until a signal is received.
