@@ -88,6 +88,7 @@ function filemanagerutil.resetDocumentSettings(file)
         highlights_imported = true,
         last_page = true,
         last_xpointer = true,
+        last_epubcfi = true,
     }
     local file_abs_path = ffiUtil.realpath(file)
     if file_abs_path then
