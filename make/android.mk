@@ -44,7 +44,6 @@ ANDROID_LAUNCHER_BUILD = $(INSTALL_DIR)/luajit-launcher
 ANDROID_ASSETS = $(ANDROID_LAUNCHER_BUILD)/assets
 # Assets compression method:
 # - LZMA/LZMA2: `-m0=lzma2 -mx=9`
-# - LZMA/LZMA2 (7z >= 17.02, fast version): `-m0=flzma2 -mx=9`
 # - ZSTD (7z >= 17.02, LZMA still used for archive headers): `-m0=zstd -mx=16`
 # - ZSTD (7z >= 17.02): `-m0=zstd -mhc=off -mx=16`
 ANDROID_ASSETS_COMPRESSION ?= -m0=lzma2 -mx=9
