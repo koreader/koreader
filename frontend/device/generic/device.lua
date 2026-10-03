@@ -110,6 +110,7 @@ local Device = {
     hasNaturalLight = no, -- FL warmth implementation specific to NTX boards (Kobo, Cervantes)
     hasNaturalLightMixer = no, -- Same, but only found on newer boards
     hasNaturalLightApi = no,
+    hasPageTurnAnimation = no, -- hardware page-turn animation (water ripple); currently only the iReader Neo 3 Ultra
     hasClipboard = yes, -- generic internal clipboard on all devices
     hasEinkScreen = yes,
     hasExternalSD = no, -- or other storage volume that cannot be accessed using the File Manager
