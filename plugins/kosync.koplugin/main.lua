@@ -1013,15 +1013,19 @@ function KOSync:_onNetworkConnected()
     logger.dbg("KOSync: onNetworkConnected")
     UIManager:scheduleIn(0.5, function()
         -- Drain any queued progress updates first
-        self:drainQueue()
-        -- Then pull as normal
-        self:getProgress(false, false)
+        self:drainQueue(function()
+            -- Pull only after queued uploads have completed.
+            self:getProgress(false, false)
+        end)
     end)
 end
 
-function KOSync:drainQueue()
+function KOSync:drainQueue(done_func)
     local KOSyncQueue = require("KOSyncQueue")
-    if KOSyncQueue:count() == 0 then return end
+    if KOSyncQueue:count() == 0 then
+        if done_func then done_func() end
+        return
+    end
 
     local KOSyncClient = require("KOSyncClient")
     local client = KOSyncClient:new{
@@ -1029,9 +1033,8 @@ function KOSync:drainQueue()
         service_spec = self.path .. "/api.json"
     }
 
-    KOSyncQueue:drain(function(item)
-        local ok = pcall(client.update_progress,
-            client,
+    KOSyncQueue:drain(function(item, callback)
+        client:update_progress(
             self.settings.username,
             self.settings.userkey,
             item.document,
@@ -1040,9 +1043,8 @@ function KOSync:drainQueue()
             item.percentage,
             item.device,
             item.device_id,
-            function() end)
-        return ok
-    end)
+            callback)
+    end, done_func)
 end
 
 function KOSync:_onNetworkDisconnecting()

@@ -1,6 +1,7 @@
 local DataStorage = require("datastorage")
 local Persist = require("persist")
 local logger = require("logger")
+local util = require("util")
 
 local QUEUE_PATH = DataStorage:getSettingsDir() .. "/kosync_queue.lua"
 local MAX_AGE = 28 * 24 * 3600 -- 4 weeks in seconds
@@ -64,35 +65,73 @@ function KOSyncQueue:push(item)
     logger.dbg("KOSyncQueue: queued progress for", item.document, "total:", #filtered)
 end
 
---- Attempt to send all queued items in order.
--- @param send_func function(item) -> bool: sends one item, returns true on success
--- @return number of successfully sent items
-function KOSyncQueue:drain(send_func)
+--- Attempt to send all queued items in order, stopping on the first failure.
+-- @param send_func function(item, callback): reports success through callback(bool)
+-- @param done_func optional function(sent): called when the drain finishes
+function KOSyncQueue:drain(send_func, done_func)
+    -- Network events may arrive while an asynchronous request is still in flight.
+    if self._draining then return end
     local queue = self:load()
-    if #queue == 0 then return 0 end
+    if #queue == 0 then
+        if done_func then done_func(0) end
+        return
+    end
+    self._draining = true
 
     logger.info("KOSyncQueue: draining", #queue, "queued items")
     local sent = 0
 
-    for i, item in ipairs(queue) do
-        if send_func(item) then
-            sent = sent + 1
-        else
-            -- Server still unreachable, keep remaining items
-            local remaining = {}
-            for j = i, #queue do
-                table.insert(remaining, queue[j])
-            end
-            self:save(remaining)
-            logger.info("KOSyncQueue: sent", sent, ", remaining", #remaining)
-            return sent
+    local function finish()
+        self._draining = nil
+        logger.info("KOSyncQueue: sent", sent, ", remaining", self:count())
+        if done_func then done_func(sent) end
+    end
+
+    local function findItem(current, item)
+        for i, entry in ipairs(current) do
+            -- Compare the contents too: a same-day replacement can have the same
+            -- document and queued_at when it was queued within the same second.
+            if util.tableEquals(entry, item) then return i end
         end
     end
 
-    -- All sent
-    self:save({})
-    logger.info("KOSyncQueue: sent all", sent, "items")
-    return sent
+    local function sendNext(i)
+        local item = queue[i]
+        if not item then
+            finish()
+            return
+        end
+        -- Do not send snapshot entries that have since been replaced or cleared.
+        if not findItem(self:load(), item) then
+            sendNext(i + 1)
+            return
+        end
+        local completed = false
+        local function callback(ok)
+            if completed then return end
+            completed = true
+            if not ok then
+                finish()
+                return
+            end
+            -- Reload after the request: pushes may have changed the queue in flight.
+            local current = self:load()
+            local index = findItem(current, item)
+            if index then
+                table.remove(current, index)
+                self:save(current)
+            end
+            sent = sent + 1
+            sendNext(i + 1)
+        end
+        local ok, err = pcall(send_func, item, callback)
+        if not ok then
+            logger.warn("KOSyncQueue: failed to send queued progress:", err)
+            callback(false)
+        end
+    end
+
+    sendNext(1)
 end
 
 function KOSyncQueue:count()
