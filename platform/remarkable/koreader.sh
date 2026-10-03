@@ -29,6 +29,14 @@ fi
 
 fbink_wrapped() {
     if [ -n "${KO_USE_QTFB}" ]; then
+        case "${MACHINE_TYPE}" in
+            "reMarkable Ferrari" | "reMarkable Chiappa")
+                # Our QTFB framebuffer is 32bpp RGBA8888 on the color models,
+                # but the qtfb-shim can only present a 16bpp RGB565 one to
+                # FBInk, and AppLoad refuses mismatched formats on a key.
+                return 0
+                ;;
+        esac
         LD_PRELOAD="/home/root/shims/qtfb-shim.so" \
             QTFB_SHIM_MODEL="false" \
             QTFB_SHIM_INPUT_MODE="NATIVE" \
