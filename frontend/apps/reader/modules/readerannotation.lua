@@ -78,6 +78,7 @@ function ReaderAnnotation:buildAnnotation(bm, highlights, init)
         page             = bm.page,     -- highlight location, xPointer or number (pdf)
         pos0             = bm.pos0,     -- highlight start position, xPointer (== page) or table (pdf)
         pos1             = bm.pos1,     -- highlight end position, xPointer or table (pdf)
+        epubcfi          = bm.epubcfi,  -- epubcfi, based on pos0/pos1 xPointers, not used by pdf
         pboxes           = hl.pboxes,   -- pdf pboxes, used only and changeable by addMarkupAnnotation
         ext              = hl.ext,      -- pdf multi-page highlight
     }
