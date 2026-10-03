@@ -8,6 +8,9 @@ local http = require("socket.http")
 local https = require("ssl.https")
 local ltn12 = require("ltn12")
 local socket = require("socket")
+local ssl = require("ssl")
+local socketurl = require("socket.url")
+local mime = require("mime")
 local ffiUtil = require("ffi/util")
 local T = ffiUtil.template
 
@@ -86,6 +89,183 @@ function socketutil.tcp()
     return req_sock
 end
 socket.tcp = socketutil.tcp
+
+--- Enable HTTPS through an HTTP CONNECT proxy.
+-- Stock LuaSec (ssl.https) refuses to use an HTTP proxy for HTTPS and never
+-- opens a CONNECT tunnel, while LuaSocket's own proxy handling only emits
+-- absolute-form requests (which an HTTP CONNECT proxy rejects). As a result any
+-- https:// request issued while an HTTP proxy is configured fails -- OPDS, the
+-- news downloader, Wallabag, WebDAV, OTA, Wikipedia, ... all go through
+-- socket.http.request. We wrap it here so that, for https targets with a proxy
+-- set, we open a real CONNECT tunnel and TLS-wrap it.
+-- See https://github.com/koreader/koreader/issues/14693
+local real_http_request = http.request
+
+-- TLS config mirroring LuaSec https.lua defaults. Like stock KOReader HTTPS,
+-- this does not verify certificates (verify = "none"). These are only defaults:
+-- connect_tunnel_create() fills them in for TLS keys the caller did not set, so
+-- caller-supplied TLS params (verify, cafile, ...) still take effect.
+local https_tls_cfg = {
+    protocol = "any",
+    options  = { "all", "no_sslv2", "no_sslv3", "no_tlsv1" },
+    verify   = "none",
+    mode     = "client",
+}
+
+-- Forward the SSL socket's methods onto the connection wrapper (as https.lua's reg()).
+local function reg_ssl_conn(conn)
+    local mt = getmetatable(conn.sock).__index
+    for name, method in pairs(mt) do
+        if type(method) == "function" then
+            conn[name] = function(self, ...) return method(self.sock, ...) end
+        end
+    end
+end
+
+-- A LuaSocket `create` that opens a CONNECT tunnel through `proxy` (a parsed
+-- url table) and then TLS-wraps it. connect(host, port) receives the *real*
+-- target host/port because http_request() below temporarily hides http.PROXY
+-- from socket.http for the duration of the call.
+-- `reqt` is the request table, used as the ssl.wrap params: caller-supplied TLS
+-- fields (verify, cafile, certificate, ...) are honoured, with https_tls_cfg
+-- filling the rest, mirroring how stock LuaSec https.tcp treats the request as
+-- its ssl params. ssl.wrap ignores the non-TLS fields.
+local function connect_tunnel_create(proxy, reqt)
+    local proxy_host = proxy.host
+    local proxy_port = tonumber(proxy.port) or 3128
+
+    local params = {}
+    for k, v in pairs(reqt) do params[k] = v end
+    for k, v in pairs(https_tls_cfg) do
+        if params[k] == nil then params[k] = v end
+    end
+    params.mode = "client"
+
+    return function()
+        local conn = {}
+        conn.sock = socket.try(socket.tcp())
+        function conn:close()
+            if self.sock then return self.sock:close() end
+        end
+        local st = getmetatable(conn.sock).__index.settimeout
+        function conn:settimeout()
+            return st(self.sock, http.TIMEOUT)
+        end
+        -- Return nil, err on failure (rather than raising) so LuaSocket's
+        -- newtry finalizer in http.open closes the socket and the error
+        -- surfaces as a normal nil, err request result.
+        function conn:connect(host, port)
+            local ok, err = self.sock:connect(proxy_host, proxy_port)
+            if not ok then return nil, err end
+
+            -- IPv6 literals must be bracketed in the request-line / Host authority.
+            local authority = host:find(":", 1, true) and ("[" .. host .. "]") or host
+            local msg = ("CONNECT %s:%s HTTP/1.1\r\nHost: %s:%s\r\n"):format(
+                authority, port, authority, port)
+            if proxy.user and proxy.password then
+                msg = msg .. "Proxy-Authorization: Basic " ..
+                    mime.b64(proxy.user .. ":" .. proxy.password) .. "\r\n"
+            end
+            msg = msg .. "\r\n"
+            ok, err = self.sock:send(msg)
+            if not ok then return nil, err end
+
+            local line
+            line, err = self.sock:receive("*l")
+            if not line then return nil, err end
+            local status = line:match("HTTP/%d%.%d%s+(%d%d%d)")
+            while line and line ~= "" do -- drain the rest of the proxy response headers
+                line, err = self.sock:receive("*l")
+                if err then return nil, err end
+            end
+            if status ~= "200" then
+                return nil, "proxy CONNECT failed: " .. tostring(status or "no response")
+            end
+
+            local sslsock
+            sslsock, err = ssl.wrap(self.sock, params)
+            if not sslsock then return nil, err end
+            self.sock = sslsock
+            self.sock:sni(host)
+            self.sock:settimeout(http.TIMEOUT)
+            ok, err = self.sock:dohandshake()
+            if not ok then return nil, err end
+            reg_ssl_conn(self)
+            return 1
+        end
+        return conn
+    end
+end
+
+--- Wrapper around socket.http.request that tunnels https:// through an HTTP proxy.
+-- No-op (delegates to the original) for http:// targets, when no proxy is set,
+-- for localhost targets, or when the caller already supplied a create.
+function socketutil.http_request(reqt, body)
+    local is_string = type(reqt) == "string"
+
+    -- Determine whether this is an https request and to which host. Supports
+    -- string urls, table requests with a url, and component-form tables
+    -- (scheme/host/path with no url field).
+    local is_https, host
+    if is_string then
+        is_https = reqt:find("^https://") ~= nil
+        host = is_https and socketurl.parse(reqt).host or nil
+    elseif not reqt.create then
+        -- Explicit scheme/host override the url (as LuaSocket's adjustrequest
+        -- does); `or {}` guards against socketurl.parse returning nil (empty url).
+        local parsed = type(reqt.url) == "string" and socketurl.parse(reqt.url) or {}
+        is_https = (reqt.scheme or parsed.scheme) == "https"
+        host = reqt.host or parsed.host
+    end
+
+    local proxy_url = (not is_string and reqt.proxy) or http.PROXY
+    if is_https and proxy_url and host
+        and host ~= "localhost" and host ~= "127.0.0.1" and host ~= "::1" then
+        local proxy = socketurl.parse(proxy_url)
+        if not proxy then return real_http_request(reqt, body) end
+        local result_table, nreqt
+        if is_string then
+            result_table = {}
+            nreqt = {
+                url    = reqt,
+                method = body and "POST" or "GET",
+                sink   = ltn12.sink.table(result_table),
+            }
+            if body then
+                nreqt.source  = ltn12.source.string(body)
+                nreqt.headers = {
+                    ["content-length"] = tostring(#body),
+                    ["content-type"]   = "application/x-www-form-urlencoded",
+                }
+            end
+        else
+            -- Shallow-copy so we never mutate the caller's request table
+            -- (it may be reused for retries).
+            nreqt = {}
+            for k, v in pairs(reqt) do nreqt[k] = v end
+        end
+        nreqt.proxy = nil
+        nreqt.create = connect_tunnel_create(proxy, nreqt)
+        -- Hide the global proxy so socket.http passes the real Host to our
+        -- connector and emits an origin-form request over the tunnel.
+        -- Restore it unconditionally: socket.http.request re-raises non-table
+        -- Lua errors (e.g. from a sink/source callback), which would
+        -- otherwise leave http.PROXY nil for the rest of the session.
+        local saved_proxy = http.PROXY
+        http.PROXY = nil
+        local ok, res, code, headers, status = pcall(real_http_request, nreqt)
+        http.PROXY = saved_proxy
+        if not ok then error(res, 0) end
+        -- Match stock: on the string path, return the body only on success
+        -- (res is 1); a transport failure returns nil, err like stock request.
+        if res and is_string then
+            return table.concat(result_table), code, headers, status
+        end
+        return res, code, headers, status
+    end
+    return real_http_request(reqt, body)
+end
+http.request = socketutil.http_request
 
 --- Various timeout return codes
 socketutil.TIMEOUT_CODE         = "timeout"      -- from LuaSocket's io.c
