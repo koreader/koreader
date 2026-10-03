@@ -401,12 +401,13 @@ local back_to_exit_str = {
     always = {_("Always"), _("always")},
     disable ={_("Disable"), _("disable")},
 }
-local function genGenericMenuEntry(title, setting, value, default)
+local function genGenericMenuEntry(title, setting, value, default, enabled_func)
     return {
         text = title,
         checked_func = function()
             return G_reader_settings:readSetting(setting, default) == value
         end,
+        enabled_func = enabled_func,
         radio = true,
         callback = function()
             G_reader_settings:saveSetting(setting, value)
@@ -775,30 +776,21 @@ common_settings.document_end_action = {
             end,
             separator = true,
         },
-        genGenericMenuEntry(_("Ask with popup dialog"), "end_document_action", "pop-up", "pop-up"),
-        genGenericMenuEntry(_("Do nothing"), "end_document_action", "nothing", nil),
-        genGenericMenuEntry(_("Book status"), "end_document_action", "book_status", nil),
-        genGenericMenuEntry(_("Delete file"), "end_document_action", "delete_file", nil),
-        {
-            text = _("Open next file"),
-            enabled_func = function()
-                local collate = G_reader_settings:readSetting("collate")
-                return collate ~= "access" and collate ~= "date"
-            end,
-            checked_func = function()
-                return G_reader_settings:readSetting("end_document_action") == "next_file"
-            end,
-            radio = true,
-            callback = function()
-                G_reader_settings:saveSetting("end_document_action", "next_file")
-            end,
-        },
-        genGenericMenuEntry(_("Go to beginning"), "end_document_action", "goto_beginning", nil),
-        genGenericMenuEntry(_("Return to file browser"), "end_document_action", "file_browser", nil),
-        genGenericMenuEntry(_("Mark book as finished"), "end_document_action", "mark_read", nil),
-        genGenericMenuEntry(_("Book status and return to file browser"), "end_document_action", "book_status_file_browser", nil),
     }
 }
+local ReaderStatus = require("apps/reader/modules/readerstatus")
+local end_actions, end_actions_texts = ReaderStatus.getEndOfBookActions()
+local end_actions_enabled_funcs = {
+    next_file = function()
+        local collate = G_reader_settings:readSetting("collate")
+        return collate ~= "access" and collate ~= "date"
+    end,
+}
+for i = 1, #end_actions do
+    table.insert(common_settings.document_end_action.sub_item_table,
+        genGenericMenuEntry(end_actions_texts[i], "end_document_action", end_actions[i], "pop-up",
+            end_actions_enabled_funcs[end_actions[i]]))
+end
 
 common_settings.language = Language:getLangMenuTable()
 

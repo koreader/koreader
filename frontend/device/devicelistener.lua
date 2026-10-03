@@ -341,6 +341,10 @@ function DeviceListener:onToggleFlashOnPagesWithImages()
     G_reader_settings:flipNilOrTrue("refresh_on_pages_with_images")
 end
 
+function DeviceListener:onSetEndOfBookAction(action)
+    G_reader_settings:saveSetting("end_document_action", action)
+end
+
 function DeviceListener:onSwapPageTurnButtons(side)
     local new_text
     if side == "left" then
