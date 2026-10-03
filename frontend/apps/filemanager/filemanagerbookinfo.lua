@@ -296,9 +296,9 @@ function BookInfo.prettifyAuthors(authors, max_lines_nb)
     end
     if max_lines_nb and max_lines_nb < #t then
         t[max_lines_nb] = T(_("%1 et al."), t[max_lines_nb])
-        return table.concat(t, "\n", 1, max_lines_nb), true
+        return table.concat(t, "\n", 1, max_lines_nb), true -- multi-line authors
     end
-    return table.concat(t, "\n"), true
+    return table.concat(t, "\n"), true -- multi-line authors
 end
 
 function BookInfo.combineAuthorsTitle(authors, title, separate_lines)
