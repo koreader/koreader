@@ -387,6 +387,8 @@ end
 local Kindle = Generic:extend{
     model = "Kindle",
     isKindle = yes,
+    -- The uevent listener in input-kindle.h generates EvdevInputInsert/Remove events for UHID devices
+    supportsExternalKeyboard = yes,
     -- NOTE: We can cheat by adding a platform-specific entry here, because the only code that will check for this is here.
     isSpecialOffers = isSpecialOffers(),
     hasOTAUpdates = yes,
