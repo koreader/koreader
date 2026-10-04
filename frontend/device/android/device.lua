@@ -266,6 +266,7 @@ function Device:init()
     -- check if we have a touchscreen
     if android.lib.AConfiguration_getTouchscreen(android.app.config)
        ~= C.ACONFIGURATION_TOUCHSCREEN_NOTOUCH
+       or android.prop.brokenTouchReport
     then
         self.isTouchDevice = yes
     end
