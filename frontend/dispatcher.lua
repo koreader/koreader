@@ -38,6 +38,7 @@ local Notification = require("ui/widget/notification")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
+local ReaderStatus = require("apps/reader/modules/readerstatus")
 local ReaderTypography = require("apps/reader/modules/readertypography")
 local ReaderView = require("apps/reader/modules/readerview")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
@@ -79,6 +80,8 @@ local settingsList = {
     open_previous_document_in_folder = {category="none", event="OpenNextOrPreviousFileInFolder", arg=true, title=_("Open previous file in last book folder"), general=true},
     notebook_file = {category="none", event="ShowNotebookFile", title=_("Notebook file"), general=true},
     screenshot = {category="none", event="Screenshot", title=_("Screenshot"), general=true, separator=true},
+    ----
+    set_end_of_book_action = {category="string", event="SetEndOfBookAction", title=_("End of document action"), args_func=ReaderStatus.getEndOfBookActions, general=true, separator=true},
     ----
 
     -- Device
@@ -339,6 +342,8 @@ local dispatcher_menu_order = {
     "open_previous_document_in_folder",
     "notebook_file",
     "screenshot",
+    ----
+    "set_end_of_book_action",
     ----
 
     -- Device
