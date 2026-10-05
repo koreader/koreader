@@ -1673,7 +1673,7 @@ abbr.abbr {
             else
                 UI:info(T(_("Retrieving images… %1 / %2 completed"), #tasks, #tasks))
             end
-            ffiutil.usleep(300000)
+            ffiutil.usleep(600000)
         end
 
         -- Report any failures once, rather than interrupting on each one.
