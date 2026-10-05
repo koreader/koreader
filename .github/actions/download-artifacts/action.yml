@@ -1,0 +1,80 @@
+# This workflow is managed by gh actions-lock.
+# Workaround for downloading-artifact#491.
+
+name: Download multiple artifacts
+
+inputs:
+  path:
+    description: Destination path
+    required: false
+  regex:
+    description: Filter assets by name
+    required: false
+
+runs:
+
+  using: "composite"
+
+  steps:
+
+      - name: Download
+        uses: actions/github-script@v9.0.0
+        env:
+          path: ${{ inputs.path || github.workspace }}
+          regex: ${{ inputs.regex || '.*' }}
+        with:
+          script: |
+            const fs = require('fs');
+            const rx = RegExp(process.env.regex);
+            const { createHash } = require('node:crypto');
+            const result = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId,
+              per_page: 100,
+            });
+            result.data.artifacts.sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
+            const artifact_from_name = new Map();
+            for (const artifact of result.data.artifacts) {
+              if (rx.test(artifact.name) && !artifact_from_name.has(artifact.name)) {
+                artifact_from_name.set(artifact.name, artifact);
+              }
+            }
+            if (!artifact_from_name.size) {
+              core.setFailed('No matching artifact found!');
+              return;
+            }
+            // Create destination directory.
+            try {
+              fs.mkdirSync(process.env.path);
+            }
+            catch (err) {
+              if (err.code != 'EEXIST') {
+                  throw err;
+              }
+            }
+            // Download the artifacts.
+            for (const artifact of artifact_from_name.values()) {
+              // Download.
+              console.log(`Downloading ${artifact.name} id:${artifact.id} ${artifact.digest}`);
+              const download = await github.rest.actions.downloadArtifact({
+                artifact_id: artifact.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                archive_format: 'zip',
+              });
+              const data = Buffer.from(download.data);
+              // Validate digest.
+              const [digest_type, digest_expected] = artifact.digest.split(':', 2);
+              const hash = createHash(digest_type);
+              hash.update(data);
+              const digest_caculated = hash.digest('hex');
+              if (digest_caculated != digest_expected) {
+                core.setFailed(`Downloading failed, bad digest: calculated ${digest_caculated}, expected ${digest_expected}`);
+                return;
+              }
+              // Save to file.
+              fs.writeFileSync(`${process.env.path}/${artifact.name}`, data);
+            }
+
+# vim: expandtab filetype=javascript list shiftwidth=2
