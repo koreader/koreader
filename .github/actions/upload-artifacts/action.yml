@@ -1,17 +1,12 @@
 # This workflow is managed by gh actions-lock.
-# Workaround for uploading multiple unarchived artifacts until
-# https://github.com/actions/upload-artifact#766 is resolved.
+# Workaround for actions/upload-artifact#766.
 
-name: Upload multiple (unarchived) artifacts
+name: Upload multiple artifacts
 
 inputs:
   patterns:
     description: Artifact pattern(s)
     required: true
-  overwrite:
-    description: Overwrite existing artifacts
-    required: false
-    default: false
 
 runs:
 
@@ -21,82 +16,71 @@ runs:
 
       - name: Expand patterns
         id: expand
-        shell: bash
-        run: |
-          set -x
-          count=0
-          patterns=(${{ inputs.patterns }})
-          for m in "${patterns[@]}"; do
-            [[ -e "${m}" ]] || continue
-            count=$((count + 1))
-            printf 'artifact_%u=%s\n' "${count}" "${m}" >>"${GITHUB_OUTPUT}"
-          done
-          if [[ ${count} -gt 8 ]]; then
-            echo "too many artifacts (> 8): ${count}" 1>&2
-            exit 1
-          fi
-          printf 'artifact_count=%u\n' "${count}" >>"${GITHUB_OUTPUT}"
+        uses: actions/github-script@v9.0.0
+        env:
+          patterns: ${{ inputs.patterns }}
+        with:
+          script: |
+            const globber = await glob.create(process.env.patterns)
+            const matches = await globber.glob()
+            if (matches.length > 8) {
+              core.setFailed("too many artifacts (> 8):", matches.length)
+              return;
+            }
+            return { count: matches.length, match: matches }
 
-      - name: Upload artifact (1/${{ steps.expand.outputs.artifact_count }})
-        if: steps.expand.outputs.artifact_1
+      - name: Upload artifact (1/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 1
         uses: actions/upload-artifact@v7.0.1
         with:
           archive: false
-          path: ${{ steps.expand.outputs.artifact_1 }}
-          overwrite: ${{ inputs.overwrite }}
+          path: ${{ fromJSON(steps.expand.outputs.result).match[0] }}
 
-      - name: Upload artifact (2/${{ steps.expand.outputs.artifact_count }})
-        if: steps.expand.outputs.artifact_2
+      - name: Upload artifact (2/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 2
         uses: actions/upload-artifact@v7.0.1
         with:
           archive: false
-          path: ${{ steps.expand.outputs.artifact_2 }}
-          overwrite: ${{ inputs.overwrite }}
+          path: ${{ fromJSON(steps.expand.outputs.result).match[1] }}
 
-      - name: Upload artifact (3/${{ steps.expand.outputs.artifact_count }})
-        if: steps.expand.outputs.artifact_3
+      - name: Upload artifact (3/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 3
         uses: actions/upload-artifact@v7.0.1
         with:
           archive: false
-          path: ${{ steps.expand.outputs.artifact_3 }}
-          overwrite: ${{ inputs.overwrite }}
+          path: ${{ fromJSON(steps.expand.outputs.result).match[2] }}
 
-      - name: Upload artifact (4/${{ steps.expand.outputs.artifact_count }})
-        if: steps.expand.outputs.artifact_4
+      - name: Upload artifact (4/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 4
         uses: actions/upload-artifact@v7.0.1
         with:
           archive: false
-          path: ${{ steps.expand.outputs.artifact_4 }}
-          overwrite: ${{ inputs.overwrite }}
+          path: ${{ fromJSON(steps.expand.outputs.result).match[3] }}
 
-      - name: Upload artifact (5/${{ steps.expand.outputs.artifact_count }})
-        if: steps.expand.outputs.artifact_5
+      - name: Upload artifact (5/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 5
         uses: actions/upload-artifact@v7.0.1
         with:
           archive: false
-          path: ${{ steps.expand.outputs.artifact_5 }}
-          overwrite: ${{ inputs.overwrite }}
+          path: ${{ fromJSON(steps.expand.outputs.result).match[4] }}
 
-      - name: Upload artifact (6/${{ steps.expand.outputs.artifact_count }})
-        if: steps.expand.outputs.artifact_6
+      - name: Upload artifact (6/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 6
         uses: actions/upload-artifact@v7.0.1
         with:
           archive: false
-          path: ${{ steps.expand.outputs.artifact_6 }}
-          overwrite: ${{ inputs.overwrite }}
+          path: ${{ fromJSON(steps.expand.outputs.result).match[5] }}
 
-      - name: Upload artifact (7/${{ steps.expand.outputs.artifact_count }})
-        if: steps.expand.outputs.artifact_7
+      - name: Upload artifact (7/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 7
         uses: actions/upload-artifact@v7.0.1
         with:
           archive: false
-          path: ${{ steps.expand.outputs.artifact_7 }}
-          overwrite: ${{ inputs.overwrite }}
+          path: ${{ fromJSON(steps.expand.outputs.result).match[6] }}
 
-      - name: Upload artifact (8/${{ steps.expand.outputs.artifact_count }})
-        if: steps.expand.outputs.artifact_8
+      - name: Upload artifact (8/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 8
         uses: actions/upload-artifact@v7.0.1
         with:
           archive: false
-          path: ${{ steps.expand.outputs.artifact_8 }}
-          overwrite: ${{ inputs.overwrite }}
+          path: ${{ fromJSON(steps.expand.outputs.result).match[7] }}
