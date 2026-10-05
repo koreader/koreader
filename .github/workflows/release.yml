@@ -70,12 +70,10 @@ jobs:
           show-progress: false
           sparse-checkout: .ci
       - name: Download APKs
-        uses: actions/download-artifact@v8.0.1
+        uses: $/.github/actions/download-artifacts
         with:
-          merge-multiple: true
           path: assets
-          pattern: "*.apk"
-          skip-decompress: true
+          regex: \.apk$
       - name: Sign APKs
         if: hashFiles('assets/*.apk')
         env:
@@ -88,7 +86,6 @@ jobs:
         if: hashFiles('assets/*.apk')
         uses: $/.github/actions/upload-artifacts
         with:
-          overwrite: true
           patterns: assets/*.apk
 
   release:
@@ -108,11 +105,9 @@ jobs:
             .ci
             tools
       - name: Download artifacts
-        uses: actions/download-artifact@v8.0.1
+        uses: $/.github/actions/download-artifacts
         with:
-          merge-multiple: true
           path: assets
-          skip-decompress: true
       - name: Release
         env:
           GH_TOKEN: ${{ github.token }}
