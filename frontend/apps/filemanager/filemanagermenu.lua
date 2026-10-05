@@ -24,7 +24,7 @@ local T = ffiUtil.template
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
     menu_items = nil, -- table, mandatory
-    registered_widgets = nil, -- array
+    registered_widgets = nil, -- hash table
 }
 
 local function getDefaultMenuButtons()
@@ -851,7 +851,7 @@ To:
         }
     end
 
-    for _, widget in ipairs(self.registered_widgets) do
+    for widget in pairs(self.registered_widgets) do
         local ok, err = pcall(widget.addToMainMenu, widget, self.menu_items)
         if not ok then
             logger.err("failed to register widget", widget.name, err)
@@ -867,7 +867,7 @@ end
 dbg:guard(FileManagerMenu, 'setUpdateItemTable',
     function(self)
         local mock_menu_items = {}
-        for _, widget in ipairs(self.registered_widgets) do
+        for widget in pairs(self.registered_widgets) do
             -- make sure addToMainMenu works in debug mode
             widget:addToMainMenu(mock_menu_items)
         end
@@ -1112,12 +1112,7 @@ function FileManagerMenu:onMenuSearch()
 end
 
 function FileManagerMenu:registerToMainMenu(widget)
-    for _, w in ipairs(self.registered_widgets) do
-        if w == widget then
-            return
-        end
-    end
-    table.insert(self.registered_widgets, widget)
+    self.registered_widgets[widget] = true
 end
 
 return FileManagerMenu
