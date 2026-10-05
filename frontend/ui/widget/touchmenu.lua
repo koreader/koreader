@@ -470,6 +470,7 @@ local TouchMenu = FocusManager:extend{
     tab_item_table = nil, -- mandatory
     -- for returning in multi-level menus
     item_table_stack = nil,
+    path_stack = nil,
     parent_id = nil,
     item_table = nil,
     item_height = Size.item.height_large,
@@ -787,6 +788,7 @@ function TouchMenu:switchMenuTab(tab_num)
     -- Also, switching to the _same_ tab resets the stack and takes us back to
     -- the top of the menu tree
     self.item_table_stack = {}
+    self.path_stack = {}
     self.parent_id = nil
     self.cur_tab = tab_num
     self.item_table = self.tab_item_table[tab_num]
@@ -796,6 +798,9 @@ end
 function TouchMenu:backToUpperMenu(no_close)
     if #self.item_table_stack ~= 0 then
         self.item_table = table.remove(self.item_table_stack)
+        if self.path_stack and #self.path_stack > 0 then
+            table.remove(self.path_stack)
+        end
         -- Allow a menu table to refresh itself when going up (ie. from a setting
         -- submenu that may want to have its parent menu updated).
         if self.item_table.needs_refresh and self.item_table.refresh_func then
@@ -888,6 +893,13 @@ function TouchMenu:onMenuSelect(item, tap_on_checkmark)
     if sub_item_table then
         if #sub_item_table > 0 then
             table.insert(self.item_table_stack, self.item_table)
+            self.path_stack = self.path_stack or {}
+            -- Record the sub_count as our structural fingerprint
+            table.insert(self.path_stack, {
+                idx = item.idx,
+                text = getMenuText(item),
+                sub_count = #sub_item_table
+            })
             item.menu_item_id = item.menu_item_id or tostring(item) -- unique id
             self.parent_id = item.menu_item_id
             self.item_table = sub_item_table
@@ -1234,6 +1246,60 @@ function TouchMenu:openMenu(path, with_animation)
     -- If tap while animating, it will switch to the non-animation
     -- behaviour, to reach the requested menu item immediately.
     walkStep()
+end
+
+function TouchMenu:getState()
+    return {
+        path_stack = self.path_stack,
+        page = self.page
+    }
+end
+
+function TouchMenu:restoreState(path_stack, page)
+    if not path_stack or #path_stack == 0 then
+        if page and page > 1 then
+            self:updateItems(page)
+        end
+        return
+    end
+
+    self.path_stack = {}
+    for _, entry in ipairs(path_stack) do
+        local target_item
+        local candidate = self.item_table and self.item_table[entry.idx]
+        if candidate and getMenuText(candidate) == entry.text then
+            target_item = candidate
+        else
+            -- Fallback in case conditional options shifted earlier indices
+            for _, item in ipairs(self.item_table or {}) do
+                if getMenuText(item) == entry.text then
+                    target_item = item
+                    break
+                end
+            end
+            -- Fallback B: Text mutated (dynamic status changed), but index remained stable.
+            -- We verify it possesses a sub-menu to avoid accidentally stepping on a leaf node.
+            if not target_item and candidate then
+                local cand_sub = candidate.sub_item_table_func and candidate.sub_item_table_func() or candidate.sub_item_table
+                if cand_sub and #cand_sub > 0 and entry.sub_count and #cand_sub == entry.sub_count then
+                    target_item = candidate
+                end
+            end
+        end
+        if not target_item then break end
+
+        local sub_item_table = target_item.sub_item_table_func and target_item.sub_item_table_func() or target_item.sub_item_table
+        if sub_item_table and #sub_item_table > 0 then
+            table.insert(self.item_table_stack, self.item_table)
+            table.insert(self.path_stack, { idx = target_item.idx, text = entry.text })
+            target_item.menu_item_id = target_item.menu_item_id or tostring(target_item)
+            self.parent_id = target_item.menu_item_id
+            self.item_table = sub_item_table
+        else -- halt traversal if a dynamic sub-menu collapsed during the rebuild
+            break
+        end
+    end
+    self:updateItems(page or 1)
 end
 
 function TouchMenu:onShowMenuSearch()
