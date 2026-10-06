@@ -86,7 +86,7 @@ local kindle_fonts_blacklist = {
     ["Helvetica_LT_66_Medium_Italic.ttf"] = true,
     ["Helvetica_LT_75_Bold.ttf"] = true,
     ["Helvetica_LT_76_Bold_Italic.ttf"] = true,
-    -- All these fonts seemed to have been added recently as they were not available
+    -- All these fonts seemed to have been added not long before October 2026 as they were not available
     -- in FW 5.17.1 but are in 5.19.6, not used in stock reader, so must be fallback.
     ["Ankle-Biter-Mono-B.ttf"] = true,
     ["Ankle-Biter-Single-B.ttf"] = true,
