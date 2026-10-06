@@ -2,6 +2,7 @@
 
 release: &RELEASE [
   android-.*,
+  bookeen,
   cervantes,
   kindle.*,
   kobo.*,
@@ -76,6 +77,16 @@ android: # {{{
   - <<: *ANDROID
     id: android-x86_64
     job: Android x86_64
+
+# }}}
+
+bookeen: # {{{
+
+  - id: bookeen
+    job: bookeen
+    image: koreader/kobookeen:5.0.0-22.04
+    env: PARALLEL_JOBS=5
+    cache_size: 70M
 
 # }}}
 
