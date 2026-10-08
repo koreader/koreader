@@ -27,6 +27,9 @@ describe("Readerui module", function()
         assert.truthy(doc_settings.data.last_xpointer)
         assert.are.same(doc_settings.data.last_xpointer,
                 readerui.doc_settings.data.last_xpointer)
+        assert.truthy(doc_settings.data.last_epubcfi)
+        assert.are.same(doc_settings.data.last_epubcfi,
+                readerui.doc_settings.data.last_epubcfi)
     end)
     it("should show reader", function()
         UIManager:quit()
