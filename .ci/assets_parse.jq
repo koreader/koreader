@@ -8,6 +8,8 @@ def asset_parse:
     "android-fdroid": "Android F-Droid",
     "android-x86": "Android x86",
     "android-x86_64": "Android x86_64",
+    # Bookeen
+    "bookeen": "Bookeen",
     # Cervantes
     "cervantes": "Cervantes",
     # Kindle
