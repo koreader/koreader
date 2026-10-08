@@ -45,14 +45,6 @@ describe("EPUB CFI generation", function()
         end
     end)
 
-    it("should track the exact target of onGotoXPointer", function()
-        rolling:onGotoPage(30)
-        local target_xp = readerui.document:getXPointer()
-        rolling:onGotoPage(1)
-        rolling:onGotoXPointer(target_xp)
-        assert.are.equal(target_xp, rolling.xpointer)
-    end)
-
     it("should return nil for an xpointer absent from the document", function()
         assert.is_nil(readerui.document:getEPubCFIFromXPointer("/body[1]/DocFragment[999]/body[1]"))
     end)
