@@ -84,6 +84,7 @@ end
 
 local Bookeen = Generic:extend{
     model = "Bookeen",
+    ota_model = "bookeen",
     isBookeen = yes,
     hasKeys = yes,
     hasOTAUpdates = yes,
