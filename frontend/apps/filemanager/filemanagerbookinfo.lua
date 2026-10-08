@@ -1202,7 +1202,7 @@ function BookInfo:expandString(str, file, timestamp)
                     if patterns["%p"] and percent then
                         patterns["%p"] = Math.round(percent * 100)
                     end
-                    pages = book_info.pages
+                    local pages = book_info.pages
                     patterns["%t"] = patterns["%t"] and (doc_settings:readSetting("pagemap_last_page_label") or pages or "")
                     patterns["%s"] = patterns["%s"] and (pages or "")
                     if patterns["%c"] or patterns["%u"] then
