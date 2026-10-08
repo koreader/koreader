@@ -49,7 +49,7 @@ describe("EPUB CFI generation", function()
         assert.is_nil(readerui.document:getEPubCFIFromXPointer("/body[1]/DocFragment[999]/body[1]"))
     end)
 
-    -- This must run last: onCloseDocument tears down scheduled tasks that 
+    -- This must run last: onCloseDocument tears down scheduled tasks that
     -- earlier tests rely on.
     it("should save last_epubcfi consistent with xpointer on document close", function()
         rolling:onGotoPage(20)
