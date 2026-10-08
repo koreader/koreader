@@ -6,6 +6,7 @@ local ButtonSelector = require("ui/widget/buttonselector")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
+local DictPrefetch = require("dictprefetch")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
@@ -1230,7 +1231,7 @@ function ReaderDictionary:showSearchWithPresetDialog(preset_names, input_dialog,
     UIManager:show(button_dialog)
 end
 
-function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progress_msg)
+function ReaderDictionary:getDictDirs()
     -- Allow for two sdcv calls : one in the classic data/dict, and
     -- another one in data/dict_ext if it exists
     -- We could put in data/dict_ext dictionaries with a great number of words
@@ -1242,10 +1243,18 @@ function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progre
     if lfs.attributes(dict_ext, "mode") == "directory" then
         table.insert(dict_dirs, dict_ext)
     end
+    return dict_dirs
+end
+
+function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progress_msg)
+    local dict_dirs = self:getDictDirs()
     -- early exit if no dictionaries
     if dictDirsEmpty(dict_dirs) then
         return false, nil
     end
+    -- Don't compete with sdcv for storage: what it already warmed stays
+    -- cached, and it's restarted below to finish the rest.
+    local prefetch_interrupted = DictPrefetch:stop()
     local all_results = {}
     local lookup_cancelled = false
     for _, dict_dir in ipairs(dict_dirs) do
@@ -1334,6 +1343,9 @@ function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progre
                 logger.warn("sdcv returned a different number of results than the number of words")
             end
         end
+    end
+    if prefetch_interrupted then
+        DictPrefetch:start(dict_dirs)
     end
     return lookup_cancelled, all_results
 end
@@ -1901,6 +1913,26 @@ function ReaderDictionary:onReadSettings(config)
     end
     -- Disabled dictionary list for this book
     self.doc_disabled_dicts = config:readSetting("disabled_dicts") or {}
+end
+
+function ReaderDictionary:onSuspend()
+    if self.prefetch_func then
+        UIManager:unschedule(self.prefetch_func)
+    end
+    DictPrefetch:stop()
+end
+
+function ReaderDictionary:onResume()
+    if not available_ifos or #available_ifos == 0 then return end
+    -- Suspend dropped the page cache, so the first lookup would have to get
+    -- everything back from storage, at its slowest right after a wake-up.
+    -- Do it in the background instead (see dictprefetch.lua). Not right away,
+    -- so as to stay out of the way of the wake-up itself.
+    self.prefetch_func = self.prefetch_func or function()
+        DictPrefetch:start(self:getDictDirs())
+    end
+    UIManager:unschedule(self.prefetch_func)
+    UIManager:scheduleIn(1, self.prefetch_func)
 end
 
 function ReaderDictionary:onSaveSettings()
