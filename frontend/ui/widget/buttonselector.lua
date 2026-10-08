@@ -9,6 +9,7 @@ local ButtonSelector = ButtonDialog:extend{
     values = nil, -- array { { value_text, value_key, value_color } } - buttons in order
     apply_current_value = nil, -- set to true to apply the callback when value == current_value
     keep_open_on_apply = nil,
+    avoid_text_truncation = nil,
     width_factor = 0.4,
 }
 
@@ -31,6 +32,7 @@ function ButtonSelector:init()
             id = value_key,
             text = value_text,
             menu_style = true,
+            avoid_text_truncation = self.avoid_text_truncation,
             background = value_color,
             checked_func = function()
                 if self.multi_choice then
@@ -46,7 +48,7 @@ function ButtonSelector:init()
                 else
                     UIManager:close(self)
                     if self.apply_current_value or self.current_value ~= value_key then
-                        self.callback(value_key)
+                        self.callback(value_key, value_text)
                     end
                     if self.keep_open_on_apply then
                         self.current_value = value_key

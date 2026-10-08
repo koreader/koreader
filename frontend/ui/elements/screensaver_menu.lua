@@ -167,7 +167,7 @@ local sub_item_table = {
                         end,
                         keep_menu_open = true,
                         callback = function()
-                            Screensaver:setMessage(true)
+                            Screensaver:setMessage(ui, true)
                         end,
                     },
                 },
@@ -228,7 +228,7 @@ local sub_item_table = {
                 end,
                 keep_menu_open = true,
                 callback = function()
-                    Screensaver:setMessage()
+                    Screensaver:setMessage(ui)
                 end,
             },
             {
