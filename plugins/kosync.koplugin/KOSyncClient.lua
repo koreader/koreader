@@ -108,6 +108,7 @@ function KOSyncClient:update_progress(
         password,
         document,
         metadata,
+        identifiers,
         progress,
         percentage,
         device,
@@ -127,6 +128,7 @@ function KOSyncClient:update_progress(
             return self.client:update_progress({
                 document = document,
                 metadata = metadata,
+                identifiers = identifiers,
                 progress = tostring(progress),
                 percentage = percentage,
                 device = device,
@@ -150,6 +152,7 @@ function KOSyncClient:get_progress(
         username,
         password,
         document,
+        ids,
         callback)
     self.client:reset_middlewares()
     self.client:enable("Format.JSON")
@@ -163,6 +166,7 @@ function KOSyncClient:get_progress(
         local ok, res = pcall(function()
             return self.client:get_progress({
                 document = document,
+                ids = ids,
             })
         end)
         if ok then
