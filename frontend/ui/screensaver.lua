@@ -207,8 +207,7 @@ function Screensaver.isExcluded(ui)
     end
 end
 
-function Screensaver:setMessage(exit_sleep_screen)
-    local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
+function Screensaver:setMessage(ui, exit_sleep_screen)
     local InputDialog = require("ui/widget/inputdialog")
     local title, input, setting
     if exit_sleep_screen then
@@ -235,8 +234,10 @@ function Screensaver:setMessage(exit_sleep_screen)
                     end,
                 },
                 {
-                    text = _("Info"),
-                    callback = FileManagerBookInfo.expandString,
+                    text = _("Patterns"),
+                    callback = function()
+                        ui.bookinfo.chooseExpandStringPattern(input_dialog, ui)
+                    end,
                 },
                 {
                     text = _("Set message"),
