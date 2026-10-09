@@ -287,6 +287,8 @@ function ReaderRolling:onCloseDocument()
 
     self.current_header_height = nil -- show unload progress bar at top
 
+    self.ui.doc_settings:saveSetting("last_epubcfi", self.ui.document:getEPubCFIFromXPointer(self.xpointer))
+
     local cache_file_path = self.ui.document:getCacheFilePath() -- nil if no cache file
     self.ui.doc_settings:saveSetting("cache_file_path", cache_file_path)
     if self.ui.document:hasCacheFile() then
