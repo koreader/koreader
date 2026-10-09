@@ -3,9 +3,12 @@ describe("UIManager spec", function()
     local now, wait_until
     local noop = function() end
 
+    -- commonrequire is needed by setup and other describe blocks
+    local commonrequire = require("commonrequire")
+    time = require("ui/time") -- time is used by multiple describe blocks
+
     setup(function()
-        require("commonrequire")
-        time = require("ui/time")
+        -- Keep original UIManager for existing tests if they don't need mocks
         UIManager = require("ui/uimanager")
     end)
 
@@ -473,5 +476,128 @@ describe("UIManager spec", function()
 
         assert.is.same(1, #UIManager._window_stack)
         assert.is.same(widget_3, UIManager._window_stack[1].widget)
+    end)
+end)
+
+describe("UIManager input blocking with BlockedPoints", function()
+    local UIManager_BlockedPointsTest -- Renamed to avoid conflict with UIManager above
+    local mock_BlockedPoints
+    local send_event_spy
+    local logger_dbg_spy
+    local UIManagerInjector = commonrequire.preload("ui/uimanager")
+    local Geom = require("ui/geometry")
+    -- Event module is not strictly needed for creating event tables, but good for consistency
+    -- local Event = require("ui/event")
+    local Logger = require("logger") -- To spy on logger.dbg
+
+    before_each(function()
+        -- Mock BlockedPoints
+        mock_BlockedPoints = {
+            isBlocked = function(x, y) return false end -- Default: not blocked
+        }
+
+        -- Spy on logger.dbg
+        -- Note: Busted's spy replaces the function on the table.
+        -- We need to save and restore the original if other tests need it,
+        -- or if Logger.dbg is a complex function.
+        -- For simple cases, spy.restore() in after_each is often enough.
+        if Logger.dbg_original == nil then -- Store original only once
+            Logger.dbg_original = Logger.dbg
+        end
+        logger_dbg_spy = spy.new(function(...) end)
+        Logger.dbg = logger_dbg_spy
+
+        -- Inject mock BlockedPoints
+        UIManager_BlockedPointsTest = UIManagerInjector({
+            ["ui/blockedpoints"] = mock_BlockedPoints,
+            ["logger"] = Logger, -- Ensure our spied logger is used by the module
+        })
+
+        -- Spy on the method that would be called if event is not blocked
+        send_event_spy = spy.on(UIManager_BlockedPointsTest, "sendEvent")
+        if not UIManager_BlockedPointsTest.event_handlers then UIManager_BlockedPointsTest.event_handlers = {} end
+        UIManager_BlockedPointsTest.event_handlers.__default__ = send_event_spy -- capture default processing
+    end)
+
+    after_each(function()
+        spy.restore() -- Restores all spies created by spy.on and spy.new
+        if Logger.dbg_original then
+            Logger.dbg = Logger.dbg_original -- Restore original logger.dbg
+            -- Logger.dbg_original = nil -- Avoid restoring multiple times if before_each runs again in another context
+        end
+        -- Clean up G_reader_settings if UIManager init creates it (UIManager might depend on it)
+        -- local ReaderSettings = package.loaded.luasettings -- path to ReaderSettings
+        -- if ReaderSettings and ReaderSettings.G_reader_settings_backup then
+        --     _G.G_reader_settings = ReaderSettings.G_reader_settings_backup
+        --     ReaderSettings.G_reader_settings_backup = nil
+        -- end
+    end)
+
+    it("should block input event if BlockedPoints:isBlocked returns true", function()
+        mock_BlockedPoints.isBlocked = function(x, y)
+            if x == 50 and y == 50 then return true end
+            return false
+        end
+
+        local test_event = { name = "TestTapBlocked", ges = "tap", pos = Geom:new{ x = 50, y = 50, w = 0, h = 0 } }
+        UIManager_BlockedPointsTest:handleInputEvent(test_event)
+
+        assert.spy(logger_dbg_spy).was.called_with("UIManager: Blocked input event at", 50, 50)
+        assert.spy(send_event_spy).was.not_called()
+    end)
+
+    it("should process input event if BlockedPoints:isBlocked returns false", function()
+        mock_BlockedPoints.isBlocked = function(x, y)
+            if x == 60 and y == 60 then return false end
+            return true -- Block other coordinates to be sure
+        end
+
+        local test_event = { name = "TestTapAllowed", ges = "tap", pos = Geom:new{ x = 60, y = 60, w = 0, h = 0 } }
+        UIManager_BlockedPointsTest:handleInputEvent(test_event)
+
+        assert.spy(logger_dbg_spy).was.not_called_with("UIManager: Blocked input event at", 60, 60)
+        -- Check if default handler was called (which is our send_event_spy)
+        assert.spy(send_event_spy).was.called_with(UIManager_BlockedPointsTest, test_event)
+    end)
+
+    it("should process event normally if event has no 'pos' field", function()
+        local test_event = { name = "TestKeyPress", ges = "key_press", code = 123 } -- No pos field
+        local is_blocked_spy = spy.on(mock_BlockedPoints, "isBlocked")
+
+        UIManager_BlockedPointsTest:handleInputEvent(test_event)
+
+        assert.spy(is_blocked_spy).was.not_called()
+        assert.spy(logger_dbg_spy).was.not_called_with("UIManager: Blocked input event at")
+        assert.spy(send_event_spy).was.called_with(UIManager_BlockedPointsTest, test_event)
+    end)
+
+    it("should process event normally if event.pos is not a table with x,y numbers", function()
+        local test_event_nil_xy = { name = "TestMalformedPosNil", ges = "tap", pos = Geom:new{} } -- x,y might be nil
+        local test_event_string_xy = { name = "TestMalformedPosStr", ges = "tap", pos = Geom:new{x="foo", y="bar"} }
+        local is_blocked_spy = spy.on(mock_BlockedPoints, "isBlocked")
+
+        UIManager_BlockedPointsTest:handleInputEvent(test_event_nil_xy)
+        assert.spy(is_blocked_spy).was.not_called() -- BlockedPoints:isBlocked should not be called
+        assert.spy(send_event_spy).was.called_with(UIManager_BlockedPointsTest, test_event_nil_xy)
+        send_event_spy:reset() -- Reset spy for next call
+
+        UIManager_BlockedPointsTest:handleInputEvent(test_event_string_xy)
+        assert.spy(is_blocked_spy).was.not_called() -- Type check for x,y as numbers fails
+        assert.spy(send_event_spy).was.called_with(UIManager_BlockedPointsTest, test_event_string_xy)
+    end)
+
+    it("should handle event if input_event is not a table (e.g. string event name)", function()
+        local test_event_string = "CustomPowerOffEvent"
+        -- Mock this specific handler on the UIManager instance being tested
+        UIManager_BlockedPointsTest.event_handlers[test_event_string] = spy.new(function() end)
+
+        local is_blocked_spy = spy.on(mock_BlockedPoints, "isBlocked")
+
+        UIManager_BlockedPointsTest:handleInputEvent(test_event_string)
+
+        assert.spy(is_blocked_spy).was.not_called()
+        assert.spy(UIManager_BlockedPointsTest.event_handlers[test_event_string]).was.called()
+        -- Default handler (send_event_spy) should not be called if a specific handler exists
+        assert.spy(send_event_spy).was.not_called()
     end)
 end)
