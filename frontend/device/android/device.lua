@@ -80,6 +80,10 @@ local Device = Generic:extend{
     hasSeamlessWifiToggle = no, -- Requires losing focus to the sytem's network settings and user interaction
     hasExitOptions = no,
     hasEinkScreen = function() return android.isEink() end,
+    hasPageTurnAnimation = function()
+        local _, eink_platform = android.isEink()
+        return eink_platform == "ireader"
+    end,
     hasColorScreen = android.isColorScreen() and yes or no,
     hasFrontlight = android.hasLights,
     hasNaturalLight = android.isWarmthDevice,
@@ -137,7 +141,10 @@ end
 
 function Device:init()
     self.screen = require("ffi/framebuffer_android"):new{device = self, debug = logger.dbg}
-    self.powerd = require("device/android/powerd"):new{device = self}
+    local _, eink_platform = android.isEink()
+    self.powerd = (eink_platform == "ireader"
+        and require("device/android/powerd_ireader")
+        or require("device/android/powerd")):new{device = self}
 
     local event_map = dofile("frontend/device/android/event_map.lua")
 
@@ -307,6 +314,7 @@ function Device:init()
     end
 
     Generic.init(self)
+    self:setupPageTurnAnimation()
 end
 
 function Device:UIManagerReady(uimgr)
@@ -601,5 +609,97 @@ end
 
 android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
     android.prop.version, getCodename(), Device.firmware_rev, android.prop.flavor))
+
+function Device:getPageTurnEffect()
+    local ok, ReaderUI = pcall(require, "apps/reader/readerui")
+    local ui = ok and ReaderUI and ReaderUI.instance
+    return require("ui/pageturneffect").resolve(ui)
+end
+
+-- iReader Neo 3 Ultra: fire the hardware "water ripple" right before a page-turn
+-- commit. The ripple is an EPDC waveform applied to the very same frame commit
+-- that draws the page, so it cannot be decoupled from the content: we must not
+-- delay a page turn to let an animation finish. The panel plays the ripple when
+-- it is free and simply skips it while a previous one is still running, which
+-- keeps page turns responsive.
+function Device:setupPageTurnAnimation()
+    if not self:hasPageTurnAnimation() then
+        return
+    end
+
+    local bit = require("bit")
+    local last_page
+
+    -- Direction nibble for next-effect-type N.
+    -- The panel encodes rotation via Display.getRotation() (0/90/180/270), but
+    -- android.orientation.get() returns LinuxFB constants; on this device the
+    -- two landscape orientations (90/270) are swapped, so we pre-swap them here
+    -- (1 <-> 3) to keep PAGE_H running the correct way in landscape.
+    local next_effect = {[0]=1, [1]=3, [2]=2, [3]=4}
+    local prev_effect = {[0]=2, [1]=4, [2]=1, [3]=3}
+    -- Speed bit OR-ed into the direction nibble.
+    local speed_bit = {
+        ripple_slow = 128,
+        ripple_standard = 64,
+        ripple_fast = 0,
+    }
+
+    local function current_page()
+        local ok, ReaderUI = pcall(require, "apps/reader/readerui")
+        if not (ok and ReaderUI and ReaderUI.instance) then
+            return nil
+        end
+        local inst = ReaderUI.instance
+        if inst.paging and inst.paging.current_page then
+            return inst.paging.current_page
+        end
+        if inst.rolling and inst.rolling.current_page then
+            return inst.rolling.current_page
+        end
+        return nil
+    end
+
+    local function encode(forward, effect)
+        local speed = speed_bit[effect]
+        if not speed then
+            return nil
+        end
+        local rot = 0
+        pcall(function()
+            rot = android.orientation.get()
+        end)
+        local dir = (forward and next_effect or prev_effect)[rot] or 1
+        return bit.bor(dir, speed)
+    end
+
+    local function wrap(name)
+        local orig = self.screen[name]
+        if type(orig) ~= "function" then
+            return
+        end
+        self.screen[name] = function(screen, x, y, w, h, ...)
+            local extra = {...}
+            local page = current_page()
+            local changed = page and last_page and page ~= last_page
+            local forward = changed and page > last_page
+            if page then
+                last_page = page
+            end
+            -- Only page turns play the ripple; other refreshes pass straight
+            -- through. The commit is never deferred: the panel plays the ripple
+            -- if it is free, otherwise the page still turns immediately.
+            if changed then
+                local e = encode(forward, self:getPageTurnEffect())
+                if e then
+                    android.einkPrepareRipple(e)
+                end
+            end
+            orig(screen, x, y, w, h, unpack(extra))
+        end
+    end
+    wrap("refreshFullImp")
+    wrap("refreshPartialImp")
+    wrap("refreshFlashPartialImp")
+end
 
 return Device
