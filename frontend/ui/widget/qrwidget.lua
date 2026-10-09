@@ -6,7 +6,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local ImageWidget = require("ui/widget/imagewidget")
 local logger = require("logger")
 local qrencode = require("ffi/qrencode")
-local _ = require("gettext")
+local time = require("ui/time")
 
 local QRWidget = ImageWidget:extend{
     original_in_nightmode = false,
@@ -22,13 +22,10 @@ local QRWidget = ImageWidget:extend{
 
 function QRWidget:init()
     if not (self.width and self.height) then return end
-    local text = self.text
-    if #text > self.MAX_BYTES then
-        local truncated = _("... (truncated...)")
-        text = text:sub(1, self.MAX_BYTES - #truncated) .. truncated
-    end
+    if not self.text or self.text == "" then return end
+    local start_time = time.now()
     -- qrcode() throws on failure (e.g., payload too long)
-    local call_ok, res_or_err, matrix, size = pcall(qrencode.qrcode, text)
+    local call_ok, res_or_err, matrix, size = pcall(qrencode.qrcode, self.text)
     if not call_ok then
         logger.warn("QRWidget: QR encoding failed:", res_or_err) -- res_or_err holds the error message here
         return
@@ -53,8 +50,9 @@ function QRWidget:init()
         end
     end
     self.image = bb
-    logger.dbg("QRWidget: generated QR code for text of byte length", #text, "| matrix size", size, "| grid size", grid_size)
-    logger.dbg("QRWidget: scale factor =", sq_size, "| width =", self.width, "| height =", self.height)
+    local elapsed_time = time.to_s(time.since(start_time))
+    logger.dbg("QRWidget: generated QR code for text of byte length", #self.text, "| matrix size", size, "| grid size", grid_size)
+    logger.dbg("QRWidget: scale factor =", sq_size, "| width =", self.width, "| height =", self.height, "| encoding time", elapsed_time, "seconds")
 end
 
 return QRWidget
