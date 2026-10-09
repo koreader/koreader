@@ -1,5 +1,10 @@
-local DataStorage = require("datastorage")
 local Device = require("device")
+
+if not (Device:hasScreenKB() or Device:hasKeyboard() or Device:supportsExternalKeyboard()) then
+    return { disabled = true, }
+end
+
+local DataStorage = require("datastorage")
 local Dispatcher = require("dispatcher")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Gamepad = require("device/sdl/gamepad")
@@ -10,10 +15,6 @@ local logger = require("logger")
 local util = require("util")
 local T = ffiUtil.template
 local _ = require("gettext")
-
-if not (Device:hasScreenKB() or Device:hasKeyboard()) then
-    return { disabled = true, }
-end
 
 local HotKeys = InputContainer:extend{
     name = "hotkeys",

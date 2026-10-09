@@ -89,6 +89,8 @@ local Device = {
     hasBattery = yes,
     hasAuxBattery = no,
     hasKeyboard = no,
+    supportsExternalKeyboard = no,
+    hasOTGManagement = no,
     hasKeys = no,
     hasScreenKB = no, -- in practice only some Kindles
     hasSymKey = no, -- in practice only some Kindles
@@ -144,6 +146,9 @@ local Device = {
     -- Start and stop text input mode (e.g. open soft keyboard, etc)
     startTextInput = function() end,
     stopTextInput = function() end,
+
+    getOTGRole = function() end,
+    setOTGRole = function(role) end,
 
     -- use these only as a last resort. We should abstract the functionality
     -- and have device dependent implementations in the corresponding
