@@ -984,6 +984,7 @@ function ReaderFooter:disableFooter()
     self.resetLayout = function() end
     self.updateFooter = function() end
     self.onUpdateFooter = function() end
+    self.setTocMarkers = function() end
     self.mode = self.mode_list.off
     self.view.footer_visible = false
 end
