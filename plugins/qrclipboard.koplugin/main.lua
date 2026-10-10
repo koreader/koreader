@@ -48,8 +48,7 @@ function QRClipboard:addToHighlightDialog()
                 end
                 UIManager:show(QRMessage:new{
                     text = text,
-                    width = Device.screen:getWidth(),
-                    height = Device.screen:getHeight(),
+                    invert_bidi = this.ui.view:shouldInvertBiDiLayoutMirroring(),
                     dismiss_callback = function()
                         -- delay clearing highlighted text a bit, so the user can see
                         -- what was used to generate the QR code
@@ -80,10 +79,10 @@ function QRClipboard:onQRFromClipboard()
         UIManager:show(InfoMessage:new{ text = _("Clipboard is empty") })
         return nil
     end
+    local invert_bidi = self.ui and self.ui.view and self.ui.view:shouldInvertBiDiLayoutMirroring()
     UIManager:show(QRMessage:new{
         text = clipboard_text,
-        width = Device.screen:getWidth(),
-        height = Device.screen:getHeight(),
+        invert_bidi = invert_bidi,
     })
 end
 
