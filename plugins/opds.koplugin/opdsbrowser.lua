@@ -13,6 +13,7 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
 local Notification = require("ui/widget/notification")
 local OPDSClient = require("opdsclient")
+local OPDSListMenu = require("opdslistmenu")
 local OPDSParser = require("opdsparser")
 local OPDSPSE = require("opdspse")
 local SpinWidget = require("ui/widget/spinwidget")
@@ -64,6 +65,7 @@ local OPDSBrowser = Menu:extend{
     },
 
     root_catalog_title    = nil,
+    root_catalog_url      = nil,
     root_catalog_username = nil,
     root_catalog_password = nil,
     facet_groups          = nil, -- Stores OPDS facet groups
@@ -79,6 +81,21 @@ local function get_value(value)
     return value
 end
 
+-- Atom text elements are a table when they carry attributes
+local function get_text(value)
+    if type(value) == "string" then
+        return value
+    elseif type(value) == "table" then
+        if type(value.div) == "string" then return value.div end
+        if type(value[1]) == "string" then return value[1] end
+    end
+end
+
+local function get_year(value)
+    local date = get_text(value)
+    return date and date:match("^%s*(%d%d%d%d)") or nil
+end
+
 function OPDSBrowser:init()
     self.item_table = self:genItemTableFromRoot()
     self:getHttpClient()
@@ -88,6 +105,7 @@ function OPDSBrowser:init()
         self:showOPDSMenu()
     end
     self.facet_groups = nil -- Initialize facet groups storage
+    self:applyDisplayMode()
     Menu.init(self) -- call parent's init()
 end
 
@@ -100,6 +118,63 @@ function OPDSBrowser:getHttpClient()
     return self.http_client
 end
 
+-- The detailed view's methods are set on the instance, so removing them falls back to Menu's
+function OPDSBrowser:applyDisplayMode()
+    if self.stopCoverUpdates then
+        self:stopCoverUpdates()
+    end
+    local detailed = self.settings.detailed_view
+    for name in pairs(OPDSListMenu) do
+        self[name] = detailed and OPDSListMenu[name] or nil
+    end
+    self.opds_show_covers = self.settings.hide_covers ~= true
+end
+
+-- Shows dialog to switch the catalog display mode
+function OPDSBrowser:showDisplayMenu()
+    local dialog
+    local function toggle(setting, enabled_value)
+        UIManager:close(dialog)
+        if self.settings[setting] then
+            self.settings[setting] = nil
+        else
+            self.settings[setting] = enabled_value
+        end
+        self._manager.updated = true
+        self:applyDisplayMode()
+        self:switchItemTable(nil, self.item_table)
+    end
+    dialog = ButtonDialog:new{
+        buttons = {
+            {{
+                    text = _("Detailed list with covers"),
+                    checked_func = function()
+                        return self.settings.detailed_view == true
+                    end,
+                    callback = function()
+                        toggle("detailed_view", true)
+                    end,
+                    align = "left",
+            }},
+            {{
+                    text = _("Show cover images"),
+                    enabled_func = function()
+                        return self.settings.detailed_view == true
+                    end,
+                    checked_func = function()
+                        return self.settings.hide_covers ~= true
+                    end,
+                    callback = function()
+                        toggle("hide_covers", true)
+                    end,
+                    align = "left",
+            }},
+        },
+        shrink_unneeded_width = true,
+    }
+    UIManager:show(dialog)
+end
+
 function OPDSBrowser:showOPDSMenu()
     local dialog
     dialog = ButtonDialog:new{
@@ -109,6 +184,15 @@ function OPDSBrowser:showOPDSMenu()
                     callback = function()
                         UIManager:close(dialog)
                         self:addEditCatalog()
+                    end,
+                    align = "left",
+            }},
+            {},
+            {{
+                    text = _("Catalog display"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:showDisplayMenu()
                     end,
                     align = "left",
             }},
@@ -174,6 +258,15 @@ function OPDSBrowser:showCatalogMenu()
             callback = function()
                 UIManager:close(dialog)
                 self:addSubCatalog(catalog_url)
+            end,
+            align = "left",
+        }},
+        {}, -- separator
+        {{
+            text = "\u{f03a} " .. _("Catalog display"), -- 'list' sign
+            callback = function()
+                UIManager:close(dialog)
+                self:showDisplayMenu()
             end,
             align = "left",
         }},
@@ -805,10 +898,13 @@ function OPDSBrowser:getItemFromPublication(entry, item_url)
         end
     end
 
+    local metadata = type(entry.metadata) == "table" and entry.metadata or {}
     return { -- book list item
         text = title .. " - " .. author,
         title = title,
         author = author,
+        subtitle = get_text(metadata.subtitle),
+        published = get_year(metadata.published),
         content = content,
         thumbnail = thumbnail,
         image = image,
@@ -997,6 +1093,10 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
         end
         item.title = title
         item.author = author
+        item.subtitle = get_text(entry.subtitle)
+        -- Atom's <published> is the catalog entry's date, hence only a last resort
+        item.published = get_year(entry["dcterms:issued"] or entry["dc:issued"]
+            or entry["dc:date"] or entry.published)
         item.content = entry.content or entry.summary
         table.insert(item_table, item)
     end
@@ -1414,6 +1514,7 @@ function OPDSBrowser:onMenuSelect(item)
                 return true
             end
             self.root_catalog_title     = item.text
+            self.root_catalog_url       = item.url
             self.root_catalog_username  = item.username
             self.root_catalog_password  = item.password
             self.root_catalog_raw_names = item.raw_names
