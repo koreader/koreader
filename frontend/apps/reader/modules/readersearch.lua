@@ -425,6 +425,12 @@ function ReaderSearch:onShowFulltextSearchInput(search_string)
                 end
                 search_type_buttons_refresh()
             end,
+            hold_callback = function()
+                UIManager:show(InfoMessage:new{
+                    text = regex_help_text,
+                    width = math.floor(Screen:getWidth() * 0.9),
+                })
+            end,
             parent = self.input_dialog,
         }
         table.insert(search_type_buttons, regex_button)
