@@ -522,11 +522,14 @@ function TextEditor:editFile(file_path, readonly, caller_callback)
     if self.qr_code_export then
         table.insert(buttons_first_row, {
             text = _("QR"),
+            enabled_func = function()
+                return self.input:getInputText() ~= ""
+            end,
             callback = function()
+                local invert_bidi = self.ui and self.ui.view and self.ui.view:shouldInvertBiDiLayoutMirroring()
                 UIManager:show(QRMessage:new{
                     text = self.input:getInputText(),
-                    height = Screen:getHeight(),
-                    width = Screen:getWidth()
+                    invert_bidi = invert_bidi,
                 })
             end,
         })
