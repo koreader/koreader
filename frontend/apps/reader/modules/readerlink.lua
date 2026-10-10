@@ -156,8 +156,7 @@ function ReaderLink:init()
                 UIManager:close(this.external_link_dialog)
                 UIManager:show(QRMessage:new{
                     text = link_url,
-                    width = Device.screen:getWidth(),
-                    height = Device.screen:getHeight()
+                    invert_bidi = this.ui.view:shouldInvertBiDiLayoutMirroring(),
                 })
             end
         }
