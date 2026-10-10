@@ -4,13 +4,11 @@ Widget that displays a qr code.
 Example:
     local UIManager = require("ui/uimanager")
     local _ = require("gettext")
-    local Screen = require("device").screen
     local sample
     sample = QRMessage:new{
         title = _("Send to Device"),
         text = _("my message"),
-        height = Screen:scaleBySize(400),
-        width = Screen:scaleBySize(400),
+        invert_bidi = self.ui.view:shouldInvertBiDiLayoutMirroring(),
         timeout = 5,  -- This widget will vanish in 5 seconds.
     }
     UIManager:show(sample)
@@ -50,28 +48,32 @@ local QRMessage = InputContainer:extend{
     _timeout_func = nil,
     title = nil,
     text = nil,  -- The text to encode.
-    width = nil,  -- Defaults to the screen width.
-    height = nil, -- Defaults to the screen height.
+    width = nil, -- screen width.
+    height = nil, -- screen height.
     dismiss_callback = nil,
     alpha = nil,
     scale_factor = 1,
     pages = nil,
     page_num = 1,
+    invert_bidi = false,
 }
 
 function QRMessage:init()
-    self.width = self.width or Screen:getWidth()
-    self.height = self.height or Screen:getHeight()
+    if self.invert_bidi then
+        BD.invert()
+    end
     self.text = self.text or ""
     self.pages = self.splitText(self.text)
+    self.width = Screen:getWidth()
+    self.height = Screen:getHeight()
 
     self:registerKeyEvents()
     if Device:isTouchDevice() then
         if #self.pages > 1 then
             local full_screen = Geom:new{
                 x = 0, y = 0,
-                w = Screen:getWidth(),
-                h = Screen:getHeight(),
+                w = self.width,
+                h = self.height,
             }
             self.ges_events.Swipe = {
                 GestureRange:new{ ges = "swipe", range = full_screen }
@@ -132,7 +134,7 @@ function QRMessage.splitText(text)
             end_idx = end_idx - 1
         end
         -- Invalid UTF-8 (no lead byte within the chunk): hard cut rather than
-        -- emitting an empty chunk and moving current_idx backwards.
+        -- emitting an empty chunk and no forward progress.
         if end_idx < current_idx then
             end_idx = hard_end
         end
@@ -346,6 +348,9 @@ function QRMessage:onCloseWidget()
         self._timeout_func = nil
     end
 
+    if self.invert_bidi then
+        BD.resetInvert()
+    end
     local image = self.content_group and self.content_group[2]
     if image and image.free then
         image:free()
