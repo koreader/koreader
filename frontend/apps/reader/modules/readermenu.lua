@@ -79,10 +79,7 @@ end
 function ReaderMenu:onPhysicalKeyboardConnected()
     self.key_events = {}
     self:registerKeyEvents()
-    if self.menu_container then
-        self:onCloseReaderMenu()
-    end
-    self.tab_item_table = nil
+    self:onRebuildMenu()
 end
 ReaderMenu.onPhysicalKeyboardDisconnected = ReaderMenu.onPhysicalKeyboardConnected
 
@@ -365,6 +362,12 @@ dbg:guard(ReaderMenu, 'setUpdateItemTable',
 function ReaderMenu:saveDocumentSettingsAsDefault()
     local prefix
     if self.ui.rolling then
+        G_reader_settings:saveSetting("text_lang_embedded_langs", self.ui.typography.text_lang_embedded_langs)
+        G_reader_settings:saveSetting("hyphenation", self.ui.typography.hyphenation)
+        G_reader_settings:saveSetting("hyph_trust_soft_hyphens", self.ui.typography.hyph_trust_soft_hyphens)
+        G_reader_settings:saveSetting("hyph_soft_hyphens_only", self.ui.typography.hyph_soft_hyphens_only)
+        G_reader_settings:saveSetting("hyph_force_algorithmic", self.ui.typography.hyph_force_algorithmic)
+        G_reader_settings:saveSetting("floating_punctuation", self.ui.typography.floating_punctuation == 1)
         G_reader_settings:saveSetting("cre_font", self.ui.font.font_face)
         G_reader_settings:saveSetting("copt_css", self.ui.document.default_css)
         local style_tweaks = G_reader_settings:readSetting("style_tweaks")
@@ -514,6 +517,31 @@ end
 function ReaderMenu:onTapCloseMenu()
     self:onCloseReaderMenu()
     self.ui:handleEvent(Event:new("CloseConfigMenu"))
+end
+
+function ReaderMenu:teardownMenu()
+    if self.menu_container then
+        self:onCloseReaderMenu()
+    end
+    self.tab_item_table = nil
+end
+
+function ReaderMenu:onRebuildMenu()
+    local was_open = self.menu_container ~= nil
+    local state
+    if was_open and self.menu_container[1] then
+        state = self.menu_container[1]:getState()
+    end
+    self:teardownMenu()
+
+    if was_open then
+        self:onShowMenu(nil, true)
+        local menu = self.menu_container[1]
+        if state and menu.restoreState then
+            menu:restoreState(state.path_stack, state.page)
+        end
+        UIManager:show(self.menu_container)
+    end
 end
 
 function ReaderMenu:onReadSettings(config)

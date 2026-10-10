@@ -1665,6 +1665,15 @@ abbr.abbr {
 
         if not download_completed then
             cancelled = true
+        elseif #tasks > 0 then
+            -- Always show the final count because the progress text only refreshes once a second.
+            local errors = #failed_images
+            if errors > 0 then
+                UI:info(T(_("Retrieving images… %1 / %2 completed (%3 errors)"), #tasks, #tasks, errors))
+            else
+                UI:info(T(_("Retrieving images… %1 / %2 completed"), #tasks, #tasks))
+            end
+            ffiutil.usleep(600000)
         end
 
         -- Report any failures once, rather than interrupting on each one.

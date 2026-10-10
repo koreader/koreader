@@ -30,12 +30,6 @@ local _ = require("gettext")
 local N_ = _.ngettext
 local T = ffiUtil.template
 
--- cache catalog parsed from feed xml
-local CatalogCache = Cache:new{
-    -- Make it 20 slots, with no storage space constraints
-    slots = 20,
-}
-
 local OPDSBrowser = Menu:extend{
     opds20_feed          = "application/opds+json, application/atom+xml;profile=opds-catalog, */*",
     catalog_type         = "application/atom%+xml",
@@ -191,6 +185,16 @@ function OPDSBrowser:showCatalogMenu()
             callback = function()
                 UIManager:close(dialog)
                 self:searchCatalog(self.search_url)
+            end,
+            align = "left",
+        }})
+    end
+    if self.alt_search_url then
+        table.insert(buttons, {{
+            text = "\u{f002} " .. _("Alt search"),
+            callback = function()
+                UIManager:close(dialog)
+                self:searchCatalog(self.alt_search_url)
             end,
             align = "left",
         }})
@@ -429,8 +433,33 @@ function OPDSBrowser:deleteCatalog(item)
     self._manager.updated = true
 end
 
+function OPDSBrowser:getCatalogCache()
+    if not self.catalog_cache then
+        self.catalog_cache = Cache:new{
+            -- Make it 20 slots, with no storage space constraints.
+            slots = 20,
+        }
+    end
+    return self.catalog_cache
+end
+
+function OPDSBrowser:getConditionalFeedHeaders(cached_feed)
+    if not cached_feed then
+        return nil
+    end
+
+    local headers = {}
+    if cached_feed.etag then
+        headers["If-None-Match"] = cached_feed.etag
+    end
+    if cached_feed.last_modified then
+        headers["If-Modified-Since"] = cached_feed.last_modified
+    end
+    return headers
+end
+
 -- Fetches feed from server
-function OPDSBrowser:fetchFeed(item_url, headers_only)
+function OPDSBrowser:fetchFeed(item_url, headers_only, extra_headers)
     local sink = {}
     socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
     local request = {
@@ -446,6 +475,9 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
         username = self.root_catalog_username,
         password = self.root_catalog_password,
     }
+    for name, value in pairs(extra_headers or {}) do
+        request.headers[name] = value
+    end
     logger.dbg("Request:", socketutil.redact_request(request))
     local code, headers, status = self:getHttpClient():request(request)
     socketutil:reset_timeout()
@@ -455,7 +487,9 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
     end
     if code == 200 then
         local xml = table.concat(sink)
-        return xml ~= "" and xml
+        return xml ~= "" and xml, headers, code
+    elseif code == 304 then
+        return nil, headers, code
     end
 
     local text, icon
@@ -473,6 +507,7 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
             ["403"] = _("Failed to authenticate. Please check your username and password."),
             ["404"] = _("Catalog not found."),
             ["406"] = _("Cannot get catalog. Server refuses to serve uncompressed content."),
+            [socketutil.SSL_HANDSHAKE_CODE] = _("Cannot get catalog. TLS connection interrupted."),
         }
         text = code and error_message[tostring(code)] or T(_("Cannot get catalog. Server response status: %1."), status or code)
     end
@@ -485,24 +520,25 @@ end
 
 -- Parses feed to catalog
 function OPDSBrowser:parseFeed(item_url)
-    local headers = self:fetchFeed(item_url, true)
-    local feed_last_modified = headers and headers["last-modified"]
-    local feed
-    if feed_last_modified then
-        local hash = "opds|catalog|" .. item_url .. "|" .. feed_last_modified
-        feed = CatalogCache:check(hash)
-        if feed then
-            logger.dbg("Cache hit for", hash)
-        else
-            logger.dbg("Cache miss for", hash)
-            feed = self:fetchFeed(item_url)
-            if feed then
-                logger.dbg("Caching", hash)
-                CatalogCache:insert(hash, feed)
-            end
-        end
-    else
-        feed = self:fetchFeed(item_url)
+    local cache_key = "opds|catalog|" .. item_url
+    local cache = self:getCatalogCache()
+    local cached_feed = cache:check(cache_key)
+    local conditional_headers = self:getConditionalFeedHeaders(cached_feed)
+    if conditional_headers then
+        logger.dbg("Revalidating cache entry for", cache_key)
+    end
+
+    local feed, headers, code = self:fetchFeed(item_url, false, conditional_headers)
+    if code == 304 and cached_feed then
+        feed = cached_feed.content
+        logger.dbg("Cache hit for", cache_key)
+    elseif feed and headers and (headers.etag or headers["last-modified"]) then
+        cache:insert(cache_key, {
+            content = feed,
+            etag = headers.etag,
+            last_modified = headers["last-modified"],
+        })
+        logger.dbg("Caching", cache_key)
     end
     if feed then
         if feed:match("^%s*{") then -- OPDS 2.0
@@ -590,6 +626,7 @@ function OPDSBrowser:genItemTableFromCatalog2(catalog, item_url)
     self.catalog_title = catalog.metadata and catalog.metadata.title or self.catalog_title
     self.facet_groups = nil
     self.search_url = nil
+    self.alt_search_url = nil
     local item_table = { hrefs = {} }
 
     if type(catalog.links) == "table" then
@@ -782,21 +819,21 @@ end
 -- Generates catalog item table and processes OPDS facets/search links
 function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
     local item_table = {}
-    self.facet_groups = nil -- Reset facets
-    self.search_url = nil   -- Reset search URL
+    self.facet_groups = nil
+    self.search_url = nil
+    self.alt_search_url = nil
 
     if not catalog then
         return item_table
     end
 
     local feed = catalog.feed or catalog
-    self.facet_groups = {} -- Initialize table to store facet groups
+    self.facet_groups = {}
 
     local function build_href(href)
         return url.absolute(item_url, href)
     end
 
-    local has_opensearch = false
     local hrefs = {}
     if feed.link then
         for __, link in ipairs(feed.link) do
@@ -807,17 +844,14 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                     end
                 end
                 if not self.sync then
-                    -- OpenSearch
-                    if link.type:find(self.search_type) then
-                        if link.href then
-                            self.search_url = build_href(self:getSearchTemplate(build_href(link.href)))
-                            has_opensearch = true
+                    if link.href then
+                        if not self.search_url and link.type:find(self.search_type) then
+                            local template = self:getSearchTemplate(build_href(link.href))
+                            self.search_url = template and build_href(template)
                         end
-                    end
-                    -- Calibre search (also matches the actual template for OpenSearch!)
-                    if link.type:find(self.search_template_type) and link.rel and link.rel:find("search") then
-                        if link.href and not has_opensearch then
-                            self.search_url = build_href(link.href:gsub("{searchTerms}", "%%s"))
+                        if not self.alt_search_url and link.type:find(self.search_template_type)
+                                and link.rel and link.rel:find("search") then
+                            self.alt_search_url = build_href(link.href:gsub("{searchTerms}", "%%s"))
                         end
                     end
                     -- Process OPDS facets
@@ -829,6 +863,14 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                         table.insert(self.facet_groups[group_name], link)
                     end
                 end
+            end
+        end
+        if self.alt_search_url then
+            if not self.search_url then
+                self.search_url = self.alt_search_url
+                self.alt_search_url = nil
+            elseif self.alt_search_url == self.search_url then
+                self.alt_search_url = nil
             end
         end
     end
@@ -964,6 +1006,36 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
     return item_table
 end
 
+function OPDSBrowser:saveCatalogSnapshot()
+    local path = self.paths[#self.paths]
+    if path then
+        path.snapshot = {
+            catalog_title = self.catalog_title,
+            facet_groups = self.facet_groups,
+            item_table = self.item_table,
+            search_url = self.search_url,
+            alt_search_url = self.alt_search_url,
+        }
+    end
+end
+
+function OPDSBrowser:setCatalogMenu(item_url, menu_table)
+    self:switchItemTable(self.catalog_title, menu_table)
+
+    -- Set appropriate title bar icon based on content
+    if self.facet_groups or self.search_url then
+        self:setTitleBarLeftIcon("appbar.menu")
+        self.onLeftButtonTap = function()
+            self:showCatalogMenu()
+        end
+    else
+        self:setTitleBarLeftIcon("plus")
+        self.onLeftButtonTap = function()
+            self:addSubCatalog(item_url)
+        end
+    end
+end
+
 -- Requests and shows updated list of catalog entries
 function OPDSBrowser:updateCatalog(item_url, paths_updated)
     local menu_table = self:genItemTableFromURL(item_url)
@@ -974,25 +1046,13 @@ function OPDSBrowser:updateCatalog(item_url, paths_updated)
                 title = self.catalog_title,
             })
         end
-        self:switchItemTable(self.catalog_title, menu_table)
-
-        -- Set appropriate title bar icon based on content
-        if self.facet_groups or self.search_url then
-            self:setTitleBarLeftIcon("appbar.menu")
-            self.onLeftButtonTap = function()
-                self:showCatalogMenu()
-            end
-        else
-            self:setTitleBarLeftIcon("plus")
-            self.onLeftButtonTap = function()
-                self:addSubCatalog(item_url)
-            end
-        end
+        self:setCatalogMenu(item_url, menu_table)
 
         if self.page_num <= 1 then
             -- Request more content, but don't change the page
             self:onNextPage(true)
         end
+        self:saveCatalogSnapshot()
     end
 end
 
@@ -1447,9 +1507,17 @@ function OPDSBrowser:onReturn()
     table.remove(self.paths)
     local path = self.paths[#self.paths]
     if path then
-        -- return to last path
-        self.catalog_title = path.title
-        self:updateCatalog(path.url, true)
+        if path.snapshot then
+            self.catalog_title = path.snapshot.catalog_title
+            self.facet_groups = path.snapshot.facet_groups
+            self.search_url = path.snapshot.search_url
+            self.alt_search_url = path.snapshot.alt_search_url
+            self:setCatalogMenu(path.url, path.snapshot.item_table)
+        else
+            -- Return to a path that predates session caching.
+            self.catalog_title = path.title
+            self:updateCatalog(path.url, true)
+        end
     else
         -- return to root path, we simply reinit opdsbrowser
         self:init()
@@ -1478,6 +1546,7 @@ function OPDSBrowser:onNextPage(fill_only)
             break
         end
     end
+    self:saveCatalogSnapshot()
     if not fill_only then
         -- We also *do* want to paginate, so call the base class.
         Menu.onNextPage(self)
@@ -2155,4 +2224,5 @@ function OPDSBrowser:downloadPendingSyncs()
         UIManager:show(textviewer)
     end
 end
+
 return OPDSBrowser

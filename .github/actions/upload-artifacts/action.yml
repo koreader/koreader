@@ -1,0 +1,86 @@
+# This workflow is managed by gh actions-lock.
+# Workaround for actions/upload-artifact#766.
+
+name: Upload multiple artifacts
+
+inputs:
+  patterns:
+    description: Artifact pattern(s)
+    required: true
+
+runs:
+
+  using: "composite"
+
+  steps:
+
+      - name: Expand patterns
+        id: expand
+        uses: actions/github-script@v9.0.0
+        env:
+          patterns: ${{ inputs.patterns }}
+        with:
+          script: |
+            const globber = await glob.create(process.env.patterns)
+            const matches = await globber.glob()
+            if (matches.length > 8) {
+              core.setFailed("too many artifacts (> 8):", matches.length)
+              return;
+            }
+            return { count: matches.length, match: matches }
+
+      - name: Upload artifact (1/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 1
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ fromJSON(steps.expand.outputs.result).match[0] }}
+
+      - name: Upload artifact (2/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 2
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ fromJSON(steps.expand.outputs.result).match[1] }}
+
+      - name: Upload artifact (3/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 3
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ fromJSON(steps.expand.outputs.result).match[2] }}
+
+      - name: Upload artifact (4/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 4
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ fromJSON(steps.expand.outputs.result).match[3] }}
+
+      - name: Upload artifact (5/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 5
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ fromJSON(steps.expand.outputs.result).match[4] }}
+
+      - name: Upload artifact (6/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 6
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ fromJSON(steps.expand.outputs.result).match[5] }}
+
+      - name: Upload artifact (7/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 7
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ fromJSON(steps.expand.outputs.result).match[6] }}
+
+      - name: Upload artifact (8/${{ fromJSON(steps.expand.outputs.result).count }})
+        if: fromJSON(steps.expand.outputs.result).count >= 8
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          archive: false
+          path: ${{ fromJSON(steps.expand.outputs.result).match[7] }}

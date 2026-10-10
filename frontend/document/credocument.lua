@@ -889,6 +889,22 @@ function CreDocument:getPageXPointer(page)
     return self._document:getPageXPointer(page)
 end
 
+function CreDocument:getEPubCFI()
+    return self._document:getEPubCFI()
+end
+
+function CreDocument:getPageEPubCFI(page)
+    return self._document:getPageEPubCFI(page)
+end
+
+function CreDocument:getEPubCFIFromXPointer(xp)
+    return self._document:getEPubCFIFromXPointer(xp)
+end
+
+function CreDocument:getEPubCFIRangeFromXPointers(start_xp, end_xp)
+    return self._document:getEPubCFIRangeFromXPointers(start_xp, end_xp)
+end
+
 function CreDocument:isXPointerInDocument(xp)
     return self._document:isXPointerInDocument(xp)
 end
@@ -1932,6 +1948,7 @@ function CreDocument:setupCallCache()
             elseif name == "getScreenPositionFromXPointer" then cache_by_tag = true
             elseif name == "getNearestWordFromPosition" then cache_by_tag = true
             elseif name == "getXPointer" then cache_by_tag = true
+            elseif name == "getEPubCFI" then cache_by_tag = true
             elseif name == "isXPointerInCurrentPage" then cache_by_tag = true
             elseif name == "getPageMapCurrentPageLabel" then cache_by_tag = true
             elseif name == "getPageMapVisiblePageLabels" then cache_by_tag = true

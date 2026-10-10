@@ -26,10 +26,7 @@ local OTAManager = {
     -- NOTE: Each URL *MUST* end with a /
     ota_servers = {
         "http://ota.koreader.rocks/",
-        --[[
-        -- NOTE: Seems down? Ping @chrox ;).
-        "http://vislab.bjmu.edu.cn/apps/koreader/ota/",
-        --]]
+        "https://github.com/koreader/koreader/releases/download/ota/",
         "http://koreader-fr.ak-team.com/",
         "http://koreader-pl.ak-team.com/",
         "http://koreader-na.ak-team.com/",

@@ -566,7 +566,7 @@ function FileManager:getPlusDialogButtons()
                     end,
                 },
                 {
-                    text = _("Move"),
+                    text = _("Move here"),
                     enabled = actions_enabled,
                     callback = function()
                         self.cutfile = true
@@ -574,7 +574,7 @@ function FileManager:getPlusDialogButtons()
                     end,
                 },
                 {
-                    text = _("Copy"),
+                    text = _("Copy here"),
                     enabled = actions_enabled,
                     callback = function()
                         self.cutfile = false
@@ -595,6 +595,17 @@ function FileManager:getPlusDialogButtons()
             {
                 self.collections:genExportHighlightsButton(self.selected_files, close_dialog_callback, not actions_enabled),
                 self.collections:genBookmarkBrowserButton(self.selected_files, close_dialog_callback, not actions_enabled),
+            },
+            {}, -- separator
+            {
+                {
+                    text = _("New folder"),
+                    callback = function()
+                        UIManager:close(self.plus_dialog)
+                        self:createFolder()
+                    end,
+                },
+                self.folder_shortcuts:genShowFolderShortcutsButton(close_dialog_callback),
             },
             {}, -- separator
             {
@@ -633,17 +644,6 @@ function FileManager:getPlusDialogButtons()
                         self:showSelectedFilesList()
                     end,
                 },
-            },
-            {}, -- separator
-            {
-                {
-                    text = _("New folder"),
-                    callback = function()
-                        UIManager:close(self.plus_dialog)
-                        self:createFolder()
-                    end,
-                },
-                self.folder_shortcuts:genShowFolderShortcutsButton(close_dialog_callback),
             },
         }
 

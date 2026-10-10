@@ -1,5 +1,6 @@
 local http = require("socket.http")
 local socket = require("socket")
+local socketutil = require("socketutil")
 local url = require("socket.url")
 
 local OPDSClient = {}
@@ -17,6 +18,10 @@ local default_ports = {
     http = 80,
     https = 443,
 }
+
+local function isIdempotentRequest(method)
+    return method == nil or method == "GET" or method == "HEAD"
+end
 
 local function isSameOrigin(left, right)
     return left.scheme == right.scheme
@@ -47,18 +52,25 @@ function OPDSClient:request(request)
 
         local request_origin = url.parse(request_url)
         local same_origin = isSameOrigin(request_origin, original_origin)
-        local code, response_headers, status = socket.skip(1, http.request {
-            url = request_url,
-            method = request.method,
-            headers = headers,
-            sink = request.sink,
-            user = same_origin and request.username or nil,
-            password = same_origin and request.password or nil,
-            redirect = false,
-            response_headers = function(response_code)
-                return redirect_codes[response_code]
-            end,
-        })
+        local function makeRequest()
+            return socket.skip(1, http.request {
+                url = request_url,
+                method = request.method,
+                headers = headers,
+                sink = request.sink,
+                user = same_origin and request.username or nil,
+                password = same_origin and request.password or nil,
+                redirect = false,
+                response_headers = function(response_code)
+                    return redirect_codes[response_code]
+                end,
+            })
+        end
+
+        local code, response_headers, status = makeRequest()
+        if code == socketutil.SSL_HANDSHAKE_CODE and isIdempotentRequest(request.method) then
+            code, response_headers, status = makeRequest()
+        end
         self.cookie_jar:store(request_url, response_headers)
 
         if not redirect_codes[code] or not response_headers or not response_headers.location then

@@ -26,6 +26,10 @@ Each setting contains:
 * toggle: display name for args
 * separator: put a separator after in the menu list
 * configurable: can be parsed from cre/kopt and used to set `document.configurable`. Should not be set manually
+* condition: static boolean, set once when the table loads
+* condition_func: like condition, but a closure evaluated fresh every time `isAvailable()` is called.
+    That means `Dispatcher:isActionEnabled()` (execution gating), `getDisplayList`/`_addItem` (menu visibility),
+    and the section-level tick all correctly reflect live condition state, not a stale snapshot from boot.
 --]]--
 
 local CreOptions = require("ui/data/creoptions")
@@ -38,6 +42,7 @@ local Notification = require("ui/widget/notification")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
+local ReaderStatus = require("apps/reader/modules/readerstatus")
 local ReaderTypography = require("apps/reader/modules/readertypography")
 local ReaderView = require("apps/reader/modules/readerview")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
@@ -80,6 +85,8 @@ local settingsList = {
     notebook_file = {category="none", event="ShowNotebookFile", title=_("Notebook file"), general=true},
     screenshot = {category="none", event="Screenshot", title=_("Screenshot"), general=true, separator=true},
     ----
+    set_end_of_book_action = {category="string", event="SetEndOfBookAction", title=_("End of document action"), args_func=ReaderStatus.getEndOfBookActions, general=true, separator=true},
+    ----
 
     -- Device
     exit_screensaver = {category="none", event="ExitScreensaver", title=_("Exit sleep screen"), device=true, condition=Device:isTouchDevice()},
@@ -96,12 +103,12 @@ local settingsList = {
     touch_input_off = {category="none", event="IgnoreTouchInput", arg=true, title=_("Disable touch input"), device=true, condition=Device:isTouchDevice()},
     toggle_touch_input = {category="none", event="IgnoreTouchInput", title=_("Toggle touch input"), device=true, separator=true, condition=Device:isTouchDevice()},
     ----
-    swap_left_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg="left", title=_("Invert left-side page-turn buttons"), device=true, condition= Device:hasDPad() and Device:useDPadAsActionKeys()},
-    swap_right_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg="right", title=_("Invert right-side page-turn buttons"), device=true, condition= Device:hasDPad() and Device:useDPadAsActionKeys()},
-    swap_page_turn_buttons = {category="none", event="SwapPageTurnButtons", title=_("Invert page-turn buttons"), device=true, condition=Device:hasKeys()},
-    set_page_turn_buttons = {category="string", event="SetPageTurnButtonDirection", title=_("Set page-turn button inversion"), device=true, condition=Device:hasKeys(), args = {true, false}, toggle = { _("on"), _("off")}, separator=true},
+    swap_left_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg="left", title=_("Invert left-side page-turn buttons"), device=true, condition_func=function() return Device:hasDPad() and Device:useDPadAsActionKeys() end},
+    swap_right_page_turn_buttons = {category="none", event="SwapPageTurnButtons", arg="right", title=_("Invert right-side page-turn buttons"), device=true, condition_func=function() return Device:hasDPad() and Device:useDPadAsActionKeys() end},
+    swap_page_turn_buttons = {category="none", event="SwapPageTurnButtons", title=_("Invert page-turn buttons"), device=true, condition_func=function() return Device:hasKeys() end},
+    set_page_turn_buttons = {category="string", event="SetPageTurnButtonDirection", title=_("Set page-turn button inversion"), device=true, condition_func=function() return Device:hasKeys() end, args = {true, false}, toggle = { _("on"), _("off")}, separator=true},
     ----
-    toggle_key_repeat = {category="none", event="ToggleKeyRepeat", title=_("Toggle key repeat"), device=true, condition=Device:hasKeys() and Device:canKeyRepeat(), separator=true},
+    toggle_key_repeat = {category="none", event="ToggleKeyRepeat", title=_("Toggle key repeat"), device=true, condition_func=function() return Device:hasKeys() and Device:canKeyRepeat() end, separator=true},
     toggle_gsensor = {category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:hasGSensor()},
     temp_gsensor_on = {category="none", event="TempGSensorOn", title=_("Enable accelerometer for 5 seconds"), device=true, condition=Device:hasGSensor()},
     lock_gsensor = {category="none", event="LockGSensor", title=_("Toggle lock auto rotation to current orientation"), device=true, condition=Device:hasGSensor()},
@@ -219,7 +226,7 @@ local settingsList = {
     toggle_handmade_toc = {category="none", event="ToggleHandmadeToc", title=_("Toggle custom TOC"), reader=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
     toggle_handmade_flows = {category="none", event="ToggleHandmadeFlows", title=_("Toggle custom hidden flows"), reader=true, separator=true, condition=Device:isTouchDevice() or (Device:hasDPad() and Device:useDPadAsActionKeys())},
     ----
-    text_selection = {category="none", event="StartHighlightIndicator", title=_("Toggle text selection mode"), reader=true, condition=Device:hasKeyboard()},
+    text_selection = {category="none", event="StartHighlightIndicator", title=_("Toggle text selection mode"), reader=true, condition_func=function() return Device:hasKeyboard() end},
     set_highlight_action = {category="string", event="SetHighlightAction", title=_("Set highlight action"), args_func=ReaderHighlight.getHighlightActions, reader=true},
     cycle_highlight_action = {category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), reader=true},
     cycle_highlight_style = {category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), reader=true, separator=true},
@@ -339,6 +346,8 @@ local dispatcher_menu_order = {
     "open_previous_document_in_folder",
     "notebook_file",
     "screenshot",
+    ----
+    "set_end_of_book_action",
     ----
 
     -- Device
@@ -675,6 +684,16 @@ function Dispatcher:removeAction(name)
     return true
 end
 
+-- condition_func (evaluated on every call) takes precedence over the static condition, for anything
+-- that can change while running (e.g., a keyboard being connected).
+local function isAvailable(action)
+    if action == nil then return false end
+    if action.condition_func ~= nil then
+        return action.condition_func() and true or false
+    end
+    return action.condition ~= false
+end
+
 function Dispatcher.getActionArgs(settings, get_args)
     if Dispatcher:_itemsCount(settings) == 1 then
         local action = next(settings)
@@ -850,7 +869,7 @@ function Dispatcher.getDisplayList(settings, for_sorting)
     local is_check_mark = for_sorting and settings.settings and settings.settings.show_as_quickmenu
     for item, v in Dispatcher.iter_func(settings) do
         if type(item) == "number" then item = v end
-        if settingsList[item] ~= nil and settingsList[item].condition ~= false then
+        if isAvailable(settingsList[item]) then
             table.insert(item_table, {
                 text = Dispatcher:getNameFromItem(item, settings),
                 key = item,
@@ -908,7 +927,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
         end
     end
     for __, k in ipairs(dispatcher_menu_order) do
-        if settingsList[k][section] == true and settingsList[k].condition ~= false then
+        if settingsList[k][section] == true and isAvailable(settingsList[k]) then
             if settingsList[k].category == "none" or settingsList[k].category == "arg" then
                 table.insert(menu, {
                     text = settingsList[k].title,
@@ -1046,6 +1065,20 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                     separator = settingsList[k].separator,
                 })
             end
+        -- A dynamic action that is not available in the current context, but was selected previously.
+        -- We still want to show it, so the user can unselect it, the action will be removed from the list
+        -- when the user disables it, and will only return once the condition is met again.
+        elseif settingsList[k][section] == true and location[settings] ~= nil and location[settings][k] ~= nil then
+            table.insert(menu, {
+                text = T(_("%1 (unavailable)"), settingsList[k].title),
+                checked_func = function() return true end,
+                callback = function(touchmenu_instance)
+                    -- Murder the action and hide the body ;)
+                    setValue(k, nil, touchmenu_instance)
+                    UIManager:broadcastEvent(Event:new("RebuildMenu"))
+                end,
+                separator = settingsList[k].separator,
+            })
         end
     end
 end
@@ -1113,9 +1146,9 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             checked_func = function()
                 if location[settings] ~= nil then
                     for k, _ in pairs(location[settings]) do
-                        if settingsList[k] ~= nil and settingsList[k][section[1]] == true and
-                            (settingsList[k].condition == nil or settingsList[k].condition)
-                        then return true end
+                        if settingsList[k] ~= nil and settingsList[k][section[1]] == true then
+                            return true
+                        end
                     end
                 end
             end,
@@ -1401,7 +1434,7 @@ end
 
 function Dispatcher:isActionEnabled(action)
     local disabled = true
-    if action and (action.condition == nil or action.condition == true) then
+    if action and isAvailable(action) then
         local ui = require("apps/reader/readerui").instance
         local context = ui and (ui.paging and "paging" or "rolling")
         if context == "paging" then

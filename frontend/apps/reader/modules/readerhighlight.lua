@@ -98,6 +98,7 @@ local function inside_box(pos, box)
 end
 
 function ReaderHighlight:init()
+    self.is_touch_device = Device:isTouchDevice()
     self.screen_w = Screen:getWidth()
     self.screen_h = Screen:getHeight()
     self.select_mode = false -- extended highlighting
@@ -114,7 +115,7 @@ function ReaderHighlight:init()
                 callback = function()
                     this:startSelection(index)
                     this:onClose()
-                    if not Device:isTouchDevice() then
+                    if not self.is_touch_device then
                         self.ui.keyselection:startHighlightIndicator()
                     end
                 end,
@@ -287,7 +288,7 @@ end
 function ReaderHighlight:onGesture() end
 
 function ReaderHighlight:setupTouchZones()
-    if not Device:isTouchDevice() then return end
+    if not self.is_touch_device then return end
     local hold_pan_rate = G_reader_settings:readSetting("hold_pan_rate")
     if not hold_pan_rate then
         hold_pan_rate = Screen.low_pan_rate and 5.0 or 30.0
@@ -841,7 +842,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
         end,
         sub_item_table = prompt_sub_item_table,
     })
-    if Device:isTouchDevice() then
+    if self.is_touch_device then
         -- highlight very-long-press interval
         table.insert(menu_items.long_press.sub_item_table, {
             text_func = function()
@@ -1114,6 +1115,7 @@ function ReaderHighlight:updateHighlightRolling(highlight, side, direction, move
 
     local new_beginning = highlight.pos0
     local new_end = highlight.pos1
+    highlight.epubcfi = self.document:getEPubCFIRangeFromXPointers(new_beginning, new_end)
     highlight.text = self.ui.document:getTextFromXPointers(new_beginning, new_end)
     if side == 0 then
         -- Ensure we show the page with the new beginning of highlight
@@ -1595,7 +1597,28 @@ function ReaderHighlight:_getDialogAnchor(dialog, index)
     end
 end
 
+-- For Non-touch devices, where long_hold is set with mod+press
+function ReaderHighlight:setLongHoldReached(state)
+    self.long_hold_reached = state
+end
+
+function ReaderHighlight:disableLongHoldReachedAction()
+    if self.is_touch_device then
+        self.long_hold_disabled = true
+        if self.long_hold_reached_action then
+            UIManager:unschedule(self.long_hold_reached_action)
+        end
+    end
+end
+
+function ReaderHighlight:restoreLongHoldReachedAction()
+    if self.is_touch_device then
+        self.long_hold_disabled = false
+    end
+end
+
 function ReaderHighlight:_resetHoldTimer(clear)
+    if not self.is_touch_device then return end
     if not self.long_hold_reached_action then
         self.long_hold_reached_action = function()
             self.long_hold_reached = true
@@ -1628,7 +1651,7 @@ function ReaderHighlight:_resetHoldTimer(clear)
                 handle_long_hold = false
             end
         end
-        if handle_long_hold then
+        if handle_long_hold and not self.long_hold_disabled then
             UIManager:scheduleIn(G_reader_settings:readSetting("highlight_long_hold_threshold_s")
                 or GestureDetector.LONG_HOLD_INTERVAL_S, self.long_hold_reached_action)
         end
@@ -2266,6 +2289,8 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             if extend_to_sentence then
                 local extended_text = self.ui.document:extendXPointersToSentenceSegment(self.selected_text.pos0, self.selected_text.pos1)
                 if extended_text then
+                    extended_text.drawer = self.selected_text.drawer
+                    extended_text.color = self.selected_text.color
                     self.selected_text = extended_text
                 end
             end
@@ -2274,7 +2299,6 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             pg_or_xp = self.selected_text.pos0.page
         end
         local item = {
-            page = self.ui.paging and self.selected_text.pos0.page or self.selected_text.pos0,
             pos0 = self.selected_text.pos0,
             pos1 = self.selected_text.pos1,
             text = util.cleanupSelectedText(self.selected_text.text),
@@ -2285,9 +2309,13 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             chapter = self.ui.toc:getTocTitleByPage(pg_or_xp),
         }
         if self.ui.paging then
+            item.page = self.selected_text.pos0.page
             item.pboxes = self.selected_text.pboxes
             item.ext = self.selected_text.ext
             self:writePdfAnnotation("save", item)
+        else -- rolling
+            item.page = self.selected_text.pos0
+            item.epubcfi = self.document:getEPubCFIRangeFromXPointers(item.pos0, item.pos1)
         end
         local index = self.ui.annotation:addItem(item)
         self.view.footer:maybeUpdateFooter()

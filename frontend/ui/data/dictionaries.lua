@@ -2864,7 +2864,7 @@ local dictionaries = {
         lang_in = "cat",
         lang_out = "cat",
         entries = 421834,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/ca/dict-ca-ca.zip"
     },
     {
@@ -2872,7 +2872,7 @@ local dictionaries = {
         lang_in = "ces",
         lang_out = "ces",
         entries = 373601,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/cs/dict-cs-cs.zip"
     },
     {
@@ -2880,7 +2880,7 @@ local dictionaries = {
         lang_in = "dan",
         lang_out = "dan",
         entries = 34941,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/da/dict-da-da.zip"
     },
     {
@@ -2888,7 +2888,7 @@ local dictionaries = {
         lang_in = "deu",
         lang_out = "deu",
         entries = 998869,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/de/dict-de-de.zip"
     },
     {
@@ -2896,7 +2896,7 @@ local dictionaries = {
         lang_in = "nld",
         lang_out = "nld",
         entries = 589195,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/nl/dict-nl-nl.zip"
     },
     {
@@ -2904,7 +2904,7 @@ local dictionaries = {
         lang_in = "ell",
         lang_out = "ell",
         entries = 413661,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/el/dict-el-el.zip"
     },
     {
@@ -2912,7 +2912,7 @@ local dictionaries = {
         lang_in = "eng",
         lang_out = "eng",
         entries = 1470678,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/en/dict-en-en.zip"
     },
     {
@@ -2920,7 +2920,7 @@ local dictionaries = {
         lang_in = "epo",
         lang_out = "epo",
         entries = 378828,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/eo/dict-eo-eo.zip"
     },
     {
@@ -2928,7 +2928,7 @@ local dictionaries = {
         lang_in = "pol",
         lang_out = "pol",
         entries = 889051,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/pl/dict-pl-pl.zip"
     },
     {
@@ -2936,15 +2936,23 @@ local dictionaries = {
         lang_in = "spa",
         lang_out = "spa",
         entries = 933377,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/es/dict-es-es.zip"
+    },
+    {
+        name = "reader.dict Finnish",
+        lang_in = "fin",
+        lang_out = "fin",
+        entries = 1162957,
+        license = "CC BY-SA 4.0",
+        url = "https://www.reader-dict.com/file/fi/dict-fi-fi.zip"
     },
     {
         name = "reader.dict French",
         lang_in = "fra",
         lang_out = "fra",
         entries = 2060373,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/fr/dict-fr-fr.zip"
     },
     {
@@ -2952,7 +2960,7 @@ local dictionaries = {
         lang_in = "ita",
         lang_out = "ita",
         entries = 329201,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/it/dict-it-it.zip"
     },
     {
@@ -2960,7 +2968,7 @@ local dictionaries = {
         lang_in = "jbo",
         lang_out = "jbo",
         entries = 1712,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/jbo/dict-jbo-jbo.zip"
     },
     {
@@ -2968,7 +2976,7 @@ local dictionaries = {
         lang_in = "jpn",
         lang_out = "jpn",
         entries = 323373,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/ja/dict-ja-ja.zip"
     },
     {
@@ -2976,23 +2984,39 @@ local dictionaries = {
         lang_in = "kor",
         lang_out = "kor",
         entries = 67047,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/ko/dict-ko-ko.zip"
+    },
+    {
+        name = "reader.dict Latin",
+        lang_in = "lat",
+        lang_out = "lat",
+        entries = 75126,
+        license = "CC BY-SA 4.0",
+        url = "https://www.reader-dict.com/file/la/dict-la-la.zip"
     },
     {
         name = "reader.dict Lithuanian",
         lang_in = "lit",
         lang_out = "lit",
         entries = 654958,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/lt/dict-lt-lt.zip"
+    },
+    {
+        name = "reader.dict Malagasy",
+        lang_in = "mlg",
+        lang_out = "mlg",
+        entries = 944164,
+        license = "CC BY-SA 4.0",
+        url = "https://www.reader-dict.com/file/mg/dict-mg-mg.zip"
     },
     {
         name = "reader.dict Norwegian",
         lang_in = "nor",
         lang_out = "nor",
         entries = 64991,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/no/dict-no-no.zip"
     },
     {
@@ -3000,7 +3024,7 @@ local dictionaries = {
         lang_in = "por",
         lang_out = "por",
         entries = 547983,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/pt/dict-pt-pt.zip"
     },
     {
@@ -3008,7 +3032,7 @@ local dictionaries = {
         lang_in = "rom",
         lang_out = "rom",
         entries = 380513,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/ro/dict-ro-ro.zip"
     },
     {
@@ -3016,7 +3040,7 @@ local dictionaries = {
         lang_in = "rus",
         lang_out = "rus",
         entries = 2882238,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/ru/dict-ru-ru.zip"
     },
     {
@@ -3024,7 +3048,7 @@ local dictionaries = {
         lang_in = "swe",
         lang_out = "swe",
         entries =  537111,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/sv/dict-sv-sv.zip"
     },
     {
@@ -3032,7 +3056,7 @@ local dictionaries = {
         lang_in = "tur",
         lang_out = "tur",
         entries =  1263984,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/tr/dict-tr-tr.zip"
     },
     {
@@ -3040,7 +3064,7 @@ local dictionaries = {
         lang_in = "ukr",
         lang_out = "ukr",
         entries = 193778,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/uk/dict-uk-uk.zip"
     },
     {
@@ -3048,7 +3072,7 @@ local dictionaries = {
         lang_in = "zho",
         lang_out = "zho",
         entries = 119123,
-        license = "MIT https://github.com/reader-dict/monolingual",
+        license = "CC BY-SA 4.0",
         url = "https://www.reader-dict.com/file/zh/dict-zh-zh.zip"
     },
     {

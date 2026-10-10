@@ -22,10 +22,8 @@ local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local logger = require("logger")
-local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
-local T = require("ffi/util").template
 local getMenuText = require("ui/widget/menu").getMenuText
 
 local BookInfoManager = require("bookinfomanager")
@@ -133,19 +131,8 @@ function FakeCover:init()
     end
     -- If multiple authors (crengine separates them with \n), we
     -- can display them on multiple lines, but limit to 3, and
-    -- append "et al." on a 4th line if there are more
-    if authors and authors:find("\n") then
-        authors = util.splitToArray(authors, "\n")
-        for i=1, #authors do
-            authors[i] = BD.auto(authors[i])
-        end
-        if #authors > 3 then
-            authors = { authors[1], authors[2], T(_("%1 et al."), authors[3]) }
-        end
-        authors = table.concat(authors, "\n")
-    elseif authors then
-        authors = BD.auto(authors)
-    end
+    -- append "et al." on the 3rd line if there are more
+    authors = self.menu.ui.bookinfo.prettifyAuthors(authors, 3)
     -- Add any _add, which must be already BD wrapped if needed
     if self.filename_add then
         filename = (filename and filename or "") .. self.filename_add
@@ -582,6 +569,7 @@ function MosaicMenuItem:update()
                         file_deleted = self.file_deleted,
                         bottom_pad = bottom_pad,
                         bottom_right_compensate = not self.show_progress_bar and self.do_hint_opened,
+                        menu = self.menu,
                     }
                 }
             end
@@ -621,6 +609,7 @@ function MosaicMenuItem:update()
                     filename_add = "\n" .. hint,
                     initial_sizedec = 4, -- start with a smaller font when filenames only
                     file_deleted = self.file_deleted,
+                    menu = self.menu,
                 }
             }
         end

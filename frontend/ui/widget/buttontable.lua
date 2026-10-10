@@ -70,6 +70,7 @@ function ButtonTable:init()
                 no_refresh_checkmark = btn_entry.no_refresh_checkmark,
                 lang = btn_entry.lang,
                 icon = btn_entry.icon,
+                alpha = btn_entry.alpha,
                 icon_width = btn_entry.icon_width,
                 icon_height = btn_entry.icon_height,
                 align = btn_entry.align,
