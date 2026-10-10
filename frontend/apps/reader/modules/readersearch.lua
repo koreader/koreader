@@ -40,19 +40,18 @@ local ReaderSearch = InputContainer:extend{
     --   FOLD_APOSTROPHES            = 0x0040
     --   FOLD_HYPHENS                = 0x0080
     --   IGNORE_DIACRITICS           = 0x0100
+    --   MATCH_WHOLE_WORDS           = 0x1000
     -- Make a few types of search available as (mutually exclusive) check buttons
     -- (These are available to be updated/extended by user-patches)
     search_types = {
-        { text = _("Ignore diacritics and accents"), flags = 0x01FF, regex = false, is_ignore_diacritics = true },
-        -- { text = _("As typed"), flags = 0x0017, regex = false },
-        -- { text = _("Legacy search"), flags = 0x0000, regex = false },
-        { text = _("Whole word"), flags = 0x0001, regex = true, is_whole_word = true }, -- requires regex
-        { text = _("Regular expression (long-press for help)"), flags = 0x0001, regex = true, is_regex = true },
+        { text = _("Ignore diacritics and accents"), flags = 0x01FF },
+        -- { text = _("As typed"), flags = 0x0017 },
+        -- { text = _("Legacy search"), flags = 0x0000 },
     },
-    default_search_type = { flags = 0x00FF, regex = false }, -- Most except IGNORE_DIACRITICS
+    whole_word_flags = 0x1000, -- can be combined with other flags
+    regex_flags      = 0x0001, -- MATCH_ACROSS_TEXT_NODES
+    default_flags    = 0x00FF, -- all except IGNORE_DIACRITICS and MATCH_WHOLE_WORDS
 
-    word_boundary_start = "[ ({\"'\n—–-]",
-    word_boundary_end = "[ .,!?;:)}\"'\n—–-]",
     -- For a regex like [a-z\. ] many many hits are found, maybe the number of chars on a few pages.
     -- We don't try to catch them all as this is a reader and not a computer science playground. ;)
     -- So if some regex gets more than max_hits a notification will be shown.
@@ -76,7 +75,7 @@ function ReaderSearch:init()
     self.findall_results_per_page = G_reader_settings:readSetting("fulltext_search_results_per_page") or 10
     self.findall_results_max_lines = G_reader_settings:readSetting("fulltext_search_results_max_lines")
 
-    self.current_search_type = self.default_search_type
+    self.current_search_type = { flags = self.default_flags, whole_word = nil, regex = nil }
 
     self.ui.menu:registerToMainMenu(self)
     self.mirrored_ui = BD.mirroredUILayout()
@@ -261,7 +260,7 @@ function ReaderSearch:searchCallback(reverse, text)
 
     if text then -- from highlight dialog
         self.case_insensitive = true
-        self.current_search_type = self.default_search_type
+        self.current_search_type = { flags = self.default_flags }
     else -- from input dialog
         -- search_text comes from our keyboard, and may contain multiple diacritics ordered
         -- in any order: we'd rather have them normalized, and expect the book content to
@@ -284,9 +283,6 @@ function ReaderSearch:searchCallback(reverse, text)
         UIManager:show(InfoMessage:new{ text = error_message })
     else
         UIManager:close(self.input_dialog)
-        if self.current_search_type.is_whole_word then
-            search_text = self.word_boundary_start .. search_text .. self.word_boundary_end
-        end
         if reverse then -- provided as 0 or 1
             self.last_search_hash = nil
             self:onShowSearchDialog(search_text, reverse, self.current_search_type, self.case_insensitive)
@@ -347,7 +343,6 @@ function ReaderSearch:onShowFulltextSearchInput(search_string)
 
     if self.ui.rolling then
         -- Add mutually exclusive check buttons, to select one of our search types
-        -- (or none and use our default_search_type)
         local separator_width = self.input_dialog:getAddedWidgetAvailableWidth()
         local separator = CenterContainer:new{
             dimen = Geom:new{
@@ -368,50 +363,72 @@ function ReaderSearch:onShowFulltextSearchInput(search_string)
         local search_type_buttons_refresh = function()
             for _, button in ipairs(search_type_buttons) do
                 button.checked = button.checked_func()
-                if button.allow_checked_when_disabled and self.current_search_type.is_whole_word then
-                    button:disable() -- disable Regex button when Whole word is checked
-                else
-                    button:enable()
-                end
+                button:enable() -- this updates its state
             end
         end
         for _, search_type in ipairs(self.search_types) do
             local button = CheckButton:new{
                 text = search_type.text,
-                allow_checked_when_disabled = search_type.is_regex,
+                checked = search_type.flags == self.current_search_type.flags,
                 checked_func = function()
-                    if search_type.is_ignore_diacritics then
-                        return self.current_search_type.is_ignore_diacritics
-                    elseif search_type.is_whole_word then
-                        return self.current_search_type.is_whole_word
-                    elseif search_type.is_regex then
-                        return self.current_search_type.is_regex or self.current_search_type.is_whole_word
-                    end
+                    return search_type.flags == self.current_search_type.flags
                 end,
                 callback = function()
                     -- Our buttons are mutually exclusive, but we can have
                     -- none of them checked
-                    if self.current_search_type == search_type then
+                    if self.current_search_type.flags == search_type.flags then
                         -- All unchecked: back to default search type
-                        self.current_search_type = self.default_search_type
+                        self.current_search_type.flags = self.default_flags
                     else
-                        self.current_search_type = search_type
+                        self.current_search_type.flags = search_type.flags
+                        self.current_search_type.regex = nil
                     end
                     search_type_buttons_refresh()
                 end,
-                allow_hold_when_disabled = search_type.is_regex,
-                hold_callback = search_type.is_regex and function()
-                    UIManager:show(InfoMessage:new{
-                        text = regex_help_text,
-                        width = Screen:getWidth() * 0.9,
-                    })
-                end,
                 parent = self.input_dialog,
             }
-            button.checked = button.checked_func()
             table.insert(search_type_buttons, button)
             self.input_dialog:addWidget(button)
         end
+        local whole_word_button = CheckButton:new{
+            text = _("Whole word"),
+            checked = self.current_search_type.whole_word,
+            checked_func = function()
+                return self.current_search_type.whole_word
+            end,
+            callback = function()
+                self.current_search_type.whole_word = not self.current_search_type.whole_word or nil
+                if self.current_search_type.regex then
+                    self.current_search_type.flags = self.default_flags
+                    self.current_search_type.regex = nil
+                end
+                search_type_buttons_refresh()
+            end,
+            parent = self.input_dialog,
+        }
+        table.insert(search_type_buttons, whole_word_button)
+        self.input_dialog:addWidget(whole_word_button)
+        local regex_button = CheckButton:new{
+            text = _("Regular expression (long-press for help)"),
+            checked = self.current_search_type.regex,
+            checked_func = function()
+                return self.current_search_type.regex
+            end,
+            callback = function()
+                if self.current_search_type.regex then
+                    self.current_search_type.flags = self.default_flags
+                    self.current_search_type.regex = nil
+                else
+                    self.current_search_type.flags = self.regex_flags
+                    self.current_search_type.whole_word = nil
+                    self.current_search_type.regex = true
+                end
+                search_type_buttons_refresh()
+            end,
+            parent = self.input_dialog,
+        }
+        table.insert(search_type_buttons, regex_button)
+        self.input_dialog:addWidget(regex_button)
         search_type_buttons_refresh() -- update all buttons states
     end
 
@@ -691,8 +708,17 @@ function ReaderSearch:search(pattern, origin, search_type, case_insensitive)
     end
     -- (search_type should be provided all along this module, but
     -- unit tests don't: fallback for them to legacy search)
-    local search_flags = search_type and search_type.flags or 0x0000
-    local regex = search_type and search_type.regex or false
+    local search_flags, regex
+    if search_type then
+        search_flags = search_type.flags
+        if search_type.whole_word then
+            search_flags = search_flags + self.whole_word_flags
+        end
+        regex = search_type.regex or false
+    else
+        search_flags = 0x0000
+        regex = false
+    end
     Device:setIgnoreInput(true)
     local retval, words_found = self.ui.document:findText(pattern, origin, direction, case_insensitive, page, regex, self.max_hits, search_flags)
     Device:setIgnoreInput(false)
@@ -750,9 +776,12 @@ end
 
 function ReaderSearch:findAllText(search_text)
     local search_flags = self.current_search_type.flags
-    local use_regex = self.current_search_type.regex
+    if self.current_search_type.whole_word then
+        search_flags = search_flags + self.whole_word_flags
+    end
+    local use_regex = self.current_search_type.regex or false
     local last_search_hash = (self.last_search_text or "") .. tostring(self.case_insensitive) ..
-        tostring(search_flags) .. tostring(use_regex) .. tostring(self.current_search_type.is_whole_word)
+                                tostring(search_flags) .. tostring(use_regex)
     local not_cached = self.last_search_hash ~= last_search_hash
     if not_cached then
         local Trapper = require("ui/trapper")
@@ -792,20 +821,12 @@ function ReaderSearch:onShowFindAllResults(not_cached)
                     table.insert(text, " ")
                 end
             end
+            table.insert(text, TextBoxWidget.PTF_BOLD_START) -- start of the word in bold
             -- PDF/Kopt shows full words when only some part matches; let's do the same with CRE
-            if self.current_search_type.is_whole_word then
-                table.insert(text, item.matched_word_prefix)
-                table.insert(text, TextBoxWidget.PTF_BOLD_START)
-                table.insert(text, item.matched_text)
-                table.insert(text, TextBoxWidget.PTF_BOLD_END)
-                table.insert(text, item.matched_word_suffix)
-            else
-                table.insert(text, TextBoxWidget.PTF_BOLD_START)
-                table.insert(text, item.matched_word_prefix)
-                table.insert(text, item.matched_text)
-                table.insert(text, item.matched_word_suffix)
-                table.insert(text, TextBoxWidget.PTF_BOLD_END)
-            end
+            table.insert(text, item.matched_word_prefix)
+            table.insert(text, item.matched_text)
+            table.insert(text, item.matched_word_suffix)
+            table.insert(text, TextBoxWidget.PTF_BOLD_END) -- end of the word in bold
             if item.next_text then
                 if not item.next_text:find("^[%s%p]") then -- separate next context
                     table.insert(text, " ")
