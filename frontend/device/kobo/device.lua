@@ -1271,6 +1271,7 @@ function Kobo:checkUnexpectedWakeup()
         if self.unexpected_wakeup_count > 20 then
             -- If we've failed to put the device back to sleep over 20 consecutive times, we give up.
             -- Broadcast a specific event, so that AutoSuspend can pick up the baton...
+            logger.err("Kobo suspend: giving up after too many consecutive unexpected wakeups, the device will stay awake")
             local Event = require("ui/event")
             UIManager:broadcastEvent(Event:new("UnexpectedWakeupLimit"))
             return
