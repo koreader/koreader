@@ -17,14 +17,113 @@ local BookList = Menu:extend{
 
 BookList.strcoll = ffiUtil.strcoll
 
+BookList.leading_articles = {
+    af = { "'n", "die" },
+    de = { "der", "die", "das", "den", "ein", "eine", "einen", "dem", "des", "einem", "eines" },
+    el = { "o", "i", "to", "ta", "tus", "tis", "'enas", "'mia", "'ena", "'enan" },
+    en = { "a", "the", "an" },
+    eo = { "la", "l'" },
+    es = { "el", "la", "lo", "los", "las", "un", "una", "unos", "unas" },
+    fr = { "le", "la", "l'", "les", "un", "une", "des", "de la", "de", "d'" },
+    hu = { "a", "az", "egy" },
+    it = { "lo", "il", "l'", "la", "gli", "i", "le", "uno", "un", "una", "un'",
+           "dei", "degli", "delle", "del", "della", "dello", "dell'" },
+    nl = { "de", "het", "een", "'n", "'s", "ene", "ener", "enes", "den", "der", "des", "'t" },
+    pl = {},
+    pt = { "a", "o", "os", "as", "um", "uns", "uma", "umas" },
+    ro = { "un", "o", "nişte" },
+    sv = { "en", "ett", "det", "den", "de" },
+    tr = { "bir" },
+}
+
+local iso639_2_to_1 = {
+    afr = "af", deu = "de", ger = "de", ell = "el", gre = "el", eng = "en", epo = "eo",
+    spa = "es", fra = "fr", fre = "fr", hun = "hu", ita = "it", nld = "nl", dut = "nl",
+    pol = "pl", por = "pt", ron = "ro", rum = "ro", swe = "sv", tur = "tr",
+}
+
+local leading_article_prefixes = {}
+
+local function getLeadingArticlePrefixes(lang)
+    if lang then
+        lang = lang:lower():match("^%a+")
+        lang = lang and (iso639_2_to_1[lang] or lang)
+    else
+        lang = G_reader_settings:readSetting("language", "en"):lower():match("^%a+")
+    end
+    if not BookList.leading_articles[lang] then
+        lang = "en"
+    end
+    local prefixes = leading_article_prefixes[lang]
+    if not prefixes then
+        prefixes = {}
+        for _, article in ipairs(BookList.leading_articles[lang]) do
+            if article:sub(-1) == "'" then
+                local stem = article:sub(1, -2)
+                table.insert(prefixes, article)
+                table.insert(prefixes, stem .. "\u{2019}") -- right single quotation mark
+                table.insert(prefixes, stem .. "\u{00B4}") -- acute accent
+            else
+                table.insert(prefixes, article .. " ")
+            end
+        end
+        leading_article_prefixes[lang] = prefixes
+    end
+    return prefixes
+end
+
+function BookList.getSortTitle(str, lang)
+    local start = str:match("^%s*()")
+    local lower_str = str:lower()
+    for _, prefix in ipairs(getLeadingArticlePrefixes(lang)) do
+        if lower_str:sub(start, start + #prefix - 1) == prefix then
+            local rest = str:sub(start + #prefix):match("^%s*(.-)$")
+            if rest ~= "" then
+                return rest
+            end
+        end
+    end
+    return str
+end
+
+function BookList.getStringCompareFunc(compare_func)
+    compare_func = compare_func or BookList.strcoll
+    if not G_reader_settings:isTrue("sort_ignore_articles") then
+        return compare_func
+    end
+    local sort_titles = {}
+    local function getSortTitle(str, lang)
+        local cache_id = lang or ""
+        local cache = sort_titles[cache_id]
+        if not cache then
+            cache = {}
+            sort_titles[cache_id] = cache
+        end
+        local sort_title = cache[str]
+        if not sort_title then
+            sort_title = BookList.getSortTitle(str, lang)
+            cache[str] = sort_title
+        end
+        return sort_title
+    end
+    return function(a, b, a_lang, b_lang)
+        local sort_a, sort_b = getSortTitle(a, a_lang), getSortTitle(b, b_lang)
+        if sort_a ~= sort_b then
+            return compare_func(sort_a, sort_b)
+        end
+        return compare_func(a, b)
+    end
+end
+
 BookList.collates = {
     strcoll = {
         text = _("name"),
         menu_order = 10,
         can_collate_mixed = true,
         init_sort_func = function()
+            local compare = BookList.getStringCompareFunc()
             return function(a, b)
-                return BookList.strcoll(a.text, b.text)
+                return compare(a.text, b.text)
             end
         end,
     },
@@ -35,14 +134,16 @@ BookList.collates = {
         init_sort_func = function(cache)
             local natsort
             natsort, cache = sort.natsort_cmp(cache)
+            local compare = BookList.getStringCompareFunc(natsort)
             return function(a, b)
-                return natsort(a.text, b.text)
+                return compare(a.text, b.text)
             end, cache
         end,
     },
     access = {
         text = _("last read date"),
         menu_order = 30,
+        compares_names = false,
         can_collate_mixed = true,
         init_sort_func = function()
             return function(a, b)
@@ -56,6 +157,7 @@ BookList.collates = {
     date = {
         text = _("date modified"),
         menu_order = 40,
+        compares_names = false,
         can_collate_mixed = true,
         init_sort_func = function()
             return function(a, b)
@@ -69,6 +171,7 @@ BookList.collates = {
     size = {
         text = _("size"),
         menu_order = 50,
+        compares_names = false,
         init_sort_func = function()
             return function(a, b)
                 return a.attr.size < b.attr.size
@@ -79,11 +182,12 @@ BookList.collates = {
         text = _("type"),
         menu_order = 60,
         init_sort_func = function()
+            local compare = BookList.getStringCompareFunc()
             return function(a, b)
                 if (a.suffix or b.suffix) and a.suffix ~= b.suffix then
                     return BookList.strcoll(a.suffix, b.suffix)
                 end
-                return BookList.strcoll(a.text, b.text)
+                return compare(a.text, b.text)
             end
         end,
         item_func = function(item)
@@ -94,12 +198,13 @@ BookList.collates = {
         text = _("percent - unopened first"),
         menu_order = 70,
         init_sort_func = function()
+            local compare = BookList.getStringCompareFunc()
             return function(a, b)
                 if a.opened == b.opened then
                     if a.opened then
                         return a.percent_finished < b.percent_finished
                     end
-                    return BookList.strcoll(a.text, b.text)
+                    return compare(a.text, b.text)
                 end
                 return b.opened
             end
@@ -118,12 +223,13 @@ BookList.collates = {
         text = _("percent - unopened last"),
         menu_order = 80,
         init_sort_func = function()
+            local compare = BookList.getStringCompareFunc()
             return function(a, b)
                 if a.opened == b.opened then
                     if a.opened then
                         return a.percent_finished < b.percent_finished
                     end
-                    return BookList.strcoll(a.text, b.text)
+                    return compare(a.text, b.text)
                 end
                 return a.opened
             end
@@ -145,9 +251,10 @@ BookList.collates = {
         init_sort_func = function(cache)
             local natsort
             natsort, cache = sort.natsort_cmp(cache)
+            local compare = BookList.getStringCompareFunc(natsort)
             local sortfunc =  function(a, b)
                 if a.sort_percent == b.sort_percent then
-                    return natsort(a.text, b.text)
+                    return compare(a.text, b.text)
                 elseif a.sort_percent == 1 then
                     return false
                 elseif b.sort_percent == 1 then
@@ -187,8 +294,10 @@ BookList.collates = {
             item.doc_props = doc_props
         end,
         init_sort_func = function()
+            local compare = BookList.getStringCompareFunc()
             return function(a, b)
-                return BookList.strcoll(a.doc_props.display_title, b.doc_props.display_title)
+                return compare(a.doc_props.display_title, b.doc_props.display_title,
+                    a.doc_props.language, b.doc_props.language)
             end
         end,
     },
@@ -201,11 +310,13 @@ BookList.collates = {
             item.doc_props = doc_props
         end,
         init_sort_func = function()
+            local compare = BookList.getStringCompareFunc()
             return function(a, b)
                 if a.doc_props.authors ~= b.doc_props.authors then
                     return BookList.strcoll(a.doc_props.authors, b.doc_props.authors)
                 end
-                return BookList.strcoll(a.doc_props.display_title, b.doc_props.display_title)
+                return compare(a.doc_props.display_title, b.doc_props.display_title,
+                    a.doc_props.language, b.doc_props.language)
             end
         end,
     },
@@ -219,6 +330,7 @@ BookList.collates = {
             item.doc_props = doc_props
         end,
         init_sort_func = function()
+            local compare = BookList.getStringCompareFunc()
             return function(a, b)
                 if a.doc_props.series ~= b.doc_props.series then
                     return BookList.strcoll(a.doc_props.series, b.doc_props.series)
@@ -226,7 +338,8 @@ BookList.collates = {
                 if a.doc_props.series_index and b.doc_props.series_index then
                     return a.doc_props.series_index < b.doc_props.series_index
                 end
-                return BookList.strcoll(a.doc_props.display_title, b.doc_props.display_title)
+                return compare(a.doc_props.display_title, b.doc_props.display_title,
+                    a.doc_props.language, b.doc_props.language)
             end
         end,
     },
@@ -239,11 +352,13 @@ BookList.collates = {
             item.doc_props = doc_props
         end,
         init_sort_func = function()
+            local compare = BookList.getStringCompareFunc()
             return function(a, b)
                 if a.doc_props.keywords ~= b.doc_props.keywords then
                     return BookList.strcoll(a.doc_props.keywords, b.doc_props.keywords)
                 end
-                return BookList.strcoll(a.doc_props.display_title, b.doc_props.display_title)
+                return compare(a.doc_props.display_title, b.doc_props.display_title,
+                    a.doc_props.language, b.doc_props.language)
             end
         end,
     },
@@ -256,11 +371,13 @@ BookList.collates = {
             item.rating = BookList.getBookInfo(file).rating or 0
         end,
         init_sort_func = function()
+            local compare = BookList.getStringCompareFunc()
             return function(a, b)
                 if a.rating ~= b.rating then
                     return a.rating > b.rating
                 end
-                return BookList.strcoll(a.doc_props.display_title, b.doc_props.display_title)
+                return compare(a.doc_props.display_title, b.doc_props.display_title,
+                    a.doc_props.language, b.doc_props.language)
             end
         end,
         mandatory_func = function(item)
