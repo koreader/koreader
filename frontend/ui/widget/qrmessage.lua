@@ -158,11 +158,17 @@ function QRMessage:_buildLayout()
     local pad_top = 0
     local pad_bottom = (num_pages > 1) and 0 or padding
 
+    local title
+    if self.title and self.title ~= "" then
+        title = self.title .. T(_(" (%1 bytes)"), #self.text)
+    else
+        title = T(_("Scan me (%1 bytes)"), #self.text)
+    end
     self.title_bar = TitleBar:new{
         width = self.width,
         fullscreen = "true",
         align = "center",
-        title = self.title or T(_("Scan me (%1 bytes)"), #self.text),
+        title = title,
         title_top_padding = Screen:scaleBySize(6),
         button_padding = Screen:scaleBySize(5),
         right_icon_size_ratio = 1,
