@@ -260,8 +260,8 @@ else
                 -- @translators This is the time using a 24-hour clock (%_H is the hour, %M the minute).
                 return os.date(_("%_H:%M"), seconds)
             else
-                -- @translators This is the time using a 24-hour clock (%-H is the hour, %M the minute).
-                return os.date(_("%-H:%M"), seconds)
+                -- @translators This is the time using a 24-hour clock (%H is the hour, %M the minute).
+                return os.date(_("%H:%M"), seconds)
             end
         end
     end
