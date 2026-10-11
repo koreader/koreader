@@ -44,6 +44,7 @@ local DENSITY_THRESHOLD = MAX_PAYLOAD * 0.85 -- (85% of max capacity, roughly ~2
 
 local QRMessage = InputContainer:extend{
     modal = true,
+    stop_events_propagation = true,
     timeout = nil, -- in seconds
     _timeout_func = nil,
     title = nil,
@@ -69,12 +70,15 @@ function QRMessage:init()
 
     self:registerKeyEvents()
     if Device:isTouchDevice() then
+        local full_screen = Geom:new{
+            x = 0, y = 0,
+            w = self.width,
+            h = self.height,
+        }
+        self.ges_events.DiagonalSwipe = {
+            GestureRange:new{ ges = "swipe", range = full_screen }
+        }
         if #self.pages > 1 then
-            local full_screen = Geom:new{
-                x = 0, y = 0,
-                w = self.width,
-                h = self.height,
-            }
             self.ges_events.Swipe = {
                 GestureRange:new{ ges = "swipe", range = full_screen }
             }
@@ -86,9 +90,12 @@ end
 
 function QRMessage:registerKeyEvents()
     if Device:hasKeys() then
-        self.key_events.NextPage = { { Input.group.PgFwd } }
-        self.key_events.PrevPage = { { Input.group.PgBack } }
+        if #self.pages > 1 then
+            self.key_events.NextPage = { { Input.group.PgFwd } }
+            self.key_events.PrevPage = { { Input.group.PgBack } }
+        end
         self.key_events.Close = { { Input.group.Back } }
+        self.key_events.FullRefresh = { { { "Press", "F5" } } }
     end
 end
 QRMessage.onPhysicalKeyboardConnected = QRMessage.registerKeyEvents
@@ -336,6 +343,18 @@ function QRMessage:onLastPage()
     return self:_goToPage(#self.pages)
 end
 
+local DIAGONAL_DIRECTIONS = {
+    northeast = true, northwest = true, southeast = true, southwest = true,
+}
+function QRMessage:onDiagonalSwipe(_, ges)
+    -- Any diagonal swipe forces a full refresh.
+    if DIAGONAL_DIRECTIONS[ges.direction] then
+        self:onFullRefresh()
+        return true
+    end
+    return false
+end
+
 function QRMessage:onSwipe(_, ges)
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
     if direction == "west" then
@@ -343,7 +362,7 @@ function QRMessage:onSwipe(_, ges)
     elseif direction == "east" then
         return self:onPrevPage()
     end
-    return true
+    return false
 end
 
 function QRMessage:onCloseWidget()
@@ -382,6 +401,11 @@ function QRMessage:onShow()
         end
         UIManager:scheduleIn(self.timeout, self._timeout_func)
     end
+    return true
+end
+
+function QRMessage:onFullRefresh()
+    UIManager:setDirty(self, "full")
     return true
 end
 
