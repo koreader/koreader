@@ -1242,8 +1242,12 @@ function Kobo:rescheduleSuspend(timeout)
     UIManager:scheduleIn(timeout or self.suspend_wait_timeout, self.suspend, self)
 end
 
-function Kobo:scheduleUnexpectedWakeupGuard()
-    self.unexpected_wakeup_count = self.unexpected_wakeup_count + 1
+function Kobo:scheduleUnexpectedWakeupGuard(count_as_unexpected)
+    -- Callers rescheduling the check for something that was not an actual wakeup (e.g. a suspend
+    -- skipped because the device is charging) pass false, to keep the budget for real failures.
+    if count_as_unexpected ~= false then
+        self.unexpected_wakeup_count = self.unexpected_wakeup_count + 1
+    end
     logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
     UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
 end
@@ -1370,9 +1374,10 @@ function Kobo:suspend()
     if self:isMTK() and self.powerd:isCharging() then
         logger.info("Kobo suspend: skipping the suspend request for now: device is plugged in and would otherwise crash!")
 
-        -- Do the usual scheduling dance, so we get a chance to fire the UnexpectedWakeupLimit event...
+        -- Do the usual scheduling dance, so we keep retrying until the device is unplugged...
+        -- NOTE: This is *not* an unexpected wakeup: don't spend the budget on it.
         UIManager:unschedule(self.checkUnexpectedWakeup)
-        self:scheduleUnexpectedWakeupGuard()
+        self:scheduleUnexpectedWakeupGuard(false)
         return
     end
 
