@@ -1,4 +1,5 @@
 local DocSettings = require("docsettings")
+local IsoLanguage = require("ui/data/isolanguage")
 local Menu = require("ui/widget/menu")
 local datetime = require("datetime")
 local ffiUtil = require("ffi/util")
@@ -36,18 +37,12 @@ BookList.leading_articles = {
     tr = { "bir" },
 }
 
-local iso639_2_to_1 = {
-    afr = "af", deu = "de", ger = "de", ell = "el", gre = "el", eng = "en", epo = "eo",
-    spa = "es", fra = "fr", fre = "fr", hun = "hu", ita = "it", nld = "nl", dut = "nl",
-    pol = "pl", por = "pt", ron = "ro", rum = "ro", swe = "sv", tur = "tr",
-}
-
 local leading_article_prefixes = {}
 
 local function getLeadingArticlePrefixes(lang)
     if lang then
         lang = lang:lower():match("^%a+")
-        lang = lang and (iso639_2_to_1[lang] or lang)
+        lang = lang and IsoLanguage:getBCPLanguageTag(lang)
     else
         lang = G_reader_settings:readSetting("language", "en"):lower():match("^%a+")
     end
