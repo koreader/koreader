@@ -1,5 +1,4 @@
 local BD = require("ui/bidi")
-local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
