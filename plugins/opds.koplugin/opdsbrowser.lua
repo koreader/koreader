@@ -480,6 +480,7 @@ function OPDSBrowser:fetchFeed(item_url, headers_only, extra_headers)
     end
     logger.dbg("Request:", socketutil.redact_request(request))
     local code, headers, status = self:getHttpClient():request(request)
+    local block_timeout, total_timeout = socketutil.block_timeout, socketutil.total_timeout
     socketutil:reset_timeout()
 
     if headers_only then
@@ -507,9 +508,13 @@ function OPDSBrowser:fetchFeed(item_url, headers_only, extra_headers)
             ["403"] = _("Failed to authenticate. Please check your username and password."),
             ["404"] = _("Catalog not found."),
             ["406"] = _("Cannot get catalog. Server refuses to serve uncompressed content."),
-            [socketutil.SSL_HANDSHAKE_CODE] = _("Cannot get catalog. TLS connection interrupted."),
         }
-        text = code and error_message[tostring(code)] or T(_("Cannot get catalog. Server response status: %1."), status or code)
+        local network_error = socketutil.describe_error(code, block_timeout, total_timeout)
+        if network_error then
+            text = T(_("Cannot get catalog.\n\n%1"), network_error)
+        else
+            text = code and error_message[tostring(code)] or T(_("Cannot get catalog. Server response status: %1."), status or code)
+        end
     end
     UIManager:show(InfoMessage:new{
         text = text,
@@ -1357,7 +1362,7 @@ end
 
 function OPDSBrowser:downloadFile(local_path, remote_url, username, password, caller_callback)
     logger.dbg("Downloading file", local_path, "from", remote_url)
-    local code, headers, status
+    local code, headers, status, block_timeout, total_timeout
     local parsed = url.parse(remote_url)
     if parsed.scheme == "http" or parsed.scheme == "https" then
         socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
@@ -1370,6 +1375,7 @@ function OPDSBrowser:downloadFile(local_path, remote_url, username, password, ca
             username = username,
             password = password,
         }
+        block_timeout, total_timeout = socketutil.block_timeout, socketutil.total_timeout
         socketutil:reset_timeout()
     else
         UIManager:show(InfoMessage:new {
@@ -1390,12 +1396,14 @@ function OPDSBrowser:downloadFile(local_path, remote_url, username, password, ca
         })
     else
         util.removeFile(local_path)
-        logger.dbg("OPDSBrowser:downloadFile: Request failed:", status or code)
+        logger.warn("OPDSBrowser:downloadFile: Request failed:", remote_url, status or code,
+                    "block_timeout:", block_timeout, "total_timeout:", total_timeout)
         logger.dbg("OPDSBrowser:downloadFile: Response headers:", headers)
         UIManager:show(InfoMessage:new {
             text = T(_("Could not save file to:\n%1\n%2"),
                 BD.filepath(local_path),
-                status or code or "network unreachable"),
+                socketutil.describe_error(code, block_timeout, total_timeout)
+                    or status or code or _("Network unreachable.")),
         })
     end
 end
