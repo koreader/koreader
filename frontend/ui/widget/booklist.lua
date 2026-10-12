@@ -37,25 +37,15 @@ BookList.leading_articles = {
     tr = { "bir" },
 }
 
-local article_languages = {}
 local leading_article_prefixes = {}
 
-local function getArticleLanguage(lang)
-    lang = lang or G_reader_settings:readSetting("language", "en")
-    local resolved = article_languages[lang]
-    if not resolved then
-        resolved = lang:lower():match("^%a+")
-        resolved = resolved and IsoLanguage:getBCPLanguageTag(resolved)
-        if not BookList.leading_articles[resolved] then
-            resolved = "en"
-        end
-        article_languages[lang] = resolved
-    end
-    return resolved
-end
-
 local function getLeadingArticlePrefixes(lang)
-    lang = getArticleLanguage(lang)
+    lang = lang or G_reader_settings:readSetting("language", "en")
+    lang = lang:lower():match("^%a+")
+    lang = lang and IsoLanguage:getBCPLanguageTag(lang)
+    if not BookList.leading_articles[lang] then
+        lang = "en"
+    end
     local prefixes = leading_article_prefixes[lang]
     if not prefixes then
         prefixes = {}
@@ -74,7 +64,7 @@ local function getLeadingArticlePrefixes(lang)
     return prefixes
 end
 
-function BookList.getSortTitle(str, lang)
+function BookList.removeLeadingArticle(str, lang)
     local start = str:match("^%s*()")
     local lower_str = str:lower()
     for _, prefix in ipairs(getLeadingArticlePrefixes(lang)) do
@@ -88,35 +78,17 @@ function BookList.getSortTitle(str, lang)
     return str
 end
 
-function BookList.getStringCompareFunc(compare_func)
-    compare_func = compare_func or BookList.strcoll
-    if not G_reader_settings:isTrue("sort_ignore_articles") then
-        return compare_func
+function BookList.compareSortTitles(compare_func, a_sort, b_sort, a_str, b_str)
+    if not (a_sort or b_sort) then
+        return compare_func(a_str, b_str)
     end
-    local sort_titles = {}
-    local function getSortTitle(str, lang)
-        lang = getArticleLanguage(lang)
-        local cache = sort_titles[lang]
-        if not cache then
-            cache = {}
-            sort_titles[lang] = cache
-        end
-        local sort_title = cache[str]
-        if not sort_title then
-            sort_title = BookList.getSortTitle(str, lang)
-            cache[str] = sort_title
-        end
-        return sort_title
+    a_sort, b_sort = a_sort or a_str, b_sort or b_str
+    if compare_func(a_sort, b_sort) then
+        return true
+    elseif compare_func(b_sort, a_sort) then
+        return false
     end
-    return function(a, b, a_lang, b_lang)
-        local sort_a, sort_b = getSortTitle(a, a_lang), getSortTitle(b, b_lang)
-        if compare_func(sort_a, sort_b) then
-            return true
-        elseif compare_func(sort_b, sort_a) then
-            return false
-        end
-        return compare_func(a, b)
-    end
+    return compare_func(a_str, b_str)
 end
 
 BookList.collates = {
@@ -125,9 +97,13 @@ BookList.collates = {
         menu_order = 10,
         can_collate_mixed = true,
         init_sort_func = function()
-            local compare = BookList.getStringCompareFunc()
             return function(a, b)
-                return compare(a.text, b.text)
+                return BookList.compareSortTitles(BookList.strcoll, a.sort_text, b.sort_text, a.text, b.text)
+            end
+        end,
+        item_func = function(item)
+            if G_reader_settings:isTrue("sort_ignore_articles") then
+                item.sort_text = BookList.removeLeadingArticle(item.text)
             end
         end,
     },
@@ -138,10 +114,14 @@ BookList.collates = {
         init_sort_func = function(cache)
             local natsort
             natsort, cache = sort.natsort_cmp(cache)
-            local compare = BookList.getStringCompareFunc(natsort)
             return function(a, b)
-                return compare(a.text, b.text)
+                return BookList.compareSortTitles(natsort, a.sort_text, b.sort_text, a.text, b.text)
             end, cache
+        end,
+        item_func = function(item)
+            if G_reader_settings:isTrue("sort_ignore_articles") then
+                item.sort_text = BookList.removeLeadingArticle(item.text)
+            end
         end,
     },
     access = {
@@ -186,29 +166,30 @@ BookList.collates = {
         text = _("type"),
         menu_order = 60,
         init_sort_func = function()
-            local compare = BookList.getStringCompareFunc()
             return function(a, b)
                 if (a.suffix or b.suffix) and a.suffix ~= b.suffix then
                     return BookList.strcoll(a.suffix, b.suffix)
                 end
-                return compare(a.text, b.text)
+                return BookList.compareSortTitles(BookList.strcoll, a.sort_text, b.sort_text, a.text, b.text)
             end
         end,
         item_func = function(item)
             item.suffix = util.getFileNameSuffix(item.text)
+            if G_reader_settings:isTrue("sort_ignore_articles") then
+                item.sort_text = BookList.removeLeadingArticle(item.text)
+            end
         end,
     },
     percent_unopened_first = {
         text = _("percent - unopened first"),
         menu_order = 70,
         init_sort_func = function()
-            local compare = BookList.getStringCompareFunc()
             return function(a, b)
                 if a.opened == b.opened then
                     if a.opened then
                         return a.percent_finished < b.percent_finished
                     end
-                    return compare(a.text, b.text)
+                    return BookList.compareSortTitles(BookList.strcoll, a.sort_text, b.sort_text, a.text, b.text)
                 end
                 return b.opened
             end
@@ -218,6 +199,9 @@ BookList.collates = {
             item.opened = book_info.been_opened
             -- smooth 2 decimal points (0.00) instead of 16 decimal points
             item.percent_finished = util.round_decimal(book_info.percent_finished or 0, 2)
+            if G_reader_settings:isTrue("sort_ignore_articles") then
+                item.sort_text = BookList.removeLeadingArticle(item.text)
+            end
         end,
         mandatory_func = function(item)
             return item.opened and string.format("%d\u{202F}%%", 100 * item.percent_finished) or "–"
@@ -227,13 +211,12 @@ BookList.collates = {
         text = _("percent - unopened last"),
         menu_order = 80,
         init_sort_func = function()
-            local compare = BookList.getStringCompareFunc()
             return function(a, b)
                 if a.opened == b.opened then
                     if a.opened then
                         return a.percent_finished < b.percent_finished
                     end
-                    return compare(a.text, b.text)
+                    return BookList.compareSortTitles(BookList.strcoll, a.sort_text, b.sort_text, a.text, b.text)
                 end
                 return a.opened
             end
@@ -243,6 +226,9 @@ BookList.collates = {
             item.opened = book_info.been_opened
             -- smooth 2 decimal points (0.00) instead of 16 decimal points
             item.percent_finished = util.round_decimal(book_info.percent_finished or 0, 2)
+            if G_reader_settings:isTrue("sort_ignore_articles") then
+                item.sort_text = BookList.removeLeadingArticle(item.text)
+            end
         end,
         mandatory_func = function(item)
             return item.opened and string.format("%d\u{202F}%%", 100 * item.percent_finished) or "–"
@@ -255,10 +241,9 @@ BookList.collates = {
         init_sort_func = function(cache)
             local natsort
             natsort, cache = sort.natsort_cmp(cache)
-            local compare = BookList.getStringCompareFunc(natsort)
             local sortfunc =  function(a, b)
                 if a.sort_percent == b.sort_percent then
-                    return compare(a.text, b.text)
+                    return BookList.compareSortTitles(natsort, a.sort_text, b.sort_text, a.text, b.text)
                 elseif a.sort_percent == 1 then
                     return false
                 elseif b.sort_percent == 1 then
@@ -285,6 +270,9 @@ BookList.collates = {
             -- smooth 2 decimal points (0.00) instead of 16 decimal points
             item.sort_percent = sort_percent or util.round_decimal(percent_finished or -1, 2)
             item.percent_finished = percent_finished or 0
+            if G_reader_settings:isTrue("sort_ignore_articles") then
+                item.sort_text = BookList.removeLeadingArticle(item.text)
+            end
         end,
         mandatory_func = function(item)
             return item.opened and string.format("%d\u{202F}%%", 100 * item.percent_finished) or "–"
@@ -295,13 +283,15 @@ BookList.collates = {
         menu_order = 100,
         item_func = function(item, ui)
             local doc_props = ui.bookinfo:getDocProps(item.path or item.file)
+            if G_reader_settings:isTrue("sort_ignore_articles") then
+                doc_props.sort_title = BookList.removeLeadingArticle(doc_props.display_title, doc_props.language)
+            end
             item.doc_props = doc_props
         end,
         init_sort_func = function()
-            local compare = BookList.getStringCompareFunc()
             return function(a, b)
-                return compare(a.doc_props.display_title, b.doc_props.display_title,
-                    a.doc_props.language, b.doc_props.language)
+                return BookList.compareSortTitles(BookList.strcoll, a.doc_props.sort_title, b.doc_props.sort_title,
+                    a.doc_props.display_title, b.doc_props.display_title)
             end
         end,
     },
@@ -311,16 +301,18 @@ BookList.collates = {
         item_func = function(item, ui)
             local doc_props = ui.bookinfo:getDocProps(item.path or item.file)
             doc_props.authors = doc_props.authors or "\u{FFFF}" -- sorted last
+            if G_reader_settings:isTrue("sort_ignore_articles") then
+                doc_props.sort_title = BookList.removeLeadingArticle(doc_props.display_title, doc_props.language)
+            end
             item.doc_props = doc_props
         end,
         init_sort_func = function()
-            local compare = BookList.getStringCompareFunc()
             return function(a, b)
                 if a.doc_props.authors ~= b.doc_props.authors then
                     return BookList.strcoll(a.doc_props.authors, b.doc_props.authors)
                 end
-                return compare(a.doc_props.display_title, b.doc_props.display_title,
-                    a.doc_props.language, b.doc_props.language)
+                return BookList.compareSortTitles(BookList.strcoll, a.doc_props.sort_title, b.doc_props.sort_title,
+                    a.doc_props.display_title, b.doc_props.display_title)
             end
         end,
     },
@@ -331,10 +323,12 @@ BookList.collates = {
             local doc_props = ui.bookinfo:getDocProps(item.path or item.file)
             doc_props.series = doc_props.series or "\u{FFFF}"
             doc_props.series_index = tonumber(doc_props.series_index)
+            if G_reader_settings:isTrue("sort_ignore_articles") then
+                doc_props.sort_title = BookList.removeLeadingArticle(doc_props.display_title, doc_props.language)
+            end
             item.doc_props = doc_props
         end,
         init_sort_func = function()
-            local compare = BookList.getStringCompareFunc()
             return function(a, b)
                 if a.doc_props.series ~= b.doc_props.series then
                     return BookList.strcoll(a.doc_props.series, b.doc_props.series)
@@ -342,8 +336,8 @@ BookList.collates = {
                 if a.doc_props.series_index and b.doc_props.series_index then
                     return a.doc_props.series_index < b.doc_props.series_index
                 end
-                return compare(a.doc_props.display_title, b.doc_props.display_title,
-                    a.doc_props.language, b.doc_props.language)
+                return BookList.compareSortTitles(BookList.strcoll, a.doc_props.sort_title, b.doc_props.sort_title,
+                    a.doc_props.display_title, b.doc_props.display_title)
             end
         end,
     },
@@ -353,16 +347,18 @@ BookList.collates = {
         item_func = function(item, ui)
             local doc_props = ui.bookinfo:getDocProps(item.path or item.file)
             doc_props.keywords = doc_props.keywords or "\u{FFFF}"
+            if G_reader_settings:isTrue("sort_ignore_articles") then
+                doc_props.sort_title = BookList.removeLeadingArticle(doc_props.display_title, doc_props.language)
+            end
             item.doc_props = doc_props
         end,
         init_sort_func = function()
-            local compare = BookList.getStringCompareFunc()
             return function(a, b)
                 if a.doc_props.keywords ~= b.doc_props.keywords then
                     return BookList.strcoll(a.doc_props.keywords, b.doc_props.keywords)
                 end
-                return compare(a.doc_props.display_title, b.doc_props.display_title,
-                    a.doc_props.language, b.doc_props.language)
+                return BookList.compareSortTitles(BookList.strcoll, a.doc_props.sort_title, b.doc_props.sort_title,
+                    a.doc_props.display_title, b.doc_props.display_title)
             end
         end,
     },
@@ -373,15 +369,18 @@ BookList.collates = {
             local file = item.path or item.file
             item.doc_props = ui.bookinfo:getDocProps(file)
             item.rating = BookList.getBookInfo(file).rating or 0
+            if G_reader_settings:isTrue("sort_ignore_articles") then
+                item.doc_props.sort_title = BookList.removeLeadingArticle(item.doc_props.display_title,
+                    item.doc_props.language)
+            end
         end,
         init_sort_func = function()
-            local compare = BookList.getStringCompareFunc()
             return function(a, b)
                 if a.rating ~= b.rating then
                     return a.rating > b.rating
                 end
-                return compare(a.doc_props.display_title, b.doc_props.display_title,
-                    a.doc_props.language, b.doc_props.language)
+                return BookList.compareSortTitles(BookList.strcoll, a.doc_props.sort_title, b.doc_props.sort_title,
+                    a.doc_props.display_title, b.doc_props.display_title)
             end
         end,
         mandatory_func = function(item)
