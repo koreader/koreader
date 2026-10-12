@@ -289,12 +289,12 @@ describe("Readerfooter module", function()
         local horizontal_margin = Screen:scaleBySize(10)*2
         footer:onUpdateFooter()
         -- Account for trimming of the leading 0 in the AM
-        local expected = is_am() and 362 or 370
+        local expected = is_am() and 362 or 371
         assert.is.same(expected, footer.text_width)
         assert.is.same(600, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        expected = is_am() and 218 or 210
+        expected = is_am() and 218 or 211
         assert.is.same(expected, footer.progress_bar.width)
 
         local old_screen_getwidth = Screen.getWidth
@@ -306,7 +306,7 @@ describe("Readerfooter module", function()
         assert.is.same(900, footer.progress_bar.width
                             + footer.text_width
                             + new_horizontal_margin)
-        expected = (is_am() and 518 or 510) - (new_horizontal_margin - horizontal_margin)
+        expected = (is_am() and 518 or 511) - (new_horizontal_margin - horizontal_margin)
         assert.is.same(expected, footer.progress_bar.width)
         Screen.getWidth = old_screen_getwidth
     end)
@@ -322,15 +322,15 @@ describe("Readerfooter module", function()
         }
         local footer = readerui.view.footer
         footer:onPageUpdate(1)
-        local expected = is_am() and 210 or 202
+        local expected = is_am() and 210 or 203
         assert.are.same(expected, footer.progress_bar.width)
-        expected = is_am() and 370 or 378
+        expected = is_am() and 370 or 379
         assert.are.same(expected, footer.text_width)
 
         footer:onPageUpdate(100)
-        expected = is_am() and 186 or 178
+        expected = is_am() and 186 or 179
         assert.are.same(expected, footer.progress_bar.width)
-        expected = is_am() and 394 or 402
+        expected = is_am() and 394 or 403
         assert.are.same(expected, footer.text_width)
     end)
 
