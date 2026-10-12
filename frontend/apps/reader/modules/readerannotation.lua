@@ -261,7 +261,7 @@ end
 
 function ReaderAnnotation:onExportAnnotations(on_closing)
     local do_export = not on_closing or G_reader_settings:isTrue("annotations_export_on_closing")
-    if do_export and self:hasAnnotations() then
+    if do_export and (self:hasAnnotations() or not on_closing) then
         local file = self:getExportAnnotationsFilepath()
         local anno = LuaSettings:open(file)
         local device_id = G_reader_settings:readSetting("device_id")
