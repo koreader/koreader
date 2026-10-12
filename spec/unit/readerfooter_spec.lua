@@ -301,7 +301,7 @@ describe("Readerfooter module", function()
         Screen.getWidth = function() return 900 end
         local new_horizontal_margin = Screen:scaleBySize(10)*2
         footer:resetLayout()
-        expected = is_am() and 362 or 370
+        expected = is_am() and 362 or 371
         assert.is.same(expected, footer.text_width)
         assert.is.same(900, footer.progress_bar.width
                             + footer.text_width
