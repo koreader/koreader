@@ -37,6 +37,7 @@ local KoptOptions = require("ui/data/koptoptions")
 local Device = require("device")
 local Event = require("ui/event")
 local FileManager = require("apps/filemanager/filemanager")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local Key = require("device/key")
 local Notification = require("ui/widget/notification")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
@@ -1384,39 +1385,49 @@ function Dispatcher.renameQuickMenuActions(actions, rename_update_func)
         local InputDialog = require("ui/widget/inputdialog")
         local name_input
         name_input = InputDialog:new{
-            title = _("Enter action name"),
+            title = _("Action name"),
             description = T(_("Action: %1"), action.text),
             input = util.tableGetValue(actions, "settings", "quickmenu_action_names", action.key) or action.text,
-            buttons = {{
+            buttons = {
                 {
-                    text = _("Cancel"),
-                    id = "close",
-                    callback = function()
-                        UIManager:close(name_input)
-                    end,
+                    {
+                        text = _("Patterns"),
+                        callback = function()
+                            FileManagerBookInfo.chooseExpandStringPattern(name_input)
+                        end,
+                    },
+                    {
+                        text = _("Default"),
+                        callback = function()
+                            name_input:setInputText(action.text, nil, false)
+                        end,
+                    },
                 },
                 {
-                    text = _("Default"),
-                    callback = function()
-                        name_input:setInputText(action.text, nil, false)
-                    end,
+                    {
+                        text = _("Cancel"),
+                        id = "close",
+                        callback = function()
+                            UIManager:close(name_input)
+                        end,
+                    },
+                    {
+                        text = _("Save"),
+                        callback = function()
+                            local new_name = name_input:getInputText()
+                            if new_name == "" or new_name == action.text then -- reset custom name
+                                util.tableRemoveValue(actions, "settings", "quickmenu_action_names", action.key)
+                            else
+                                util.tableSetValue(actions, new_name, "settings", "quickmenu_action_names", action.key)
+                            end
+                            UIManager:close(name_input)
+                            UIManager:close(quickmenu)
+                            rename_update_func()
+                            Dispatcher._showAsMenu(actions, nil, rename_callback, rename_hold_callback)
+                        end,
+                    },
                 },
-                {
-                    text = _("Save"),
-                    callback = function()
-                        local new_name = name_input:getInputText()
-                        if new_name == "" or new_name == action.text then -- reset custom name
-                            util.tableRemoveValue(actions, "settings", "quickmenu_action_names", action.key)
-                        else
-                            util.tableSetValue(actions, new_name, "settings", "quickmenu_action_names", action.key)
-                        end
-                        UIManager:close(name_input)
-                        UIManager:close(quickmenu)
-                        rename_update_func()
-                        Dispatcher._showAsMenu(actions, nil, rename_callback, rename_hold_callback)
-                    end,
-                },
-            }},
+            },
         }
         UIManager:show(name_input)
         name_input:onShowKeyboard()
@@ -1468,8 +1479,12 @@ function Dispatcher._showAsMenu(settings, exec_props, rename_callback, rename_ho
     end
     for _, v in ipairs(display_list) do
         local text = util.tableGetValue(settings, "settings", "quickmenu_action_names", v.key) -- custom name
-        if text and rename_callback then -- rename mode
-            text = "\u{F040} " .. text -- "pen" symbol
+        if text then
+            local ui = require("apps/reader/readerui").instance or require("apps/filemanager/filemanager").instance
+            text = ui.bookinfo:expandString(text)
+            if rename_callback then -- rename mode
+                text = "\u{F040} " .. text -- "pen" symbol
+            end
         end
         table.insert(buttons, {{
             text = text or v.text,
