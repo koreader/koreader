@@ -227,6 +227,7 @@ function ReaderGoto:onGoToRandomPage()
             self.pages_pool[i] = i
         end
     end
+    math.randomseed(os.time())
     while true do
         local random_page_idx = math.random(1, #self.pages_pool)
         local random_page = self.pages_pool[random_page_idx]
