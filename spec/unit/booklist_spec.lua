@@ -80,6 +80,24 @@ describe("BookList module", function()
             assert.are.same({ "Animal Farm", "The Count of Monte Cristo", "Silmarillion", "The Silmarillion", "Stoner" }, sorted)
             G_reader_settings:delSetting("sort_ignore_articles")
         end)
+        it("should give a consistent order for titles differing only in case", function()
+            G_reader_settings:saveSetting("sort_ignore_articles", true)
+            local compare = BookList.getStringCompareFunc()
+            local titles = { "hobbit", "Hobbit", "The Hobbit", "the hobbit" }
+            for _, a in ipairs(titles) do
+                for _, b in ipairs(titles) do
+                    for _, c in ipairs(titles) do
+                        if compare(a, b) and compare(b, c) then
+                            assert.is_true(compare(a, c))
+                        end
+                        if not compare(a, b) and not compare(b, a) and not compare(b, c) and not compare(c, b) then
+                            assert.is_false(compare(a, c))
+                        end
+                    end
+                end
+            end
+            G_reader_settings:delSetting("sort_ignore_articles")
+        end)
         it("should use the given languages", function()
             G_reader_settings:saveSetting("sort_ignore_articles", true)
             local compare = BookList.getStringCompareFunc()

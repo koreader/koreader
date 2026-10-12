@@ -110,8 +110,10 @@ function BookList.getStringCompareFunc(compare_func)
     end
     return function(a, b, a_lang, b_lang)
         local sort_a, sort_b = getSortTitle(a, a_lang), getSortTitle(b, b_lang)
-        if sort_a ~= sort_b then
-            return compare_func(sort_a, sort_b)
+        if compare_func(sort_a, sort_b) then
+            return true
+        elseif compare_func(sort_b, sort_a) then
+            return false
         end
         return compare_func(a, b)
     end
