@@ -671,6 +671,66 @@ describe("OPDS module", function()
             assert.are.same(2, requests)
         end)
 
+        describe("network error messages", function()
+            local http, InfoMessage, UIManager, messages, requests
+
+            before_each(function()
+                http = require("socket.http")
+                InfoMessage = require("ui/widget/infomessage")
+                UIManager = require("ui/uimanager")
+                messages, requests = {}, 0
+                -- Simulate LuaSec timing out while OpenSSL waits for the server (SSL_ERROR_WANT_READ),
+                -- which LuaSocket surfaces as `nil, "wantread"`.
+                stub(http, "request", function()
+                    requests = requests + 1
+                    return nil, "wantread" -- literal on purpose: it's what LuaSec returns, independent of our constants
+                end)
+                stub(InfoMessage, "new", function(_, options) return options end)
+                stub(UIManager, "show", function(_, dialog) table.insert(messages, dialog.text) end)
+            end)
+
+            after_each(function()
+                http.request:revert()
+                InfoMessage.new:revert()
+                UIManager.show:revert()
+            end)
+
+            it("should explain a TLS timeout when downloading a book instead of showing the raw code", function()
+                local local_path = require("datastorage"):getDataDir() .. "/opds_wantread_spec.epub"
+                finally(function() os.remove(local_path) end)
+
+                local ok = OPDSBrowser:extend{}:downloadFile(local_path, "https://example.test/book.epub")
+
+                assert.is_falsy(ok)
+                assert.are.same(2, requests) -- the idempotent GET is retried once before giving up
+                assert.are.same(1, #messages)
+                local text = messages[1]
+                assert.is_nil(text:match("\nwantread$"), "raw LuaSec code shown to the user: " .. text)
+                assert.truthy(text:find("timed out", 1, true))
+                assert.truthy(text:find(tostring(socketutil.FILE_BLOCK_TIMEOUT) .. " seconds", 1, true))
+                assert.truthy(text:find("(wantread)", 1, true)) -- raw code kept for bug reports
+                assert.is_nil(require("libs/libkoreader-lfs").attributes(local_path)) -- partial file removed
+            end)
+
+            it("should explain a TLS timeout when fetching a catalog", function()
+                local feed = OPDSBrowser:extend{}:fetchFeed("https://example.test/catalog")
+
+                assert.is_falsy(feed)
+                assert.are.same(1, #messages)
+                local text = messages[1]
+                assert.truthy(text:find("Cannot get catalog", 1, true))
+                assert.truthy(text:find("timed out", 1, true))
+                assert.truthy(text:find(tostring(socketutil.LARGE_BLOCK_TIMEOUT) .. " seconds", 1, true))
+                assert.truthy(text:find("(wantread)", 1, true))
+            end)
+
+            it("should leave codes it does not know about to the caller", function()
+                assert.is_nil(socketutil.describe_error(404))
+                assert.is_nil(socketutil.describe_error("something else"))
+                assert.is_nil(socketutil.describe_error(nil))
+            end)
+        end)
+
         it("should add the file extension to a server filename that lacks a usable one #internet", function()
             local orig_fetchFeed = OPDSBrowser.fetchFeed
             OPDSBrowser.fetchFeed = function() return nil end -- no headers: fall back to the URL
