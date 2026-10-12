@@ -464,8 +464,10 @@ function Exporter:setFilename()
         buttons = {
             {
                 {
-                    text = _("Info"),
-                    callback = self.ui.bookinfo.expandString,
+                    text = _("Patterns"),
+                    callback = function()
+                        self.ui.bookinfo.chooseExpandStringPattern(dialog, self.ui)
+                    end,
                 },
                 {
                     text = _("Default"),

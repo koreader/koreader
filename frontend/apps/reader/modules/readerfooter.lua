@@ -702,8 +702,10 @@ function ReaderFooter:set_custom_text(touchmenu_instance)
                     end,
                 },
                 {
-                    text = _("Info"),
-                    callback = self.ui.bookinfo.expandString,
+                    text = _("Patterns"),
+                    callback = function()
+                        self.ui.bookinfo.chooseExpandStringPattern(text_dialog, self.ui)
+                    end,
                 },
                 {
                     text = _("Set"),

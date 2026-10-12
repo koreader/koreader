@@ -565,15 +565,10 @@ function ReadTimer:setExpiryMessageText(touchmenu_instance)
         buttons = {
             {
                 {
-                    text = _("Cancel"),
-                    id = "close",
+                    text = _("Patterns"),
                     callback = function()
-                        UIManager:close(input_dialog)
+                        self.ui.bookinfo.chooseExpandStringPattern(input_dialog, self.ui)
                     end,
-                },
-                {
-                    text = _("Info"),
-                    callback = self.ui.bookinfo.expandString,
                 },
                 {
                     text = _("Show"),
@@ -582,6 +577,15 @@ function ReadTimer:setExpiryMessageText(touchmenu_instance)
                         UIManager:show(InfoMessage:new{
                             text = text ~= "" and self.ui.bookinfo:expandString(text) or self.default_expiry_message_text,
                         })
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(input_dialog)
                     end,
                 },
                 {
