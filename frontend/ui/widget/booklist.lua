@@ -37,18 +37,25 @@ BookList.leading_articles = {
     tr = { "bir" },
 }
 
+local article_languages = {}
 local leading_article_prefixes = {}
 
+local function getArticleLanguage(lang)
+    lang = lang or G_reader_settings:readSetting("language", "en")
+    local resolved = article_languages[lang]
+    if not resolved then
+        resolved = lang:lower():match("^%a+")
+        resolved = resolved and IsoLanguage:getBCPLanguageTag(resolved)
+        if not BookList.leading_articles[resolved] then
+            resolved = "en"
+        end
+        article_languages[lang] = resolved
+    end
+    return resolved
+end
+
 local function getLeadingArticlePrefixes(lang)
-    if lang then
-        lang = lang:lower():match("^%a+")
-        lang = lang and IsoLanguage:getBCPLanguageTag(lang)
-    else
-        lang = G_reader_settings:readSetting("language", "en"):lower():match("^%a+")
-    end
-    if not BookList.leading_articles[lang] then
-        lang = "en"
-    end
+    lang = getArticleLanguage(lang)
     local prefixes = leading_article_prefixes[lang]
     if not prefixes then
         prefixes = {}
@@ -88,11 +95,11 @@ function BookList.getStringCompareFunc(compare_func)
     end
     local sort_titles = {}
     local function getSortTitle(str, lang)
-        local cache_id = lang or ""
-        local cache = sort_titles[cache_id]
+        lang = getArticleLanguage(lang)
+        local cache = sort_titles[lang]
         if not cache then
             cache = {}
-            sort_titles[cache_id] = cache
+            sort_titles[lang] = cache
         end
         local sort_title = cache[str]
         if not sort_title then
