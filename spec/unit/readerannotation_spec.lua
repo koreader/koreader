@@ -36,7 +36,7 @@ describe("ReaderAnnotation export and import", function()
     end
 
     it("should replace a previous export after deleting the last annotation", function()
-        G_reader_settings:saveSetting("annotations_export_on_closing", true)
+        G_reader_settings:saveSetting("annotations_export_on_closing", false)
         annotation.annotations = {{ page = 1, datetime = "2020-01-01 00:00:00" }}
         annotation:onExportAnnotations()
         assert.are.equal(1, #dofile(filepath).annotations)
@@ -121,6 +121,7 @@ describe("ReaderAnnotation export and import", function()
         local UIManager = require("ui/uimanager")
         local ButtonDialog = require("ui/widget/buttondialog")
         local Menu = require("ui/widget/menu")
+        G_reader_settings:saveSetting("bookmarks_items_per_page", Menu.items_per_page_default)
         local shown
         stub(ButtonDialog, "new", function(_, options) return options end)
         stub(Menu, "new", function(_, options) return options end)
