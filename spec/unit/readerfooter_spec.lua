@@ -7,11 +7,6 @@ describe("Readerfooter module", function()
     local toc_pdf = "spec/front/unit/data/paper.pdf"
     local doc_epub, doc_pdf
 
-    local function is_am()
-        -- Technically only an issue for 1 digit results from %-H, e.g., anything below 10:00 AM
-        return tonumber(os.date("%H")) < 10
-    end
-
     setup(function()
         require("commonrequire")
         disable_plugins()
@@ -289,24 +284,24 @@ describe("Readerfooter module", function()
         local horizontal_margin = Screen:scaleBySize(10)*2
         footer:onUpdateFooter()
         -- Account for trimming of the leading 0 in the AM
-        local expected = is_am() and 363 or 370
+        local expected = 370
         assert.is.same(expected, footer.text_width)
         assert.is.same(600, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        expected = is_am() and 219 or 210
+        expected = 210
         assert.is.same(expected, footer.progress_bar.width)
 
         local old_screen_getwidth = Screen.getWidth
         Screen.getWidth = function() return 900 end
         local new_horizontal_margin = Screen:scaleBySize(10)*2
         footer:resetLayout()
-        expected = is_am() and 363 or 370
+        expected = 370
         assert.is.same(expected, footer.text_width)
         assert.is.same(900, footer.progress_bar.width
                             + footer.text_width
                             + new_horizontal_margin)
-        expected = (is_am() and 519 or 510) - (new_horizontal_margin - horizontal_margin)
+        expected = 510 - (new_horizontal_margin - horizontal_margin)
         assert.is.same(expected, footer.progress_bar.width)
         Screen.getWidth = old_screen_getwidth
     end)
@@ -322,15 +317,15 @@ describe("Readerfooter module", function()
         }
         local footer = readerui.view.footer
         footer:onPageUpdate(1)
-        local expected = is_am() and 211 or 202
+        local expected = 202
         assert.are.same(expected, footer.progress_bar.width)
-        expected = is_am() and 371 or 378
+        expected = 378
         assert.are.same(expected, footer.text_width)
 
         footer:onPageUpdate(100)
-        expected = is_am() and 187 or 178
+        expected = 178
         assert.are.same(expected, footer.progress_bar.width)
-        expected = is_am() and 395 or 402
+        expected = 402
         assert.are.same(expected, footer.text_width)
     end)
 
