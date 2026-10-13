@@ -1217,6 +1217,7 @@ local KindleColorSoft = Kindle:extend{
     canHWDither = yes,
     canDoSwipeAnimation = yes,
     hasColorScreen = yes,
+    hasKaleidoWfm = yes,
 }
 
 local KindleScribeColorSoft = Kindle:extend{
@@ -1236,6 +1237,7 @@ local KindleScribeColorSoft = Kindle:extend{
     canHWDither = yes,
     canDoSwipeAnimation = yes,
     hasColorScreen = yes,
+    hasKaleidoWfm = yes,
 }
 
 function Kindle2:init()
