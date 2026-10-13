@@ -388,6 +388,13 @@ function AutoSuspend:onResume()
     -- and avoids broken refreshes after aborted suspend (when standby_time is 1s).
     -- (And we like 1s for power saving reasons!)
     self:_start_standby(default_standby_timeout_after_resume_seconds)
+
+    if self.suspend_gave_up then
+        self.suspend_gave_up = nil
+        -- We had given up on suspend earlier, and the device has been left awake ever since:
+        -- tell the user, since nothing will suspend it again on its own.
+        self:_notifySuspendGaveUp()
+    end
 end
 
 function AutoSuspend:onUnexpectedWakeupLimit()
@@ -397,6 +404,19 @@ function AutoSuspend:onUnexpectedWakeupLimit()
     self:_unschedule()
     -- Only re-engage the *shutdown* schedule to avoid doing the same dance indefinitely.
     self:_restart()
+    -- Nothing is going to attempt to suspend again on its own now: the device is going to sit
+    -- awake (and drain) until the user does something about it. Flag it so that they hear about
+    -- it as soon as they look at the device, since right now they're looking at a blank screen.
+    logger.warn("AutoSuspend: suspend gave up after repeated failures, the device will stay awake until the next user wakeup or a reboot")
+    self.suspend_gave_up = true
+end
+
+function AutoSuspend:_notifySuspendGaveUp()
+    local InfoMessage = require("ui/widget/infomessage")
+    UIManager:show(InfoMessage:new{
+        text = _("The device could not suspend. Reboot to restore sleep."),
+        timeout = 15,
+    })
 end
 
 function AutoSuspend:onNotCharging()
