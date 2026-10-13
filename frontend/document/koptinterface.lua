@@ -1539,6 +1539,7 @@ local function all_matches(boxes, plist, case_insensitive)
             local matched
             if pnb == 1 then -- single word in plist
                 if plist.from_start or plist.from_end then
+                    word = util.stripPunctuation(word)
                     if plist.from_start and plist.from_end then
                         matched = word == pword
                     elseif plist.from_start then
