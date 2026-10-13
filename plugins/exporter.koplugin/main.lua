@@ -82,6 +82,7 @@ local targets = {
     my_clippings = require("target/my_clippings"),
     nextcloud = require("target/nextcloud"),
     readwise = require("target/readwise"),
+    screvi = require("target/screvi"),
     text = require("target/text"),
     xmnote = require("target/xmnote"),
 }
