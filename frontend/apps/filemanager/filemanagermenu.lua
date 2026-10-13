@@ -466,6 +466,7 @@ To:
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("sort_ignore_articles")
+            BookList.updateSortTextFunc()
             FileChooser:refreshPath()
         end,
     }
