@@ -25,7 +25,7 @@ local function NOP() return end
 local USB_ROLE_DEVICE = "device"
 local USB_ROLE_HOST   = "host"
 -- The Chipidea driver calls them "host" and "gadget".
--- This plugin sticks to Linux naming except when interacting with drivers.
+-- This sticks to Linux naming except when interacting with drivers.
 local CHIPIDEA_TO_USB = {
     host   = USB_ROLE_HOST,
     gadget = USB_ROLE_DEVICE,
