@@ -68,24 +68,23 @@ describe("BookList module", function()
     end)
 
     describe("compareSortTitles()", function()
-        local strcoll = BookList.strcoll
         local function key(str)
             return BookList.removeLeadingArticle(str, "en")
         end
 
         it("should compare full strings when there are no sort titles", function()
-            assert.is_true(BookList.compareSortTitles(strcoll, nil, nil, "Stoner", "The Hobbit"))
-            assert.is_false(BookList.compareSortTitles(strcoll, nil, nil, "The Hobbit", "Stoner"))
+            assert.is_true(BookList.compareSortTitles(nil, nil, "Stoner", "The Hobbit"))
+            assert.is_false(BookList.compareSortTitles(nil, nil, "The Hobbit", "Stoner"))
         end)
         it("should compare sort titles first, then full strings", function()
-            assert.is_true(BookList.compareSortTitles(strcoll, key("The Hobbit"), key("Stoner"), "The Hobbit", "Stoner"))
-            assert.is_true(BookList.compareSortTitles(strcoll, key("Silmarillion"), key("The Silmarillion"),
+            assert.is_true(BookList.compareSortTitles(key("The Hobbit"), key("Stoner"), "The Hobbit", "Stoner"))
+            assert.is_true(BookList.compareSortTitles(key("Silmarillion"), key("The Silmarillion"),
                 "Silmarillion", "The Silmarillion"))
         end)
         it("should give a consistent order for titles differing only in case", function()
             local titles = { "hobbit", "Hobbit", "The Hobbit", "the hobbit" }
             local function compare(a, b)
-                return BookList.compareSortTitles(strcoll, key(a), key(b), a, b)
+                return BookList.compareSortTitles(key(a), key(b), a, b)
             end
             for _, a in ipairs(titles) do
                 for _, b in ipairs(titles) do

@@ -90,7 +90,8 @@ function BookList.updateSortTextFunc()
 end
 BookList.updateSortTextFunc()
 
-function BookList.compareSortTitles(compare_func, a_sort, b_sort, a_str, b_str)
+function BookList.compareSortTitles(a_sort, b_sort, a_str, b_str, compare_func)
+    compare_func = compare_func or BookList.strcoll
     if not (a_sort or b_sort) then
         return compare_func(a_str, b_str)
     end
@@ -110,7 +111,7 @@ BookList.collates = {
         can_collate_mixed = true,
         init_sort_func = function()
             return function(a, b)
-                return BookList.compareSortTitles(BookList.strcoll, a.sort_text, b.sort_text, a.text, b.text)
+                return BookList.compareSortTitles(a.sort_text, b.sort_text, a.text, b.text)
             end
         end,
         item_func = function(item)
@@ -125,7 +126,7 @@ BookList.collates = {
             local natsort
             natsort, cache = sort.natsort_cmp(cache)
             return function(a, b)
-                return BookList.compareSortTitles(natsort, a.sort_text, b.sort_text, a.text, b.text)
+                return BookList.compareSortTitles(a.sort_text, b.sort_text, a.text, b.text, natsort)
             end, cache
         end,
         item_func = function(item)
@@ -178,7 +179,7 @@ BookList.collates = {
                 if (a.suffix or b.suffix) and a.suffix ~= b.suffix then
                     return BookList.strcoll(a.suffix, b.suffix)
                 end
-                return BookList.compareSortTitles(BookList.strcoll, a.sort_text, b.sort_text, a.text, b.text)
+                return BookList.compareSortTitles(a.sort_text, b.sort_text, a.text, b.text)
             end
         end,
         item_func = function(item)
@@ -195,7 +196,7 @@ BookList.collates = {
                     if a.opened then
                         return a.percent_finished < b.percent_finished
                     end
-                    return BookList.compareSortTitles(BookList.strcoll, a.sort_text, b.sort_text, a.text, b.text)
+                    return BookList.compareSortTitles(a.sort_text, b.sort_text, a.text, b.text)
                 end
                 return b.opened
             end
@@ -220,7 +221,7 @@ BookList.collates = {
                     if a.opened then
                         return a.percent_finished < b.percent_finished
                     end
-                    return BookList.compareSortTitles(BookList.strcoll, a.sort_text, b.sort_text, a.text, b.text)
+                    return BookList.compareSortTitles(a.sort_text, b.sort_text, a.text, b.text)
                 end
                 return a.opened
             end
@@ -245,7 +246,7 @@ BookList.collates = {
             natsort, cache = sort.natsort_cmp(cache)
             local sortfunc =  function(a, b)
                 if a.sort_percent == b.sort_percent then
-                    return BookList.compareSortTitles(natsort, a.sort_text, b.sort_text, a.text, b.text)
+                    return BookList.compareSortTitles(a.sort_text, b.sort_text, a.text, b.text, natsort)
                 elseif a.sort_percent == 1 then
                     return false
                 elseif b.sort_percent == 1 then
@@ -288,7 +289,7 @@ BookList.collates = {
         end,
         init_sort_func = function()
             return function(a, b)
-                return BookList.compareSortTitles(BookList.strcoll, a.sort_text, b.sort_text,
+                return BookList.compareSortTitles(a.sort_text, b.sort_text,
                     a.doc_props.display_title, b.doc_props.display_title)
             end
         end,
@@ -307,7 +308,7 @@ BookList.collates = {
                 if a.doc_props.authors ~= b.doc_props.authors then
                     return BookList.strcoll(a.doc_props.authors, b.doc_props.authors)
                 end
-                return BookList.compareSortTitles(BookList.strcoll, a.sort_text, b.sort_text,
+                return BookList.compareSortTitles(a.sort_text, b.sort_text,
                     a.doc_props.display_title, b.doc_props.display_title)
             end
         end,
@@ -330,7 +331,7 @@ BookList.collates = {
                 if a.doc_props.series_index and b.doc_props.series_index then
                     return a.doc_props.series_index < b.doc_props.series_index
                 end
-                return BookList.compareSortTitles(BookList.strcoll, a.sort_text, b.sort_text,
+                return BookList.compareSortTitles(a.sort_text, b.sort_text,
                     a.doc_props.display_title, b.doc_props.display_title)
             end
         end,
@@ -349,7 +350,7 @@ BookList.collates = {
                 if a.doc_props.keywords ~= b.doc_props.keywords then
                     return BookList.strcoll(a.doc_props.keywords, b.doc_props.keywords)
                 end
-                return BookList.compareSortTitles(BookList.strcoll, a.sort_text, b.sort_text,
+                return BookList.compareSortTitles(a.sort_text, b.sort_text,
                     a.doc_props.display_title, b.doc_props.display_title)
             end
         end,
@@ -368,7 +369,7 @@ BookList.collates = {
                 if a.rating ~= b.rating then
                     return a.rating > b.rating
                 end
-                return BookList.compareSortTitles(BookList.strcoll, a.sort_text, b.sort_text,
+                return BookList.compareSortTitles(a.sort_text, b.sort_text,
                     a.doc_props.display_title, b.doc_props.display_title)
             end
         end,
