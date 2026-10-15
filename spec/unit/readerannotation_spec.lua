@@ -1,18 +1,17 @@
 describe("ReaderAnnotation export and import", function()
-    local ReaderAnnotation, LuaSettings, Notification, lfs, filepath, original_settings, annotation
+    local orig_device_id, ReaderAnnotation, Notification, lfs, filepath, annotation
 
     setup(function()
         require("commonrequire")
+        orig_device_id = G_reader_settings:readSetting("device_id", "target")
         ReaderAnnotation = require("apps/reader/modules/readerannotation")
-        LuaSettings = require("luasettings")
         Notification = require("ui/widget/notification")
         lfs = require("libs/libkoreader-lfs")
         filepath = require("datastorage"):getDataDir() .. "/readerannotation.annotations.lua"
     end)
 
     before_each(function()
-        original_settings = G_reader_settings
-        G_reader_settings = LuaSettings:wrap{ device_id = "source" }
+        G_reader_settings:saveSetting("device_id", "source")
         stub(Notification, "notify")
         os.remove(filepath)
         os.remove(filepath .. ".old")
@@ -24,7 +23,7 @@ describe("ReaderAnnotation export and import", function()
     end)
 
     after_each(function()
-        G_reader_settings = original_settings
+        G_reader_settings:saveSetting("device_id", orig_device_id)
         Notification.notify:revert()
         os.remove(filepath)
         os.remove(filepath .. ".old")
