@@ -985,8 +985,10 @@ function ReaderUI:onOpenLastDoc()
     filemanagerutil.openFile(self, self.menu:getPreviousFile())
 end
 
-function ReaderUI:onAnnotationsModified()
-    BookList.setBookInfoCacheProperty(self.document.file, "has_annotations", self.annotation:hasAnnotations())
+function ReaderUI:onAnnotationsModified(items)
+    if items.index_modified then
+        BookList.setBookInfoCacheProperty(self.document.file, "has_annotations", self.annotation:hasAnnotations())
+    end
 end
 
 function ReaderUI:onDocumentRerendered()
