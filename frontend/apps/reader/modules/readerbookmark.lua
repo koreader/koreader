@@ -1411,7 +1411,7 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note, ca
                         local value = input_dialog:getInputText()
                         value = value ~= "" and value or nil -- blank input deletes note
                         annotation.note = value
-                        local type_after
+                        local type_after, datetime_updated
                         if type_before ~= "bookmark" then
                             self.ui.highlight:writePdfAnnotation("content", annotation, value or "")
                             type_after = self.getBookmarkType(annotation)
@@ -1423,7 +1423,11 @@ function ReaderBookmark:setBookmarkNote(item_or_index, is_new_note, new_note, ca
                                     self.ui:handleEvent(Event:new("AnnotationsModified",
                                         { annotation, nb_highlights_added = 1, nb_notes_added = -1 }))
                                 end
+                                datetime_updated = true
                             end
+                        end
+                        if not datetime_updated then
+                            self.ui.annotation:onAnnotationsModified({ annotation })
                         end
                         UIManager:close(input_dialog)
                         if item then
@@ -1503,6 +1507,7 @@ function ReaderBookmark:setHighlightedText(item_or_index, text, caller_callback)
     end
     annotation.text = text
     annotation.text_edited = edited
+    self.ui.annotation:onAnnotationsModified({ annotation }) -- datetime_updated
     if item then
         item.text_orig = text
         item.text = self:getBookmarkItemText(item)

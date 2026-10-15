@@ -1,18 +1,17 @@
 describe("ReaderAnnotation export and import", function()
-    local ReaderAnnotation, LuaSettings, Notification, lfs, filepath, original_settings, annotation
+    local orig_device_id, ReaderAnnotation, Notification, lfs, filepath, annotation
 
     setup(function()
         require("commonrequire")
+        orig_device_id = G_reader_settings:readSetting("device_id", "target")
         ReaderAnnotation = require("apps/reader/modules/readerannotation")
-        LuaSettings = require("luasettings")
         Notification = require("ui/widget/notification")
         lfs = require("libs/libkoreader-lfs")
         filepath = require("datastorage"):getDataDir() .. "/readerannotation.annotations.lua"
     end)
 
     before_each(function()
-        original_settings = G_reader_settings
-        G_reader_settings = LuaSettings:wrap{ device_id = "source" }
+        G_reader_settings:saveSetting("device_id", "source")
         stub(Notification, "notify")
         os.remove(filepath)
         os.remove(filepath .. ".old")
@@ -24,7 +23,7 @@ describe("ReaderAnnotation export and import", function()
     end)
 
     after_each(function()
-        G_reader_settings = original_settings
+        G_reader_settings:saveSetting("device_id", orig_device_id)
         Notification.notify:revert()
         os.remove(filepath)
         os.remove(filepath .. ".old")
@@ -56,6 +55,7 @@ describe("ReaderAnnotation export and import", function()
     end)
 
     it("should not export on closing when disabled", function()
+        G_reader_settings:saveSetting("annotations_export_on_closing", false)
         annotation.annotations = {{ page = 1, datetime = "2020-01-01 00:00:00" }}
         annotation:onExportAnnotations(true)
         assert.is_nil(lfs.attributes(filepath, "mode"))
@@ -109,6 +109,7 @@ describe("ReaderAnnotation export and import", function()
 
     it("should import an empty rolling snapshot", function()
         G_reader_settings:saveSetting("annotations_export_on_closing", true)
+        G_reader_settings:saveSetting("annotations_export_keep_all_on_import", false)
         annotation.ui = { rolling = true }
         export_empty()
         annotation.annotations = {{ page = "/body/p[1]", datetime = "2020-01-01 00:00:00" }}
