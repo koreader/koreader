@@ -49,6 +49,7 @@ socketutil.DEFAULT_TOTAL_TIMEOUT = -1
 -- as that's what the socket timeout will end up using most of the time.
 -- Note that name resolution happens earlier and one level lower (e.g., glibc),
 -- so name resolution delays will fall outside of these timeouts.
+-- Returns the block & total timeouts now in effect, so callers can report them later (e.g., via describe_error()).
 function socketutil:set_timeout(block_timeout, total_timeout)
     self.block_timeout = block_timeout or 5
     self.total_timeout = total_timeout or 15
@@ -58,6 +59,7 @@ function socketutil:set_timeout(block_timeout, total_timeout)
     -- 2. Rogue code might be attempting to enforce them
     http.TIMEOUT = self.block_timeout
     https.TIMEOUT = self.block_timeout
+    return self.block_timeout, self.total_timeout
 end
 
 --- Reset timeout values to LuaSocket defaults.
@@ -103,7 +105,7 @@ socketutil.SSL_WANTWRITE_CODE   = "wantwrite"    -- from LuaSec's ssl.c
 -- @param total_timeout (required) The total timeout (in seconds) that was in effect for the request.
 -- NOTE: Don't read socketutil.block_timeout/total_timeout here: callers usually call reset_timeout()
 --       right after the request, so by the time we get here those hold the defaults, not what was in effect.
---       Callers must save them before resetting. If they're missing anyway, the duration is just omitted.
+--       Use the values returned by set_timeout(). If they're missing anyway, the duration is just omitted.
 function socketutil.describe_error(code, block_timeout, total_timeout)
     if type(code) ~= "string" then
         return nil

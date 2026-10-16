@@ -461,7 +461,7 @@ end
 -- Fetches feed from server
 function OPDSBrowser:fetchFeed(item_url, headers_only, extra_headers)
     local sink = {}
-    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
+    local block_timeout, total_timeout = socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
     local request = {
         url      = item_url,
         method   = headers_only and "HEAD" or "GET",
@@ -480,7 +480,6 @@ function OPDSBrowser:fetchFeed(item_url, headers_only, extra_headers)
     end
     logger.dbg("Request:", socketutil.redact_request(request))
     local code, headers, status = self:getHttpClient():request(request)
-    local block_timeout, total_timeout = socketutil.block_timeout, socketutil.total_timeout
     socketutil:reset_timeout()
 
     if headers_only then
@@ -1365,7 +1364,7 @@ function OPDSBrowser:downloadFile(local_path, remote_url, username, password, ca
     local code, headers, status, block_timeout, total_timeout
     local parsed = url.parse(remote_url)
     if parsed.scheme == "http" or parsed.scheme == "https" then
-        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+        block_timeout, total_timeout = socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
         code, headers, status = self:getHttpClient():request {
             url      = remote_url,
             headers  = {
@@ -1375,7 +1374,6 @@ function OPDSBrowser:downloadFile(local_path, remote_url, username, password, ca
             username = username,
             password = password,
         }
-        block_timeout, total_timeout = socketutil.block_timeout, socketutil.total_timeout
         socketutil:reset_timeout()
     else
         UIManager:show(InfoMessage:new {
