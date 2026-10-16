@@ -107,8 +107,8 @@ end
 
 function FileChooser:getList(path, collate)
     local dirs, files = {}, {}
-    self:getPathList(path, collate, dirs, files)
-    return dirs, files
+    local readable = self:getPathList(path, collate, dirs, files)
+    return dirs, files, readable
 end
 
 function FileChooser:getPathList(path, collate, dirs, files)
@@ -142,7 +142,7 @@ function FileChooser:getPathList(path, collate, dirs, files)
             end
         end
     else -- error, probably "permission denied"
-        if FileChooser.show_flat_view and self.is_fm then return end
+        if FileChooser.show_flat_view and self.is_fm then return false end
         if unreadable_dir_content[path] then
             -- If we knew about some content (if we had come up from them
             -- to this directory), have them shown
@@ -155,6 +155,7 @@ function FileChooser:getPathList(path, collate, dirs, files)
             end
         end
     end
+    return ok
 end
 
 function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
@@ -185,17 +186,13 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         item.dim = self.ui and self.ui.selected_files and self.ui.selected_files[item.path]
         item.mandatory = self:getMenuItemMandatory(item, collate)
     else -- folder
-        if item.text == "./." then -- added as content of an unreadable directory
-            item.text = _("Current folder not readable. Some content may not be shown.")
-        else
-            item.text = item.text.."/"
-            item.bidi_wrap_func = BD.directory
-            if collate.can_collate_mixed and collate.item_func ~= nil then -- used by user plugin/patch, don't remove
-                collate.item_func(item, self.ui)
-            end
-            if dirpath then -- file browser or PathChooser
-                item.mandatory = self:getMenuItemMandatory(item)
-            end
+        item.text = item.text.."/"
+        item.bidi_wrap_func = BD.directory
+        if collate.can_collate_mixed and collate.item_func ~= nil then -- used by user plugin/patch, don't remove
+            collate.item_func(item, self.ui)
+        end
+        if dirpath then -- file browser or PathChooser
+            item.mandatory = self:getMenuItemMandatory(item)
         end
     end
     return item
@@ -235,8 +232,8 @@ end
 
 function FileChooser:genItemTableFromPath(path)
     local collate = self:getCollate()
-    local dirs, files = self:getList(path, collate)
-    return self:genItemTable(dirs, files, path)
+    local dirs, files, readable = self:getList(path, collate)
+    return self:genItemTable(dirs, files, path), readable
 end
 
 function FileChooser:genItemTable(dirs, files, path)
@@ -261,10 +258,6 @@ function FileChooser:genItemTable(dirs, files, path)
     end
 
     if path then -- file browser or PathChooser
-        if unreadable_dir_content[path] and not (FileChooser.show_flat_view and self.is_fm) then
-            -- This message has no file attributes, so keep it out of sorting.
-            table.insert(item_table, 1, self:getListItem(path, "./.", path, {}))
-        end
         if path ~= "/"
             and not (G_reader_settings:isFalse("show_parent_folder") and self.is_fm)
             and not (G_reader_settings:isTrue("lock_home_folder") and path == G_reader_settings:readSetting("home_dir"))
@@ -327,7 +320,7 @@ function FileChooser:updateItems(select_number, no_recalculate_dimen)
 end
 
 function FileChooser:refreshPath()
-    local _, folder_name = util.splitFilePathName(self.path)
+    local folder_name = select(2, util.splitFilePathName(self.path))
     Screen:setWindowTitle(folder_name)
 
     local itemmatch
@@ -337,7 +330,17 @@ function FileChooser:refreshPath()
     end
     local subtitle = not self.is_fm -- filemanager does it by itself
         and (self.ui.folder_shortcuts:getShortcutFullName(self.path) or BD.directory(filemanagerutil.abbreviate(self.path)))
-    self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path], itemmatch, subtitle)
+    local items, readable = self:genItemTableFromPath(self.path)
+    self:switchItemTable(nil, items, self.path_items[self.path], itemmatch, subtitle)
+    if readable then
+        self.unreadable_path_warned = nil
+    elseif self.unreadable_path_warned ~= self.path then
+        self.unreadable_path_warned = self.path
+        local InfoMessage = require("ui/widget/infomessage")
+        UIManager:show(InfoMessage:new{
+            text = _("Current folder not readable. Some content may not be shown."),
+        })
+    end
 end
 
 function FileChooser:changeToPath(path, focused_path)
