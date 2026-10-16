@@ -144,8 +144,6 @@ function FileChooser:getPathList(path, collate, dirs, files)
     else -- error, probably "permission denied"
         if FileChooser.show_flat_view and self.is_fm then return end
         if unreadable_dir_content[path] then
-            -- Add this dummy item that will be replaced with a message by genItemTable()
-            table.insert(dirs, self:getListItem(path, "./.", path, {}))
             -- If we knew about some content (if we had come up from them
             -- to this directory), have them shown
             for k, v in pairs(unreadable_dir_content[path]) do
@@ -263,6 +261,10 @@ function FileChooser:genItemTable(dirs, files, path)
     end
 
     if path then -- file browser or PathChooser
+        if unreadable_dir_content[path] and not (FileChooser.show_flat_view and self.is_fm) then
+            -- This message has no file attributes, so keep it out of sorting.
+            table.insert(item_table, 1, self:getListItem(path, "./.", path, {}))
+        end
         if path ~= "/"
             and not (G_reader_settings:isFalse("show_parent_folder") and self.is_fm)
             and not (G_reader_settings:isTrue("lock_home_folder") and path == G_reader_settings:readSetting("home_dir"))
