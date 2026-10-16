@@ -283,7 +283,6 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         local horizontal_margin = Screen:scaleBySize(10)*2
         footer:onUpdateFooter()
-        -- Account for trimming of the leading 0 in the AM
         local expected = 370
         assert.is.same(expected, footer.text_width)
         assert.is.same(600, footer.progress_bar.width
