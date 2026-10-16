@@ -510,7 +510,7 @@ function OPDSBrowser:fetchFeed(item_url, headers_only, extra_headers)
         }
         local network_error = socketutil.describe_error(code, block_timeout, total_timeout)
         if network_error then
-            text = T(_("Cannot get catalog.\n\n%1"), network_error)
+            text = _("Cannot get catalog.") .. "\n\n" .. network_error
         else
             text = code and error_message[tostring(code)] or T(_("Cannot get catalog. Server response status: %1."), status or code)
         end
