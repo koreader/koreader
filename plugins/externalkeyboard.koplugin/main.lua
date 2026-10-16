@@ -1,5 +1,10 @@
-local Event = require("ui/event")
 local Device =  require("device")
+
+if not Device:supportsExternalKeyboard() then
+    return { disabled = true }
+end
+
+local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputText = require("ui/widget/inputtext")
 local lfs = require("libs/libkoreader-lfs")
@@ -14,95 +19,12 @@ local C = ffi.C
 require("ffi/posix_h")
 require("ffi/fbink_input_h")
 
--- The include/linux/usb/role.h calls the USB roles "host" and "device".
 local USB_ROLE_DEVICE = "device"
 local USB_ROLE_HOST   = "host"
--- The Chipidea driver calls them "host" and "gadget".
--- This plugin sticks to Linux naming except when interacting with drivers.
-local CHIPIDEA_TO_USB = {
-    host   = USB_ROLE_HOST,
-    gadget = USB_ROLE_DEVICE,
-}
-local USB_TO_CHIPIDEA = {
-    [USB_ROLE_HOST]   = "host",
-    [USB_ROLE_DEVICE] = "gadget",
-}
--- sunxi just adds a "usb_" prefix
-local SUNXI_TO_USB = {
-    usb_host   = USB_ROLE_HOST,
-    usb_device = USB_ROLE_DEVICE,
-}
-local USB_TO_SUNXI = {
-    [USB_ROLE_HOST]   = "usb_host",
-    [USB_ROLE_DEVICE] = "usb_device",
-}
 
--- This path exists on Kobo Clara and newer. Other devices w/ Chipidea drivers should have it too.
--- Also, the kernel must be compiled with CONFIG_DEBUG_FS and the debugfs must be mounted (we'll ensure the latter).
-local OTG_CHIPIDEA_ROLE_PATH = "/sys/kernel/debug/ci_hdrc.0/role"
--- This one is for devices on a sunxi SoC (tested on a B300, as found on the Kobo Elipsa & Sage).
--- It does not require debugfs, but the point is moot as debugfs is mounted by default on those,
--- as Nickel relies on it for PM interaction with the display driver.
-local OTG_SUNXI_ROLE_PATH = "/sys/devices/platform/soc/usbc0/otg_role"
 local KEYBOARD_LAYOUTS_DIR = "plugins/externalkeyboard.koplugin/keyboard_layouts"
 -- NOTE: See https://www.mobileread.com/forums/showthread.php?p=4135724 if your keyboard reports itself as an Apple keyboard.
 --       (We currently don't do this here, but that may change in the future).
-
-local function setupDebugFS()
-    local mounts = io.open("/proc/mounts", "re")
-    if not mounts then
-        return false
-    end
-
-    local found = false
-    for line in mounts:lines() do
-        if line:find("^none /sys/kernel/debug debugfs") or
-           line:find("^debugfs /sys/kernel/debug debugfs") then
-            found = true
-            break
-        end
-    end
-    mounts:close()
-
-    if not found then
-        -- If we're not root, we won't be able to mount it
-        if C.getuid() ~= 0 then
-            logger.dbg("ExternalKeyboard: Cannot mount debugfs (unprivileged user)")
-            return false
-        end
-
-        if os.execute("mount -t debugfs none /sys/kernel/debug") ~= 0 then
-            logger.dbg("ExternalKeyboard: Failed to mount debugfs")
-            return false
-        end
-    end
-
-    return true
-end
-
--- Check whether we can manage OTG role switching (Kobo) or at least receive
--- input hotplug events (Kindle). On Kindle, the uevent listener in
--- input-kindle.h generates EvdevInputInsert/Remove events for UHID devices
--- (e.g., kindle-hid-passthrough keyboards), so the plugin can work without
--- OTG role management.
-local has_otg_role = false
--- The mount point probably doesn't exist on kernels built w/o CONFIG_DEBUG_FS
-if lfs.attributes("/sys/kernel/debug", "mode") == "directory" then
-    -- This should be in init() but the check must come first. So this part
-    -- of initialization is here. It is quick and harmless enough for a check.
-    setupDebugFS()
-    if lfs.attributes(OTG_CHIPIDEA_ROLE_PATH, "mode") == "file" or
-       lfs.attributes(OTG_SUNXI_ROLE_PATH,    "mode") == "file" then
-        has_otg_role = true
-    end
-end
-
--- On Kindle, we don't need OTG role switching — UHID devices are created by
--- userspace daemons and the uevent listener handles hotplug. On Kobo, OTG
--- role files must exist.
-if not has_otg_role and not Device:isKindle() then
-    return { disabled = true }
-end
 
 local function yes() return true end
 local function no() return false end  -- luacheck: ignore
@@ -117,22 +39,15 @@ local ExternalKeyboard = WidgetContainer:extend{
 
 function ExternalKeyboard:init()
     self.ui.menu:registerToMainMenu(self)
+    self.has_otg_role = Device:hasOTGManagement()
 
-    if has_otg_role then
+    if self.has_otg_role then
         -- Kobo: set up OTG role management
-        if lfs.attributes(OTG_SUNXI_ROLE_PATH, "mode") == "file" then
-            self.getOTGRole = self.sunxiGetOTGRole
-            self.setOTGRole = self.sunxiSetOTGRole
-        else
-            self.getOTGRole = self.chipideaGetOTGRole
-            self.setOTGRole = self.chipideaSetOTGRole
-        end
-
-        local role = self:getOTGRole()
+        local role = Device:getOTGRole()
         logger.dbg("ExternalKeyboard: role", role)
 
         if role == USB_ROLE_DEVICE and G_reader_settings:isTrue("external_keyboard_otg_mode_on_start") then
-            self:setOTGRole(USB_ROLE_HOST)
+            Device:setOTGRole(USB_ROLE_HOST)
             role = USB_ROLE_HOST
         end
         if role == USB_ROLE_HOST then
@@ -150,16 +65,16 @@ function ExternalKeyboard:addToMainMenu(menu_items)
     local sub_items = {}
 
     -- OTG role management is only available on platforms with OTG sysfs knobs (Kobo)
-    if has_otg_role then
+    if self.has_otg_role then
         table.insert(sub_items, {
             text = _("Enable OTG mode to connect peripherals"),
             checked_func = function()
-                return self:getOTGRole() == USB_ROLE_HOST
+                return Device:getOTGRole() == USB_ROLE_HOST
             end,
             callback = function(touchmenu_instance)
-                local role = self:getOTGRole()
+                local role = Device:getOTGRole()
                 local new_role = (role == USB_ROLE_DEVICE) and USB_ROLE_HOST or USB_ROLE_DEVICE
-                self:setOTGRole(new_role)
+                Device:setOTGRole(new_role)
             end,
         })
         table.insert(sub_items, {
@@ -239,62 +154,12 @@ function ExternalKeyboard:getKeyboardLayoutMenu()
     return items
 end
 
-function ExternalKeyboard:chipideaGetOTGRole()
-    local role = USB_ROLE_DEVICE
-    local file = io.open(OTG_CHIPIDEA_ROLE_PATH, "re")
-
-    -- Do not throw exception if the file for role does not exist.
-    -- If it does not exist, the USB must be in the default device mode.
-    if file then
-        local chipidea_role = file:read("l")
-        file:close()
-        return CHIPIDEA_TO_USB[chipidea_role] or role
-    end
-    return role
-end
-
-function ExternalKeyboard:sunxiGetOTGRole()
-    local file = io.open(OTG_SUNXI_ROLE_PATH, "re")
-
-    -- File should always be present
-    if file then
-        local sunxi_role = file:read("l")
-        file:close()
-        return SUNXI_TO_USB[sunxi_role]
-    end
-end
-
-function ExternalKeyboard:getOTGRole() end
-
-function ExternalKeyboard:chipideaSetOTGRole(role)
-    -- Writing role to file will fail if the role is the same as the current role.
-    -- Check current role before calling.
-    logger.dbg("ExternalKeyboard:chipideaSetOTGRole setting to", role)
-    local file = io.open(OTG_CHIPIDEA_ROLE_PATH, "we")
-    if file then
-        file:write(USB_TO_CHIPIDEA[role])
-        file:close()
-    end
-end
-
-function ExternalKeyboard:sunxiSetOTGRole(role)
-    -- Sunxi being what it is, there's no sanity check at all, it'll happily reset USB to set the same role again.
-    logger.dbg("ExternalKeyboard:sunxiSetOTGRole setting to", role)
-    local file = io.open(OTG_SUNXI_ROLE_PATH, "we")
-    if file then
-        file:write(USB_TO_SUNXI[role])
-        file:close()
-    end
-end
-
-function ExternalKeyboard:setOTGRole(role) end
-
 function ExternalKeyboard:onExit()
     logger.dbg("ExternalKeyboard:onExit")
-    if has_otg_role then
-        local role = self:getOTGRole()
+    if self.has_otg_role then
+        local role = Device:getOTGRole()
         if role == USB_ROLE_HOST then
-            self:setOTGRole(USB_ROLE_DEVICE)
+            Device:setOTGRole(USB_ROLE_DEVICE)
         end
     end
 end
