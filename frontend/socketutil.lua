@@ -91,6 +91,45 @@ socket.tcp = socketutil.tcp
 socketutil.TIMEOUT_CODE         = "timeout"      -- from LuaSocket's io.c
 socketutil.SSL_HANDSHAKE_CODE   = "wantread"     -- from LuaSec's ssl.c
 socketutil.SINK_TIMEOUT_CODE    = "sink timeout" -- from our own socketutil
+-- NOTE: Despite its legacy name above, LuaSec returns "wantread"/"wantwrite" whenever the socket wait times out
+--       while OpenSSL is waiting on the peer, i.e., during the handshake *or* while sending/receiving data.
+socketutil.SSL_WANTREAD_CODE    = "wantread"     -- from LuaSec's ssl.c
+socketutil.SSL_WANTWRITE_CODE   = "wantwrite"    -- from LuaSec's ssl.c
+
+--- Translate a LuaSocket/LuaSec error code into a human-readable explanation.
+-- Returns nil for codes it doesn't know about (e.g., HTTP status codes), so callers can fall back to their own text.
+-- @param code The error code returned by LuaSocket/LuaSec (e.g., the first return value of http.request)
+-- @param block_timeout (required) The block timeout (in seconds) that was in effect for the request.
+-- @param total_timeout (required) The total timeout (in seconds) that was in effect for the request.
+-- NOTE: Don't read socketutil.block_timeout/total_timeout here: callers usually call reset_timeout()
+--       right after the request, so by the time we get here those hold the defaults, not what was in effect.
+--       Callers must save them before resetting. If they're missing anyway, the duration is just omitted.
+function socketutil.describe_error(code, block_timeout, total_timeout)
+    if type(code) ~= "string" then
+        return nil
+    end
+    local _ = require("gettext")
+    local msg
+    if code == socketutil.TIMEOUT_CODE then
+        msg = block_timeout and T(_("Connection timed out: no response within %1 seconds."), block_timeout)
+                             or _("Connection timed out: no response.")
+    elseif code == socketutil.SSL_WANTREAD_CODE then
+        msg = block_timeout and T(_("Secure connection timed out: no data received within %1 seconds."), block_timeout)
+                             or _("Secure connection timed out: no data received.")
+    elseif code == socketutil.SSL_WANTWRITE_CODE then
+        msg = block_timeout and T(_("Secure connection timed out: could not send data within %1 seconds."), block_timeout)
+                             or _("Secure connection timed out: could not send data.")
+    elseif code == socketutil.SINK_TIMEOUT_CODE then
+        msg = total_timeout and T(_("Transfer aborted: took longer than %1 seconds."), total_timeout)
+                             or _("Transfer aborted: took too long.")
+    elseif code == "closed" then
+        msg = _("Connection closed by the server.")
+    end
+    if msg then
+        -- Keep the raw code around, it's what people will search for or paste into bug reports.
+        return T("%1 (%2)", msg, code)
+    end
+end
 
 -- NOTE: Use os.time() for simplicity's sake (we don't really need subsecond precision).
 --       LuaSocket itself is already using gettimeofday anyway (although it does the maths, like ffi/util's getTimestamp).
