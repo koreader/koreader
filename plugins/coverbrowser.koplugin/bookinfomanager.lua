@@ -927,7 +927,7 @@ Do you want to prune the cache of removed books?]]
             end
         end
         UIManager:close(info)
-        info = InfoMessage:new{text = T(N_("Found 1 book to index.", "Found %1 books to index."), #files)}
+        info = InfoMessage:new{text = T(N_("Found 1 book to index.", "Found %1 books to index.", #files), #files)}
         UIManager:show(info)
         UIManager:forceRePaint()
         FFIUtil.sleep(2) -- Let the user see that
