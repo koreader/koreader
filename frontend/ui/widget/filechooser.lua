@@ -339,6 +339,7 @@ function FileChooser:refreshPath()
         local InfoMessage = require("ui/widget/infomessage")
         UIManager:show(InfoMessage:new{
             text = _("Current folder not readable. Some content may not be shown."),
+            icon = "notice-warning",
         })
     end
 end
