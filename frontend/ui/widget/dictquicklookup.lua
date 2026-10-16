@@ -1136,6 +1136,21 @@ function DictQuickLookup:buildButtonLayout()
             if try_shrink_row(row) then break end
         end
     end -- if has_shrinkable_buttons
+    if not self.is_wiki and Device:hasClipboard() then
+        -- Keep copying the queried word available below custom and plugin rows.
+        table.insert(buttons, {{
+            id = "copy",
+            text = C_("Text", "Copy"),
+            callback = function()
+                Device.input.setClipboardText(util.cleanupSelectedText(self.word))
+                self:onClose()
+                local Notification = require("ui/widget/notification")
+                UIManager:show(Notification:new{
+                    text = _("Selection copied to clipboard."),
+                })
+            end,
+        }})
+    end
     return buttons
 end
 
