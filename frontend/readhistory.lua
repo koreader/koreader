@@ -19,7 +19,7 @@ local ReadHistory = {
 
 local function getMandatory(date_time)
     return G_reader_settings:isTrue("history_datetime_short")
-        and os.date(C_("Date string", "%y-%m-%d"), date_time) or datetime.secondsToDateTime(date_time)
+        and os.date(C_("Date string", "%y-%m-%d"), date_time) or datetime.secondsToDateTime(date_time, nil, true)
 end
 
 local function buildEntry(input_time, input_file)

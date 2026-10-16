@@ -50,7 +50,7 @@ BookList.collates = {
             end
         end,
         mandatory_func = function(item)
-            return datetime.secondsToDateTime(item.attr.access)
+            return datetime.secondsToDateTime(item.attr.access, nil, true)
         end,
     },
     date = {
@@ -63,7 +63,7 @@ BookList.collates = {
             end
         end,
         mandatory_func = function(item)
-            return datetime.secondsToDateTime(item.attr.modification)
+            return datetime.secondsToDateTime(item.attr.modification, nil, true)
         end,
     },
     size = {

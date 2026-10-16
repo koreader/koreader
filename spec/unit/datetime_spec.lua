@@ -214,9 +214,9 @@ describe("datetime module", function()
             assert.is_equal("2022-11-21  9:57 AM",
                             datetime.secondsToDateTime(time_s + 86400, true))
 
-            assert.is_equal("Sun Nov 20 2022 9:57",
+            assert.is_equal("Sun Nov 20 2022 09:57",
                             datetime.secondsToDateTime(time_s, false, true))
-            assert.is_equal("Mon Nov 21 2022 9:57",
+            assert.is_equal("Mon Nov 21 2022 09:57",
                             datetime.secondsToDateTime(time_s + 86400, false, true))
 
             assert.is_equal("Sun Nov 20 2022 9:57 AM",
