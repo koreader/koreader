@@ -105,6 +105,7 @@ function KOSyncQueue:drain(send_func, done_func)
         end
         -- Do not send snapshot entries that have since been replaced or cleared.
         if not findItem(self:load(), item) then
+            logger.dbg("KOSyncQueue: skipping replaced or cleared progress for", item.document)
             sendNext(i + 1)
             return
         end
