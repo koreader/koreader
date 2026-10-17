@@ -62,6 +62,8 @@ local IME = {
     local_del = "",  -- default
     has_case = false,
     exact_match = false,
+    candidate_bar = false, -- when true, candidates are shown in a tappable bar above the keyboard
+                           -- instead of the inline [candidate…] preview
     W = nil -- default no wildcard
 }
 
@@ -247,7 +249,8 @@ function IME:getHintChars()
     end
     local imex = _stack[#_stack]
     local has_wildcard = self.W and imex.code:find(self.W)
-    if self:show_candi_callback() and -- shows candidates
+    if not self.candidate_bar and -- inline preview disabled when using the candidate bar
+        self:show_candi_callback() and -- shows candidates
         #imex.candi ~= 0 and -- has candidates
         ( #imex.code > 1 or imex.index > 1 ) and -- more than one key
         ( #imex.candi > 1 or has_wildcard and imex.candi[1] ~= (imex.last_candi or {})[1] ) then -- one candidate but use wildcard, or more candidates
@@ -285,6 +288,7 @@ end
 function IME:refreshHintChars(inpuxbox)
     self:delOnStageAndHintChars(inpuxbox)
     inpuxbox.addChars:raw_method_call(self:getHintChars())
+    self:updateCandidateBar(inpuxbox)
 end
 
 function IME:separate(inputbox)
@@ -292,6 +296,54 @@ function IME:separate(inputbox)
         self:delHintChars(inputbox)
     end
     self:clear_stack()
+    self:updateCandidateBar(inputbox)
+end
+
+-- Push the current candidate list (of the character being composed) plus the
+-- highlighted candidate's position to the keyboard's candidate bar, if the
+-- active keyboard has one. Sends an empty list when nothing is being composed.
+function IME:updateCandidateBar(inputbox)
+    if not self.candidate_bar then return end
+    local keyboard = inputbox and inputbox.keyboard
+    if keyboard and keyboard.setCandidates then
+        local imex = _stack[#_stack]
+        -- Respect the "Show character candidates" toggle: when off, keep the bar empty.
+        local candi = self:show_candi_callback() and (imex.candi or {}) or {}
+        -- imex.index can grow past the candidate count as it cycles; wrap it back
+        -- to the actual 1-based position of the highlighted candidate.
+        local selected = 1
+        if #candi > 0 then
+            local r = imex.index % #candi
+            selected = r == 0 and #candi or r
+        end
+        keyboard:setCandidates(candi, selected)
+    end
+end
+
+-- Move the highlight to the candidate at the given (1-based) index without
+-- committing it (used by the candidate bar's « / » paging arrows). The inline
+-- provisional text follows, so Space then commits the highlighted candidate.
+function IME:setHighlight(inputbox, global_idx)
+    local imex = _stack[#_stack]
+    if not imex.candi[global_idx] then return end
+    imex.index = global_idx
+    imex.char = imex.candi[global_idx]
+    self:refreshHintChars(inputbox)
+end
+
+-- Commit the candidate at the given (1-based, list-global) index, as picked by
+-- tapping it in the candidate bar.
+function IME:selectCandidate(inputbox, global_idx)
+    local imex = _stack[#_stack]
+    local candi = imex.candi[global_idx]
+    if not candi then return end
+    imex.char = candi
+    -- Redraw the inline text so the picked candidate replaces the provisional one,
+    -- then commit by clearing the composing stack. The bar is repainted once (empty).
+    self:delOnStageAndHintChars(inputbox)
+    inputbox.addChars:raw_method_call(self:getHintChars())
+    self:clear_stack()
+    self:updateCandidateBar(inputbox)
 end
 
 function IME:tweak_case(new_candi, old_imex, new_stroke_upper)
