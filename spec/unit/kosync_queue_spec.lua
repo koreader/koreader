@@ -3,6 +3,7 @@ describe("KOSyncQueue module", function()
     local orig_time
     local client_stub
     local schedule_stub
+    local bookkeeping_stub
 
     setup(function()
         require("commonrequire")
@@ -16,6 +17,10 @@ describe("KOSyncQueue module", function()
     end)
 
     after_each(function()
+        if bookkeeping_stub then
+            bookkeeping_stub:revert()
+            bookkeeping_stub = nil
+        end
         KOSyncQueue:clear()
         if client_stub then
             client_stub:revert()
@@ -258,6 +263,52 @@ describe("KOSyncQueue module", function()
         KOSyncQueue:drain(function() error("empty queue") end, function(count) sent = count end)
         assert.are.equal(0, sent)
     end)
+
+    it("should ignore duplicate callbacks while the next upload is pending", function()
+        KOSyncQueue:push({ document = "a", progress = "1" })
+        KOSyncQueue:push({ document = "b", progress = "2" })
+        local callbacks = {}
+        local completions = 0
+        KOSyncQueue:drain(function(_, callback)
+            table.insert(callbacks, callback)
+        end, function(sent)
+            assert.are.equal(2, sent)
+            completions = completions + 1
+        end)
+        callbacks[1](true)
+        callbacks[1](true)
+        callbacks[1](false)
+        assert.are.equal(2, #callbacks)
+        assert.are.equal(0, completions)
+        assert.are.equal(1, KOSyncQueue:count())
+        callbacks[2](true)
+        callbacks[2](false)
+        assert.are.equal(1, completions)
+        assert.is_nil(KOSyncQueue._draining)
+        assert.are.equal(0, KOSyncQueue:count())
+    end)
+
+    for _, method in ipairs({ "load", "save" }) do
+        it("should finish once and allow retry after a deferred " .. method .. " error", function()
+            KOSyncQueue:push({ document = "a", progress = "1" })
+            local pending
+            local completions = 0
+            KOSyncQueue:drain(function(_, callback) pending = callback end, function(sent)
+                assert.are.equal(0, sent)
+                completions = completions + 1
+            end)
+            bookkeeping_stub = stub(KOSyncQueue, method, function() error("storage unavailable") end)
+            pending(true)
+            pending(false)
+            assert.are.equal(1, completions)
+            assert.is_nil(KOSyncQueue._draining)
+            bookkeeping_stub:revert()
+            bookkeeping_stub = nil
+            assert.are.equal(1, KOSyncQueue:count())
+            KOSyncQueue:drain(function(_, callback) callback(true) end)
+            assert.are.equal(0, KOSyncQueue:count())
+        end)
+    end
 
     it("should retain an upload failure reported by KOSyncClient", function()
         local KOSync = dofile("plugins/kosync.koplugin/main.lua")

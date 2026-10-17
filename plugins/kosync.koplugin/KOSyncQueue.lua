@@ -82,11 +82,23 @@ function KOSyncQueue:drain(send_func, done_func)
 
     logger.info("KOSyncQueue: draining", #queue, "queued items")
     local sent = 0
+    local settled = false
 
-    local function finish()
+    -- Both failure and queue exhaustion complete the drain exactly once.
+    local function settle()
+        if settled then return end
+        settled = true
         self._draining = nil
-        logger.info("KOSyncQueue: sent", sent, ", remaining", self:count())
+        local ok, remaining = pcall(self.count, self)
+        logger.info("KOSyncQueue: sent", sent, ", remaining", ok and remaining or "unknown")
         if done_func then done_func(sent) end
+    end
+
+    local function fail(err)
+        if err then
+            logger.warn("KOSyncQueue: drain failed:", err)
+        end
+        settle()
     end
 
     local function findItem(current, item)
@@ -98,33 +110,45 @@ function KOSyncQueue:drain(send_func, done_func)
     end
 
     local function sendNext(i)
+        if settled then return end
         local item = queue[i]
         if not item then
-            finish()
+            settle()
             return
         end
         -- Do not send snapshot entries that have since been replaced or cleared.
-        if not findItem(self:load(), item) then
+        local ok_load, current_queue = pcall(self.load, self)
+        if not ok_load then
+            fail(current_queue)
+            return
+        end
+        if not findItem(current_queue, item) then
             logger.dbg("KOSyncQueue: skipping replaced or cleared progress for", item.document)
             sendNext(i + 1)
             return
         end
         local completed = false
         local function callback(ok)
-            if completed then return end
+            if settled or completed then return end
             completed = true
             if not ok then
-                finish()
+                fail()
                 return
             end
             -- Reload after the request: pushes may have changed the queue in flight.
-            local current = self:load()
-            local index = findItem(current, item)
-            if index then
-                table.remove(current, index)
-                self:save(current)
+            local ok_book, err = pcall(function()
+                local current = self:load()
+                local index = findItem(current, item)
+                if index then
+                    table.remove(current, index)
+                    self:save(current)
+                end
+                sent = sent + 1
+            end)
+            if not ok_book then
+                fail(err)
+                return
             end
-            sent = sent + 1
             sendNext(i + 1)
         end
         local ok, err = pcall(send_func, item, callback)
