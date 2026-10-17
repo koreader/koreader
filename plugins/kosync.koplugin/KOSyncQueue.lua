@@ -7,7 +7,9 @@ local QUEUE_PATH = DataStorage:getSettingsDir() .. "/kosync_queue.lua"
 local MAX_AGE = 28 * 24 * 3600 -- 4 weeks in seconds
 local MAX_ENTRIES = 200 -- paranoia cap
 
-local KOSyncQueue = {}
+local KOSyncQueue = {
+    _draining = nil,
+}
 
 function KOSyncQueue:_storage()
     if not self._persist then
