@@ -456,6 +456,20 @@ To:
             FileChooser:refreshPath()
         end,
     }
+    self.menu_items.sort_ignore_articles = {
+        text = _("Ignore leading articles"),
+        enabled_func = function()
+            return FileChooser:getCollate().compares_names ~= false
+        end,
+        checked_func = function()
+            return FileChooser:getCollate().compares_names ~= false and G_reader_settings:isTrue("sort_ignore_articles")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("sort_ignore_articles")
+            BookList.updateSortTextFunc()
+            FileChooser:refreshPath()
+        end,
+    }
     self.menu_items.sort_mixed = {
         text = _("Folders and files mixed"),
         enabled_func = function()

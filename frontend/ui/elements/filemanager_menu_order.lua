@@ -16,6 +16,7 @@ local order = {
         "show_filter",
         "sort_by",
         "reverse_sorting",
+        "sort_ignore_articles",
         "sort_mixed",
         "----------------------------",
         "start_with",
