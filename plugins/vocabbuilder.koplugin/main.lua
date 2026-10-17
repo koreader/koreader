@@ -241,7 +241,7 @@ function MenuDialog:setupPluginMenu()
                     callback = function()
                         UIManager:close(self.sync_dialogue)
                         UIManager:close(self)
-                        self.vocabbuilder.vocabbuilder:onSyncVocabBuilder()
+                        self.vocabbuilder.vocabbuilder:onSyncVocabBuilder(true)
                     end,
                 },
             },
@@ -1450,7 +1450,7 @@ function VocabularyBuilderWidget:refreshFooter()
         margin = 0,
         show_parent = self,
         callback = function()
-            self.vocabbuilder:onSyncVocabBuilder()
+            self.vocabbuilder:onSyncVocabBuilder(true)
         end
     }
     self.footer_sync.label_widget.fgcolor = Blitbuffer.COLOR_GRAY_3
@@ -2073,7 +2073,7 @@ function VocabBuilder:onDispatcherRegisterActions()
     Dispatcher:registerAction("show_vocab_builder",
         {category="none", event="ShowVocabBuilder", title=_("Open vocabulary builder"), general=true})
     Dispatcher:registerAction("sync_vocab_builder",
-        {category="none", event="SyncVocabBuilder", title=_("Sync vocabulary builder"), general=true, separator=true})
+        {category="none", event="SyncVocabBuilder", arg=true, title=_("Sync vocabulary builder"), general=true, separator=true})
 end
 
 function VocabBuilder:onShowVocabBuilder()
@@ -2086,12 +2086,15 @@ function VocabBuilder:onShowVocabBuilder()
     return true
 end
 
-function VocabBuilder:onSyncVocabBuilder()
+-- `interactive` marks a sync the user asked for: the sync buttons and the Dispatcher action both
+-- pass it. A plugin driving a periodic sync sends the bare event and gets a silent one, leaving the
+-- page the user is reading alone. Same flag as KOSync:updateProgress.
+function VocabBuilder:onSyncVocabBuilder(interactive)
     if settings.server and self.ui.cloudstorage then
         if self.widget then
             DB:batchUpdateItems(self.widget.item_table)
         end
-        self.ui.cloudstorage:sync(settings.server, DB.path, DB.onSync, false)
+        self.ui.cloudstorage:sync(settings.server, DB.path, DB.onSync, not interactive)
         if self.widget then
             self.widget:reloadItems()
         end
