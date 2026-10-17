@@ -43,7 +43,7 @@ local OTAManager = {
 
 local ota_channels = {
     stable = _("Stable"),
-    nightly = _("Development"),
+    nightly = _("Development (nightly build)"),
 }
 
 function OTAManager:getOTAType()
