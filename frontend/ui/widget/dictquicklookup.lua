@@ -917,7 +917,6 @@ function DictQuickLookup:_getButtonPool()
             enabled = Device:hasClipboard(),
             callback = function()
                 Device.input.setClipboardText(util.cleanupSelectedText(self.word))
-                self:onClose()
                 local Notification = require("ui/widget/notification")
                 UIManager:show(Notification:new{
                     text = _("Selection copied to clipboard."),
