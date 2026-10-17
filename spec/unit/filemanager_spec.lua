@@ -13,6 +13,16 @@ describe("FileManager module", function()
         makePath = require("util").makePath
         util = require("ffi/util")
     end)
+    local function findButtonText(buttons, text)
+        for _, row in ipairs(buttons) do
+            for _, btn in ipairs(row) do
+                if btn.text == text then
+                    return btn
+                end
+            end
+        end
+        return nil
+    end
     it("should show file manager", function()
         local filemanager = FileManager:new{
             dimen = Screen:getSize(),
@@ -106,5 +116,24 @@ describe("FileManager module", function()
         assert.is_nil(lfs.attributes(tmp_fn))
         assert.is_nil(lfs.attributes(tmp_sidecar))
         assert.is_nil(lfs.attributes(tmp_history))
+    end)
+    it("should only show \"New text file\" when the texteditor plugin is enabled", function()
+        local filemanager = FileManager:new{
+            dimen = Screen:getSize(),
+            root_path = "spec/front/unit/data",
+        }
+        UIManager:show(filemanager)
+        fastforward_ui_events()
+
+        filemanager.texteditor = nil
+        local _, buttons_without = filemanager:getPlusDialogButtons()
+        assert.is_nil(findButtonText(buttons_without, "New text file"))
+
+        filemanager.texteditor = {} -- stub: presence is all getPlusDialogButtons checks
+        local _, buttons_with = filemanager:getPlusDialogButtons()
+        assert.is_not_nil(findButtonText(buttons_with, "New text file"))
+
+        filemanager:onClose()
+        UIManager:quit()
     end)
 end)
