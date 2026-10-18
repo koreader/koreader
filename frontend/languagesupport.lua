@@ -122,7 +122,7 @@ local function callPlugin(plugin, handler_name, ...)
         return
     end
     logger.dbg("language plugin", handler_name, "returned", ret)
-    if ret[1] == nil then return end -- handler declined, try the next plugin
+    if not ret[1] then return end -- handler declined, try the next plugin
     return ret
 end
 
