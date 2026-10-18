@@ -47,7 +47,7 @@ local FileManagerShortcuts = WidgetContainer:extend{
         download_dir = {
             name = _("Download folder"),
             get = function()
-                return G_reader_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+                return G_reader_settings:readSetting("download_dir") or filemanagerutil.getHomeFolder()
             end,
             set = function(path)
                 G_reader_settings:saveSetting("download_dir", path)
@@ -97,6 +97,11 @@ function FileManagerShortcuts.registerShortcut(shortcut) -- for plugins
         table.insert(FileManagerShortcuts.providers, shortcut.provider)
         FileManagerShortcuts.provider_props[shortcut.provider] = shortcut
     end
+end
+
+function FileManagerShortcuts:getProviderFolder(provider)
+    local provider_props = FileManagerShortcuts.provider_props[provider]
+    return provider_props and provider_props.get()
 end
 
 function FileManagerShortcuts:updateShortcut(provider, new_folder) -- for all providers
