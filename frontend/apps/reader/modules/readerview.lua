@@ -267,6 +267,12 @@ function ReaderView:paintTo(bb, x, y)
     if self.ui.paging then
         if self.document.hw_dithering then
             self.dialog.dithered = true
+            -- On Kaleido panels, a dithered full refresh uses the flashing color waveform mode (GCC16),
+            -- so request one the first time we paint a new page, like for CRe pages with images (but not in continuous view).
+            if Device:hasKaleidoWfm() and Screen:isColorEnabled() and not self.page_scroll
+                    and self.state.drawn == false and G_reader_settings:nilOrTrue("refresh_on_pages_with_images") then
+                UIManager:setDirty(nil, "full")
+            end
         end
     else
         -- Whereas for CRe,
@@ -286,8 +292,8 @@ function ReaderView:paintTo(bb, x, y)
                 UIManager:setDirty(nil, "full")
             end
         end
-        self.state.drawn = true
     end
+    self.state.drawn = true
 end
 
 --[[
