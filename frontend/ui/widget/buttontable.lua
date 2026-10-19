@@ -67,6 +67,7 @@ function ButtonTable:init()
                 text = btn_entry.text,
                 text_func = btn_entry.text_func,
                 checked_func = btn_entry.checked_func,
+                focusable = btn_entry.focusable,
                 no_refresh_checkmark = btn_entry.no_refresh_checkmark,
                 lang = btn_entry.lang,
                 icon = btn_entry.icon,
@@ -128,7 +129,9 @@ function ButtonTable:init()
                     h = button_dim.h,
                 }
             }
-            buttons_layout_line[j] = button
+            if button.focusable then
+                buttons_layout_line[j] = button
+            end
             table.insert(horizontal_group, button)
             if j < column_cnt then
                 table.insert(horizontal_group, vertical_sep)
