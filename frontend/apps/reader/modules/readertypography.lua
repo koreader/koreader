@@ -45,7 +45,9 @@ ReaderTypography.HYPH_DICT_NAME_TO_LANG_NAME_TAG = {
 local LANGUAGES = {
     -- lang-tag          aliases    features    menu title                  hyphenation file name
     { "hy", {"arm", "hye", "hyw"},   "H   ",   _("Armenian"),               "Armenian.pattern" },
+    { "as",               {"asm"},   "    ",   _("Assamese") },
     { "eu",                    {},   "H   ",   _("Basque"),                 "Basque.pattern" },
+    { "bn",               {"ben"},   "    ",   _("Bengali") },
     { "bg",               {"bul"},   "H   ",   _("Bulgarian"),              "Bulgarian.pattern" },
     { "ca",               {"cat"},   "H   ",   _("Catalan"),                "Catalan.pattern" },
     { "zh-CN",  {"zh", "zh-Hans"},   " b  ",   _("Chinese (Simplified)") },
@@ -65,11 +67,14 @@ local LANGUAGES = {
     { "ka",                    {},   "H   ",   _("Georgian"),               "Georgian.pattern" },
     { "de",               {"deu"},   "Hb  ",   _("German"),                 "German.pattern" },
     { "el",               {"ell"},   "H   ",   _("Greek"),                  "Greek.pattern" },
+    { "gu",               {"guj"},   "    ",   _("Gujarati") },
+    { "hi",               {"hin"},   "    ",   _("Hindi") },
     { "hu",               {"hun"},   "H   ",   _("Hungarian"),              "Hungarian.pattern" },
     { "is",               {"isl"},   "H   ",   _("Icelandic"),              "Icelandic.pattern" },
     { "ga",               {"gle"},   "H   ",   _("Irish"),                  "Irish.pattern" },
     { "it",               {"ita"},   "H   ",   _("Italian"),                "Italian.pattern" },
     { "ja",                    {},   "    ",   _("Japanese") },
+    { "kn",               {"kan"},   "    ",   _("Kannada") },
     { "ko",                    {},   "    ",   _("Korean") },
     { "la",               {"lat"},   "H   ",   _("Latin"),                  "Latin.pattern" },
     { "la-lit",       {"lat-lit"},   "H   ",   _("Latin (liturgical)"),     "Latin_liturgical.pattern" },
@@ -77,10 +82,15 @@ local LANGUAGES = {
     { "lt",               {"lit"},   "H   ",   _("Lithuanian"),             "Lithuanian.pattern" },
     { "mk",                  {""},   "H   ",   _("Macedonian"),             "Macedonian.pattern" },
     { "ml",               {"mal"},   "H   ",   _("Malayalam"),              "Malayalam.pattern" },
+    { "mr",               {"mar"},   "    ",   _("Marathi") },
+    { "ne",               {"nep"},   "    ",   _("Nepali") },
     { "no",               {"nor"},   "H   ",   _("Norwegian"),              "Norwegian.pattern" },
     { "oc",               {"oci"},   "H   ",   _("Occitan"),                "Occitan.pattern" },
-    { "pl",               {"pol"},   "HB  ",   _("Polish"),                 "Polish.pattern" },
+    { "or",               {"ori"},   "    ",   _("Odia") },
+    { "pa-Guru",    {"pa", "pan"},   "    ",   _("Punjabi (Gurmukhi)") },
+    { "pa-Arab",          {"pnb"},   "    ",   _("Punjabi (Shahmukhi)") },
     { "pms",                   {},   "H   ",   _("Piedmontese"),            "Piedmontese.pattern" },
+    { "pl",               {"pol"},   "HB  ",   _("Polish"),                 "Polish.pattern" },
     { "pt",               {"por"},   "HB  ",   _("Portuguese"),             "Portuguese.pattern" },
     { "pt-BR",                 {},   "HB  ",   _("Portuguese (BR)"),        "Portuguese_BR.pattern" },
     { "rm",               {"roh"},   "H   ",   _("Romansh"),                "Romansh.pattern" },
@@ -88,11 +98,14 @@ local LANGUAGES = {
     { "ru",               {"rus"},   "HB  ",   _("Russian"),                "Russian.pattern" },
     { "ru-GB",                 {},   "HB  ",   _("Russian + English (UK)"), "Russian_EnGB.pattern" },
     { "ru-US",                 {},   "HB  ",   _("Russian + English (US)"), "Russian_EnUS.pattern" },
+    { "sa",               {"san"},   "    ",   _("Sanskrit") },
     { "sr",               {"srp"},   "HB  ",   _("Serbian"),                "Serbian.pattern" },
     { "sk",               {"slk"},   "HB  ",   _("Slovak"),                 "Slovak.pattern" },
     { "sl",               {"slv"},   "H   ",   _("Slovenian"),              "Slovenian.pattern" },
     { "es",               {"spa"},   "Hb  ",   _("Spanish"),                "Spanish.pattern" },
     { "sv",               {"swe"},   "H   ",   _("Swedish"),                "Swedish.pattern" },
+    { "ta",               {"tam"},   "    ",   _("Tamil") },
+    { "te",               {"tel"},   "    ",   _("Telugu") },
     { "tr",               {"tur"},   "H   ",   _("Turkish"),                "Turkish.pattern" },
     { "uk",               {"ukr"},   "H   ",   _("Ukrainian"),              "Ukrainian.pattern" },
     { "cy",               {"cym"},   "H   ",   _("Welsh"),                  "Welsh.pattern" },
@@ -238,6 +251,7 @@ When the book's language tag is not among our presets, no specific features will
             checked_func = function()
                 return self.text_lang_tag == lang_tag
             end,
+            menu_item_id = lang_tag,
             radio = true,
             callback = function()
                 -- We use an InfoMessage because the text might be too long for a Notification.
@@ -271,6 +285,13 @@ When the book's language tag is not among our presets, no specific features will
                 })
             end,
         })
+    end
+    self.language_submenu.open_on_menu_item_id_func = function()
+        -- If book language matches current text_lang_tag, stay on
+        -- the first page as it shows that with its first item.
+        if self.text_lang_tag ~= self.book_lang_tag then
+            return self.text_lang_tag
+        end
     end
 
     self.language_submenu.max_per_page = 5
