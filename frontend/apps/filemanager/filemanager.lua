@@ -764,6 +764,18 @@ function FileManager:getPlusDialogButtons()
             })
         end
 
+        if self.texteditor then
+            table.insert(buttons, 3, {
+                {
+                    text = _("New text file"),
+                    callback = function()
+                        UIManager:close(self.plus_dialog)
+                        self.texteditor:newFile(folder, nil, true)
+                    end,
+                },
+            })
+        end
+
         local extract_button = self.coverbrowser and self.coverbrowser:genExtractBookInfoButton(close_dialog_callback)
         if extract_button ~= nil then
             table.insert(buttons, {}) -- separator
