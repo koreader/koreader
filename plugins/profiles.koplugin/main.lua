@@ -19,6 +19,7 @@ local C_ = _.pgettext
 local Screen = Device.screen
 local T = ffiUtil.template
 
+local string_input_hint = _("^ NOT * AND , OR")
 local autostart_done
 
 local Profiles = WidgetContainer:extend{
@@ -859,6 +860,7 @@ function Profiles:genAutoExecPathChangedMenuItem(text, event, profile_name, sepa
                         dialog = InputDialog:new{
                             title = _("Enter text contained in folder path"),
                             input = util.tableGetValue(self.autoexec, event, profile_name, condition),
+                            input_hint = (condition == "has" or condition == "has_not") and string_input_hint,
                             buttons = buttons,
                         }
                         UIManager:show(dialog)
@@ -995,6 +997,7 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                                     dialog = InputDialog:new{
                                         title =  _("Enter text contained in:") .. " " .. self.ui.bookinfo.prop_text[prop]:sub(1, -2),
                                         input = util.tableGetValue(self.autoexec, event, profile_name, condition, prop),
+                                        input_hint = string_input_hint,
                                         buttons = buttons,
                                     }
                                     UIManager:show(dialog)
@@ -1077,6 +1080,7 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                         dialog = InputDialog:new{
                             title =  _("Enter text contained in file path"),
                             input = util.tableGetValue(self.autoexec, event, profile_name, condition),
+                            input_hint = string_input_hint,
                             buttons = buttons,
                         }
                         UIManager:show(dialog)
