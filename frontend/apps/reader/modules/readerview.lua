@@ -1108,11 +1108,22 @@ function ReaderView:onSaturationUpdate(saturation, no_notification)
     end
 end
 
+-- Comic archives, as registered by PdfDocument
+local comic_archive_suffixes = { cbr = true, cbt = true, cbz = true }
+
 -- For ReaderKOptListener
 function ReaderView:onDitheringUpdate()
     -- Do the device cap checks again, to avoid snafus when sharing configs between devices
     if Device:hasEinkScreen() then
         if Device:canHWDither() then
+            -- On Kaleido panels, dithering is what engages the color waveform modes,
+            -- so enable it by default for comic archives, unless it was set for this book or as a global default.
+            if Device:hasKaleidoWfm() and Screen:isColorEnabled()
+                    and comic_archive_suffixes[util.getFileNameSuffix(self.document.file):lower()]
+                    and not self.ui.doc_settings:has("kopt_hw_dithering")
+                    and not G_reader_settings:has("kopt_hw_dithering") then
+                self.document.configurable.hw_dithering = 1
+            end
             if self.document.configurable.hw_dithering then
                 self.document.hw_dithering = self.document.configurable.hw_dithering == 1
             end
