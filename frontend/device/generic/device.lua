@@ -320,6 +320,10 @@ function Device:init()
         end
     end
 
+    if self:hasDPad() and G_reader_settings:isTrue("input_use_dpad_as_action_keys") then
+        self.useDPadAsActionKeys = function() return true end
+    end
+
     if self:hasGSensor() then
         -- Setup our standard gyro event handler (EV_MSC:MSC_GYRO)
         if G_reader_settings:nilOrFalse("input_ignore_gsensor") then

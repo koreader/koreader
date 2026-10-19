@@ -209,6 +209,7 @@ function ReaderKeySelection:registerKeyEvents()
         -- startHighlightIndicator (H) is handled by hotkeys.koplugin
     end
 end
+ReaderKeySelection.onRegisterDPadEvents = ReaderKeySelection.registerKeyEvents
 ReaderKeySelection.onPhysicalKeyboardConnected = ReaderKeySelection.init
 
 function ReaderKeySelection:addToMainMenu(menu_items)

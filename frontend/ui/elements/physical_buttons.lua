@@ -23,7 +23,9 @@ local PhysicalButtons = {
     },
 }
 
-if Device:hasDPad() and Device:useDPadAsActionKeys() then
+local uses_d_pad_as_action_keys = Device:hasDPad() and Device:useDPadAsActionKeys()
+
+if uses_d_pad_as_action_keys then
     table.insert(PhysicalButtons.sub_item_table, {
         text = _("Invert left-side page-turn buttons"),
         enabled_func = function()
@@ -49,6 +51,27 @@ if Device:hasDPad() and Device:useDPadAsActionKeys() then
         end,
         separator = true,
     })
+end
+
+if Device:isTouchDevice() and Device:hasDPad() then
+    table.insert(PhysicalButtons.sub_item_table, {
+        text = _("Use cursor keys as action keys"),
+        help_text = _("When enabled, the cursor keys are used for: Up/Down calls text selection, Left/Right calls previous/next chapter."),
+        checked_func = function()
+            return G_reader_settings:isTrue("input_use_dpad_as_action_keys")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("input_use_dpad_as_action_keys")
+            Device.useDPadAsActionKeys = function()
+                return G_reader_settings:isTrue("input_use_dpad_as_action_keys")
+            end
+            UIManager:broadcastEvent(Event:new("RegisterDPadEvents"))
+            UIManager:broadcastEvent(Event:new("RebuildMenu"))
+        end,
+        separator = not uses_d_pad_as_action_keys,
+    })
+end
+if uses_d_pad_as_action_keys then
     table.insert(PhysicalButtons.sub_item_table, {
         text = _("Use left and right keys for page turning"),
         checked_func = function()
@@ -56,10 +79,12 @@ if Device:hasDPad() and Device:useDPadAsActionKeys() then
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("left_right_keys_turn_pages")
-            UIManager:askForRestart()
+            UIManager:broadcastEvent(Event:new("RegisterDPadEvents"))
         end,
+        separator = true,
     })
 end
+-- Hotkeys.koplugin inserts itself here.
 
 if Device:canKeyRepeat() then
     table.insert(PhysicalButtons.sub_item_table, 1, {
