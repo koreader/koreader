@@ -8,6 +8,7 @@ local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
+local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
@@ -18,6 +19,7 @@ local C_ = _.pgettext
 local Screen = Device.screen
 local T = ffiUtil.template
 
+local string_input_hint = _("^ NOT * AND , OR")
 local autostart_done
 
 local Profiles = WidgetContainer:extend{
@@ -858,6 +860,7 @@ function Profiles:genAutoExecPathChangedMenuItem(text, event, profile_name, sepa
                         dialog = InputDialog:new{
                             title = _("Enter text contained in folder path"),
                             input = util.tableGetValue(self.autoexec, event, profile_name, condition),
+                            input_hint = (condition == "has" or condition == "has_not") and string_input_hint,
                             buttons = buttons,
                         }
                         UIManager:show(dialog)
@@ -884,7 +887,8 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
     return {
         text = text,
         checked_func = function()
-            return (util.tableGetValue(self.autoexec, event_always, profile_name) or util.tableGetValue(self.autoexec, event, profile_name)) and true
+            return (util.tableGetValue(self.autoexec, event_always, profile_name)
+                or util.tableGetValue(self.autoexec, event, profile_name)) and true
         end,
         sub_item_table_func = function()
             local conditions = {
@@ -892,6 +896,7 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                 { _("if book metadata contains"), "doc_props" },
                 { _("if book file path contains"), "filepath" },
                 { _("if book is in collections"), "collections" },
+                { _("all selected conditions"), "AND" },
                 { _("and if book is new"), "is_new" },
             }
             local sub_item_table = {
@@ -992,6 +997,7 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                                     dialog = InputDialog:new{
                                         title =  _("Enter text contained in:") .. " " .. self.ui.bookinfo.prop_text[prop]:sub(1, -2),
                                         input = util.tableGetValue(self.autoexec, event, profile_name, condition, prop),
+                                        input_hint = string_input_hint,
                                         buttons = buttons,
                                     }
                                     UIManager:show(dialog)
@@ -1074,6 +1080,7 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                         dialog = InputDialog:new{
                             title =  _("Enter text contained in file path"),
                             input = util.tableGetValue(self.autoexec, event, profile_name, condition),
+                            input_hint = string_input_hint,
                             buttons = buttons,
                         }
                         UIManager:show(dialog)
@@ -1120,15 +1127,16 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                         util.tableRemoveValue(self.autoexec, event, profile_name, conditions[4][2])
                         touchmenu_instance:updateItems()
                     end,
-                    separator = true,
                 },
-                event == "ReaderReadyAll" and {
-                    text = conditions[5][1], -- new
+                {
+                    text = conditions[5][1], -- all selected conditions
                     enabled_func = function()
                         return not util.tableGetValue(self.autoexec, event_always, profile_name)
+                            and self:countDocConditions(event, profile_name) > 1
                     end,
                     checked_func = function()
-                        return util.tableGetValue(self.autoexec, event, profile_name, conditions[5][2]) and true
+                        return util.tableGetValue(self.autoexec, event, profile_name, conditions[5][2])
+                            and self:countDocConditions(event, profile_name) > 1
                     end,
                     callback = function(touchmenu_instance)
                         local condition = conditions[5][2]
@@ -1140,6 +1148,28 @@ function Profiles:genAutoExecDocConditionalMenuItem(text, event, profile_name, s
                     end,
                     hold_callback = function(touchmenu_instance)
                         util.tableRemoveValue(self.autoexec, event, profile_name, conditions[5][2])
+                        touchmenu_instance:updateItems()
+                    end,
+                    separator = true,
+                },
+                event == "ReaderReadyAll" and { -- "on book opening" only
+                    text = conditions[6][1], -- new
+                    enabled_func = function()
+                        return not util.tableGetValue(self.autoexec, event_always, profile_name)
+                    end,
+                    checked_func = function()
+                        return util.tableGetValue(self.autoexec, event, profile_name, conditions[6][2]) and true
+                    end,
+                    callback = function(touchmenu_instance)
+                        local condition = conditions[6][2]
+                        if util.tableGetValue(self.autoexec, event, profile_name, condition) then
+                            util.tableRemoveValue(self.autoexec, event, profile_name, condition)
+                        else
+                            util.tableSetValue(self.autoexec, true, event, profile_name, condition)
+                        end
+                    end,
+                    hold_callback = function(touchmenu_instance)
+                        util.tableRemoveValue(self.autoexec, event, profile_name, conditions[6][2])
                         touchmenu_instance:updateItems()
                     end,
                 } or nil,
@@ -1186,32 +1216,23 @@ end
 function Profiles:onPathChanged(path) -- global
     local event = "PathChanged"
     if self.autoexec[event] == nil then return end
-    local function is_match(txt, pattern)
-        for str in util.gsplit(pattern, ",") do -- comma separated patterns are allowed
-            if util.stringSearch(txt, util.trim(str)) ~= 0 then
-                return true
-            end
-        end
-    end
     for profile_name, conditions in pairs(self.autoexec[event]) do
-        local do_execute
         for condition, trigger in pairs(conditions) do
             local expanded_trigger = self.ui.folder_shortcuts:expandPath(trigger)
+            local do_execute
             if condition == "has" then
-                do_execute = is_match(path, expanded_trigger)
+                do_execute = Profiles.doesStringContain(path, expanded_trigger)
             elseif condition == "has_not" then
-                do_execute = not is_match(path, expanded_trigger)
+                do_execute = not Profiles.doesStringContain(path, expanded_trigger)
             elseif condition == "is_equal" then
                 do_execute = path == expanded_trigger
             elseif condition == "is_not_equal" then
                 do_execute = path ~= expanded_trigger
             end
             if do_execute then
-                break
+                self:executeAutoExec(profile_name)
+                break -- any condition is enough
             end
-        end
-        if do_execute then
-            self:executeAutoExec(profile_name)
         end
     end
 end
@@ -1286,58 +1307,79 @@ function Profiles:executeAutoExec(profile_name, event)
     end
 end
 
-function Profiles:executeAutoExecDocConditional(event)
-    if self.autoexec[event] == nil then return end
-    local function is_match(txt, pattern)
-        for str in util.gsplit(pattern, ",") do
-            if util.stringSearch(txt, util.trim(str)) ~= 0 then
-                return true
-            end
-        end
-    end
-    for profile_name, conditions in pairs(self.autoexec[event]) do
-        if self.data[profile_name] then
-            local do_execute
-            if not conditions.is_new or self.document.is_new then
-                for condition, trigger in pairs(conditions) do
-                    if condition == "orientation" then
-                        local mode = Screen:getRotationMode()
-                        do_execute = trigger[mode]
-                    elseif condition == "doc_props" then
-                        if self.document then
-                            for prop_name, pattern in pairs(trigger) do
-                                local prop = self.ui.doc_props[prop_name == "title" and "display_title" or prop_name]
-                                do_execute = is_match(prop, pattern)
-                                if do_execute then
-                                    break -- any prop match is enough
-                                end
-                            end
-                        end
-                    elseif condition == "filepath" then
-                        if self.document then
-                            do_execute = is_match(self.document.file, self.ui.folder_shortcuts:expandPath(trigger))
-                        end
-                    elseif condition == "collections" then
-                        if self.document then
-                            local ReadCollection = require("readcollection")
-                            for collection_name in pairs(trigger) do
-                                if ReadCollection:isFileInCollection(self.document.file, collection_name) then
-                                    do_execute = true
-                                    break -- any collection is enough
-                                end
-                            end
-                        end
-                    end
-                    if do_execute then
-                        break -- execute profile only once
-                    end
+function Profiles:getDocConditionalMatchFuncs()
+    return {
+        ["orientation"] = function(param)
+            return param[Screen:getRotationMode()]
+        end,
+        ["doc_props"] = function(param)
+            for prop_name, pattern in pairs(param) do
+                local prop = self.ui.doc_props[prop_name == "title" and "display_title" or prop_name]
+                if Profiles.doesStringContain(prop, pattern) then
+                    return true -- any prop match is enough
                 end
             end
-            if do_execute then
-                self:executeAutoExec(profile_name, event)
+        end,
+        ["filepath"] = function(param)
+            return Profiles.doesStringContain(self.document.file, self.ui.folder_shortcuts:expandPath(param))
+        end,
+        ["collections"] = function(param)
+            for collection_name in pairs(param) do
+                if ReadCollection:isFileInCollection(self.document.file, collection_name) then
+                    return true -- any collection is enough
+                end
+            end
+        end,
+    }
+end
+
+function Profiles:countDocConditions(event, profile_name)
+    local count = 0
+    local conditions = util.tableGetValue(self.autoexec, event, profile_name)
+    if conditions then
+        local match_funcs = self:getDocConditionalMatchFuncs()
+        for condition in pairs(conditions) do
+            if match_funcs[condition] then
+                count = count + 1
             end
         end
     end
+    return count
+end
+
+function Profiles:executeAutoExecDocConditional(event)
+    if self.autoexec[event] and self.document then
+        local match_funcs = self:getDocConditionalMatchFuncs()
+        for profile_name, conditions in pairs(self.autoexec[event]) do
+            if self.data[profile_name] and (not conditions.is_new or self.document.is_new) then
+                local any = not conditions.AND
+                for condition, trigger in pairs(conditions) do
+                    local match_func = match_funcs[condition]
+                    if match_func then -- skip is_new, AND
+                        if not match_func(trigger) then goto loop end
+                        if any then break end -- execute
+                    end
+                end
+                self:executeAutoExec(profile_name, event)
+            end
+            ::loop::
+        end
+    end
+end
+
+function Profiles.doesStringContain(txt, pattern)
+    -- In pattern "*" means AND; "," means OR; "^" at the beginning means NOT.
+    -- Splitted by AND first: "alice*epub,pdf" means "alice AND (epub OR pdf)".
+    local str, count = pattern:gsub("^^", "")
+    for str_and in util.gsplit(str, "*") do
+        local ok
+        for str_or in util.gsplit(str_and, ",") do
+            ok = util.stringSearch(txt, util.trim(str_or)) ~= 0
+            if ok then break end
+        end
+        if not ok then return count > 0 end
+    end
+    return count == 0
 end
 
 return Profiles
