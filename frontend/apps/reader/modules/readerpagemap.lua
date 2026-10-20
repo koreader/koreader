@@ -78,9 +78,7 @@ function ReaderPageMap:_postInit()
         end
     end
     if self.ui.document:hasPageMap() then
-        self.has_pagemap = true
-        self:resetLayout()
-        self.view:registerViewModule("pagemap", self)
+        self:initPageMap()
         self.ui.doc_settings:saveSetting("pagemap_doc_pages", select(3, self:getCurrentPageLabel()))
         if self.ui.document.is_new and self.has_pagemap_document_provided
                 and G_reader_settings:isTrue("pagemap_notify_document_provided") then
@@ -110,6 +108,14 @@ function ReaderPageMap:_postInit()
     else -- no pagemap
         self.ui.doc_settings:delSetting("pagemap_use_page_labels")
         self.ui.doc_settings:delSetting("pagemap_show_page_labels")
+    end
+end
+
+function ReaderPageMap:initPageMap()
+    if not self.has_pagemap then
+        self.has_pagemap = true
+        self:resetLayout()
+        self.view:registerViewModule("pagemap", self)
     end
 end
 
@@ -432,11 +438,7 @@ Source (print edition):
 end
 
 function ReaderPageMap:setSyntheticPagesNumber(pages)
-    if not self.has_pagemap then
-        self.has_pagemap = true
-        self:resetLayout()
-        self.view:registerViewModule("pagemap", self)
-    end
+    self:initPageMap()
     local _start, _end = 501, 3000 -- CPP dialog min, max
     local _middle, _pages
     for _ = 1, 12 do
@@ -456,11 +458,7 @@ end
 
 function ReaderPageMap:setCharactersPerPage(cpp, pages)
     if not pages then -- from CPP dialog
-        if not self.has_pagemap then
-            self.has_pagemap = true
-            self:resetLayout()
-            self.view:registerViewModule("pagemap", self)
-        end
+        self:initPageMap()
         self.ui.document:buildSyntheticPageMap(cpp)
         pages = select(3, self:getCurrentPageLabel())
     end
