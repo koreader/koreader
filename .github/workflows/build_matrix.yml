@@ -259,6 +259,10 @@ jobs:
 
       - name: Install
         if: matrix.artifacts || matrix.tests
+        # NOTE: ensure the GitHub token is available so calls to the
+        # REST API don't hit the (very low) unauthenticated rate limit.
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: make --assume-old=base all
 
       - name: Test
