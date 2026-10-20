@@ -27,7 +27,17 @@ local FileManagerMenu = InputContainer:extend{
     registered_widgets = nil, -- array
 }
 
-local function getDefaultMenuButtons()
+function FileManagerMenu:init()
+    self.menu_items = self:getDefaultMenuButtons()
+
+    self.registered_widgets = {}
+
+    self:registerKeyEvents()
+
+    self.activation_menu = G_reader_settings:readSetting("activate_menu") or "swipe_tap"
+end
+
+function FileManagerMenu:getDefaultMenuButtons()
     return {
         ["KOMenu:menu_buttons"] = {
             -- top menu
@@ -37,18 +47,16 @@ local function getDefaultMenuButtons()
         setting = { icon = "appbar.settings" },
         tools = { icon = "appbar.tools" },
         search = { icon = "appbar.search" },
+        reader = {
+            icon = "book.opened",
+            remember = false,
+            callback = function()
+                self:onCloseFileManagerMenu()
+                self.ui:onOpenLastDoc()
+            end,
+        },
         main = { icon = "appbar.menu" },
     }
-end
-
-function FileManagerMenu:init()
-    self.menu_items = getDefaultMenuButtons()
-
-    self.registered_widgets = {}
-
-    self:registerKeyEvents()
-
-    self.activation_menu = G_reader_settings:readSetting("activate_menu") or "swipe_tap"
 end
 
 function FileManagerMenu:registerKeyEvents()
@@ -124,7 +132,7 @@ function FileManagerMenu:initGesListener()
 end
 
 function FileManagerMenu:setUpdateItemTable()
-    for k, v in pairs(getDefaultMenuButtons()) do
+    for k, v in pairs(self:getDefaultMenuButtons()) do
         self.menu_items[k] = v
     end
     local FileChooser = self.ui.file_chooser
