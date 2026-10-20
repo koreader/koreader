@@ -56,8 +56,7 @@ dl  { margin: 0; }              /* MuPDF: margin: 1em 0 */
 dd  { margin: 0 1em; }          /* MuPDF: margin: 0 0 0 40px */
 pre { margin: 0.5em 0; }        /* MuPDF: margin: 1em 0 */
 a   { color: black; }           /* MuPDF: color: #06C; */
-/* MuPDF has no support for text-decoration, so we can't underline links,
- * which is fine as we don't really need to provide link support */
+/* MuPDF has no support for text-decoration, so we can't underline links */
 
 /* MuPDF draws the bullet for a standalone LI outside the margin.
  * Avoid it being displayed if the first node is a LI (in
@@ -132,6 +131,7 @@ local FootnoteWidget = InputContainer:extend{
         bottom = Screen:scaleBySize(10),
     },
     follow_callback = nil,
+    html_link_tapped_callback = nil,
     on_tap_close_callback = nil,
     close_callback = nil,
     navigate_footnote_callback = nil,
@@ -222,7 +222,7 @@ function FootnoteWidget:init()
     -- Elements with a id= attribute get a line above them (by some internal MuPDF
     -- code, possibly generate_anchor() in html-layout.c).
     -- Working around it with the following does not work: *[id] {margin-top: -1em;}
-    -- So, just rename the id= attribute, as we don't follow links in this popup.
+    -- Keep avoiding MuPDF's extra anchor line; link taps are handled separately.
     self.html = self.html:gsub([[(<[^>]* )[iI][dD]=]], [[%1disabledID=]])
 
     -- We may use a font size a bit smaller than the document one (because
@@ -331,6 +331,8 @@ function FootnoteWidget:init()
         text_scroll_span = text_scroll_span,
         dialog = self.dialog,
         highlight_text_selection = true,
+        html_link_tapped_callback = self.html_link_tapped_callback,
+        force_tap_to_follow_links = self.html_link_tapped_callback ~= nil,
     }
 
     -- We only want a top border, so use a LineWidget for that

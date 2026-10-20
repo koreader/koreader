@@ -329,6 +329,24 @@ From the footnote popup, you can jump to the footnote location in the book by sw
     local function subItemTable()
         local temp_menu_items = {
             {
+                text = _("Follow links in footnote popup"),
+                enabled_func = function()
+                    return isFootnoteLinkInPopupEnabled() and
+                        (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
+                end,
+                checked_func = function()
+                    return G_reader_settings:isTrue("footnote_popup_follow_links")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("footnote_popup_follow_links")
+                end,
+                help_text = _([[
+Allow tapping links inside footnote popups.
+Internal links jump within the book; external links use regular link handling.
+This works even when "Tap to follow links" is disabled.]]),
+                separator = true,
+            },
+            {
                 text = _("Show more links as footnotes"),
                 enabled_func = function()
                     return isFootnoteLinkInPopupEnabled() and
@@ -921,6 +939,13 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
     })
     -- don't propagate, user will notice and tap elsewhere if he wants to change page
     return true
+end
+
+function ReaderLink:onGotoFootnotePopupLink(link, neglect_current_location)
+    if not link or not link.uri or link.uri == "" then
+        return false
+    end
+    return self:onGotoLink({ xpointer = link.uri }, neglect_current_location)
 end
 
 function ReaderLink:openFileFromLink(link_url)
@@ -1585,8 +1610,22 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
     -- don't have a fixed size)
     local FootnoteWidget = require("ui/widget/footnotewidget")
     local popup
+    local html_link_tapped_callback
+    if G_reader_settings:isTrue("footnote_popup_follow_links") then
+        html_link_tapped_callback = function(html_link)
+            if not html_link.uri or html_link.uri == "" then
+                return
+            end
+            if close_callback then
+                close_callback(popup.height)
+            end
+            UIManager:close(popup)
+            self:onGotoFootnotePopupLink(html_link, neglect_current_location)
+        end
+    end
     popup = FootnoteWidget:new{
         html = html,
+        html_link_tapped_callback = html_link_tapped_callback,
         doc_font_name = self.ui.font.font_face,
         doc_font_size = Screen:scaleBySize(self.document.configurable.font_size),
         doc_margins = self.document:getPageMargins(),

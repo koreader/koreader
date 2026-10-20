@@ -190,6 +190,7 @@ local HtmlBoxWidget = InputContainer:extend{
     hold_end_pos = nil,
     hold_start_time = nil,
     html_link_tapped_callback = nil,
+    force_tap_to_follow_links = false,
 
     highlight_text_selection = false, -- if true then the selected text will be highlighted
     highlight_rects = nil,
@@ -463,7 +464,7 @@ function HtmlBoxWidget:getLinkByPosition(pos)
 end
 
 function HtmlBoxWidget:onTapText(arg, ges)
-    if G_reader_settings:isFalse("tap_to_follow_links") then
+    if not self.force_tap_to_follow_links and G_reader_settings:isFalse("tap_to_follow_links") then
         return
     end
 

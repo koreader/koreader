@@ -14,8 +14,19 @@ describe("ReaderLink module", function()
     end)
 
     local readerui
+    local popup_widget
+    local previous_tap_to_follow_links
+    local tap_setting_was_saved = false
 
     after_each(function()
+        if popup_widget then
+            popup_widget.htmlwidget.htmlbox_widget:free()
+            popup_widget = nil
+        end
+        if tap_setting_was_saved then
+            G_reader_settings:saveSetting("tap_to_follow_links", previous_tap_to_follow_links)
+            tap_setting_was_saved = false
+        end
         readerui:closeDocument()
         readerui:onClose()
         readerui = nil
@@ -42,6 +53,54 @@ describe("ReaderLink module", function()
             assert.is.same(37, readerui.rolling.current_page)
             readerui.link:onGoBackLink()
             assert.is.same(5, readerui.rolling.current_page)
+        end)
+
+        it("should follow EPUB links rendered in footnote popup HTML", function()
+            readerui.rolling:onGotoPage(5)
+            local epub_href, source_xpointer = readerui.document:getLinkFromPosition({x = 320, y = 190})
+            assert.is_true(readerui.document:isXPointerInDocument(epub_href))
+
+            local popup_html = readerui.document:getHTMLFromXPointer(source_xpointer, 0x1001, true)
+            assert.is_truthy(popup_html)
+
+            local FootnoteWidget = require("ui/widget/footnotewidget")
+            local tapped_link
+            popup_widget = FootnoteWidget:new{
+                html = popup_html,
+                doc_font_name = readerui.link.ui.font.font_face,
+                doc_font_size = Screen:scaleBySize(readerui.document.configurable.font_size),
+                doc_margins = readerui.document:getPageMargins(),
+                html_link_tapped_callback = function(link)
+                    tapped_link = link
+                end,
+            }
+            local htmlbox = popup_widget.htmlwidget.htmlbox_widget
+            local page = htmlbox.document:openPage(1)
+            local page_links = page:getPageLinks()
+            page:close()
+            assert.is_true(#page_links > 0)
+
+            local popup_link_box = page_links[1]
+            local popup_link = htmlbox:getLinkByPosition({
+                x = (popup_link_box.x0 + popup_link_box.x1) / 2,
+                y = (popup_link_box.y0 + popup_link_box.y1) / 2,
+            })
+            assert.is_truthy(popup_link)
+            assert.are.equal(epub_href, popup_link.uri)
+            assert.is_true(readerui.document:isXPointerInDocument(popup_link.uri))
+
+            previous_tap_to_follow_links = G_reader_settings:readSetting("tap_to_follow_links")
+            tap_setting_was_saved = true
+            G_reader_settings:saveSetting("tap_to_follow_links", false)
+            assert.is_true(htmlbox:onTapText(nil, {
+                pos = {
+                    x = htmlbox.dimen.x + (popup_link_box.x0 + popup_link_box.x1) / 2,
+                    y = htmlbox.dimen.y + (popup_link_box.y0 + popup_link_box.y1) / 2,
+                },
+            }))
+            assert.are.equal(popup_link.uri, tapped_link.uri)
+            assert.is_true(readerui.link:onGotoFootnotePopupLink(tapped_link))
+            assert.is.same(37, readerui.rolling.current_page)
         end)
 
     end)
