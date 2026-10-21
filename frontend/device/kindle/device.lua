@@ -830,7 +830,7 @@ function Kindle:outofScreenSaver(source)
             self.screen_saver_mode = false
         end
     end
-
+    UIManager:scheduleIn(1,function() UIManager:setDirty("all", "full") end)
     self.powerd:afterResume()
 end
 
@@ -846,6 +846,7 @@ function Kindle:wakeupFromSuspend(ts)
     self.powerd:wakeupFromSuspend(ts)
     self.last_suspend_time = time.boottime_or_realtime_coarse() - self.suspend_time
     self.total_suspend_time = self.total_suspend_time + self.last_suspend_time
+    UIManager:scheduleIn(1,function() UIManager:setDirty("all", "full") end)
 end
 
 function Kindle:readyToSuspend(delay)
