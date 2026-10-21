@@ -121,7 +121,7 @@ show_help() {
 
 is_kodev_command() {
     local fn="kodev-$1"
-    type "${fn}" 2>/dev/null | grep -Fqx "${fn} is a function"
+    LC_ALL=C type "${fn}" 2>/dev/null | grep -Fqx "${fn} is a function"
 }
 
 # }}}
