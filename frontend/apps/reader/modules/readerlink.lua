@@ -329,24 +329,6 @@ From the footnote popup, you can jump to the footnote location in the book by sw
     local function subItemTable()
         local temp_menu_items = {
             {
-                text = _("Follow links in footnote popup"),
-                enabled_func = function()
-                    return isFootnoteLinkInPopupEnabled() and
-                        (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
-                end,
-                checked_func = function()
-                    return G_reader_settings:isTrue("footnote_popup_follow_links")
-                end,
-                callback = function()
-                    G_reader_settings:flipNilOrFalse("footnote_popup_follow_links")
-                end,
-                help_text = _([[
-Allow tapping links inside footnote popups.
-Internal links jump within the book; external links use regular link handling.
-This works even when "Tap to follow links" is disabled.]]),
-                separator = true,
-            },
-            {
                 text = _("Show more links as footnotes"),
                 enabled_func = function()
                     return isFootnoteLinkInPopupEnabled() and
@@ -459,6 +441,25 @@ This allows you to specify how much smaller or larger it should be relative to t
                     G_reader_settings:flipNilOrTrue("footnote_popup_justify")
                 end,
                 help_text = _([[Justify text in footnote popup.]]),
+            },
+            {
+                text = _("Follow links in footnote popup"),
+                enabled_func = function()
+                    return isFootnoteLinkInPopupEnabled() and
+                        (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
+                end,
+                checked_func = function()
+                    return G_reader_settings:isTrue("footnote_popup_follow_links")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("footnote_popup_follow_links")
+                end,
+                help_text = _([[
+Follow links inside footnote popups without closing them.
+Use "Return to source" to go back to the passage that opened the popup.
+Internal links jump within the book; external links use regular link handling.
+This works even when "Tap to follow links" is disabled.]]),
+                separator = true,
             },
         }
         return temp_menu_items
@@ -939,13 +940,6 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
     })
     -- don't propagate, user will notice and tap elsewhere if he wants to change page
     return true
-end
-
-function ReaderLink:onGotoFootnotePopupLink(link, neglect_current_location)
-    if not link or not link.uri or link.uri == "" then
-        return false
-    end
-    return self:onGotoLink({ xpointer = link.uri }, neglect_current_location)
 end
 
 function ReaderLink:openFileFromLink(link_url)
@@ -1612,15 +1606,22 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
     local popup
     local html_link_tapped_callback
     if G_reader_settings:isTrue("footnote_popup_follow_links") then
+        local return_to_source_uri = "koreader://footnote-popup-source"
+        local return_to_source_xpointer = link.from_xpointer or self:getCurrentLocation().xpointer
+        html = '<p><a href="' .. return_to_source_uri .. '"><strong>' ..
+            util.htmlEscape(_("Return to source")) .. '</strong></a></p>\n' .. html
         html_link_tapped_callback = function(html_link)
             if not html_link.uri or html_link.uri == "" then
                 return
             end
-            if close_callback then
-                close_callback(popup.height)
+            if html_link.uri == return_to_source_uri then
+                self:onGotoLink({
+                    xpointer = return_to_source_xpointer,
+                    marker_xpointer = link.from_xpointer,
+                }, neglect_current_location)
+            else
+                self:onGotoLink({ xpointer = html_link.uri }, neglect_current_location)
             end
-            UIManager:close(popup)
-            self:onGotoFootnotePopupLink(html_link, neglect_current_location)
         end
     end
     popup = FootnoteWidget:new{

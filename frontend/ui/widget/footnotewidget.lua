@@ -56,7 +56,6 @@ dl  { margin: 0; }              /* MuPDF: margin: 1em 0 */
 dd  { margin: 0 1em; }          /* MuPDF: margin: 0 0 0 40px */
 pre { margin: 0.5em 0; }        /* MuPDF: margin: 1em 0 */
 a   { color: black; }           /* MuPDF: color: #06C; */
-/* MuPDF has no support for text-decoration, so we can't underline links */
 
 /* MuPDF draws the bullet for a standalone LI outside the margin.
  * Avoid it being displayed if the first node is a LI (in
