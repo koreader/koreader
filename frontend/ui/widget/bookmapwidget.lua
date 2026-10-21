@@ -1391,6 +1391,7 @@ function BookMapWidget:onShowBookMapMenu()
         {
             {
                 text = _("Chapter levels"),
+                focusable = false,
                 callback = function() end,
                 align = "left",
             },
@@ -1418,6 +1419,7 @@ function BookMapWidget:onShowBookMapMenu()
         not self.overview_mode and {
             {
                 text = _("Page-slot width"),
+                focusable = false,
                 callback = function() end,
                 align = "left",
                 -- Below, minus increases page per row and plus decreases it.
@@ -1457,6 +1459,7 @@ function BookMapWidget:onShowBookMapMenu()
         {
             {
                 text = _("10-page markers"),
+                focusable = false,
                 callback = function() end,
                 align = "left",
             },
