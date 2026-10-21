@@ -405,9 +405,8 @@ function ReaderMenu:onShowMenu(tab_index, do_not_show)
         dimen = Screen:getSize(),
     }
 
-    local main_menu
     local TouchMenu = require("ui/widget/touchmenu")
-    main_menu = TouchMenu:new{
+    local main_menu = TouchMenu:new{
         width = Screen:getWidth(),
         last_index = tab_index or self.last_tab_index,
         tab_item_table = self.tab_item_table,
