@@ -1035,29 +1035,17 @@ function FileManagerMenu:onShowMenu(tab_index, do_not_show)
         dimen = Screen:getSize(),
     }
 
-    local main_menu
-    if Device:isTouchDevice() or Device:hasDPad() then
-        local TouchMenu = require("ui/widget/touchmenu")
-        main_menu = TouchMenu:new{
-            width = Screen:getWidth(),
-            last_index = tab_index or G_reader_settings:readSetting("filemanagermenu_tab_index") or 1,
-            tab_item_table = self.tab_item_table,
-            show_parent = menu_container,
-            not_shown = do_not_show,
-        }
-    else
-        local Menu = require("ui/widget/menu")
-        main_menu = Menu:new{
-            title = _("File manager menu"),
-            item_table = Menu.itemTableFromTouchMenu(self.tab_item_table),
-            width = Screen:getWidth() - (Size.margin.fullscreen_popout * 2),
-            show_parent = menu_container,
-        }
-    end
-
-    main_menu.close_callback = function()
-        self:onCloseFileManagerMenu()
-    end
+    local TouchMenu = require("ui/widget/touchmenu")
+    local main_menu = TouchMenu:new{
+        width = Screen:getWidth(),
+        last_index = tab_index or G_reader_settings:readSetting("filemanagermenu_tab_index") or 1,
+        tab_item_table = self.tab_item_table,
+        show_parent = menu_container,
+        not_shown = do_not_show,
+        close_callback = function()
+            self:onCloseFileManagerMenu()
+        end,
+    }
 
     menu_container[1] = main_menu
     -- maintain a reference to menu_container
