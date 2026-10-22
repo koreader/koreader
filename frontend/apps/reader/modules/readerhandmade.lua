@@ -234,9 +234,12 @@ This can be useful to exclude long footnotes or bibliography sections.
 It can also be handy when interested in reading only a subset of a book.
 
 In Page browser, you can long-press on a thumbnail to start a hidden flow or restart the regular flow on this page.
-(Once you're done building it and don't want to see the button anymore, you can disable Edit mode.)
+In the TOC, you can long-press on a chapter to include it in a hidden flow or in the regular flow.
+(Once you're done building hidden flows and don't want to see the buttons anymore, you can disable Edit mode.)
 
-Hidden flows are shown with gray or hatched background in Book map and Page browser.]])
+Hidden flows are shown with gray or hatched background in Book map and Page browser.]]),
+                            show_icon = false,
+                            width_factor = 0.9,
                         })
                     end,
                     keep_menu_open = true,
