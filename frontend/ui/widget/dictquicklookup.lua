@@ -911,6 +911,18 @@ function DictQuickLookup:_getButtonPool()
                 end
             end,
         },
+        copy = {
+            id = "copy",
+            text = C_("Text", "Copy"),
+            enabled = Device:hasClipboard(),
+            callback = function()
+                Device.input.setClipboardText(util.cleanupSelectedText(self.word))
+                local Notification = require("ui/widget/notification")
+                UIManager:show(Notification:new{
+                    text = _("Selection copied to clipboard."),
+                })
+            end,
+        },
         text_selection = {
             id = "text_selection",
             text = _("Text selection"),
