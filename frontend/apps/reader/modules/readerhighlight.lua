@@ -2298,6 +2298,13 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
         else
             pg_or_xp = self.selected_text.pos0.page
         end
+        local chapter
+        if G_reader_settings:isTrue("bookmark_full_chapter") then
+            local t = self.ui.toc:getFullTocTitleByPage(pg_or_xp)
+            chapter = next(t) and table.concat(t, " ▸ ")
+        else
+            chapter = self.ui.toc:getTocTitleByPage(pg_or_xp)
+        end
         local item = {
             pos0 = self.selected_text.pos0,
             pos1 = self.selected_text.pos1,
@@ -2306,7 +2313,7 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             drawer = self.selected_text.drawer or self.view.highlight.saved_drawer,
             color = self.selected_text.color or self.view.highlight.saved_color,
             note = self.selected_text.note,
-            chapter = self.ui.toc:getTocTitleByPage(pg_or_xp),
+            chapter = chapter,
         }
         if self.ui.paging then
             item.page = self.selected_text.pos0.page
