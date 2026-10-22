@@ -251,6 +251,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 },
             },
             -- page 2
+            genToggleMenuItem(_("Save full chapter titles in annotations"), "bookmark_full_chapter"),
             genToggleMenuItem(_("Prompt to add note to page bookmark"), "bookmark_prompt", true),
             -- separator
             genToggleMenuItem(_("Export annotations on book closing"), "annotations_export_on_closing"),
