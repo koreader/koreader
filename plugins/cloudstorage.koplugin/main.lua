@@ -31,7 +31,7 @@ function Cloud:init()
         name = _("Cloud storage download folder"),
         get = function()
             self:loadSettings()
-            return self.settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+            return self.settings:readSetting("download_dir") or self.ui.folder_shortcuts:getProviderFolder("download_dir")
         end,
         set = function(path)
             self.settings:saveSetting("download_dir", path)
@@ -116,7 +116,7 @@ function Cloud:onShowCloudStorageList(caller_choose_folder_callback)
                     base:init(true)
                     UIManager:show(base)
                 else
-                    local download_dir = self.settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+                    local download_dir = self.ui.folder_shortcuts:getProviderFolder(Cloud.name)
                     local fc = self.ui.file_chooser
                     if fc and fc.path == download_dir then
                         fc:refreshPath()
