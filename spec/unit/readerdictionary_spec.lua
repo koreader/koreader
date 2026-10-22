@@ -59,4 +59,40 @@ describe("Readerdictionary module", function()
         end
         readerui.languagesupport.extraDictionaryFormCandidates:revert()
     end)
+    describe("download menu", function()
+        -- language name -> list of dictionaries shown for it
+        local function getDownloadLists()
+            local lists = {}
+            stub(dictionary, "showDownload", function(_, lang, dicts)
+                lists[lang] = dicts
+            end)
+            for _, item in ipairs(dictionary:_genDownloadDictionariesMenu()) do
+                item.callback()
+            end
+            dictionary.showDownload:revert()
+            return lists
+        end
+        local function contains(dicts, dict)
+            for _, d in ipairs(dicts) do
+                if d == dict then return true end
+            end
+            return false
+        end
+        it("should list every dictionary under both its languages", function()
+            local lists = getDownloadLists()
+            for _, dict in ipairs(require("ui/data/dictionaries")) do
+                assert.is_true(contains(lists[dict.lang_in], dict), dict.url .. " missing from " .. dict.lang_in)
+                assert.is_true(contains(lists[dict.lang_out], dict), dict.url .. " missing from " .. dict.lang_out)
+            end
+        end)
+        it("should list a dictionary only once per language", function()
+            for lang, dicts in pairs(getDownloadLists()) do
+                local seen = {}
+                for _, dict in ipairs(dicts) do
+                    assert.is_nil(seen[dict], dict.url .. " listed twice in " .. lang)
+                    seen[dict] = true
+                end
+            end
+        end)
+    end)
 end)
