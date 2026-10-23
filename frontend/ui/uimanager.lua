@@ -1252,6 +1252,16 @@ function UIManager:_refresh(mode, region, dither)
         self.refresh_counted = true
     end
 
+    -- Optional: use the low-fidelity "fast" waveform for reader page turns.
+    -- This only applies to full-screen, non-dithered "partial" refreshes, which in practice
+    -- means pages without image content (ReaderView requests dithering for image-heavy pages).
+    -- The PARTIAL -> FULL promotion above is kept intact, so ghosting still gets cleared.
+    if mode == "partial" and not region and not dither
+        and G_reader_settings:isTrue("page_turn_fast_refresh") then
+        mode = "fast"
+        logger.dbg("_refresh: page turn using fast waveform")
+    end
+
     -- if no region is specified, use the screen's dimensions
     region = region or Geom:new{x = 0, y = 0, w = Screen:getWidth(), h = Screen:getHeight()}
 
