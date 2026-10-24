@@ -1579,6 +1579,35 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
         end
     end
 
+    -- Let plugins customize the popup (see Events.md): they may alter context.html,
+    -- and register handlers for custom URIs found in the popup HTML.
+    local context = {
+        html = html,
+        source_xpointer = source_xpointer,
+        target_xpointer = target_xpointer,
+        link = link,
+        force_tap_to_follow_links = false,
+        link_tap_handlers = {},
+    }
+    self.ui:handleEvent(Event:new("FootnotePopupPreparing", context))
+    html = context.html
+
+    local html_link_tapped_callback
+    if context.force_tap_to_follow_links or next(context.link_tap_handlers) ~= nil then
+        html_link_tapped_callback = function(html_link)
+            local uri = html_link.uri
+            if not uri or uri == "" then
+                return
+            end
+            local handler = context.link_tap_handlers[uri]
+            if handler then
+                handler(html_link)
+                return
+            end
+            self:onGotoLink({ xpointer = uri }, neglect_current_location)
+        end
+    end
+
     -- We give FootnoteWidget the document margins and font size, so
     -- it can base its own values on them (note that this can look
     -- misaligned when floating punctuation is enabled, as margins then
@@ -1587,6 +1616,8 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
     local popup
     popup = FootnoteWidget:new{
         html = html,
+        html_link_tapped_callback = html_link_tapped_callback,
+        force_tap_to_follow_links = context.force_tap_to_follow_links,
         doc_font_name = self.ui.font.font_face,
         doc_font_size = Screen:scaleBySize(self.document.configurable.font_size),
         doc_margins = self.document:getPageMargins(),
