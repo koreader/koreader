@@ -86,6 +86,30 @@ local kindle_fonts_blacklist = {
     ["Helvetica_LT_66_Medium_Italic.ttf"] = true,
     ["Helvetica_LT_75_Bold.ttf"] = true,
     ["Helvetica_LT_76_Bold_Italic.ttf"] = true,
+    -- All these fonts seemed to have been added not long before October 2026 as they were not available
+    -- in FW 5.17.1 but are in 5.19.6, not used in stock reader, so must be fallback.
+    ["Ankle-Biter-Mono-B.ttf"] = true,
+    ["Ankle-Biter-Single-B.ttf"] = true,
+    ["Cadia-Mono.ttf"] = true,
+    ["Cadia-Single.ttf"] = true,
+    ["Florio-Mono.ttf"] = true,
+    ["Florio-Single.ttf"] = true,
+    ["Intruding-Cat-Mono-A.ttf"] = true,
+    ["Intruding-Cat-Single-A.ttf"] = true,
+    ["Juicy-Gossip-MonoA.ttf"] = true,
+    ["Juicy-Gossip-Single-A.ttf"] = true,
+    ["Kadigan-Mono-D.ttf"] = true,
+    ["Kadigan-Single-D.ttf"] = true,
+    ["Notewright-Mono.ttf"] = true,
+    ["Notewright-Single.ttf"] = true,
+    ["Rainy-Winter-Mono-D.ttf"] = true,
+    ["Rainy-Winter-Single-D.ttf"] = true,
+    ["Salty-Dish-Mono-A.ttf"] = true,
+    ["Salty-Dish-Single-A.ttf"] = true,
+    ["Sunroom-Mono.ttf"] = true,
+    ["Sunroom-Single.ttf"] = true,
+    ["Tragic-Marker-Mono-A.ttf"] = true,
+    ["Tragic-Marker-Single-A.ttf"] = true,
 }
 
 local function isInFontsBlacklist(f)
