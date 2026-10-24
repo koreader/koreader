@@ -155,6 +155,7 @@ function ReaderRolling:registerKeyEvents()
 end
 
 ReaderRolling.onPhysicalKeyboardConnected = ReaderRolling.registerKeyEvents
+ReaderRolling.onRegisterDPadEvents = ReaderRolling.registerKeyEvents
 
 function ReaderRolling:onReadSettings(config)
     -- 20180503: some fix in crengine has changed the way the DOM is built
