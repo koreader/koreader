@@ -8,7 +8,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local PluginLoader = require("pluginloader")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
-local Size = require("ui/size")
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
@@ -27,7 +26,17 @@ local FileManagerMenu = InputContainer:extend{
     registered_widgets = nil, -- array
 }
 
-local function getDefaultMenuButtons()
+function FileManagerMenu:init()
+    self.menu_items = self:getDefaultMenuButtons()
+
+    self.registered_widgets = {}
+
+    self:registerKeyEvents()
+
+    self.activation_menu = G_reader_settings:readSetting("activate_menu") or "swipe_tap"
+end
+
+function FileManagerMenu:getDefaultMenuButtons()
     return {
         ["KOMenu:menu_buttons"] = {
             -- top menu
@@ -37,18 +46,16 @@ local function getDefaultMenuButtons()
         setting = { icon = "appbar.settings" },
         tools = { icon = "appbar.tools" },
         search = { icon = "appbar.search" },
+        reader = {
+            icon = "book.opened",
+            remember = false,
+            callback = function()
+                self:onCloseFileManagerMenu()
+                self.ui:onOpenLastDoc()
+            end,
+        },
         main = { icon = "appbar.menu" },
     }
-end
-
-function FileManagerMenu:init()
-    self.menu_items = getDefaultMenuButtons()
-
-    self.registered_widgets = {}
-
-    self:registerKeyEvents()
-
-    self.activation_menu = G_reader_settings:readSetting("activate_menu") or "swipe_tap"
 end
 
 function FileManagerMenu:registerKeyEvents()
@@ -124,7 +131,7 @@ function FileManagerMenu:initGesListener()
 end
 
 function FileManagerMenu:setUpdateItemTable()
-    for k, v in pairs(getDefaultMenuButtons()) do
+    for k, v in pairs(self:getDefaultMenuButtons()) do
         self.menu_items[k] = v
     end
     local FileChooser = self.ui.file_chooser
@@ -1027,29 +1034,17 @@ function FileManagerMenu:onShowMenu(tab_index, do_not_show)
         dimen = Screen:getSize(),
     }
 
-    local main_menu
-    if Device:isTouchDevice() or Device:hasDPad() then
-        local TouchMenu = require("ui/widget/touchmenu")
-        main_menu = TouchMenu:new{
-            width = Screen:getWidth(),
-            last_index = tab_index or G_reader_settings:readSetting("filemanagermenu_tab_index") or 1,
-            tab_item_table = self.tab_item_table,
-            show_parent = menu_container,
-            not_shown = do_not_show,
-        }
-    else
-        local Menu = require("ui/widget/menu")
-        main_menu = Menu:new{
-            title = _("File manager menu"),
-            item_table = Menu.itemTableFromTouchMenu(self.tab_item_table),
-            width = Screen:getWidth() - (Size.margin.fullscreen_popout * 2),
-            show_parent = menu_container,
-        }
-    end
-
-    main_menu.close_callback = function()
-        self:onCloseFileManagerMenu()
-    end
+    local TouchMenu = require("ui/widget/touchmenu")
+    local main_menu = TouchMenu:new{
+        width = Screen:getWidth(),
+        last_index = tab_index or G_reader_settings:readSetting("filemanagermenu_tab_index") or 1,
+        tab_item_table = self.tab_item_table,
+        show_parent = menu_container,
+        not_shown = do_not_show,
+        close_callback = function()
+            self:onCloseFileManagerMenu()
+        end,
+    }
 
     menu_container[1] = main_menu
     -- maintain a reference to menu_container
