@@ -1090,7 +1090,7 @@ function ReaderHighlight:updateHighlightRolling(highlight, side, direction, move
         if order == nil or order <= 0 then return end -- only if beginning did not go past end
         highlight.pos0 = updated_highlight_beginning
         highlight.page = updated_highlight_beginning
-        highlight.chapter = self.ui.toc:getTocTitleByPage(updated_highlight_beginning)
+        highlight.chapter = self:getHighlightChapter(updated_highlight_beginning)
         highlight.pageno = self.document:getPageFromXPointer(updated_highlight_beginning)
     else -- we move pos1
         local updated_highlight_end
@@ -2278,6 +2278,14 @@ function ReaderHighlight:highlightFromHoldPos()
     end
 end
 
+function ReaderHighlight:getHighlightChapter(pg_or_xp)
+    if G_reader_settings:isTrue("bookmark_full_chapter") then
+        local t = self.ui.toc:getFullTocTitleByPage(pg_or_xp)
+        return next(t) and table.concat(t, " ▸ ")
+    end
+    return self.ui.toc:getTocTitleByPage(pg_or_xp)
+end
+
 function ReaderHighlight:saveHighlight(extend_to_sentence)
     logger.dbg("save highlight")
     if self.hold_pos and not self.selected_text then
@@ -2306,7 +2314,7 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
             drawer = self.selected_text.drawer or self.view.highlight.saved_drawer,
             color = self.selected_text.color or self.view.highlight.saved_color,
             note = self.selected_text.note,
-            chapter = self.ui.toc:getTocTitleByPage(pg_or_xp),
+            chapter = self:getHighlightChapter(pg_or_xp),
         }
         if self.ui.paging then
             item.page = self.selected_text.pos0.page
