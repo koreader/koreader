@@ -62,9 +62,7 @@ if Device:isTouchDevice() and Device:hasDPad() then
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("input_use_dpad_as_action_keys")
-            Device.useDPadAsActionKeys = function()
-                return G_reader_settings:isTrue("input_use_dpad_as_action_keys")
-            end
+            Device:setUseDPadAsActionKeys(G_reader_settings:isTrue("input_use_dpad_as_action_keys"))
             UIManager:broadcastEvent(Event:new("RegisterDPadEvents"))
             UIManager:broadcastEvent(Event:new("RebuildMenu"))
         end,

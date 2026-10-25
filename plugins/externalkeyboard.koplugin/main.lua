@@ -205,6 +205,7 @@ function ExternalKeyboard:_onEvdevInputRemove(event_path)
         Device.hasKeys = ExternalKeyboard.original_device_values.hasKeys
         Device.hasFewKeys = ExternalKeyboard.original_device_values.hasFewKeys
         Device.hasDPad = ExternalKeyboard.original_device_values.hasDPad
+        Device.useDPadAsActionKeys = ExternalKeyboard.original_device_values.useDPadAsActionKeys
         ExternalKeyboard.original_device_values = nil
     end
 
@@ -343,6 +344,7 @@ function ExternalKeyboard:setupKeyboard(data)
             hasKeys = Device.hasKeys,
             hasFewKeys = Device.hasFewKeys,
             hasDPad = Device.hasDPad,
+            useDPadAsActionKeys = Device.useDPadAsActionKeys,
         }
     end
 
@@ -362,6 +364,7 @@ function ExternalKeyboard:setupKeyboard(data)
     Device.hasKeys = yes
     Device.hasFewKeys = no
     Device.hasDPad = has_dpad_func
+    Device:setUseDPadAsActionKeys(G_reader_settings:isTrue("input_use_dpad_as_action_keys"))
 
     -- Only show this once
     if ExternalKeyboard.connected_keyboards == 1 then
