@@ -1080,12 +1080,14 @@ function FileManagerMenu:onRebuildMenu()
     self:teardownMenu()
 
     if was_open then
-        self:onShowMenu(nil, true)
-        local menu = self.menu_container[1]
-        if state and menu.restoreState then
-            menu:restoreState(state.path_stack, state.page)
-        end
-        UIManager:show(self.menu_container)
+        UIManager:nextTick(function()
+            self:onShowMenu(nil, true)
+            local menu = self.menu_container[1]
+            if state and menu.restoreState then
+                menu:restoreState(state.path_stack, state.page)
+            end
+            UIManager:show(self.menu_container)
+        end)
     end
 end
 
