@@ -35,9 +35,11 @@ local ExternalKeyboard = WidgetContainer:extend{
     original_device_values = nil,
     keyboard_fds = {},
     connected_keyboards = 0,
+    keyboards_scanned = false,
 }
 
 function ExternalKeyboard:init()
+    if ExternalKeyboard.keyboards_scanned then return end
     self.ui.menu:registerToMainMenu(self)
     self.has_otg_role = Device:hasOTGManagement()
 
@@ -59,6 +61,7 @@ function ExternalKeyboard:init()
         -- started). New keyboards are handled via EvdevInputInsert events.
         self:findAndSetupKeyboards()
     end
+    ExternalKeyboard.keyboards_scanned = true
 end
 
 function ExternalKeyboard:addToMainMenu(menu_items)
