@@ -43,11 +43,14 @@ local FocusManager = InputContainer:extend{
 local KEY_EVENTS
 local BUILTIN_KEY_EVENTS
 local EXTRA_KEY_EVENTS
+-- The device caps the mappings above were built from.
+local mappings_has_dpad
 
 local function populateEventMappings()
     KEY_EVENTS = {}
     BUILTIN_KEY_EVENTS = {}
     EXTRA_KEY_EVENTS = {}
+    mappings_has_dpad = Device:hasDPad()
 
     if Device:hasDPad() then
         local event_keys = {}
@@ -112,6 +115,13 @@ populateEventMappings()
 
 function FocusManager:_init()
     InputContainer._init(self)
+
+    -- The mappings are only refreshed by the hot-plug handlers below, which only
+    -- run if a FocusManager is in the window stack when the event is broadcast.
+    -- If the D-pad cap changed while none was, they're stale.
+    if mappings_has_dpad ~= Device:hasDPad() then
+        populateEventMappings()
+    end
 
     -- These *need* to be instance-specific, hence the copy
     if not self.selected then
