@@ -1320,12 +1320,11 @@ function OPDSBrowser:getSyncDir(server)
     return server and server.sync_dir or self.settings.sync_dir
 end
 
--- Returns user selected or last opened folder
 function OPDSBrowser:getCurrentDownloadDir()
     if self.sync then
         return self:getSyncDir(self.sync_server)
     else
-        return G_reader_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+        return self._manager.ui.folder_shortcuts:expandPath("%D%")
     end
 end
 
