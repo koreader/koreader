@@ -985,18 +985,29 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
         end
         item.text = title
         local author = _("Unknown Author")
-        if type(entry.author) == "table" and entry.author.name then
-            author = entry.author.name
-            if type(author) == "table" then
-                if #author > 0 then
-                    author = table.concat(author, ", ")
-                else
-                    -- we may get an empty table on https://gallica.bnf.fr/opds
-                    author = nil
+        if type(entry.author) == "table" then
+            local names = {}
+            local empty_name = false
+            for _, entry_author in ipairs(entry.author) do
+                local name = type(entry_author) == "table" and entry_author.name or nil
+                if type(name) == "table" then
+                    if #name > 0 then
+                        name = table.concat(name, ", ")
+                    else
+                        -- we may get an empty table on https://gallica.bnf.fr/opds
+                        empty_name = true
+                        name = nil
+                    end
+                end
+                if type(name) == "string" then
+                    table.insert(names, name)
                 end
             end
-            if author then
+            if #names > 0 then
+                author = table.concat(names, ", ")
                 item.text = title .. " - " .. author
+            elseif empty_name then
+                author = nil
             end
         end
         item.title = title

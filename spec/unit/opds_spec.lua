@@ -354,6 +354,30 @@ local pdf_acquisition_sample = [[
 </feed>
 ]]
 
+local multiple_authors_sample = [[
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>urn:multiple:authors</id>
+    <title>Multiple authors</title>
+    <updated>2026-10-25T00:00:00Z</updated>
+    <entry>
+        <title>The Wrong Box</title>
+        <id>urn:wrong:box</id>
+        <updated>2026-10-25T00:00:00Z</updated>
+        <author><name>Robert Louis Stevenson</name></author>
+        <author><name>Lloyd Osbourne</name></author>
+        <link href="/opds/download/97/epub/" type="application/epub+zip" rel="http://opds-spec.org/acquisition" />
+    </entry>
+    <entry>
+        <title>Treasure Island</title>
+        <id>urn:treasure:island</id>
+        <updated>2026-10-25T00:00:00Z</updated>
+        <author><name>Robert Louis Stevenson</name></author>
+        <link href="/opds/download/68/epub/" type="application/epub+zip" rel="http://opds-spec.org/acquisition" />
+    </entry>
+</feed>
+]]
+
 describe("OPDS module", function()
     local socketutil
     local CookieJar, OPDSClient, OPDSParser, OPDSBrowser
@@ -467,6 +491,15 @@ describe("OPDS module", function()
             assert.are.same(entry.category.label, "Приключения")
             assert.are.same(entry.link[1].title, "Все книги серии «Капитан Немо»")
         end)
+        it("should keep every author of an entry", function()
+            local catalog = OPDSParser:parse(multiple_authors_sample)
+            local entries = catalog.feed.entry
+            assert.are.same(#entries[1].author, 2)
+            assert.are.same(entries[1].author[1].name, "Robert Louis Stevenson")
+            assert.are.same(entries[1].author[2].name, "Lloyd Osbourne")
+            assert.are.same(#entries[2].author, 1)
+            assert.are.same(entries[2].author[1].name, "Robert Louis Stevenson")
+        end)
     end)
 
     describe("OPDS browser module", function()
@@ -538,6 +571,15 @@ describe("OPDS module", function()
                 assert.are.same("https://www.cbeta.org/opds/index.php?vol=T", item_table[1].url)
                 assert.are.same("Entry Two", item_table[2].title)
                 assert.are.same("https://www.cbeta.org/opds/index.php?vol=X", item_table[2].url)
+            end)
+            it("should list every author of an entry", function()
+                local catalog = OPDSParser:parse(multiple_authors_sample)
+                local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "https://example.com/opds/")
+
+                assert.are.same("Robert Louis Stevenson, Lloyd Osbourne", item_table[1].author)
+                assert.are.same("The Wrong Box - Robert Louis Stevenson, Lloyd Osbourne", item_table[1].text)
+                assert.are.same("Robert Louis Stevenson", item_table[2].author)
+                assert.are.same("Robert Louis Stevenson, Lloyd Osbourne - The Wrong Box", (OPDSBrowser:getFileName(item_table[1])))
             end)
             it("should use the main URL for faceted links as long as faceted links aren't properly supported #internet", function()
                 local catalog = OPDSParser:parse(facet_sample)
