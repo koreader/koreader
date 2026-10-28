@@ -1052,7 +1052,7 @@ function ReaderFooter:textOptionTitles(option)
             string.format(" × %d", self.custom_text_repetitions) or ""),
         dynamic_filler = _("Dynamic filler 1"),
         dynamic_filler2 = _("Dynamic filler 2"),
-        additional_content = _("External content"),
+        additional_content = _("External content (e.g., from Read Timer plugin)"),
     }
     return option_titles[option]
 end
