@@ -41,7 +41,7 @@ emulator: # {{{
   - &EMU
     id: emu-clang
     job: Emulator (Clang)
-    image: koreader/kobase-clang:5.0.0-22.04
+    image: koreader/kobase-clang:6.0.0-22.04
     target: ""
     env: PARALLEL_JOBS=5 USE_CLANG=1
     cache_size: 150M
@@ -51,7 +51,7 @@ emulator: # {{{
   - <<: *EMU
     id: emu-gcc
     job: Emulator (GCC)
-    image: koreader/kobase:5.0.0-22.04
+    image: koreader/kobase:6.0.0-22.04
     env: PARALLEL_JOBS=5
     cache_size: 240M
 
@@ -62,7 +62,7 @@ android: # {{{
   - &ANDROID
     id: android-arm
     job: Android ARM
-    image: koreader/koandroid:5.0.0-22.04
+    image: koreader/koandroid:6.0.0-22.04
     env: PARALLEL_JOBS=5
     cache_size: 60M
 
@@ -84,7 +84,7 @@ bookeen: # {{{
 
   - id: bookeen
     job: Bookeen
-    image: koreader/kobookeen:5.0.0-22.04
+    image: koreader/kobookeen:6.0.0-22.04
     env: PARALLEL_JOBS=5
     cache_size: 70M
 
@@ -94,7 +94,7 @@ cervantes: # {{{
 
   - id: cervantes
     job: Cervantes
-    image: koreader/kocervantes:5.0.0-22.04
+    image: koreader/kocervantes:6.0.0-22.04
     env: PARALLEL_JOBS=5
     cache_size: 70M
 
@@ -105,7 +105,7 @@ kindle: # {{{
   - &KINDLE
     id: kindle
     job: Kindle
-    image: koreader/kokindle:5.0.0-22.04
+    image: koreader/kokindle:6.0.0-22.04
     env: PARALLEL_JOBS=5
     cache_size: 70M
 
@@ -128,7 +128,7 @@ kobo: # {{{
   - &KOBO
     id: kobo
     job: Kobo
-    image: koreader/kokobo:5.0.0-22.04
+    image: koreader/kokobo:6.0.0-22.04
     env: PARALLEL_JOBS=5
     cache_size: 80M
 
@@ -144,7 +144,7 @@ linux: # {{{
     id: linux-aarch64
     job: Linux AArch64
     runs-on: ubuntu-26.04-arm
-    image: koreader/koappimage:5.0.0-22.04
+    image: koreader/koappimage:6.0.0-22.04
     target: linux
     env: PARALLEL_JOBS=5
     cache_size: 90M
@@ -191,7 +191,7 @@ pocketbook: # {{{
   - &POCKETBOOK
     id: pocketbook
     job: PocketBook
-    image: koreader/kopb:5.0.0-22.04
+    image: koreader/kopb:6.0.0-22.04
     env: PARALLEL_JOBS=5
     cache_size: 80MB
 
@@ -206,7 +206,7 @@ remarkable: # {{{
   - &REMARKABLE
     id: remarkable
     job: reMarkable
-    image: koreader/koremarkable:5.0.0-22.04
+    image: koreader/koremarkable:6.0.0-22.04
     env: PARALLEL_JOBS=5
     cache_size: 70MB
 
