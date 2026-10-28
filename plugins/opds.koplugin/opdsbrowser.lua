@@ -4,7 +4,6 @@ local Cache = require("cache")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local CookieJar = require("cookiejar")
-local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -1207,19 +1206,18 @@ function OPDSBrowser:showDownloads(item)
         return {
             default_path = default_path,
             current_path = self.download_dir or default_path,
-            caller_callback = function(_path)
-                self.download_dir = _path ~= default_path and _path or nil
+            caller_callback = function(path_arg)
+                self.download_dir = path_arg ~= default_path and path_arg or nil
             end,
         }
     end
     local function change_filename_func()
-        local filename_without_suffix, filetype = filemanagerutil.splitFileNameType(item.file)
         return {
             input = self.download_filename or filename_orig,
             input_hint = filename_orig,
-            caller_callback = function(_filename)
-                if _filename ~= self.download_filename then
-                    self.download_filename = _filename ~= "" and _filename or filename_orig
+            caller_callback = function(filename_arg)
+                if filename_arg ~= self.download_filename then
+                    self.download_filename = filename_arg ~= "" and filename_arg or filename_orig
                     return true
                 end
             end,

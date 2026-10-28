@@ -100,8 +100,8 @@ function OPDSDownloadList:onMenuSelect(item)
         return {
             default_path = self.opdsbrowser._manager.ui.folder_shortcuts:expandPath("%D%"),
             current_path = ffiUtil.dirname(dl_item.file),
-            caller_callback = function(_path)
-                dl_item.file = _path .. "/" .. ffiUtil.basename(dl_item.file)
+            caller_callback = function(path_arg)
+                dl_item.file = path_arg .. "/" .. ffiUtil.basename(dl_item.file)
                 self.updated = true
             end,
         }
@@ -110,9 +110,9 @@ function OPDSDownloadList:onMenuSelect(item)
         local filename_without_suffix, filetype = filemanagerutil.splitFileNameType(dl_item.file)
         return {
             input = filename_without_suffix,
-            caller_callback = function(_filename)
-                if _filename ~= "" and _filename ~= filename_without_suffix then
-                    item.text = _filename .. "." .. filetype
+            caller_callback = function(filename_arg)
+                if filename_arg ~= "" and filename_arg ~= filename_without_suffix then
+                    item.text = filename_arg .. "." .. filetype
                     dl_item.file = ffiUtil.dirname(dl_item.file) .. "/" .. item.text
                     self:updateItems(1, true)
                     self.updated = true
