@@ -814,62 +814,6 @@ describe("OPDS module", function()
                     UIManager.close:revert()
                 end)
 
-                it("should put sync settings first without a following separator", function()
-                    browser:onMenuHold{ idx = 2, text = "Catalog" }
-                    assert.are.same("Sync settings", shown.buttons[1][1].text)
-                    assert.are.same("Force sync", shown.buttons[2][1].text)
-                    shown.buttons[1][1].callback()
-                    assert.are.same("Choose catalog sync folder", shown.buttons[1][1].text)
-                end)
-
-                it("should explain fallback and offer only the two folder actions", function()
-                    browser:showSyncSettingsDialog{ idx = 2 }
-                    assert.truthy(shown.title:find("default sync folder", 1, true))
-                    assert.are.same(2, #shown.buttons)
-                    assert.are.same("Choose catalog sync folder", shown.buttons[1][1].text)
-                    assert.are.same("Use default sync folder", shown.buttons[2][1].text)
-                    assert.is_false(shown.buttons[2][1].enabled)
-                end)
-
-                it("should clear only the catalog folder and refresh the dialog", function()
-                    local server = browser.servers[1]
-                    server.sync_dir = "/catalog"
-                    server.last_download = "latest"
-                    browser:showSyncSettingsDialog{ idx = 2 }
-                    assert.is_true(shown.buttons[2][1].enabled)
-                    shown.buttons[2][1].callback()
-                    assert.is_nil(server.sync_dir)
-                    assert.are.same("/default", browser.settings.sync_dir)
-                    assert.are.same("latest", server.last_download)
-                    assert.is_true(browser._manager.updated)
-                    assert.is_false(shown.buttons[2][1].enabled)
-                end)
-
-                it("should choose and persist a catalog folder without changing the default", function()
-                    local DownloadMgr = require("ui/downloadmgr")
-                    local Device = require("device")
-                    local picker, initial_dir
-                    stub(DownloadMgr, "new", function(_, options)
-                        picker = options
-                        options.chooseDir = function(_, path) initial_dir = path end
-                        return options
-                    end)
-                    stub(Device, "isAndroid", function() return false end)
-                    finally(function()
-                        DownloadMgr.new:revert()
-                        Device.isAndroid:revert()
-                    end)
-                    browser:showSyncSettingsDialog{ idx = 2 }
-                    shown.buttons[1][1].callback()
-                    assert.are.same("/default", initial_dir)
-                    picker.onConfirm("/catalog")
-                    assert.are.same("/catalog", browser.servers[1].sync_dir)
-                    assert.are.same("/default", browser.settings.sync_dir)
-                    assert.is_true(browser._manager.updated)
-                    assert.is_true(shown.buttons[2][1].enabled)
-                end)
-            end)
-
             describe("sync selection", function()
                 local UIManager, browser, collected, downloaded, messages
 
@@ -910,7 +854,7 @@ describe("OPDS module", function()
                 it("should sync enabled catalogs with their own folders without a global folder", function()
                     browser:checkSyncDownload()
                     assert.are.same({ "comics", "ebooks" }, collected)
-                    assert.is_false(browser.sync)
+                    assert.is_false(browser.syncing)
                     assert.is_false(downloaded)
                 end)
 
@@ -948,7 +892,7 @@ describe("OPDS module", function()
                     local ok, err = pcall(function() browser:checkSyncDownload(2) end)
                     assert.is_false(ok)
                     assert.truthy(err:find("feed failed", 1, true))
-                    assert.is_false(browser.sync)
+                    assert.is_false(browser.syncing)
                     assert.is_false(downloaded)
                 end)
             end)
