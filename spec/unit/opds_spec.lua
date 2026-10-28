@@ -779,7 +779,7 @@ describe("OPDS module", function()
             it("should resolve sync paths for each catalog without a global folder", function()
                 local browser = OPDSBrowser:extend{
                     settings = {},
-                    sync = true,
+                    syncing = true,
                     sync_server = { sync_dir = "/comics" },
                 }
                 assert.are.same("/comics", browser:getCurrentDownloadDir())
