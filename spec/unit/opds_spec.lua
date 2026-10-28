@@ -842,23 +842,23 @@ describe("OPDS module", function()
                 end)
 
                 it("should allow explicit sync of a catalog excluded from automatic sync", function()
-                    browser:checkSyncDownload(browser.servers[4])
+                    browser:checkSyncDownload(browser.servers[3])
                     assert.are.same({ "disabled" }, collected)
                 end)
 
                 it("should ignore pending downloads from a previous catalog selection", function()
                     browser.sync_server_list = { ebooks = true }
                     browser.pending_syncs = {{ catalog = "ebooks" }}
-                    browser:checkSyncDownload(browser.servers[2])
+                    browser:checkSyncDownload(browser.servers[1])
                     assert.is_false(downloaded)
                     assert.is_nil(browser.sync_server_list.ebooks)
                     browser.pending_syncs = {{ catalog = "comics" }}
-                    browser:checkSyncDownload(browser.servers[2])
+                    browser:checkSyncDownload(browser.servers[1])
                     assert.is_true(downloaded)
                 end)
 
                 it("should request a folder when the selected catalog has no destination", function()
-                    browser:checkSyncDownload(browser.servers[4])
+                    browser:checkSyncDownload(browser.servers[3])
                     assert.are.same({}, collected)
                     assert.are.same("Please choose a folder for this catalog's sync downloads first", messages[1])
                     assert.is_false(downloaded)
@@ -866,7 +866,7 @@ describe("OPDS module", function()
 
                 it("should leave sync mode after feed collection fails", function()
                     browser.fillPendingSyncs = function() error("feed failed") end
-                    local ok, err = pcall(function() browser:checkSyncDownload(browser.servers[2]) end)
+                    local ok, err = pcall(function() browser:checkSyncDownload(browser.servers[1]) end)
                     assert.is_false(ok)
                     assert.truthy(err:find("feed failed", 1, true))
                     assert.is_false(browser.syncing)
