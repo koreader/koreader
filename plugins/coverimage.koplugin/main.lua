@@ -107,7 +107,7 @@ function CoverImage:cleanUpImage()
         os.remove(self.cover_image_path)
     elseif isFileOk(self.cover_image_path) then
         ffiutil.copyFile(self.cover_image_fallback_path, self.cover_image_path)
-        self:updatePocketBookBootLogo(true)
+        self:updatePocketBookBootLogo()
     end
 end
 
