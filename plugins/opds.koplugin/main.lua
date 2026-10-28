@@ -78,6 +78,51 @@ function OPDS:addToMainMenu(menu_items)
                 self:onShowOPDSCatalog()
             end,
         }
+        menu_items.calibre_web = {
+            text = _("Calibre-Web"),
+            callback = function()
+                self:onShowCalibreWeb()
+            end,
+        }
+    end
+end
+
+-- Calibre-Web keeps its own settings, mappings and caches, separate from OPDS catalogs
+function OPDS:getCalibreWebStore()
+    if not self.calibre_web_store then
+        local CalibreWebIndex = require("calibrewebindex")
+        self.calibre_web_store = CalibreWebIndex.Store:new(DataStorage:getSettingsDir())
+    end
+    return self.calibre_web_store
+end
+
+function OPDS:onShowCalibreWeb()
+    local CalibreWebBrowser = require("calibrewebbrowser")
+    -- Survives closing the view (never persisted): session password, server client, partial results
+    self.calibre_web_session = self.calibre_web_session or {}
+    self.calibre_web_browser = CalibreWebBrowser:new{
+        store = self:getCalibreWebStore(),
+        session = self.calibre_web_session,
+        is_popout = false,
+        is_borderless = true,
+        title_bar_fm_style = true,
+        _manager = self,
+        close_callback = function()
+            UIManager:close(self.calibre_web_browser)
+            self.calibre_web_browser = nil
+        end,
+    }
+    UIManager:show(self.calibre_web_browser)
+end
+
+function OPDS:openCalibreWebFile(file)
+    if self.calibre_web_browser then
+        self.calibre_web_browser.close_callback()
+    end
+    if self.ui.document then
+        self.ui:switchDocument(file)
+    else
+        self.ui:openFile(file)
     end
 end
 
@@ -148,6 +193,9 @@ function OPDS:onFlushSettings()
     if self.updated then
         self.settings:flush()
         self.updated = nil
+    end
+    if self.calibre_web_store then
+        self.calibre_web_store:flush()
     end
 end
 
