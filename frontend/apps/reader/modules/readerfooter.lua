@@ -2408,7 +2408,7 @@ function ReaderFooter:_updateFooterText(force_repaint, full_repaint)
 end
 
 function ReaderFooter:updatePercentFinished()
-    if not self.pages then
+    if type(self.pageno) ~= "number" or not self.pages or self.pages == 0 then
         return
     end
     self.percent_finished = self:getBookProgress()
@@ -2419,7 +2419,7 @@ end
 -- and will then emit a "TocReset" after the new ToC is made.
 function ReaderFooter:onTocReset()
     self.pages = self.ui.document:getPageCount()
-    if type(self.pageno) == "number" then self:updatePercentFinished() end
+    self:updatePercentFinished()
     self:setTocMarkers(true)
     self:onUpdateFooter()
 end
@@ -2439,14 +2439,14 @@ function ReaderFooter:onPageUpdate(pageno)
             end
         end
     end
-    if self.pages then self:updatePercentFinished() end
+    self:updatePercentFinished()
     self:onUpdateFooter()
 end
 
 function ReaderFooter:onPosUpdate(pos, pageno)
     self.pageno = pageno
     self.initial_pageno = self.initial_pageno or pageno
-    if self.pages then self:updatePercentFinished() end
+    self:updatePercentFinished()
     self:onUpdateFooter()
 end
 
