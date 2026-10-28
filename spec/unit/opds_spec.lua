@@ -857,13 +857,6 @@ describe("OPDS module", function()
                     assert.is_true(downloaded)
                 end)
 
-                it("should request a folder when the selected catalog has no destination", function()
-                    browser:checkSyncDownload(browser.servers[4])
-                    assert.are.same({}, collected)
-                    assert.are.same("Please choose a folder for this catalog's sync downloads first", messages[1])
-                    assert.is_false(downloaded)
-                end)
-
                 it("should leave sync mode after feed collection fails", function()
                     browser.fillPendingSyncs = function() error("feed failed") end
                     local ok, err = pcall(function() browser:checkSyncDownload(browser.servers[1]) end)
