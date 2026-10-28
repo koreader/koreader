@@ -813,6 +813,7 @@ describe("OPDS module", function()
                     UIManager.show:revert()
                     UIManager.close:revert()
                 end)
+            end)
 
             describe("sync selection", function()
                 local UIManager, browser, collected, downloaded, messages
