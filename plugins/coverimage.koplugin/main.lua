@@ -111,14 +111,11 @@ function CoverImage:cleanUpImage()
     end
 end
 
-function CoverImage:updatePocketBookBootLogo(enable_sync)
+function CoverImage:updatePocketBookBootLogo()
     if Device.isPocketBook() then
         logger.dbg("CoverImage: updating PocketBook boot logo from", self.cover_image_path)
-        if enable_sync then
-            os.execute("sync")
-        end
         -- iv2sh is run in background because it can be very slow and would block KOReader.
-        os.execute("iv2sh WriteStartupLogo " .. util.shell_escape({self.cover_image_path}) .. " &")
+        os.execute("(sync && iv2sh WriteStartupLogo " .. util.shell_escape({self.cover_image_path}) .. ") &")
     end
 end
 
