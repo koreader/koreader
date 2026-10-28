@@ -2411,6 +2411,10 @@ end
 -- and will then emit a "TocReset" after the new ToC is made.
 function ReaderFooter:onTocReset()
     self.pages = self.ui.document:getPageCount()
+    if type(self.pageno) == "number" then
+        self.percent_finished = self:getBookProgress()
+        BookList.setBookInfoCacheProperty(self.ui.document.file, "percent_finished", self.percent_finished)
+    end
     self:setTocMarkers(true)
     self:onUpdateFooter()
 end
