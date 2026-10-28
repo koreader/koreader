@@ -791,30 +791,6 @@ describe("OPDS module", function()
                 assert.are.same("/default", browser:getCurrentDownloadDir())
             end)
 
-            describe("dialogs", function()
-                local UIManager
-
-                before_each(function()
-                    UIManager = require("ui/uimanager")
-                    local ButtonDialog = require("ui/widget/buttondialog")
-                    stub(ButtonDialog, "new", function(_, options) return options end)
-                    stub(UIManager, "show", function(_, dialog) shown = dialog end)
-                    stub(UIManager, "close")
-                    browser = OPDSBrowser:extend{
-                        paths = {},
-                        settings = { sync_dir = "/default" },
-                        servers = {{ title = "Catalog", url = "http://example.org/opds" }},
-                        _manager = {},
-                    }
-                end)
-
-                after_each(function()
-                    require("ui/widget/buttondialog").new:revert()
-                    UIManager.show:revert()
-                    UIManager.close:revert()
-                end)
-            end)
-
             describe("sync selection", function()
                 local UIManager, browser, collected, downloaded, messages
 
