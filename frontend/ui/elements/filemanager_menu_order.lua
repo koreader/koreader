@@ -165,6 +165,7 @@ local order = {
         "find_book_in_calibre_catalog",
         "----------------------------",
         "opds",
+        "calibre_web",
     },
     search_settings = {
         "dictionary_settings",
