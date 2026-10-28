@@ -792,7 +792,7 @@ describe("OPDS module", function()
             end)
 
             describe("dialogs", function()
-                local UIManager, browser, shown
+                local UIManager
 
                 before_each(function()
                     UIManager = require("ui/uimanager")
