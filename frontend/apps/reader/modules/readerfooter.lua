@@ -2407,14 +2407,19 @@ function ReaderFooter:_updateFooterText(force_repaint, full_repaint)
     end
 end
 
+function ReaderFooter:updatePercentFinished()
+    if not self.pages then
+        return
+    end
+    self.percent_finished = self:getBookProgress()
+    BookList.setBookInfoCacheProperty(self.ui.document.file, "percent_finished", self.percent_finished)
+end
+
 -- Note: no need for :onDocumentRerendered(), ReaderToc will catch "DocumentRerendered"
 -- and will then emit a "TocReset" after the new ToC is made.
 function ReaderFooter:onTocReset()
     self.pages = self.ui.document:getPageCount()
-    if type(self.pageno) == "number" then
-        self.percent_finished = self:getBookProgress()
-        BookList.setBookInfoCacheProperty(self.ui.document.file, "percent_finished", self.percent_finished)
-    end
+    if type(self.pageno) == "number" then self:updatePercentFinished() end
     self:setTocMarkers(true)
     self:onUpdateFooter()
 end
@@ -2434,20 +2439,14 @@ function ReaderFooter:onPageUpdate(pageno)
             end
         end
     end
-    if self.pages then
-        self.percent_finished = self:getBookProgress()
-        BookList.setBookInfoCacheProperty(self.ui.document.file, "percent_finished", self.percent_finished)
-    end
+    if self.pages then self:updatePercentFinished() end
     self:onUpdateFooter()
 end
 
 function ReaderFooter:onPosUpdate(pos, pageno)
     self.pageno = pageno
     self.initial_pageno = self.initial_pageno or pageno
-    if self.pages then
-        self.percent_finished = self:getBookProgress()
-        BookList.setBookInfoCacheProperty(self.ui.document.file, "percent_finished", self.percent_finished)
-    end
+    if self.pages then self:updatePercentFinished() end
     self:onUpdateFooter()
 end
 
