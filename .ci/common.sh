@@ -63,7 +63,7 @@ onexit() {
 
 # Docker helpers. {{{
 
-declare -r CONTAINER_IMAGE='koreader/nightswatcher:3.0.0'
+declare -r CONTAINER_IMAGE='koreader/nightswatcher:3.1.0'
 
 container_start() {
     CONTAINER_ID="$(run docker run --detach --tty --volume="${PWD}:/work" --workdir=/work "${CONTAINER_IMAGE}" sh -c 'while true; do sleep 0.25; done')"
