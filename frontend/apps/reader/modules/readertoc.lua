@@ -1473,7 +1473,7 @@ Enabling this option will restrict display to the chapter titles of progress bar
             local items = SpinWidget:new{
                 value = curr_perpage,
                 value_min = 6,
-                value_max = 24,
+                value_max = 50,
                 default_value = self.toc_items_per_page_default,
                 title_text =  _("ToC entries per page"),
                 callback = function(spin)
