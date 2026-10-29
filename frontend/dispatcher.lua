@@ -82,7 +82,7 @@ local settingsList = {
     show_menu = {category="none", event="ShowMenu", title=_("Show menu"), general=true},
     menu_search = {category="none", event="MenuSearch", title=_("Menu search"), general=true},
     open_next_document_in_folder = {category="none", event="OpenNextOrPreviousFileInFolder", title=_("Open next unfinished file in last visited folder"), general=true},
-    open_previous_document_in_folder = {category="none", event="OpenNextOrPreviousFileInFolder", arg=true, title=_("Open previous unfinished file in last folder"), general=true},
+    open_previous_document_in_folder = {category="none", event="OpenNextOrPreviousFileInFolder", arg=true, title=_("Open previous unfinished file in last visited folder"), general=true},
     notebook_file = {category="none", event="ShowNotebookFile", title=_("Notebook file"), general=true},
     screenshot = {category="none", event="Screenshot", title=_("Screenshot"), general=true, separator=true},
     ----
