@@ -2418,8 +2418,6 @@ end
 -- Note: no need for :onDocumentRerendered(), ReaderToc will catch "DocumentRerendered"
 -- and will then emit a "TocReset" after the new ToC is made.
 function ReaderFooter:onTocReset()
-    self.pages = self.ui.document:getPageCount()
-    self:updatePercentFinished()
     self:setTocMarkers(true)
     self:onUpdateFooter()
 end
