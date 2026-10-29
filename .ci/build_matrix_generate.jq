@@ -39,9 +39,9 @@ def cached:
     #| debug
     # …updating optional fields…
     | .cache_id = (.cache // .id)
-    | .cache_key_build = cache_key("build"; .cache_id; $cache_key_build)
-    | .cache_key_ccache_exact = cache_key("ccache"; .cache_id; $cache_key_build)
-    | .cache_key_ccache_partial = cache_key("ccache"; .cache_id)
+    | .cache_key_build = cache_key(.cache_id; "build"; $cache_key_build)
+    | .cache_key_ccache_exact = cache_key(.cache_id; "ccache"; $cache_key_build)
+    | .cache_key_ccache_partial = cache_key(.cache_id; "ccache"; "")
     | .cache_size = (.cache_size // $inputs.cache_size // "256M")
     | .target=(.target // .id)
     # Steps.
