@@ -70,4 +70,18 @@ describe("Button widget", function()
         end)
         Dbg:turnOff()
     end)
+
+    it("should not crash on a feedback highlight in an unpainted frame", function()
+        local btn = Button:new{ text = "Test" }
+        -- The frame's geometry (dimen) is only known after the first paint, but
+        -- the hit range (self.dimen) is known since Button:init(): an unpainted
+        -- button can be tapped, and the feedback highlight used to dereference
+        -- the missing geometry (see #16288).
+        assert.has_no.errors(function()
+            btn:_doFeedbackHighlight()
+            btn:_undoFeedbackHighlight()
+        end)
+        -- Nothing was painted, so nothing should have been inverted either.
+        assert.is_falsy(btn[1].invert)
+    end)
 end)
