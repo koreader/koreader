@@ -441,7 +441,9 @@ function Button:_doFeedbackHighlight()
     if self.text then
         -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
         -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
-        if self[1].radius == nil or self.background then
+        -- The background may be missing entirely (e.g. a Button widget that was patched by a plugin,
+        -- or a hidden button): in that case we can't invert the bg/fg colors, so fall back to the invert flag.
+        if (self[1].radius == nil or self.background) and self[1].background then
             self[1].radius = Size.radius.button
             -- And here, it's easier to just invert the bg/fg colors ourselves,
             -- so as to preserve the rounded corners in one step.
@@ -470,7 +472,9 @@ function Button:_undoFeedbackHighlight(is_translucent)
         return
     end
     if self.text then
-        if self[1].radius == Size.radius.button then
+        -- Same as in _doFeedbackHighlight(): only invert the colors back if there
+        -- actually was a background to invert.
+        if self[1].radius == Size.radius.button and self[1].background then
             self[1].radius = nil
             self[1].background = self[1].background:invert()
             self.label_widget.fgcolor = self.label_widget.fgcolor:invert()

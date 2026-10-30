@@ -2,12 +2,14 @@ describe("Button widget", function()
     local Button
     local ButtonTable
     local Dbg
+    local Screen
 
     setup(function()
         require("commonrequire")
         Button = require("ui/widget/button")
         ButtonTable = require("ui/widget/buttontable")
         Dbg = require("dbg")
+        Screen = require("device").screen
     end)
 
     it("should register a Shortcut key_event for a string key_bindings", function()
@@ -83,5 +85,20 @@ describe("Button widget", function()
         end)
         -- Nothing was painted, so nothing should have been inverted either.
         assert.is_falsy(btn[1].invert)
+    end)
+
+    -- The frame's background can be missing entirely: Button:hide() clears it,
+    -- and a Button widget patched by a plugin may never set one. Inverting a
+    -- nil background used to crash KOReader.
+    it("should fall back to the invert flag when the frame has no background", function()
+        local btn = Button:new{ text = "Test" }
+        -- Paint the button once, so that the frame knows its geometry.
+        btn:paintTo(Screen.bb, 0, 0)
+        btn[1].background = nil
+        assert.has_no.errors(function() btn:_doFeedbackHighlight() end)
+        -- Without a background to invert, we use the invert flag instead.
+        assert.is_true(btn[1].invert)
+        assert.has_no.errors(function() btn:_undoFeedbackHighlight(false) end)
+        assert.is_false(btn[1].invert)
     end)
 end)
