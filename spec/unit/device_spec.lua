@@ -205,7 +205,7 @@ describe("device module", function()
                         get_string_property = function() return "string prop" end,
                         set_string_property = function() end,
                         register_int_property = function() return {} end,
-                        close = function () end,
+                        close = mock(function() end),
                     }
                 end
             }
@@ -245,6 +245,7 @@ describe("device module", function()
                         fw_lipc_handle, "com.lab126.deviced", fsr_prop, 1
                     )
                 end
+                assert.stub(fw_lipc_handle.close).was_not_called()
             end)
         end)
 
@@ -253,6 +254,36 @@ describe("device module", function()
                 io.open = make_io_open_kindle_model_override("B013XX")
 
                 local kindle_dev = require("device/kindle/device")
+                assert.is.falsy(kindle_dev.framework_lipc_handle)
+            end)
+
+            it("reactivates voyage whispertouch keys and closes its temporary handle", function()
+                io.open = make_io_open_kindle_model_override("B013XX")
+                local lipc_handle = {
+                    set_int_property = mock(function() end),
+                    get_int_property = function() return 0 end,
+                    get_string_property = function() return "string prop" end,
+                    set_string_property = function() end,
+                    register_int_property = function() return {} end,
+                    close = mock(function() end),
+                }
+                package.loaded["liblipclua"] = {
+                    init = function() return lipc_handle end,
+                }
+
+                local kindle_dev = require("device/kindle/device")
+                kindle_dev:init()
+
+                for _, fsr_prop in pairs{
+                    "fsrkeypadEnable",
+                    "fsrkeypadPrevEnable",
+                    "fsrkeypadNextEnable"
+                } do
+                    assert.stub(lipc_handle.set_int_property).was.called_with(
+                        lipc_handle, "com.lab126.deviced", fsr_prop, 1
+                    )
+                end
+                assert.stub(lipc_handle.close).was.called_with(lipc_handle)
                 assert.is.falsy(kindle_dev.framework_lipc_handle)
             end)
         end)
