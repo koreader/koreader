@@ -630,10 +630,8 @@ function Dispatcher:init()
                             (option.more_options_param and (option.more_options_param.value_max or option.more_options_param.left_max))
                             or (option.args and option.args[#option.args]) or option.values[#option.values]
                     end
-                    if settingsList[name].default == nil then
-                        settingsList[name].default = option.default_value
-                    end
                 end
+                settingsList[name].default = option.default_value
                 settingsList[name].unit = option.more_options_param and option.more_options_param.unit
             end
         end
