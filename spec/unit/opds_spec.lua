@@ -713,6 +713,204 @@ describe("OPDS module", function()
             assert.are.same(2, requests)
         end)
 
+        describe("requests with a body", function()
+            local http, requests, responses, request_stub
+
+            before_each(function()
+                http = require("socket.http")
+                requests = {}
+                request_stub = stub(http, "request", function(request)
+                    table.insert(requests, request)
+                    local response = table.remove(responses, 1)
+                    if type(response[1]) ~= "number" then
+                        return nil, response[1]
+                    end
+                    if request.response_headers then
+                        request.response_headers(response[1], response[2])
+                    end
+                    return 1, response[1], response[2], "HTTP " .. response[1]
+                end)
+            end)
+
+            after_each(function()
+                request_stub:revert()
+            end)
+
+            local function post(client, request_url)
+                return client:request{
+                    url = request_url or "https://example.test/login",
+                    method = "POST",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded",
+                        ["Content-Length"] = "7",
+                        Authorization = "Bearer token",
+                        ["X-CSRFToken"] = "csrf",
+                    },
+                    source = function() return nil end,
+                    sink = function() return 1 end,
+                    username = "reader",
+                    password = "secret",
+                }
+            end
+
+            it("should forward the request source and method", function()
+                responses = { { 200, {} } }
+                local client = OPDSClient:new{ cookie_jar = CookieJar:new() }
+                local code = post(client)
+
+                assert.are.same(200, code)
+                assert.are.same(1, #requests)
+                assert.are.same("POST", requests[1].method)
+                assert.is_function(requests[1].source)
+                assert.are.same("7", requests[1].headers["Content-Length"])
+            end)
+
+            it("should follow a 303 as a GET without the body or its headers", function()
+                responses = {
+                    { 303, { location = "/", ["set-cookie"] = "session=abc; Path=/" } },
+                    { 200, {} },
+                }
+                local client = OPDSClient:new{ cookie_jar = CookieJar:new() }
+                local code = post(client)
+
+                assert.are.same(200, code)
+                assert.are.same(2, #requests)
+                assert.are.same("GET", requests[2].method)
+                assert.is_nil(requests[2].source)
+                assert.is_nil(requests[2].headers["Content-Type"])
+                assert.is_nil(requests[2].headers["Content-Length"])
+                assert.are.same("csrf", requests[2].headers["X-CSRFToken"])
+                assert.are.same("session=abc", requests[2].headers.Cookie)
+                assert.are.same("reader", requests[2].user)
+            end)
+
+            for _, redirect_code in ipairs({ 301, 302, 307, 308 }) do
+                it("should not replay the body on a " .. redirect_code .. " redirect", function()
+                    responses = {
+                        { redirect_code, { location = "https://www.example.test/login" } },
+                    }
+                    local client = OPDSClient:new{ cookie_jar = CookieJar:new() }
+                    local code, headers = post(client)
+
+                    assert.are.same(redirect_code, code)
+                    assert.are.same("https://www.example.test/login", headers.location)
+                    assert.are.same(1, #requests)
+                end)
+            end
+
+            it("should not send credentials or the Authorization header cross-origin after a 303", function()
+                responses = {
+                    { 303, { location = "https://other.test/landing" } },
+                    { 200, {} },
+                }
+                local client = OPDSClient:new{ cookie_jar = CookieJar:new() }
+                local code = post(client)
+
+                assert.are.same(200, code)
+                assert.are.same("Bearer token", requests[1].headers.Authorization)
+                assert.is_nil(requests[2].headers.Authorization)
+                assert.is_nil(requests[2].user)
+                assert.is_nil(requests[2].password)
+            end)
+
+            it("should not follow a 303 that downgrades HTTPS to HTTP", function()
+                responses = {
+                    { 303, { location = "http://example.test/" } },
+                }
+                local client = OPDSClient:new{ cookie_jar = CookieJar:new() }
+                local code = post(client)
+
+                assert.are.same(303, code)
+                assert.are.same(1, #requests)
+            end)
+
+            it("should not retry an interrupted TLS handshake", function()
+                responses = {
+                    { socketutil.SSL_HANDSHAKE_CODE },
+                    { 200, {} },
+                }
+                local client = OPDSClient:new{ cookie_jar = CookieJar:new() }
+                local code = post(client)
+
+                assert.are.same(socketutil.SSL_HANDSHAKE_CODE, code)
+                assert.are.same(1, #requests)
+            end)
+
+            it("should keep redirect bodies out of the sink", function()
+                responses = { { 302, { location = "/elsewhere" } }, { 200, {} } }
+                local client = OPDSClient:new{ cookie_jar = CookieJar:new() }
+                client:request{ url = "https://example.test/book", sink = function() return 1 end }
+
+                assert.is_true(requests[1].response_headers(302) == true)
+                assert.is_falsy(requests[1].response_headers(200))
+            end)
+        end)
+
+        it("should leave redirects to the caller when asked to", function()
+            local http = require("socket.http")
+            local requests = 0
+            local request_stub = stub(http, "request", function(request)
+                requests = requests + 1
+                request.response_headers(302, { location = "/" })
+                return 1, 302, { location = "/" }, "HTTP 302"
+            end)
+            finally(function() request_stub:revert() end)
+
+            local client = OPDSClient:new{ cookie_jar = CookieJar:new() }
+            local code, headers = client:request{ url = "https://example.test/login", follow_redirects = false }
+
+            assert.are.same(302, code)
+            assert.are.same("/", headers.location)
+            assert.are.same(1, requests)
+        end)
+
+        it("should strip the Authorization header on cross-origin GET redirects", function()
+            local http = require("socket.http")
+            local requests = {}
+            local responses = {
+                { 302, { location = "https://cdn.example.test/book" } },
+                { 200, {} },
+            }
+            local request_stub = stub(http, "request", function(request)
+                table.insert(requests, request)
+                local response = table.remove(responses, 1)
+                request.response_headers(response[1], response[2])
+                return 1, response[1], response[2], "HTTP " .. response[1]
+            end)
+            finally(function() request_stub:revert() end)
+
+            local client = OPDSClient:new{ cookie_jar = CookieJar:new() }
+            local code = client:request{
+                url = "https://example.test/book",
+                headers = { Authorization = "Basic abc" },
+            }
+
+            assert.are.same(200, code)
+            assert.are.same("Basic abc", requests[1].headers.Authorization)
+            assert.is_nil(requests[2].headers.Authorization)
+        end)
+
+        it("should only apply TLS parameters to HTTPS requests", function()
+            local http = require("socket.http")
+            local requests = {}
+            local request_stub = stub(http, "request", function(request)
+                table.insert(requests, request)
+                return 1, 200, {}, "HTTP 200"
+            end)
+            finally(function() request_stub:revert() end)
+
+            local client = OPDSClient:new{
+                cookie_jar = CookieJar:new(),
+                tls_params = { verify = "peer", cafile = "data/ca-bundle.crt" },
+            }
+            client:request{ url = "https://example.test/opds" }
+            client:request{ url = "http://example.test/opds" }
+
+            assert.are.same("peer", requests[1].verify)
+            assert.are.same("data/ca-bundle.crt", requests[1].cafile)
+            assert.is_nil(requests[2].verify)
+        end)
+
         it("should add the file extension to a server filename that lacks a usable one #internet", function()
             local orig_fetchFeed = OPDSBrowser.fetchFeed
             OPDSBrowser.fetchFeed = function() return nil end -- no headers: fall back to the URL
