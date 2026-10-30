@@ -124,6 +124,20 @@ See [Building](https://github.com/koreader/koreader/blob/master/doc/Building.md)
 
 #### Kobo
 
+For Kobo and Tolino devices running firmware 5.x, build the `kobov5` target:
+
+```
+./kodev release kobov5
+```
+
+For Mk. 7 and newer Kobo devices running firmware 4.x, build `kobov4`:
+
+```
+./kodev release kobov4
+```
+
+For other Kobo devices, build `kobo`:
+
 ```
 ./kodev release kobo
 ```
