@@ -866,6 +866,7 @@ function OPDSBrowser:getItemFromPublication(entry, item_url)
                                         type = in_link.type,
                                         title = in_link.title,
                                         href = url.absolute(item_url, in_link.href),
+                                        size = in_link.size,
                                     })
                                 end
                             end
@@ -875,6 +876,7 @@ function OPDSBrowser:getItemFromPublication(entry, item_url)
                             type = link.type,
                             title = link.title,
                             href = url.absolute(item_url, link.href),
+                            size = link.size,
                         })
                     end
                 end
@@ -976,6 +978,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                             type  = link.type,
                             href  = link_href,
                             title = link.title,
+                            size  = link.length,
                         })
                     elseif link.rel == self.stream_rel then
                         -- https://vaemendis.net/opds-pse/
@@ -1007,6 +1010,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                             type  = link.type,
                             href  = link_href,
                             title = link.title,
+                            size  = link.length,
                         })
                     end
                     -- This statement grabs the catalog items that are
@@ -1273,6 +1277,9 @@ function OPDSBrowser:getDownloadButtons(item, close_parent_dialog)
             local filetype = self.getFiletype(acquisition)
             if filetype then -- supported file type
                 local text = url.unescape(acquisition.title or string.upper(filetype))
+                if acquisition.size then
+                    text = T(_("%1 (%2)"), text, util.getFriendlySize(acquisition.size))
+                end
                 table.insert(download_buttons, {
                     text = text .. "\u{2B07}", -- append DOWNWARDS BLACK ARROW
                     callback = function()
@@ -1287,6 +1294,7 @@ function OPDSBrowser:getDownloadButtons(item, close_parent_dialog)
                         table.insert(self.downloads, {
                             file     = self:getLocalDownloadPath(self.download_filename, filetype, acquisition.href),
                             url      = acquisition.href,
+                            size     = acquisition.size,
                             image    = item.image or item.thumbnail,
                             info     = item.content,
                             catalog  = self.root_catalog_title,
