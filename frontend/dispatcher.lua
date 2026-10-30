@@ -648,6 +648,15 @@ function Dispatcher:init()
     Dispatcher.initialized = true
 end
 
+local function getDefaultValue(name)
+    local g_settings_key = settingsList[name].prefix and settingsList[name].prefix .. name or name
+    local g_settings_value = G_reader_settings:readSetting(g_settings_key)
+    if g_settings_value ~= nil then
+        return g_settings_value
+    end
+    return settingsList[name].default
+end
+
 --[[--
 Adds settings at runtime.
 
@@ -792,8 +801,14 @@ end
 
 -- Converts copt/kopt-options values to args.
 function Dispatcher:getArgFromValue(item, value)
-    local value_num = util.arrayContains(settingsList[item].configurable.values, value)
-    return settingsList[item].args[value_num]
+    local configurable = settingsList[item].configurable
+    if type(configurable) == "table" then
+        local value_num = util.arrayContains(configurable.values, value)
+        if value_num then
+            return settingsList[item].args[value_num]
+        end
+    end
+    return value
 end
 
 -- Add the item to the end of the execution order.
@@ -956,9 +971,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                         if settingsList[k].step and math.floor(settingsList[k].step) ~= settingsList[k].step then
                             precision = "%0.1f"
                         end
-                        local default_value =
-                            G_reader_settings:readSetting(settingsList[k].prefix and settingsList[k].prefix .. k or k)
-                            or settingsList[k].default -- in this category value is a number
+                        local default_value = getDefaultValue(k)
                         UIManager:show(SpinWidget:new{
                             value = location[settings] ~= nil and location[settings][k] or default_value or settingsList[k].min,
                             default_value = default_value,
@@ -1031,9 +1044,21 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                     if settingsList[k].args_func then
                         settingsList[k].args, settingsList[k].toggle = settingsList[k].args_func()
                     end
+                    local default_value = self:getArgFromValue(k, getDefaultValue(k))
+                    if type(default_value) == "table" then
+                        default_value = default_value[1]
+                    end
                     for i=1,#settingsList[k].args do
+                        local text = tostring(settingsList[k].toggle[i])
+                        local current_value = settingsList[k].args[i]
+                        if type(current_value) == "table" then
+                            current_value = current_value[1]
+                        end
+                        if current_value == default_value then
+                            text = text .. "   ★"
+                        end
                         table.insert(item_table, {
-                            text = tostring(settingsList[k].toggle[i]),
+                            text = text,
                             checked_func = function()
                                 if location[settings] ~= nil and location[settings][k] ~= nil then
                                     if type(location[settings][k]) == "table" then
