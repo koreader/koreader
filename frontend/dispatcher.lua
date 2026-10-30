@@ -589,6 +589,7 @@ function Dispatcher:init()
         for _, option in ipairs(options) do
             local name = prefix and prefix .. option.name or option.name
             if settingsList[name] ~= nil then
+                settingsList[name].prefix = not prefix and "copt_" or nil
                 if option.name ~= nil and option.values ~= nil then
                     settingsList[name].configurable = {name = option.name, values = option.values}
                 end
@@ -955,9 +956,12 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                         if settingsList[k].step and math.floor(settingsList[k].step) ~= settingsList[k].step then
                             precision = "%0.1f"
                         end
-                        local items = SpinWidget:new{
-                            value = location[settings] ~= nil and location[settings][k] or settingsList[k].default or settingsList[k].min,
-                            default_value = settingsList[k].default,
+                        local default_value =
+                            G_reader_settings:readSetting(settingsList[k].prefix and settingsList[k].prefix .. k or k)
+                            or settingsList[k].default -- in this category value is a number
+                        UIManager:show(SpinWidget:new{
+                            value = location[settings] ~= nil and location[settings][k] or default_value or settingsList[k].min,
+                            default_value = default_value,
                             value_min = settingsList[k].min,
                             value_step = settingsList[k].step,
                             precision = precision,
@@ -969,8 +973,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                             callback = function(spin)
                                 setValue(k, spin.value, touchmenu_instance)
                             end,
-                        }
-                        UIManager:show(items)
+                        })
                     end,
                     hold_callback = function(touchmenu_instance)
                         if location[settings] ~= nil and location[settings][k] ~= nil then
@@ -997,7 +1000,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                             precision = "%0.1f"
                         end
                         local SpinWidget = require("ui/widget/spinwidget")
-                        local items = SpinWidget:new{
+                        UIManager:show(SpinWidget:new{
                             value = value,
                             value_min = settingsList[k].min,
                             value_step = settingsList[k].step,
@@ -1013,8 +1016,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                             option_callback = function()
                                 setValue(k, 0, touchmenu_instance)
                             end,
-                        }
-                        UIManager:show(items)
+                        })
                     end,
                     hold_callback = function(touchmenu_instance)
                         if location[settings] ~= nil and location[settings][k] ~= nil then
