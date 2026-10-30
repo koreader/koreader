@@ -1289,7 +1289,6 @@ function OPDSBrowser:getDownloadButtons(item, close_parent_dialog)
                             self.file_downloaded_callback, self.file_read_now_callback)
                     end,
                     hold_callback = function()
-                        Notification:notify(_("Book added to download list"), Notification.SOURCE_OTHER)
                         close_parent_dialog()
                         table.insert(self.downloads, {
                             file     = self:getLocalDownloadPath(self.download_filename, filetype, acquisition.href),
@@ -1303,6 +1302,7 @@ function OPDSBrowser:getDownloadButtons(item, close_parent_dialog)
                             datetime = os.date("%Y-%m-%d %H:%M:%S"),
                         })
                         self._manager.updated = true
+                        UIManager:show(InfoMessage:new{ text = _("Book added to download list"), timeout = 2 })
                     end,
                 })
             end
