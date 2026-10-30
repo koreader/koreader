@@ -216,7 +216,7 @@ describe("KOSync modules #notest", function()
             return res.result, res.body
         end
 
-        c.update_progress = function(name, passwd, doc, metadata, prog, percent, device, device_id, cb) --luacheck: ignore
+        c.update_progress = function(name, passwd, doc, metadata, prog, percent, device, device_id, timestamp, cb) --luacheck: ignore
             cb(res.result, res.body)
         end
 
