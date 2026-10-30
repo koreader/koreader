@@ -1052,6 +1052,7 @@ function ReaderRolling:updatePos(force)
         -- A few things like page numbers may have changed
         self.ui.document:resetCallCache() -- be really sure this cache is reset
         self.ui.document:_readMetadata() -- get updated document height and nb of pages
+        self.view.footer.pages = self.ui.document:getPageCount()
         if self.hide_nonlinear_flows or force then
             self.ui.document:cacheFlows()
         end
