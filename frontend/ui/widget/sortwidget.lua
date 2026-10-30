@@ -6,6 +6,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckMark = require("ui/widget/checkmark")
 local Device = require("device")
+local Event = require("ui/event")
 local Font = require("ui/font")
 local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -15,6 +16,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -573,7 +575,52 @@ function SortWidget:sortItems(collate, reverse_collate)
     self:_populateItems()
 end
 
+function SortWidget:_unsavedChanges()
+    if not self.orig_item_table then return end
+    UIManager:show(MultiConfirmBox:new{
+        text = _("You have unsaved changes."),
+        cancel_text = _("Cancel"),
+        cancel_callback = function()
+            if self._home_pending then
+                self._home_pending = nil
+            end
+        end,
+        choice1_text = _("Discard"),
+        choice1_callback = function()
+            if self._home_pending then
+                UIManager:setSuspendRepaints(true)
+            end
+            self:onCancel()
+            self:onClose()
+            if self._home_pending then
+                self._home_pending = nil
+                UIManager:nextTick(function()
+                    UIManager:sendEvent(Event:new("Home"))
+                end)
+            end
+        end,
+        choice2_text = _("Save"),
+        choice2_callback = function()
+            if self._home_pending then
+                UIManager:setSuspendRepaints(true)
+            end
+            self:onReturn()
+            self:onClose()
+            if self._home_pending then
+                self._home_pending = nil
+                UIManager:nextTick(function()
+                    UIManager:sendEvent(Event:new("Home"))
+                end)
+            end
+        end,
+    })
+    return true
+end
+
 function SortWidget:onClose()
+    if self:_unsavedChanges() then
+        return true
+    end
     UIManager:close(self)
     UIManager:setDirty(nil, "ui")
     return true
@@ -624,14 +671,36 @@ function SortWidget:onReturn()
         self:callback()
     end
 
+    self.orig_item_table = nil
     -- If we're not in the middle of moving stuff around, just exit.
     if self.marked == 0 then
         return self:onClose()
     end
 
     self.marked = 0
-    self.orig_item_table = nil
     self:onGoToPage(self.show_page)
+    return true
+end
+
+function SortWidget:onHome()
+    if self.orig_item_table then
+        self._home_pending = true
+        -- If we are in the middle of the stack, being called by the Home unwind
+        -- mechanism, we need to halt and yield back control to the user.
+        if UIManager:getSuspendRepaints() then
+            UIManager:setSuspendRepaints(false)
+            UIManager:setDirty(self, function()
+                return "ui", self.dimen
+            end)
+        end
+        self:onClose()
+    else
+        UIManager:setSuspendRepaints(true)
+        self:onClose()
+        UIManager:nextTick(function()
+            UIManager:sendEvent(Event:new("Home"))
+        end)
+    end
     return true
 end
 
