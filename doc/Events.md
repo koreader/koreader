@@ -23,6 +23,14 @@ recalculate the view based on the new typesetting.
 
 * PosUpdate: emitted by readerrolling module to signal a change in pos.
 
+* FootnotePopupPreparing: emitted by readerlink module (rolling documents only) just before a footnote popup
+is shown. Takes a single mutable `context` table that handlers can modify (and should not consume):
+  * `html`: the popup HTML, can be replaced (eg: to prepend or append content).
+  * `source_xpointer`, `target_xpointer`, `link`: read-only information about the followed link.
+  * `force_tap_to_follow_links`: set to `true` to make links in the popup tappable, even if "Tap to follow links" is disabled.
+  * `link_tap_handlers`: table mapping a link URI of the popup HTML to a `function(html_link)` called when it is tapped.
+  Other links tapped in the popup are followed as regular document links, keeping the popup open.
+
 
 ## Event propagation ##
 
