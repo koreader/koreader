@@ -1,5 +1,6 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local DocSettings = require("docsettings")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
@@ -12,6 +13,8 @@ local NetworkMgr = require("ui/network/manager")
 local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local datetime = require("datetime")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local time = require("ui/time")
@@ -61,7 +64,7 @@ KOSync.default_settings = {
     auto_sync = false,
     pages_before_update = nil,
     sync_forward = SYNC_STRATEGY.PROMPT,
-    sync_backward = SYNC_STRATEGY.DISABLE,
+    sync_backward = SYNC_STRATEGY.PROMPT,
     checksum_method = CHECKSUM_METHOD.BINARY,
     send_metadata = false,
 }
@@ -188,6 +191,9 @@ function KOSync:onDispatcherRegisterActions()
 end
 
 function KOSync:onReaderReady()
+    -- Until a page is turned, the last time this book was read here is when its settings were last saved.
+    local sidecar_file = DocSettings:findSidecarFile(self.ui.document.file)
+    self.last_page_turn_timestamp = sidecar_file and lfs.attributes(sidecar_file, "modification") or 0
     if self.settings.auto_sync then
         UIManager:nextTick(function()
             self:getProgress(true, false)
@@ -323,8 +329,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                 sub_item_table = {
                     {
                         text_func = function()
-                            -- NOTE: With an up-to-date Sync server, "forward" means *newer*, not necessarily ahead in the document.
-                            return T(_("Sync to a newer state (%1)"), getNameStrategy(self.settings.sync_forward))
+                            return T(_("Sync to a position further ahead (%1)"), getNameStrategy(self.settings.sync_forward))
                         end,
                         sub_item_table = {
                             {
@@ -361,7 +366,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                     },
                     {
                         text_func = function()
-                            return T(_("Sync to an older state (%1)"), getNameStrategy(self.settings.sync_backward))
+                            return T(_("Sync to a position further back (%1)"), getNameStrategy(self.settings.sync_backward))
                         end,
                         sub_item_table = {
                             {
@@ -663,6 +668,38 @@ function KOSync:getLastProgress()
     end
 end
 
+-- Inline elements don't start a new line, so a position inside one belongs to the enclosing paragraph.
+local INLINE_TAGS = {
+    a = true, abbr = true, b = true, big = true, cite = true, code = true, em = true, font = true, i = true,
+    q = true, s = true, small = true, span = true, strong = true, sub = true, sup = true, u = true,
+}
+
+-- Returns the paragraph holding a sync position, or nil for page-based documents.
+function KOSync:getParagraph(progress)
+    if self.ui.document.info.has_pages or type(progress) ~= "string" then
+        return
+    end
+    local para = progress:gsub("/text%(%)[^/]*$", "")
+    para = para:gsub("%.%d+$", "")
+    while true do
+        local tag = para:match("/([%w_-]+)[%[%d%]]*$")
+        if not tag or not INLINE_TAGS[tag:lower()] then break end
+        para = para:gsub("/[^/]+$", "")
+    end
+    return para
+end
+
+-- Returns the page a sync position lands on with the current layout, or nil if it can't be resolved.
+function KOSync:getPageFromProgress(progress)
+    if self.ui.document.info.has_pages then
+        return tonumber(progress)
+    end
+    if type(progress) ~= "string" or not self.ui.document:isXPointerInDocument(progress) then
+        return
+    end
+    return self.ui.document:getPageFromXPointer(progress)
+end
+
 function KOSync:getDocumentDigest()
     if self.settings.checksum_method == CHECKSUM_METHOD.FILENAME then
         return self:getFileNameDigest()
@@ -707,7 +744,8 @@ function KOSync:syncToProgress(progress)
     if self.ui.document.info.has_pages then
         self.ui:handleEvent(Event:new("GotoPage", tonumber(progress)))
     else
-        self.ui:handleEvent(Event:new("GotoXPointer", progress))
+        -- Also pass it as marker, to briefly show where to resume reading.
+        self.ui:handleEvent(Event:new("GotoXPointer", progress, progress))
     end
 end
 
@@ -874,59 +912,97 @@ function KOSync:getProgress(ensure_networking, interactive)
             local percentage = self:getLastPercent()
             logger.dbg("KOSync: Current progress:", percentage * 100, "% =>", progress)
 
+            -- Servers that store positions in their own format (e.g. Kavita) hand back a position that
+            -- differs slightly from what we pushed, so also compare the pages the positions land on.
+            local remote_page = self:getPageFromProgress(body.progress)
+            local local_page = self:getPageFromProgress(progress)
+            local have_pages = remote_page ~= nil and local_page ~= nil
+            local remote_para = self:getParagraph(body.progress)
+            local function describe(page, pct)
+                if have_pages then
+                    return T(_("page %1 of %2"), page, self.ui.document:getPageCount())
+                end
+                return T(_("%1%"), Math.round(pct * 100))
+            end
+            local remote_where = describe(remote_page, body.percentage)
+            local local_where = describe(local_page, percentage)
+
             if percentage == body.percentage
-            or body.progress == progress then
+            or body.progress == progress
+            or (have_pages and remote_page == local_page)
+            -- Servers that only keep the paragraph (e.g. Kavita) hand back its start, which is often on the
+            -- previous page: still the same place.
+            or (remote_para ~= nil and (body.progress == remote_para or body.progress == remote_para .. ".0")
+                and remote_para == self:getParagraph(progress)) then
                 if interactive then
                     UIManager:show(InfoMessage:new{
-                        text = _("The progress has already been synchronized."),
+                        text = T(_("Already in sync: you and %1 are both at %2."), body.device, local_where),
                         timeout = 3,
                     })
                 end
                 return
             end
 
-            -- The progress needs to be updated.
-            if interactive then
-                -- If user actively pulls progress from other devices,
-                -- we always update the progress without further confirmation.
-                self:syncToProgress(body.progress)
-                showSyncedMessage()
-                return
-            end
-
-            local self_older
-            if body.timestamp ~= nil then
-                self_older = (body.timestamp > self.last_page_turn_timestamp)
+            -- The direction is where the synced position is in the book compared to ours:
+            -- ahead means forward, behind means backward.
+            local remote_ahead
+            if have_pages then
+                remote_ahead = remote_page > local_page
             else
-                -- If we are working with an old sync server, we can only use the percentage field.
-                self_older = (body.percentage > percentage)
+                remote_ahead = body.percentage > percentage
             end
-            if self_older then
-                if self.settings.sync_forward == SYNC_STRATEGY.SILENT then
+            local remote_time = body.timestamp and body.timestamp > 0 and body.timestamp or nil
+            local local_time = self.last_page_turn_timestamp > 0 and self.last_page_turn_timestamp or nil
+            -- When the user pulls progress from the menu, always ask, whatever the sync behavior settings say.
+            local sync_forward = interactive and SYNC_STRATEGY.PROMPT or self.settings.sync_forward
+            local sync_backward = interactive and SYNC_STRATEGY.PROMPT or self.settings.sync_backward
+
+            local function when(ts)
+                if not ts then return _("unknown") end
+                local hour = datetime.secondsToHour(ts, G_reader_settings:isTrue("twelve_hour_clock"))
+                local day = os.date("%Y-%m-%d", ts)
+                if day == os.date("%Y-%m-%d") then
+                    return T(_("today %1"), hour)
+                elseif day == os.date("%Y-%m-%d", os.time() - 24 * 3600) then
+                    return T(_("yesterday %1"), hour)
+                end
+                -- @translators %1 is the short month name, %2 the day of the month, %3 the time.
+                return T(_("%1 %2 %3"), datetime.shortMonthTranslation[os.date("%b", ts)], tonumber(os.date("%d", ts)), hour)
+            end
+            local positions = T(_("%1: %2\nSaved %3\n\nThis device: %4\nLast read %5"),
+                                body.device, remote_where, when(remote_time), local_where, when(local_time))
+
+            if remote_ahead then
+                if sync_forward == SYNC_STRATEGY.SILENT then
                     self:syncToProgress(body.progress)
                     showSyncedMessage()
-                elseif self.settings.sync_forward == SYNC_STRATEGY.PROMPT then
+                elseif sync_forward == SYNC_STRATEGY.PROMPT then
                     UIManager:show(ConfirmBox:new{
-                        text = T(_("Sync to latest location %1% from device '%2'?"),
-                                 Math.round(body.percentage * 100),
-                                 body.device),
+                        text = T(_("%1 has a later page."), body.device) .. "\n\n" .. positions .. "\n\n" .. _("Jump forward to that page?"),
+                        ok_text = _("Jump forward"),
+                        cancel_text = _("Stay here"),
                         ok_callback = function()
                             self:syncToProgress(body.progress)
                         end,
                     })
                 end
-            else -- if not self_older then
-                if self.settings.sync_backward == SYNC_STRATEGY.SILENT then
+            else
+                if sync_backward == SYNC_STRATEGY.SILENT then
                     self:syncToProgress(body.progress)
                     showSyncedMessage()
-                elseif self.settings.sync_backward == SYNC_STRATEGY.PROMPT then
-                    UIManager:show(ConfirmBox:new{
-                        text = T(_("Sync to previous location %1% from device '%2'?"),
-                                 Math.round(body.percentage * 100),
-                                 body.device),
-                        ok_callback = function()
+                elseif sync_backward == SYNC_STRATEGY.PROMPT then
+                    local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+                    UIManager:show(MultiConfirmBox:new{
+                        text = T(_("%1 has an earlier page."), body.device) .. "\n\n" .. positions .. "\n\n" .. T(_("Go back to %1's page, or push yours to %1?"), body.device),
+                        choice1_text = _("Go back"),
+                        choice1_callback = function()
                             self:syncToProgress(body.progress)
                         end,
+                        choice2_text = _("Push progress"),
+                        choice2_callback = function()
+                            self:updateProgress(true, true)
+                        end,
+                        cancel_text = _("Stay here"),
                     })
                 end
             end
