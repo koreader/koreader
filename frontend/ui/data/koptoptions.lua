@@ -716,6 +716,11 @@ Useful for Internet Archive PDF documents.]]),
                 help_text = _([[In reflow mode, sets the max number of columns to try to detect in the original document.
 You might need to set it to 1 column if, in a full width document, text is incorrectly detected as multiple columns because of unlucky word spacing.]]),
             },
+            {   -- iReader Neo 3 Ultra hardware page-turn animation (water ripple)
+                name = "page_turn_effect",
+                default_value = "ripple_standard",
+                show = false, -- the reader menu provides the UI
+            },
         }
     },
 }

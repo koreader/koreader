@@ -740,6 +740,11 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Disable the automagic inversion of images when nightmode is enabled. Useful if your book contains mainly inlined mathematical content or scene break art.]]),
             },
+            {   -- iReader Neo 3 Ultra hardware page-turn animation (water ripple)
+                name = "page_turn_effect",
+                default_value = "ripple_standard",
+                show = false, -- the reader menu provides the UI
+            },
         },
     },
 }
