@@ -748,6 +748,7 @@ local option_help_text = {
     mem_usage       = _("Show memory usage in MiB."),
     reclaim_height  = _("When the status bar is hidden, this setting will utilize the entirety of screen real estate (for your book) and will temporarily overlap the text when the status bar is shown."),
     custom_text     = ReaderFooter.set_custom_text,
+    additional_content = _("E.g., alarm time or countdown interval from Read Timer plugin, or status icons from plugins like SSH and Kindle HID Passthrough."),
 }
 
 function ReaderFooter:updateFooterContainer()
