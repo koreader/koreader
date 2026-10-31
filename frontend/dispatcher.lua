@@ -591,7 +591,7 @@ function Dispatcher:init()
             if settingsList[name] ~= nil then
                 settingsList[name].prefix = not prefix and "copt_" or nil
                 if option.name ~= nil and option.values ~= nil then
-                    settingsList[name].configurable = {name = option.name, values = option.values}
+                    settingsList[name].configurable = {name = option.name, values = option.values, args_differ = option.args_differ}
                 end
                 if settingsList[name].event == nil then
                     settingsList[name].event = option.event
@@ -798,9 +798,9 @@ function Dispatcher:getNameFromItem(item, settings, dont_show_value, honor_cycle
 end
 
 -- Converts copt/kopt-options values to args.
-function Dispatcher:getArgFromValue(item, value)
+function Dispatcher.getArgFromValue(item, value)
     local configurable = settingsList[item].configurable
-    if type(configurable) == "table" then
+    if type(configurable) == "table" and configurable.args_differ then
         local value_num = util.arrayContains(configurable.values, value)
         if value_num then
             return settingsList[item].args[value_num]
@@ -1042,21 +1042,20 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                     if settingsList[k].args_func then
                         settingsList[k].args, settingsList[k].toggle = settingsList[k].args_func()
                     end
-                    local default_value = self:getArgFromValue(k, getDefaultValue(k))
+                    local default_value = self.getArgFromValue(k, getDefaultValue(k))
                     if type(default_value) == "table" then
                         default_value = default_value[1]
                     end
                     for i=1,#settingsList[k].args do
-                        local text = tostring(settingsList[k].toggle[i])
-                        local current_value = settingsList[k].args[i]
-                        if type(current_value) == "table" then
-                            current_value = current_value[1]
-                        end
-                        if current_value == default_value then
-                            text = text .. "   ★"
-                        end
                         table.insert(item_table, {
-                            text = text,
+                            text = tostring(settingsList[k].toggle[i]),
+                            text_star_func = function()
+                                local current_value = settingsList[k].args[i]
+                                if type(current_value) == "table" then
+                                    current_value = current_value[1]
+                                end
+                                return current_value == default_value
+                            end,
                             checked_func = function()
                                 if location[settings] ~= nil and location[settings][k] ~= nil then
                                     if type(location[settings][k]) == "table" then
