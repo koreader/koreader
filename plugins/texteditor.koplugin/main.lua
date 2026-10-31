@@ -728,6 +728,35 @@ local function extractLines(text, from, to)
     return table.concat(out, "\n")
 end
 
+-- Locates the last "./luajit: ... [C]: at" crash excerpt (including the line
+-- immediately following "[C]: at"), returning its 1-based (from, to) line range.
+local function findLastCrash(text, last_line)
+    -- Anchored greedy match: one C-level pass, selects the last match
+    local last_luajit = text:match("^.*()%./luajit:")
+    local last_c_at = text:find("[C]: at", last_luajit, true)
+    if not (last_luajit and last_c_at) then return nil, nil end
+
+    -- Count newlines up to each anchor in a single forward pass.
+    local line, pos, nl = 1, 1
+    while true do
+        nl = text:find("\n", pos, true)
+        if not nl or nl >= last_luajit then break end
+        line = line + 1
+        pos = nl + 1
+    end
+    local crash_from = line
+
+    while nl and nl < last_c_at do
+        line = line + 1
+        nl = text:find("\n", nl + 1, true)
+    end
+    local crash_to = line + 1
+    if last_line and crash_to > last_line then
+        crash_to = last_line
+    end
+    return crash_from, crash_to
+end
+
 -- Export the whole text, or a range of lines, as QR code(s).
 function TextEditor:showQRExport()
     local text = self.input:getInputText()
@@ -752,6 +781,13 @@ function TextEditor:showQRExport()
             })
             return
         end
+        -- Strip the leading dot from "./luajit:" crash logs so [some] scanners
+        -- do not misclassify the relative path + colon as a malformed URI.
+        if text:sub(1, 9) == "./luajit:" then
+            -- Normally we wouldn't want to alter the payload, but this seems the most
+            -- likely encounter of this limitation and doesn't affect the actual content.
+            text = text:sub(2)
+        end
         local title
         if from_line and to_line and from_line ~= to_line then
             title = T(_("Lines %1-%2"), from_line, to_line)
@@ -770,6 +806,7 @@ function TextEditor:showQRExport()
         showQR(extractLines(text, 1, 1))
         return
     end
+    local is_crash_log = self.input.title == "crash.log"
 
     -- Start the range at the line shown on the nav bar button, clamped to the
     -- offered range (curr_line_num can point at the trimmed trailing line).
@@ -798,6 +835,18 @@ function TextEditor:showQRExport()
             end
             showQR(extractLines(text, from, to), from, to)
         end,
+        extra_text = is_crash_log and _("Export last crash traceback") or nil,
+        extra_callback = is_crash_log and function()
+            local crash_from, crash_to = findLastCrash(text, last)
+            if crash_from and crash_to then
+                showQR(extractLines(text, crash_from, crash_to), crash_from, crash_to)
+            else
+                UIManager:show(InfoMessage:new{
+                    text = _("No crash traceback found" .. "\n\n" ..
+                "Note: This uses a heuristic to locate the last crash traceback, which may not be accurate for all crash logs."),
+                })
+            end
+        end or nil,
     })
 end
 

@@ -17,6 +17,7 @@ Example:
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
+local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Font = require("ui/font")
@@ -25,6 +26,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local QRWidget = require("ui/widget/qrwidget")
 local TextWidget = require("ui/widget/textwidget")
@@ -43,7 +45,6 @@ local MAX_PAYLOAD = HARD_MAX_BYTES - PREFIX_RESERVE
 local DENSITY_THRESHOLD = math.floor(MAX_PAYLOAD * 0.85) -- (85% of max capacity, roughly ~2500 bytes).
 
 local QRMessage = InputContainer:extend{
-    modal = true,
     stop_events_propagation = true,
     timeout = nil, -- in seconds
     _timeout_func = nil,
@@ -94,6 +95,7 @@ function QRMessage:registerKeyEvents()
             self.key_events.NextPage = { { Input.group.PgFwd } }
             self.key_events.PrevPage = { { Input.group.PgBack } }
         end
+        self.key_events.ShowMenu = { { "Menu" } }
         self.key_events.Close = { { Input.group.Back } }
         self.key_events.FullRefresh = { { { "Press", "F5" } } }
     end
@@ -176,6 +178,9 @@ function QRMessage:_buildLayout()
         title = title,
         title_top_padding = Screen:scaleBySize(6),
         button_padding = Screen:scaleBySize(5),
+        left_icon = "appbar.menu",
+        left_icon_size_ratio = 1,
+        left_icon_tap_callback = function() self:onShowMenu() end,
         right_icon_size_ratio = 1,
         close_callback = function() self:onClose() end,
         show_parent = self.show_parent or self,
@@ -292,6 +297,47 @@ function QRMessage:_makeImage()
             max_width = self.img_w,
         },
     }
+end
+
+function QRMessage:onShowMenu()
+    local can_force = #self.pages == 1 and not self._plain_text_forced
+    local dialog
+    local text = _([[
+Some QR scanners may misinterpret certain payloads as invalid URIs, resulting in scanning errors and failure to decode the payload.
+
+Forcing plain-text mode re-encodes the symbol with a small leading six-byte prefix that helps the scanner recognise the payload as plain text.]])
+    local buttons = {
+        {{
+            text = _("About forced re-encoding"),
+            callback = function()
+                UIManager:close(dialog)
+                UIManager:show(InfoMessage:new{
+                    text = text,
+                })
+            end,
+
+        }},
+        {{
+            text = _("Force plain-text mode"),
+            enabled = can_force,
+            callback = function()
+                UIManager:close(dialog)
+                self._plain_text_forced = true
+                self.pages[1] = "(1/1) " .. self.pages[1]
+                self:_renderPage()
+                UIManager:setDirty(self, "ui")
+            end,
+        }},
+    }
+    dialog = ButtonDialog:new{
+        shrink_unneeded_width = true,
+        anchor = function()
+            return self.title_bar.left_button.image.dimen
+        end,
+        buttons = buttons,
+    }
+    UIManager:show(dialog)
+    return true
 end
 
 function QRMessage:_syncFooter()
