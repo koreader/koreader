@@ -396,27 +396,11 @@ function Profiles:getProfileFromCurrentBookSettings(new_name)
             "kopt_max_columns",
         }
     end
-    local setting_needs_arg = {
-        ["sync_t_b_page_margins"] = true,
-        ["view_mode"]             = true,
-        ["embedded_css"]          = true,
-        ["embedded_fonts"]        = true,
-        ["smooth_scaling"]        = true,
-        ["nightmode_images"]      = true,
-        ["kopt_trim_page"]        = true,
-        ["kopt_zoom_mode_genus"]  = true,
-        ["kopt_zoom_mode_type"]   = true,
-        ["kopt_page_scroll"]      = true,
-    }
-
     local profile = { settings = { name = new_name, order = document_settings } }
     for _, v in ipairs(document_settings) do
         -- document configurable settings do not have prefixes
         local value = self.document.configurable[v:gsub("^kopt_", "")]
-        if setting_needs_arg[v] then
-            value = Dispatcher:getArgFromValue(v, value)
-        end
-        profile[v] = value
+        profile[v] = Dispatcher.getArgFromValue(v, value)
     end
     if self.ui.rolling then
         profile["set_font"] = self.ui.font.font_face -- not in configurable settings

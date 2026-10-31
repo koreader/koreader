@@ -589,8 +589,9 @@ function Dispatcher:init()
         for _, option in ipairs(options) do
             local name = prefix and prefix .. option.name or option.name
             if settingsList[name] ~= nil then
+                settingsList[name].prefix = not prefix and "copt_" or nil
                 if option.name ~= nil and option.values ~= nil then
-                    settingsList[name].configurable = {name = option.name, values = option.values}
+                    settingsList[name].configurable = {name = option.name, values = option.values, args_differ = option.args_differ}
                 end
                 if settingsList[name].event == nil then
                     settingsList[name].event = option.event
@@ -629,10 +630,8 @@ function Dispatcher:init()
                             (option.more_options_param and (option.more_options_param.value_max or option.more_options_param.left_max))
                             or (option.args and option.args[#option.args]) or option.values[#option.values]
                     end
-                    if settingsList[name].default == nil then
-                        settingsList[name].default = option.default_value
-                    end
                 end
+                settingsList[name].default = option.default_value
                 settingsList[name].unit = option.more_options_param and option.more_options_param.unit
             end
         end
@@ -645,6 +644,15 @@ function Dispatcher:init()
     end
     UIManager:broadcastEvent(Event:new("DispatcherRegisterActions"))
     Dispatcher.initialized = true
+end
+
+local function getDefaultValue(name)
+    local g_settings_key = settingsList[name].prefix and settingsList[name].prefix .. name or name
+    local g_settings_value = G_reader_settings:readSetting(g_settings_key)
+    if g_settings_value ~= nil then
+        return g_settings_value
+    end
+    return settingsList[name].default
 end
 
 --[[--
@@ -790,9 +798,15 @@ function Dispatcher:getNameFromItem(item, settings, dont_show_value, honor_cycle
 end
 
 -- Converts copt/kopt-options values to args.
-function Dispatcher:getArgFromValue(item, value)
-    local value_num = util.arrayContains(settingsList[item].configurable.values, value)
-    return settingsList[item].args[value_num]
+function Dispatcher.getArgFromValue(item, value)
+    local configurable = settingsList[item].configurable
+    if type(configurable) == "table" and configurable.args_differ then
+        local value_num = util.arrayContains(configurable.values, value)
+        if value_num then
+            return settingsList[item].args[value_num]
+        end
+    end
+    return value
 end
 
 -- Add the item to the end of the execution order.
@@ -955,9 +969,10 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                         if settingsList[k].step and math.floor(settingsList[k].step) ~= settingsList[k].step then
                             precision = "%0.1f"
                         end
-                        local items = SpinWidget:new{
-                            value = location[settings] ~= nil and location[settings][k] or settingsList[k].default or settingsList[k].min,
-                            default_value = settingsList[k].default,
+                        local default_value = getDefaultValue(k)
+                        UIManager:show(SpinWidget:new{
+                            value = location[settings] ~= nil and location[settings][k] or default_value or settingsList[k].min,
+                            default_value = default_value,
                             value_min = settingsList[k].min,
                             value_step = settingsList[k].step,
                             precision = precision,
@@ -969,8 +984,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                             callback = function(spin)
                                 setValue(k, spin.value, touchmenu_instance)
                             end,
-                        }
-                        UIManager:show(items)
+                        })
                     end,
                     hold_callback = function(touchmenu_instance)
                         if location[settings] ~= nil and location[settings][k] ~= nil then
@@ -997,7 +1011,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                             precision = "%0.1f"
                         end
                         local SpinWidget = require("ui/widget/spinwidget")
-                        local items = SpinWidget:new{
+                        UIManager:show(SpinWidget:new{
                             value = value,
                             value_min = settingsList[k].min,
                             value_step = settingsList[k].step,
@@ -1013,8 +1027,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                             option_callback = function()
                                 setValue(k, 0, touchmenu_instance)
                             end,
-                        }
-                        UIManager:show(items)
+                        })
                     end,
                     hold_callback = function(touchmenu_instance)
                         if location[settings] ~= nil and location[settings][k] ~= nil then
@@ -1029,9 +1042,20 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                     if settingsList[k].args_func then
                         settingsList[k].args, settingsList[k].toggle = settingsList[k].args_func()
                     end
+                    local default_value = self.getArgFromValue(k, getDefaultValue(k))
+                    if type(default_value) == "table" then
+                        default_value = default_value[1]
+                    end
                     for i=1,#settingsList[k].args do
                         table.insert(item_table, {
                             text = tostring(settingsList[k].toggle[i]),
+                            text_star_func = function()
+                                local current_value = settingsList[k].args[i]
+                                if type(current_value) == "table" then
+                                    current_value = current_value[1]
+                                end
+                                return current_value == default_value
+                            end,
                             checked_func = function()
                                 if location[settings] ~= nil and location[settings][k] ~= nil then
                                     if type(location[settings][k]) == "table" then

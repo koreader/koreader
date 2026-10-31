@@ -183,6 +183,7 @@ This is disabled in scroll mode. Switching from page mode with two columns to sc
                 default_value = 0,
                 event = "SyncPageTopBottomMargins",
                 args = {false, true},
+                args_differ = true, -- args differ from values
                 hide_on_apply = true,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Keep top and bottom margins synchronized.
@@ -308,6 +309,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 values = {0, 1},
                 default_value = G_defaults:readSetting("DCREREADER_VIEW_MODE") == "page" and 0 or 1,
                 args = {"page", "scroll"},
+                args_differ = true,
                 event = "SetViewMode",
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[- 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of pages may change when you change fonts, margins, styles, etc.).
@@ -684,6 +686,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 values = {0, 1},
                 default_value = 1,
                 args = {false, true},
+                args_differ = true,
                 event = "ToggleEmbeddedStyleSheet",
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Enable or disable publisher stylesheets embedded in the book.
@@ -696,6 +699,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 values = {0, 1},
                 default_value = 1,
                 args = {false, true},
+                args_differ = true,
                 event = "ToggleEmbeddedFonts",
                 enabled_func = function(configurable, document)
                     return optionsutil.enableIfEquals(configurable, "embedded_css", 1)
@@ -723,6 +727,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 values = {0, 1},
                 default_value = 0,
                 args = {false, true},
+                args_differ = true,
                 event = "ToggleImageScaling",
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[- 'fast' uses a fast but inaccurate scaling algorithm when scaling images.
@@ -735,6 +740,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 values = {0, 1},
                 default_value = 1,
                 args = {false, true},
+                args_differ = true,
                 event = "ToggleNightmodeImages",
                 show_func = function() return Screen.night_mode end,
                 name_text_hold_callback = optionsutil.showValues,

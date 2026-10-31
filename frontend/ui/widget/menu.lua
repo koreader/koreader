@@ -1614,6 +1614,9 @@ function Menu.getMenuText(item)
     else
         text = item.text
     end
+    if item.text_star_func and item.text_star_func() then
+        text = text .. "   ★"
+    end
     if item.sub_item_table ~= nil or item.sub_item_table_func then
         text = string.format(sub_item_format, text)
     end
