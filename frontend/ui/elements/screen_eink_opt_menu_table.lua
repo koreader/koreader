@@ -69,6 +69,12 @@ local eink_settings_table = {
 
 if Device:hasEinkScreen() then
     table.insert(eink_settings_table.sub_item_table, 1, dofile("frontend/ui/elements/refresh_menu_table.lua"))
+    table.insert(eink_settings_table.sub_item_table, 2, {
+        text = _("Fast page turns (low-quality waveform)"),
+        help_text = _("Use the fastest e-ink waveform for page turns. Text will look rougher and ghosting builds up until the next full refresh. Image-heavy pages keep the normal waveform; pages with only a small inline image may still use the fast one, and that image will then look coarser. The refresh rate above still applies."),
+        checked_func = function() return G_reader_settings:isTrue("page_turn_fast_refresh") end,
+        callback = function() G_reader_settings:flipNilOrFalse("page_turn_fast_refresh") end,
+    })
     if (Screen.wf_level_max or 0) > 0 then
         table.insert(eink_settings_table.sub_item_table, dofile("frontend/ui/elements/waveform_level.lua"))
     end
