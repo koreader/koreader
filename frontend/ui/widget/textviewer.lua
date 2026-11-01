@@ -403,7 +403,7 @@ function TextViewer:init(reinit)
     }
 
     -- NT: add titlebar.left_button (hamburger menu) to FocusManager.
-    if Device:hasDPad() and not (Device:hasSymKey() or Device:hasScreenKB()) then
+    if self.titlebar.left_button and Device:hasDPad() and not (Device:hasSymKey() or Device:hasScreenKB()) then
         table.insert(self.button_table.layout, 1, { self.titlebar.left_button })
         -- Refocus on the updated layout
         self.button_table:refocusWidget()
