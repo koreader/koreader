@@ -264,8 +264,7 @@ footerTextGeneratorMap = {
             end
         else
             if page_label then
-                return ("{%s / %s} %d / %d"):format(page_label, footer.ui.pagemap:getLastPageLabel(true),
-                    footer.pageno, footer.pages)
+                return ("%d / %d"):format(page_label, footer.ui.pagemap:getLastPageLabel(true))
             end
             return ("%d / %d"):format(footer.pageno, footer.pages)
         end
