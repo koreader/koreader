@@ -45,7 +45,7 @@ local PageBrowserWidget = FocusManager:extend{
 
 function PageBrowserWidget:init()
     self.layout = {}
-    self.build_focus_layout = not Device:isTouchDevice() and Device:hasDPad() and Device:useDPadAsActionKeys()
+    self.build_focus_layout = Device:hasDPad() and Device:useDPadAsActionKeys()
     if self.ui.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
@@ -195,10 +195,10 @@ end
 
 function PageBrowserWidget:registerKeyEvents()
     if Device:hasKeys() then
-        if Device:isTouchDevice() then
+        if Device:hasDPad() and not Device:useDPadAsActionKeys() then
             -- Remove key handling by FocusManager (there is no ordering/priority
             -- handling for key_events, unlike with touch zones)
-            self.key_events = {}
+            self:releaseFocusKeys("FocusLeft", "FocusRight", "FocusUp", "FocusDown", "Press")
             self.key_events.ScrollRowUp = { { "Up" } }
             self.key_events.ScrollRowDown = { { "Down" } }
         elseif Device:hasScreenKB() or Device:hasKeyboard() then
