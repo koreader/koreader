@@ -430,10 +430,7 @@ end
 -- Used by onTapSelectButton to handle visual feedback when flash_ui is enabled
 function Button:_doFeedbackHighlight()
     -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
-    -- We can only highlight a Button that's already been painted once: the frame's
-    -- geometry (dimen) is only known after the first paint, and reading it before
-    -- that is a nil dereference.
-    -- (Same guard as in Button:refresh(), which has been there all along.)
+    -- The frame's geometry is only known after the first paint.
     if not (self[1] and self[1].dimen) then
         logger.dbg("Button:", tostring(self), "attempted a feedback highlight in an unpainted frame!")
         return
@@ -441,8 +438,7 @@ function Button:_doFeedbackHighlight()
     if self.text then
         -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
         -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
-        -- The background may be missing entirely (e.g. a Button widget that was patched by a plugin,
-        -- or a hidden button): in that case we can't invert the bg/fg colors, so fall back to the invert flag.
+        -- The frame may have no background: fall back to the invert flag.
         if (self[1].radius == nil or self.background) and self[1].background then
             self[1].radius = Size.radius.button
             -- And here, it's easier to just invert the bg/fg colors ourselves,
@@ -465,15 +461,13 @@ function Button:_doFeedbackHighlight()
 end
 
 function Button:_undoFeedbackHighlight(is_translucent)
-    -- Same guard as in _doFeedbackHighlight(): an unpainted frame has no geometry
-    -- to repaint or to invert.
+    -- Same as in _doFeedbackHighlight().
     if not (self[1] and self[1].dimen) then
         logger.dbg("Button:", tostring(self), "attempted a feedback unhighlight in an unpainted frame!")
         return
     end
     if self.text then
-        -- Same as in _doFeedbackHighlight(): only invert the colors back if there
-        -- actually was a background to invert.
+        -- Only invert back what was inverted.
         if self[1].radius == Size.radius.button and self[1].background then
             self[1].radius = nil
             self[1].background = self[1].background:invert()
