@@ -2,8 +2,10 @@ local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local Device = require("device")
 local Dispatcher = require("dispatcher")
 local DocumentRegistry = require("document/documentregistry")
+local DoubleSpinWidget = require("ui/widget/doublespinwidget")
 local Font = require("ui/font")
 local QRMessage = require("ui/widget/qrmessage")
 local InfoMessage = require("ui/widget/infomessage")
@@ -522,12 +524,11 @@ function TextEditor:editFile(file_path, readonly, caller_callback)
     if self.qr_code_export then
         table.insert(buttons_first_row, {
             text = _("QR"),
+            enabled_func = function()
+                return self.input:getInputText() ~= ""
+            end,
             callback = function()
-                UIManager:show(QRMessage:new{
-                    text = self.input:getInputText(),
-                    height = Screen:getHeight(),
-                    width = Screen:getWidth()
-                })
+                self:showQRExport()
             end,
         })
     end
@@ -706,6 +707,148 @@ function TextEditor:showMenu()
         modal = true,
     }
     UIManager:show(dialog)
+end
+
+-- Returns lines from..to (1-based, inclusive) of text, joined with "\n".
+-- Lines are "\n"-delimited, which matches the editor's own line numbers.
+-- Lines before `from` are skipped without creating any strings, and the walk
+-- stops at `to`.
+local function extractLines(text, from, to)
+    local out = {}
+    local pos, n = 1, 1
+    while n <= to do
+        local nl = text:find("\n", pos, true)
+        if n >= from then
+            -- CRLF files are read in "rb" mode, so drop the trailing "\r"
+            out[#out + 1] = (text:sub(pos, (nl or #text + 1) - 1):gsub("\r$", ""))
+        end
+        if not nl then break end
+        pos = nl + 1
+        n = n + 1
+    end
+    return table.concat(out, "\n")
+end
+
+-- Locates the last "./luajit: ... [C]: at" crash excerpt (including the line
+-- immediately following "[C]: at"), returning its 1-based (from, to) line range.
+local function findLastCrash(text, last_line)
+    -- Anchored greedy match: one C-level pass, selects the last match
+    local last_luajit = text:match("^.*()%./luajit:")
+    local last_c_at = text:find("[C]: at", last_luajit, true)
+    if not (last_luajit and last_c_at) then return nil, nil end
+
+    -- Count newlines up to each anchor in a single forward pass.
+    local line, pos, nl = 1, 1
+    while true do
+        nl = text:find("\n", pos, true)
+        if not nl or nl >= last_luajit then break end
+        line = line + 1
+        pos = nl + 1
+    end
+    local crash_from = line
+
+    while nl and nl < last_c_at do
+        line = line + 1
+        nl = text:find("\n", nl + 1, true)
+    end
+    local crash_to = line + 1
+    if last_line and crash_to > last_line then
+        crash_to = last_line
+    end
+    return crash_from, crash_to
+end
+
+-- Export the whole text, or a range of lines, as QR code(s).
+function TextEditor:showQRExport()
+    local text = self.input:getInputText()
+    if text == "" then return end
+
+    -- Count lines without materialising anything: one per "\n", plus the final
+    -- line unless the text ends with a newline (that would only add an empty
+    -- "line", which we don't offer).
+    local last = 0
+    for __ in text:gmatch("\n") do
+        last = last + 1
+    end
+    if text:sub(-1) ~= "\n" then
+        last = last + 1
+    end
+
+    local invert_bidi = self.ui and self.ui.view and self.ui.view:shouldInvertBiDiLayoutMirroring()
+    local function showQR(qr_text, from_line, to_line)
+        if not qr_text:find("%S") then
+            UIManager:show(InfoMessage:new{
+                text = _("Nothing to export in the selected lines"),
+            })
+            return
+        end
+        -- Strip the leading dot from "./luajit:" crash logs so [some] scanners
+        -- do not misclassify the relative path + colon as a malformed URI.
+        if text:sub(1, 9) == "./luajit:" then
+            -- Normally we wouldn't want to alter the payload, but this seems the most
+            -- likely encounter of this limitation and doesn't affect the actual content.
+            text = text:sub(2)
+        end
+        local title
+        if from_line and to_line and from_line ~= to_line then
+            title = T(_("Lines %1-%2"), from_line, to_line)
+        else
+            title = T(_("Line %1"), from_line or 1)
+        end
+        UIManager:show(QRMessage:new{
+            text = qr_text,
+            title = title,
+            invert_bidi = invert_bidi,
+        })
+    end
+
+    -- Nothing to choose with a single line
+    if last <= 1 then
+        showQR(extractLines(text, 1, 1))
+        return
+    end
+    local is_crash_log = self.input.title == "crash.log" and not Device:isAndroid()
+
+    -- Start the range at the line shown on the nav bar button, clamped to the
+    -- offered range (curr_line_num can point at the trimmed trailing line).
+    local current_line = math.max(1, math.min(self.input.curr_line_num or 1, last))
+    local hold_step = math.max(4, math.floor(last / 20))
+    UIManager:show(DoubleSpinWidget:new{
+        title_text = _("Generate QR code from line range"),
+        left_text = _("From"),
+        right_text = _("To"),
+        left_min = 1,
+        left_max = last,
+        left_value = current_line,
+        left_hold_step = hold_step,
+        left_precision = "%d",
+        right_min = 1,
+        right_max = last,
+        right_value = last,
+        right_hold_step = hold_step,
+        right_precision = "%d",
+        is_range = true,
+        ok_always_enabled = true,
+        ok_text = _("Generate code"),
+        callback = function(from, to)
+            if from > to then
+                from, to = to, from
+            end
+            showQR(extractLines(text, from, to), from, to)
+        end,
+        extra_text = is_crash_log and _("Export last crash traceback") or nil,
+        extra_callback = is_crash_log and function()
+            local crash_from, crash_to = findLastCrash(text, last)
+            if crash_from and crash_to then
+                showQR(extractLines(text, crash_from, crash_to), crash_from, crash_to)
+            else
+                UIManager:show(InfoMessage:new{
+                    text = _("No crash traceback found" .. "\n\n" ..
+                "Note: This uses a heuristic to locate the last crash traceback, which may not be accurate for all crash logs."),
+                })
+            end
+        end or nil,
+    })
 end
 
 return TextEditor

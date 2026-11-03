@@ -31,7 +31,7 @@ function Cloud:init()
         name = _("Cloud storage download folder"),
         get = function()
             self:loadSettings()
-            return self.settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+            return self:getDownloadDir()
         end,
         set = function(path)
             self.settings:saveSetting("download_dir", path)
@@ -76,6 +76,10 @@ function Cloud:loadSettings()
     self.servers = Cloud.settings:readSetting("cs_servers", {})
 end
 
+function Cloud:getDownloadDir()
+    return self.settings:readSetting("download_dir") or self.ui.folder_shortcuts:expandPath("%D%")
+end
+
 function Cloud:onFlushSettings()
     if self.updated then
         Cloud.settings:flush()
@@ -116,7 +120,7 @@ function Cloud:onShowCloudStorageList(caller_choose_folder_callback)
                     base:init(true)
                     UIManager:show(base)
                 else
-                    local download_dir = self.settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+                    local download_dir = self:getDownloadDir()
                     local fc = self.ui.file_chooser
                     if fc and fc.path == download_dir then
                         fc:refreshPath()
@@ -194,6 +198,9 @@ end
 -- After merging, the income file is no longer needed and is deleted. The local file is uploaded and then a copy of it is saved
 -- and renamed to replace the old cached file (thus the naming). The cached file stays (in the same folder) till being replaced
 -- in the next round.
+--
+-- `is_silent` suppresses both the failure message and the success notification, so a caller can run
+-- a sync the user did not ask for without interrupting what they are doing.
 function Cloud:sync(server, file_path, sync_cb, is_silent, caller_pre_callback)
     local provider = server and server.type and self.providers[server.type]
     if not provider then return end
@@ -208,7 +215,11 @@ function Cloud:sync(server, file_path, sync_cb, is_silent, caller_pre_callback)
             local cached_file_path = file_path .. ".sync" -- file uploaded to server last time
             local fail_msg = _("Something went wrong when syncing, please check your network connection and try again later.")
             local show_msg = function(msg)
-                if is_silent then return end
+                if is_silent then
+                    -- nobody is watching: log it
+                    logger.warn("cloud sync failed:", msg or fail_msg)
+                    return
+                end
                 UIManager:show(InfoMessage:new{
                     text = msg or fail_msg,
                     timeout = 3,
@@ -238,10 +249,12 @@ function Cloud:sync(server, file_path, sync_cb, is_silent, caller_pre_callback)
             if type(code_response) == "number" and code_response >= 200 and code_response < 300 then
                 os.remove(cached_file_path)
                 ffiUtil.copyFile(file_path, cached_file_path)
-                UIManager:show(Notification:new{
-                    text = _("Successfully synchronized."),
-                    timeout = 2,
-                })
+                if not is_silent then
+                    UIManager:show(Notification:new{
+                        text = _("Successfully synchronized."),
+                        timeout = 2,
+                    })
+                end
             else
                 show_msg()
             end

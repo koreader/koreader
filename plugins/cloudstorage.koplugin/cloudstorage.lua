@@ -696,7 +696,7 @@ function CloudStorage:showFileDownloadDialog(item)
             filename_orig, filesize_str, filename, BD.dirpath(path))
     end
 
-    local download_dir = self.settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+    local download_dir = self._manager:getDownloadDir()
     local filename_orig = item.text
     local filename = filename_orig
     local filesize = item.filesize
@@ -964,7 +964,7 @@ end
 function CloudStorage:showSelectedFilesDownloadDialog()
     local files = self.remote_selected_files
     local files_nb = util.tableSize(files)
-    local download_dir = self.settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+    local download_dir = self._manager:getDownloadDir()
     local local_path = (download_dir ~= "/" and download_dir or "") .. "/"
     UIManager:show(MultiConfirmBox:new{
         text = T(N_("Download 1 file?", "Download %1 files?", files_nb), files_nb) .. "\n" ..

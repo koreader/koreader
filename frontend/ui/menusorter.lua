@@ -4,6 +4,7 @@ menu_items and a separate menu order.
 ]]
 
 local DataStorage = require("datastorage")
+local Dbg = require("dbg")
 local FFIUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -178,8 +179,19 @@ function MenuSorter:sort(item_table, order)
         end
         if sorting_hint then
             local sorting_hint_menu = self:findById(menu_table["KOMenu:menu_buttons"], sorting_hint)
-            sorting_hint_menu = sorting_hint_menu.sub_item_table or sorting_hint_menu
-            table.insert(sorting_hint_menu, v)
+            Dbg.dassert(sorting_hint_menu, string.format(
+                "MenuSorter: item '%s' has sorting_hint '%s', but no menu with that id exists. "
+                .. "Either the hint is mistyped, or the target is conditionally built "
+                .. "(e.g., physical_buttons_setup requires Device:hasKeys()).",
+                tostring(k), tostring(sorting_hint)
+            ))
+            if sorting_hint_menu then
+                sorting_hint_menu = sorting_hint_menu.sub_item_table or sorting_hint_menu
+                table.insert(sorting_hint_menu, v)
+            else
+                -- The target menu may legitimately be absent (e.g., physical_buttons_setup without hasKeys).
+                logger.warn("menu hint target not found, skipping item:", k, sorting_hint)
+            end
         else
             table.insert(menu_table["KOMenu:menu_buttons"][1], v)
         end

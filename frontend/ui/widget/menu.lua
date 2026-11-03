@@ -1614,24 +1614,13 @@ function Menu.getMenuText(item)
     else
         text = item.text
     end
+    if item.text_star_func and item.text_star_func() then
+        text = text .. "   ★"
+    end
     if item.sub_item_table ~= nil or item.sub_item_table_func then
         text = string.format(sub_item_format, text)
     end
     return text
-end
-
-function Menu.itemTableFromTouchMenu(t)
-    local item_t = {}
-    for k, v in ffiUtil.orderedPairs(t) do
-        local item = { text = k }
-        if v.callback then
-            item.callback = v.callback
-        else
-            item.sub_item_table = v
-        end
-        table.insert(item_t, item)
-    end
-    return item_t
 end
 
 return Menu

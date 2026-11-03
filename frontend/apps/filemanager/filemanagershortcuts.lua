@@ -47,7 +47,7 @@ local FileManagerShortcuts = WidgetContainer:extend{
         download_dir = {
             name = _("Download folder"),
             get = function()
-                return G_reader_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
+                return G_reader_settings:readSetting("download_dir") or filemanagerutil.getHomeFolder()
             end,
             set = function(path)
                 G_reader_settings:saveSetting("download_dir", path)

@@ -52,6 +52,7 @@ local Button = InputContainer:extend{
     enabled = true,
     hidden = false,
     allow_hold_when_disabled = false,
+    focusable = true, -- if false, the button won't be added to focusmanager.layout
     -- Allow any button to have a physical key_binding(s), same shape as InputContainer.key_events
     -- entries: a single key string, or an array of keys/modifier-key combinations.
     key_bindings = nil,

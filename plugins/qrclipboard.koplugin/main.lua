@@ -5,6 +5,7 @@ This plugin generates a QR code from clipboard content.
 --]]--
 
 local Device = require("device")
+local Dispatcher = require("dispatcher")
 local QRMessage = require("ui/widget/qrmessage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -21,6 +22,7 @@ function QRClipboard:init()
     end
     if Device:hasClipboard() then
         self.ui.menu:registerToMainMenu(self)
+        self:onDispatcherRegisterActions()
     end
 end
 
@@ -46,8 +48,7 @@ function QRClipboard:addToHighlightDialog()
                 end
                 UIManager:show(QRMessage:new{
                     text = text,
-                    width = Device.screen:getWidth(),
-                    height = Device.screen:getHeight(),
+                    invert_bidi = this.ui.view:shouldInvertBiDiLayoutMirroring(),
                     dismiss_callback = function()
                         -- delay clearing highlighted text a bit, so the user can see
                         -- what was used to generate the QR code
@@ -66,13 +67,32 @@ function QRClipboard:addToMainMenu(menu_items)
     menu_items.qrclipboard = {
         text = _("QR from clipboard"),
         callback = function()
-            UIManager:show(QRMessage:new{
-                text = Device.input.getClipboardText(),
-                width = Device.screen:getWidth(),
-                height = Device.screen:getHeight(),
-            })
+            self:onQRFromClipboard()
         end,
     }
+end
+
+function QRClipboard:onQRFromClipboard()
+    local clipboard_text = Device.input.getClipboardText()
+    if not clipboard_text or clipboard_text == "" then
+        local InfoMessage = require("ui/widget/infomessage")
+        UIManager:show(InfoMessage:new{ text = _("Clipboard is empty") })
+        return nil
+    end
+    local invert_bidi = self.ui and self.ui.view and self.ui.view:shouldInvertBiDiLayoutMirroring()
+    UIManager:show(QRMessage:new{
+        text = clipboard_text,
+        invert_bidi = invert_bidi,
+    })
+end
+
+function QRClipboard:onDispatcherRegisterActions()
+    Dispatcher:registerAction("qr_from_clipboard", {
+        category = "none",
+        event = "QRFromClipboard",
+        title = _("Generate QR code from clipboard"),
+        general = true
+    })
 end
 
 return QRClipboard

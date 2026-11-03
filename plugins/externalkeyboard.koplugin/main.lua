@@ -26,6 +26,15 @@ local KEYBOARD_LAYOUTS_DIR = "plugins/externalkeyboard.koplugin/keyboard_layouts
 -- NOTE: See https://www.mobileread.com/forums/showthread.php?p=4135724 if your keyboard reports itself as an Apple keyboard.
 --       (We currently don't do this here, but that may change in the future).
 
+-- Blacklist for virtual input nodes that *falsely* advertise KEYBOARD capabilities.
+-- For example, `kindle-input-pt` is a software-defined pass-through device created by
+-- Amazon's input_manager to route events from Bluetooth remotes (like the Kindle Click).
+-- Because it broadcasts a catch-all list of capabilities (including KEYBOARD and DPAD),
+-- we must explicitly ignore it so this plugin does not erroneously hijack input handling.
+local BLACKLISTED_DEVICES = {
+    ["kindle-input-pt"] = true,
+}
+
 local function yes() return true end
 local function no() return false end  -- luacheck: ignore
 
@@ -35,9 +44,11 @@ local ExternalKeyboard = WidgetContainer:extend{
     original_device_values = nil,
     keyboard_fds = {},
     connected_keyboards = 0,
+    keyboards_scanned = false,
 }
 
 function ExternalKeyboard:init()
+    if ExternalKeyboard.keyboards_scanned then return end
     self.ui.menu:registerToMainMenu(self)
     self.has_otg_role = Device:hasOTGManagement()
 
@@ -59,6 +70,7 @@ function ExternalKeyboard:init()
         -- started). New keyboards are handled via EvdevInputInsert events.
         self:findAndSetupKeyboards()
     end
+    ExternalKeyboard.keyboards_scanned = true
 end
 
 function ExternalKeyboard:addToMainMenu(menu_items)
@@ -205,6 +217,7 @@ function ExternalKeyboard:_onEvdevInputRemove(event_path)
         Device.hasKeys = ExternalKeyboard.original_device_values.hasKeys
         Device.hasFewKeys = ExternalKeyboard.original_device_values.hasFewKeys
         Device.hasDPad = ExternalKeyboard.original_device_values.hasDPad
+        Device.useDPadAsActionKeys = ExternalKeyboard.original_device_values.useDPadAsActionKeys
         ExternalKeyboard.original_device_values = nil
     end
 
@@ -243,9 +256,17 @@ local function findKeyboards()
         for i = 0, tonumber(dev_count[0]) - 1 do
             local dev = devices[i]
             if dev.matched then
-                -- Check if it provides a DPad, too.
-                local has_dpad = bit.band(dev.type, C.INPUT_DPAD) ~= 0
-                table.insert(keyboards, { event_fd = tonumber(dev.fd), event_path = ffi.string(dev.path), name = ffi.string(dev.name), has_dpad = has_dpad })
+                local dev_name = ffi.string(dev.name)
+                --- @fixme Might want to revise this later, with a more robust solution.
+                if Device:isKindle() and Device:isMTK() and BLACKLISTED_DEVICES[dev_name] then
+                    -- This is a kindle only problem. Technically only MTK devices get the newer
+                    -- problematic firmware even though not all of them do (e.g., PW5).
+                    logger.dbg("ExternalKeyboard: Ignoring blacklisted node in findKeyboards:", dev_name)
+                else
+                    -- Check if it provides a DPad, too.
+                    local has_dpad = bit.band(dev.type, C.INPUT_DPAD) ~= 0
+                    table.insert(keyboards, { event_fd = tonumber(dev.fd), event_path = ffi.string(dev.path), name = dev_name, has_dpad = has_dpad })
+                end
             end
         end
         C.free(devices)
@@ -261,12 +282,20 @@ local function checkKeyboard(path)
     local dev = FBInkInput.fbink_input_check(path, C.INPUT_KEYBOARD, 0, 0)
     if dev ~= nil then
         if dev.matched then
-            keyboard = {
-                event_fd = tonumber(dev.fd),
-                event_path = ffi.string(dev.path),
-                name = ffi.string(dev.name),
-                has_dpad = bit.band(dev.type, C.INPUT_DPAD) ~= 0
-            }
+            local dev_name = ffi.string(dev.name)
+            --- @fixme Might want to revise this later, with a more robust solution.
+            if Device:isKindle() and Device:isMTK() and BLACKLISTED_DEVICES[dev_name] then
+                -- This is a kindle only problem. Technically only MTK devices get the newer
+                -- problematic firmware even though not all of them do (e.g., PW5).
+                logger.dbg("ExternalKeyboard: Ignoring blacklisted node in checkKeyboard:", dev_name)
+            else
+                keyboard = {
+                    event_fd = tonumber(dev.fd),
+                    event_path = ffi.string(dev.path),
+                    name = dev_name,
+                    has_dpad = bit.band(dev.type, C.INPUT_DPAD) ~= 0
+                }
+            end
         end
         C.free(dev)
     end
@@ -343,6 +372,7 @@ function ExternalKeyboard:setupKeyboard(data)
             hasKeys = Device.hasKeys,
             hasFewKeys = Device.hasFewKeys,
             hasDPad = Device.hasDPad,
+            useDPadAsActionKeys = Device.useDPadAsActionKeys,
         }
     end
 
@@ -362,6 +392,7 @@ function ExternalKeyboard:setupKeyboard(data)
     Device.hasKeys = yes
     Device.hasFewKeys = no
     Device.hasDPad = has_dpad_func
+    Device:setUseDPadAsActionKeys(G_reader_settings:isTrue("input_use_dpad_as_action_keys"))
 
     -- Only show this once
     if ExternalKeyboard.connected_keyboards == 1 then

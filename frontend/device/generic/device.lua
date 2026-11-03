@@ -320,6 +320,10 @@ function Device:init()
         end
     end
 
+    if self:hasDPad() and G_reader_settings:isTrue("input_use_dpad_as_action_keys") then
+        self:setUseDPadAsActionKeys(true)
+    end
+
     if self:hasGSensor() then
         -- Setup our standard gyro event handler (EV_MSC:MSC_GYRO)
         if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
@@ -663,6 +667,11 @@ function Device:restoreKeyRepeat() end
 --       opting instead for a hard-coded one (as we can't guarantee that key repeat is actually setup properly or at all).
 -- Device specific method to toggle key repeat
 function Device:toggleKeyRepeat(toggle) end
+
+function Device:setUseDPadAsActionKeys(bool)
+    if bool == nil then bool = false end
+    self.useDPadAsActionKeys = function() return bool end
+end
 
 --[[
 prepare for application shutdown

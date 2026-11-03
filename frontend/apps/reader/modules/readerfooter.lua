@@ -264,8 +264,7 @@ footerTextGeneratorMap = {
             end
         else
             if page_label then
-                return ("{%s / %s} %d / %d"):format(page_label, footer.ui.pagemap:getLastPageLabel(true),
-                    footer.pageno, footer.pages)
+                return ("%d / %d"):format(page_label, footer.ui.pagemap:getLastPageLabel(true))
             end
             return ("%d / %d"):format(footer.pageno, footer.pages)
         end
@@ -2410,7 +2409,6 @@ end
 -- Note: no need for :onDocumentRerendered(), ReaderToc will catch "DocumentRerendered"
 -- and will then emit a "TocReset" after the new ToC is made.
 function ReaderFooter:onTocReset()
-    self.pages = self.ui.document:getPageCount()
     self:setTocMarkers(true)
     self:onUpdateFooter()
 end

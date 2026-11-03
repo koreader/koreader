@@ -6,6 +6,7 @@ local order = {
         "setting",
         "tools",
         "search",
+        "reader",
         "plus_menu",
         "main",
     },
@@ -16,6 +17,7 @@ local order = {
         "show_filter",
         "sort_by",
         "reverse_sorting",
+        "sort_ignore_articles",
         "sort_mixed",
         "----------------------------",
         "start_with",
@@ -168,6 +170,7 @@ local order = {
         "dictionary_settings",
         "wikipedia_settings",
     },
+    reader = {},
     main = {
         "history",
         "open_last_document",

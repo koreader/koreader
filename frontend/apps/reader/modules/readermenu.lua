@@ -405,31 +405,19 @@ function ReaderMenu:onShowMenu(tab_index, do_not_show)
         dimen = Screen:getSize(),
     }
 
-    local main_menu
-    if Device:isTouchDevice() or Device:hasDPad() then
-        local TouchMenu = require("ui/widget/touchmenu")
-        main_menu = TouchMenu:new{
-            width = Screen:getWidth(),
-            last_index = tab_index or self.last_tab_index,
-            tab_item_table = self.tab_item_table,
-            show_parent = menu_container,
-            not_shown = do_not_show,
-        }
-    else
-        local Menu = require("ui/widget/menu")
-        main_menu = Menu:new{
-            title = _("Document menu"),
-            item_table = Menu.itemTableFromTouchMenu(self.tab_item_table),
-            width = Screen:getWidth() - 100,
-            show_parent = menu_container,
-        }
-    end
+    local TouchMenu = require("ui/widget/touchmenu")
+    local main_menu = TouchMenu:new{
+        width = Screen:getWidth(),
+        last_index = tab_index or self.last_tab_index,
+        tab_item_table = self.tab_item_table,
+        show_parent = menu_container,
+        not_shown = do_not_show,
+        close_callback = function()
+            self:onCloseReaderMenu()
+        end,
+    }
 
-    main_menu.close_callback = function()
-        self:onCloseReaderMenu()
-    end
-
-    main_menu.touch_menu_callback = function ()
+    main_menu.touch_menu_callback = function() -- TouchMenu calls it on init
         self.ui:handleEvent(Event:new("CloseConfigMenu"))
     end
 
@@ -535,12 +523,14 @@ function ReaderMenu:onRebuildMenu()
     self:teardownMenu()
 
     if was_open then
-        self:onShowMenu(nil, true)
-        local menu = self.menu_container[1]
-        if state and menu.restoreState then
-            menu:restoreState(state.path_stack, state.page)
-        end
-        UIManager:show(self.menu_container)
+        UIManager:nextTick(function()
+            self:onShowMenu(nil, true)
+            local menu = self.menu_container[1]
+            if state and menu.restoreState then
+                menu:restoreState(state.path_stack, state.page)
+            end
+            UIManager:show(self.menu_container)
+        end)
     end
 end
 

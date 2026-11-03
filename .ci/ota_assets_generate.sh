@@ -97,7 +97,7 @@ while read -r line; do
                 *) opts=() pats=() ;;
             esac
             release_make "${opts[@]}" "${stem}.targz" "${asset[file]}" "${pats[@]}"
-            zsync_make "${asset[file]}" "${stem}.zsync" "${latest_files[@]/%/.zsync}"
+            zsync_make "${stem}.targz" "${stem}.zsync" "${latest_files[@]/%/.zsync}"
             ;;
 
         linux-*.AppImage) latest_make link "${asset[file]}" "${latest_files[@]/-linux-/-appimage-}" ;;

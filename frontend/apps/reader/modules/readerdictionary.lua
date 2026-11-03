@@ -31,6 +31,7 @@ local posix = require("ffi/posix")
 local time = require("ui/time")
 local util  = require("util")
 local _ = require("gettext")
+local C_ = _.pgettext
 local Input = Device.input
 local T = ffiUtil.template
 local android = Device:isAndroid() and require("android")
@@ -514,6 +515,9 @@ function ReaderDictionary:_genCustomizeButtonsMenu()
         { text = _("Close"),           id = "close" },
         { text = _("Translate"),       id = "translate" },
     }
+    if Device:hasClipboard() then
+        table.insert(available_options, { text = C_("Text", "Copy"), id = "copy" })
+    end
     if Device:hasDPad() then
         table.insert(available_options, { text = _("Text selection"), id = "text_selection" })
     end

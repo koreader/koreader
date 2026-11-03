@@ -52,7 +52,8 @@ local InfoMessage = InputContainer:extend{
     text = "",
     timeout = nil, -- in seconds
     _timeout_func = nil,
-    width = nil,  -- The width of the InfoMessage. Keep it nil to use default value.
+    width = nil,  -- The width of the InfoMessage. Prevails width_factor. Keep it nil to use default value.
+    width_factor = nil, -- number between 0 and 1, factor to the screen width. Keep it nil to use default value.
     height = nil,  -- The height of the InfoMessage. If this field is set, a scrollbar may be shown.
     force_one_line = false,  -- Attempt to show text in one single line. This setting and height are not to be used conjointly.
     -- The image shows at the left of the InfoMessage. Image data will be freed
@@ -126,14 +127,14 @@ function InfoMessage:init()
     end
 
     local text_width
-    if self.width == nil then
-        text_width = math.floor(Screen:getWidth() * 2/3)
-    else
-        text_width = self.width - image_widget:getSize().w
-        if text_width < 0 then
-            text_width = 0
+    if not self.width then
+        if not self.width_factor then
+            text_width = math.floor(Screen:getWidth() * 2/3) -- default
+        else
+            self.width = math.floor(Screen:getWidth() * self.width_factor)
         end
     end
+    text_width = text_width or math.max(self.width - image_widget:getSize().w, 0)
 
     local text_widget
     if self.height then
