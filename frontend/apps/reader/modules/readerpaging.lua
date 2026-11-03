@@ -151,7 +151,10 @@ end
 
 function ReaderPaging:onReadSettings(config)
     self.page_positions = config:readSetting("page_positions") or {}
-    self:_gotoPage(config:readSetting("last_page") or 1)
+    local last_page = config:readSetting("last_page") or 1
+    self.ui:registerPostInitCallback(function()
+        self:_gotoPage(last_page)
+    end)
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
 end

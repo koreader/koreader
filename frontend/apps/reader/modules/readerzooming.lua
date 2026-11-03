@@ -16,6 +16,7 @@ local T = require("ffi/util").template
 local ReaderZooming = InputContainer:extend{
     zoom = 1.0,
     available_zoom_modes = { -- const
+        "auto",
         "page",
         "pagewidth",
         "pageheight",
@@ -27,6 +28,7 @@ local ReaderZooming = InputContainer:extend{
         "manual",
     },
     zoom_mode_label = { -- const
+        auto          = _("auto"),
         page          = _("page") .. " - " .. _("full"),
         pagewidth     = _("page") .. " - " .. _("width"),
         pageheight    = _("page") .. " - " .. _("height"),
@@ -38,6 +40,7 @@ local ReaderZooming = InputContainer:extend{
         manual        = _("manual"),
     },
     zoom_genus_to_mode = { -- const
+        [5] = "auto",
         [4] = "page",
         [3] = "content",
         [2] = "columns",
@@ -45,6 +48,7 @@ local ReaderZooming = InputContainer:extend{
         [0] = "manual",
     },
     zoom_mode_to_genus = { -- const
+        auto    = 5,
         page    = 4,
         content = 3,
         columns = 2,
@@ -64,12 +68,15 @@ local ReaderZooming = InputContainer:extend{
     -- default to nil so we can trigger ZoomModeUpdate events on start up
     zoom_mode = nil,
     DEFAULT_ZOOM_MODE = "pagewidth",
+    AUTO_ZOOM_ASPECT_RATIO = 1.5,
+    auto_zoom_aspect_ratio = 1.5,
+    effective_zoom_mode = nil,
     -- for pan mode: fit to width/zoom_factor,
     -- with overlap of zoom_overlap_h % (horizontally)
     -- and zoom_overlap_v % (vertically).
     kopt_zoom_factor = 1.5,
-    zoom_overlap_h = 40,
-    zoom_overlap_v = 40,
+    zoom_overlap_h = 36,
+    zoom_overlap_v = 36,
     zoom_bottom_to_top = nil,  -- true for bottom-to-top
     zoom_direction_vertical = nil, -- true for column mode
     zoom_direction_settings = { -- const
@@ -95,6 +102,25 @@ local ReaderZooming = InputContainer:extend{
 
 function ReaderZooming:init()
     self:registerKeyEvents()
+end
+
+function ReaderZooming:getAutoZoomMode(pageno)
+    local page_size = self.ui.document:getNativePageDimensions(pageno)
+    local page_width, page_height = page_size.w, page_size.h
+    if self.rotation % 180 ~= 0 then
+        page_width, page_height = page_height, page_width
+    end
+    if page_width / page_height >= self.auto_zoom_aspect_ratio then
+        return "columns"
+    end
+    return "page"
+end
+
+function ReaderZooming:getEffectiveZoomMode(pageno)
+    if self.zoom_mode == "auto" then
+        return self:getAutoZoomMode(pageno)
+    end
+    return self.zoom_mode
 end
 
 function ReaderZooming:registerKeyEvents()
@@ -158,7 +184,10 @@ function ReaderZooming:mode_to_combo(zoom_mode)
     end
 
     -- Quick'n dirty zoom_mode to genus/type conversion...
-    local zgenus, ztype = zoom_mode:match("^(page)(%l*)$")
+    local zgenus, ztype = zoom_mode:match("^(auto)$")
+    if not zgenus then
+        zgenus, ztype = zoom_mode:match("^(page)(%l*)$")
+    end
     if not zgenus then
         zgenus, ztype = zoom_mode:match("^(content)(%l*)$")
     end
@@ -251,20 +280,24 @@ function ReaderZooming:onReadSettings(config)
     -- Don't stomp on normal_zoom_mode in ReaderKoptListener if we're reflowed...
     local is_reflowed = config:has("kopt_text_wrap") and config:readSetting("kopt_text_wrap") == 1
 
-    self:setZoomMode(zoom_mode, true, is_reflowed) -- avoid informative message on load
-
+    self.auto_zoom_aspect_ratio = config:readSetting("auto_zoom_aspect_ratio")
+                            or G_reader_settings:readSetting("auto_zoom_aspect_ratio")
+                            or self.AUTO_ZOOM_ASPECT_RATIO
+    self.document.configurable.auto_zoom_aspect_ratio = self.auto_zoom_aspect_ratio
     self.kopt_zoom_factor = config:readSetting("kopt_zoom_factor")
                             or G_reader_settings:readSetting("kopt_zoom_factor") or self.kopt_zoom_factor
     self.zoom_overlap_h = config:readSetting("kopt_zoom_overlap_h")
                             or G_reader_settings:readSetting("kopt_zoom_overlap_h") or self.zoom_overlap_h
     self.zoom_overlap_v = config:readSetting("kopt_zoom_overlap_v")
                             or G_reader_settings:readSetting("kopt_zoom_overlap_v") or self.zoom_overlap_v
-
+    self.document.configurable.zoom_overlap_h = self.zoom_overlap_h
+    self.document.configurable.zoom_overlap_v = self.zoom_overlap_v
     -- update zoom direction parameters
     local zoom_direction_setting = self.zoom_direction_settings[self.document.configurable.zoom_direction
                                                                 or G_reader_settings:readSetting("kopt_zoom_direction") or 7]
     self.zoom_bottom_to_top = zoom_direction_setting.zoom_bottom_to_top
     self.zoom_direction_vertical = zoom_direction_setting.zoom_direction_vertical
+    self:setZoomMode(zoom_mode, true, is_reflowed) -- avoid informative message on load
 end
 
 function ReaderZooming:onSaveSettings()
@@ -325,6 +358,9 @@ end
 --- @note: From ReaderRotation, which was broken, and has been removed in #12658
 function ReaderZooming:onRotationUpdate(rotation)
     self.rotation = rotation
+    if self.zoom_mode == "auto" then
+        self:onSetZoomMode("auto")
+    end
     self:setZoom()
 end
 
@@ -355,6 +391,7 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     local zoom_mode_type = self.zoom_type_to_mode[config.zoom_mode_type]
     settings.zoom_overlap_h = config.zoom_overlap_h
     settings.zoom_overlap_v = config.zoom_overlap_v
+    settings.auto_zoom_aspect_ratio = config.auto_zoom_aspect_ratio or self.auto_zoom_aspect_ratio
     if btn == "set_zoom_overlap_h" then
         self:_zoomPanChange(_("Set horizontal overlap"), "zoom_overlap_h")
         settings.zoom_overlap_h = self.zoom_overlap_h
@@ -385,15 +422,20 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     settings.right_to_left = nil
 
     local old_zoom_mode = self.zoom_mode -- self.zoom_mode is changed in onSetZoomPan()
-    if zoom_mode == "columns" or zoom_mode == "rows" then
+    if zoom_mode == "columns" or zoom_mode == "rows" or zoom_mode == "auto" then
         if btn ~= "columns" and btn ~= "rows" then
-            self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
-            config.zoom_factor = self:setNumberOf(
-                zoom_mode,
-                zoom_range_number,
-                zoom_mode == "columns" and settings.zoom_overlap_h or settings.zoom_overlap_v
-            )
-            settings.kopt_zoom_factor = config.zoom_factor
+            if zoom_mode == "auto" then
+                settings.kopt_zoom_factor = self.kopt_zoom_factor
+            end
+            self.ui:handleEvent(Event:new("SetZoomPan", settings, zoom_mode ~= "auto"))
+            if zoom_mode ~= "auto" then
+                config.zoom_factor = self:setNumberOf(
+                    zoom_mode,
+                    zoom_range_number,
+                    zoom_mode == "columns" and settings.zoom_overlap_h or settings.zoom_overlap_v
+                )
+                settings.kopt_zoom_factor = config.zoom_factor
+            end
         end
     elseif zoom_mode == "manual" then
         if btn == "manual" then
@@ -439,23 +481,32 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
 end
 
 function ReaderZooming:onSetZoomMode(new_mode)
-    self.view.zoom_mode = new_mode
-    if self.zoom_mode ~= new_mode then
-        logger.info("setting zoom mode to", new_mode)
-        self.ui:handleEvent(Event:new("ZoomModeUpdate", new_mode))
+    local old_mode = self.zoom_mode
+    local old_effective_mode = self.effective_zoom_mode
+    self.zoom_mode = new_mode
+    self.effective_zoom_mode = self:getEffectiveZoomMode(self.current_page)
+    self.view.zoom_mode = self.effective_zoom_mode
+    if old_mode ~= new_mode or old_effective_mode ~= self.effective_zoom_mode then
+        logger.info("setting zoom mode to", new_mode, "(effective:", self.effective_zoom_mode, ")")
+        self.ui:handleEvent(Event:new("ZoomModeUpdate", self.effective_zoom_mode))
         self.zoom_mode = new_mode
-        self:_updateConfigurable(new_mode)
+        if new_mode ~= "auto" then
+            self:_updateConfigurable(new_mode)
+        end
         self:setZoom()
-        if new_mode == "manual" then
+        if self.effective_zoom_mode == "manual" then
             self.ui:handleEvent(Event:new("SetScrollMode", false))
         else
-            self.ui:handleEvent(Event:new("InitScrollPageStates", new_mode))
+            self.ui:handleEvent(Event:new("InitScrollPageStates", self.effective_zoom_mode))
         end
     end
 end
 
 function ReaderZooming:onPageUpdate(new_page_no)
     self.current_page = new_page_no
+    if self.zoom_mode == "auto" then
+        self:onSetZoomMode("auto")
+    end
     self:setZoom()
 end
 
@@ -524,8 +575,10 @@ end
 function ReaderZooming:getZoom(pageno)
     -- check if we're in bbox mode and work on bbox if that's the case
     local zoom
-    local page_size = self.ui.document:getNativePageDimensions(pageno)
-    if not (self.zoom_mode and self.zoom_mode:match("^page") or self.ui.document.configurable.trim_page == 3) then
+    local native_page_size = self.ui.document:getNativePageDimensions(pageno)
+    local page_size = native_page_size
+    local zoom_mode = self.effective_zoom_mode or self.zoom_mode
+    if not (zoom_mode and zoom_mode:match("^page") or self.ui.document.configurable.trim_page == 3) then
         local ubbox_dimen = self.ui.document:getUsedBBoxDimensions(pageno, 1)
         -- if bbox is larger than the native page dimension render the full page
         -- See discussion in koreader/koreader#970.
@@ -554,23 +607,35 @@ function ReaderZooming:getZoom(pageno)
         zoom_w = zoom_w / page_size.h
         zoom_h = zoom_h / page_size.w
     end
-    if self.zoom_mode == "content" or self.zoom_mode == "page" then
+    if zoom_mode == "content" or zoom_mode == "page" then
         if zoom_w < zoom_h then
             zoom = zoom_w
         else
             zoom = zoom_h
         end
-    elseif self.zoom_mode == "contentwidth" or self.zoom_mode == "pagewidth" then
+    elseif zoom_mode == "contentwidth" or zoom_mode == "pagewidth" then
         zoom = zoom_w
-    elseif self.zoom_mode == "contentheight" or self.zoom_mode == "pageheight" then
+    elseif zoom_mode == "contentheight" or zoom_mode == "pageheight" then
         zoom = zoom_h
-    elseif self.zoom_mode == "free" then
+    elseif zoom_mode == "free" then
         zoom = self.zoom
     else
-        local zoom_factor = self.ui.doc_settings:readSetting("kopt_zoom_factor")
-                         or G_reader_settings:readSetting("kopt_zoom_factor")
-                         or self.kopt_zoom_factor
-        zoom = zoom_w * zoom_factor
+        local zoom_factor
+        if self.zoom_mode == "auto" then
+            local page_width, page_height = native_page_size.w, native_page_size.h
+            if self.rotation % 180 ~= 0 then
+                page_width, page_height = page_height, page_width
+            end
+            local panel_count = math.max(2, math.ceil(page_width / page_height))
+            local overlap = self.zoom_overlap_h * (panel_count - 1) / panel_count
+            zoom_factor = 1 - overlap / 100
+            zoom = zoom_h * zoom_factor
+        else
+            zoom_factor = self.ui.doc_settings:readSetting("kopt_zoom_factor")
+                              or G_reader_settings:readSetting("kopt_zoom_factor")
+                              or self.kopt_zoom_factor
+            zoom = zoom_w * zoom_factor
+        end
     end
     if zoom and zoom > 10 and not DocCache:willAccept(zoom * (self.dimen.w * self.dimen.h + 512)) then
         logger.dbg("zoom too large, adjusting")
@@ -616,6 +681,7 @@ function ReaderZooming:setZoom()
     if not self.dimen then
         self.dimen = self.ui.dimen
     end
+    self.effective_zoom_mode = self:getEffectiveZoomMode(self.current_page)
     self.zoom = self:getZoom(self.current_page)
     self.ui:handleEvent(Event:new("ZoomUpdate", self.zoom))
 end
@@ -720,6 +786,15 @@ end
 function ReaderZooming:onSetZoomPan(settings, no_redraw)
     self.ui.doc_settings:saveSetting("kopt_zoom_factor", settings.kopt_zoom_factor)
     self.ui.doc_settings:saveSetting("zoom_mode", settings.zoom_mode)
+    if settings.zoom_overlap_h ~= nil then
+        self.ui.doc_settings:saveSetting("kopt_zoom_overlap_h", settings.zoom_overlap_h)
+    end
+    if settings.zoom_overlap_v ~= nil then
+        self.ui.doc_settings:saveSetting("kopt_zoom_overlap_v", settings.zoom_overlap_v)
+    end
+    if settings.auto_zoom_aspect_ratio then
+        self.ui.doc_settings:saveSetting("auto_zoom_aspect_ratio", settings.auto_zoom_aspect_ratio)
+    end
     for k, v in pairs(settings) do
         self[k] = v
         -- Configurable keys aren't prefixed...
@@ -729,6 +804,9 @@ function ReaderZooming:onSetZoomPan(settings, no_redraw)
         end
     end
     if not no_redraw then
+        if self.zoom_mode == "auto" and settings.zoom_overlap_h ~= nil then
+            self:setZoom()
+        end
         self.ui:handleEvent(Event:new("RedrawCurrentPage"))
     end
 end

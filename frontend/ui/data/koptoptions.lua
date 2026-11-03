@@ -169,7 +169,7 @@ Will rotate up to specified value.]]),
                 default_pos = 4,
                 default_value = 36,
                 show_func = function(configurable)
-                    return configurable.zoom_mode_genus < 3
+                    return configurable.zoom_mode_genus < 3 or configurable.zoom_mode_genus == 5
                 end,
                 event = "DefineZoom",
                 args =   {0, 12, 24, 36, 48, 60, 72, 84},
@@ -200,6 +200,36 @@ Will rotate up to specified value.]]),
                 help_text = _([[Set vertical zoom overlap (between lines).]]),
             },
             {
+                name = "auto_zoom_aspect_ratio",
+                name_text = _("Spread aspect ratio"),
+                enabled_func = function(configurable)
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
+                toggle = {"1.2", "1.3", "1.4", "1.5", "1.6", "1.8", "2.0", "2.5"},
+                values = {1.2, 1.3, 1.4, 1.5, 1.6, 1.8, 2.0, 2.5},
+                default_value = 1.5,
+                show_func = function(configurable)
+                    return configurable.zoom_mode_genus == 5
+                end,
+                event = "DefineZoom",
+                args = {1.2, 1.3, 1.4, 1.5, 1.6, 1.8, 2.0, 2.5},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _("Pages at or above this width-to-height ratio are treated as spreads."),
+                help_text_func = function(configurable, document, ui)
+                    if not document or not ui or not ui.getCurrentPage then return nil end
+                    local page = ui:getCurrentPage()
+                    if not page or page < 1 then return nil end
+                    local size = document:getNativePageDimensions(page)
+                    if not size or not size.w or not size.h or size.h == 0 then return nil end
+                    local width, height = size.w, size.h
+                    local rotation = ui.zooming and ui.zooming.rotation
+                    if rotation and rotation % 180 ~= 0 then
+                        width, height = height, width
+                    end
+                    return string.format(_("Current page aspect ratio: %.2f"), width / height)
+                end,
+            },
+            {
                 name = "zoom_mode_type",
                 name_text = _("Fit"),
                 enabled_func = function(configurable)
@@ -210,7 +240,7 @@ Will rotate up to specified value.]]),
                 values = {2, 1, 0},
                 default_value = 1,
                 show_func = function(configurable)
-                    return configurable.zoom_mode_genus > 2
+                    return configurable.zoom_mode_genus > 2 and configurable.zoom_mode_genus ~= 5
                 end,
                 event = "DefineZoom",
                 args = {"full", "width", "height"},
@@ -284,6 +314,7 @@ Will rotate up to specified value.]]),
                 end,
                 -- toggle = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
                 item_icons = {
+                    "appbar.pokeball",
                     "zoom.page",
                     "zoom.content",
                     "zoom.column",
@@ -291,11 +322,11 @@ Will rotate up to specified value.]]),
                     "zoom.manual",
                 },
                 alternate = false,
-                values = {4, 3, 2, 1, 0},
-                labels = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
+                values = {5, 4, 3, 2, 1, 0},
+                labels = {_("auto"), _("page"), _("content"), _("columns"), _("rows"), _("manual")},
                 default_value = 4,
                 event = "DefineZoom",
-                args = {"page", "content", "columns", "rows", "manual"},
+                args = {"auto", "page", "content", "columns", "rows", "manual"},
                 name_text_hold_callback = optionsutil.showValues,
             },
             {
