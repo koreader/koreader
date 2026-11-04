@@ -197,16 +197,39 @@ end
 
 --- Updates the history list after renaming/moving a folder.
 function ReadHistory:updateItemsByPath(old_path, new_path)
-    local len = #old_path
+    local old_path1 = old_path .. "/"
+    local len1 = #old_path1
     local history_updated
     for i, v in ipairs(self.hist) do
-        if v.file:sub(1, len) == old_path then
-            self.hist[i].file = new_path .. v.file:sub(len + 1)
+        if v.file:sub(1, len1) == old_path1 then
+            self.hist[i].file = new_path .. v.file:sub(len1)
             history_updated = true
         end
     end
     if history_updated then
         self:_flush()
+    end
+end
+
+--- Updates the history list after deleting a folder.
+function ReadHistory:folderDeleted(old_path)
+    local old_path1 = old_path .. "/"
+    local len1 = #old_path1
+    local history_updated
+    for i = #self.hist, 1, -1 do
+        local file = self.hist[i].file
+        if file:sub(1, len1) == old_path1 then
+            self:fileDeleted(i)
+            history_updated = true
+            DocSettings.updateLocation(file) -- remove sdr if not in book location
+        end
+    end
+    if history_updated then
+        if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
+            self:_flush()
+        else
+            self:ensureLastFile()
+        end
     end
 end
 
@@ -228,26 +251,6 @@ function ReadHistory:fileDeleted(path_or_index)
             if is_single then
                 self:ensureLastFile()
             end
-        end
-    end
-end
-
---- Updates the history list after deleting a folder.
-function ReadHistory:folderDeleted(path)
-    local history_updated
-    for i = #self.hist, 1, -1 do
-        local file = self.hist[i].file
-        if util.stringStartsWith(file, path) then
-            self:fileDeleted(i)
-            history_updated = true
-            DocSettings.updateLocation(file) -- remove sdr if not in book location
-        end
-    end
-    if history_updated then
-        if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
-            self:_flush()
-        else
-            self:ensureLastFile()
         end
     end
 end
