@@ -180,17 +180,23 @@ end
 function FileManagerShortcuts:updateItemsByPath(old_path, new_path)
     -- used on renaming/moving/deleting folders in the file browser
     -- if old_path == nil then remove the shortcut and system folder in settings
+    local old_folder_path = old_path or new_path
+    local old_folder_path1 = old_folder_path .. "/"
+    local len1 = #old_folder_path1
     -- update shortcuts
-    local seen = {}
-    for old_folder, shortcut in pairs(self.folder_shortcuts) do
-        if not seen[old_folder] then
-            local new_folder, count = old_folder:gsub(old_path or new_path, new_path)
-            if count > 0 then
-                self.folder_shortcuts[old_folder] = nil
-                if old_path then
-                    self.folder_shortcuts[new_folder] = shortcut
-                    seen[new_folder] = true
-                end
+    local changed_folders = {}
+    for folder in pairs(self.folder_shortcuts) do
+        local folder_subpath = folder:sub(1, len1)
+        if folder_subpath == old_folder_path or folder_subpath == old_folder_path1 then
+            table.insert(changed_folders, { folder, old_path and new_path .. folder:sub(len1) })
+        end
+    end
+    if next(changed_folders) then
+        for _, v in ipairs(changed_folders) do
+            local shortcut = self.folder_shortcuts[v[1]]
+            self.folder_shortcuts[v[1]] = nil
+            if old_path then
+                self.folder_shortcuts[v[2]] = shortcut
             end
         end
     end
@@ -199,9 +205,9 @@ function FileManagerShortcuts:updateItemsByPath(old_path, new_path)
         if prop.set then
             local old_folder = prop.get()
             if old_folder then
-                local new_folder, count = old_folder:gsub(old_path or new_path, new_path)
-                if count > 0 then
-                    prop.set(old_path and new_folder)
+                local old_folder_subpath = old_folder:sub(1, len1)
+                if old_folder_subpath == old_folder_path or old_folder_subpath == old_folder_path1 then
+                    prop.set(old_path and new_path .. old_folder:sub(len1))
                 end
             end
         end
