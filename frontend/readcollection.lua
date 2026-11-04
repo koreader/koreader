@@ -224,19 +224,23 @@ function ReadCollection:removeItems(files) -- FM: delete files
     end
 end
 
-function ReadCollection:removeItemsByPath(path) -- FM: delete folder
+function ReadCollection:removeItemsByPath(old_path) -- FM: delete folder
+    local old_path1 = old_path .. "/"
+    local len1 = #old_path1
     local do_write
     for coll_name, coll in pairs(self.coll) do
         for file_name in pairs(coll) do
-            if util.stringStartsWith(file_name, path) then
+            if file_name:sub(1, len1) == old_path1 then
                 coll[file_name] = nil
                 do_write = true
             end
         end
+        -- connected folders
         local folders = self.coll_settings[coll_name].folders
         if folders then
             for folder in pairs(folders) do
-                if util.stringStartsWith(folder, path) then
+                local folder_subpath = folder:sub(1, len1)
+                if folder_subpath == old_path or folder_subpath == old_path1 then
                     util.tableRemoveValue(self.coll_settings[coll_name], "folders", folder)
                     do_write = true
                 end
@@ -288,29 +292,39 @@ function ReadCollection:updateItems(files, new_path) -- FM: move files
     end
 end
 
-function ReadCollection:updateItemsByPath(path, new_path) -- FM: rename folder, move folder
-    local len = #path
+function ReadCollection:updateItemsByPath(old_path, new_path) -- FM: rename folder, move folder
+    local old_path1 = old_path .. "/"
+    local len1 = #old_path1
     local do_write
     for coll_name, coll in pairs(self.coll) do
-        local seen = {}
+        local changed_files = {}
         for file_name in pairs(coll) do
-            if not seen[file_name] and file_name:sub(1, len) == path then
-                local new_file_name = self:_updateItem(coll_name, file_name, new_path .. file_name:sub(len + 1))
-                seen[new_file_name] = true
-                do_write = true
+            if file_name:sub(1, len1) == old_path1 then
+                table.insert(changed_files, { file_name, new_path .. file_name:sub(len1) })
             end
         end
+        if next(changed_files) then
+            for _, v in ipairs(changed_files) do
+                self:_updateItem(coll_name, v[1], v[2])
+            end
+            do_write = true
+        end
+        -- connected folders
         local folders = self.coll_settings[coll_name].folders
         if folders then
-            local seen_folders = {}
-            for folder, folder_settings in pairs(folders) do
-                if not seen_folders[folder] and folder:sub(1, len) == path then
-                    local new_folder = new_path .. folder:sub(len + 1)
-                    folders[new_folder] = folder_settings
-                    seen_folders[new_folder] = true
-                    folders[folder] = nil
-                    do_write = true
+            local changed_folders = {}
+            for folder in pairs(folders) do
+                local folder_subpath = folder:sub(1, len1)
+                if folder_subpath == old_path or folder_subpath == old_path1 then
+                    table.insert(changed_folders, { folder, new_path .. folder:sub(len1) })
                 end
+            end
+            if next(changed_folders) then
+                for _, v in ipairs(changed_folders) do
+                    folders[v[2]] = folders[v[1]]
+                    folders[v[1]] = nil
+                end
+                do_write = true
             end
         end
     end
