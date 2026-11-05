@@ -141,10 +141,10 @@ function MoveToArchive:onMoveToArchive(do_copy)
     local dest_file = string.format("%s%s", archive_dir_path, filename)
     local text
     if do_copy then
-        text = _("%1\ncopied to:\n%2")
+        text = _("copied to:")
         FileManager:copyFileFromTo(document_full_path, archive_dir_path)
     else
-        text = _("%1\nmoved to:\n%2")
+        text = _("moved to:")
         FileManager:moveFile(document_full_path, archive_dir_path)
         require("readhistory"):updateItem(document_full_path, dest_file) -- (will update "lastfile" if needed)
         require("readcollection"):updateItem(document_full_path, dest_file)
@@ -154,7 +154,9 @@ function MoveToArchive:onMoveToArchive(do_copy)
         FileManager.instance.file_chooser:refreshPath()
     end
     if not UIManager:isInSilentMode() then -- no dialog to allow multi-action executing
-        UIManager:show(InfoMessage:new{ text = T(text, BD.filename(filename), BD.directory(archive_dir_path)) })
+        UIManager:show(InfoMessage:new{
+            text = BD.filename(filename) .. "\n" .. text .. "\n" .. BD.directory(archive_dir_path),
+        })
     end
     return true
 end
