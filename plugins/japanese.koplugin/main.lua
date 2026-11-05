@@ -40,11 +40,15 @@ local Japanese = WidgetContainer:extend{
 -- getNextVisibleChar counts furigana if any are present, so use a higher
 -- threshold to be able to look-ahead an equivalent number of characters.
 local DEFAULT_TEXT_SCAN_LENGTH = 20
+-- Number of characters to look back from the initially selected character
+-- when attempting to find the largest word containing that character.
+local DEFAULT_TEXT_SCAN_LOOKBACK = 1
 
 function Japanese:init()
     self.deinflector = SingleInstanceDeinflector
     self.dictionary = (self.ui and self.ui.dictionary) or ReaderDictionary:new()
     self.max_scan_length = G_reader_settings:readSetting("language_japanese_text_scan_length") or DEFAULT_TEXT_SCAN_LENGTH
+    self.max_scan_lookback = G_reader_settings:readSetting("language_japanese_text_scan_lookback") or DEFAULT_TEXT_SCAN_LOOKBACK
     LanguageSupport:registerPlugin(self)
 end
 
@@ -122,79 +126,136 @@ function Japanese:onWordSelection(args)
         return
     end
 
-    -- We reset the end of the range to pos0+1 because crengine will select
-    -- half-width katakana (ｶﾀｶﾅ) in strange ways that often overshoots the
-    -- end of words.
-    local pos0, pos1 = args.pos0, callbacks.get_next_char_pos(args.pos0)
+    -- Helper to check whether target XPointer lies inside [p0, p1) by walking forward.
+    local function containsXPointer(p0, p1, target)
+        local cur = p0
+        while cur ~= nil and cur ~= p1 do
+            if cur == target then return true end
+            cur = callbacks.get_next_char_pos(cur)
+        end
+        return false
+    end
 
-    -- We try to advance the end position until we hit a word.
-    --
-    -- Unfortunately it's possible for the complete word to be longer than the
-    -- first match (obvious examples include 読み込む or similar compound verbs
-    -- where it would be less than ideal to match 読み as the full word, but
-    -- there are more subtle kana-only cases as well) so we need to keep
-    -- looking forward, but unfortunately there isn't a great endpoint defined
-    -- either (aside from punctuation). So we just copy Yomichan and set a hard
-    -- limit (20 characters) and stop early if we ever hit punctuation. We then
-    -- select the longest word present in one of the user's installed
-    -- dictionaries (after deinflection).
+    -- Define initial position (anchor). If the user selected multiple
+    -- characters, anchor on the first character (pos0) and ignore the original
+    -- selection end so that we search for the largest word that contains this
+    -- specific character.
+    local initial_pos = args.pos0
 
+    -- Compute earliest starting position by looking back up to max_scan_lookback characters.
+    local earliest_start = initial_pos
+    do
+        local cur = initial_pos
+        local steps = 0
+        while steps < (self.max_scan_lookback or 0) do
+            local prev = callbacks.get_prev_char_pos(cur)
+            if not prev then break end
+            earliest_start = prev
+            cur = prev
+            steps = steps + 1
+        end
+    end
+
+    -- Build all candidate terms across each start position, expanding right up to
+    -- max_scan_length and stopping early if we encounter non-word characters.
+    -- We explore multiple left starts (lookback) because CJK words may span
+    -- multiple characters before the tapped one; expansion is rightward only
+    -- for performance and simplicity.
+    -- The complete word can be longer than the earliest match (e.g., compound
+    -- verbs or kana-only sequences), so we keep extending the end and rely on
+    -- dictionary hits to identify the best (longest) span.
     local all_candidates = {}
-    local all_words = {}
+    local blocks = {} -- list of {start_pos, first_idx, last_idx}
 
-    local current_end = pos1
-    local num_expansions = 0
-    repeat
-        -- Move to the next character.
-        current_end = callbacks.get_next_char_pos(current_end)
-        current_text = callbacks.get_text_in_range(pos0, current_end)
-        num_expansions = num_expansions + 1
+    -- Iterate from earliest_start forward to initial_pos, one start position per step.
+    do
+        local start_pos = earliest_start
+        while start_pos ~= nil do
+            -- Track block boundary for this start.
+            local block_first = #all_candidates + 1
 
-        -- If the text could not be a complete Japanese word (i.e. it contains
-        -- a punctuation or some other special character), quit early. We test
-        -- the whole string rather than the last character because finding the
-        -- last character requires a linear walk through the string anyway, and
-        -- get_next_char_pos() skips over newlines.
-        if not isPossibleJapaneseWord(current_text) then
-            logger.dbg("japanese.koplugin: stopping expansion at", current_text, "because in contains non-word characters")
-            break
+            -- Expand right up to max_scan_length or until non-word characters.
+            local expansions = 0
+            -- Initialize the end to the next character to avoid edge cases with
+            -- half-width katakana selection occasionally overshooting word ends.
+            -- This makes the first evaluated span two characters long.
+            local cur_end = callbacks.get_next_char_pos(start_pos)
+            while cur_end ~= nil and expansions < self.max_scan_length do
+                cur_end = callbacks.get_next_char_pos(cur_end)
+                if not cur_end then break end
+
+                local span_text = callbacks.get_text_in_range(start_pos, cur_end)
+                expansions = expansions + 1
+
+                -- If the text could not be a complete Japanese word (i.e. it contains
+                -- a punctuation or some other special character), quit early. We test
+                -- the whole string rather than the last character because finding the
+                -- last character requires a linear walk through the string anyway, and
+                -- get_next_char_pos() skips over newlines.
+                if not isPossibleJapaneseWord(span_text) then
+                    logger.dbg("japanese.koplugin: stopping expansion at", span_text, "because in contains non-word characters")
+                    break
+                end
+
+                -- Deinflect span and add all terms as candidates for this span.
+                local candidates = self.deinflector:deinflect(span_text)
+                for _, cand in ipairs(candidates) do
+                    table.insert(all_candidates, { pos0 = start_pos, pos1 = cur_end, text = cand.term, span_len = expansions + 1 })
+                end
+            end
+
+            local block_last = #all_candidates
+            if block_last >= block_first then
+                table.insert(blocks, { start_pos = start_pos, first_idx = block_first, last_idx = block_last })
+            end
+
+            if start_pos == initial_pos then break end
+            start_pos = callbacks.get_next_char_pos(start_pos)
         end
+    end
 
-        -- Get the selection and try to deinflect it.
-        local candidates = self.deinflector:deinflect(current_text)
-        local terms = {}
-        for _, candidate in ipairs(candidates) do
-            table.insert(terms, candidate.term)
-        end
-
-        -- Add the candidates to the set of words to attempt.
-        for _, term in ipairs(terms) do
-            table.insert(all_candidates, {
-                pos0 = pos0,
-                pos1 = current_end,
-                text = term,
-            })
-            table.insert(all_words, term)
-        end
-    until current_end == nil or num_expansions >= self.max_scan_length
-    logger.dbg("japanese.koplugin: attempted", num_expansions, "expansions up to", current_text)
+    -- Nothing to look up.
+    if #all_candidates == 0 then return end
 
     -- Calling sdcv is fairly expensive, so reduce the cost by trying every
     -- candidate in one shot and then picking the longest one which gave us a
     -- result.
-    --- @todo Given there is a limit to how many command-line arguments you can
-    --       pass, we should split up the candidate list if it's too long.
-    local best_word
+    local all_words = {}
+    for i = 1, #all_candidates do all_words[i] = all_candidates[i].text end
     local cancelled, all_results = self.dictionary:rawSdcv(all_words)
-    if not cancelled and all_results ~= nil then
-        for i, term_results in ipairs(all_results) do
-            if #term_results ~= 0 then
-                best_word = all_candidates[i]
+    if cancelled or not all_results then return end
+
+    -- For each start block, pick the longest span that produced results, but only
+    -- keep it if it contains the initially selected character.
+    local final_candidates = {}
+    for _, block in ipairs(blocks) do
+        local best_idx = nil
+        for i = block.first_idx, block.last_idx do
+            local term_results = all_results[i]
+            if term_results and #term_results ~= 0 then
+                best_idx = i -- later i means longer span for this start
+            end
+        end
+        if best_idx then
+            local cand = all_candidates[best_idx]
+            if containsXPointer(cand.pos0, cand.pos1, initial_pos) then
+                table.insert(final_candidates, cand)
             end
         end
     end
-    if best_word ~= nil then
-        return {best_word.pos0, best_word.pos1}
+
+    -- Choose the longest candidate across all starts.
+    local best_word, best_len = nil, -1
+    for _, cand in ipairs(final_candidates) do
+        local l = cand.span_len or 0
+        if l > best_len then
+            best_len = l
+            best_word = cand
+        end
+    end
+
+    if best_word then
+        return { best_word.pos0, best_word.pos1 }
     end
 end
 
@@ -228,6 +289,39 @@ Default value: %1]]), DEFAULT_TEXT_SCAN_LENGTH),
                     callback = function(spin)
                         self.max_scan_length = spin.value
                         G_reader_settings:saveSetting("language_japanese_text_scan_length", self.max_scan_length)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                }
+                UIManager:show(items)
+            end,
+        },
+        -- self.max_scan_lookback configuration
+        {
+            text_func = function()
+                return T(N_("Text scan lookback: %1 character", "Text scan lookback: %1 characters", self.max_scan_lookback), self.max_scan_lookback)
+            end,
+            help_text = _("Number of characters to look back from the selection when trying to find the largest word containing the selected character."),
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                local SpinWidget = require("ui/widget/spinwidget")
+                local Screen = require("device").screen
+                local items = SpinWidget:new{
+                    title_text = _("Text scan lookback"),
+                    info_text = T(_([[
+Start scanning up to this many characters before the initially selected character, expanding to the right to find the longest word that contains it.
+
+Default value: %1]]), DEFAULT_TEXT_SCAN_LOOKBACK),
+                    width = math.floor(Screen:getWidth() * 0.75),
+                    value = self.max_scan_lookback,
+                    value_min = 0,
+                    value_max = 1000,
+                    value_step = 1,
+                    value_hold_step = 10,
+                    ok_text = _("Set lookback"),
+                    default_value = DEFAULT_TEXT_SCAN_LOOKBACK,
+                    callback = function(spin)
+                        self.max_scan_lookback = spin.value
+                        G_reader_settings:saveSetting("language_japanese_text_scan_lookback", self.max_scan_lookback)
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
                 }
