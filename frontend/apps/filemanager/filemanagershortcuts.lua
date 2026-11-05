@@ -101,12 +101,9 @@ end
 
 function FileManagerShortcuts:updateShortcut(provider, new_folder) -- for all providers
     local old_folder = FileManagerShortcuts.provider_props[provider].get()
-    if old_folder then
-        self:_delShortcut(old_folder, provider)
-        if new_folder then
-            self:_addShortcut(new_folder, provider)
-            return self:refreshFileManager()
-        end
+    if old_folder and self:_delShortcut(old_folder, provider) and new_folder then
+        self:_addShortcut(new_folder, provider)
+        return self:refreshFileManager()
     end
 end
 
@@ -131,23 +128,27 @@ function FileManagerShortcuts:_addShortcut(folder, provider, name)
 end
 
 function FileManagerShortcuts:_delShortcut(folder, provider)
+    local deleted
     folder = folder:gsub("/$", "")
     local shortcut = self.folder_shortcuts[folder]
     if shortcut then
         if provider then
-            if shortcut.providers then
+            if shortcut.providers and shortcut.providers[provider] then
                 shortcut.providers[provider] = nil
                 if not next(shortcut.providers) then
                     shortcut.providers = nil
                 end
+                deleted = true
             end
         else -- user shortcut
             shortcut.text = nil
+            deleted = true
         end
         if shortcut.text == nil and shortcut.providers == nil then
             self.folder_shortcuts[folder] = nil
         end
     end
+    return deleted
 end
 
 function FileManagerShortcuts:getShortcutFullName(folder)
