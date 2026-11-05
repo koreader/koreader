@@ -51,6 +51,9 @@ end
 if G_reader_settings:hasNot("screensaver_stretch_images") then
     G_reader_settings:makeFalse("screensaver_stretch_images")
 end
+if G_reader_settings:hasNot("screensaver_images_crop_to_fit") then
+    G_reader_settings:makeFalse("screensaver_images_crop_to_fit")
+end
 if G_reader_settings:hasNot("screensaver_rotate_auto_for_best_fit") then
     G_reader_settings:makeFalse("screensaver_rotate_auto_for_best_fit")
 end
@@ -268,6 +271,7 @@ function Screensaver:setStretchLimit(touchmenu_instance)
         callback = function(spin)
             G_reader_settings:saveSetting("screensaver_stretch_limit_percentage", spin.value)
             G_reader_settings:makeTrue("screensaver_stretch_images")
+            G_reader_settings:makeFalse("screensaver_images_crop_to_fit")
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
         extra_text = _("Disable stretch"),
@@ -279,6 +283,7 @@ function Screensaver:setStretchLimit(touchmenu_instance)
         option_callback = function()
             G_reader_settings:makeTrue("screensaver_stretch_images")
             G_reader_settings:delSetting("screensaver_stretch_limit_percentage")
+            G_reader_settings:makeFalse("screensaver_images_crop_to_fit")
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
     })
@@ -509,6 +514,7 @@ function Screensaver:show()
             width = screen_w,
             height = screen_h,
             scale_factor = G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil,
+            crop_to_fit = G_reader_settings:isTrue("screensaver_images_crop_to_fit"),
             stretch_limit_percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage"),
         }
         if self.image then
