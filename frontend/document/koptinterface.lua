@@ -535,8 +535,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hi
     -- factor, and unlike Document:renderPage we would render the full page instead
     -- of the visible part. Fall back to the visible part in that case.
     local page_size = Document.getPageDimensions(doc, pageno, zoom, rotation)
-    local whole_page_fits = DocCache:willAccept(page_size.w * page_size.h
-        * (doc.render_color and 4 or 1) + 512)
+    local whole_page_fits = DocCache:willAccept(page_size.w * page_size.h * (doc.render_color and 4 or 1) + 512)
     local hash_excerpt
     if not whole_page_fits then
         if not rect then
@@ -547,7 +546,10 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hi
         hash_excerpt = hash .. "|" .. tostring(rect)
     end
 
-    local cached = DocCache:check(hash_excerpt or hash, TileCacheItem)
+    local cached = DocCache:check(hash, TileCacheItem)
+    if not cached and hash_excerpt then
+        cached = DocCache:check(hash_excerpt)
+    end
     if cached then
         return cached
     end
@@ -560,13 +562,16 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hi
     if hash_excerpt then
         -- rect is in page coordinates already scaled by zoom, while the bbox has
         -- to be given in unscaled page coordinates.
+        local native_page_size = Document.getNativePageDimensions(doc, pageno)
         local part_bbox = {
-            x0 = rect.x / zoom,
-            y0 = rect.y / zoom,
-            x1 = (rect.x + rect.w) / zoom,
-            y1 = (rect.y + rect.h) / zoom,
+            x0 = math.max(rect.x / zoom, 0),
+            y0 = math.max(rect.y / zoom, 0),
+            x1 = math.min((rect.x + rect.w) / zoom, native_page_size.w),
+            y1 = math.min((rect.y + rect.h) / zoom, native_page_size.h),
         }
-        tile = buildOptimizedPagePartTile(part_bbox)
+        if part_bbox.x0 < part_bbox.x1 and part_bbox.y0 < part_bbox.y1 then
+            tile = buildOptimizedPagePartTile(part_bbox)
+        end
         if tile then
             -- Excerpts are in scaled page coordinates too. Use the actual pixel
             -- origin of the bbox, which may be a pixel off because of rounding.
