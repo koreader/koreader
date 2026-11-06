@@ -1,8 +1,9 @@
-local ConfirmBox = require("ui/widget/confirmbox")
+local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
 local Dispatcher = require("dispatcher")
 local DocSettings = require("docsettings")
 local FileManager = require("apps/filemanager/filemanager")
+local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -104,7 +105,7 @@ function MoveToArchive:getSubMenuItems()
             end,
             keep_menu_open = true,
             callback = function(touchmenu_instance)
-                local curr_path = self.data.archive_dir_path
+                local curr_path = self.data.archive_dir_path or self.ui.folder_shortcuts:expandPath("%H%")
                 local caller_callback = function(path)
                     path = path .. "/" -- trailing slash on purpose
                     if curr_path ~= path then
@@ -121,44 +122,40 @@ function MoveToArchive:getSubMenuItems()
 end
 
 function MoveToArchive:isActionEnabled()
-    return self.document ~= nil and ((ffiUtil.dirname(self.document.file) .. "/") ~= self.data.archive_dir_path )
+    local path = self.data.archive_dir_path
+    return self.document ~= nil
+        and path ~= nil and path ~= ffiUtil.dirname(self.document.file) .. "/" and util.directoryExists(path)
 end
 
 function MoveToArchive:onMoveToArchive(do_copy)
     self:loadSettings()
-    local archive_dir_path = self.data.archive_dir_path
-    if not (archive_dir_path and util.directoryExists(archive_dir_path)) then return true end
+    if not self:isActionEnabled() then return true end
     local document_full_path = self.document.file
     local last_copied_from_dir, filename = util.splitFilePathName(document_full_path)
     if self.data.last_copied_from_dir ~= last_copied_from_dir then
         self.data.last_copied_from_dir = last_copied_from_dir -- trailing slash on purpose
         self.updated = true
     end
+    self:openFileBrowser(last_copied_from_dir)
+    local archive_dir_path = self.data.archive_dir_path
     local dest_file = string.format("%s%s", archive_dir_path, filename)
     local text
     if do_copy then
-        text = _("Book copied.\nDo you want to open it from the archive folder?")
+        text = _("copied to:")
         FileManager:copyFileFromTo(document_full_path, archive_dir_path)
     else
-        text = _("Book moved.\nDo you want to open it from the archive folder?")
+        text = _("moved to:")
         FileManager:moveFile(document_full_path, archive_dir_path)
         require("readhistory"):updateItem(document_full_path, dest_file) -- (will update "lastfile" if needed)
         require("readcollection"):updateItem(document_full_path, dest_file)
     end
     DocSettings.updateLocation(document_full_path, dest_file, do_copy)
-    if UIManager:isInSilentMode() then
-        -- no dialog to allow multi-action executing
-        self:openFileBrowser(last_copied_from_dir)
-    else
-        UIManager:show(ConfirmBox:new{
-            text = text,
-            ok_text = _("Open"),
-            ok_callback = function()
-                self.ui:switchDocument(dest_file)
-            end,
-            cancel_callback = function()
-                self:openFileBrowser(last_copied_from_dir)
-            end,
+    if not do_copy and FileManager.instance then
+        FileManager.instance.file_chooser:refreshPath()
+    end
+    if not UIManager:isInSilentMode() then -- no dialog to allow multi-action executing
+        UIManager:show(InfoMessage:new{
+            text = BD.filename(filename) .. "\n" .. text .. "\n" .. BD.directory(archive_dir_path),
         })
     end
     return true
