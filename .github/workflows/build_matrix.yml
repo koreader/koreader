@@ -271,11 +271,15 @@ jobs:
 
       # Generate & upload artifacts. {{{
 
+      - name: Update translations
+        if: matrix.artifacts
+        run: make po mo
+
       - name: Generate artifacts
         if: matrix.artifacts
         # Note: ensure the build skeleton is created, so there are no dangling
         # symlinks (e.g. `data/dict`) to trip 7zip during artifact generation…
-        run: make --assume-old=all skeleton po update
+        run: make --assume-old=all skeleton update
 
       - name: Upload artifacts
         if: matrix.artifacts
