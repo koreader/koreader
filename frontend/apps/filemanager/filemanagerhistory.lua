@@ -169,7 +169,7 @@ end
 
 function FileManagerHistory:onMenuSelect(item)
     if item.dim then
-        UIManager:show(Notification:new{ text = _("File deleted") })
+        UIManager:show(Notification:new{ text = _("File does not exist") })
     else
         filemanagerutil.openFile(self.ui, item.file, self.close_callback)
     end
