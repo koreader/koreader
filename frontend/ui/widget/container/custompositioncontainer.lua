@@ -70,11 +70,9 @@ function CustomPositionContainer:getSize()
     if self.dimen then
         return self.dimen
     end
-    -- return widget size if no dimen set
-    if self.widget then
-        return self.widget:getSize()
-    end
-    return { w = 0, h = 0 }
+    -- paintTo() positions content within the full screen when
+    -- no dimen is set, so that is the size we occupy.
+    return Screen:getSize()
 end
 
 return CustomPositionContainer
