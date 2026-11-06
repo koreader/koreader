@@ -1,6 +1,5 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
-local DocSettings = require("docsettings")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
@@ -14,7 +13,6 @@ local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local datetime = require("datetime")
-local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local time = require("ui/time")
@@ -190,10 +188,11 @@ function KOSync:onDispatcherRegisterActions()
     Dispatcher:registerAction("kosync_pull_progress", { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), reader=true, separator=true,})
 end
 
-function KOSync:onReaderReady()
+function KOSync:onReaderReady(doc_settings)
     -- Until a page is turned, the last time this book was read here is when its settings were last saved.
-    local sidecar_file = DocSettings:findSidecarFile(self.ui.document.file)
-    self.last_page_turn_timestamp = sidecar_file and lfs.attributes(sidecar_file, "modification") or 0
+    -- candidates[1] is the sidecar copy DocSettings actually loaded.
+    local loaded = doc_settings and doc_settings.candidates and doc_settings.candidates[1]
+    self.last_page_turn_timestamp = loaded and loaded.mtime or 0
     if self.settings.auto_sync then
         UIManager:nextTick(function()
             self:getProgress(true, false)
@@ -927,7 +926,7 @@ function KOSync:getProgress(ensure_networking, interactive)
             local remote_where = describe(remote_page, body.percentage)
             local local_where = describe(local_page, percentage)
 
-            if percentage == body.percentage
+            if (not have_pages and percentage == body.percentage)
             or body.progress == progress
             or (have_pages and remote_page == local_page)
             -- Servers that only keep the paragraph (e.g. Kavita) hand back its start, which is often on the
@@ -1048,7 +1047,8 @@ function KOSync:schedulePeriodicPush()
     self.periodic_push_scheduled = true
 end
 
-function KOSync:_onPageUpdate(page)
+-- Always registered: the last read time is kept even with auto sync off, only the push depends on it.
+function KOSync:onPageUpdate(page)
     if page == nil then
         return
     end
@@ -1056,12 +1056,20 @@ function KOSync:_onPageUpdate(page)
     if self.last_page ~= page then
         self.last_page = page
         self.last_page_turn_timestamp = os.time()
+        if not self.settings.auto_sync then
+            return
+        end
         self.page_update_counter = self.page_update_counter + 1
         -- If we've already scheduled a push, regardless of the counter's state, delay it until we're *actually* idle
         if self.periodic_push_scheduled or self.settings.pages_before_update and self.page_update_counter >= self.settings.pages_before_update then
             self:schedulePeriodicPush()
         end
     end
+end
+
+-- Continuous view mode sends PosUpdate instead of PageUpdate.
+function KOSync:onPosUpdate(pos, pageno)
+    self:onPageUpdate(pageno)
 end
 
 function KOSync:_onResume()
@@ -1170,14 +1178,12 @@ end
 function KOSync:registerEvents()
     if self.settings.auto_sync then
         self.onCloseDocument = self._onCloseDocument
-        self.onPageUpdate = self._onPageUpdate
         self.onResume = self._onResume
         self.onSuspend = self._onSuspend
         self.onNetworkConnected = self._onNetworkConnected
         self.onNetworkDisconnecting = self._onNetworkDisconnecting
     else
         self.onCloseDocument = nil
-        self.onPageUpdate = nil
         self.onResume = nil
         self.onSuspend = nil
         self.onNetworkConnected = nil
