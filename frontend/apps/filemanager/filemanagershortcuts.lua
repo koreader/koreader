@@ -101,12 +101,9 @@ end
 
 function FileManagerShortcuts:updateShortcut(provider, new_folder) -- for all providers
     local old_folder = FileManagerShortcuts.provider_props[provider].get()
-    if old_folder then
-        self:_delShortcut(old_folder, provider)
-        if new_folder then
-            self:_addShortcut(new_folder, provider)
-            return self:refreshFileManager()
-        end
+    if old_folder and self:_delShortcut(old_folder, provider) and new_folder then
+        self:_addShortcut(new_folder, provider)
+        return self:refreshFileManager()
     end
 end
 
@@ -131,23 +128,27 @@ function FileManagerShortcuts:_addShortcut(folder, provider, name)
 end
 
 function FileManagerShortcuts:_delShortcut(folder, provider)
+    local deleted
     folder = folder:gsub("/$", "")
     local shortcut = self.folder_shortcuts[folder]
     if shortcut then
         if provider then
-            if shortcut.providers then
+            if shortcut.providers and shortcut.providers[provider] then
                 shortcut.providers[provider] = nil
                 if not next(shortcut.providers) then
                     shortcut.providers = nil
                 end
+                deleted = true
             end
         else -- user shortcut
             shortcut.text = nil
+            deleted = true
         end
         if shortcut.text == nil and shortcut.providers == nil then
             self.folder_shortcuts[folder] = nil
         end
     end
+    return deleted
 end
 
 function FileManagerShortcuts:getShortcutFullName(folder)
@@ -180,17 +181,23 @@ end
 function FileManagerShortcuts:updateItemsByPath(old_path, new_path)
     -- used on renaming/moving/deleting folders in the file browser
     -- if old_path == nil then remove the shortcut and system folder in settings
+    local old_folder_path = old_path or new_path
+    local old_folder_path1 = old_folder_path .. "/"
+    local len1 = #old_folder_path1
     -- update shortcuts
-    local seen = {}
-    for old_folder, shortcut in pairs(self.folder_shortcuts) do
-        if not seen[old_folder] then
-            local new_folder, count = old_folder:gsub(old_path or new_path, new_path)
-            if count > 0 then
-                self.folder_shortcuts[old_folder] = nil
-                if old_path then
-                    self.folder_shortcuts[new_folder] = shortcut
-                    seen[new_folder] = true
-                end
+    local changed_folders = {}
+    for folder in pairs(self.folder_shortcuts) do
+        local folder_subpath = folder:sub(1, len1)
+        if folder_subpath == old_folder_path or folder_subpath == old_folder_path1 then
+            table.insert(changed_folders, { folder, old_path and new_path .. folder:sub(len1) })
+        end
+    end
+    if next(changed_folders) then
+        for _, v in ipairs(changed_folders) do
+            local shortcut = self.folder_shortcuts[v[1]]
+            self.folder_shortcuts[v[1]] = nil
+            if old_path then
+                self.folder_shortcuts[v[2]] = shortcut
             end
         end
     end
@@ -199,9 +206,9 @@ function FileManagerShortcuts:updateItemsByPath(old_path, new_path)
         if prop.set then
             local old_folder = prop.get()
             if old_folder then
-                local new_folder, count = old_folder:gsub(old_path or new_path, new_path)
-                if count > 0 then
-                    prop.set(old_path and new_folder)
+                local old_folder_subpath = old_folder:sub(1, len1)
+                if old_folder_subpath == old_folder_path or old_folder_subpath == old_folder_path1 then
+                    prop.set(old_path and new_path .. old_folder:sub(len1))
                 end
             end
         end
