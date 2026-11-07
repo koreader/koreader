@@ -188,11 +188,9 @@ function KOSync:onDispatcherRegisterActions()
     Dispatcher:registerAction("kosync_pull_progress", { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), reader=true, separator=true,})
 end
 
-function KOSync:onReaderReady(doc_settings)
-    -- Until a page is turned, the last time this book was read here is when its settings were last saved.
-    -- candidates[1] is the sidecar copy DocSettings actually loaded.
-    local loaded = doc_settings and doc_settings.candidates and doc_settings.candidates[1]
-    self.last_page_turn_timestamp = loaded and loaded.mtime or 0
+function KOSync:onReaderReady()
+    -- Last read time from the previous session, saved alongside the reading position.
+    self.last_page_turn_timestamp = self.ui.doc_settings:readSetting("kosync_last_page_turn") or 0
     if self.settings.auto_sync then
         UIManager:nextTick(function()
             self:getProgress(true, false)
@@ -1069,7 +1067,15 @@ end
 
 -- Continuous view mode sends PosUpdate instead of PageUpdate.
 function KOSync:onPosUpdate(pos, pageno)
+    -- Scrolling within a page is reading too.
+    self.last_page_turn_timestamp = os.time()
     self:onPageUpdate(pageno)
+end
+
+function KOSync:onSaveSettings()
+    if self.last_page_turn_timestamp > 0 then
+        self.ui.doc_settings:saveSetting("kosync_last_page_turn", self.last_page_turn_timestamp)
+    end
 end
 
 function KOSync:_onResume()
