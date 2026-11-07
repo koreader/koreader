@@ -1405,11 +1405,22 @@ function KindleVoyage:init()
 
     Kindle.init(self)
 
-    -- Re-enable WhisperTouch keys when started without framework
-    if self.framework_lipc_handle then
-        self.framework_lipc_handle:set_int_property("com.lab126.deviced", "fsrkeypadEnable", 1)
-        self.framework_lipc_handle:set_int_property("com.lab126.deviced", "fsrkeypadPrevEnable", 1)
-        self.framework_lipc_handle:set_int_property("com.lab126.deviced", "fsrkeypadNextEnable", 1)
+    -- The framework may disable WhisperTouch keys for the launcher, too.
+    -- Re-enable them regardless of whether the framework was stopped.
+    local lipc_handle = self.framework_lipc_handle
+    if not lipc_handle then
+        local haslipc, lipc = pcall(require, "liblipclua")
+        if haslipc then
+            lipc_handle = lipc.init("com.github.koreader.whispertouch")
+        end
+    end
+    if lipc_handle then
+        lipc_handle:set_int_property("com.lab126.deviced", "fsrkeypadEnable", 1)
+        lipc_handle:set_int_property("com.lab126.deviced", "fsrkeypadPrevEnable", 1)
+        lipc_handle:set_int_property("com.lab126.deviced", "fsrkeypadNextEnable", 1)
+        if not self.framework_lipc_handle then
+            lipc_handle:close()
+        end
     end
 end
 
