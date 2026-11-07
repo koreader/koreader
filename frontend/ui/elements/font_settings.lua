@@ -37,7 +37,6 @@ local function getDir(isUser)
 end
 
 local function openFontDir()
-    if not Device:canOpenLink() then return end
     local user_dir = getDir(true)
     local openable = util.pathExists(user_dir)
     if not openable and user_dir then
@@ -79,14 +78,13 @@ function FontSettings:getSystemFontMenuItems()
             UIManager:askForRestart()
         end,
     }}
-
-    if Device:isDesktop() or Device:isEmulator() then table.insert(t, 2, {
+    if (Device:isDesktop() or Device:isEmulator()) and Device:canOpenLink() then
+        table.insert(t, {
             text = _("Open fonts folder"),
             keep_menu_open = true,
             callback = openFontDir,
         })
     end
-
     return t
 end
 
