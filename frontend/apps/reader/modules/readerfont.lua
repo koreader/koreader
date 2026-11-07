@@ -85,7 +85,6 @@ function ReaderFont:setupFaceMenuTable()
         table.insert(self.face_table, {
             text_func = function()
                 -- defaults are hardcoded in credocument.lua
-                local default_font = G_reader_settings:readSetting("cre_font") or self.ui.document.default_font
                 local fallback_font = G_reader_settings:readSetting("fallback_font") or self.ui.document.fallback_fonts[1]
                 local monospace_font = G_reader_settings:readSetting("monospace_font") or self.ui.document.monospace_font
                 local text = v
@@ -100,13 +99,14 @@ function ReaderFont:setupFaceMenuTable()
                 if v == fallback_font then
                     text = text .. "   �"
                 end
-                if v == default_font then
-                    text = text .. "   ★"
-                end
                 if newly_added_fonts[v] then
                     text = text .. "  \u{EA93}" -- "NEW" in a black square, from nerdfont
                 end
                 return text
+            end,
+            text_star_func = function()
+                local default_font = G_reader_settings:readSetting("cre_font") or self.ui.document.default_font
+                return v == default_font
             end,
             font_func = function(size)
                 if G_reader_settings:nilOrTrue("font_menu_use_font_face") then
