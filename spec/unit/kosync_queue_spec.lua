@@ -337,7 +337,7 @@ describe("KOSyncQueue module", function()
         schedule_stub = stub(UIManager, "scheduleIn", function(_, _, callback) scheduled = callback end)
         client_stub = stub(KOSyncClient, "new", function()
             return {
-                update_progress = function(_, username, userkey, document, metadata, progress, percentage, device, device_id, callback)
+                update_progress = function(_, username, userkey, document, metadata, progress, percentage, device, device_id, timestamp, callback)
                     assert.are.equal("user", username)
                     assert.are.equal("key", userkey)
                     assert.are.equal("a", document)
@@ -362,6 +362,32 @@ describe("KOSyncQueue module", function()
         sync:_onNetworkConnected()
         scheduled()
         assert.are.equal(2, pulls)
+    end)
+
+    it("should send each queued update with the time its progress was reached", function()
+        local KOSync = dofile("plugins/kosync.koplugin/main.lua")
+        local KOSyncClient = require("KOSyncClient")
+        local sent = {}
+        client_stub = stub(KOSyncClient, "new", function()
+            return {
+                update_progress = function(_, _, _, document, _, _, _, _, _, timestamp, callback)
+                    sent[document] = timestamp
+                    callback(true)
+                end,
+            }
+        end)
+        local sync = setmetatable({
+            settings = { username = "user", userkey = "key" },
+            path = "plugins/kosync.koplugin",
+        }, { __index = KOSync })
+        KOSyncQueue:push({ document = "a", progress = "1", timestamp = 1700000000 })
+        -- Queued by a version that didn't record timestamps: fall back to when it was queued.
+        KOSyncQueue:push({ document = "b", progress = "2" })
+        local queued_at = KOSyncQueue:load()[2].queued_at
+        sync:drainQueue()
+        assert.are.equal(1700000000, sent.a)
+        assert.are.equal(queued_at, sent.b)
+        assert.are.equal(0, KOSyncQueue:count())
     end)
 
     it("should clear the queue", function()

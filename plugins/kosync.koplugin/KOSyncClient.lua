@@ -112,6 +112,7 @@ function KOSyncClient:update_progress(
         percentage,
         device,
         device_id,
+        timestamp,
         callback)
     self.client:reset_middlewares()
     self.client:enable("Format.JSON")
@@ -131,6 +132,7 @@ function KOSyncClient:update_progress(
                 percentage = percentage,
                 device = device,
                 device_id = device_id,
+                timestamp = timestamp,
             })
         end)
         if ok then
