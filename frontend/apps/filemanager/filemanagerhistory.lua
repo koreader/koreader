@@ -4,6 +4,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local InputDialog = require("ui/widget/inputdialog")
+local Notification = require("ui/widget/notification")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -167,7 +168,11 @@ function FileManagerHistory:onSetDimensions(dimen)
 end
 
 function FileManagerHistory:onMenuSelect(item)
-    filemanagerutil.openFile(self.ui, item.file, self.close_callback)
+    if item.dim then
+        UIManager:show(Notification:new{ text = _("File does not exist") })
+    else
+        filemanagerutil.openFile(self.ui, item.file, self.close_callback)
+    end
 end
 
 function FileManagerHistory:onMenuHold(item)
@@ -238,6 +243,7 @@ function FileManagerHistory:onMenuHold(item)
         },
         {
             text = _("Remove from history"),
+            enabled = not is_currently_opened,
             callback = function()
                 UIManager:close(self.file_dialog)
                 -- The item's idx field is tied to the current *view*, so we can only pass it as-is when there's no filtering *at all* involved.
