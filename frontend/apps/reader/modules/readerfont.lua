@@ -92,17 +92,16 @@ function ReaderFont:setupFaceMenuTable()
                 if font_filename and font_faceindex then
                     text = FontList:getLocalizedFontName(font_filename, font_faceindex) or text
                 end
-
                 if v == monospace_font then
                     text = text .. " \u{1F13C}" -- Squared Latin Capital Letter M
                 elseif is_monospace then
                     text = text .. " \u{1D39}" -- Modified Letter Capital M
                 end
-                if v == default_font then
-                    text = text .. "   ★"
-                end
                 if v == fallback_font then
                     text = text .. "   �"
+                end
+                if v == default_font then
+                    text = text .. "   ★"
                 end
                 if newly_added_fonts[v] then
                     text = text .. "  \u{EA93}" -- "NEW" in a black square, from nerdfont
@@ -206,6 +205,11 @@ function ReaderFont:onReadSettings(config)
     end)
 end
 
+function ReaderFont:onSaveSettings()
+    self.ui.doc_settings:saveSetting("font_face", self.font_face)
+    self.ui.doc_settings:saveSetting("font_family_fonts", self.font_family_fonts)
+end
+
 --[[
     UpdatePos event is used to tell ReaderRolling to update pos.
 --]]
@@ -297,23 +301,21 @@ function ReaderFont:onSetFontGamma(gamma)
     return true
 end
 
-function ReaderFont:onSaveSettings()
-    self.ui.doc_settings:saveSetting("font_face", self.font_face)
-    self.ui.doc_settings:saveSetting("font_family_fonts", self.font_family_fonts)
-end
-
 function ReaderFont:onSetFont(face)
-    if face and self.font_face ~= face then
-        for _, fontinfo in pairs(FontList.fontinfo) do
-            if fontinfo[1].name == face then
-                self.font_face = face
-                self.ui.document:setFontFace(face)
-                -- signal readerrolling to update pos in new height
-                self.ui:handleEvent(Event:new("UpdatePos"))
-                return
+    if self.font_face ~= face then
+        for _, fontinfos in pairs(FontList.fontinfo) do
+            for _, fontinfo in ipairs(fontinfos) do -- several faces in TTC/OTC font collections
+                if fontinfo.name == face then
+                    self.font_face = face
+                    self.ui.document:setFontFace(face)
+                    -- signal readerrolling to update pos in new height
+                    self.ui:handleEvent(Event:new("UpdatePos"))
+                    return true
+                end
             end
         end
     end
+    return true
 end
 
 function ReaderFont:makeDefault(face, is_monospace, touchmenu_instance)
@@ -568,12 +570,9 @@ Enabling this will ignore such font names and make sure your preferred family fo
                     separator = true,
                 },
                 {
-                    text_func = function()
-                        local text = unset_font_choice_text
-                        if not g_font_family_fonts[family_tag] then
-                            text = text .. "   ★"
-                        end
-                        return text
+                    text = unset_font_choice_text,
+                    text_star_func = function()
+                        return not g_font_family_fonts[family_tag]
                     end,
                     callback = function()
                         self.font_family_fonts[family_tag] = false
@@ -617,15 +616,9 @@ Enabling this will ignore such font names and make sure your preferred family fo
             end
             if not ignore then
                 table.insert(family_table.sub_item_table, {
-                    text_func = function()
-                        local text = v
-                        if font_filename and font_faceindex then
-                            text = FontList:getLocalizedFontName(font_filename, font_faceindex) or text
-                        end
-                        if g_font_family_fonts[family_tag] == v then
-                            text = text .. "   ★"
-                        end
-                        return text
+                    text = font_filename and font_faceindex and FontList:getLocalizedFontName(font_filename, font_faceindex) or v,
+                    text_star_func = function()
+                        return g_font_family_fonts[family_tag] == v
                     end,
                     font_func = function(size)
                         if G_reader_settings:nilOrTrue("font_menu_use_font_face") then
@@ -685,8 +678,26 @@ function ReaderFont:getFontSettingsTable()
         for _, item in ipairs(require("ui/elements/font_settings"):getSystemFontMenuItems()) do
             table.insert(settings_table, item)
         end
-        settings_table[#settings_table].separator = true
     end
+
+    table.insert(settings_table, {
+        text_func = function()
+            return T(_("User fonts folder: %1"), G_reader_settings:readSetting("font_user_folder") or _("not set"))
+        end,
+        keep_menu_open = true,
+        callback = function(touchmenu_instance)
+            local curr_path = G_reader_settings:readSetting("font_user_folder") or _("not set")
+            local caller_callback = function(path)
+                if curr_path ~= path then
+                    G_reader_settings:saveSetting("font_user_folder", path)
+                    touchmenu_instance:updateItems()
+                    UIManager:askForRestart()
+                end
+            end
+            filemanagerutil.showChooseDialog(_("User fonts folder:"), caller_callback, curr_path, nil, nil, true)
+        end,
+        separator = true,
+    })
 
     table.insert(settings_table, {
         text = _("Display font names with their own font"),
