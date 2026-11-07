@@ -287,6 +287,81 @@ if Device:isTouchDevice() then
     common_settings.taps_and_gestures = {
         text = _("Taps and gestures"),
     }
+
+    if Device:hasFancyTaps() then
+        common_settings.tapback_sensitivity = {
+            text = _("Tapback sensitivity"),
+            callback = function()
+                local MultiInputDialog = require("ui/widget/multiinputdialog")
+                local ffiUtil = require("ffi/util")
+                local path = Device.tapback_sysfs_path
+
+                local curr_x = path and tonumber(ffiUtil.readSysfs(path .. "/threshold_tap_x")) or 5
+                local curr_y = path and tonumber(ffiUtil.readSysfs(path .. "/threshold_tap_y")) or 5
+                local curr_z = path and tonumber(ffiUtil.readSysfs(path .. "/threshold_tap_z")) or 5
+
+                local dialog
+                dialog = MultiInputDialog:new{
+                    title = _("Tapback sensitivity\n\n1 = Most sensitive | 31 = Hardest | 0 = Disabled"),
+                    fields = {
+                        {
+                            description = _("X-axis: Tapping on the sides of the Kindle (left or right)."),
+                            input_type = "number",
+                            text = tostring(curr_x),
+                        },
+                        {
+                            description = _("Y-axis: Tapping vertically (top or bottom)."),
+                            input_type = "number",
+                            text = tostring(curr_y),
+                        },
+                        {
+                            description = _("Z-axis: Tapping on the back (or front screen)."),
+                            input_type = "number",
+                            text = tostring(curr_z),
+                        }
+                    },
+                    buttons = {
+                        {
+                            {
+                                text = _("Cancel"),
+                                id = "close",
+                                callback = function()
+                                    UIManager:close(dialog)
+                                end,
+                            },
+                            {
+                                text = _("Save"),
+                                is_enter_default = true,
+                                callback = function()
+                                    local fields = dialog:getFields()
+                                    local x = tonumber(fields[1]) or 5
+                                    local y = tonumber(fields[2]) or 5
+                                    local z = tonumber(fields[3]) or 5
+
+                                    G_reader_settings:saveSetting("tapback_thresh_x", x)
+                                    G_reader_settings:saveSetting("tapback_thresh_y", y)
+                                    G_reader_settings:saveSetting("tapback_thresh_z", z)
+
+                                    if path then
+                                        ffiUtil.writeToSysfs(tostring(x), path .. "/threshold_tap_x")
+                                        ffiUtil.writeToSysfs(tostring(y), path .. "/threshold_tap_y")
+                                        ffiUtil.writeToSysfs(tostring(z), path .. "/threshold_tap_z")
+                                    end
+
+                                    UIManager:close(dialog)
+                                    UIManager:show(InfoMessage:new{
+                                        text = _("Tapback sensitivity adjusted!"),
+                                    })
+                                end,
+                            },
+                        }
+                    }
+                }
+                UIManager:show(dialog)
+            end,
+        }
+    end
+
     common_settings.ignore_hold_corners = {
         text = _("Ignore long-press on corners"),
         checked_func = function()
