@@ -212,10 +212,6 @@ function FontList:getFontList()
     for dir in string.gmatch(getExternalFontDir() or "", "[^;]+") do
         self:_readList(dir, mark)
     end
-    local user_dir = G_reader_settings:readSetting("font_user_folder")
-    if user_dir then
-        self:_readList(user_dir, mark)
-    end
 
     -- clear fonts that no longer exist
     for k, _ in pairs(self.fontinfo) do
