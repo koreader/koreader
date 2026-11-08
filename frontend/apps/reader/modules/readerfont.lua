@@ -678,26 +678,8 @@ function ReaderFont:getFontSettingsTable()
         for _, item in ipairs(require("ui/elements/font_settings"):getSystemFontMenuItems()) do
             table.insert(settings_table, item)
         end
+        settings_table[#settings_table].separator = true
     end
-
-    table.insert(settings_table, {
-        text_func = function()
-            return T(_("User fonts folder: %1"), G_reader_settings:readSetting("font_user_folder") or _("not set"))
-        end,
-        keep_menu_open = true,
-        callback = function(touchmenu_instance)
-            local curr_path = G_reader_settings:readSetting("font_user_folder") or _("not set")
-            local caller_callback = function(path)
-                if curr_path ~= path then
-                    G_reader_settings:saveSetting("font_user_folder", path)
-                    touchmenu_instance:updateItems()
-                    UIManager:askForRestart()
-                end
-            end
-            filemanagerutil.showChooseDialog(_("User fonts folder:"), caller_callback, curr_path, nil, nil, true)
-        end,
-        separator = true,
-    })
 
     table.insert(settings_table, {
         text = _("Display font names with their own font"),
