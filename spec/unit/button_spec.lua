@@ -2,12 +2,14 @@ describe("Button widget", function()
     local Button
     local ButtonTable
     local Dbg
+    local Size
 
     setup(function()
         require("commonrequire")
         Button = require("ui/widget/button")
         ButtonTable = require("ui/widget/buttontable")
         Dbg = require("dbg")
+        Size = require("ui/size")
     end)
 
     it("should register a Shortcut key_event for a string key_bindings", function()
@@ -69,5 +71,31 @@ describe("Button widget", function()
             Button:new{ text = "Test", key_bindings = 7 }
         end)
         Dbg:turnOff()
+    end)
+
+    -- #16149: a text button with an explicit radius must keep a *rounded*
+    -- highlight. Take the rounded path (invert colours, keep the radius) rather
+    -- than the invert flag, which paints a square highlight via invertRect.
+    it("should highlight with rounded corners when the caller set a radius", function()
+        for _, radius in ipairs({ 0, 8 }) do
+            local btn = Button:new{ text = "Test", radius = radius }
+            btn:_doFeedbackHighlight()
+            assert.is_nil(btn[1].invert)
+            assert.are.equal(Size.radius.button, btn[1].radius)
+            btn:_undoFeedbackHighlight(false)
+            -- the caller's radius must survive the round-trip
+            assert.are.equal(radius, btn[1].radius)
+        end
+    end)
+
+    -- #16267: Button:hide() clears the frame background, so a tap used to index
+    -- a nil background. It must fall back to the invert flag instead of crashing.
+    it("should not crash when highlighting a hidden icon button", function()
+        local btn = Button:new{ icon = "check" }
+        btn:hide()
+        assert.is_nil(btn[1].background)
+        assert.has_no.errors(function() btn:_doFeedbackHighlight() end)
+        assert.has_no.errors(function() btn:_undoFeedbackHighlight(false) end)
+        assert.is_true(btn[1].invert)
     end)
 end)

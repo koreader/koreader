@@ -430,24 +430,26 @@ end
 -- Used by onTapSelectButton to handle visual feedback when flash_ui is enabled
 function Button:_doFeedbackHighlight()
     -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
-    if self.text then
-        -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
-        -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
-        if self[1].radius == nil or self.background then
-            self[1].radius = Size.radius.button
-            -- And here, it's easier to just invert the bg/fg colors ourselves,
-            -- so as to preserve the rounded corners in one step.
-            self[1].background = self[1].background:invert()
-            self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
-            -- We do *NOT* set the invert flag, because it just adds an invertRect step at the end of the paintTo process,
-            -- and we've already taken care of inversion in a way that won't mangle the rounded corners.
-        else
-            self[1].invert = true
-        end
+    if self.text and self[1].background then
+        -- We want the button's *highlight* to have rounded corners whenever the
+        -- frame is painted with a radius (otherwise they're redundant, same color
+        -- as the bg). Take the rounded path whenever a radius is in play: nil means
+        -- the default set in init, but it may also be an explicit caller value
+        -- (e.g. radius = 0 for a button table sharing its neighbours' corners).
+        self[1].orig_radius = self[1].radius
+        self[1].radius = Size.radius.button
+        -- And here, it's easier to just invert the bg/fg colors ourselves,
+        -- so as to preserve the rounded corners in one step.
+        self[1].background = self[1].background:invert()
+        self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+        -- We do *NOT* set the invert flag, because it just adds an invertRect step at the end of the paintTo process,
+        -- and we've already taken care of inversion in a way that won't mangle the rounded corners.
 
         -- This repaints *now*, unlike setDirty
         UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
     else
+        -- No frame background (icon-only button, or one hidden via Button:hide(),
+        -- which clears the background): fall back to the invert flag.
         self[1].invert = true
         UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
     end
@@ -455,14 +457,13 @@ function Button:_doFeedbackHighlight()
 end
 
 function Button:_undoFeedbackHighlight(is_translucent)
-    if self.text then
-        if self[1].radius == Size.radius.button then
-            self[1].radius = nil
-            self[1].background = self[1].background:invert()
-            self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
-        else
-            self[1].invert = false
-        end
+    if self.text and self[1].background then
+        -- Mirror the radius handling from _doFeedbackHighlight: restore the
+        -- caller's original radius (nil for the default button).
+        self[1].radius = self[1].orig_radius
+        self[1].orig_radius = nil
+        self[1].background = self[1].background:invert()
+        self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
         UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
     else
         self[1].invert = false
