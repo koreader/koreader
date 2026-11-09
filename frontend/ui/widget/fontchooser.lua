@@ -17,6 +17,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local ffiUtil = require("ffi/util")
+local util = require("util")
 local _ = require("gettext")
 local Device = require("device")
 local Screen = Device.screen
@@ -24,7 +25,9 @@ local Screen = Device.screen
 local FontChooser = FocusManager:extend{
     title = "",
     font_file = nil, -- current
+    font_file_index = nil, -- starting from 0
     default_font_file = nil, -- is marked with a star
+    default_font_file_index = nil, -- starting from 0
     keep_shown_on_apply = false,
     callback = nil, -- must be provided by the caller
     close_callback = nil, -- can be nil
@@ -59,35 +62,9 @@ function FontChooser:init()
         show_parent = self,
     }
 
-    local radio_buttons = {} -- one column
-    for font_file, font_info in pairs(FontList.fontinfo) do
-        local name_text, name = self.getFontNameText(font_file)
-        if self.default_font_file and self.default_font_file == font_file then
-            name_text = name_text .. "  ★"
-        end
-        table.insert(radio_buttons, {{
-            text = name_text,
-            name = name,
-            checked = font_file == self.font_file,
-            provider = font_file,
-            face = Font:getFace(font_file, 22),
-            hold_callback = function()
-                UIManager:show(InfoMessage:new{ text = font_file, show_icon = false })
-            end,
-        }})
-    end
-    if #radio_buttons > 1 then
-        table.sort(radio_buttons, function(a, b)
-            if a[1].name ~= b[1].name then
-                return ffiUtil.strcoll(a[1].name, b[1].name)
-            end
-            return ffiUtil.strcoll(a[1].text, b[1].text)
-        end)
-    end
-
     local scroll_container_inner_width = width - ScrollableContainer:getScrollbarWidth()
     local radio_button_table = RadioButtonTable:new{
-        radio_buttons = radio_buttons,
+        radio_buttons = self:genFontButtons(),
         width = scroll_container_inner_width - 2*Size.padding.large,
         button_single_line = true,
         no_sep = true,
@@ -112,7 +89,7 @@ function FontChooser:init()
                 if not self.keep_shown_on_apply then
                     UIManager:close(self)
                 end
-                self.callback(radio_button_table.checked_button.provider)
+                self.callback(unpack(radio_button_table.checked_button.provider)) -- (font_file, font_file_index)
             end,
         },
     }}
@@ -192,6 +169,42 @@ function FontChooser:init()
     }
 end
 
+function FontChooser:genFontButtons()
+    local radio_buttons = {} -- one column
+    for font_file, font_infos in pairs(FontList.fontinfo) do
+        for i = 0, #font_infos - 1 do -- several faces in TTC/OTC font collections
+            local name_text, name = self.getFontNameText(font_file, i)
+            if self.default_font_file == font_file and self.default_font_file_index == i then
+                name_text = name_text .. "   ★"
+            end
+            table.insert(radio_buttons, {{
+                text = name_text,
+                name = name,
+                checked = self.font_file == font_file and self.font_file_index == i,
+                provider = { font_file, i },
+                face = Font:getFace(font_file, 22, i),
+                hold_callback = function()
+                    local path = ffiUtil.realpath(font_file)
+                    local version = util.tableGetValue(font_infos[i + 1], "names", "en", 5)
+                    UIManager:show(InfoMessage:new{
+                        text = version and path .. "\n\n" .. version or path,
+                        show_icon = false,
+                    })
+                end,
+            }})
+        end
+    end
+    if #radio_buttons > 1 then
+        table.sort(radio_buttons, function(a, b)
+            if a[1].name ~= b[1].name then
+                return ffiUtil.strcoll(a[1].name, b[1].name)
+            end
+            return ffiUtil.strcoll(a[1].text, b[1].text)
+        end)
+    end
+    return radio_buttons
+end
+
 function FontChooser:scrollToCheckedButton()
     if not self.is_scrollable then return end
     -- keep scrollable container "pagination"
@@ -203,15 +216,15 @@ function FontChooser:scrollToCheckedButton()
     self.cropping_widget:setScrolledOffset({ x = 0, y = math.min(checked_button_page_offset, max_offset) })
 end
 
-function FontChooser.isFontRegistered(file)
-    return file and FontList.fontinfo[file] and true or false
+function FontChooser.isFontRegistered(font_file)
+    return font_file and FontList.fontinfo[font_file] and true or false
 end
 
-function FontChooser.getFontNameText(file)
-    local font_info = FontList.fontinfo[file]
-    local info = font_info and font_info[1]
+function FontChooser.getFontNameText(font_file, font_file_index)
+    font_file_index = font_file_index or 0
+    local info = FontList.fontinfo[font_file] and FontList.fontinfo[font_file][font_file_index + 1]
     if info then
-        local name = FontList:getLocalizedFontName(file, 0) or info.name
+        local name = FontList:getLocalizedFontName(font_file, font_file_index) or info.name
         local name_text = name
         if info.bold then
             name_text = name_text .. " " .. _("bold")
