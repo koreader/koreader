@@ -430,10 +430,16 @@ end
 -- Used by onTapSelectButton to handle visual feedback when flash_ui is enabled
 function Button:_doFeedbackHighlight()
     -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
+    -- The frame's geometry is only known after the first paint.
+    if not (self[1] and self[1].dimen) then
+        logger.dbg("Button:", tostring(self), "attempted a feedback highlight in an unpainted frame!")
+        return
+    end
     if self.text then
         -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
         -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
-        if self[1].radius == nil or self.background then
+        -- The frame may have no background: fall back to the invert flag.
+        if (self[1].radius == nil or self.background) and self[1].background then
             self[1].radius = Size.radius.button
             -- And here, it's easier to just invert the bg/fg colors ourselves,
             -- so as to preserve the rounded corners in one step.
@@ -455,8 +461,14 @@ function Button:_doFeedbackHighlight()
 end
 
 function Button:_undoFeedbackHighlight(is_translucent)
+    -- Same as in _doFeedbackHighlight().
+    if not (self[1] and self[1].dimen) then
+        logger.dbg("Button:", tostring(self), "attempted a feedback unhighlight in an unpainted frame!")
+        return
+    end
     if self.text then
-        if self[1].radius == Size.radius.button then
+        -- Only invert back what was inverted.
+        if self[1].radius == Size.radius.button and self[1].background then
             self[1].radius = nil
             self[1].background = self[1].background:invert()
             self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
