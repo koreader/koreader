@@ -258,12 +258,15 @@ describe("device module", function()
         end)
 
         insulate("Julep identification", function()
-            it("should identify Julep as a ColorSoft", function()
-                io.open = make_io_open_kindle_model_override("GN45R6XXX")
+            it("should identify Julep variants as ColorSoft", function()
+                for _, devcode in ipairs({ "5R6", "5R7", "5R8", "5R9", "5RA", "5RB", "65R", "65S", "65T" }) do
+                    package.unload("device/kindle/device")
+                    io.open = make_io_open_kindle_model_override("GN4" .. devcode .. "XXX")
 
-                local kindle_dev = require("device/kindle/device")
-                assert.is.same("KindleColorSoft", kindle_dev.model)
-                assert.is_true(kindle_dev:hasColorScreen())
+                    local kindle_dev = require("device/kindle/device")
+                    assert.is.same("KindleColorSoft", kindle_dev.model)
+                    assert.is_true(kindle_dev:hasColorScreen())
+                end
             end)
         end)
 
