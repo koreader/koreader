@@ -257,6 +257,16 @@ describe("device module", function()
             end)
         end)
 
+        insulate("Julep identification", function()
+            it("should identify Julep as a ColorSoft", function()
+                io.open = make_io_open_kindle_model_override("GN45R6XXX")
+
+                local kindle_dev = require("device/kindle/device")
+                assert.is.same("KindleColorSoft", kindle_dev.model)
+                assert.is_true(kindle_dev:hasColorScreen())
+            end)
+        end)
+
         it("should initialize voyage without error", function()
             io.open = make_io_open_kindle_model_override("B013XX")
 
