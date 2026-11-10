@@ -489,21 +489,23 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hi
         return buildOptimizedTile(full_page_bbox, true)
     end
 
-    local function buildOptimizedPagePartTile()
-        local page_size = Document.getNativePageDimensions(doc, pageno)
-        local x0 = math.max(rect.x, 0)
-        local y0 = math.max(rect.y, 0)
-        local x1 = math.min(rect.x + rect.w, page_size.w)
-        local y1 = math.min(rect.y + rect.h, page_size.h)
-        if x1 <= x0 or y1 <= y0 then
-            return nil
+    local function buildOptimizedPagePartTile(bbox)
+        if not bbox then
+            local page_size = Document.getNativePageDimensions(doc, pageno)
+            local x0 = math.max(rect.x, 0)
+            local y0 = math.max(rect.y, 0)
+            local x1 = math.min(rect.x + rect.w, page_size.w)
+            local y1 = math.min(rect.y + rect.h, page_size.h)
+            if x1 <= x0 or y1 <= y0 then
+                return nil
+            end
+            bbox = {
+                x0 = x0,
+                y0 = y0,
+                x1 = x1,
+                y1 = y1,
+            }
         end
-        local bbox = {
-            x0 = x0,
-            y0 = y0,
-            x1 = x1,
-            y1 = y1,
-        }
         return buildOptimizedTile(bbox, false)
     end
 
@@ -527,23 +529,74 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hi
     self:getContextHash(doc, pageno, bbox, hash_list)
     local hash = table.concat(hash_list, "|")
 
+    -- Rendering the whole page at a high zoom can ask for a bitmap far larger than
+    -- the device can allocate: in "content" zoom mode the zoom factor is derived
+    -- from the used bbox, so a page whose content is a small speck gets a huge
+    -- factor, and unlike Document:renderPage we would render the full page instead
+    -- of the visible part. Fall back to the visible part in that case.
+    local page_size = Document.getPageDimensions(doc, pageno, zoom, rotation)
+    local whole_page_fits = DocCache:willAccept(page_size.w * page_size.h * (doc.render_color and 4 or 1) + 512)
+    local hash_excerpt
+    if not whole_page_fits then
+        if not rect then
+            logger.warn("optimized page too large and no render region was specified, we won't render the page at all!")
+            return
+        end
+        logger.dbg("Attempting to render only part of the page:", rect)
+        -- NOTE: The zoom isn't part of the base hash, and the rect alone doesn't
+        -- always disambiguate it (e.g., it's at the page origin right after a zoom
+        -- change), so it has to be part of the excerpt key (c.f., Document:getPagePartHash).
+        hash_excerpt = hash.."|"..tostring(rect).."|"..zoom
+    end
+
     local cached = DocCache:check(hash, TileCacheItem)
-    if not cached then
-        if hinting then
-            CanvasContext:enableCPUCores(2)
-        end
-
-        local tile = buildOptimizedFullPageTile()
-        DocCache:insert(hash, tile)
-
-        if hinting then
-            CanvasContext:enableCPUCores(1)
-        end
-
-        return tile
-    else
+    if not cached and hash_excerpt then
+        cached = DocCache:check(hash_excerpt)
+    end
+    if cached then
         return cached
     end
+
+    if hinting then
+        CanvasContext:enableCPUCores(2)
+    end
+
+    local tile
+    if hash_excerpt then
+        -- rect is in page coordinates already scaled by zoom, while the bbox has
+        -- to be given in unscaled page coordinates.
+        local native_page_size = Document.getNativePageDimensions(doc, pageno)
+        local part_bbox = {
+            x0 = math.max(rect.x / zoom, 0),
+            y0 = math.max(rect.y / zoom, 0),
+            x1 = math.min((rect.x + rect.w) / zoom, native_page_size.w),
+            y1 = math.min((rect.y + rect.h) / zoom, native_page_size.h),
+        }
+        if part_bbox.x0 < part_bbox.x1 and part_bbox.y0 < part_bbox.y1 then
+            tile = buildOptimizedPagePartTile(part_bbox)
+        end
+        if tile then
+            -- Excerpts are in scaled page coordinates too. Use the actual pixel
+            -- origin of the bbox, which may be a pixel off because of rounding.
+            tile.excerpt = Geom:new{
+                x = math.floor(part_bbox.x0 * zoom),
+                y = math.floor(part_bbox.y0 * zoom),
+                w = tile.bb.w,
+                h = tile.bb.h,
+            }
+        end
+    else
+        tile = buildOptimizedFullPageTile()
+    end
+    if tile then
+        DocCache:insert(hash_excerpt or hash, tile)
+    end
+
+    if hinting then
+        CanvasContext:enableCPUCores(1)
+    end
+
+    return tile
 end
 
 function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, saturation)
