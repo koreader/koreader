@@ -3097,6 +3097,14 @@ end
 -- the user is reading alone. Same flag as KOSync:updateProgress.
 function ReaderStatistics:onSyncBookStats(interactive)
     if self:canSync() then
+        if not ReaderStatistics.walCheckpoint() then
+            if interactive then
+                UIManager:show(InfoMessage:new{
+                    text = _("Statistics database is busy"),
+                })
+            end
+            return true
+        end
         local caller_pre_callback
         if interactive then
             caller_pre_callback = function()
@@ -3108,6 +3116,16 @@ function ReaderStatistics:onSyncBookStats(interactive)
         end
         self.ui.cloudstorage:sync(self.settings.sync_server, db_location, self.onSync, not interactive, caller_pre_callback)
     end
+    return true
+end
+
+function ReaderStatistics.walCheckpoint()
+    if not Device:canUseWAL() then return true end
+    local conn = SQ3.open(db_location)
+    local res = conn:exec("PRAGMA wal_checkpoint(TRUNCATE)")
+    conn:close()
+    local busy = tonumber(res and res[1] and res[1][1])
+    return busy == 0
 end
 
 function ReaderStatistics.onSync(local_path, cached_path, income_path)
