@@ -418,6 +418,14 @@ function VocabularyBuilder:purge()
     conn:close()
 end
 
+function VocabularyBuilder.walCheckpoint()
+    if not Device:canUseWAL() then return true end
+    local conn = SQ3.open(db_location)
+    local res = conn:exec("PRAGMA wal_checkpoint(TRUNCATE)")
+    conn:close()
+    local busy = tonumber(res and res[1] and res[1][1])
+    return busy == 0
+end
 
 -- Synchronization
 function VocabularyBuilder.onSync(local_path, cached_path, income_path)
