@@ -543,7 +543,10 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hi
             return
         end
         logger.dbg("Attempting to render only part of the page:", rect)
-        hash_excerpt = hash .. "|" .. tostring(rect)
+        -- NOTE: The zoom isn't part of the base hash, and the rect alone doesn't
+        -- always disambiguate it (e.g., it's at the page origin right after a zoom
+        -- change), so it has to be part of the excerpt key (c.f., Document:getPagePartHash).
+        hash_excerpt = hash.."|"..tostring(rect).."|"..zoom
     end
 
     local cached = DocCache:check(hash, TileCacheItem)
