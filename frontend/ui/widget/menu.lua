@@ -1279,9 +1279,9 @@ function Menu:setupItemHeights()
         -- exact item height can be calculated by building the TextBoxWidget for item text,
         -- but it is slow, so estimate the number of lines by building the TextWidget
         -- empirical 8% is added to consider unjustified unhyphenated multilines text layout
-        local item_text_width = 1.08 * TextWidget.getTextWidth(item.text, face, item.bold) -- luacheck: ignore
+        local item_text_w = TextWidget.getTextWidth(item.text, face, item.bold) * 1.08
         local item_available_width = available_width - infont_char_width * (item.mandatory and #tostring(item.mandatory) or 0)
-        local lines_nb = math.min(math.ceil(item_text_width / item_available_width), self.items_max_lines)
+        local lines_nb = math.min(math.ceil(item_text_w / item_available_width), self.items_max_lines)
         item.height = lines_nb * line_height + 2 * Size.span.vertical_default + self.linesize
         item.shortcut_icon_width = line_height -- letter shortcuts of fixed size (1 line)
 
