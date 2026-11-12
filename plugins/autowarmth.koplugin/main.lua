@@ -6,13 +6,12 @@ Plugin for setting screen warmth based on the sun position and/or a time schedul
 
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
-local Device = require("device")
 local DateTimeWidget = require("ui/widget/datetimewidget")
-local DoubleSpinWidget = require("ui/widget/doublespinwidget")
+local Device = require("device")
 local DeviceListener = require("device/devicelistener")
 local Dispatcher = require("dispatcher")
+local DoubleSpinWidget = require("ui/widget/doublespinwidget")
 local Event = require("ui/event")
-local FFIUtil = require("ffi/util")
 local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -23,13 +22,13 @@ local SunTime = require("suntime")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local datetime = require("datetime")
 local logger = require("logger")
+local Powerd = Device.powerd
+local Screen = Device.screen
 local _ = require("gettext")
 local C_ = _.pgettext
-local Powerd = Device.powerd
-local T = FFIUtil.template
-local Screen = require("device").screen
-local datetime = require("datetime")
+local T = require("ffi/util").template
 
 local activate_sun = 1
 local activate_schedule = 2
@@ -1232,23 +1231,8 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
     -- t .. times
     -- num .. index in times
     local function info_line(indent, text, time, num, face, easy)
-        -- get width of space
-        local unit = " "
-        local tmp = TextWidget:new{
-            text = unit,
-            face = face,
-        }
-        local space_w = tmp:getSize().w
-
-        -- get width of text
-        unit = text
-        tmp = TextWidget:new{
-            text = unit,
-            face = face,
-        }
-        local text_w = tmp:getSize().w
-        tmp:free()
-
+        local space_w = TextWidget.getTextWidth(" ", face)
+        local text_w = TextWidget.getTextWidth(text, face)
         -- width of text in spaces
         local str_len = math.floor(text_w / space_w + 0.5)
 

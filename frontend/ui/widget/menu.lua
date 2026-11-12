@@ -471,12 +471,7 @@ function MenuItem:getDotsText(face)
     if not _dots_cached_info or _dots_cached_info.screen_width ~= screen_w
                     or _dots_cached_info.face ~= face then
         local unit = "."
-        local tmp = TextWidget:new{
-            text = unit,
-            face = face,
-        }
-        local unit_w = tmp:getSize().w
-        tmp:free()
+        local unit_w = TextWidget.getTextWidth(unit, face)
         -- (We assume/expect no kerning will happen between consecutive units)
         local nb_units = math.ceil(screen_w / unit_w)
         local min_width = unit_w * 3 -- have it not shown if smaller than this
@@ -1270,11 +1265,7 @@ function Menu:setupItemHeights()
     }:getSize().h
     local infont_size = self.items_mandatory_font_size or (self.font_size - 4)
     local infont_face = Font:getFace("infont", infont_size)
-    local infont_char_width = TextWidget:new{
-        text = "0",
-        face = infont_face,
-        bold = true,
-    }:getSize().w
+    local infont_char_width = TextWidget.getTextWidth("0", infont_face, true) -- bold
     local available_width = self.inner_dimen.w
     if self.is_enable_shortcut then
         available_width = available_width - line_height - Size.span.horizontal_default
@@ -1288,11 +1279,7 @@ function Menu:setupItemHeights()
         -- exact item height can be calculated by building the TextBoxWidget for item text,
         -- but it is slow, so estimate the number of lines by building the TextWidget
         -- empirical 8% is added to consider unjustified unhyphenated multilines text layout
-        local item_text_width = TextWidget:new{
-            text = item.text,
-            face = face,
-            bold = item.bold,
-        }:getSize().w * 1.08
+        local item_text_width = 1.08 * TextWidget.getTextWidth(item.text, face, item.bold)
         local item_available_width = available_width - infont_char_width * (item.mandatory and #tostring(item.mandatory) or 0)
         local lines_nb = math.min(math.ceil(item_text_width / item_available_width), self.items_max_lines)
         item.height = lines_nb * line_height + 2 * Size.span.vertical_default + self.linesize

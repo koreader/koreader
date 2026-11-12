@@ -826,12 +826,7 @@ function ReaderToc:onShowToc()
             end
         end
         -- Have the width of 4 spaces be the unit of indentation
-        local tmp = TextWidget:new{
-            text = "    ",
-            face = Font:getFace("smallinfofont", items_font_size),
-            }
-        self.toc_indent = tmp:getSize().w
-        tmp:free()
+        self.toc_indent = TextWidget.getTextWidth("    ", Font:getFace("smallinfofont", items_font_size))
         self:updateChaptersDisplayedTitlePageNumber()
     end
 

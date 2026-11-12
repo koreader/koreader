@@ -795,12 +795,7 @@ function BookMapWidget:init()
     self.toc_span_font_name = "infofont"
     self.toc_span_font_size = 14
     self.toc_span_face = Font:getFace(self.toc_span_font_name, self.toc_span_font_size)
-    local test_w = TextWidget:new{
-        text = "z",
-        face = self.toc_span_face,
-    }
-    self.span_height = test_w:getSize().h + BookMapRow.toc_span_border
-    test_w:free()
+    self.span_height = TextWidget.getTextHeight("z", self.toc_span_face) + BookMapRow.toc_span_border
 
     -- Reference font size for flat TOC items, as set (or default) in ReaderToc
     self.reader_toc_font_size = G_reader_settings:readSetting("toc_items_font_size")

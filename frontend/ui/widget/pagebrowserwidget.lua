@@ -141,12 +141,7 @@ function PageBrowserWidget:init()
     self.toc_span_font_name = "infofont"
     self.toc_span_font_size = 14
     self.toc_span_face = Font:getFace(self.toc_span_font_name, self.toc_span_font_size)
-    local test_w = TextWidget:new{
-        text = "z",
-        face = self.toc_span_face,
-    }
-    self.span_height = test_w:getSize().h + BookMapRow.toc_span_border
-    test_w:free()
+    self.span_height = TextWidget.getTextHeight("z", self.toc_span_face) + BookMapRow.toc_span_border
 
     -- For page numbers alongside thumbnails, use the same font size
     -- we use for them in the ribbon
@@ -155,12 +150,7 @@ function PageBrowserWidget:init()
         -- We'll be displaying the number vertically, so get the width we'd need
         -- to display some wide single char (this will influence side and inter
         -- thumbnails margins).
-        test_w = TextWidget:new{
-            text = "W",
-            face = self.page_num_font_face,
-        }
-        self.page_num_width = test_w:getWidth()
-        test_w:free()
+        self.page_num_width = TextWidget.getTextWidth("W", self.page_num_font_face)
     end
 
     self.min_nb_rows = 1

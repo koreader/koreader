@@ -1,7 +1,6 @@
 local CheckButton = require("ui/widget/checkbutton")
 local CheckMark = require("ui/widget/checkmark")
 local Device = require("device")
-local FFIUtil = require("ffi/util")
 local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local Language = require("ui/language")
@@ -9,9 +8,10 @@ local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VirtualKeyboard = require("ui/widget/virtualkeyboard")
-local Screen = Device.screen
-local T = FFIUtil.template
+local ffiUtil = require("ffi/util")
 local util = require("util")
+local Screen = Device.screen
+local T = ffiUtil.template
 local _ = require("gettext")
 
 local input_dialog, check_button_bold, check_button_border, check_button_compact
@@ -47,14 +47,11 @@ end
 
 local function genKeyboardLayoutsSubmenu()
     local item_table = {}
-    for lang, keyboard_layout in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
+    for lang, keyboard_layout in ffiUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
         table.insert(item_table, {
-            text_func = function()
-                local text = T("%1 (%2)", Language:getLanguageName(lang), lang:sub(1, 2))
-                if G_reader_settings:readSetting("keyboard_layout_default") == lang then
-                    text = text .. "   ★"
-                end
-                return text
+            text = T("%1 (%2)", Language:getLanguageName(lang), lang:sub(1, 2)),
+            text_star_func = function()
+                return G_reader_settings:readSetting("keyboard_layout_default") == lang
             end,
             checked_func = function()
                 local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
@@ -126,21 +123,13 @@ local sub_item_table = {
         text_func = function()
             local activated_keyboards, nb_keyboards = getActivatedKeyboardsStringCount()
             local item_text = T(_("Keyboard layouts: %1"), activated_keyboards)
-
-            -- get width of text
-            local tmp = TextWidget:new{
-                text = item_text,
-                face = Font:getFace("cfont"),
-            }
-            local item_text_w = tmp:getSize().w
-            tmp:free()
+            local item_text_w = TextWidget.getTextWidth(item_text, Font:getFace("cfont"))
             local checked_widget = CheckMark:new{ -- for layout, to :getSize()
                 checked = true,
             }
             if item_text_w >= Screen:getWidth() - 2*Size.padding.default - checked_widget:getSize().w then
                 item_text = T(_("Keyboard layouts (%1)"), nb_keyboards)
             end
-
             return item_text
         end,
         sub_item_table_func = genKeyboardLayoutsSubmenu,
