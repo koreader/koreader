@@ -1788,10 +1788,10 @@ function ReaderHighlight:onHold(arg, ges)
             self.view.highlight.temp[self.hold_pos.page] = self.selected_text.sboxes
             -- Unfortunately, getWordFromPosition() may not return good coordinates,
             -- so refresh the whole page
-            UIManager:setDirty(self.dialog, "ui")
+            UIManager:setDirty(self.dialog, "fast")
         else
             -- With crengine, getWordFromPosition() does return good coordinates.
-            UIManager:setDirty(self.dialog, "ui", Geom.boundingBox(self.selected_text.sboxes))
+            UIManager:setDirty(self.dialog, "fast", Geom.boundingBox(self.selected_text.sboxes))
         end
         self:_resetHoldTimer()
         if word.pos0 then
@@ -1970,7 +1970,7 @@ function ReaderHighlight:onHoldPan(_, ges)
     if self.ui.keyselection:isActive() then
         self.ui.keyselection:clearOverlay()
     end
-    UIManager:setDirty(self.dialog, "ui")
+    UIManager:setDirty(self.dialog, "fast")
 end
 
 local info_message_ocr_text = _([[
