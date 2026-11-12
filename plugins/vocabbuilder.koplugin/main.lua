@@ -2094,6 +2094,14 @@ function VocabBuilder:onSyncVocabBuilder(interactive)
         if self.widget then
             DB:batchUpdateItems(self.widget.item_table)
         end
+        if not DB.walCheckpoint() then
+            if interactive then
+                UIManager:show(InfoMessage:new{
+                    text = _("Vocabulary builder database is busy"),
+                })
+            end
+            return true
+        end
         self.ui.cloudstorage:sync(settings.server, DB.path, DB.onSync, not interactive)
         if self.widget then
             self.widget:reloadItems()
