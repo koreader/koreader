@@ -32,11 +32,6 @@ local order = {
     navi_settings = {
         "toc_ticks_level_ignore",
         "----------------------------",
-        "toc_items_per_page",
-        "toc_items_font_size",
-        "toc_items_show_chapter_length",
-        "toc_items_with_dots",
-        "----------------------------",
         "toc_alt_toc",
         "----------------------------",
         "handmade_toc",
