@@ -1360,6 +1360,17 @@ function Input:handleBookeenTouchEvent(ev)
             -- frames then carry only X/Y, which land in the corrupted slot
             -- forever.
             self:setCurrentMtSlotChecked("id", -1)
+        elseif ev.code == C.ABS_MT_TOUCH_MAJOR and ev.value > 0 then
+            -- Contact down without a tracking ID. Because of the same per-slot
+            -- dedup, ABS_MT_TRACKING_ID (always 1 on this driver) is only ever
+            -- delivered once per boot: every later touch arrives as
+            -- TOUCH_MAJOR>0 + X/Y only (seen on a Nolimbook CYBFT2S-CF).
+            -- TOUCH_MAJOR does pass the dedup on each new contact, since the
+            -- previous lift set it to 0, so use it to (re)open the contact.
+            local id = self:getCurrentMtSlotData("id")
+            if id == nil or id == -1 then
+                self:setCurrentMtSlotChecked("id", self.cur_slot or 0)
+            end
         elseif ev.code == C.ABS_MT_POSITION_X then
             self:setCurrentMtSlotChecked("x", ev.value)
         elseif ev.code == C.ABS_MT_POSITION_Y then
