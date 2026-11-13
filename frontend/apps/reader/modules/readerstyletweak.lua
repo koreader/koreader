@@ -547,13 +547,13 @@ You can enable individual tweaks on this book with a tap, or view more details a
                 checked_func = function() return self:isTweakEnabled(item.id) end,
                 text_func = function()
                     local title = item.title or "### undefined tweak title ###"
-                    if self.global_tweaks[item.id] then
-                        title = title .. "   ★"
-                    end
                     if self.tweaks_in_dispatcher[item.id] then
                         title = title .. "   \u{F144}"
                     end
                     return title
+                end,
+                text_star_func = function()
+                    return self.global_tweaks[item.id]
                 end,
                 hold_callback = function(touchmenu_instance)
                     UIManager:show(TweakInfoWidget:new{
@@ -732,6 +732,12 @@ function ReaderStyleTweak:addToMainMenu(menu_items)
     }
 end
 
+function ReaderStyleTweak:onDispatcherRegisterActions()
+    for tweak_id, tweak_title in pairs(self.tweaks_in_dispatcher) do
+        dispatcherRegisterStyleTweak(tweak_id, tweak_title)
+    end
+end
+
 function ReaderStyleTweak:onToggleStyleTweak(tweak_id, item, no_notification)
     local toggle
     if type(tweak_id) == "table" then -- Dispatcher action 'Style tweak set on/off'
@@ -770,33 +776,18 @@ function ReaderStyleTweak:onToggleStyleTweak(tweak_id, item, no_notification)
     end
     self:updateCssText(true) -- apply it immediately
     if not no_notification then
-        UIManager:show(Notification:new{
-            text = text,
-        })
+        Notification:notify(text)
     end
     return true
-end
-
-function ReaderStyleTweak:onDispatcherRegisterActions()
-    for tweak_id, tweak_title in pairs(self.tweaks_in_dispatcher) do
-        dispatcherRegisterStyleTweak(tweak_id, tweak_title)
-    end
 end
 
 function ReaderStyleTweak:onToggleStyleTweaks(no_notification)
     self.enabled = not self.enabled
     self:updateCssText(true) -- apply it immediately
     if not no_notification then
-        local text
-        if self.enabled then
-            text = _("Enabled style tweaks.")
-        else
-            text = _("Disabled style tweaks.")
-        end
-        UIManager:show(Notification:new{
-            text = text,
-        })
+        Notification:notify(self.enabled and _("Enabled style tweaks.") or _("Disabled style tweaks."))
     end
+    return true
 end
 
 function ReaderStyleTweak:onToggleBookTweak(touchmenu_instance, no_notification)
@@ -812,14 +803,13 @@ function ReaderStyleTweak:onToggleBookTweak(touchmenu_instance, no_notification)
             else
                 text = T(C_("Style tweak", "Off: %1"), text)
             end
-            UIManager:show(Notification:new{
-                text = text,
-            })
+            Notification:notify(text)
         end
     else
         -- No tweak defined: launch editor
         self:onEditBookTweak(touchmenu_instance)
     end
+    return true
 end
 
 local BOOK_TWEAK_SAMPLE_CSS = [[
