@@ -69,9 +69,7 @@ local function buildHotkeysList()
         hotkeys_list["modifier_plus_" .. key] = T(modifier_one, label)
         -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
     end
-    if Device:hasScreenKB() or Device:hasSymKey() then
-        util.tableMerge(hotkeys_list, { press = _("Press") })
-    end
+    util.tableMerge(hotkeys_list, { press = _("Press") })
 
     if Device:supportsGamepad() then
         for i = 0, 15 do
@@ -234,9 +232,7 @@ function HotKeys:registerKeyEvents()
     if not self.is_docless then
         addKeyEvents(modifier, page_turn_keys, "HotkeyAction", "modifier_plus_")
         addKeyEvent(modifier, "Press", "HotkeyAction", "modifier_plus_press")
-        if Device:hasScreenKB() or Device:hasSymKey() then
-            self.key_events.Press = { { "Press" }, event = "HotkeyAction", args = "press" }
-        end
+        self.key_events.Press = { { "Press" }, event = "HotkeyAction", args = "press" }
     end
     addKeyEvent(modifier, "Back", "HotkeyAction", "modifier_plus_back")
     addKeyEvent(modifier, home_key, "HotkeyAction", "modifier_plus_home")
@@ -372,11 +368,8 @@ function HotKeys:genSubItem(hotkey, separator, hold_callback)
         modifier_plus_right_page_back = true,
         modifier_plus_right_page_forward = true,
         modifier_plus_press = true,
+        press = true,
     }
-    if Device:hasScreenKB() or Device:hasSymKey() then
-        local do_not_allow_press_key_do_shortcuts_in_fm = { press = true }
-        util.tableMerge(reader_only, do_not_allow_press_key_do_shortcuts_in_fm)
-    end
     local enabled_func
     if reader_only[hotkey] then
        enabled_func = function() return self.hotkey_mode == "hotkeys_reader" end
@@ -429,15 +422,12 @@ function HotKeys:addToMainMenu(menu_items)
         "modifier_plus_right_page_forward",
     }
     local fn_keys = {
+        "press",
         "modifier_plus_back",
         "modifier_plus_home",
         "modifier_plus_press"
         -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
     }
-    -- 2. Adds the "press" key to function keys if the corresponding setting is enabled.
-    if Device:hasScreenKB() or Device:hasSymKey() then
-        table.insert(fn_keys, 1, "press")
-    end
     -- 3. If the device has a keyboard, additional sets of keys (cursor, page-turn, and function keys) are appended.
     if Device:hasKeyboard() then
         local cursor_keys_haskeyboard = {
