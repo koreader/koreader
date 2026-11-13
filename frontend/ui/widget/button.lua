@@ -136,12 +136,7 @@ function Button:init()
         if not self.label_widget:isTruncated() then
             local checkmark_width = 0
             if self.checked_func and not self.checked_func() then
-                local tmp = TextWidget:new{
-                    text = self.checkmark,
-                    face = face,
-                }
-                checkmark_width = tmp:getSize().w
-                tmp:free()
+                checkmark_width = TextWidget.getTextWidth(self.checkmark, face, self.text_font_bold)
             end
             self._min_needed_width = self.label_widget:getSize().w + checkmark_width + outer_pad_width
         end

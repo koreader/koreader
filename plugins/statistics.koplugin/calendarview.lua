@@ -666,13 +666,7 @@ function CalendarDayView:init()
     self.footer_height = self.page_info:getSize().h
 
     self.items_per_page = 5
-
-    local temp_text = TextWidget:new{
-        text = " ",
-        face = BookDailyItem.face
-    }
-    self.book_item_height = temp_text:getSize().h + 2 * Size.padding.small
-    temp_text:free()
+    self.book_item_height = TextWidget.getTextHeight(" ", BookDailyItem.face) + 2 * Size.padding.small
 
     self.book_items = VerticalGroup:new{}
     self.timeline = OverlapGroup:new{
@@ -750,22 +744,12 @@ function CalendarDayView:setupView()
 
     local font_size = TextWidget:getFontSizeToFitHeight("cfont", self.time_text_width, Size.padding.small)
     self.time_text_face = Font:getFace("cfont", font_size)
-    local temp_text = TextWidget:new{
-        text = "00:00",
-        face = self.time_text_face
-    }
-    local time_text_width = temp_text:getSize().w
+    local time_text_width = TextWidget.getTextWidth("00:00", self.time_text_face)
     while time_text_width > self.time_text_width * 0.8 do
         font_size = font_size * 0.8
         self.time_text_face = Font:getFace("cfont", font_size)
-        temp_text:free()
-        temp_text = TextWidget:new{
-            text = "00:00",
-            face = self.time_text_face
-        }
-        time_text_width = temp_text:getWidth()
+        time_text_width = TextWidget.getTextWidth("00:00", self.time_text_face)
     end
-    temp_text:free()
 
     self.pages = #self.kv_pairs <= self.items_per_page+1 and 1 or math.ceil(#self.kv_pairs / self.items_per_page)
     self.footer_container[1] = self.pages > 1 and self.page_info or VerticalSpan:new{ w = 0 }

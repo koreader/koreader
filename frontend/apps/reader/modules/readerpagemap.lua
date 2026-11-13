@@ -140,14 +140,8 @@ function ReaderPageMap:resetLayout()
 
     -- Get some metric for label min width
     self.label_face = Font:getFace(self.label_font_face, self.label_font_size)
-    local textw = TextWidget:new{
-        text = " ",
-        face = self.label_face,
-    }
-    self.space_width = textw:getWidth()
-    textw:setText("8")
-    self.number_width = textw:getWidth()
-    textw:free()
+    self.space_width = TextWidget.getTextWidth(" ", self.label_face)
+    self.number_width = TextWidget.getTextWidth("8", self.label_face)
     self.min_label_width = self.space_width * 2 + self.number_width
 end
 

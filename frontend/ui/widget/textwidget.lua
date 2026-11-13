@@ -314,6 +314,32 @@ function TextWidget:getBaseline()
     return self._baseline_h
 end
 
+function TextWidget.getTextWidth(text, face, bold, padding)
+    local tmp = TextWidget:new{
+        text = text,
+        face = face,
+        bold = bold,
+        padding = padding,
+    }
+    tmp:updateSize()
+    local w = tmp._length
+    tmp:free()
+    return w
+end
+
+function TextWidget.getTextHeight(text, face, bold, padding)
+    local tmp = TextWidget:new{
+        text = text,
+        face = face,
+        bold = bold,
+        padding = padding,
+    }
+    tmp:updateSize()
+    local h = tmp._height
+    tmp:free()
+    return h
+end
+
 function TextWidget:setText(text)
     if text == self.text then
         return

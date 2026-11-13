@@ -104,17 +104,13 @@ end
 function MenuDialog:setupPluginMenu()
     local size = Screen:getSize()
     local width = math.floor(size.w * 0.9)
+    local face = Font:getFace("xx_smallinfofont")
 
     -- Switch text translations could be long
-    local temp_text_widget = TextWidget:new{
-        text = _("Auto add new words"),
-        face = Font:getFace("xx_smallinfofont")
-    }
-    local switch_guide_width = temp_text_widget:getSize().w
-    temp_text_widget:setText(_("Save context"))
-    switch_guide_width = math.max(switch_guide_width, temp_text_widget:getSize().w)
+    local w1 = TextWidget.getTextWidth(_("Auto add new words"), face)
+    local w2 = TextWidget.getTextWidth(_("Save context"), face)
+    local switch_guide_width = math.max(w1, w2)
     switch_guide_width = math.min(math.max(switch_guide_width, math.ceil(width*0.39)), math.ceil(width*0.61))
-    temp_text_widget:free()
 
     local switch_width = width - switch_guide_width - Size.padding.fullscreen - Size.padding.default
 
@@ -302,7 +298,7 @@ function MenuDialog:setupPluginMenu()
                         dimen = Geom:new{w = switch_guide_width, h = switch:getSize().h },
                         TextWidget:new{
                             text = _("Auto add new words"),
-                            face = Font:getFace("xx_smallinfofont"),
+                            face = face,
                             max_width = switch_guide_width
                         }
                     },
@@ -315,7 +311,7 @@ function MenuDialog:setupPluginMenu()
                         dimen = Geom:new{w = switch_guide_width, h = switch:getSize().h},
                         TextWidget:new{
                             text = _("Save context"),
-                            face = Font:getFace("xx_smallinfofont"),
+                            face = face,
                             max_width = switch_guide_width
                         }
                     },
@@ -523,13 +519,7 @@ function WordInfoDialog:init()
     end
 
     if not word_info_dialog_width then
-        local temp_text = TextWidget:new{
-            text = self.dates,
-            padding = Size.padding.fullscreen,
-            face = Font:getFace("cfont", 14)
-        }
-        local dates_width = temp_text:getSize().w
-        temp_text:free()
+        local dates_width = TextWidget.getTextWidth(self.dates, Font:getFace("cfont", 14), nil, Size.padding.fullscreen)
         local screen_width = math.min(Screen:getWidth(), Screen:getHeight())
         word_info_dialog_width = math.floor(math.max(screen_width * 0.6, math.min(screen_width * 0.8, dates_width)))
     end
@@ -777,8 +767,8 @@ local VocabItemWidget = InputContainer:extend{
 
 local point_widget_height = point_widget:getSize().h
 local point_widget_width = point_widget:getSize().w
-local word_height = TextWidget:new{text = " ", face = word_face}:getSize().h
-local subtitle_height = TextWidget:new{text = " ", face = subtitle_face}:getSize().h
+local word_height = TextWidget.getTextHeight(" ", word_face)
+local subtitle_height = TextWidget.getTextHeight(" ", subtitle_face)
 
 
 function VocabItemWidget:init()

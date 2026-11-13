@@ -2221,14 +2221,7 @@ function ReaderFooter:insertDynamicFillers(info, filler1_idx, filler2_idx)
 end
 
 function ReaderFooter:getTextWidth(text)
-    local tmp = TextWidget:new{
-        text = text,
-        face = self.footer_text_face,
-        bold = self.settings.text_font_bold,
-    }
-    local text_width = tmp:getSize().w
-    tmp:free()
-    return text_width
+    return TextWidget.getTextWidth(text, self.footer_text_face, self.settings.text_font_bold)
 end
 
 function ReaderFooter:setTocMarkers(reset)
