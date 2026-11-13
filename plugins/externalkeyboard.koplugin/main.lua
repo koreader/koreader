@@ -205,6 +205,10 @@ function ExternalKeyboard:_onEvdevInputRemove(event_path)
     -- Close our Input handle on it
     Device.input:close(event_path)
 
+    -- Modifier key_release may have been lost while the keyboard
+    -- was disconnected, don't let them stay stuck true.
+    Device.input:resetModifierKeys()
+
     ExternalKeyboard.keyboard_fds[event_path] = nil
     ExternalKeyboard.connected_keyboards = ExternalKeyboard.connected_keyboards - 1
     logger.dbg("ExternalKeyboard: USB keyboard", event_path, "was disconnected; total:", ExternalKeyboard.connected_keyboards)
@@ -353,6 +357,9 @@ function ExternalKeyboard:setupKeyboard(data)
         ExternalKeyboard.keyboard_fds[keyboard_info.event_path] = fd
         -- External keyboard arrows are keyboard-relative, not device-relative.
         Device.input.rotation_ignored_fds[fd] = true
+        -- Modifier key_release may have been lost while the keyboard
+        -- was disconnected, don't let them stay stuck true.
+        Device.input:resetModifierKeys()
         ExternalKeyboard.connected_keyboards = ExternalKeyboard.connected_keyboards + 1
         logger.dbg("ExternalKeyboard: USB keyboard", keyboard_info.name, "@", keyboard_info.event_path, "was connected; total:", ExternalKeyboard.connected_keyboards)
 
