@@ -9,7 +9,6 @@ local Dispatcher = require("dispatcher")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Gamepad = require("device/sdl/gamepad")
 local LuaSettings = require("luasettings")
-local UIManager = require("ui/uimanager")
 local ffiUtil = require("ffi/util")
 local logger = require("logger")
 local util = require("util")
@@ -104,6 +103,7 @@ local function buildHotkeysList(type_to_search)
             hotkeys_list_haskeyboard["alt_plus_" .. char:lower()] = T(modifier_two, char)
             if not type_to_search then
                 hotkeys_list_haskeyboard[char:lower()] = char
+                hotkeys_list_haskeyboard["shift_plus_" .. char:lower()] = T(_("Shift + %1"), char)
             end
         end
         util.tableMerge(hotkeys_list, hotkeys_list_haskeyboard)
@@ -267,6 +267,7 @@ function HotKeys:registerKeyEvents()
         if not self.type_to_search then
             for _, key in ipairs(Device.input.group.Alphabet) do
                 self.key_events[key] = { { key }, event = "HotkeyAction", args = key:lower() }
+                addKeyEvent("Shift", key, "HotkeyAction", "shift_plus_" .. key:lower())
             end
         end
     end -- if hasKeyboard()
@@ -486,11 +487,13 @@ function HotKeys:addToMainMenu(menu_items)
             checked_func = function()
                 return self.type_to_search
             end,
-            callback = function()
+            callback = function(touchmenu_instance)
                 self.type_to_search = not self.type_to_search
                 self.settings_data.data["type_to_search"] = self.type_to_search
                 self.updated = true
-                UIManager:askForRestart()
+                buildHotkeysList(self.type_to_search)
+                self:registerKeyEvents()
+                touchmenu_instance:updateItems()
             end,
         }
     end
@@ -543,6 +546,10 @@ function HotKeys:addToMainMenu(menu_items)
             end,
             sub_item_table_func = function()
                 local keys = {}
+                -- type-to-search claims these keys when on.
+                if not self.type_to_search then
+                    attachNewTableToExistingTable(keys, genAlphabetHotkeyNames("shift_plus_"))
+                end
                 if self.show_alt_hotkeys then
                     attachNewTableToExistingTable(keys, genAlphabetHotkeyNames("alt_plus_"))
                 end
@@ -591,6 +598,9 @@ function HotKeys:hardcodedEvents()
             event = "ShowFulltextSearchInput",
             args = ""
         }
+        -- Reset to avoid conflicts with hardcoded shortcuts as
+        -- self.type_to_search may have changed.
+        readersearch.key_events.Alphabet = nil
         if self.type_to_search then
             readersearch.key_events.Alphabet = {
                 { Device.input.group.Alphabet }, { "Shift", Device.input.group.Alphabet },
