@@ -222,7 +222,7 @@ function ExternalKeyboard:_onEvdevInputRemove(event_path)
     end
 
     -- Only show this once
-    if ExternalKeyboard.connected_keyboards == 0 then
+    if ExternalKeyboard.connected_keyboards == 0 and not Device.screen_saver_mode then
         UIManager:show(InfoMessage:new{
             text = _("Keyboard disconnected"),
             timeout = 1,
@@ -395,7 +395,7 @@ function ExternalKeyboard:setupKeyboard(data)
     Device:setUseDPadAsActionKeys(G_reader_settings:isTrue("input_use_dpad_as_action_keys"))
 
     -- Only show this once
-    if ExternalKeyboard.connected_keyboards == 1 then
+    if ExternalKeyboard.connected_keyboards == 1 and not Device.screen_saver_mode then
         UIManager:show(InfoMessage:new{
             text = _("Keyboard connected"),
             timeout = 1,
