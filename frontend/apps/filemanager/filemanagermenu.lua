@@ -172,7 +172,7 @@ function FileManagerMenu:setUpdateItemTable()
                         callback = function(touchmenu_instance)
                             local default_value = FileChooser.items_per_page_default
                             local current_value = G_reader_settings:readSetting("items_per_page") or default_value
-                            local widget = SpinWidget:new{
+                            UIManager:show(SpinWidget:new{
                                 title_text =  _("Items per page"),
                                 value = current_value,
                                 value_min = 6,
@@ -184,8 +184,7 @@ function FileManagerMenu:setUpdateItemTable()
                                     FileChooser:refreshPath()
                                     touchmenu_instance:updateItems()
                                 end,
-                            }
-                            UIManager:show(widget)
+                            })
                         end,
                     },
                     {
@@ -198,7 +197,7 @@ function FileManagerMenu:setUpdateItemTable()
                             local default_value = FileChooser.getItemFontSize(G_reader_settings:readSetting("items_per_page")
                                 or FileChooser.items_per_page_default)
                             local current_value = FileChooser.font_size or default_value
-                            local widget = SpinWidget:new{
+                            UIManager:show(SpinWidget:new{
                                 title_text =  _("Item font size"),
                                 value = current_value,
                                 value_min = 10,
@@ -217,8 +216,7 @@ function FileManagerMenu:setUpdateItemTable()
                                     FileChooser:refreshPath()
                                     touchmenu_instance:updateItems()
                                 end,
-                            }
-                            UIManager:show(widget)
+                            })
                         end,
                     },
                     {
@@ -403,7 +401,8 @@ To:
             {
                 text_func = function()
                     local nb_items_landscape, nb_items_portrait = KeyValuePage.getCurrentItemsPerPage()
-                    return T(_("Info lists items per page: %1 / %2"), nb_items_portrait, nb_items_landscape)
+                    return T(_("Info lists items per page: %1"),
+                        Screen:getHeight() > Screen:getWidth() and nb_items_portrait or nb_items_landscape)
                 end,
                 help_text = _([[This sets the number of items per page in:
 - Book information
@@ -415,7 +414,7 @@ To:
                     local nb_items_landscape_default, nb_items_portrait_default = KeyValuePage.getDefaultItemsPerPage()
                     local nb_items_landscape, nb_items_portrait =
                         KeyValuePage.getCurrentItemsPerPage(nb_items_landscape_default, nb_items_portrait_default)
-                    local widget = DoubleSpinWidget:new{
+                    UIManager:show(DoubleSpinWidget:new{
                         title_text =  _("Info lists items per page"),
                         width_factor = 0.6,
                         left_text = _("Portrait"),
@@ -444,8 +443,7 @@ To:
                             end
                             touchmenu_instance:updateItems()
                         end,
-                    }
-                    UIManager:show(widget)
+                    })
                 end,
             },
         },

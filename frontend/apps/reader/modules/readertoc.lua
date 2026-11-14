@@ -33,6 +33,7 @@ local ReaderToc = InputContainer:extend{
     collapse_depth = 2,
     expanded_nodes = nil, -- table
     toc_items_per_page_default = 14,
+    toc_items_per_page_landscape_default = 10,
     alt_toc_symbol = "\u{E298}" -- two-folders in circle (custom toc uses a pen in square symbol)
 }
 
@@ -804,12 +805,25 @@ function ReaderToc:expandParentNode(index)
     end
 end
 
+function ReaderToc:getItemsPerPage(is_portrait)
+    if is_portrait == nil then
+        local screen_size = Screen:getSize()
+        is_portrait = screen_size.h > screen_size.w
+    end
+    if is_portrait then
+        return G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
+    end
+    return G_reader_settings:readSetting("toc_items_per_page_landscape")
+        or G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_landscape_default
+end
+
 function ReaderToc:onShowToc()
+    local screen_size = Screen:getSize()
     if self.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
 
-    local items_per_page = G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
+    local items_per_page = self:getItemsPerPage(screen_size.h > screen_size.w)
     local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
     local items_show_chapter_length = G_reader_settings:isTrue("toc_items_show_chapter_length")
     local items_with_dots = G_reader_settings:nilOrTrue("toc_items_with_dots")
@@ -832,7 +846,7 @@ function ReaderToc:onShowToc()
 
     -- Estimate expand/collapse icon size
     -- *2/5 to account for Menu top title and bottom icons, and add some space between consecutive icons
-    local icon_size = math.floor(Screen:getHeight() / items_per_page * 2/5)
+    local icon_size = math.floor(screen_size.h / items_per_page * 2/5)
     local button_width = icon_size * 2
     -- no_focus: expand/collapse is on the left/right keys, so the buttons don't need to take focus.
     self.expand_button = Button:new{
@@ -884,7 +898,8 @@ function ReaderToc:onShowToc()
     local button_size = self.expand_button:getSize()
     local toc_menu = Menu:new{
         title = self:getTitle(),
-        subtitle = self.search_string and T(_("Query: %1"), self.search_string) or "",
+        subtitle = self.search_string and T(_("Query: %1"), self.search_string)
+                                       or T(_("Current page: %1"), self.ui.bookinfo:expandString("%c")),
         state_w = can_collapse and button_size.w or 0,
         ui = self.ui,
         is_borderless = true,
@@ -906,8 +921,8 @@ function ReaderToc:onShowToc()
                 ges = "two_finger_swipe",
                 range = Geom:new{
                     x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
+                    w = screen_size.w,
+                    h = screen_size.h,
                 },
                 direction = BD.flipDirectionIfMirroredUILayout("west")
             }
@@ -915,7 +930,7 @@ function ReaderToc:onShowToc()
     }
 
     local menu_container = CenterContainer:new{
-        dimen = Screen:getSize(),
+        dimen = screen_size,
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         toc_menu,
     }
@@ -1004,7 +1019,7 @@ function ReaderToc:onShowToc()
             else
                 -- Match the items' width
                 UIManager:show(InfoMessage:new{
-                    width = Screen:getWidth() - (Size.padding.fullscreen * (can_collapse and 4 or 3)),
+                    width = screen_size.w - (Size.padding.fullscreen * (can_collapse and 4 or 3)),
                     alignment = "center",
                     show_icon = false,
                     text = item.text,
@@ -1140,11 +1155,119 @@ function ReaderToc:updateChaptersDisplayedTitlePageNumber()
 end
 
 function ReaderToc:showTocDialog()
-    self:searchToc()
+    local dialog
+    local buttons = {
+        {{
+            text = self.search_string and _("Show full ToC") or "\u{f002} " .. _("Search"), -- 'magnifying glass' sign
+            align = "left",
+            enabled = #self.toc > 0,
+            callback = function()
+                UIManager:close(dialog)
+                self:searchToc()
+            end,
+        }},
+        {}, -- separator
+        {{
+            text_func = function()
+                return T(_("Entries per page: %1"), self:getItemsPerPage())
+            end,
+            align = "left",
+            callback = function()
+                UIManager:close(dialog)
+                local DoubleSpinWidget = require("ui/widget/doublespinwidget")
+                UIManager:show(DoubleSpinWidget:new{
+                    title_text =  _("Entries per page"),
+                    width_factor = 0.6,
+                    left_text = _("Portrait"),
+                    left_value = self:getItemsPerPage(true),
+                    left_min = 5,
+                    left_max = 50,
+                    left_default = self.toc_items_per_page_default,
+                    right_text = _("Landscape"),
+                    right_value = self:getItemsPerPage(false),
+                    right_min = 5,
+                    right_max = 30,
+                    right_default = self.toc_items_per_page_landscape_default,
+                    callback = function(left_value, right_value)
+                        G_reader_settings:saveSetting("toc_items_per_page", left_value)
+                        G_reader_settings:saveSetting("toc_items_per_page_landscape", right_value)
+                        -- We need to reset the TOC so cached expand/collapsed icons
+                        -- instances (as item.state), which were sized for a previous
+                        -- value or items_per_page, are forgotten.
+                        self:resetToc()
+                        self.toc_menu.close_callback()
+                        self:onShowToc()
+                    end,
+                })
+            end,
+        }},
+        {{
+            text_func = function()
+                local curr_font_size = G_reader_settings:readSetting("toc_items_font_size")
+                    or Menu.getItemFontSize(self:getItemsPerPage())
+                return T(_("Entry font size: %1"), curr_font_size)
+            end,
+            align = "left",
+            callback = function()
+                UIManager:close(dialog)
+                local default_font_size = Menu.getItemFontSize(self:getItemsPerPage())
+                local curr_font_size = G_reader_settings:readSetting("toc_items_font_size") or default_font_size
+                local SpinWidget = require("ui/widget/spinwidget")
+                UIManager:show(SpinWidget:new{
+                    title_text = _("Entry font size"),
+                    value = curr_font_size,
+                    value_min = 10,
+                    value_max = 72,
+                    default_value = default_font_size,
+                    callback = function(spin)
+                        G_reader_settings:saveSetting("toc_items_font_size", spin.value)
+                        self.toc_menu.close_callback()
+                        self:onShowToc()
+                    end
+                })
+            end,
+        }},
+        {{
+            text = _("Show chapter length"),
+            align = "left",
+            checked_func = function()
+                return not G_reader_settings:nilOrFalse("toc_items_show_chapter_length")
+            end,
+            no_refresh_checkmark = true,
+            callback = function()
+                UIManager:close(dialog)
+                G_reader_settings:flipNilOrFalse("toc_items_show_chapter_length")
+                self.toc_menu_items_built = false
+                self.toc_menu.close_callback()
+                self:onShowToc()
+            end,
+        }},
+        {{
+            text = _("Show dot leaders"),
+            align = "left",
+            checked_func = function()
+                return G_reader_settings:nilOrTrue("toc_items_with_dots")
+            end,
+            no_refresh_checkmark = true,
+            callback = function()
+                UIManager:close(dialog)
+                G_reader_settings:flipNilOrTrue("toc_items_with_dots")
+                self.toc_menu.close_callback()
+                self:onShowToc()
+            end,
+        }},
+    }
+    dialog = ButtonDialog:new{
+        shrink_unneeded_width = true,
+        buttons = buttons,
+        anchor = function()
+            return self.toc_menu.title_bar.left_button.image.dimen
+        end,
+    }
+    UIManager:show(dialog)
 end
 
 function ReaderToc:searchToc()
-    if #self.toc == 0 then return end
     if self.search_string then -- restore full ToC
         self.search_string = nil
         self.toc_menu_items_built = false
@@ -1311,7 +1434,6 @@ function ReaderToc:addToMainMenu(menu_items)
     -- ToC (and other navigation) settings
     menu_items.navi_settings = {
         text = _("Settings"),
-        max_per_page = 11,
     }
     -- Alternative ToC (only available with CRE documents)
     if self.ui.document:canHaveAlternativeToc() then
@@ -1458,71 +1580,6 @@ Enabling this option will restrict display to the chapter titles of progress bar
             })
             return toc_ticks_levels
         end,
-    }
-    menu_items.toc_items_per_page = {
-        text = _("ToC entries per page"),
-        keep_menu_open = true,
-        callback = function()
-            local SpinWidget = require("ui/widget/spinwidget")
-            local curr_perpage = G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
-            local items = SpinWidget:new{
-                value = curr_perpage,
-                value_min = 6,
-                value_max = 24,
-                default_value = self.toc_items_per_page_default,
-                title_text =  _("ToC entries per page"),
-                callback = function(spin)
-                    G_reader_settings:saveSetting("toc_items_per_page", spin.value)
-                    -- We need to reset the TOC so cached expand/collapsed icons
-                    -- instances (as item.state), which were sized for a previous
-                    -- value or items_per_page, are forgotten.
-                    self:resetToc()
-                end
-            }
-            UIManager:show(items)
-        end
-    }
-    menu_items.toc_items_font_size = {
-        text = _("ToC entry font size"),
-        keep_menu_open = true,
-        callback = function()
-            local SpinWidget = require("ui/widget/spinwidget")
-            local curr_perpage = G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
-            local default_font_size = Menu.getItemFontSize(curr_perpage)
-            local curr_font_size = G_reader_settings:readSetting("toc_items_font_size") or default_font_size
-            local items_font = SpinWidget:new{
-                value = curr_font_size,
-                value_min = 10,
-                value_max = 72,
-                default_value = default_font_size,
-                title_text =  _("ToC entry font size"),
-                callback = function(spin)
-                    G_reader_settings:saveSetting("toc_items_font_size", spin.value)
-                end
-            }
-            UIManager:show(items_font)
-        end,
-    }
-    menu_items.toc_items_show_chapter_length = {
-        text = _("Show chapter length"),
-        keep_menu_open = true,
-        checked_func = function()
-            return not G_reader_settings:nilOrFalse("toc_items_show_chapter_length")
-        end,
-        callback = function()
-            G_reader_settings:flipNilOrFalse("toc_items_show_chapter_length")
-            self.toc_menu_items_built = false
-        end
-    }
-    menu_items.toc_items_with_dots = {
-        text = _("Show dot leaders"),
-        keep_menu_open = true,
-        checked_func = function()
-            return G_reader_settings:nilOrTrue("toc_items_with_dots")
-        end,
-        callback = function()
-            G_reader_settings:flipNilOrTrue("toc_items_with_dots")
-        end
     }
 end
 

@@ -256,6 +256,7 @@ ReaderPageMap.onChangeViewMode = ReaderPageMap.updateVisibleLabels
 ReaderPageMap.onSetStatusLine = ReaderPageMap.updateVisibleLabels
 
 function ReaderPageMap:onShowPageList()
+    local screen_size = Screen:getSize()
     -- build up item_table
     local cur_page = self.ui.document:getCurrentPage()
     local cur_page_idx = 0
@@ -273,7 +274,7 @@ function ReaderPageMap:onShowPageList()
     end
 
     -- We use the per-page and font-size settings set for the ToC
-    local items_per_page = G_reader_settings:readSetting("toc_items_per_page") or 14
+    local items_per_page = self.ui.toc:getItemsPerPage(screen_size.h > screen_size.w)
     local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
     local items_with_dots = G_reader_settings:nilOrTrue("toc_items_with_dots")
 
@@ -284,7 +285,7 @@ function ReaderPageMap:onShowPageList()
         is_popout = false,
         items_per_page = items_per_page,
         items_font_size = items_font_size,
-        line_color = require("ffi/blitbuffer").COLOR_WHITE,
+        line_color = Blitbuffer.COLOR_WHITE,
         single_line = true,
         align_baselines = true,
         with_dots = items_with_dots,
@@ -293,8 +294,8 @@ function ReaderPageMap:onShowPageList()
                 ges = "two_finger_swipe",
                 range = Geom:new{
                     x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
+                    w = screen_size.w,
+                    h = screen_size.h,
                 },
                 direction = BD.flipDirectionIfMirroredUILayout("east")
             }
@@ -302,7 +303,7 @@ function ReaderPageMap:onShowPageList()
     }
 
     self.pagelist_menu = CenterContainer:new{
-        dimen = Screen:getSize(),
+        dimen = screen_size,
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         pl_menu,
     }
