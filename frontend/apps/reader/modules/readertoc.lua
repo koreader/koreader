@@ -807,8 +807,8 @@ end
 
 function ReaderToc:getItemsPerPage(is_portrait)
     if is_portrait == nil then
-        local screen_s = Screen:getSize()
-        is_portrait = screen_s.h > screen_s.w
+        local screen_size = Screen:getSize()
+        is_portrait = screen_size.h > screen_size.w
     end
     if is_portrait then
         return G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
@@ -818,12 +818,12 @@ function ReaderToc:getItemsPerPage(is_portrait)
 end
 
 function ReaderToc:onShowToc()
-    local screen_s = Screen:getSize()
+    local screen_size = Screen:getSize()
     if self.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
 
-    local items_per_page = self:getItemsPerPage(screen_s.h > screen_s.w)
+    local items_per_page = self:getItemsPerPage(screen_size.h > screen_size.w)
     local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
     local items_show_chapter_length = G_reader_settings:isTrue("toc_items_show_chapter_length")
     local items_with_dots = G_reader_settings:nilOrTrue("toc_items_with_dots")
@@ -846,7 +846,7 @@ function ReaderToc:onShowToc()
 
     -- Estimate expand/collapse icon size
     -- *2/5 to account for Menu top title and bottom icons, and add some space between consecutive icons
-    local icon_size = math.floor(screen_s.h / items_per_page * 2/5)
+    local icon_size = math.floor(screen_size.h / items_per_page * 2/5)
     local button_width = icon_size * 2
     -- no_focus: expand/collapse is on the left/right keys, so the buttons don't need to take focus.
     self.expand_button = Button:new{
@@ -921,8 +921,8 @@ function ReaderToc:onShowToc()
                 ges = "two_finger_swipe",
                 range = Geom:new{
                     x = 0, y = 0,
-                    w = screen_s.w,
-                    h = screen_s.h,
+                    w = screen_size.w,
+                    h = screen_size.h,
                 },
                 direction = BD.flipDirectionIfMirroredUILayout("west")
             }
@@ -930,7 +930,7 @@ function ReaderToc:onShowToc()
     }
 
     local menu_container = CenterContainer:new{
-        dimen = screen_s,
+        dimen = screen_size,
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         toc_menu,
     }
@@ -1019,7 +1019,7 @@ function ReaderToc:onShowToc()
             else
                 -- Match the items' width
                 UIManager:show(InfoMessage:new{
-                    width = screen_s.w - (Size.padding.fullscreen * (can_collapse and 4 or 3)),
+                    width = screen_size.w - (Size.padding.fullscreen * (can_collapse and 4 or 3)),
                     alignment = "center",
                     show_icon = false,
                     text = item.text,
@@ -1169,7 +1169,7 @@ function ReaderToc:showTocDialog()
         {}, -- separator
         {{
             text_func = function()
-                return T(_("Entries per page: %1 / %2"), self:getItemsPerPage(true), self:getItemsPerPage(false))
+                return T(_("Entries per page: %1"), self:getItemsPerPage())
             end,
             align = "left",
             callback = function()
