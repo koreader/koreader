@@ -626,7 +626,7 @@ function CoverImage:menuEntryFormat(title, format, grayscale)
     return {
         text = title,
         checked_func = function()
-            return self.cover_image_format == format and self.cover_image_grayscale == grayscale
+            return self.cover_image_format == format and (not self.cover_image_grayscale) == (not grayscale)
         end,
         callback = function()
             local old_cover_image_format = self.cover_image_format
@@ -635,7 +635,7 @@ function CoverImage:menuEntryFormat(title, format, grayscale)
             G_reader_settings:saveSetting("cover_image_format", format)
             self.cover_image_grayscale = grayscale
             G_reader_settings:saveSetting("cover_image_grayscale", grayscale)
-            if self:coverEnabled() and (old_cover_image_format ~= format or old_cover_image_grayscale ~= grayscale) then
+            if self:coverEnabled() and (old_cover_image_format ~= format or (not old_cover_image_grayscale) ~= (not grayscale)) then
                 self:createCoverImage(self.ui.doc_settings)
             end
         end,
