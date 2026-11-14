@@ -400,34 +400,10 @@ describe("Readerfooter module", function()
         assert.is.same(0, found)
     end)
 
-    it("should not schedule auto refresh time task if footer is disabled", function()
-        assert.are.same(0, #UIManager._task_queue)
-
-        local settings = G_reader_settings:readSetting("footer")
-        settings.disabled = true
-        settings.auto_refresh_time = true
-        settings.all_at_once = true
-        G_reader_settings:saveSetting("footer", settings)
-
-        readerui = ReaderUI:new{
-            dimen = Screen:getSize(),
-            document = DocumentRegistry:openDocument(sample_epub),
-        }
-        local footer = readerui.view.footer
-        local found = 0
-        for _,task in ipairs(UIManager._task_queue) do
-            if task.action == footer.autoRefreshFooter then
-                found = found + 1
-            end
-        end
-        assert.is.same(0, found)
-    end)
-
     it("should toggle auto refresh time task by toggling the menu", function()
         assert.are.same(0, #UIManager._task_queue)
 
         local settings = G_reader_settings:readSetting("footer")
-        settings.disabled = false
         settings.auto_refresh_time = true
         settings.all_at_once = true
         G_reader_settings:saveSetting("footer", settings)
@@ -661,53 +637,4 @@ describe("Readerfooter module", function()
         assert.falsy(readerui.view.footer_visible)
     end)
 
-    it("should disable footer if settings.disabled is true", function()
-        local settings = G_reader_settings:readSetting("footer")
-        settings.disabled = true
-        G_reader_settings:saveSetting("footer", settings)
-
-        readerui = ReaderUI:new{
-            dimen = Screen:getSize(),
-            document = DocumentRegistry:openDocument(sample_epub),
-        }
-        local footer = readerui.view.footer
-
-        assert.falsy(readerui.view.footer_visible)
-        assert.truthy(footer.mode == 0)
-
-        local found = 0
-        for _,task in ipairs(UIManager._task_queue) do
-            if task.action == footer.autoRefreshFooter then
-                found = found + 1
-            end
-        end
-        assert.is.same(0, found)
-    end)
-
-    --[[ This toggling behaviour has been removed:
-    it("should toggle between full and min progress bar for cre documents", function()
-        local sample_txt = "spec/front/unit/data/sample.txt"
-        readerui = ReaderUI:new{
-            dimen = Screen:getSize(),
-            document = DocumentRegistry:openDocument(sample_txt),
-        }
-        local footer = readerui.view.footer
-
-        footer:applyFooterMode(0)
-        assert.is.same(0, footer.mode)
-        assert.falsy(readerui.view.footer_visible)
-        readerui.rolling:onSetStatusLine(1)
-        assert.is.same(1, footer.mode)
-        assert.truthy(readerui.view.footer_visible)
-
-        footer.mode = 1
-        readerui.rolling:onSetStatusLine(1)
-        assert.is.same(1, footer.mode)
-        assert.truthy(readerui.view.footer_visible)
-
-        readerui.rolling:onSetStatusLine(0)
-        assert.is.same(0, footer.mode)
-        assert.falsy(readerui.view.footer_visible)
-    end)
-    ]]--
 end)
