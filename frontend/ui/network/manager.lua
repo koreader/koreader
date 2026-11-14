@@ -611,6 +611,13 @@ function NetworkMgr:beforeWifiAction(callback)
         return self:turnOnWifiAndWaitForConnection(callback)
     elseif wifi_enable_action == "ignore" then
         return self:doNothingAndWaitForConnection(callback)
+    elseif wifi_enable_action == nil and self.wifi_was_on then
+        -- Default ("prompt") behavior, but Wi-Fi was on a moment ago (e.g., we just resumed
+        -- from suspend and haven't reassociated yet). wifi_was_on is only ever cleared by an
+        -- *explicit* user action to turn Wi-Fi off, so silently reconnecting here doesn't
+        -- override real user intent, it just avoids re-asking "do you want Wi-Fi?" for
+        -- something the user already had on seconds ago.
+        return self:turnOnWifiAndWaitForConnection(callback)
     else
         return self:promptWifiOn(callback)
     end
