@@ -297,6 +297,11 @@ InputContainer.isGestureAlwaysActive = InputContainer._isGestureAlwaysActive
 -- Filtered variant that only lets specific touch zones marked as "always active" through.
 -- (This is used by the "toggle_touch_input" Dispatcher action).
 function InputContainer:_onGestureFiltered(ev)
+    -- Gestures synthesised from focus (DPad/key) navigation aren't touch inputs, so they bypass the lock.
+    -- NOTE: _onGesture is always set while this handler is installed (see setIgnoreTouchInput).
+    if ev.from_focus_navigation then
+        return InputContainer._onGesture(self, ev)
+    end
     for _, tzone in ipairs(self._ordered_touch_zones) do
         if self:isGestureAlwaysActive(tzone.def.id, ev.multiswipe_directions) and tzone.gs_range:match(ev) and tzone.handler(ev) then
             return true
