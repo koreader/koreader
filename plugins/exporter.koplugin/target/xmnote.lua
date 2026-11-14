@@ -5,6 +5,7 @@ local SQ3 = require("lua-ljsqlite3/init")
 local UIManager = require("ui/uimanager")
 local datetime = require("datetime")
 local logger = require("logger")
+local rapidjson = require("rapidjson")
 local util = require("util")
 local _ = require("gettext")
 
@@ -59,10 +60,82 @@ function XMNoteExporter:genTargetSubMenu()
     }
 end
 
-function XMNoteExporter:getBookReadingDurationsByDay(title, md5)
-    if util.fileExists(db_location) then
+function XMNoteExporter:findBookIdInStatistics(conn, title, author, md5)
+    local function findByMd5(author_value)
+        local stmt = conn:prepare([[
+            SELECT id
+            FROM   book
+            WHERE  title = ?
+              AND  authors = ?
+              AND  md5 = ?
+            LIMIT 1;
+        ]])
+        local row = stmt:reset():bind(title, author_value, md5):step()
+        stmt:close()
+        return row and tonumber(row[1])
+    end
+
+    local function findUniqueWithoutMd5(author_values)
+        local sql_stmt
+        if #author_values == 1 then
+            sql_stmt = [[
+                SELECT id
+                FROM   book
+                WHERE  title = ?
+                  AND  authors = ?
+                LIMIT 2;
+            ]]
+        else
+            sql_stmt = [[
+                SELECT id
+                FROM   book
+                WHERE  title = ?
+                  AND  authors IN (?, ?)
+                LIMIT 2;
+            ]]
+        end
+        local stmt = conn:prepare(sql_stmt)
+        local first_row = stmt:reset():bind(title, unpack(author_values)):step()
+        local second_row = first_row and stmt:step()
+        stmt:close()
+        if first_row and not second_row then
+            return tonumber(first_row[1])
+        end
+    end
+
+    title = title or ""
+    local author_values
+    if author and author ~= "" then
+        author_values = { author }
+    else
+        author_values = { "N/A", "" }
+    end
+
+    if md5 and md5 ~= "" then
+        for _, author_value in ipairs(author_values) do
+            local book_id = findByMd5(author_value)
+            if book_id then
+                return book_id
+            end
+        end
+    end
+
+    return findUniqueWithoutMd5(author_values)
+end
+
+function XMNoteExporter:getBookReadingDurationsByDay(title, author, md5, md5_source)
+    if not util.fileExists(db_location) then
+        return rapidjson.null
+    end
+
+    local ok, durations = pcall(function()
         local conn = SQ3.open(db_location)
-        local sql_query_book_id = [[SELECT id FROM book WHERE title = '%s' and md5 = '%s' LIMIT 1]]
+        local book_id = self:findBookIdInStatistics(conn, title, author, md5)
+        if not book_id then
+            conn:close()
+            return rapidjson.null
+        end
+
         local sql_query_durations = [[
             SELECT date(start_time, 'unixepoch', 'localtime') AS date,
                    max(page)                                  AS last_page,
@@ -74,43 +147,51 @@ function XMNoteExporter:getBookReadingDurationsByDay(title, md5)
             ORDER  BY date DESC;
         ]]
 
-        local result_book_id = conn:exec(string.format(sql_query_book_id, title, md5))
-        if not (result_book_id and result_book_id[1] and result_book_id[1][1]) then
-            return {}
-        end
-        local book_id = tonumber(result_book_id[1][1])
-
         local result_durations = conn:exec(string.format(sql_query_durations, book_id))
         conn:close()
 
-        if not result_durations then
-            return {}
+        if not (result_durations and result_durations.date) then
+            return rapidjson.null
         end
 
-        local durations = {}
+        local result = {}
         for i = 1, #result_durations.date do
             local entry = {
                 date = tonumber(result_durations[4][i]) * 1000,
                 durationSeconds = tonumber(result_durations[3][i]),
                 position = tonumber(result_durations[2][i]),
             }
-            table.insert(durations, entry)
+            table.insert(result, entry)
         end
-        return durations
-    else
-        return {}
+        if #result == 0 then
+            return rapidjson.null
+        end
+        return result
+    end)
+    if not ok then
+        local err = tostring(durations):gsub("\n.*", "")
+        logger.warn("XMNote: statistics query failed",
+            string.format("title=%q author=%q md5_source=%s err=%s",
+                title or "", author or "", tostring(md5_source), err))
+        return rapidjson.null
     end
+    return durations
 end
 
 function XMNoteExporter:createRequestBody(booknotes)
     local doc_settings = DocSettings:open(booknotes.file)
     local summary = doc_settings:readSetting("summary") or {}
     local md5 = doc_settings:readSetting("partial_md5_checksum")
+    local md5_source = "sidecar"
+    if not md5 then
+        md5 = util.partialMD5(booknotes.file)
+        md5_source = md5 and "computed" or "missing"
+    end
 
     local reading_status_map = {
         reading = 2,
         complete = 3,
-        abandoned = 5,
+        abandoned = 4,
     }
 
     local reading_status_changed_date
@@ -147,7 +228,8 @@ function XMNoteExporter:createRequestBody(booknotes)
         end
     end
     book.entries = entries
-    book.fuzzyReadingDurations = self:getBookReadingDurationsByDay(book.title, md5)
+    book.fuzzyReadingDurations = self:getBookReadingDurationsByDay(
+        book.title, book.author, md5, md5_source)
     return book
 end
 
@@ -157,11 +239,15 @@ function XMNoteExporter:createHighlights(booknotes)
 
     local result, err = self:makeJsonRequest(url, "POST", body)
     if not result then
-        logger.warn("error creating highlights", err)
+        logger.warn("XMNote: request failed", err)
+        return false
+    end
+    if result.code ~= 200 then
+        logger.warn("XMNote: request failed",
+            string.format("code=%s message=%s", tostring(result.code), tostring(result.message)))
         return false
     end
 
-    logger.dbg("createHighlights result", result)
     return true
 end
 
