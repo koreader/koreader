@@ -7,6 +7,7 @@ local Language = {
         C = "English",
         en = "English",
         en_GB = "English (United Kingdom)",
+        en_CO = "English (Colemak)",
         ca = "Català",
         cs = "Čeština",
         da = "Dansk",
