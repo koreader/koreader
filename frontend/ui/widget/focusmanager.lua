@@ -549,6 +549,8 @@ function FocusManager:_sendGestureEventToFocusedWidget(gesture)
         UIManager:sendEvent(Event:new("Gesture", {
             ges = gesture,
             pos = point,
+            -- Lets this event through InputContainer:_onGestureFiltered when touch input is disabled
+            from_focus_navigation = true,
         }))
         return true
     end
@@ -656,6 +658,5 @@ function FocusManager:getFocusableWidgetXY(widget)
         end
     end
 end
-
 
 return FocusManager
