@@ -205,12 +205,16 @@ function DropBoxApi.downloadFile(path, token, local_path, progress_callback)
     return code, headers and headers.etag
 end
 
-function DropBoxApi.uploadFile(path, token, file_path, etag, overwrite)
+function DropBoxApi.uploadFile(path, token, file_path, etag, overwrite, progress_callback)
     local data = "{\"path\": \"" .. path .. "/" .. ffiUtil.basename(file_path) ..
         "\",\"mode\":" .. (overwrite and "\"overwrite\"" or "\"add\"") ..
         ",\"autorename\": " .. (overwrite and "false" or "true") ..
         ",\"mute\": false,\"strict_conflict\": false}"
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+    local handle = ltn12.source.file(io.open(file_path, "rb"))
+    if progress_callback then
+        handle = socketutil.chainSourceWithProgressCallback(handle, progress_callback)
+    end
     local code, _, status = socket.skip(1, http.request{
         url     = API_UPLOAD_FILE,
         method  = "POST",
@@ -221,7 +225,7 @@ function DropBoxApi.uploadFile(path, token, file_path, etag, overwrite)
             ["Content-Length"]  = lfs.attributes(file_path, "size"),
             ["If-Match"]        = etag,
         },
-        source  = ltn12.source.file(io.open(file_path, "r")),
+        source  = handle,
     })
     socketutil:reset_timeout()
     if code ~= 200 then
@@ -336,10 +340,10 @@ function DropBox.downloadFile(url, local_path, progress_callback)
     return DropBoxApi.downloadFile(url, base.password, local_path, progress_callback)
 end
 
-function DropBox.uploadFile(url, local_path, etag, overwrite)
+function DropBox.uploadFile(url, local_path, etag, overwrite, progress_callback)
     local base = DropBox.base
     -- code
-    return DropBoxApi.uploadFile(url, base.password, local_path, etag, overwrite)
+    return DropBoxApi.uploadFile(url, base.password, local_path, etag, overwrite, progress_callback)
 end
 
 function DropBox.deleteFile(url)
