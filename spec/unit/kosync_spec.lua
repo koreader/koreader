@@ -33,10 +33,12 @@ local service = [[
             ],
             "optional_params" : [
                 "metadata",
+                "identifiers",
             ],
             "payload" : [
                 "document",
                 "metadata",
+                "identifiers",
                 "progress",
                 "percentage",
                 "device",
@@ -49,6 +51,9 @@ local service = [[
             "method" : "GET",
             "required_params" : [
                 "document",
+            ],
+            "optional_params" : [
+                "ids",
             ],
             "expected_status" : [200, 401]
         },
@@ -216,11 +221,11 @@ describe("KOSync modules #notest", function()
             return res.result, res.body
         end
 
-        c.update_progress = function(name, passwd, doc, metadata, prog, percent, device, device_id, cb) --luacheck: ignore
+        c.update_progress = function(name, passwd, doc, metadata, ids, prog, percent, device, device_id, cb) --luacheck: ignore
             cb(res.result, res.body)
         end
 
-        c.get_progress = function(name, passwd, doc, cb) --luacheck: ignore
+        c.get_progress = function(name, passwd, doc, ids, cb) --luacheck: ignore
             cb(res.result, res.body)
         end
     end
