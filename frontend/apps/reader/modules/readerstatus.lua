@@ -187,8 +187,8 @@ function ReaderStatus:onOpenNextOrPreviousFileInFolder(prev)
         end)
     else
         UIManager:show(InfoMessage:new{
-            text = prev and _("This is the first file in the folder. No previous file to open.")
-                         or _("This is the last file in the folder. No next file to open."),
+            text = prev and _("This is the first unfinished file in the folder. No previous file to open.")
+                         or _("This is the last unfinished file in the folder. No next file to open."),
         })
     end
     return true
