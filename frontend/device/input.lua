@@ -711,6 +711,15 @@ function Input:resetState()
     }
 end
 
+-- A modifier release can get lost (e.g., a BT keyboard dropping connection mid-press
+-- while going to sleep), which would leave that modifier stuck as pressed.
+function Input:resetModifierKeys()
+    for key in pairs(self.modifiers) do
+        self.modifiers[key] = false
+    end
+    self.keyboard_toggle_tapped = nil
+end
+
 function Input:handleKeyBoardEv(ev)
     -- Detect loss of contact for the "snow" protocol, as we *never* get EV_ABS:ABS_MT_TRACKING_ID:-1 on those...
     -- NOTE: The same logic *could* be used on *some* ST devices to detect contact states,

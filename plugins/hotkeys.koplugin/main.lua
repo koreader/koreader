@@ -9,7 +9,6 @@ local Dispatcher = require("dispatcher")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Gamepad = require("device/sdl/gamepad")
 local LuaSettings = require("luasettings")
-local UIManager = require("ui/uimanager")
 local ffiUtil = require("ffi/util")
 local logger = require("logger")
 local util = require("util")
@@ -37,7 +36,7 @@ local function getHomeKey()
     return isSDL and "KeyHome" or "Home"
 end
 
-local function buildHotkeysList()
+local function buildHotkeysList(type_to_search)
     -- Define hotkeys_list
     hotkeys_list = {}
     base_keys = {
@@ -69,9 +68,7 @@ local function buildHotkeysList()
         hotkeys_list["modifier_plus_" .. key] = T(modifier_one, label)
         -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
     end
-    if Device:hasScreenKB() or Device:hasSymKey() then
-        util.tableMerge(hotkeys_list, { press = _("Press") })
-    end
+    util.tableMerge(hotkeys_list, { press = _("Press") })
 
     if Device:supportsGamepad() then
         for i = 0, 15 do
@@ -90,7 +87,7 @@ local function buildHotkeysList()
         local hotkeys_list_haskeyboard = { modifier_plus_menu = _("Shift + Menu") }
         -- now we can add the "menu" button to base_keys, so we can use it on haskeyboard devices
         base_keys.menu = "Menu"
-        -- NOTE: we will use 'alt' for kindles and 'ctrl' for other devices with keyboards
+        -- NOTE: we will use 'alt' for NT kindles and 'ctrl' for other devices with keyboards
         --       but for simplicity we will use in code 'alt+keys' as the array's key for all.
         local modifier_two = Device:hasSymKey() and _("Alt + %1") or _("Ctrl + %1")
         -- Alt/Ctrl + base_keys
@@ -98,12 +95,15 @@ local function buildHotkeysList()
             hotkeys_list_haskeyboard["alt_plus_" .. key] = T(modifier_two, label)
         end
 
-        local type_to_search = LuaSettings:open(hotkeys_path).data["type_to_search"]
+        if type_to_search == nil then
+            type_to_search = LuaSettings:open(hotkeys_path).data["type_to_search"]
+        end
         -- Alt/Ctrl + alphabet keys and (no modifier) + alphabet keys
         for dummy, char in ipairs(Device.input.group.Alphabet) do
             hotkeys_list_haskeyboard["alt_plus_" .. char:lower()] = T(modifier_two, char)
             if not type_to_search then
                 hotkeys_list_haskeyboard[char:lower()] = char
+                hotkeys_list_haskeyboard["shift_plus_" .. char:lower()] = T(_("Shift + %1"), char)
             end
         end
         util.tableMerge(hotkeys_list, hotkeys_list_haskeyboard)
@@ -137,6 +137,8 @@ function HotKeys:init()
     end
     self.hotkeys = self.settings_data.data[self.hotkey_mode]
     self.type_to_search = self.settings_data.data["type_to_search"] or false
+    -- This is a visual only flag, it does not affect the actual triggering functionality.
+    self.show_alt_hotkeys = self.settings_data.data["show_alt_hotkeys"] or false
 
     self.ui.menu:registerToMainMenu(self)
     Dispatcher:init()
@@ -234,9 +236,7 @@ function HotKeys:registerKeyEvents()
     if not self.is_docless then
         addKeyEvents(modifier, page_turn_keys, "HotkeyAction", "modifier_plus_")
         addKeyEvent(modifier, "Press", "HotkeyAction", "modifier_plus_press")
-        if Device:hasScreenKB() or Device:hasSymKey() then
-            self.key_events.Press = { { "Press" }, event = "HotkeyAction", args = "press" }
-        end
+        self.key_events.Press = { { "Press" }, event = "HotkeyAction", args = "press" }
     end
     addKeyEvent(modifier, "Back", "HotkeyAction", "modifier_plus_back")
     addKeyEvent(modifier, home_key, "HotkeyAction", "modifier_plus_home")
@@ -267,6 +267,7 @@ function HotKeys:registerKeyEvents()
         if not self.type_to_search then
             for _, key in ipairs(Device.input.group.Alphabet) do
                 self.key_events[key] = { { key }, event = "HotkeyAction", args = key:lower() }
+                addKeyEvent("Shift", key, "HotkeyAction", "shift_plus_" .. key:lower())
             end
         end
     end -- if hasKeyboard()
@@ -372,11 +373,8 @@ function HotKeys:genSubItem(hotkey, separator, hold_callback)
         modifier_plus_right_page_back = true,
         modifier_plus_right_page_forward = true,
         modifier_plus_press = true,
+        press = true,
     }
-    if Device:hasScreenKB() or Device:hasSymKey() then
-        local do_not_allow_press_key_do_shortcuts_in_fm = { press = true }
-        util.tableMerge(reader_only, do_not_allow_press_key_do_shortcuts_in_fm)
-    end
     local enabled_func
     if reader_only[hotkey] then
        enabled_func = function() return self.hotkey_mode == "hotkeys_reader" end
@@ -405,9 +403,19 @@ local function attachNewTableToExistingTable(original_table, second_table)
     end
 end
 
+-- Returns { prefix .. "a", prefix .. "b", ... } for every key in the device's alphabet group.
+local function genAlphabetHotkeyNames(prefix)
+    local names = {}
+    for _, char in ipairs(Device.input.group.Alphabet) do
+        table.insert(names, prefix .. char:lower())
+    end
+    return names
+end
+
 --[[
     This function configures and adds various hotkey shortcuts to the main menu based on the device's capabilities
     and user settings. It supports different sets of keys for devices with and without keyboards.
+    NOTE: show_alt_hotkeys is a visual-only flag (Alt/Ctrl entries); it does not affect the triggering of the hotkeys.
 --]]
 function HotKeys:addToMainMenu(menu_items)
     if not self.settings_data then
@@ -415,7 +423,8 @@ function HotKeys:addToMainMenu(menu_items)
         menu_items.a_type_to_search = nil
         return
     end
-    -- 1. Defines sets of cursor keys, page-turn buttons, and function keys.
+    local has_keyboard = Device:hasKeyboard()
+    -- Defines sets of cursor keys, page-turn buttons, and function keys.
     local cursor_keys = {
         "modifier_plus_up",
         "modifier_plus_down",
@@ -429,102 +438,134 @@ function HotKeys:addToMainMenu(menu_items)
         "modifier_plus_right_page_forward",
     }
     local fn_keys = {
+        "press",
         "modifier_plus_back",
         "modifier_plus_home",
         "modifier_plus_press"
         -- modifier_plus_menu (screenkb+menu) is already used globally for screenshots (on k4), don't add it here.
     }
-    -- 2. Adds the "press" key to function keys if the corresponding setting is enabled.
-    if Device:hasScreenKB() or Device:hasSymKey() then
-        table.insert(fn_keys, 1, "press")
-    end
-    -- 3. If the device has a keyboard, additional sets of keys (cursor, page-turn, and function keys) are appended.
-    if Device:hasKeyboard() then
-        local cursor_keys_haskeyboard = {
+    -- Alt/Ctrl counterparts, only listed when show_alt_hotkeys is on.
+    local cursor_keys_alt, pg_turn_alt, fn_keys_alt = {}, {}, {}
+    if has_keyboard then
+        table.insert(fn_keys, "modifier_plus_menu")
+        cursor_keys_alt = {
             "alt_plus_up",
             "alt_plus_down",
             "alt_plus_left",
             "alt_plus_right",
         }
-        attachNewTableToExistingTable(cursor_keys, cursor_keys_haskeyboard)
-        local pg_turn_haskeyboard = {
+        pg_turn_alt = {
             "alt_plus_left_page_back",
             "alt_plus_left_page_forward",
             "alt_plus_right_page_back",
             "alt_plus_right_page_forward",
         }
-        attachNewTableToExistingTable(pg_turn, pg_turn_haskeyboard)
-        local fn_keys_haskeyboard = {
-            "modifier_plus_menu",
+        fn_keys_alt = {
             "alt_plus_back",
             "alt_plus_home",
             "alt_plus_press",
-            "alt_plus_menu"
+            "alt_plus_menu",
         }
-        attachNewTableToExistingTable(fn_keys, fn_keys_haskeyboard)
     end
-    -- 4a. Adds a menu item for enabling/disabling the type-to-search feature
-    if Device:hasKeyboard() and not self.is_docless then
+
+    local function genKeysFunc(shared_keys, alt_keys)
+        return function()
+            local keys = {}
+            attachNewTableToExistingTable(keys, shared_keys)
+            if self.show_alt_hotkeys then
+                attachNewTableToExistingTable(keys, alt_keys)
+            end
+            return self:genSubItemTable(keys)
+        end
+    end
+
+    -- Adds a menu item for enabling/disabling the type-to-search feature
+    if has_keyboard and not self.is_docless then
         menu_items.a_type_to_search = {
             sorting_hint = "physical_buttons_setup",
             text = _("Type to launch full text search"),
             checked_func = function()
                 return self.type_to_search
             end,
-            callback = function()
+            callback = function(touchmenu_instance)
                 self.type_to_search = not self.type_to_search
                 self.settings_data.data["type_to_search"] = self.type_to_search
                 self.updated = true
-                UIManager:askForRestart()
+                buildHotkeysList(self.type_to_search)
+                self:registerKeyEvents()
+                touchmenu_instance:updateItems()
             end,
         }
     end
-    --5. Adds a menu item for configuring keyboard shortcuts, including cursor keys, page-turn buttons, and function keys.
+    -- Adds a menu item for configuring keyboard shortcuts, including cursor keys, page-turn buttons, and function keys.
     menu_items.hotkeys = {
         sorting_hint = "physical_buttons_setup",
         text = _("Keyboard shortcuts"),
         sub_item_table = {
             {
                 text = _("Cursor keys"),
-                sub_item_table = self:genSubItemTable(cursor_keys),
+                sub_item_table_func = genKeysFunc(cursor_keys, cursor_keys_alt),
             },
             {
                 text = _("Page-turn buttons"),
                 enabled_func = function()
-                    return Device:hasKeyboard() and self.hotkey_mode == "hotkeys_fm" or self.hotkey_mode == "hotkeys_reader"
+                    return has_keyboard and self.hotkey_mode == "hotkeys_fm" or self.hotkey_mode == "hotkeys_reader"
                 end,
-                sub_item_table = self:genSubItemTable(pg_turn),
+                sub_item_table_func = genKeysFunc(pg_turn, pg_turn_alt),
             },
             {
                 text = _("Function keys"),
-                sub_item_table = self:genSubItemTable(fn_keys),
+                sub_item_table_func = genKeysFunc(fn_keys, fn_keys_alt),
             },
         },
     }
-    -- 6. If the device has a keyboard, adds a menu item for configuring hotkeys using alphabet keys.
-    if Device:hasKeyboard() then
+    -- If the device has a keyboard, adds the Alt/Ctrl visibility toggle and the alphabet key menus.
+    if has_keyboard then
+        table.insert(menu_items.hotkeys.sub_item_table, 1, {
+            text_func = function()
+                local second_modifier = Device:hasSymKey() and _("Alt") or _("Ctrl")
+                return T(_("Show %1 based shortcuts"), second_modifier)
+            end,
+            checked_func = function()
+                return self.show_alt_hotkeys
+            end,
+            check_callback_updates_menu = true,
+            callback = function(touchmenu_instance)
+                self.show_alt_hotkeys = not self.show_alt_hotkeys
+                self.settings_data.data["show_alt_hotkeys"] = self.show_alt_hotkeys
+                self.updated = true
+                touchmenu_instance:updateItems()
+            end,
+            separator = true,
+        })
         table.insert(menu_items.hotkeys.sub_item_table, {
             text = _("Alphabet keys"),
-            sub_item_table = self:genSubItemTable({
-                "alt_plus_a", "alt_plus_b", "alt_plus_c", "alt_plus_d", "alt_plus_e", "alt_plus_f", "alt_plus_g", "alt_plus_h", "alt_plus_i",
-                "alt_plus_j", "alt_plus_k", "alt_plus_l", "alt_plus_m", "alt_plus_n", "alt_plus_o", "alt_plus_p", "alt_plus_q", "alt_plus_r",
-                "alt_plus_s", "alt_plus_t", "alt_plus_u", "alt_plus_v", "alt_plus_w", "alt_plus_x", "alt_plus_y", "alt_plus_z",
-            }),
+            -- Nothing to list when type-to-search owns Shift + letter and the Alt/Ctrl entries are hidden.
+            enabled_func = function()
+                return not self.type_to_search or self.show_alt_hotkeys
+            end,
+            sub_item_table_func = function()
+                local keys = {}
+                -- type-to-search claims these keys when on.
+                if not self.type_to_search then
+                    attachNewTableToExistingTable(keys, genAlphabetHotkeyNames("shift_plus_"))
+                end
+                if self.show_alt_hotkeys then
+                    attachNewTableToExistingTable(keys, genAlphabetHotkeyNames("alt_plus_"))
+                end
+                return self:genSubItemTable(keys)
+            end,
         })
-        if not self.type_to_search then
-            table.insert(menu_items.hotkeys.sub_item_table, {
-                text = _("Alphabet keys (single key)"),
-                enabled_func = function()
-                    return self.hotkey_mode == "hotkeys_reader"
-                end,
-                sub_item_table = self:genSubItemTable({
-                    "a", "b", "c", "d", "e", "f", "g", "h", "i",
-                    "j", "k", "l", "m", "n", "o", "p", "q", "r",
-                    "s", "t", "u", "v", "w", "x", "y", "z",
-                }),
-                separator = true,
-            })
-        end
+        table.insert(menu_items.hotkeys.sub_item_table, {
+            text = _("Alphabet keys (single key)"),
+            enabled_func = function()
+                return not self.type_to_search and self.hotkey_mode == "hotkeys_reader"
+            end,
+            sub_item_table_func = function()
+                return self:genSubItemTable(genAlphabetHotkeyNames(""))
+            end,
+            separator = true,
+        })
     end
     if Device:supportsGamepad() then
         local gamepad_keys = {}
@@ -557,6 +598,9 @@ function HotKeys:hardcodedEvents()
             event = "ShowFulltextSearchInput",
             args = ""
         }
+        -- Reset to avoid conflicts with hardcoded shortcuts as
+        -- self.type_to_search may have changed.
+        readersearch.key_events.Alphabet = nil
         if self.type_to_search then
             readersearch.key_events.Alphabet = {
                 { Device.input.group.Alphabet }, { "Shift", Device.input.group.Alphabet },

@@ -205,6 +205,10 @@ function ExternalKeyboard:_onEvdevInputRemove(event_path)
     -- Close our Input handle on it
     Device.input:close(event_path)
 
+    -- Modifier key_release may have been lost while the keyboard
+    -- was disconnected, don't let them stay stuck true.
+    Device.input:resetModifierKeys()
+
     ExternalKeyboard.keyboard_fds[event_path] = nil
     ExternalKeyboard.connected_keyboards = ExternalKeyboard.connected_keyboards - 1
     logger.dbg("ExternalKeyboard: USB keyboard", event_path, "was disconnected; total:", ExternalKeyboard.connected_keyboards)
@@ -222,7 +226,7 @@ function ExternalKeyboard:_onEvdevInputRemove(event_path)
     end
 
     -- Only show this once
-    if ExternalKeyboard.connected_keyboards == 0 then
+    if ExternalKeyboard.connected_keyboards == 0 and not Device.screen_saver_mode then
         UIManager:show(InfoMessage:new{
             text = _("Keyboard disconnected"),
             timeout = 1,
@@ -353,6 +357,9 @@ function ExternalKeyboard:setupKeyboard(data)
         ExternalKeyboard.keyboard_fds[keyboard_info.event_path] = fd
         -- External keyboard arrows are keyboard-relative, not device-relative.
         Device.input.rotation_ignored_fds[fd] = true
+        -- Modifier key_release may have been lost while the keyboard
+        -- was disconnected, don't let them stay stuck true.
+        Device.input:resetModifierKeys()
         ExternalKeyboard.connected_keyboards = ExternalKeyboard.connected_keyboards + 1
         logger.dbg("ExternalKeyboard: USB keyboard", keyboard_info.name, "@", keyboard_info.event_path, "was connected; total:", ExternalKeyboard.connected_keyboards)
 
@@ -395,7 +402,7 @@ function ExternalKeyboard:setupKeyboard(data)
     Device:setUseDPadAsActionKeys(G_reader_settings:isTrue("input_use_dpad_as_action_keys"))
 
     -- Only show this once
-    if ExternalKeyboard.connected_keyboards == 1 then
+    if ExternalKeyboard.connected_keyboards == 1 and not Device.screen_saver_mode then
         UIManager:show(InfoMessage:new{
             text = _("Keyboard connected"),
             timeout = 1,
