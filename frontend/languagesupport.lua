@@ -85,6 +85,13 @@ corresponding onHandler method):
    all be displayed to the user. It is not necessary to include the original
    word in the candidate list -- it will always be given highest priority.
 
+   Candidates are always resolved with exact search, even when the user has
+   fuzzy search enabled. A candidate is a dictionary form, and an analysis that
+   is not actually a headword would otherwise contribute near-spelling matches
+   that sort above the entry the user asked for. A candidate that is not a
+   headword simply returns nothing, so plugins can offer every analysis they
+   consider legal and let the dictionary decide which ones exist.
+
 @param Plugin to register (plugin.name is used as the internal name and must not be nil or "").
 @treturn bool Whether the plugin was successfully registered.
 ]]
@@ -119,6 +126,13 @@ local function callPlugin(plugin, handler_name, ...)
     local ok = table.remove(ret, 1)
     if not ok then
         logger.err("language plugin", plugin, "crashed during", handler_name, "handler:", unpack(ret))
+        return
+    end
+    -- A handler returning nil is declining to handle this text, and the caller
+    -- must go on to the next plugin. Without this the pcall wrapper would turn
+    -- that into an empty (but non-nil) table and the search would stop here.
+    if ret[1] == nil then
+        logger.dbg("language plugin", plugin, "declined to handle", handler_name)
         return
     end
     logger.dbg("language plugin", handler_name, "returned", ret)
