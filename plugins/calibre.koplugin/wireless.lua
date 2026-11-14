@@ -908,16 +908,23 @@ function CalibreWireless:getCollections(arg)
     for collection_name, collection in pairs(ReadCollection.coll) do
         local files = rapidjson.array()
         for file in pairs(collection) do
-            table.insert(files, file)
+            table.insert(files, FFIUtil.basename(file))
         end
         collections[collection_name] = files
     end
+
     self:sendJsonData("OK", {collections = collections})
 end
 
 function CalibreWireless:updateCollections(arg)
     if not arg or type(arg) ~= "table" then
         logger.warn("CalibreWireless: invalid UPDATE_COLLECTIONS payload")
+        return
+    end
+
+    local inbox_dir = G_reader_settings:readSetting("inbox_dir")
+    if not inbox_dir or lfs.attributes(inbox_dir, "mode") ~= "directory" then
+        logger.warn("CalibreWireless: inbox directory not available")
         return
     end
 
@@ -944,17 +951,22 @@ function CalibreWireless:updateCollections(arg)
         end
     end
 
-    -- Add individual book memberships.
+    -- Add individual book memberships using the basename from the protocol.
     if arg.add then
         for coll_name, files in pairs(arg.add) do
             local coll = ReadCollection.coll[coll_name]
             if coll then
-                for _, file in ipairs(files) do
-                    if lfs.attributes(file, "mode") == "file"
-                        and not ReadCollection:isFileInCollection(file, coll_name)
+                for _, basename in ipairs(files) do
+                    if type(basename) == "string" and isSafeLpath(basename, true)
                     then
-                        ReadCollection:addItem(file, coll_name)
-                        updated_collections[coll_name] = true
+                        local file = inbox_dir .. "/" .. basename
+                        if lfs.attributes(file, "mode") == "file" and not ReadCollection:isFileInCollection(file, coll_name)
+                        then
+                            ReadCollection:addItem(file, coll_name)
+                            updated_collections[coll_name] = true
+                        end
+                    else
+                        logger.warn("CalibreWireless: refusing unsafe collection member:", tostring(basename))
                     end
                 end
             else
@@ -963,14 +975,24 @@ function CalibreWireless:updateCollections(arg)
         end
     end
 
-    -- Remove individual book memberships.
+    -- Remove individual book memberships by matching the basename.
     if arg.remove then
         for coll_name, files in pairs(arg.remove) do
             local coll = ReadCollection.coll[coll_name]
             if coll then
-                for _, file in ipairs(files) do
-                    if ReadCollection:removeItem(file, coll_name, true) then
-                        updated_collections[coll_name] = true
+                for _, basename in ipairs(files) do
+                    if type(basename) == "string" then
+                        local paths_to_remove = {}
+                        for path in pairs(coll) do
+                            if FFIUtil.basename(path) == basename then
+                                table.insert(paths_to_remove, path)
+                            end
+                        end
+                        for _, path in ipairs(paths_to_remove) do
+                            if ReadCollection:removeItem(path, coll_name, true) then
+                                updated_collections[coll_name] = true
+                            end
+                        end
                     end
                 end
             else
