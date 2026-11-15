@@ -245,7 +245,7 @@ function WebDav.downloadFile(url, local_path, progress_callback)
     return WebDavApi.downloadFile(path, base.username, base.password, local_path, progress_callback)
 end
 
-function WebDav.uploadFile(url, local_path, etag, progress_callback)
+function WebDav.uploadFile(url, local_path, progress_callback, etag)
     local base = WebDav.base
     local path = WebDavApi.getJoinedPath(base.address, url)
     path = WebDavApi.getJoinedPath(path, ffiUtil.basename(local_path))
