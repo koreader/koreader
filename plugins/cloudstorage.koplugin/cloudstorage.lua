@@ -813,12 +813,6 @@ function CloudStorage:showFileUploadDialog(url)
                     subtitle = file_path:gsub(".*/", ""),
                     progress_max = lfs.attributes(file_path, "size")
                 }
-                -- UIManager:nextTick(function()
-                --     UIManager:show(InfoMessage:new{
-                --         text = _("Uploading…"),
-                --         timeout = 1,
-                --     })
-                -- end)
                 UIManager:scheduleIn(1, function()
                     local progress_callback = function(progress)
                         progressbar_dialog:reportProgress(progress)
