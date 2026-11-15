@@ -1240,7 +1240,8 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
         end,
         checked_func = function()
             return util.tableGetValue(location[settings], "settings", "execute_one_by_one")
-                and Dispatcher.getActionArgs(location[settings]) ~= nil
+                and (util.tableGetValue(location[settings], "settings", "order")
+                    or Dispatcher.getActionArgs(location[settings]) ~= nil)
         end,
         radio = true,
         callback = function()
