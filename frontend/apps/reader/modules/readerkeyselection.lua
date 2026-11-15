@@ -210,7 +210,17 @@ function ReaderKeySelection:registerKeyEvents()
     end
 end
 ReaderKeySelection.onRegisterDPadEvents = ReaderKeySelection.registerKeyEvents
-ReaderKeySelection.onPhysicalKeyboardConnected = ReaderKeySelection.init
+
+function ReaderKeySelection:onPhysicalKeyboardConnected()
+    self:stopHighlightIndicator(true)
+    self:init()
+end
+
+function ReaderKeySelection:onPhysicalKeyboardDisconnected()
+    -- A dropped connection leaves the overlay up and
+    -- unreachable even on further connections.
+    self:stopHighlightIndicator(true)
+end
 
 function ReaderKeySelection:addToMainMenu(menu_items)
     if not Device:useDPadAsActionKeys() and not Device:isTouchDevice() then
