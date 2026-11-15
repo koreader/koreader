@@ -225,3 +225,148 @@ describe("KOSync modules #notest", function()
         end
     end
 end)
+
+describe("KOSync custom server configuration", function()
+    local KOSync, sync
+
+    setup(function()
+        package.path = "plugins/kosync.koplugin/?.lua;" .. package.path
+        KOSync = dofile("plugins/kosync.koplugin/main.lua")
+    end)
+
+    before_each(function()
+        sync = setmetatable({ settings = {}, path = "plugins/kosync.koplugin" }, { __index = KOSync })
+    end)
+
+    it("should accept valid custom server URLs", function()
+        assert.is_true(sync:setCustomServer("https://sync.example.com"))
+        assert.are.same("https://sync.example.com", sync.settings.custom_server)
+
+        assert.is_true(sync:setCustomServer("http://sync.example.com:8080"))
+        assert.are.same("http://sync.example.com:8080", sync.settings.custom_server)
+
+        assert.is_true(sync:setCustomServer("http://192.168.1.100:8000"))
+        assert.are.same("http://192.168.1.100:8000", sync.settings.custom_server)
+    end)
+
+    it("should prepend https:// if no scheme is specified for a valid host", function()
+        assert.is_true(sync:setCustomServer("sync.example.com"))
+        assert.are.same("https://sync.example.com", sync.settings.custom_server)
+    end)
+
+    it("should reset custom server to nil when given empty string, whitespace, or bare scheme", function()
+        sync.settings.custom_server = "https://sync.example.com"
+        assert.is_true(sync:setCustomServer(""))
+        assert.is_nil(sync.settings.custom_server)
+
+        sync.settings.custom_server = "https://sync.example.com"
+        assert.is_true(sync:setCustomServer("   "))
+        assert.is_nil(sync.settings.custom_server)
+
+        sync.settings.custom_server = "https://sync.example.com"
+        assert.is_true(sync:setCustomServer("https://"))
+        assert.is_nil(sync.settings.custom_server)
+
+        sync.settings.custom_server = "https://sync.example.com"
+        assert.is_true(sync:setCustomServer("http://"))
+        assert.is_nil(sync.settings.custom_server)
+
+        sync.settings.custom_server = "https://sync.example.com"
+        assert.is_true(sync:setCustomServer("https:///"))
+        assert.is_nil(sync.settings.custom_server)
+
+        sync.settings.custom_server = "https://sync.example.com"
+        assert.is_true(sync:setCustomServer(nil))
+        assert.is_nil(sync.settings.custom_server)
+    end)
+
+    it("should reject invalid server addresses without host", function()
+        sync.settings.custom_server = "https://sync.example.com"
+
+        assert.is_false(sync:setCustomServer("http:///path"))
+        assert.are.same("https://sync.example.com", sync.settings.custom_server)
+
+        assert.is_false(sync:setCustomServer("bad :// url"))
+        assert.are.same("https://sync.example.com", sync.settings.custom_server)
+
+        assert.is_false(sync:setCustomServer("invalid url with spaces"))
+        assert.are.same("https://sync.example.com", sync.settings.custom_server)
+    end)
+end)
+
+describe("KOSyncClient initialization and fallback", function()
+    local KOSyncClient
+
+    setup(function()
+        package.path = "plugins/kosync.koplugin/?.lua;" .. package.path
+        KOSyncClient = require("KOSyncClient")
+    end)
+
+    it("should initialize safely without custom_url", function()
+        local client = KOSyncClient:new{
+            service_spec = "plugins/kosync.koplugin/api.json",
+        }
+        assert.is_truthy(client.client)
+    end)
+
+    it("should initialize safely with valid custom_url", function()
+        local client = KOSyncClient:new{
+            custom_url = "https://sync.example.com",
+            service_spec = "plugins/kosync.koplugin/api.json",
+        }
+        assert.is_truthy(client.client)
+    end)
+
+    it("should fall back to default server and not crash on invalid custom_url", function()
+        assert.has_no.errors(function()
+            local client = KOSyncClient:new{
+                custom_url = "https://",
+                service_spec = "plugins/kosync.koplugin/api.json",
+            }
+            assert.is_truthy(client.client)
+        end)
+
+        assert.has_no.errors(function()
+            local client = KOSyncClient:new{
+                custom_url = "http://",
+                service_spec = "plugins/kosync.koplugin/api.json",
+            }
+            assert.is_truthy(client.client)
+        end)
+
+        assert.has_no.errors(function()
+            local client = KOSyncClient:new{
+                custom_url = "http:///path",
+                service_spec = "plugins/kosync.koplugin/api.json",
+            }
+            assert.is_truthy(client.client)
+        end)
+    end)
+
+    it("should handle calls gracefully when uninitialized", function()
+        local client = KOSyncClient:new()
+        client.client = nil
+
+        local ok, res = client:register("user", "pass")
+        assert.is_false(ok)
+        assert.is_truthy(res)
+
+        ok, res = client:authorize("user", "pass")
+        assert.is_false(ok)
+        assert.is_truthy(res)
+
+        local called_update = false
+        client:update_progress("u", "p", "d", {}, "1", 0.1, "dev", "id", function(success)
+            called_update = true
+            assert.is_false(success)
+        end)
+        assert.is_true(called_update)
+
+        local called_get = false
+        client:get_progress("u", "p", "d", function(success)
+            called_get = true
+            assert.is_false(success)
+        end)
+        assert.is_true(called_get)
+    end)
+end)
