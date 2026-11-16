@@ -340,7 +340,7 @@ function DropBox.downloadFile(url, local_path, progress_callback)
     return DropBoxApi.downloadFile(url, base.password, local_path, progress_callback)
 end
 
-function DropBox.uploadFile(url, local_path, progress_callback, etag, overwrite)
+function DropBox.uploadFile(url, local_path, etag, overwrite, progress_callback)
     local base = DropBox.base
     -- code
     return DropBoxApi.uploadFile(url, base.password, local_path, etag, overwrite, progress_callback)

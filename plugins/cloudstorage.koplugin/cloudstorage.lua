@@ -818,7 +818,7 @@ function CloudStorage:showFileUploadDialog(url)
                         progressbar_dialog:reportProgress(progress)
                     end
                     local url_base = url ~= "/" and url or ""
-                    local code = self.provider.uploadFile(url_base, file_path, progress_callback)
+                    local code = self.provider.uploadFile(url_base, file_path, nil, true, progress_callback)
                     progressbar_dialog:close()
                     if code == 200 then
                         self:openCloudServer(url)

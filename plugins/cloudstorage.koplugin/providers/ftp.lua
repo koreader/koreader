@@ -240,7 +240,7 @@ function Ftp.downloadFile(url, local_path, progress_callback)
     return res and 200 or tonumber(err:sub(1, 3)) -- mimic http code
 end
 
-function Ftp.uploadFile(url, local_path, progress_callback)
+function Ftp.uploadFile(url, local_path, etag, overwrite, progress_callback)
     local base = Ftp.base
     local path = FtpApi.getJoinedPath(base.address, url)
     local handle = ltn12.source.file(io.open(local_path, "rb"))
