@@ -709,6 +709,7 @@ function DictQuickLookup:registerKeyEvents()
         end
     end
 end
+DictQuickLookup.onPhysicalKeyboardConnected = DictQuickLookup.registerKeyEvents
 
 -- Whether currently DictQuickLookup is working without a document.
 function DictQuickLookup:isDocless()
