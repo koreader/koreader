@@ -247,8 +247,9 @@ end
 function Ftp.uploadFile(url, local_path, etag, overwrite, progress_callback)
     local base = Ftp.base
     local path = FtpApi.getJoinedPath(base.address, url)
-    -- code, status
-    return FtpApi.uploadFile(path, base.username, base.password, local_path, progress_callback)
+    local res, err = FtpApi.uploadFile(path, base.username, base.password, local_path, progress_callback)
+    -- code
+    return res and 200 or tonumber(err:sub(1, 3)) -- mimic http code
 end
 
 function Ftp.deleteFile(url)
