@@ -250,8 +250,8 @@ function Device:init()
         gocolor7_2 = true,
         hibreak = true,
         moaanmix7 = true,
+        ["tab-executive"] = true,
         xiaomi_reader = true,
-        ["tab-executive"] = true, -- Musnap Ocean (iReader), product: tag-tab-executive
     }
 
     if models[android.prop.model] then
