@@ -357,7 +357,6 @@ function DropBoxApi.fetchInfo(token, space_usage)
         return select(2, pcall(JSON.decode, table.concat(sink)))
     end
     logger.warn("DropBoxApi: cannot get account info:", status or code)
-    logger.warn("DropBoxApi: error:", result_response)
 end
 
 -- DropBox
