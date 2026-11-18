@@ -171,13 +171,17 @@ function FtpApi.getSize(address_path)
     return tonumber(status and status:match("%d.* (%d.*)")) -- "213 1234567"
 end
 
-function FtpApi.uploadFile(address_path, username, password, file_path)
+function FtpApi.uploadFile(address_path, username, password, file_path, progress_callback)
+    local handle = ltn12.source.file(io.open(file_path, "rb"))
+    if progress_callback then
+        handle = socketutil.chainSourceWithProgressCallback(handle, progress_callback)
+    end
     local file_name = file_path:gsub(".*/", "")
     local p = url_parse(address_path)
     p.user = util.urlDecode(username)
     p.password = util.urlDecode(password)
     p.path = p.path == "/" and file_name or p.path .. "/" .. file_name
-    p.source = ltn12.source.file(io.open(file_path, "rb"))
+    p.source = handle
     local code, status = ftp.put(p)
     if code == nil then
         logger.warn("Ftp upload file:", status)
@@ -240,10 +244,10 @@ function Ftp.downloadFile(url, local_path, progress_callback)
     return res and 200 or tonumber(err:sub(1, 3)) -- mimic http code
 end
 
-function Ftp.uploadFile(url, local_path)
+function Ftp.uploadFile(url, local_path, etag, overwrite, progress_callback)
     local base = Ftp.base
     local path = FtpApi.getJoinedPath(base.address, url)
-    local res, err = FtpApi.uploadFile(path, base.username, base.password, local_path)
+    local res, err = FtpApi.uploadFile(path, base.username, base.password, local_path, progress_callback)
     -- code
     return res and 200 or tonumber(err:sub(1, 3)) -- mimic http code
 end

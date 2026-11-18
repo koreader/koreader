@@ -808,15 +808,18 @@ function CloudStorage:showFileUploadDialog(url)
             if lfs.attributes(file_path, "size") > 157286400 then
                 UIManager:show(InfoMessage:new{ text = _("File size must be less than 150 MB.") })
             else
-                UIManager:nextTick(function()
-                    UIManager:show(InfoMessage:new{
-                        text = _("Uploading…"),
-                        timeout = 1,
-                    })
-                end)
-                UIManager:tickAfterNext(function()
+                local progressbar_dialog = ProgressbarDialog:new{
+                    title = _("Uploading…"),
+                    subtitle = file_path:gsub(".*/", ""),
+                    progress_max = lfs.attributes(file_path, "size")
+                }
+                UIManager:scheduleIn(1, function()
+                    local progress_callback = function(progress)
+                        progressbar_dialog:reportProgress(progress)
+                    end
                     local url_base = url ~= "/" and url or ""
-                    local code = self.provider.uploadFile(url_base, file_path)
+                    local code = self.provider.uploadFile(url_base, file_path, nil, true, progress_callback)
+                    progressbar_dialog:close()
                     if code == 200 then
                         self:openCloudServer(url)
                         UIManager:show(InfoMessage:new{ text = T(_("File uploaded:\n%1"), BD.filepath(file_path)) })
@@ -824,6 +827,7 @@ function CloudStorage:showFileUploadDialog(url)
                         UIManager:show(InfoMessage:new{ text = T(_("Could not upload file:\n%1"), BD.filepath(file_path)) })
                     end
                 end)
+                progressbar_dialog:show()
             end
         end,
     })

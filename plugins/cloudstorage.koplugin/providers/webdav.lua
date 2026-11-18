@@ -161,7 +161,7 @@ function WebDavApi.downloadFile(file_url, user, pass, local_path, progress_callb
     return code, headers and headers.etag
 end
 
-function WebDavApi.uploadFile(file_url, user, pass, local_path, etag)
+function WebDavApi.uploadFile(file_url, user, pass, local_path, etag, progress_callback)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     -- If-Match uses strong comparison (RFC 7232 §3.1), so a weak validator
     -- (W/"…", returned e.g. for gzip-compressed responses) can never match and
@@ -169,10 +169,14 @@ function WebDavApi.uploadFile(file_url, user, pass, local_path, etag)
     if type(etag) == "string" then
         etag = etag:gsub("^%s*[Ww]/", "")
     end
+    local handle = ltn12.source.file(io.open(local_path, "rb"))
+    if progress_callback then
+        handle = socketutil.chainSourceWithProgressCallback(handle, progress_callback)
+    end
     local code, _, status = socket.skip(1, http.request{
         url      = file_url,
         method   = "PUT",
-        source   = ltn12.source.file(io.open(local_path, "r")),
+        source   = handle,
         user     = user,
         password = pass,
         headers  = {
@@ -241,12 +245,12 @@ function WebDav.downloadFile(url, local_path, progress_callback)
     return WebDavApi.downloadFile(path, base.username, base.password, local_path, progress_callback)
 end
 
-function WebDav.uploadFile(url, local_path, etag)
+function WebDav.uploadFile(url, local_path, etag, overwrite, progress_callback)
     local base = WebDav.base
     local path = WebDavApi.getJoinedPath(base.address, url)
     path = WebDavApi.getJoinedPath(path, ffiUtil.basename(local_path))
     -- code
-    return WebDavApi.uploadFile(path, base.username, base.password, local_path, etag)
+    return WebDavApi.uploadFile(path, base.username, base.password, local_path, etag, progress_callback)
 end
 
 function WebDav.deleteFile(url)
