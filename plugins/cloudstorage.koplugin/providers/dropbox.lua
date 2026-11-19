@@ -30,26 +30,37 @@ local API_GET_SPACE_USAGE = "https://api.dropboxapi.com/2/users/get_space_usage"
 local API_LIST_FOLDER     = "https://api.dropboxapi.com/2/files/list_folder"
 local API_LIST_ADD_FOLDER = "https://api.dropboxapi.com/2/files/list_folder/continue"
 local API_CREATE_FOLDER   = "https://api.dropboxapi.com/2/files/create_folder_v2"
+local API_DELETE_FILE     = "https://api.dropboxapi.com/2/files/delete_v2"
 local API_DOWNLOAD_FILE   = "https://content.dropboxapi.com/2/files/download"
 local API_UPLOAD_FILE     = "https://content.dropboxapi.com/2/files/upload"
-local API_DELETE_FILE     = "https://api.dropboxapi.com/2/files/delete"
+local API_UPLOAD_START    = "https://content.dropboxapi.com/2/files/upload_session/start"
+local API_UPLOAD_APPEND   = "https://content.dropboxapi.com/2/files/upload_session/append_v2"
+local API_UPLOAD_FINISH   = "https://content.dropboxapi.com/2/files/upload_session/finish"
+
+local UPLOAD_CHUNK_SIZE   = 4 * 1024 * 1024
+
+local function genRequestHeaders(content_type, token, arg)
+    return {
+        ["Content-Type"]    = content_type,
+        ["Authorization"]   = "Bearer ".. token,
+        ["Dropbox-API-Arg"] = arg and JSON.encode(arg),
+    }
+end
 
 function DropBoxApi.getAccessToken(refresh_token, app_key_colon_secret)
     local sink = {}
     local data = "grant_type=refresh_token&refresh_token=" .. refresh_token
-    local request = {
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+    local code, _, status = socket.skip(1, http.request{
         url     = API_TOKEN,
         method  = "POST",
         headers = {
-            ["Authorization"]  = "Basic " .. require("ffi/sha2").bin_to_base64(app_key_colon_secret),
-            ["Content-Type"]   = "application/x-www-form-urlencoded",
-            ["Content-Length"] = string.len(data),
+            ["Authorization"] = "Basic " .. require("ffi/sha2").bin_to_base64(app_key_colon_secret),
+            ["Content-Type"]  = "application/x-www-form-urlencoded",
         },
         source  = ltn12.source.string(data),
         sink    = ltn12.sink.table(sink),
-    }
-    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local code, _, status = socket.skip(1, http.request(request))
+    })
     socketutil:reset_timeout()
     local result_response = table.concat(sink)
     if code == 200 and result_response ~= "" then
@@ -65,19 +76,14 @@ function DropBoxApi.fetchListFolders(path, token)
     local data = "{\"path\": \"" .. path .. "\",\"recursive\": false,\"include_media_info\": false,"..
         "\"include_deleted\": false,\"include_has_explicit_shared_members\": false}"
     local sink = {}
-    local request = {
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+    local code, _, status = socket.skip(1, http.request{
         url     = API_LIST_FOLDER,
         method  = "POST",
-        headers = {
-            ["Authorization"]  = "Bearer ".. token,
-            ["Content-Type"]   = "application/json",
-            ["Content-Length"] = #data,
-        },
+        headers = genRequestHeaders("application/json", token),
         source  = ltn12.source.string(data),
         sink    = ltn12.sink.table(sink),
-    }
-    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local code, _, status = socket.skip(1, http.request(request))
+    })
     socketutil:reset_timeout()
     local result_response = table.concat(sink)
     if code == 200 and result_response ~= "" then
@@ -96,48 +102,32 @@ function DropBoxApi.fetchListFolders(path, token)
 end
 
 function DropBoxApi.fetchAdditionalFolders(response, token)
-  local out = response
-  local cursor = response.cursor
-
-  repeat
-    local data = "{\"cursor\": \"" .. cursor .. "\"}"
-
-    local sink = {}
-    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local request = {
-        url     = API_LIST_ADD_FOLDER,
-        method  = "POST",
-        headers = {
-            ["Authorization"]  = "Bearer ".. token,
-            ["Content-Type"]   = "application/json",
-            ["Content-Length"] = #data,
-        },
-        source  = ltn12.source.string(data),
-        sink    = ltn12.sink.table(sink),
-    }
-    local headers_request = socket.skip(1, http.request(request))
-    socketutil:reset_timeout()
-    if headers_request == nil then
-        return nil
-    end
-
-    local result_response = table.concat(sink)
-    local ret, result = pcall(JSON.decode, result_response)
-
-    if not ret then
-      return nil
-    end
-
-    for _, v in ipairs(result.entries) do
-      table.insert(out.entries, v)
-    end
-
-    if result.has_more then
-      cursor = result.cursor
-    end
-  until not result.has_more
-
-  return out
+    local out = response
+    local cursor = response.cursor
+    repeat
+        local data = "{\"cursor\": \"" .. cursor .. "\"}"
+        local sink = {}
+        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+        local headers_request = socket.skip(1, http.request{
+            url     = API_LIST_ADD_FOLDER,
+            method  = "POST",
+            headers = genRequestHeaders("application/json", token),
+            source  = ltn12.source.string(data),
+            sink    = ltn12.sink.table(sink),
+        })
+        socketutil:reset_timeout()
+        if not headers_request then return end
+        local result_response = table.concat(sink)
+        local ret, result = pcall(JSON.decode, result_response)
+        if not ret then return end
+        for _, v in ipairs(result.entries) do
+            table.insert(out.entries, v)
+        end
+        if result.has_more then
+            cursor = result.cursor
+        end
+    until not result.has_more
+    return out
 end
 
 function DropBoxApi.listFolder(path, token, include_folders)
@@ -183,19 +173,23 @@ function DropBoxApi.listFolder(path, token, include_folders)
 end
 
 function DropBoxApi.downloadFile(path, token, local_path, progress_callback)
-    local data1 = "{\"path\": \"" .. path .. "\"}"
-    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local handle = ltn12.sink.file(io.open(local_path, "w"))
+    local f = io.open(local_path, "w")
+    if not f then
+        logger.warn("DropBoxApi: cannot download file:", "cannot create file")
+        return
+    end
+    local handle = ltn12.sink.file(f)
     if progress_callback then
         handle = socketutil.chainSinkWithProgressCallback(handle, progress_callback)
     end
+    local arg = {
+        path = path,
+    }
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     local code, headers, status = socket.skip(1, http.request{
         url     = API_DOWNLOAD_FILE,
         method  = "GET",
-        headers = {
-            ["Authorization"]   = "Bearer ".. token,
-            ["Dropbox-API-Arg"] = data1,
-        },
+        headers = genRequestHeaders(nil, token, arg),
         sink    = handle,
     })
     socketutil:reset_timeout()
@@ -205,26 +199,26 @@ function DropBoxApi.downloadFile(path, token, local_path, progress_callback)
     return code, headers and headers.etag
 end
 
-function DropBoxApi.uploadFile(path, token, file_path, etag, overwrite, progress_callback)
-    local data = "{\"path\": \"" .. path .. "/" .. ffiUtil.basename(file_path) ..
-        "\",\"mode\":" .. (overwrite and "\"overwrite\"" or "\"add\"") ..
-        ",\"autorename\": " .. (overwrite and "false" or "true") ..
-        ",\"mute\": false,\"strict_conflict\": false}"
-    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local handle = ltn12.source.file(io.open(file_path, "rb"))
+function DropBoxApi.uploadFile(path, token, file_path, overwrite, progress_callback)
+    local f = io.open(file_path, "rb")
+    if not f then
+        logger.warn("DropBoxApi: cannot open file:", file_path)
+        return
+    end
+    local arg = {
+        path = path .. "/" .. ffiUtil.basename(file_path),
+        mode = overwrite and "overwrite" or "add",
+        autorename = not overwrite,
+    }
+    local handle = ltn12.source.file(f)
     if progress_callback then
         handle = socketutil.chainSourceWithProgressCallback(handle, progress_callback)
     end
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     local code, _, status = socket.skip(1, http.request{
         url     = API_UPLOAD_FILE,
         method  = "POST",
-        headers = {
-            ["Authorization"]   = "Bearer ".. token,
-            ["Dropbox-API-Arg"] = data,
-            ["Content-Type"]    = "application/octet-stream",
-            ["Content-Length"]  = lfs.attributes(file_path, "size"),
-            ["If-Match"]        = etag,
-        },
+        headers = genRequestHeaders("application/octet-stream", token, arg),
         source  = handle,
     })
     socketutil:reset_timeout()
@@ -234,17 +228,96 @@ function DropBoxApi.uploadFile(path, token, file_path, etag, overwrite, progress
     return code
 end
 
+function DropBoxApi.uploadFileByChunks(path, token, file_path, overwrite, progress_callback)
+    local f = io.open(file_path, "rb")
+    if not f then
+        logger.warn("DropBoxApi: cannot open file:", file_path)
+        return
+    end
+    local function done(status_arg, code_arg)
+        f:close()
+        socketutil:reset_timeout()
+        if status_arg then
+            logger.warn("DropBoxApi: cannot upload file:", status_arg)
+        end
+        return code_arg
+    end
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+    -- start
+    local arg = {
+        close = false,
+    }
+    local sink = {}
+    local code, _, status = socket.skip(1, http.request{
+        url     = API_UPLOAD_START,
+        method  = "POST",
+        headers = genRequestHeaders("application/octet-stream", token, arg),
+        sink    = ltn12.sink.table(sink),
+    })
+    if code ~= 200 then
+        return done(status, code)
+    end
+    local result = select(2, pcall(JSON.decode, table.concat(sink)))
+    local session_id = type(result) == "table" and result.session_id
+    if not session_id then
+        return done("cannot get session_id")
+    end
+    -- append
+    local offset = 0
+    while true do
+        local data = f:read(UPLOAD_CHUNK_SIZE)
+        if not data then break end
+        local handle = ltn12.source.string(data)
+        if progress_callback then
+            handle = socketutil.chainSourceWithProgressCallback(handle, progress_callback, offset)
+        end
+        arg = {
+            cursor = {
+                session_id = session_id,
+                offset = offset,
+            },
+        }
+        code, _, status = socket.skip(1, http.request{
+            url     = API_UPLOAD_APPEND,
+            method  = "POST",
+            headers = genRequestHeaders("application/octet-stream", token, arg),
+            source  = handle,
+        })
+        if code ~= 200 then
+            return done(status, code)
+        end
+        offset = offset + #data
+    end
+    -- finish
+    arg = {
+        cursor = {
+            session_id = session_id,
+            offset = offset,
+        },
+        commit = {
+            path = path .. "/" .. ffiUtil.basename(file_path),
+            mode = overwrite and { [".tag"] = "overwrite" } or { [".tag"] = "add" },
+            autorename = not overwrite,
+        },
+    }
+    code, _, status = socket.skip(1, http.request{
+        url     = API_UPLOAD_FINISH,
+        method  = "POST",
+        headers = genRequestHeaders("application/octet-stream", token, arg),
+    })
+    if code ~= 200 then
+        return done(status, code)
+    end
+    return done(nil, 200)
+end
+
 function DropBoxApi.deleteFile(path, token)
     local data = "{\"path\": \"" .. path .. "\"}"
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     local code, _, status = socket.skip(1, http.request{
         url     = API_DELETE_FILE,
         method  = "POST",
-        headers = {
-            ["Authorization"]  = "Bearer ".. token,
-            ["Content-Type"]   = "application/json",
-            ["Content-Length"] = #data,
-        },
+        headers = genRequestHeaders("application/json", token),
         source  = ltn12.source.string(data),
     })
     socketutil:reset_timeout()
@@ -260,11 +333,7 @@ function DropBoxApi.createFolder(path, token, folder_name)
     local code, _, status = socket.skip(1, http.request{
         url     = API_CREATE_FOLDER,
         method  = "POST",
-        headers = {
-            ["Authorization"]  = "Bearer ".. token,
-            ["Content-Type"]   = "application/json",
-            ["Content-Length"] = #data,
-        },
+        headers = genRequestHeaders("application/json", token),
         source  = ltn12.source.string(data),
     })
     socketutil:reset_timeout()
@@ -275,26 +344,19 @@ function DropBoxApi.createFolder(path, token, folder_name)
 end
 
 function DropBoxApi.fetchInfo(token, space_usage)
-    local url = space_usage and API_GET_SPACE_USAGE or API_URL_INFO
     local sink = {}
-    local request = {
-        url     = url,
-        method  = "POST",
-        headers = {
-            ["Authorization"] = "Bearer " .. token,
-        },
-        sink    = ltn12.sink.table(sink),
-    }
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local code, _, status = socket.skip(1, http.request(request))
+    local code, _, status = socket.skip(1, http.request{
+        url     = space_usage and API_GET_SPACE_USAGE or API_URL_INFO,
+        method  = "POST",
+        headers = genRequestHeaders(nil, token),
+        sink    = ltn12.sink.table(sink),
+    })
     socketutil:reset_timeout()
-    local result_response = table.concat(sink)
-    if code == 200 and result_response ~= "" then
-        local _, result = pcall(JSON.decode, result_response)
-        return result
+    if code == 200 then
+        return select(2, pcall(JSON.decode, table.concat(sink)))
     end
     logger.warn("DropBoxApi: cannot get account info:", status or code)
-    logger.warn("DropBoxApi: error:", result_response)
 end
 
 -- DropBox
@@ -341,9 +403,16 @@ function DropBox.downloadFile(url, local_path, progress_callback)
 end
 
 function DropBox.uploadFile(url, local_path, etag, overwrite, progress_callback)
+    -- etag is not supported by Dropbox
     local base = DropBox.base
     -- code
-    return DropBoxApi.uploadFile(url, base.password, local_path, etag, overwrite, progress_callback)
+    local size = lfs.attributes(local_path, "size")
+    if size then
+        if size <= 4 * UPLOAD_CHUNK_SIZE then
+            return DropBoxApi.uploadFile(url, base.password, local_path, overwrite, progress_callback)
+        end
+        return DropBoxApi.uploadFileByChunks(url, base.password, local_path, overwrite, progress_callback)
+    end
 end
 
 function DropBox.deleteFile(url)

@@ -15,10 +15,13 @@ local UIManager = require("ui/uimanager")
 local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
+local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
 local T = ffiUtil.template
+
+local strcoll = BookList.strcoll
 
 local CloudStorage = BookList:extend{
     collates = {
@@ -40,7 +43,7 @@ local CloudStorage = BookList:extend{
                 if a.filesize and b.filesize then
                     return a.filesize < b.filesize
                 end
-                return ffiUtil.strcoll(a.text, b.text)
+                return strcoll(a.text, b.text)
             end,
         },
         date = {
@@ -49,7 +52,7 @@ local CloudStorage = BookList:extend{
                 if a.modification and b.modification then
                     return a.modification > b.modification
                 end
-                return ffiUtil.strcoll(a.text, b.text)
+                return strcoll(a.text, b.text)
             end,
         },
     },
@@ -134,7 +137,7 @@ function CloudStorage:sortItemTable(tbl, url)
             if a.is_file and b.is_file then
                 return sort_func(a, b)
             elseif a.is_folder and b.is_folder then
-                return ffiUtil.strcoll(a.text, b.text)
+                return strcoll(a.text, b.text)
             else -- folders first
                 return a.is_folder
             end
@@ -538,7 +541,7 @@ function CloudStorage:showPlusRootDialog()
         })
     end
     if #buttons > 1 then
-        table.sort(buttons, function(a, b) return ffiUtil.strcoll(a[1].text, b[1].text) end)
+        table.sort(buttons, function(a, b) return strcoll(a[1].text, b[1].text) end)
     end
     table.insert(buttons, {}) -- separator
     table.insert(buttons, {
@@ -663,10 +666,16 @@ function CloudStorage:showFileDownloadDialog(item)
             title = _("Downloading…"),
             subtitle = unit_item.text,
             progress_max = unit_item.filesize,
+            refresh_time_seconds = 0.5,
         }
         UIManager:scheduleIn(1, function()
+            local time_prev = time.now()
             local progress_callback = function(progress)
-                progressbar_dialog:reportProgress(progress)
+                if time.to_ms(time.since(time_prev)) > 200 then
+                    if progressbar_dialog:reportProgress(progress) then
+                        time_prev = time.now()
+                    end
+                end
             end
             local code = self.provider.downloadFile(unit_item.url, local_path, progress_callback)
             progressbar_dialog:close()
@@ -805,30 +814,32 @@ function CloudStorage:showFileUploadDialog(url)
                 self.settings:saveSetting("upload_dir", new_path)
                 self._manager.updated = true
             end
-            if lfs.attributes(file_path, "size") > 157286400 then
-                UIManager:show(InfoMessage:new{ text = _("File size must be less than 150 MB.") })
-            else
-                local progressbar_dialog = ProgressbarDialog:new{
-                    title = _("Uploading…"),
-                    subtitle = file_path:gsub(".*/", ""),
-                    progress_max = lfs.attributes(file_path, "size")
-                }
-                UIManager:scheduleIn(1, function()
-                    local progress_callback = function(progress)
-                        progressbar_dialog:reportProgress(progress)
+            local progressbar_dialog = ProgressbarDialog:new{
+                title = _("Uploading…"),
+                subtitle = file_path:gsub(".*/", ""),
+                progress_max = lfs.attributes(file_path, "size"),
+                refresh_time_seconds = 0.5,
+            }
+            UIManager:scheduleIn(1, function()
+                local time_prev = time.now()
+                local progress_callback = function(progress)
+                    if time.to_ms(time.since(time_prev)) > 200 then
+                        if progressbar_dialog:reportProgress(progress) then
+                            time_prev = time.now()
+                        end
                     end
-                    local url_base = url ~= "/" and url or ""
-                    local code = self.provider.uploadFile(url_base, file_path, nil, true, progress_callback)
-                    progressbar_dialog:close()
-                    if code == 200 then
-                        self:openCloudServer(url)
-                        UIManager:show(InfoMessage:new{ text = T(_("File uploaded:\n%1"), BD.filepath(file_path)) })
-                    else
-                        UIManager:show(InfoMessage:new{ text = T(_("Could not upload file:\n%1"), BD.filepath(file_path)) })
-                    end
-                end)
-                progressbar_dialog:show()
-            end
+                end
+                local url_base = url ~= "/" and url or ""
+                local code = self.provider.uploadFile(url_base, file_path, nil, true, progress_callback)
+                progressbar_dialog:close()
+                if code == 200 then
+                    self:openCloudServer(url)
+                    UIManager:show(InfoMessage:new{ text = T(_("File uploaded:\n%1"), BD.filepath(file_path)) })
+                else
+                    UIManager:show(InfoMessage:new{ text = T(_("Could not upload file:\n%1"), BD.filepath(file_path)) })
+                end
+            end)
+            progressbar_dialog:show()
         end,
     })
 end
