@@ -1972,7 +1972,7 @@ function OPDSBrowser:getSyncDownloadList(url_arg)
         if acquisitions_empty then
             first_href = sub_table[count].url
         else
-            first_href = sub_table[1].acquisitions[1].href
+            first_href = sub_table[count].acquisitions[1].href
         end
         if first_href == self.sync_server.last_download and not self.sync_force then
             return nil
@@ -1986,7 +1986,7 @@ function OPDSBrowser:getSyncDownloadList(url_arg)
                     href = nil
                 end
             else
-                href = entry.acquisitions[1].href
+                href = entry.acquisitions[1] and entry.acquisitions[1].href
             end
             if href then
                 if href == self.sync_server.last_download and not self.sync_force then
