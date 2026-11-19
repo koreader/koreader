@@ -1705,6 +1705,9 @@ function ReaderHighlight:onHold(arg, ges)
         -- Ignore mismatched hold events while an active hold session is owned by the other input source.
         return true
     end
+    if not is_keyselection and self.ui.keyselection:isActive() then
+        self.ui.keyselection:stopHighlightIndicator()
+    end
 
     if self.ui.paging and self.panel_zoom_enabled then
         local res = self:onPanelZoom(arg, ges)
