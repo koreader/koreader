@@ -1264,6 +1264,7 @@ function ReaderKeySelection:_createHighlightGesture(gesture)
         ges = gesture,
         pos = point,
         time = time.realtime(),
+        from_keyselection = true,
     }
 end
 

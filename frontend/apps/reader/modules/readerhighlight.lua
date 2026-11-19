@@ -841,6 +841,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
             end
         end,
         sub_item_table = prompt_sub_item_table,
+        separator = not self.is_touch_device,
     })
     if self.is_touch_device then
         -- highlight very-long-press interval
@@ -873,27 +874,27 @@ If you wish your highlights to be saved in the document, just move it to a writa
                 })
             end,
         })
-    end
 
-    table.insert(menu_items.long_press.sub_item_table, {
-        text = _("Auto-scroll when selection reaches a corner"),
-        help_text = _([[
-Auto-scroll to show part of the previous page when your text selection reaches the top left corner, or of the next page when it reaches the bottom right corner.
-Except when in two columns mode, where this is limited to showing only the previous or next column.]]),
-        separator = true,
-        checked_func = function()
-            if self.ui.paging then return false end
-            return not self.view.highlight.disabled and G_reader_settings:nilOrTrue("highlight_corner_scroll")
-        end,
-        enabled_func = function()
-            if self.ui.paging then return false end
-            return not self.view.highlight.disabled
-        end,
-        callback = function()
-            G_reader_settings:flipNilOrTrue("highlight_corner_scroll")
-            self.allow_corner_scroll = G_reader_settings:nilOrTrue("highlight_corner_scroll")
-        end,
-    })
+        table.insert(menu_items.long_press.sub_item_table, {
+            text = _("Auto-scroll when selection reaches a corner"),
+            help_text = _([[
+        Auto-scroll to show part of the previous page when your text selection reaches the top left corner, or of the next page when it reaches the bottom right corner.
+        Except when in two columns mode, where this is limited to showing only the previous or next column.]]),
+            separator = true,
+            checked_func = function()
+                if self.ui.paging then return false end
+                return not self.view.highlight.disabled and G_reader_settings:nilOrTrue("highlight_corner_scroll")
+            end,
+            enabled_func = function()
+                if self.ui.paging then return false end
+                return not self.view.highlight.disabled
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrTrue("highlight_corner_scroll")
+                self.allow_corner_scroll = G_reader_settings:nilOrTrue("highlight_corner_scroll")
+            end,
+        })
+    end
 
     -- main menu Search
     menu_items.translation_settings = Translator:genSettingsMenu()
@@ -1830,8 +1831,9 @@ function ReaderHighlight:onHoldPan(_, ges)
 
     self.holdpan_pos = self.view:screenToPageTransform(ges.pos)
     logger.dbg("holdpan position in page", self.holdpan_pos)
+    local corner_scroll = self.allow_corner_scroll and not ges.from_keyselection
 
-    if self.ui.rolling and self.allow_corner_scroll and self.selected_text_start_xpointer then
+    if self.ui.rolling and corner_scroll and self.selected_text_start_xpointer then
         -- With CreDocuments, allow text selection across multiple pages
         -- by (temporarily) switching to scroll mode when panning to the
         -- top left or bottom right corners.
