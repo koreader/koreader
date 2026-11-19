@@ -1830,11 +1830,10 @@ function DictQuickLookup:onLookupInputWord(hint, ev)
     if key_pressed and ev.key == " " then
         return self:lookupInputWord()
     end
+    -- we want to exclude NT kindles with keyboards, which already do this by magic
+    local has_keyboard = Device:hasKeyboard() and not Device:hasSymKey()
     -- Key-event path: open dialog now, then inject key during next tick.
-    if Device:isSDL() and not hint and key_pressed then
-        if ev.key == " " then
-            return self:lookupInputWord()
-        end
+    if has_keyboard and not hint and key_pressed then
         local k = tostring(ev.key)
         local is_shift = ev.modifiers and ev.modifiers.Shift
         local letter = is_shift and k or k:lower()
