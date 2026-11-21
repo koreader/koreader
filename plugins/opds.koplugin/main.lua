@@ -37,6 +37,10 @@ local OPDS = WidgetContainer:extend{
             url = "https://bookserver.archive.org/",
         },
         {
+            title = "Fireside Folio",
+            url = "https://firesidefolio.com/opds/catalog/v2",
+        },
+        {
             title = "textos.info (Spanish)",
             url = "https://www.textos.info/catalogo.atom",
         },
