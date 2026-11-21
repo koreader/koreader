@@ -32,10 +32,12 @@
             ],
             "optional_params" : [
                 "metadata",
+                "identifiers",
             ],
             "payload" : [
                 "document",
                 "metadata",
+                "identifiers",
                 "progress",
                 "percentage",
                 "device",
@@ -48,6 +50,9 @@
             "method" : "GET",
             "required_params" : [
                 "document",
+            ],
+            "optional_params" : [
+                "ids",
             ],
             "expected_status" : [200, 401]
         },
