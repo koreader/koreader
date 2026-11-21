@@ -190,6 +190,9 @@ end
 function KOSync:onReaderReady()
     if self.settings.auto_sync then
         UIManager:nextTick(function()
+            if NetworkMgr:isOnline() then
+                self:drainQueue()
+            end
             self:getProgress(true, false)
         end)
     end
