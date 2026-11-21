@@ -25,6 +25,7 @@ local ScrollHtmlWidget = InputContainer:extend{
     dialog = nil,
     highlight_text_selection = false,
     html_link_tapped_callback = nil,
+    force_tap_to_follow_links = false,
     dimen = nil,
     width = 0,
     height = 0,
@@ -42,6 +43,7 @@ function ScrollHtmlWidget:init()
         dialog = self.dialog,
         highlight_text_selection = self.highlight_text_selection,
         html_link_tapped_callback = self.html_link_tapped_callback,
+        force_tap_to_follow_links = self.force_tap_to_follow_links,
         on_clear_search = self.on_clear_search,
     }
 

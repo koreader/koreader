@@ -132,6 +132,8 @@ local FootnoteWidget = InputContainer:extend{
         bottom = Screen:scaleBySize(10),
     },
     follow_callback = nil,
+    html_link_tapped_callback = nil,
+    force_tap_to_follow_links = false,
     on_tap_close_callback = nil,
     close_callback = nil,
     navigate_footnote_callback = nil,
@@ -331,6 +333,8 @@ function FootnoteWidget:init()
         text_scroll_span = text_scroll_span,
         dialog = self.dialog,
         highlight_text_selection = true,
+        html_link_tapped_callback = self.html_link_tapped_callback,
+        force_tap_to_follow_links = self.force_tap_to_follow_links,
     }
 
     -- We only want a top border, so use a LineWidget for that
