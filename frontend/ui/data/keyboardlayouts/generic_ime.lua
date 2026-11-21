@@ -5,6 +5,80 @@ local logger = require("logger")
 local util = require("util")
 local Utf8Proc = require("ffi/utf8proc")
 
+-- Numbered candidate window: when an IME sets candidate_pages, the composing
+-- text shows the upcoming candidates with digit prefixes, the digit keys
+-- (1-9) select a candidate directly, and the switch keys page through the
+-- candidate list. The page size also adapts to the input box width so that
+-- wide (multi-character) candidates never push the start of the line out
+-- of view.
+local PAGE = 9
+
+-- Display width of a string in CJK-char units (CJK=1, ASCII=0.5)
+local function textUnits(s)
+    local w = 0
+    for _, ch in ipairs(util.splitToChars(s)) do
+        w = w + (ch:byte(1) >= 0xE0 and 1 or 0.5)
+    end
+    return w
+end
+
+-- How many candidates fit in one page (incl. the stage char) given the input
+-- field width; falls back to candidate_pages when geometry is unknown.
+local function visiblePageSize(imex, inputbox)
+    local face_size = inputbox and inputbox.face and inputbox.face.size
+    local box_w = inputbox and inputbox.width
+    if not face_size or not box_w or box_w <= 0 then return PAGE end
+    local pad = (inputbox.margin or 0) + (inputbox.bordersize or 0) + (inputbox.padding or 0)
+    local avail = math.max(0, box_w - 2 * pad) / face_size - 2 -- cursor + rounding safety
+    local units = textUnits(imex.char or "") + 1 -- stage chars + "[" "]"
+    local last = math.min(imex.index + PAGE - 1, #imex.candi)
+    local n = 0
+    for i = imex.index + 1, last do
+        local cand_units = 0.5 + textUnits(imex.candi[i])
+        local truncated = i < last or last < #imex.candi
+        local need = cand_units + (truncated and 0.5 or 0) -- room for the trailing "…"
+        if units + need <= avail then
+            units = units + cand_units
+            n = n + 1
+        else
+            break
+        end
+    end
+    return n + 1 -- the stage char counts as the first candidate of the page
+end
+
+-- Fuzzy pinyin: when the IME provides fuzzy_rules, candidates of codes that
+-- differ by the rule pairs are merged after the exact hits, so e.g. typing
+-- "zichi" still offers the candidates of "zhichi".
+local FUZZY_MAX_VARIANTS = 16
+local function fuzzy_variants(code, rules)
+    local variants = {}
+    local seen = { [code] = true }
+    local queue = { code }
+    while #queue > 0 and #variants < FUZZY_MAX_VARIANTS do
+        local s = table.remove(queue)
+        for _, rule in ipairs(rules) do
+            for _, pair in ipairs({ { rule[1], rule[2] }, { rule[2], rule[1] } }) do
+                local from, to = pair[1], pair[2]
+                local pos = 1
+                while true do
+                    local start = s:find(from, pos, true)
+                    if not start then break end
+                    local v = s:sub(1, start-1) .. to .. s:sub(start + #from)
+                    if not seen[v] then
+                        seen[v] = true
+                        variants[#variants+1] = v
+                        if #variants >= FUZZY_MAX_VARIANTS then return variants end
+                        queue[#queue+1] = v
+                    end
+                    pos = start + 1
+                end
+            end
+        end
+    end
+    return variants
+end
+
 local function binarysearch( tbl, value, fcompval, reversed )
     if not fcompval then return end
     local iStart,iEnd = 1,#tbl
@@ -62,6 +136,9 @@ local IME = {
     local_del = "",  -- default
     has_case = false,
     exact_match = false,
+    candidate_pages = nil, -- when set: numbered candidate window w/ digit selection & paging
+    fuzzy_rules = nil, -- when set with fuzzy_enabled_callback: merge candidates of fuzzy variants
+    fuzzy_enabled_callback = function() return false end,
     W = nil -- default no wildcard
 }
 
@@ -216,7 +293,40 @@ function IME:getCandidates(code)
         end
     end
     -- no wildcard
+    if self.candidate_pages and self.fuzzy_enabled_callback() then
+        local merged = self:getMergedCandidates(code)
+        if #merged > 0 then return merged end
+        return
+    end
     return self:getCandiFromMap(code) or self:searchStartWith(code)
+end
+
+-- Merge candidates of the typed code and its fuzzy variants: exact hits first,
+-- then prefix matches; the originally typed code always ranks first.
+function IME:getMergedCandidates(code)
+    local merged, seen = {}, {}
+    local function addCandi(candi)
+        if type(candi) == "string" then candi = { candi } end
+        if candi then
+            for _, v in ipairs(candi) do
+                if not seen[v] then
+                    seen[v] = true
+                    merged[#merged+1] = v
+                end
+            end
+        end
+    end
+    addCandi(self:getCandiFromMap(code))
+    local variants = fuzzy_variants(code, self.fuzzy_rules or {})
+    for _, v in ipairs(variants) do
+        addCandi(self:getCandiFromMap(v))
+    end
+    if #merged > 0 then return merged end
+    addCandi(self:searchStartWith(code))
+    for _, v in ipairs(variants) do
+        addCandi(self:searchStartWith(v))
+    end
+    return merged
 end
 
 
@@ -235,7 +345,7 @@ function IME:delOnStageAndHintChars(inputbox)
     end
 end
 
-function IME:getHintChars()
+function IME:getHintChars(inputbox)
     self.hint_char_count = 0
     self.on_stage_char_count = 0
     local hint_chars = ""
@@ -247,6 +357,28 @@ function IME:getHintChars()
     end
     local imex = _stack[#_stack]
     local has_wildcard = self.W and imex.code:find(self.W)
+    if self.candidate_pages then
+        local page_size = visiblePageSize(imex, inputbox)
+        -- Numbered candidate window, page starts at imex.index. The stage char
+        -- (candi[index], what space commits) stays outside the brackets; the
+        -- brackets show the rest of the page with digit prefixes 2..S.
+        if self:show_candi_callback() and #imex.candi > 1 and #imex.code > 0 and page_size >= 2 then
+            hint_chars = hint_chars .. "["
+            local last = math.min(imex.index + page_size - 1, #imex.candi)
+            for i = imex.index + 1, last do
+                hint_chars = hint_chars .. (i - imex.index + 1) .. imex.candi[i]
+                self.hint_char_count = self.hint_char_count + 1 + #util.splitToChars(imex.candi[i])
+            end
+            if last < #imex.candi then
+                hint_chars = hint_chars .. "…"
+                self.hint_char_count = self.hint_char_count + 1
+            end
+            hint_chars = hint_chars .. "]"
+            self.hint_char_count = self.hint_char_count + 2
+        end
+        logger.dbg("zh_kbd: got hint chars:", hint_chars, "with count", self.hint_char_count)
+        return hint_chars
+    end
     if self:show_candi_callback() and -- shows candidates
         #imex.candi ~= 0 and -- has candidates
         ( #imex.code > 1 or imex.index > 1 ) and -- more than one key
@@ -284,7 +416,7 @@ end
 
 function IME:refreshHintChars(inpuxbox)
     self:delOnStageAndHintChars(inpuxbox)
-    inpuxbox.addChars:raw_method_call(self:getHintChars())
+    inpuxbox.addChars:raw_method_call(self:getHintChars(inpuxbox))
 end
 
 function IME:separate(inputbox)
@@ -350,6 +482,17 @@ end
 function IME:wrappedAddChars(inputbox, char, orig_char)
     local imex = _stack[#_stack]
     if char == self.switch_char then
+        if self.candidate_pages then
+            -- page forward by the visible page size, wraps back to the first page
+            local page_size = visiblePageSize(imex, inputbox)
+            if #imex.candi > 1 and page_size >= 2 then
+                imex.index = imex.index + page_size
+                if imex.index > #imex.candi then imex.index = 1 end
+                imex.char = imex.candi[imex.index]
+                self:refreshHintChars(inputbox)
+            end
+            return
+        end
         imex.index = imex.index + 1
         if self.W and imex.code:find(self.W) then
             if #imex.candi == 0 then
@@ -369,6 +512,20 @@ function IME:wrappedAddChars(inputbox, char, orig_char)
         end
         self:refreshHintChars(inputbox)
     elseif char == self.switch_char_prev then
+        if self.candidate_pages then
+            -- page backward, first page wraps to the last page start
+            local page_size = visiblePageSize(imex, inputbox)
+            if #imex.candi > 1 and page_size >= 2 then
+                if imex.index == 1 then
+                    imex.index = #imex.candi - ((#imex.candi - 1) % page_size)
+                else
+                    imex.index = math.max(imex.index - page_size, 1)
+                end
+                imex.char = imex.candi[imex.index]
+                self:refreshHintChars(inputbox)
+            end
+            return
+        end
         if self.W and imex.code:find(self.W) then
             if #imex.candi == 0 then
                 return
@@ -403,6 +560,21 @@ function IME:wrappedAddChars(inputbox, char, orig_char)
             self:clear_stack()
         else
             inputbox.delChar:raw_method_call()
+        end
+    elseif self.candidate_pages and #char == 1 and char >= "1" and char <= "9" and #imex.code > 0 then
+        -- digit key selects the n-th candidate on the current page; digits beyond
+        -- the visible page size commit literally (never a hidden candidate)
+        local nd = tonumber(char)
+        local page_size = visiblePageSize(imex, inputbox)
+        local target = imex.index + nd - 1
+        if nd <= page_size and imex.candi[target] then
+            imex.char = imex.candi[target]
+            self:refreshHintChars(inputbox)
+            self:separate(inputbox)
+        else
+            -- literal digit, composition flushed (same path as stock for unmapped chars)
+            self:separate(inputbox)
+            inputbox.addChars:raw_method_call(char)
         end
     else
         local key = self.key_map[char]

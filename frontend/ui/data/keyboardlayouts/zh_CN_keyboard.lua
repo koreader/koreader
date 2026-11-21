@@ -8,12 +8,27 @@ local SETTING_NAME = "keyboard_chinese_pinyin_settings"
 
 local code_map = dofile("frontend/ui/data/keyboardlayouts/zh_pinyin_data.lua")
 local settings = G_reader_settings:readSetting(SETTING_NAME, {show_candi=true})
+-- fuzzy pinyin defaults to enabled when unset (nil ~= false)
+local function fuzzyEnabled()
+    return settings.fuzzy ~= false
+end
 local ime = IME:new {
     code_map = code_map,
     partial_separators = {" "},
     show_candi_callback = function()
         return settings.show_candi
     end,
+    candidate_pages = 9,
+    fuzzy_rules = {
+        { "zh", "z" },
+        { "ch", "c" },
+        { "sh", "s" },
+        { "n", "l" },
+        { "an", "ang" },
+        { "en", "eng" },
+        { "in", "ing" },
+    },
+    fuzzy_enabled_callback = fuzzyEnabled,
     switch_char = "→",
     switch_char_prev = "←",
 }
@@ -74,6 +89,16 @@ local genMenuItems = function(self)
             end,
             callback = function()
                 settings.show_candi = not settings.show_candi
+                G_reader_settings:saveSetting(SETTING_NAME, settings)
+            end
+        },
+        {
+            text = _("Fuzzy pinyin"),
+            checked_func = function()
+                return fuzzyEnabled()
+            end,
+            callback = function()
+                settings.fuzzy = not fuzzyEnabled()
                 G_reader_settings:saveSetting(SETTING_NAME, settings)
             end
         }
