@@ -190,13 +190,13 @@ function KoptInterface:getContextHash(doc, pageno, bbox, hash_list)
     table.insert(hash_list, canvas_size.h)
 end
 
-function KoptInterface:getPageBBox(doc, pageno)
+function KoptInterface:getPageBBox(doc, pageno, defer_busy)
     if doc.configurable.text_wrap ~= 1 and doc.configurable.trim_page == 1 then
         -- auto bbox finding
-        return self:getAutoBBox(doc, pageno)
+        return self:getAutoBBox(doc, pageno, defer_busy)
     elseif doc.configurable.text_wrap ~= 1 and doc.configurable.trim_page == 2 then
         -- semi-auto bbox finding
-        return self:getSemiAutoBBox(doc, pageno)
+        return self:getSemiAutoBBox(doc, pageno, defer_busy)
     else
         -- get saved manual bbox
         return Document.getPageBBox(doc, pageno)
@@ -206,7 +206,7 @@ end
 --[[--
 Auto detect bbox.
 --]]
-function KoptInterface:getAutoBBox(doc, pageno)
+function KoptInterface:getAutoBBox(doc, pageno, defer_busy)
     local native_size = Document.getNativePageDimensions(doc, pageno)
     local bbox = {
         x0 = 0,
@@ -219,6 +219,24 @@ function KoptInterface:getAutoBBox(doc, pageno)
     local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
+        -- Avoid racing a running MuPDF worker: defer non-critical hint probes,
+        -- or cancel the worker when the caller needs an immediate result.
+        local pdf = doc.is_pdf and package.loaded["ffi/mupdf"]
+        if pdf then
+            if defer_busy then
+                if pdf.workerStatus() == pdf.WORKER_RUNNING then
+                    return Document.getPageBBox(doc, pageno)
+                end
+            elseif pdf.workerStatus() == pdf.WORKER_RUNNING then
+                if doc._abortInFlightJob then
+                    doc:_abortInFlightJob()
+                end
+                if pdf.workerStatus() == pdf.WORKER_RUNNING then
+                    pdf.workerAbort()
+                    pdf.workerWait(-1)
+                end
+            end
+        end
         local page = doc._document:openPage(pageno)
         local kc = self:createContext(doc, pageno, bbox)
         page:getPagePix(kc, doc.render_mode, doc.configurable.background_cleanup)
@@ -241,7 +259,7 @@ end
 --[[--
 Detect bbox within user restricted bbox.
 --]]
-function KoptInterface:getSemiAutoBBox(doc, pageno)
+function KoptInterface:getSemiAutoBBox(doc, pageno, defer_busy)
     -- use manual bbox
     local bbox = Document.getPageBBox(doc, pageno)
     local hash_list = { "semiautobbox" }
@@ -249,6 +267,22 @@ function KoptInterface:getSemiAutoBBox(doc, pageno)
     local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
+        local pdf = doc.is_pdf and package.loaded["ffi/mupdf"]
+        if pdf then
+            if defer_busy then
+                if pdf.workerStatus() == pdf.WORKER_RUNNING then
+                    return bbox
+                end
+            elseif pdf.workerStatus() == pdf.WORKER_RUNNING then
+                if doc._abortInFlightJob then
+                    doc:_abortInFlightJob()
+                end
+                if pdf.workerStatus() == pdf.WORKER_RUNNING then
+                    pdf.workerAbort()
+                    pdf.workerWait(-1)
+                end
+            end
+        end
         local page = doc._document:openPage(pageno)
         local kc = self:createContext(doc, pageno, bbox)
         local auto_bbox = {}
@@ -599,7 +633,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, hi
     return tile
 end
 
-function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, saturation)
+function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, saturation, hint_rect, dispatch_only, use_bbox)
     --- @note: Crappy safeguard around memory issues like in #7627: if we're eating too much RAM, drop half the cache...
     DocCache:memoryPressureCheck()
 
@@ -608,7 +642,7 @@ function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, saturation)
     elseif self:is_optimizing_page(doc) then
         self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, true)
     else
-        Document.hintPage(doc, pageno, zoom, rotation, gamma, saturation)
+        Document.hintPage(doc, pageno, zoom, rotation, gamma, saturation, hint_rect, dispatch_only, use_bbox)
     end
 end
 

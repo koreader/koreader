@@ -521,23 +521,30 @@ function ReaderZooming:onExitFlippingMode(zoom_mode)
     self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode))
 end
 
-function ReaderZooming:getZoom(pageno)
-    -- check if we're in bbox mode and work on bbox if that's the case
+--- Pure zoom evaluation for `pageno` without mutating `ReaderView` state.
+-- Hinting paths evaluate upcoming pages with this so they do not overwrite
+-- `view.use_bbox` for the currently displayed page.
+-- @tparam int pageno
+-- @tparam[opt=true] bool defer_busy defer uncached bbox probes while the background worker is running
+-- @treturn number zoom
+-- @treturn bool use_bbox whether the page's content bbox governs the view
+-- @treturn number zoom_w
+-- @treturn number zoom_h
+function ReaderZooming:getZoomForPage(pageno, defer_busy)
+    if defer_busy == nil then
+        defer_busy = true
+    end
     local zoom
     local page_size = self.ui.document:getNativePageDimensions(pageno)
+    local use_bbox = false
     if not (self.zoom_mode and self.zoom_mode:match("^page") or self.ui.document.configurable.trim_page == 3) then
-        local ubbox_dimen = self.ui.document:getUsedBBoxDimensions(pageno, 1)
+        local ubbox_dimen = self.ui.document:getUsedBBoxDimensions(pageno, 1, nil, defer_busy)
         -- if bbox is larger than the native page dimension render the full page
         -- See discussion in koreader/koreader#970.
         if ubbox_dimen.w <= page_size.w and ubbox_dimen.h <= page_size.h then
             page_size = ubbox_dimen
-            self.view:onBBoxUpdate(ubbox_dimen)
-        else
-            self.view:onBBoxUpdate(nil)
+            use_bbox = true
         end
-    else
-        -- otherwise, operate on full page
-        self.view:onBBoxUpdate(nil)
     end
     -- calculate zoom value:
     local zoom_w = self.dimen.w
@@ -588,8 +595,17 @@ function ReaderZooming:getZoom(pageno)
             end
             logger.dbg("new zoom: "..zoom)
 
-            if zoom < 0 then return 0 end
+            if zoom < 0 then return 0, false, zoom_w, zoom_h end
         end
+    end
+    return zoom, use_bbox, zoom_w, zoom_h
+end
+
+--- Compute zoom for `pageno` and update `view.use_bbox` when evaluating the displayed page.
+function ReaderZooming:getZoom(pageno)
+    local zoom, use_bbox, zoom_w, zoom_h = self:getZoomForPage(pageno, false)
+    if self.view.state.page == nil or pageno == self.view.state.page then
+        self.view:onBBoxUpdate(use_bbox and true or false)
     end
     return zoom, zoom_w, zoom_h
 end

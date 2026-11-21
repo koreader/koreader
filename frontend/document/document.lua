@@ -293,11 +293,13 @@ function Document:getPageBBox(pageno)
     return bbox
 end
 
---[[
-This method returns pagesize if bbox is corrupted
---]]
-function Document:getUsedBBoxDimensions(pageno, zoom, rotation)
-    local bbox = self:getPageBBox(pageno)
+--- Compute scaled content bounding box dimensions (falls back to full page if invalid).
+-- @tparam int pageno
+-- @tparam number zoom
+-- @tparam number rotation
+-- @tparam[opt] bool defer_busy defer uncached bbox probes while the background worker is running
+function Document:getUsedBBoxDimensions(pageno, zoom, rotation, defer_busy)
+    local bbox = self:getPageBBox(pageno, defer_busy)
     -- clipping page bbox
     if bbox.x0 < 0 then bbox.x0 = 0 end
     if bbox.y0 < 0 then bbox.y0 = 0 end
@@ -411,6 +413,12 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, saturation, hi
     -- If rect contains a nested scaled_rect object, our caller handled scaling itself (e.g., drawPagePart)
     local is_prescaled = rect and rect.scaled_rect ~= nil or false
 
+    -- Commit any finished background worker job before checking DocCache,
+    -- suppressing _pending_hint dispatch until cache resolution completes.
+    if not is_prescaled and self._drainFinishedWorker then
+        self:_drainFinishedWorker(true)
+    end
+
     local hash, hash_excerpt, tile
     if is_prescaled then
         hash = self:getPagePartHash(pageno, zoom, rotation, gamma, saturation, rect)
@@ -425,6 +433,30 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, saturation, hi
         if not tile and rect then
             hash_excerpt = hash.."|"..tostring(rect)
             tile = DocCache:check(hash_excerpt)
+        end
+    end
+    if tile then
+        if self.tile_cache_validity_ts then
+            if tile.created_ts and tile.created_ts >= self.tile_cache_validity_ts then
+                return tile
+            end
+            logger.dbg("discarding stale cached tile")
+        else
+            return tile
+        end
+    end
+
+    -- On a cache miss, coalesce with a matching in-flight hint or abort an obsolete one.
+    if not is_prescaled and self.resolveInFlightHint then
+        local resolved = self:resolveInFlightHint(pageno, rect, zoom, rotation, gamma, saturation, hinting)
+        if resolved == "covered" then
+            return
+        end
+        if resolved == "committed" then
+            tile = DocCache:check(hash, TileCacheItem)
+            if not tile and hash_excerpt then
+                tile = DocCache:check(hash_excerpt)
+            end
         end
     end
     if tile then
@@ -522,11 +554,81 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, saturation, hi
     return tile
 end
 
--- a hint for the cache engine to paint a full page to the cache
---- @todo this should trigger a background operation
-function Document:hintPage(pageno, zoom, rotation, gamma, saturation)
+--- Pre-render a page (or viewport excerpt when oversized) into the tile cache,
+-- preferring asynchronous background rasterization when supported.
+-- @tparam int pageno
+-- @tparam number zoom
+-- @tparam number rotation
+-- @tparam number gamma
+-- @tparam number saturation
+-- @tparam[opt] Geom hint_rect target viewport rect when clipping oversized pages
+-- @tparam[opt] bool dispatch_only park or skip instead of running synchronously if busy
+-- @tparam[opt] bool use_bbox whether the view crops this page to its content bbox
+function Document:hintPage(pageno, zoom, rotation, gamma, saturation, hint_rect, dispatch_only, use_bbox)
     logger.dbg("hinting page", pageno)
-    self:renderPage(pageno, nil, zoom, rotation, gamma, saturation, true)
+
+    local rect = nil
+    -- Check cache budget against the uncropped page allocation (used when
+    -- rect == nil), while sizing excerpt bounds from the cropped page area.
+    local full_page_size = self:getPageDimensions(pageno, zoom, rotation)
+    local page_size
+    if use_bbox then
+        page_size = self:getUsedBBoxDimensions(pageno, zoom, rotation, true)
+    else
+        page_size = full_page_size
+    end
+    local needed_bytes = full_page_size.w * full_page_size.h * (self.render_color and 4 or 1) + 512
+    local screen_area = CanvasContext:getWidth() * CanvasContext:getHeight()
+    local reason
+    if not DocCache:willAccept(needed_bytes) then
+        reason = "cache"
+    elseif page_size.w * page_size.h > 1.5 * screen_area then
+        reason = "zoom"
+    end
+    if reason then
+        -- Clamp against absolute page bounds (page_size.x/y may be non-zero when cropped).
+        local px = page_size.x or 0
+        local py = page_size.y or 0
+        local limit_x = px + page_size.w
+        local limit_y = py + page_size.h
+        if hint_rect then
+            local rx = math.max(px, math.min(hint_rect.x or 0, limit_x))
+            local ry = math.max(py, math.min(hint_rect.y or 0, limit_y))
+            rect = Geom:new{
+                x = rx,
+                y = ry,
+                w = math.min(hint_rect.w, limit_x - rx),
+                h = math.min(hint_rect.h, limit_y - ry),
+            }
+        else
+            rect = Geom:new{
+                x = px,
+                y = py,
+                w = math.min(page_size.w, CanvasContext:getWidth()),
+                h = math.min(page_size.h, CanvasContext:getHeight()),
+            }
+        end
+    end
+
+    if self.hintPageAsync and self:hintPageAsync(pageno, rect, zoom, rotation, gamma, saturation, dispatch_only) then
+        return
+    end
+
+    if dispatch_only then
+        return
+    end
+
+    self:renderPage(pageno, rect, zoom, rotation, gamma, saturation, true)
+end
+
+function Document:_recordActiveView(pageno, rect, zoom, rotation, gamma, saturation)
+    self._active_view = {
+        pageno = pageno, rect = rect, zoom = zoom,
+        rotation = rotation, gamma = gamma, saturation = saturation,
+    }
+    if self._pending_hint then
+        self._pending_hint = nil
+    end
 end
 
 --[[
@@ -538,6 +640,7 @@ Draw page content to blitbuffer.
 @rect: visible_area inside document page
 --]]
 function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, saturation)
+    self:_recordActiveView(pageno, rect, zoom, rotation, gamma, saturation)
     local tile = self:renderPage(pageno, rect, zoom, rotation, gamma, saturation)
     -- Enable SW dithering if requested (only available in koptoptions)
     if self.sw_dithering then
@@ -556,6 +659,7 @@ function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, sa
 end
 
 function Document:drawPageInverted(target, x, y, rect, pageno, zoom, rotation, gamma, saturation)
+    self:_recordActiveView(pageno, rect, zoom, rotation, gamma, saturation)
     local tile = self:renderPage(pageno, rect, zoom, rotation, gamma, saturation)
     target:invertblitFrom(tile.bb,
         x, y,

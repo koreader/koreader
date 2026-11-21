@@ -573,6 +573,10 @@ function ReaderPaging:onGotoPercent(percent)
 end
 
 function ReaderPaging:onGotoViewRel(diff, no_page_turn)
+    -- Track the active reading direction so hinting can predict the next view.
+    if diff ~= 0 then
+        self.last_view_rel_diff = diff > 0 and 1 or -1
+    end
     -- When called via a key event, the second arg is a key object (table), not used here.
     no_page_turn = no_page_turn == true and true or nil
     -- ReaderSearch calls with no_page_turn = true.
@@ -1126,6 +1130,145 @@ function ReaderPaging:onGotoPageRel(diff, no_page_turn)
     return true
 end
 
+--- Predict the next `{ page, rect, use_bbox }` view along `last_view_rel_diff`
+-- by mirroring `onGotoPageRel` read-only (including axis swaps for vertical
+-- column navigation, RTL, and bottom-to-top flows).
+-- @treturn[opt] table `{ page = int, rect = Geom, use_bbox = bool }` or nil
+function ReaderPaging:getNextViewHint()
+    if self.view.page_scroll or self.zoom_mode == "free" then
+        return nil
+    end
+    local va = self.visible_area
+    local pa = self.page_area
+    if not va or not pa or pa.w == 0 or pa.h == 0 then
+        return nil
+    end
+    local diff = self.last_view_rel_diff or 1
+
+    local right_to_left = self.ui.document.configurable.writing_direction
+        and self.ui.document.configurable.writing_direction > 0
+    local bottom_to_top = self.ui.zooming.zoom_bottom_to_top
+    local h_progress = 1 - self.ui.zooming.zoom_overlap_h * (1/100)
+    local v_progress = 1 - self.ui.zooming.zoom_overlap_v * (1/100)
+    local x, y, w, h = "x", "y", "w", "h"
+    local x_diff = diff
+    local y_diff = diff
+
+    if self.ui.zooming.zoom_direction_vertical then  -- invert axes
+        y, x, h, w = x, y, w, h
+        h_progress, v_progress = v_progress, h_progress
+        if right_to_left then
+            x_diff, y_diff = -x_diff, -y_diff
+        end
+        if bottom_to_top then
+            x_diff = -x_diff
+        end
+    elseif bottom_to_top then
+        y_diff = -y_diff
+    end
+    if right_to_left then
+        x_diff = -x_diff
+    end
+
+    local x_pan_off = Math.roundAwayFromZero(va[w] * h_progress * x_diff)
+    local y_pan_off = Math.roundAwayFromZero(va[h] * v_progress * y_diff)
+
+    local new_va = { x = va.x, y = va.y, w = va.w, h = va.h }
+    local function at_end(axis)
+        local len, _diff
+        if axis == x then
+            len, _diff = w, x_diff
+        else
+            len, _diff = h, y_diff
+        end
+        return va[axis] + va[len] + _diff > pa[axis] + pa[len]
+            or va[axis] + _diff < pa[axis]
+    end
+    local function goto_end(axis, _diff)
+        local len = axis == x and w or h
+        _diff = _diff or (axis == x and x_diff or y_diff)
+        new_va[axis] = _diff > 0
+                    and va[axis] + pa[len] - va[len]
+                    or pa[axis]
+    end
+    local function panned_rect()
+        local rect = Geom:new(new_va)
+        rect:offsetWithin(pa, 0, 0)
+        return rect
+    end
+
+    new_va[x] = va[x] + x_pan_off
+    if pa:contains(new_va) then
+        return { page = self.current_page, rect = panned_rect() }
+    end
+    if not at_end(x) then
+        goto_end(x)
+        return { page = self.current_page, rect = panned_rect() }
+    end
+    new_va[y] = va[y] + y_pan_off
+    goto_end(x, -x_diff)
+    if pa:contains(new_va) then
+        return { page = self.current_page, rect = panned_rect() }
+    end
+    if not at_end(y) then
+        goto_end(y)
+        return { page = self.current_page, rect = panned_rect() }
+    end
+
+    local target_page
+    if self.ui.document:hasHiddenFlows() then
+        target_page = diff > 0 and self.ui.document:getNextPage(self.current_page)
+            or self.ui.document:getPrevPage(self.current_page)
+        if target_page == 0 then
+            return nil
+        end
+    else
+        target_page = self.current_page + diff
+    end
+    if target_page < 1 or target_page > self.number_of_pages then
+        return nil
+    end
+
+    local zoom, target_use_bbox = self.ui.zooming:getZoomForPage(target_page)
+    local target_pa = self.view:getPageArea(target_page, zoom, self.view.state.rotation, target_use_bbox, true)
+    local fresh = Geom:new{
+        x = target_pa.x,
+        y = target_pa.y,
+        w = self.view.dimen.w,
+        h = self.view.dimen.h,
+    }
+    if self.view.footer_visible and self.view.footer
+            and not self.view.footer.settings.reclaim_height then
+        fresh.h = fresh.h - self.view.footer:getHeight()
+    end
+    if fresh.w > target_pa.w then
+        fresh.w = target_pa.w
+    end
+    if fresh.h > target_pa.h then
+        fresh.h = target_pa.h
+    end
+    if (self.ui.document.configurable.writing_direction or 0) > 0 then
+        fresh.x = target_pa.x + target_pa.w - fresh.w
+    end
+    local zoom_direction = self.ui.document.configurable.zoom_direction or 0
+    if zoom_direction >= 2 and zoom_direction <= 5 then
+        fresh.y = target_pa.y + target_pa.h - fresh.h
+    end
+    fresh:offsetWithin(target_pa, 0, 0)
+
+    local entry = fresh:copy()
+    local function goto_entry_end(axis, _diff)
+        local len = axis == x and w or h
+        entry[axis] = _diff > 0
+            and fresh[axis] + target_pa[len] - fresh[len]
+            or target_pa[axis]
+    end
+    goto_entry_end(x, -x_diff)
+    goto_entry_end(y, -y_diff)
+    entry:offsetWithin(target_pa, 0, 0)
+    return { page = target_page, rect = entry, use_bbox = target_use_bbox }
+end
+
 function ReaderPaging:onRedrawCurrentPage()
     self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
     return true
@@ -1152,6 +1295,8 @@ function ReaderPaging:_gotoPage(number, orig_mode)
 end
 
 function ReaderPaging:onGotoPage(number, pos)
+    -- Reset assumed reading direction on absolute jumps (TOC, bookmarks, links).
+    self.last_view_rel_diff = 1
     self:setPagePosition(number, 0)
     self:_gotoPage(number)
     if pos then

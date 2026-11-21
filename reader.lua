@@ -324,5 +324,13 @@ local reader_retval = exitReader()
 -- Apply exit user patches and execute user scripts
 userpatch.applyPatches(userpatch.on_exit)
 
+-- Stop the background MuPDF rasterization worker before LuaJIT finalizers tear down the context.
+pcall(function()
+    local pdf = package.loaded["ffi/mupdf"]
+    if pdf and pdf.workerShutdown then
+        pdf.workerShutdown()
+    end
+end)
+
 -- Close the Lua state on exit
 os.exit(reader_retval, true)
