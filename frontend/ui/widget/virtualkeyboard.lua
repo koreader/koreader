@@ -25,6 +25,7 @@ local Screen = Device.screen
 
 local keyboard_state = {
     force_current_layout = false, -- Set to true to get/set current layout (instead of default layout)
+    previous_layout = nil, -- Layout used before the current one, so the layout switch key can toggle back to it
 }
 
 local DEFAULT_LABEL_SIZE = 22
@@ -81,6 +82,15 @@ function VirtualKey:init()
         self.callback = function ()
             self.keyboard:onSwitchingKeyboardLayout()
             local current = G_reader_settings:readSetting("keyboard_layout")
+            -- Toggle back to the previously used layout (bounce between the two
+            -- most recently used ones). With a single pair of layouts enabled this
+            -- behaves like cycling; the full list stays reachable via hold/swipe.
+            -- On a fresh session there is no previous layout yet: cycle as before.
+            local previous_layout = keyboard_state.previous_layout
+            if previous_layout and previous_layout ~= current then
+                self.keyboard:setKeyboardLayout(previous_layout)
+                return
+            end
             local default = G_reader_settings:readSetting("keyboard_layout_default")
             local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
             local next_layout = nil
@@ -910,6 +920,10 @@ end
 function VirtualKeyboard:setKeyboardLayout(layout)
     keyboard_state.force_current_layout = true
     local prev_keyboard_height = self.dimen and self.dimen.h
+    local current_layout = G_reader_settings:readSetting("keyboard_layout")
+    if current_layout and current_layout ~= layout then
+        keyboard_state.previous_layout = current_layout
+    end
     G_reader_settings:saveSetting("keyboard_layout", layout)
     self:init()
     if prev_keyboard_height and self.dimen.h ~= prev_keyboard_height then
