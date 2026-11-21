@@ -75,7 +75,7 @@ function IndicatorOverlay:handleEvent(event)
         onKeyPress = true,
         onKeyRepeat = true,
         onKeyRelease = true,
-        onGesture = true,
+        onGesture = not self._touch_input_disabled,
         onPan = true, -- mouse wheel pan via sendEvent
     }
     if input_events[event.handler] and self.parent_ui then
@@ -501,6 +501,7 @@ function ReaderKeySelection:_beginIndicator(rect, save_r)
     -- The only place _current_indicator_pos and _indicator_overlay are created together,
     -- the same way _resetIndicatorState is the only place they're torn down together.
     self._current_indicator_pos = rect
+    self._touch_input_disabled = UIManager:getInputGesturesDisabled()
     self._indicator_overlay = IndicatorOverlay:new{
         dimen = Geom:new{ x = save_r.x, y = save_r.y, w = save_r.w, h = save_r.h },
         parent_ui = self.ui,
@@ -519,6 +520,7 @@ function ReaderKeySelection:_resetIndicatorState()
     self._edge_dx, self._edge_dy = nil, nil
     self._last_move_was_quick_move = nil
     self._fast_dict_mode = nil
+    self._touch_input_disabled = nil
     if self._indicator_overlay then
         self._indicator_overlay:freeSavedBB()
         UIManager:close(self._indicator_overlay)
