@@ -128,6 +128,71 @@ local PageTurns = {
             sub_item_table = page_turns_tap_zones_sub_items,
             separator = true,
         },
+        Device:hasTapbackSensitivity() and {
+            text = _("Tapback sensitivity"),
+            callback = function()
+                local MultiInputDialog = require("ui/widget/multiinputdialog")
+                local InfoMessage = require("ui/widget/infomessage")
+
+                local curr_x, curr_y, curr_z = Device:getTapbackSensitivity()
+
+                local dialog
+                dialog = MultiInputDialog:new{
+                    title = _("Tapback sensitivity\n\n1 = Lightest tap | 31 = Hardest tap | 0 = Disabled"),
+                    fields = {
+                        {
+                            description = _("X-axis: Tapping on the sides of the Kindle (left or right)."),
+                            input_type = "number",
+                            text = tostring(curr_x),
+                        },
+                        {
+                            description = _("Y-axis: Tapping vertically (top or bottom)."),
+                            input_type = "number",
+                            text = tostring(curr_y),
+                        },
+                        {
+                            description = _("Z-axis: Tapping on the back (or front screen)."),
+                            input_type = "number",
+                            text = tostring(curr_z),
+                        }
+                    },
+                    buttons = {
+                        {
+                            {
+                                text = _("Cancel"),
+                                id = "close",
+                                callback = function()
+                                    UIManager:close(dialog)
+                                end,
+                            },
+                            {
+                                text = _("Save"),
+                                is_enter_default = true,
+                                callback = function()
+                                    local fields = dialog:getFields()
+                                    local x = tonumber(fields[1]) or 5
+                                    local y = tonumber(fields[2]) or 5
+                                    local z = tonumber(fields[3]) or 5
+
+                                    G_reader_settings:saveSetting("tapback_thresh_x", x)
+                                    G_reader_settings:saveSetting("tapback_thresh_y", y)
+                                    G_reader_settings:saveSetting("tapback_thresh_z", z)
+
+                                    Device:setTapbackSensitivity(x, y, z)
+
+                                    UIManager:close(dialog)
+                                    UIManager:show(InfoMessage:new{
+                                        text = _("Tapback sensitivity adjusted!"),
+                                    })
+                                end,
+                            },
+                        }
+                    }
+                }
+                UIManager:show(dialog)
+            end,
+            separator = true,
+        } or nil,
         {
             text_func = function()
                 local text = _("Invert page turn taps and swipes")
