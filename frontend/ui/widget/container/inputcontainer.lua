@@ -447,6 +447,15 @@ function InputContainer:onPhysicalKeyboardDisconnected()
     if not Device:hasKeys() then
         self.key_events = {}
     end
+    -- It is possible that input touch is disabled and the disconnection occurs
+    -- during a widget's lifetime, where UIManager would have temporarily enabled
+    -- input gestures but didn't due to the our dpad, so restore touch input here.
+    if not Device:hasDPad() then
+        -- If UIManager:show already restored touch for us (the flag is set on window-level widgets only),
+        -- this restore is now permanent: don't let UIManager:close disable gestures again.
+        self._restored_input_gestures = nil
+        self:onIgnoreTouchInput(false)
+    end
 end
 
 return InputContainer

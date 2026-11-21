@@ -372,6 +372,8 @@ function FocusManager:onPhysicalKeyboardConnected()
 end
 
 function FocusManager:onPhysicalKeyboardDisconnected()
+    -- Run the Class method to restore touch input if it was temporarily disabled due to DPad presence.
+    InputContainer.onPhysicalKeyboardDisconnected(self)
     local prev_key_events = KEY_EVENTS
     populateEventMappings()
 

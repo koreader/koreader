@@ -264,8 +264,9 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     -- a widget may override tap interval (when it doesn't, nil restores the default)
     Input.tap_interval_override = widget.tap_interval_override
     -- If input was disabled, re-enable it while this widget is shown so we can actually interact with it.
-    -- The only thing that could actually call show in this state is something automatic, so we need to be able to deal with it.
-    if UIManager._input_gestures_disabled then
+    -- A few things could call `show` while gestures are disabled, something automatic or button inputs.
+    -- With a DPad, FocusManager can handle it, touch only requires a temporary re-enable of gestures.
+    if UIManager._input_gestures_disabled and not Device:hasDPad() then
         logger.dbg("Gestures were disabled, temporarily re-enabling them to allow interaction with widget")
         self:setIgnoreTouchInput(false)
         widget._restored_input_gestures = true
