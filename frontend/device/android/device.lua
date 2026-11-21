@@ -66,6 +66,7 @@ local external = require("device/thirdparty"):new{
         { "Mdict", "Mdict", false, "cn.mdict", "send" },
         { "OSS-Dict", "OSS-Dict", false, "com.akylas.aard2", "send" },
         { "QuickDic", "QuickDic", false, "de.reimardoeffinger.quickdic", "quickdic" },
+        { "wuDict", "wuDict", false, "com.legbehindneck.wudict", "text" },
     },
     check = function(self, app)
         return android.isPackageEnabled(app)
