@@ -22,9 +22,28 @@ end
 
 function KOSyncClient:init()
     local Spore = require("Spore")
-    self.client = Spore.new_from_spec(self.service_spec, {
-        base_url = self.custom_url,
+    local custom_url = self.custom_url
+    if custom_url then
+        local socket_url = require("socket.url")
+        local parsed = socket_url.parse(custom_url)
+        if not parsed or not parsed.host or parsed.host == "" or not parsed.host:match("^[%w%.%_%-%[%]]+$") then
+            logger.warn("KOSyncClient: invalid custom_url, falling back to default:", custom_url)
+            custom_url = nil
+        end
+    end
+    local ok, client = pcall(Spore.new_from_spec, self.service_spec, {
+        base_url = custom_url,
     })
+    if not ok then
+        logger.warn("KOSyncClient: failed to initialize with custom_url, falling back to default server:", custom_url, client)
+        ok, client = pcall(Spore.new_from_spec, self.service_spec)
+    end
+    if ok then
+        self.client = client
+    else
+        logger.err("KOSyncClient: failed to initialize Spore client:", client)
+        return
+    end
     package.loaded["Spore.Middleware.GinClient"] = {}
     require("Spore.Middleware.GinClient").call = function(_, req)
         req.headers["accept"] = "application/vnd.koreader.v1+json"
@@ -63,6 +82,9 @@ function KOSyncClient:init()
 end
 
 function KOSyncClient:register(username, password)
+    if not self.client then
+        return false, { message = "KOSync client not initialized" }
+    end
     self.client:reset_middlewares()
     self.client:enable("Format.JSON")
     self.client:enable("GinClient")
@@ -83,6 +105,9 @@ function KOSyncClient:register(username, password)
 end
 
 function KOSyncClient:authorize(username, password)
+    if not self.client then
+        return false, { message = "KOSync client not initialized" }
+    end
     self.client:reset_middlewares()
     self.client:enable("Format.JSON")
     self.client:enable("GinClient")
@@ -113,6 +138,10 @@ function KOSyncClient:update_progress(
         device,
         device_id,
         callback)
+    if not self.client then
+        if callback then callback(false, nil, nil) end
+        return
+    end
     self.client:reset_middlewares()
     self.client:enable("Format.JSON")
     self.client:enable("GinClient")
@@ -151,6 +180,10 @@ function KOSyncClient:get_progress(
         password,
         document,
         callback)
+    if not self.client then
+        if callback then callback(false, nil) end
+        return
+    end
     self.client:reset_middlewares()
     self.client:enable("Format.JSON")
     self.client:enable("GinClient")
