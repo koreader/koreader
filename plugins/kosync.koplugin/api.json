@@ -32,6 +32,7 @@
             ],
             "optional_params" : [
                 "metadata",
+                "timestamp",
             ],
             "payload" : [
                 "document",
@@ -40,6 +41,7 @@
                 "percentage",
                 "device",
                 "device_id",
+                "timestamp",
             ],
             "expected_status" : [200, 202, 401]
         },

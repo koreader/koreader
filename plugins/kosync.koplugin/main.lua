@@ -739,6 +739,8 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
     local progress = self:getLastProgress()
     local percentage = self:getLastPercent()
     local chosen_device_name = self.settings.kosync_hostname or Device.model
+    -- When this progress was reached, so a queued update can be dated correctly once it's finally sent.
+    local timestamp = os.time()
     local queue_item = {
         document = doc_digest,
         metadata = metadata,
@@ -746,6 +748,7 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
         percentage = percentage,
         device = chosen_device_name,
         device_id = self.device_id,
+        timestamp = timestamp,
     }
     local ok, err = pcall(client.update_progress,
         client,
@@ -757,6 +760,7 @@ function KOSync:updateProgress(ensure_networking, interactive, on_suspend)
         percentage,
         chosen_device_name,
         self.device_id,
+        timestamp,
         function(ok, status, body)
             logger.dbg("KOSync: [Push] progress to", percentage * 100, "% =>", progress, "for", self.view.document.file)
             logger.dbg("KOSync: ok:", ok, "body:", body)
@@ -1043,6 +1047,8 @@ function KOSync:drainQueue(done_func)
             item.percentage,
             item.device,
             item.device_id,
+            -- Items queued before timestamps were recorded fall back to when they were queued.
+            item.timestamp or item.queued_at,
             callback)
     end, done_func)
 end
