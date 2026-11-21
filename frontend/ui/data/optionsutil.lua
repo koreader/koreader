@@ -104,9 +104,15 @@ end
 -- or it can be set to an explicit unit (e.g., "pt" or "px"),
 -- in which case we append the results of a conversion to that unit in the final string.
 -- It can also be set to `true`, in which case the unit is pulled from user settings ("dimension_units").
-function optionsutil.showValues(configurable, option, prefix, document, unit)
+function optionsutil.showValues(configurable, option, prefix, document, unit, ui)
     local default = G_reader_settings:readSetting(prefix.."_"..option.name)
     local current = configurable[option.name]
+    if current == nil then
+        current = option.default_value
+    end
+    if default == nil then
+        default = option.default_value
+    end
     local value_default, value_current
     unit = unit or option.name_text_unit
     if unit and unit ~= "pt" then
@@ -180,7 +186,7 @@ function optionsutil.showValues(configurable, option, prefix, document, unit)
     end
     if option.help_text_func then
         -- Allow for concatenating a dynamic help_text_func to a static help_text
-        local more_text = option.help_text_func(configurable, document)
+        local more_text = option.help_text_func(configurable, document, ui)
         if more_text and more_text ~= "" then
             help_text = T("%1\n%2\n", help_text, more_text)
         end
