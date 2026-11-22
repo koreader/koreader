@@ -867,6 +867,11 @@ function Input:handleKeyBoardEv(ev)
         UIManager:nextTick(function() UIManager:quit() end) -- Ensure the program closes in case of some lingering dialog.
     end
 
+    -- fakes a keyboard hotplug event (for emulator only) - F12
+    if self:isEvKeyPress(ev) and keycode == "F12" and self.device:isEmulator() then
+        UIManager:broadcastEvent(Event:new("DebugToggleKeyboard"))
+    end
+
     -- A lone Sym or ScreenKB key tap (pressed and released with no other key in
     -- between) is used by InputText to toggle the on-screen keyboard, mirroring
     -- Shift/ScreenKB + Home. Both are otherwise only modifiers whose bare

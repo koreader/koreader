@@ -480,4 +480,23 @@ function DeviceListener:onResume()
     UIManager:setIgnoreTouchInput(false)
 end
 
+if Device:isEmulator() then
+    local InfoMessage = require("ui/widget/infomessage")
+    --- @todo This method is for debugging purposes only and should be kept in sync with externalkeyboard.koplugin
+    function DeviceListener:onDebugToggleKeyboard()
+        local connected = not Device:hasKeyboard()
+        Device.hasKeyboard = function() return connected end
+        Device.hasKeys = function() return connected end
+        Device.hasDPad = function() return connected end
+        local message = connected and _("Keyboard connected") or _("Keyboard disconnected")
+        UIManager:show(InfoMessage:new{
+            text = message,
+            timeout = 1,
+        })
+        UIManager:scheduleIn(0.5, function()
+            UIManager:broadcastEvent(Event:new(connected and "PhysicalKeyboardConnected" or "PhysicalKeyboardDisconnected"))
+        end)
+    end
+end
+
 return DeviceListener
