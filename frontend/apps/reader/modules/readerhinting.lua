@@ -4,11 +4,6 @@ local UIManager = require("ui/uimanager")
 
 local DHINTCOUNT = G_defaults:readSetting("DHINTCOUNT")
 
-local function isWorkerRunning()
-    local pdf = package.loaded["ffi/mupdf"]
-    return pdf and pdf.workerStatus() == pdf.WORKER_RUNNING
-end
-
 local ReaderHinting = EventListener:extend{
     hinting_states = nil, -- array
 }
@@ -23,37 +18,10 @@ function ReaderHinting:onHintPage(_, opportunistic)
         UIManager:unschedule(self._hint_retry_fn)
         self._hint_retry_fn = nil
     end
-    local doc = self.document
-    if doc._drainFinishedWorker then
-        doc:_drainFinishedWorker(true)
-    end
-    -- Keep the worker idle while evaluating target bbox/zoom params: abort an
-    -- obsolete job immediately, or retry once a useful prefetch settles.
-    if isWorkerRunning() then
-        local job = doc._in_flight_job
-        local dir = (self.ui.paging and self.ui.paging.last_view_rel_diff) or 1
-        local cur_page = self.view.state.page
-        local job_useful = false
-        if job then
-            if doc._jobStillRelevant and doc:_jobStillRelevant(job) then
-                job_useful = true
-            elseif cur_page
-                    and job.rotation == self.view.state.rotation
-                    and job.gamma == self.view.state.gamma
-                    and job.saturation == self.view.state.saturation then
-                if job.pageno == cur_page and job.zoom == self.view.state.zoom then
-                    job_useful = true
-                elseif job.pageno == cur_page + dir then
-                    job_useful = true
-                end
-            end
-        end
-        if job and not job_useful then
-            doc:_abortInFlightJob()
-        else
-            self:_scheduleHintRetry(opportunistic)
-            return true
-        end
+    local dir = (self.ui.paging and self.ui.paging.last_view_rel_diff) or 1
+    if self.document:shouldDeferHint(self.view.state.page, dir, self.view.state) then
+        self:_scheduleHintRetry(opportunistic)
+        return true
     end
 
     local predicted = self.ui.paging
@@ -74,7 +42,6 @@ function ReaderHinting:onHintPage(_, opportunistic)
             { pageno = predicted.page, rect = predicted.rect,
               zoom = zoom, use_bbox = use_bbox },
         }
-        local dir = (self.ui.paging and self.ui.paging.last_view_rel_diff) or 1
         for i = 2, DHINTCOUNT do
             local pageno = predicted.page + (dir > 0 and (i - 1) or -(i - 1))
             if pageno >= 1 and pageno <= self.document.info.number_of_pages then
@@ -91,7 +58,6 @@ function ReaderHinting:onHintPage(_, opportunistic)
     end
 
     -- Fallback when prediction is unavailable (scroll mode, free zoom).
-    local dir = (self.ui.paging and self.ui.paging.last_view_rel_diff) or 1
     local slots = {}
     for i = 1, DHINTCOUNT do
         local pageno = self.view.state.page + (dir > 0 and i or -i)
@@ -138,7 +104,7 @@ function ReaderHinting:_scheduleHintRetry(opportunistic, attempt)
         if not self.ui or not self.view or not self.view.hinting then
             return
         end
-        if isWorkerRunning() then
+        if self.document:hasPendingBackgroundRender() then
             self:_scheduleHintRetry(opportunistic, attempt)
             return
         end

@@ -203,6 +203,20 @@ function KoptInterface:getPageBBox(doc, pageno, defer_busy)
     end
 end
 
+-- Defer a synchronous bbox probe while a background render is ongoing, or
+-- abort the pending job when the caller needs the result now.
+-- @treturn bool true when the caller should fall back to the manual/page bbox
+local function prepare_sync_probe(doc, defer_busy)
+    if not doc:hasPendingBackgroundRender() then
+        return false
+    end
+    if defer_busy then
+        return true
+    end
+    doc:abortBackgroundRender()
+    return false
+end
+
 --[[--
 Auto detect bbox.
 --]]
@@ -219,23 +233,8 @@ function KoptInterface:getAutoBBox(doc, pageno, defer_busy)
     local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
-        -- Avoid racing a running MuPDF worker: defer non-critical hint probes,
-        -- or cancel the worker when the caller needs an immediate result.
-        local pdf = doc.is_pdf and package.loaded["ffi/mupdf"]
-        if pdf then
-            if defer_busy then
-                if pdf.workerStatus() == pdf.WORKER_RUNNING then
-                    return Document.getPageBBox(doc, pageno)
-                end
-            elseif pdf.workerStatus() == pdf.WORKER_RUNNING then
-                if doc._abortInFlightJob then
-                    doc:_abortInFlightJob()
-                end
-                if pdf.workerStatus() == pdf.WORKER_RUNNING then
-                    pdf.workerAbort()
-                    pdf.workerWait(-1)
-                end
-            end
+        if prepare_sync_probe(doc, defer_busy) then
+            return Document.getPageBBox(doc, pageno)
         end
         local page = doc._document:openPage(pageno)
         local kc = self:createContext(doc, pageno, bbox)
@@ -267,21 +266,8 @@ function KoptInterface:getSemiAutoBBox(doc, pageno, defer_busy)
     local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
-        local pdf = doc.is_pdf and package.loaded["ffi/mupdf"]
-        if pdf then
-            if defer_busy then
-                if pdf.workerStatus() == pdf.WORKER_RUNNING then
-                    return bbox
-                end
-            elseif pdf.workerStatus() == pdf.WORKER_RUNNING then
-                if doc._abortInFlightJob then
-                    doc:_abortInFlightJob()
-                end
-                if pdf.workerStatus() == pdf.WORKER_RUNNING then
-                    pdf.workerAbort()
-                    pdf.workerWait(-1)
-                end
-            end
+        if prepare_sync_probe(doc, defer_busy) then
+            return bbox
         end
         local page = doc._document:openPage(pageno)
         local kc = self:createContext(doc, pageno, bbox)

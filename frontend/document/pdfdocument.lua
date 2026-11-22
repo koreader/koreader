@@ -276,13 +276,13 @@ function PdfDocument:deleteHighlight(pageno, item)
     self.is_edited = true
     local quadpoints, n = _quadpointsFromPboxes(item.pboxes)
     local page = self._document:openPage(pageno)
-        local annot = page:getMarkupAnnotation(quadpoints, n)
-        if annot ~= nil then
-            page:deleteAnnotation(annot)
-            self:resetTileCacheValidity()
-            self:_purgeDisplayListCache()
-        end
-        page:close()
+    local annot = page:getMarkupAnnotation(quadpoints, n)
+    if annot ~= nil then
+        page:deleteAnnotation(annot)
+        self:resetTileCacheValidity()
+        self:_purgeDisplayListCache()
+    end
+    page:close()
 end
 
 function PdfDocument:updateHighlightContents(pageno, item, contents)
@@ -324,7 +324,7 @@ function PdfDocument:close()
     self:_clearPollTimer()
     if self._in_flight_job or (pdf and pdf.workerStatus() == pdf.WORKER_RUNNING) then
         pdf.workerAbort()
-        pdf.workerWait(-1)
+        pdf.workerWait()
         self._in_flight_job = nil
         CanvasContext:enableCPUCores(1)
     end
@@ -440,7 +440,6 @@ end
 
 -- Asynchronous background hinting (c.f., base/mupdf_worker.c)
 
-local COALESCE_WAIT_MS = 250  -- bounded wait when coalescing with an in-flight hint
 local POLL_INTERVAL_S = 0.02  -- UIManager polling cadence for job completion
 
 function PdfDocument:_clearPollTimer()
@@ -742,6 +741,35 @@ function PdfDocument:_commitInFlightJob(suppress_dispatch)
     end
 end
 
+function PdfDocument:hasPendingBackgroundRender()
+    return self._in_flight_job ~= nil
+        or (self._worker_initialized and not self._worker_broken
+            and pdf.workerStatus() == pdf.WORKER_RUNNING)
+end
+
+function PdfDocument:abortBackgroundRender()
+    self:_abortInFlightJob()
+end
+
+function PdfDocument:shouldDeferHint(cur_page, dir, view_state)
+    self:_drainFinishedWorker(true)
+    if not self:hasPendingBackgroundRender() then
+        return false
+    end
+    local job = self._in_flight_job
+    if not job or self:_jobStillRelevant(job)
+            or (cur_page
+                and job.rotation == view_state.rotation
+                and job.gamma == view_state.gamma
+                and job.saturation == view_state.saturation
+                and ((job.pageno == cur_page and job.zoom == view_state.zoom)
+                     or job.pageno == cur_page + dir)) then
+        return true
+    end
+    self:abortBackgroundRender()
+    return false
+end
+
 --- Abort the in-flight worker job and block until the worker thread is idle.
 function PdfDocument:_abortInFlightJob()
     self:_drainFinishedWorker(true)
@@ -750,7 +778,7 @@ function PdfDocument:_abortInFlightJob()
         return
     end
     pdf.workerAbort()
-    pdf.workerWait(-1)
+    pdf.workerWait()
     self:_clearPollTimer()
     self._in_flight_job = nil
     CanvasContext:enableCPUCores(1)
@@ -781,7 +809,7 @@ function PdfDocument:resolveInFlightHint(pageno, rect, zoom, rotation, gamma, sa
         if hinting then
             return "covered"
         end
-        local status = pdf.workerWait(COALESCE_WAIT_MS)
+        local status = pdf.workerWait()
         if status ~= pdf.WORKER_DONE then
             self:_abortInFlightJob()
             return nil

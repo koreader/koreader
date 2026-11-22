@@ -621,6 +621,10 @@ function Document:hintPage(pageno, zoom, rotation, gamma, saturation, hint_rect,
     self:renderPage(pageno, rect, zoom, rotation, gamma, saturation, true)
 end
 
+function Document:hasPendingBackgroundRender() return false end
+function Document:abortBackgroundRender() end
+function Document:shouldDeferHint() return false end
+
 function Document:_recordActiveView(pageno, rect, zoom, rotation, gamma, saturation)
     self._active_view = {
         pageno = pageno, rect = rect, zoom = zoom,
