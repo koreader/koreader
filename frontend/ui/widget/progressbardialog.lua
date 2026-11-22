@@ -47,6 +47,7 @@ local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
+local Button = require("ui/widget/button")
 local dbg = require("dbg")
 local time = require("ui/time")
 local Input = Device.input
@@ -61,6 +62,8 @@ local ProgressbarDialog = InputContainer:extend {
     dismiss_text = nil,
     _home_pending_callback = nil,
     refresh_time_seconds = 3,
+    cancel_callback = nil,
+    cancel_text = nil
 }
 
 function ProgressbarDialog:init()
@@ -128,6 +131,16 @@ function ProgressbarDialog:init()
             percentage = 0,
         }
         vertical_group[#vertical_group + 1] = self.progress_bar
+    end
+    if self.cancel_callback then
+        vertical_group[#vertical_group + 1] = Button:new {
+            text = self.cancel_text or _("Cancel"),
+            width = progress_bar_width,
+            callback = function()
+                UIManager:close(self)
+                self.cancel_callback()
+            end,
+        }
     end
 
     self[1] = FrameContainer:new {
