@@ -724,6 +724,15 @@ function PocketBook634K3._fb_init(fb, finfo, vinfo)
     vinfo.bits_per_pixel = 24
 end
 
+-- PocketBook Verta (635)
+local PocketBook635 = PocketBook:extend{
+    model = "PB635",
+    display_dpi = 300,
+    isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
+    ota_model = "pocketbookhf",
+}
+
 -- PocketBook Aqua (640)
 local PocketBook640 = PocketBook:extend{
     model = "PBAqua",
@@ -978,6 +987,8 @@ elseif codename == "634" then
     return PocketBook634
 elseif codename == "634K3" then
     return PocketBook634K3
+elseif codename == "635" then
+    return PocketBook635
 elseif codename == "640" then
     return PocketBook640
 elseif codename == "641" then
