@@ -2453,6 +2453,18 @@ function ReaderHighlight:editNote(index, is_new_note, text)
     self.ui.bookmark:setBookmarkNote(index, is_new_note, text, note_updated_callback)
 end
 
+function ReaderHighlight:applyHighlightChanges(item)
+    if self.ui.paging then
+        self:writePdfAnnotation("delete", item)
+        self:writePdfAnnotation("save", item)
+        if item.note then
+            self:writePdfAnnotation("content", item, item.note)
+        end
+    end
+    UIManager:setDirty(self.dialog, "ui")
+    self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
+end
+
 function ReaderHighlight:editHighlightStyle(index)
     local item = self.ui.annotation.annotations[index]
     local style_selector
@@ -2460,16 +2472,8 @@ function ReaderHighlight:editHighlightStyle(index)
         current_value = item.drawer,
         values = highlight_style,
         callback = function(value)
-            self:writePdfAnnotation("delete", item)
             item.drawer = value
-            if self.ui.paging then
-                self:writePdfAnnotation("save", item)
-                if item.note then
-                    self:writePdfAnnotation("content", item, item.note)
-                end
-            end
-            UIManager:setDirty(self.dialog, "ui")
-            self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
+            self:applyHighlightChanges(item)
         end,
         anchor = function()
             return self:_getDialogAnchor(style_selector, index)
@@ -2485,16 +2489,8 @@ function ReaderHighlight:editHighlightColor(index)
         current_value = item.color,
         values = self:getHighlightColorList(),
         callback = function(selected_color_name)
-            self:writePdfAnnotation("delete", item)
             item.color = selected_color_name
-            if self.ui.paging then
-                self:writePdfAnnotation("save", item)
-                if item.note then
-                    self:writePdfAnnotation("content", item, item.note)
-                end
-            end
-            UIManager:setDirty(self.dialog, "ui")
-            self.ui:handleEvent(Event:new("AnnotationsModified", { item }))
+            self:applyHighlightChanges(item)
         end,
         anchor = function()
             return self:_getDialogAnchor(color_selector, index)
