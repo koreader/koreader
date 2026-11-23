@@ -595,6 +595,13 @@ function BookmarkBrowser:showBookmarkDetails(item)
         },
         {
             {
+                text = "\u{F48E}",
+                enabled = not book.is_locked,
+                callback = function()
+                    self:removeBookmark(textviewer, item)
+                end,
+            },
+            {
                 text = _("Style"),
                 enabled = not book.is_locked,
                 callback = function()
@@ -608,17 +615,8 @@ function BookmarkBrowser:showBookmarkDetails(item)
                     self:editBookmarkStyleColor(textviewer, item, true)
                 end,
             },
-        },
-        {
             {
-                text = _("Remove bookmark"),
-                enabled = not book.is_locked,
-                callback = function()
-                    self:removeBookmark(textviewer, item)
-                end,
-            },
-            {
-                text = anno.note and _("Edit note") or _("Add note"),
+                text = _("Note"),
                 enabled = not book.is_locked,
                 callback = function()
                     self:editBookmarkNote(textviewer, item)
