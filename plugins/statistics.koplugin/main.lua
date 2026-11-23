@@ -2688,7 +2688,7 @@ end
 function ReaderStatistics:updateBookAnnotationsNumber(doc_props, md5, highlights_nb, notes_nb) -- for Bookmark browser
     if doc_props.title and doc_props.authors and md5 then
         local conn = SQ3.open(db_location)
-        sql_stmt = [[
+        local sql_stmt = [[
             SELECT id
             FROM   book
             WHERE  title = ?
