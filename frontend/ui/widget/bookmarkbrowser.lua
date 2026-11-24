@@ -552,6 +552,24 @@ function BookmarkBrowser:showBookmarkDetails(item)
         self:updateBookmarkList(idx)
         self:showBookmarkDetails(item_table[idx])
     end
+    local function _showPrevBookmarkDetails()
+        if item.idx > 2 then
+            local idx = item.idx - 1
+            if item_table[idx].self_books_idx then -- book
+                idx = idx - 1
+            end
+            _showBookmarkDetails(idx)
+        end
+    end
+    local function _showNextBookmarkDetails()
+        if item.idx < items_nb then
+            local idx = item.idx + 1
+            if item_table[idx].self_books_idx then -- book
+                idx = idx + 1
+            end
+            _showBookmarkDetails(idx)
+        end
+    end
 
     local label_prev, label_next, label_first, label_last = BD.getArrowLabels()
     local buttons_table = {
@@ -566,24 +584,12 @@ function BookmarkBrowser:showBookmarkDetails(item)
             {
                 text = label_prev,
                 enabled = item.idx > 2,
-                callback = function()
-                    local idx = item.idx - 1
-                    if item_table[idx].file then -- book
-                        idx = idx - 1
-                    end
-                    _showBookmarkDetails(idx)
-                end,
+                callback = _showPrevBookmarkDetails,
             },
             {
                 text = label_next,
                 enabled = item.idx < items_nb,
-                callback = function()
-                    local idx = item.idx + 1
-                    if item_table[idx].file then -- book
-                        idx = idx + 1
-                    end
-                    _showBookmarkDetails(idx)
-                end,
+                callback = _showNextBookmarkDetails,
             },
             {
                 text = label_last,
@@ -659,6 +665,8 @@ function BookmarkBrowser:showBookmarkDetails(item)
         text = ReaderBookmark.getBookmarkDetailsText(self, item, book),
         text_type = "bookmark",
         buttons_table = buttons_table,
+        page_turn_callback_prev = _showPrevBookmarkDetails,
+        page_turn_callback_next = _showNextBookmarkDetails,
     }
     UIManager:show(textviewer)
 end
