@@ -1531,7 +1531,7 @@ function UIManager:drainInput()
             self.event_hook:execute("InputEvent")
         end
         for __, ev in ipairs(input_events) do
-            self:handleInput(ev)
+            self:handleInputEvent(ev)
         end
     end
 end

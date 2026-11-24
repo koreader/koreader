@@ -63,7 +63,8 @@ local ProgressbarDialog = InputContainer:extend {
     _home_pending_callback = nil,
     refresh_time_seconds = 3,
     cancel_callback = nil,
-    cancel_text = nil
+    cancel_text = nil,
+    cancel_confirm_text = nil
 }
 
 function ProgressbarDialog:init()
@@ -137,8 +138,21 @@ function ProgressbarDialog:init()
             text = self.cancel_text or _("Cancel"),
             width = progress_bar_width,
             callback = function()
-                UIManager:close(self)
-                self.cancel_callback()
+                if self._confirm_box then return end
+                self._confirm_box = ConfirmBox:new {
+                    text = self.cancel_confirm_text or _("Cancel this operation?"),
+                    ok_text = _("Cancel"),
+                    cancel_text = _("Continue"),
+                    ok_callback = function()
+                        self._confirm_box = nil
+                        UIManager:close(self)
+                        self.cancel_callback()
+                    end,
+                    cancel_callback = function()
+                        self._confirm_box = nil
+                    end
+                }
+                UIManager:show(self._confirm_box)
             end,
         }
     end
@@ -226,6 +240,10 @@ function ProgressbarDialog:onCloseWidget()
     if self.dismiss_box then
         UIManager:close(self.dismiss_box)
         self.dismiss_box = nil
+    end
+    if self._confirm_box then
+        UIManager:close(self._confirm_box)
+        self._confirm_box = nil
     end
     if self.dismiss_callback then
         self.dismiss_callback()

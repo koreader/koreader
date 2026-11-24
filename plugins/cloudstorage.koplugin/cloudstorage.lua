@@ -662,24 +662,33 @@ end
 function CloudStorage:showFileDownloadDialog(item)
     if self.provider.downloadFile == nil then return end
     local function startDownloadFile(unit_item, local_path)
+        local cancelled = false
         local progressbar_dialog = ProgressbarDialog:new{
             title = _("Downloading…"),
             subtitle = unit_item.text,
             progress_max = unit_item.filesize,
             refresh_time_seconds = 0.5,
+            cancel_callback = function() cancelled = true end,
+            cancel_confirm_text = _("Cancel this download?"),
         }
         UIManager:scheduleIn(1, function()
             local time_prev = time.now()
             local progress_callback = function(progress)
+                if cancelled then return false end
                 if time.to_ms(time.since(time_prev)) > 200 then
                     if progressbar_dialog:reportProgress(progress) then
                         time_prev = time.now()
                     end
+                    UIManager:drainInput()
                 end
+                return true
             end
             local code = self.provider.downloadFile(unit_item.url, local_path, progress_callback)
             progressbar_dialog:close()
-            if code == 200 then
+            if cancelled then
+                os.remove(local_path)
+                UIManager:show(InfoMessage:new{ text = _("Download cancelled.") })
+            elseif code == 200 then
                 local text = T(_("File saved to:\n%1"), BD.filepath(local_path))
                 if DocumentRegistry:hasProvider(local_path) then
                     UIManager:show(ConfirmBox:new{
@@ -814,25 +823,33 @@ function CloudStorage:showFileUploadDialog(url)
                 self.settings:saveSetting("upload_dir", new_path)
                 self._manager.updated = true
             end
+            local cancelled = false
             local progressbar_dialog = ProgressbarDialog:new{
                 title = _("Uploading…"),
                 subtitle = file_path:gsub(".*/", ""),
                 progress_max = lfs.attributes(file_path, "size"),
                 refresh_time_seconds = 0.5,
+                cancel_callback = function() cancelled = true end,
+                cancel_confirm_text = _("Cancel this upload?"),
             }
             UIManager:scheduleIn(1, function()
                 local time_prev = time.now()
                 local progress_callback = function(progress)
+                    if cancelled then return false end
                     if time.to_ms(time.since(time_prev)) > 200 then
                         if progressbar_dialog:reportProgress(progress) then
                             time_prev = time.now()
                         end
+                        UIManager:drainInput()
                     end
+                    return true
                 end
                 local url_base = url ~= "/" and url or ""
                 local code = self.provider.uploadFile(url_base, file_path, nil, true, progress_callback)
                 progressbar_dialog:close()
-                if code == 200 then
+                if cancelled then
+                    UIManager:show(InfoMessage:new{ text = _("Upload cancelled.") })
+                elseif code == 200 then
                     self:openCloudServer(url)
                     UIManager:show(InfoMessage:new{ text = T(_("File uploaded:\n%1"), BD.filepath(file_path)) })
                 else

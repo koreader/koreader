@@ -226,7 +226,9 @@ function socketutil.chainSinkWithProgressCallback(sink, progressCallback)
         if chunk ~= nil then
             -- accumulate the downloaded bytes so we don't need to check the actual file every time
             downloaded_bytes = downloaded_bytes + chunk:len()
-            progressCallback(downloaded_bytes)
+            if progressCallback(downloaded_bytes) == false then
+                return nil, "cancelled"
+            end
         end
         return chunk, err
     end
@@ -244,7 +246,9 @@ function socketutil.chainSourceWithProgressCallback(source, progressCallback, up
         if chunk ~= nil then
             -- accumulate the uploaded_bytes so we don't need to check the actual file every time
             uploaded_bytes = uploaded_bytes + chunk:len()
-            progressCallback(uploaded_bytes)
+            if progressCallback(uploaded_bytes) == false then
+                return nil, "cancelled"
+            end
         end
         return chunk, err
     end
