@@ -2685,6 +2685,34 @@ function ReaderStatistics:onAnnotationsModified(annotations)
     end
 end
 
+function ReaderStatistics:updateBookAnnotationsNumber(doc_props, md5, highlights_nb, notes_nb) -- for Bookmark browser
+    if doc_props.title and doc_props.authors and md5 then
+        local conn = SQ3.open(db_location)
+        local sql_stmt = [[
+            SELECT id
+            FROM   book
+            WHERE  title = ?
+              AND  authors = ?
+              AND  md5 = ?;
+        ]]
+        local stmt = conn:prepare(sql_stmt)
+        local res = stmt:reset():bind(doc_props.title, doc_props.authors, md5):step()
+        local id_book = res[1]
+        if id_book then
+            sql_stmt = [[
+                UPDATE book
+                SET    highlights = ?,
+                       notes = ?
+                WHERE  id = ?;
+            ]]
+            stmt = conn:prepare(sql_stmt)
+            stmt:reset():bind(highlights_nb, notes_nb, id_book):step()
+        end
+        stmt:close()
+        conn:close()
+    end
+end
+
 -- Triggered by auto_save_settings_interval_minutes
 function ReaderStatistics:onSaveSettings()
     self:insertDB()
