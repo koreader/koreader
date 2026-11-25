@@ -221,19 +221,24 @@ function socketutil.chainSinkWithProgressCallback(sink, progressCallback)
         return sink
     end
 
+    local closed = false
+    local safe_sink = function(chunk, err)
+        if closed then return nil, "cancelled" end
+        return sink(chunk, err)
+    end
     local downloaded_bytes = 0
     local progress_reporter_filter = function(chunk, err)
         if chunk ~= nil then
             -- accumulate the downloaded bytes so we don't need to check the actual file every time
             downloaded_bytes = downloaded_bytes + chunk:len()
             if progressCallback(downloaded_bytes) == false then
-                return nil, "cancelled"
+                closed = true
             end
         end
         return chunk, err
     end
 
-    return ltn12.sink.chain(progress_reporter_filter, sink)
+    return ltn12.sink.chain(progress_reporter_filter, safe_sink)
 end
 
 function socketutil.chainSourceWithProgressCallback(source, progressCallback, uploaded_bytes)
@@ -241,19 +246,24 @@ function socketutil.chainSourceWithProgressCallback(source, progressCallback, up
         return source
     end
 
-    uploaded_bytes = uploaded_bytes or 0
+    local closed = false
+    local safe_source = function()
+        if closed then return nil, "cancelled" end
+        return source()
+    end
+    local uploaded_bytes = 0
     local progress_reporter_filter = function(chunk, err)
         if chunk ~= nil then
             -- accumulate the uploaded_bytes so we don't need to check the actual file every time
             uploaded_bytes = uploaded_bytes + chunk:len()
             if progressCallback(uploaded_bytes) == false then
-                return nil, "cancelled"
+                closed = true
             end
         end
         return chunk, err
     end
 
-    return ltn12.source.chain(source, progress_reporter_filter)
+    return ltn12.source.chain(safe_source, progress_reporter_filter)
 end
 
 return socketutil

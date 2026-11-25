@@ -47,7 +47,7 @@ local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
-local Button = require("ui/widget/button")
+local ButtonTable = require("ui/widget/buttontable")
 local dbg = require("dbg")
 local time = require("ui/time")
 local Input = Device.input
@@ -134,26 +134,35 @@ function ProgressbarDialog:init()
         vertical_group[#vertical_group + 1] = self.progress_bar
     end
     if self.cancel_callback then
-        vertical_group[#vertical_group + 1] = Button:new {
-            text = self.cancel_text or _("Cancel"),
+        vertical_group[#vertical_group + 1] = ButtonTable:new {
             width = progress_bar_width,
-            callback = function()
-                if self._confirm_box then return end
-                self._confirm_box = ConfirmBox:new {
-                    text = self.cancel_confirm_text or _("Cancel this operation?"),
-                    ok_text = _("Cancel"),
-                    cancel_text = _("Continue"),
-                    ok_callback = function()
-                        self._confirm_box = nil
-                        UIManager:close(self)
-                        self.cancel_callback()
-                    end,
-                    cancel_callback = function()
-                        self._confirm_box = nil
-                    end
-                }
-                UIManager:show(self._confirm_box)
-            end,
+            show_parent = self,
+            buttons = {
+                {
+                    {
+                        text = self.cancel_text or _("Cancel"),
+                        callback = function()
+                            if self._confirm_box then return end
+                            self._confirm_box = ConfirmBox:new {
+                                text = self.cancel_confirm_text or _("Cancel this operation?"),
+                                ok_text = _("Cancel"),
+                                cancel_text = _("Continue"),
+                                ok_callback = function()
+                                    self._confirm_box = nil
+                                    self.cancel_callback()
+                                    UIManager:nextTick(function()
+                                        UIManager:close(self)
+                                    end)
+                                end,
+                                cancel_callback = function()
+                                    self._confirm_box = nil
+                                end
+                            }
+                            UIManager:show(self._confirm_box)
+                        end,
+                    },
+                },
+            },
         }
     end
 
