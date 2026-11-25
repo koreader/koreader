@@ -251,7 +251,7 @@ function socketutil.chainSourceWithProgressCallback(source, progressCallback, up
         if closed then return nil, "cancelled" end
         return source()
     end
-    local uploaded_bytes = 0
+    uploaded_bytes = uploaded_bytes or 0
     local progress_reporter_filter = function(chunk, err)
         if chunk ~= nil then
             -- accumulate the uploaded_bytes so we don't need to check the actual file every time
