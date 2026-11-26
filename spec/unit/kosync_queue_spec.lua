@@ -337,7 +337,7 @@ describe("KOSyncQueue module", function()
         schedule_stub = stub(UIManager, "scheduleIn", function(_, _, callback) scheduled = callback end)
         client_stub = stub(KOSyncClient, "new", function()
             return {
-                update_progress = function(_, username, userkey, document, metadata, progress, percentage, device, device_id, callback)
+                update_progress = function(_, username, userkey, document, metadata, identifiers, progress, percentage, device, device_id, callback)
                     assert.are.equal("user", username)
                     assert.are.equal("key", userkey)
                     assert.are.equal("a", document)
@@ -362,6 +362,32 @@ describe("KOSyncQueue module", function()
         sync:_onNetworkConnected()
         scheduled()
         assert.are.equal(2, pulls)
+    end)
+
+    it("should send the identifiers a queued item was pushed with", function()
+        local KOSync = dofile("plugins/kosync.koplugin/main.lua")
+        local KOSyncClient = require("KOSyncClient")
+        local identifiers = {
+            { type = "content", value = "a" },
+            { type = "metadata", value = "m", weak = true },
+        }
+        local sent
+        client_stub = stub(KOSyncClient, "new", function()
+            return {
+                update_progress = function(_, _, _, _, _, ids, progress, _, _, _, callback)
+                    sent = ids
+                    assert.are.equal("1", progress)
+                    callback(true)
+                end,
+            }
+        end)
+        local sync = setmetatable({ settings = {}, path = "plugins/kosync.koplugin" }, { __index = KOSync })
+        KOSyncQueue:push({ document = "a", identifiers = identifiers, progress = "1" })
+        assert.are.same(identifiers, KOSyncQueue:load()[1].identifiers)
+        sync:drainQueue()
+        assert.are.same(identifiers, sent)
+        assert.is_true(sent[2].weak)
+        assert.are.equal(0, KOSyncQueue:count())
     end)
 
     it("should clear the queue", function()
