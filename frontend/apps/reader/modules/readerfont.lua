@@ -362,6 +362,8 @@ function ReaderFont:makeDefault(face, is_monospace, touchmenu_instance)
 end
 
 function ReaderFont:addToMainMenu(menu_items)
+    -- Fully fixed-layout (pre-paginated) books don't reflow, so font face/size has no effect.
+    if self.ui.document:getFixedLayoutMode() == 1 then return end
     -- insert table to main reader menu
     menu_items.change_font = {
         text_func = function()

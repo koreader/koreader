@@ -1002,6 +1002,18 @@ function ReaderView:onReadSettings(config)
                                               or 8)
 end
 
+function ReaderView:onPreRenderDocument(config)
+    -- The spine's page-progression-direction is only known once the document
+    -- has been parsed, which happens after onReadSettings. A fixed-layout (or
+    -- any) EPUB that declares rtl (e.g. a manga) defaults to right-to-left page
+    -- turns, unless the user has already made a per-book choice.
+    if not config:has("inverse_reading_order")
+            and self.document.getPageProgressionDirection
+            and self.document:getPageProgressionDirection() == "rtl" then
+        self.inverse_reading_order = true
+    end
+end
+
 function ReaderView:shouldInvertBiDiLayoutMirroring()
     return self.invert_ui_layout
 end

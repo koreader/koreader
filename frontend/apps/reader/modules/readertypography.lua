@@ -589,6 +589,8 @@ These settings will apply to all books with any hyphenation dictionary.
 end
 
 function ReaderTypography:addToMainMenu(menu_items)
+    -- Fully fixed-layout (pre-paginated) books don't reflow, so hyphenation/typography has no effect.
+    if self.ui.document:getFixedLayoutMode() == 1 then return end
     self.menu_table.max_per_page = 7
     -- insert table to main reader menu
     menu_items.typography = {

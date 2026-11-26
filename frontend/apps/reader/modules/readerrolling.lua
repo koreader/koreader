@@ -1181,7 +1181,10 @@ end
 
 function ReaderRolling:_gotoPage(new_page, free_first_page, internal)
     if self.ui.document:getVisiblePageCount() > 1 and not free_first_page
-            and (internal or self.ui.document:getVisiblePageNumberCount() == 2) then
+            and (internal or self.ui.document:getVisiblePageNumberCount() == 2)
+            and not self.ui.document:isFixedLayout() then
+        -- (Fixed-layout books align to two-page spreads in crengine, honouring
+        -- page-spread-left/right/center, so we don't force odd/even here.)
         -- Ensure we always have the first of the two pages odd
         if self.odd_or_even_first_page == 1 then -- odd
             if band(new_page, 1) == 0 then

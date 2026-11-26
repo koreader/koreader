@@ -213,6 +213,21 @@ function CreDocument:getDocumentProps()
     return self._document:getDocumentProps()
 end
 
+-- Fixed-layout (EPUB3 pre-paginated) book-level info.
+-- Returns: 0 = reflowable, 1 = fully fixed-layout, 2 = mixed.
+function CreDocument:getFixedLayoutMode()
+    return self._document:getFixedLayoutMode()
+end
+
+function CreDocument:isFixedLayout()
+    return self:getFixedLayoutMode() > 0
+end
+
+-- Reading direction from the EPUB <spine page-progression-direction>: "rtl", "ltr" or "".
+function CreDocument:getPageProgressionDirection()
+    return self._document:getPageProgressionDirection()
+end
+
 function CreDocument:setAltDocumentProp(prop, value)
     logger.dbg("CreDocument: set alt document prop", prop, value)
     if type(value) == "number" then -- series index

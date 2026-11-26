@@ -719,6 +719,8 @@ You can enable individual tweaks on this book with a tap, or view more details a
 end
 
 function ReaderStyleTweak:addToMainMenu(menu_items)
+    -- Fully fixed-layout (pre-paginated) books don't reflow, so CSS style tweaks have no effect.
+    if self.ui.document:getFixedLayoutMode() == 1 then return end
     -- insert table to main reader menu
     menu_items.style_tweaks = {
         text_func = function()

@@ -448,6 +448,8 @@ function ReaderTypeset:ensureSanerBlockRenderingFlags(mode)
 end
 
 function ReaderTypeset:addToMainMenu(menu_items)
+    -- Fully fixed-layout (pre-paginated) books don't reflow, so the CSS render style has no effect.
+    if self.ui.document:getFixedLayoutMode() == 1 then return end
     -- insert table to main reader menu
     menu_items.set_render_style = {
         text = self.css_menu_title,
