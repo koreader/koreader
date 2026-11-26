@@ -1726,8 +1726,8 @@ function FileManager:onOpenNextOrPreviousFileInFolder(prev)
         self:openFile(file)
     else
         UIManager:show(InfoMessage:new{
-            text = prev and _("Last book is the first file in the folder. No previous file to open.")
-                         or _("Last book is the last file in the folder. No next file to open."),
+            text = prev and _("Most recent book is the first unfinished file in the folder. No previous file to open.")
+                         or _("Most recent book is the last unfinished file in the folder. No next file to open."),
         })
     end
     return true
