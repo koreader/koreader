@@ -213,10 +213,17 @@ function KOSync:addToMainMenu(menu_items)
                     return {
                         -- @translators Server address defined by user for progress sync.
                         title = _("Custom progress sync server address"),
-                        input = self.settings.custom_server or "https://",
+                        input = self.settings.custom_server,
+                        hint = _("Leave empty to use default"),
+                        allow_blank_input = true,
                         callback = function(input)
-                            self:setCustomServer(input)
-                            self.updated = true
+                            if self:setCustomServer(input) then
+                                self.updated = true
+                            else
+                                UIManager:show(InfoMessage:new{
+                                    text = _("Invalid server address. Please enter a valid URL."),
+                                })
+                            end
                         end,
                     }
                 end,
@@ -461,8 +468,30 @@ function KOSync:setPagesBeforeUpdate(pages_before_update)
 end
 
 function KOSync:setCustomServer(server)
-    logger.dbg("KOSync: Setting custom server to:", server)
-    self.settings.custom_server = server ~= "" and server or nil
+    if not server then
+        logger.dbg("KOSync: Clearing custom server setting")
+        self.settings.custom_server = nil
+        return true
+    end
+    server = util.trim(server)
+    if server == "" or server == "http://" or server == "https://" or server == "http:///" or server == "https:///" then
+        logger.dbg("KOSync: Clearing custom server setting")
+        self.settings.custom_server = nil
+        return true
+    end
+    local url_to_parse = server
+    if not url_to_parse:match("^https?://") then
+        url_to_parse = "https://" .. url_to_parse
+    end
+    local socket_url = require("socket.url")
+    local parsed = socket_url.parse(url_to_parse)
+    if not parsed or not parsed.host or parsed.host == "" or not parsed.host:match("^[%w%.%_%-%[%]]+$") then
+        logger.warn("KOSync: Invalid custom server address:", server)
+        return false
+    end
+    logger.dbg("KOSync: Setting custom server to:", url_to_parse)
+    self.settings.custom_server = url_to_parse
+    return true
 end
 
 function KOSync:setSyncForward(strategy)
