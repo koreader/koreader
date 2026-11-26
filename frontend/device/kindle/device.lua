@@ -1574,6 +1574,20 @@ local function KindleGyroTransform(this, ev)
     end
 end
 
+-- The Oasis 2 & 3 page turn buttons are the other way around compared to what Input's default rotation_map assumes
+-- (i.e., in Portrait, PgFwd is on TOP, and PgBack on the BOTTOM).
+-- That's fine Upside Down (it's a straight swap either way), but in Landscape, it means the swap belongs to the opposite
+-- rotation, otherwise both Landscape orientations end up backwards (e.g., with the buttons at the bottom, right goes back).
+-- NOTE: The kernel does *not* remap the keys on rotation (checked on a KOA3: Upside Down, the top button sends 109).
+local function OasisRotationMap(screen)
+    return {
+        [screen.DEVICE_ROTATED_UPRIGHT]           = {},
+        [screen.DEVICE_ROTATED_CLOCKWISE]         = { Up = "Right", Right = "Down", Down = "Left",  Left = "Up" },
+        [screen.DEVICE_ROTATED_UPSIDE_DOWN]       = { Up = "Down",  Right = "Left", Down = "Up",    Left = "Right", LPgFwd = "LPgBack", LPgBack = "LPgFwd", RPgFwd = "RPgBack", RPgBack = "RPgFwd" },
+        [screen.DEVICE_ROTATED_COUNTER_CLOCKWISE] = { Up = "Left",  Right = "Up",   Down = "Right", Left = "Down",  LPgFwd = "LPgBack", LPgBack = "LPgFwd", RPgFwd = "RPgBack", RPgBack = "RPgFwd" },
+    }
+end
+
 function KindleOasis2:init()
     -- temporarily wake up awesome
     if os.getenv("AWESOME_STOPPED") == "yes" then
@@ -1596,7 +1610,8 @@ function KindleOasis2:init()
         event_map = {
             [104] = "RPgFwd",
             [109] = "RPgBack",
-        }
+        },
+        rotation_map = OasisRotationMap(self.screen),
     }
 
     Kindle.init(self)
@@ -1673,7 +1688,8 @@ function KindleOasis3:init()
         event_map = {
             [104] = "RPgFwd",
             [109] = "RPgBack",
-        }
+        },
+        rotation_map = OasisRotationMap(self.screen),
     }
 
     Kindle.init(self)
