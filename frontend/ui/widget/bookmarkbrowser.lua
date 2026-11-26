@@ -243,11 +243,11 @@ function BookmarkBrowser:show(files, ui)
         and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE
     self.sorting_mode = G_reader_settings:readSetting("bookmarks_items_sorting") or "page"
     self.is_reverse_sorting = G_reader_settings:isTrue("bookmarks_items_reverse_sorting")
-    self.highlight_color_default = G_reader_settings:readSetting("highlight_color")
-        or (Screen:isColorEnabled() and "yellow" or "gray")
+    self.hl_color_name = G_reader_settings:readSetting("highlight_color")
+        or (Screen:isColorEnabled() and "yellow" or "gray") -- see ReaderView
+    self.hl_color = ReaderHighlight:getHighlightColor(self.hl_color_name)
     self.bookmarks_items_show_color = G_reader_settings:isTrue("bookmarks_items_show_color")
-    self.bookmarks_items_color_default = G_reader_settings:isTrue("bookmarks_items_show_color_default")
-        and ReaderHighlight:getHighlightColor(self.highlight_color_default) or nil
+    self.bookmarks_items_show_color_default = G_reader_settings:isTrue("bookmarks_items_show_color_default") or nil
 
     self.books = self:getBookList(files)
     self.books_updated = {}
@@ -368,6 +368,7 @@ function BookmarkBrowser:getBookList(files)
             end
         end
         if annotations and #annotations > 0 then
+            local hl_color_name = doc_settings:readSetting("highlight_color")
             if not is_current_file then
                 doc_props = self.ui.bookinfo.extendProps(doc_props, doc_path or file)
             end
@@ -383,6 +384,8 @@ function BookmarkBrowser:getBookList(files)
                 doc_settings    = doc_settings,
                 doc_props       = doc_props,
                 annotations     = annotations,
+                hl_color_name   = hl_color_name,
+                hl_color        = hl_color_name and ReaderHighlight:getHighlightColor(hl_color_name),
                 text            = util.stringLower((doc_props.authors or "") .. doc_props.display_title), -- for sorting
                 -- will be filled when building item table
                 item_table_idx  = nil,
@@ -404,16 +407,18 @@ function BookmarkBrowser:getFiltersNumber()
          + (self.filter_table.color and 1 or 0)
 end
 
-function BookmarkBrowser:getItemColor(anno)
-    local text_bgcolor
-    if self.bookmarks_items_show_color and anno.drawer then
-        if anno.color == nil or anno.color == self.highlight_color_default then
-            text_bgcolor = self.bookmarks_items_color_default
+function BookmarkBrowser:getItemColor(book, anno)
+    if anno.drawer and self.bookmarks_items_show_color then
+        if anno.color == nil then
+            return self.bookmarks_items_show_color_default and (book.hl_color or self.hl_color)
+        elseif anno.color == book.hl_color_name then
+            return self.bookmarks_items_show_color_default and book.hl_color
+        elseif anno.color == self.hl_color_name then
+            return self.bookmarks_items_show_color_default and self.hl_color
         else
-            text_bgcolor = ReaderHighlight:getHighlightColor(anno.color)
+            return ReaderHighlight:getHighlightColor(anno.color)
         end
     end
-    return text_bgcolor
 end
 
 function BookmarkBrowser:getItemTable()
@@ -440,10 +445,11 @@ function BookmarkBrowser:getItemTable()
                     bookmark_idx = bookmark_idx + 1
                     local item = { -- item_table boookmark entry
                         text         = nil,
-                        text_bgcolor = self:getItemColor(a),
+                        text_bgcolor = self:getItemColor(book, a),
                         mandatory    = a.pageref or a.pageno,
                         datetime     = a.datetime,
                         text_orig    = a.text or "",
+                        chapter      = a.chapter,
                         note         = a.note,
                         drawer       = a.drawer,
                         color        = a.color,
@@ -692,7 +698,7 @@ function BookmarkBrowser:editBookmarkStyleColor(textviewer, item, is_color)
             else
                 item[mode] = value
                 if is_color then
-                    item.text_bgcolor = self:getItemColor(anno)
+                    item.text_bgcolor = self:getItemColor(book, anno)
                     self:updateBookmarkList(item.idx)
                 end
                 self:showBookmarkDetails(item)
