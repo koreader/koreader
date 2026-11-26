@@ -7,6 +7,7 @@ local py_keyboard = dofile("frontend/ui/data/keyboardlayouts/en_keyboard.lua")
 local SETTING_NAME = "keyboard_chinese_pinyin_settings"
 
 local code_map = dofile("frontend/ui/data/keyboardlayouts/zh_pinyin_data.lua")
+local phrase_map = dofile("frontend/ui/data/keyboardlayouts/zh_pinyin_phrase_data.lua")
 local settings = G_reader_settings:readSetting(SETTING_NAME, {show_candi=true})
 local ime = IME:new {
     code_map = code_map,
@@ -16,6 +17,9 @@ local ime = IME:new {
     end,
     switch_char = "→",
     switch_char_prev = "←",
+    candidate_bar = true, -- show candidates in the keyboard's candidate bar
+    phrase_map = phrase_map, -- 简拼 (initials) dictionary
+    phrase_limit = 10,
 }
 
 py_keyboard.keys[4][3][2].alt_label = nil
@@ -84,9 +88,11 @@ local wrappedAddChars = function(inputbox, char)
     ime:wrappedAddChars(inputbox, char)
 end
 
+-- While composing, ← / → page the candidate bar; otherwise move the cursor.
 local wrappedRightChar = function(inputbox)
-    if ime:hasCandidates() then
-        ime:wrappedAddChars(inputbox, "→")
+    local kb = inputbox.keyboard
+    if ime:hasComposing() and kb and kb.pageCandidates then
+        kb:pageCandidates(1)
     else
         ime:separate(inputbox)
         inputbox.rightChar:raw_method_call()
@@ -94,8 +100,9 @@ local wrappedRightChar = function(inputbox)
 end
 
 local wrappedLeftChar = function(inputbox)
-    if ime:hasCandidates() then
-        ime:wrappedAddChars(inputbox, "←")
+    local kb = inputbox.keyboard
+    if ime:hasComposing() and kb and kb.pageCandidates then
+        kb:pageCandidates(-1)
     else
         ime:separate(inputbox)
         inputbox.leftChar:raw_method_call()
@@ -110,8 +117,9 @@ local function wrappedDelChar(inputbox)
     ime:wrappedDelChar(inputbox)
 end
 
-local function clear_stack()
+local function clear_stack(inputbox)
     ime:clear_stack()
+    ime:clearCandidateBar(inputbox)
 end
 
 local wrapInputBox = function(inputbox)
@@ -137,6 +145,8 @@ local wrapInputBox = function(inputbox)
         table.insert(wrappers, util.wrapMethod(inputbox, "onTapTextBox", nil, separate))
         table.insert(wrappers, util.wrapMethod(inputbox, "onHoldTextBox", nil, separate))
         table.insert(wrappers, util.wrapMethod(inputbox, "onSwipeTextBox", nil, separate))
+        -- -- Switching keyboard layout finishes any pending composition.
+        table.insert(wrappers, util.wrapMethod(inputbox, "onSwitchingKeyboardLayout", nil, separate))
 
         table.insert(wrappers, util.wrapMethod(inputbox, "addChars", wrappedAddChars, nil))
         table.insert(wrappers, util.wrapMethod(inputbox, "leftChar", wrappedLeftChar, nil))
@@ -155,5 +165,6 @@ end
 
 py_keyboard.wrapInputBox = wrapInputBox
 py_keyboard.genMenuItems = genMenuItems
+py_keyboard.has_candidate_bar = true -- reserve the keyboard's first row for IME candidates
 py_keyboard.keys[5][4].label = "空格"
 return py_keyboard
