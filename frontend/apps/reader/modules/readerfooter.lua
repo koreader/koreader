@@ -420,8 +420,13 @@ footerTextGeneratorMap = {
     custom_text = function(footer)
         -- if custom_text contains only spaces, request to merge it with the text before and after,
         -- in other words, don't add a separator then.
+        if footer.custom_text:gsub(" ", "") == "" then
+            return footer.custom_text:rep(footer.custom_text_repetitions), true
+        end
         local text = footer.ui.bookinfo:expandString(footer.custom_text)
-        return text:rep(footer.custom_text_repetitions), text:gsub(" ", "") == ""
+        if text and text:gsub(" ", "") ~= "" then -- display non-blank string only
+            return text:rep(footer.custom_text_repetitions)
+        end
     end,
     dynamic_filler = function(footer)
         local filler_enabled = footer.settings.disable_progress_bar or footer.settings.progress_bar_position ~= "alongside"
