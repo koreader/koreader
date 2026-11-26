@@ -7972,6 +7972,14 @@ local dictionaries = {
         url = "https://github.com/xxyzz/wiktionary_stardict/releases/latest/download/es-fr.tar.zst",
     },
     {
+        name = "Wiktionnaire Espagnol-Français (formes fléchies)",
+        lang_in = "spa",
+        lang_out = "fra",
+        entries = 211704,
+        license = "CC BY-SA 4.0 and GFDL",
+        url = "https://github.com/alexis-morain/koreader-spanish-french-dictionary/releases/latest/download/es-fr-wiktionnaire.tar.gz",
+    },
+    {
         name = "Wiktionnaire Estonien-Français",
         lang_in = "est",
         lang_out = "fra",
