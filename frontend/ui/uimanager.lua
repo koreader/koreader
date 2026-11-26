@@ -1197,11 +1197,20 @@ UIManager that a certain part of the screen is to be refreshed.
 
 @local Not to be used outside of UIManager!
 ]]
-function UIManager:_refresh(mode, region, dither)
+function UIManager:_refresh(mode, region, dither, page_turn_fast)
     if not mode then
         -- This is most likely from a `show` or `close` that wasn't passed specific refresh details,
         -- (which is the vast majority of them), in which case we drop it to avoid enqueuing a useless full-screen refresh.
         return
+    end
+
+    -- Remember whether this refresh is a reader page turn: a full-screen, non-dithered
+    -- "partial" refresh without an explicit region (in practice, ReaderView's page repaint).
+    -- The fast-waveform decision is deferred until after collision merging: a colliding
+    -- "ui" refresh (e.g. the footer update enqueued on every page turn) would otherwise
+    -- win update_mode() and silently downgrade the whole page turn to "ui".
+    if not page_turn_fast and mode == "partial" and not region and not dither then
+        page_turn_fast = true
     end
 
     -- Downgrade all refreshes to "fast" when ReaderPaging or ReaderScrolling have set this flag
@@ -1273,16 +1282,30 @@ function UIManager:_refresh(mode, region, dither)
             mode = update_mode(mode, refresh.mode)
             -- dithering hints are viral, one is enough to infect the whole queue
             dither = update_dither(dither, refresh.dither)
+            -- a page turn stays a page turn when it collides with a (footer/UI) "ui" refresh
+            page_turn_fast = page_turn_fast or refresh.page_turn_fast
             -- remove colliding refresh
             table.remove(self._refresh_stack, i)
             -- and try again with combined data
-            return self:_refresh(mode, combined, dither)
+            return self:_refresh(mode, combined, dither, page_turn_fast)
         end
+    end
+
+    -- Optional: use the low-fidelity "fast" waveform for full-screen, non-dithered page
+    -- turns (in practice: image-free reader pages). This is resolved *after* collision
+    -- merging, so that a colliding footer/UI "ui" refresh cannot win update_mode() and
+    -- silently turn the page turn back into a slower "ui" refresh.
+    -- The PARTIAL -> FULL promotion above is kept intact, so ghosting still gets cleared.
+    if page_turn_fast and (mode == "partial" or mode == "ui") and not dither
+        and region.w >= Screen:getWidth() and region.h >= Screen:getHeight()
+        and G_reader_settings:isTrue("page_turn_fast_refresh") then
+        mode = "fast"
+        logger.dbg("_refresh: page turn using fast waveform")
     end
 
     -- if we've stopped hitting collisions, enqueue the refresh
     logger.dbg("_refresh: Enqueued", mode, "update for region", region.x, region.y, region.w, region.h, "dithering:", dither)
-    table.insert(self._refresh_stack, {mode = mode, region = region, dither = dither})
+    table.insert(self._refresh_stack, {mode = mode, region = region, dither = dither, page_turn_fast = page_turn_fast})
 end
 
 --[[--
