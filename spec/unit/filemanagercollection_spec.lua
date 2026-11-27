@@ -7,9 +7,9 @@ describe("FileManagerCollection module", function()
 
     describe("isItemMatch()", function()
         local books = {
-            ["a.epub"] = { keywords = "Fantasy\nAdventure", authors = "Alice\nBob", language = "en-US" },
+            ["a.epub"] = { keywords = "Fantasy\nAdventure", authors = "Alice\nBob", language = "en-US", series = "Saga\nTome" },
             ["b.epub"] = { keywords = "Fantasy" },
-            ["c.epub"] = { keywords = "Science" },
+            ["c.epub"] = { keywords = "Science\n" },
         }
         local function genColl(props)
             return setmetatable({
@@ -38,6 +38,12 @@ describe("FileManagerCollection module", function()
         end)
         it("should match books without the property", function()
             assert.are.same({ "b.epub", "c.epub" }, matchingFiles(genColl({ authors = FileManagerCollection.empty_prop })))
+        end)
+        it("should ignore a trailing newline", function()
+            assert.are.same({ "c.epub" }, matchingFiles(genColl({ keywords = "Science" })))
+        end)
+        it("should not split series", function()
+            assert.are.same({}, matchingFiles(genColl({ series = "Saga" })))
         end)
     end)
 end)

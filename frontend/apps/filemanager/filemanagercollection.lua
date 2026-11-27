@@ -177,9 +177,10 @@ function FileManagerCollection:getPropValues(doc_props, prop)
         return { doc_prop }
     elseif prop == "language" then
         return { doc_prop:lower() }
-    else -- "authors", "keywords"
+    elseif doc_prop:find("\n", 1, true) then -- several "authors" or "keywords"
         return util.splitToArray(doc_prop, "\n")
     end
+    return { doc_prop }
 end
 
 function FileManagerCollection:getBookListTitle(item_table)
