@@ -107,6 +107,61 @@ describe("ReaderBookmark module", function()
             local bm_xpointer = readerui.bookmark:getNextBookmarkedPage(xpointer)
             assert.are.same(15, readerui.document:getPageFromXPointer(bm_xpointer))
         end)
+        it("should open the list page holding the current page bookmark", function()
+            readerui.annotation.annotations = {}
+            for page = 1, 11 do
+                readerui.rolling:onGotoPage(page)
+                readerui.bookmark:onToggleBookmark()
+                readerui.annotation.annotations[page].datetime = string.format("2024-01-01 00:00:%02d", page)
+            end
+            G_reader_settings:saveSetting("bookmarks_items_per_page", 10)
+            local function tapCurrentPage(bm_menu)
+                local orig_show = UIManager.show
+                local dialog
+                UIManager.show = function(this, widget, ...)
+                    dialog = widget
+                    return orig_show(this, widget, ...)
+                end
+                bm_menu:onLeftButtonTap()
+                UIManager.show = orig_show
+                for _, row in ipairs(dialog.buttons) do
+                    for _, button in ipairs(row) do
+                        if button.text == "Current page" then
+                            button.callback()
+                        end
+                    end
+                end
+            end
+            -- returns the list page shown when opening the list,
+            -- and after tapping "Current page" from the other list page
+            local function getListPages(page)
+                readerui.rolling:onGotoPage(page)
+                readerui.bookmark:onShowBookmark()
+                local bm_menu = readerui.bookmark.bookmark_menu[1]
+                local list_page = bm_menu.page
+                if list_page == 1 then
+                    bm_menu:onLastPage()
+                else
+                    bm_menu:onFirstPage()
+                end
+                tapCurrentPage(bm_menu)
+                local list_page_current = bm_menu.page
+                bm_menu.close_callback()
+                return { list_page, list_page_current }
+            end
+            assert.are.same({ 1, 1 }, getListPages(9))
+            assert.are.same({ 1, 1 }, getListPages(10)) -- last row of the first list page
+            assert.are.same({ 2, 2 }, getListPages(11))
+            G_reader_settings:makeTrue("bookmarks_items_reverse_sorting")
+            assert.are.same({ 1, 1 }, getListPages(2)) -- last row of the first list page
+            assert.are.same({ 2, 2 }, getListPages(1))
+            G_reader_settings:delSetting("bookmarks_items_reverse_sorting")
+            -- date sorting: the list opens on the latest bookmark, "Current page" goes to the current one
+            G_reader_settings:saveSetting("bookmarks_items_sorting", "date")
+            assert.are.same({ 2, 1 }, getListPages(10))
+            G_reader_settings:delSetting("bookmarks_items_sorting")
+            G_reader_settings:delSetting("bookmarks_items_per_page")
+        end)
     end)
 
     describe("PDF document", function()

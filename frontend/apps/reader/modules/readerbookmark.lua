@@ -671,6 +671,7 @@ function ReaderBookmark:onShowBookmark()
     local num = #self.ui.annotation.annotations + 1
     curr_page_index = self.is_reverse_sorting and num - curr_page_index or curr_page_index
     local curr_page_index_filtered = curr_page_index
+    local curr_page_first_item_index -- first item in the current book page
     for i = 1, #self.ui.annotation.annotations do
         local v = self.ui.annotation.annotations[self.is_reverse_sorting and num - i or i]
         local item = util.tableDeepCopy(v)
@@ -696,12 +697,15 @@ function ReaderBookmark:onShowBookmark()
                 item.bold = true
                 item.after_curr_page = nil
                 item.mandatory_dim = nil
+                curr_page_first_item_index = curr_page_first_item_index or #item_table + 1
             end
             table.insert(item_table, item)
         else
             curr_page_index_filtered = curr_page_index_filtered - 1
         end
     end
+    -- point to the first item in the current book page, if any
+    curr_page_index_filtered = curr_page_first_item_index or curr_page_index_filtered
     local curr_page_datetime
     if self.sorting_mode == "date" and #item_table > 0 then
         local idx = math.max(1, math.min(curr_page_index_filtered, #item_table))
