@@ -159,13 +159,27 @@ function FileManagerCollection:isItemMatch(item)
         if self.match_table.props then
             local doc_props = self.ui.bookinfo:getDocProps(item.file, nil, true)
             for prop, value in pairs(self.match_table.props) do
-                if (doc_props[prop] or self.empty_prop) ~= value then
+                if not util.arrayContains(self:getPropValues(doc_props, prop), value) then
                     return false
                 end
             end
         end
     end
     return true
+end
+
+-- Returns the values of a book property the collection can be filtered by.
+function FileManagerCollection:getPropValues(doc_props, prop)
+    local doc_prop = doc_props[prop]
+    if doc_prop == nil then
+        return { self.empty_prop }
+    elseif prop == "series" then
+        return { doc_prop }
+    elseif prop == "language" then
+        return { doc_prop:lower() }
+    else -- "authors", "keywords"
+        return util.splitToArray(doc_prop, "\n")
+    end
 end
 
 function FileManagerCollection:getBookListTitle(item_table)
@@ -656,17 +670,8 @@ end
 function FileManagerCollection:showPropValueList(prop)
     local prop_values = {}
     for idx, item in ipairs(self.booklist_menu.item_table) do
-        local doc_prop = self.ui.bookinfo:getDocProps(item.file, nil, true)[prop]
-        if doc_prop == nil then
-            doc_prop = { self.empty_prop }
-        elseif prop == "series" then
-            doc_prop = { doc_prop }
-        elseif prop == "language" then
-            doc_prop = { doc_prop:lower() }
-        else -- "authors", "keywords"
-            doc_prop = util.splitToArray(doc_prop, "\n")
-        end
-        for _, prop_value in ipairs(doc_prop) do
+        local doc_props = self.ui.bookinfo:getDocProps(item.file, nil, true)
+        for _, prop_value in ipairs(self:getPropValues(doc_props, prop)) do
             prop_values[prop_value] = prop_values[prop_value] or {}
             table.insert(prop_values[prop_value], idx)
         end
