@@ -47,6 +47,7 @@ local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
+local ButtonTable = require("ui/widget/buttontable")
 local dbg = require("dbg")
 local time = require("ui/time")
 local Input = Device.input
@@ -61,6 +62,9 @@ local ProgressbarDialog = InputContainer:extend {
     dismiss_text = nil,
     _home_pending_callback = nil,
     refresh_time_seconds = 3,
+    cancel_callback = nil,
+    cancel_text = nil,
+    cancel_confirm_text = nil
 }
 
 function ProgressbarDialog:init()
@@ -128,6 +132,38 @@ function ProgressbarDialog:init()
             percentage = 0,
         }
         vertical_group[#vertical_group + 1] = self.progress_bar
+    end
+    if self.cancel_callback then
+        vertical_group[#vertical_group + 1] = ButtonTable:new {
+            width = progress_bar_width,
+            show_parent = self,
+            buttons = {
+                {
+                    {
+                        text = self.cancel_text or _("Cancel"),
+                        callback = function()
+                            if self._confirm_box then return end
+                            self._confirm_box = ConfirmBox:new {
+                                text = self.cancel_confirm_text or _("Cancel this operation?"),
+                                ok_text = _("Cancel"),
+                                cancel_text = _("Continue"),
+                                ok_callback = function()
+                                    self._confirm_box = nil
+                                    self.cancel_callback()
+                                    UIManager:nextTick(function()
+                                        UIManager:close(self)
+                                    end)
+                                end,
+                                cancel_callback = function()
+                                    self._confirm_box = nil
+                                end
+                            }
+                            UIManager:show(self._confirm_box)
+                        end,
+                    },
+                },
+            },
+        }
     end
 
     self[1] = FrameContainer:new {
@@ -213,6 +249,10 @@ function ProgressbarDialog:onCloseWidget()
     if self.dismiss_box then
         UIManager:close(self.dismiss_box)
         self.dismiss_box = nil
+    end
+    if self._confirm_box then
+        UIManager:close(self._confirm_box)
+        self._confirm_box = nil
     end
     if self.dismiss_callback then
         self.dismiss_callback()

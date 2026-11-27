@@ -15,6 +15,7 @@ local UIManager = require("ui/uimanager")
 local ffiUtil = require("ffi/util")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
+local Trapper = require("ui/trapper")
 local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
@@ -662,24 +663,36 @@ end
 function CloudStorage:showFileDownloadDialog(item)
     if self.provider.downloadFile == nil then return end
     local function startDownloadFile(unit_item, local_path)
-        local progressbar_dialog = ProgressbarDialog:new{
-            title = _("Downloading…"),
-            subtitle = unit_item.text,
-            progress_max = unit_item.filesize,
-            refresh_time_seconds = 0.5,
-        }
-        UIManager:scheduleIn(1, function()
+        Trapper:wrap(function ()
+            local co = coroutine.running()
+            local cancelled = false
+            local progressbar_dialog = ProgressbarDialog:new{
+                title = _("Downloading…"),
+                subtitle = unit_item.text,
+                progress_max = unit_item.filesize,
+                refresh_time_seconds = 0.5,
+                cancel_callback = function() cancelled = true end,
+                cancel_confirm_text = _("Continue download?"),
+            }
+            progressbar_dialog:show()
+            UIManager:scheduleIn(0.05, function() coroutine.resume(co) end)
+            coroutine.yield()
             local time_prev = time.now()
             local progress_callback = function(progress)
+                if cancelled then return false end
                 if time.to_ms(time.since(time_prev)) > 200 then
-                    if progressbar_dialog:reportProgress(progress) then
-                        time_prev = time.now()
-                    end
+                    time_prev = time.now()
+                    progressbar_dialog:reportProgress(progress)
+                    UIManager:drainInput()
                 end
+                return true
             end
             local code = self.provider.downloadFile(unit_item.url, local_path, progress_callback)
             progressbar_dialog:close()
-            if code == 200 then
+            if cancelled then
+                os.remove(local_path)
+                UIManager:show(InfoMessage:new{ text = _("Download cancelled.") })
+            elseif code == 200 then
                 local text = T(_("File saved to:\n%1"), BD.filepath(local_path))
                 if DocumentRegistry:hasProvider(local_path) then
                     UIManager:show(ConfirmBox:new{
@@ -696,7 +709,6 @@ function CloudStorage:showFileDownloadDialog(item)
                 UIManager:show(InfoMessage:new{ text = T(_("Could not save file to:\n%1"), BD.filepath(local_path)) })
             end
         end)
-        progressbar_dialog:show()
     end
 
     local function createTitle(filename_orig, filesize, filename, path) -- title for ButtonDialog
@@ -814,32 +826,42 @@ function CloudStorage:showFileUploadDialog(url)
                 self.settings:saveSetting("upload_dir", new_path)
                 self._manager.updated = true
             end
-            local progressbar_dialog = ProgressbarDialog:new{
-                title = _("Uploading…"),
-                subtitle = file_path:gsub(".*/", ""),
-                progress_max = lfs.attributes(file_path, "size"),
-                refresh_time_seconds = 0.5,
-            }
-            UIManager:scheduleIn(1, function()
+            Trapper:wrap(function()
+                local co = coroutine.running()
+                local cancelled = false
+                local progressbar_dialog = ProgressbarDialog:new{
+                    title = _("Uploading…"),
+                    subtitle = file_path:gsub(".*/", ""),
+                    progress_max = lfs.attributes(file_path, "size"),
+                    refresh_time_seconds = 0.5,
+                    cancel_callback = function() cancelled = true end,
+                    cancel_confirm_text = _("Continue upload?"),
+                }
+                progressbar_dialog:show()
+                UIManager:scheduleIn(0.05, function() coroutine.resume(co) end)
+                coroutine.yield()
                 local time_prev = time.now()
                 local progress_callback = function(progress)
+                    if cancelled then return false end
                     if time.to_ms(time.since(time_prev)) > 200 then
-                        if progressbar_dialog:reportProgress(progress) then
-                            time_prev = time.now()
-                        end
+                        time_prev = time.now()
+                        progressbar_dialog:reportProgress(progress)
+                        UIManager:drainInput()
                     end
+                    return true
                 end
                 local url_base = url ~= "/" and url or ""
                 local code = self.provider.uploadFile(url_base, file_path, nil, true, progress_callback)
                 progressbar_dialog:close()
-                if code == 200 then
+                if cancelled then
+                    UIManager:show(InfoMessage:new{ text = _("Upload cancelled.") })
+                elseif code == 200 then
                     self:openCloudServer(url)
                     UIManager:show(InfoMessage:new{ text = T(_("File uploaded:\n%1"), BD.filepath(file_path)) })
                 else
                     UIManager:show(InfoMessage:new{ text = T(_("Could not upload file:\n%1"), BD.filepath(file_path)) })
                 end
             end)
-            progressbar_dialog:show()
         end,
     })
 end
@@ -852,7 +874,6 @@ function CloudStorage:showSelectedFilesUploadDialog(url)
         ok_text = _("Upload"),
         ok_callback = function()
             local url_base = url ~= "/" and url or ""
-            local Trapper = require("ui/trapper")
             Trapper:wrap(function()
                 Trapper:setPausedText("Upload paused.\nDo you want to continue or abort uploading files?")
                 local proccessed_files, success_files, unsuccess_files = 0, 0, 0
@@ -940,7 +961,6 @@ function CloudStorage:showSelectedFilesDeleteDialog()
         text = T(N_("Delete 1 file?", "Delete %1 files?", files_nb), files_nb),
         ok_text = _("Delete"),
         ok_callback = function()
-            local Trapper = require("ui/trapper")
             Trapper:wrap(function()
                 Trapper:setPausedText("Deleting paused.\nDo you want to continue or abort deleting files?")
                 local proccessed_files, success_files, unsuccess_files = 0, 0, 0
@@ -1001,7 +1021,6 @@ function CloudStorage:showSelectedFilesDownloadDialog()
         end,
         choice2_text = _("Download"),
         choice2_callback = function()
-            local Trapper = require("ui/trapper")
             Trapper:wrap(function()
                 Trapper:setPausedText("Downloading paused.\nDo you want to continue or abort downloading files?")
                 local proccessed_files, success_files, unsuccess_files = 0, 0, 0
@@ -1089,7 +1108,6 @@ end
 function CloudStorage:syncCloud(item)
     local server = self:initServer(item.server_idx)
     self.provider.run(function()
-        local Trapper = require("ui/trapper")
         Trapper:wrap(function()
             Trapper:setPausedText("Download paused.\nDo you want to continue or abort downloading files?")
             Trapper:info(_("Retrieving files…"))

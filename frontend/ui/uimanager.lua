@@ -1521,6 +1521,20 @@ function UIManager:handleInputEvent(input_event)
     end
 end
 
+-- Drains any input events currently queued without blocking
+-- Called from code paths that would otherwise starve the input queue
+-- Like a long running synchronous luasocket callback
+function UIManager:drainInput()
+    local now = time.now()
+    local input_events = Input:waitEvent(now, now)
+    if input_events then
+        if input_events[1] then self.event_hook:execute("InputEvent") end
+        for __, ev in ipairs(input_events) do
+            self:handleInputEvent(ev)
+        end
+    end
+end
+
 -- Process all pending events on all registered ZMQs.
 function UIManager:processZMQs()
     local sent_InputEvent = false
