@@ -677,7 +677,6 @@ function CloudStorage:showFileDownloadDialog(item)
             progressbar_dialog:show()
             UIManager:scheduleIn(0.05, function() coroutine.resume(co) end)
             coroutine.yield()
-            
             local time_prev = time.now()
             local progress_callback = function(progress)
                 if cancelled then return false end
@@ -843,7 +842,6 @@ function CloudStorage:showFileUploadDialog(url)
                 progressbar_dialog:show()
                 UIManager:scheduleIn(0.05, function() coroutine.resume(co) end)
                 coroutine.yield()
-
                 local time_prev = time.now()
                 local progress_callback = function(progress)
                     if cancelled then return false end
