@@ -672,7 +672,7 @@ function CloudStorage:showFileDownloadDialog(item)
                 progress_max = unit_item.filesize,
                 refresh_time_seconds = 0.5,
                 cancel_callback = function() cancelled = true end,
-                cancel_confirm_text = _("Cancel this download?"),
+                cancel_confirm_text = _("Continue download?"),
             }
             progressbar_dialog:show()
             UIManager:scheduleIn(0.05, function() coroutine.resume(co) end)
@@ -681,11 +681,9 @@ function CloudStorage:showFileDownloadDialog(item)
             local progress_callback = function(progress)
                 if cancelled then return false end
                 if time.to_ms(time.since(time_prev)) > 200 then
-                    if progressbar_dialog:reportProgress(progress) then
-                        time_prev = time.now()
-                        UIManager:scheduleIn(0.05, function() coroutine.resume(co) end)
-                        coroutine.yield()
-                    end
+                    time_prev = time.now()
+                    progressbar_dialog:reportProgress(progress)
+                    UIManager:drainInput()
                 end
                 return true
             end
@@ -837,7 +835,7 @@ function CloudStorage:showFileUploadDialog(url)
                     progress_max = lfs.attributes(file_path, "size"),
                     refresh_time_seconds = 0.5,
                     cancel_callback = function() cancelled = true end,
-                    cancel_confirm_text = _("Cancel this upload?"),
+                    cancel_confirm_text = _("Continue upload?"),
                 }
                 progressbar_dialog:show()
                 UIManager:scheduleIn(0.05, function() coroutine.resume(co) end)
@@ -846,11 +844,9 @@ function CloudStorage:showFileUploadDialog(url)
                 local progress_callback = function(progress)
                     if cancelled then return false end
                     if time.to_ms(time.since(time_prev)) > 200 then
-                        if progressbar_dialog:reportProgress(progress) then
-                            time_prev = time.now()
-                            UIManager:scheduleIn(0.05, function() coroutine.resume(co) end)
-                            coroutine.yield()
-                        end
+                        time_prev = time.now()
+                        progressbar_dialog:reportProgress(progress)
+                        UIManager:drainInput()
                     end
                     return true
                 end
