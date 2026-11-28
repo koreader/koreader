@@ -402,22 +402,21 @@ function ReaderAnnotation:isItemInPositionOrderRolling(a, b)
     end
     local a_page = self.document:getPageFromXPointer(a.page)
     local b_page = self.document:getPageFromXPointer(b.page)
-    if a_page ~= b_page then
-        return a_page < b_page
-    end
-    -- same page
-    if (not a.drawer) ~= (not b.drawer) then -- comparing a page bookmark and a highlight
-        return not a.drawer -- sort page bookmark before highlights
-    end
-    local compare_xp = self.document:compareXPointers(a.page, b.page)
-    if a.drawer and compare_xp == 0 then -- both highlights with the same start, compare ends
-        order = self:getInvalidXPointersOrder(a, b, "pos1")
-        if order ~= nil then
-            return order
+    if a_page == b_page then -- both items in the same page
+        if a.drawer and b.drawer then -- both items are highlights, compare positions
+            local compare_xp = self.document:compareXPointers(a.page, b.page)
+            if compare_xp == 0 then -- both highlights with the same start, compare ends
+                order = self:getInvalidXPointersOrder(a, b, "pos1")
+                if order ~= nil then
+                    return order
+                end
+                return self.document:compareXPointers(a.pos1, b.pos1) > 0
+            end
+            return compare_xp > 0
         end
-        return self.document:compareXPointers(a.pos1, b.pos1) > 0
+        return not a.drawer -- have page bookmarks before highlights
     end
-    return compare_xp > 0
+    return a_page < b_page
 end
 
 function ReaderAnnotation:isItemInPositionOrderPaging(a, b)
